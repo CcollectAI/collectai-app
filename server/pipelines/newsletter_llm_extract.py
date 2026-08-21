@@ -41,7 +41,13 @@ at actually exists in the email:
                       summarises rather than extracts writes a headline nobody
                       sent.
   3. CHROME           a denylist built from rows that actually shipped.
-  4. DATE SANITY      parses, and inside a sane window.
+  4. DATE SANITY      parses, not past, inside a sane window.
+  4b. DATE GROUNDING  the YEAR of `starts_at` must appear in the evidence span.
+                      Steps 1-2 ground the PROSE and say nothing about the date,
+                      which the model composes rather than copies — so a real
+                      quote could carry an invented date, and the date is the
+                      field with the highest cost of being wrong. Found by
+                      auditing this gate against itself after writing it.
   5. CONFIDENCE       self-reported, and deliberately LAST — it is the weakest
                       signal here, because a confident hallucination is still a
                       hallucination. It can only reject, never rescue.
@@ -181,8 +187,8 @@ def verify(c: Candidate, source_text: str, *, now: Optional[datetime] = None) ->
 
     # 4. Date sanity. An event with no date is not an event; a drop without one
     #    is still useful, so only events are required to carry one.
+    dt = _parse_dt(c.starts_at)
     if c.kind == "event":
-        dt = _parse_dt(c.starts_at)
         if dt is None:
             reasons.append("unparseable_date")
         else:
@@ -191,6 +197,26 @@ def verify(c: Candidate, source_text: str, *, now: Optional[datetime] = None) ->
                 reasons.append("date_in_past")
             elif dt > ref + timedelta(days=MAX_DAYS_AHEAD):
                 reasons.append("date_too_far_ahead")
+
+    # 4b. GROUND THE DATE ITSELF.
+    #
+    # Steps 1-2 ground the prose; they say nothing about `starts_at`, which the
+    # model composes rather than copies. A candidate could therefore quote a
+    # real sentence, carry a real title, and attach a date from nowhere — and
+    # the date is the field with the highest cost of being wrong, because it is
+    # the one that makes somebody travel.
+    #
+    # The ISO string cannot be required verbatim: prose says "from 2 to 6
+    # February 2027", never "2027-02-02". The YEAR is the strong, cheap anchor —
+    # it is present in almost every real date sentence and it catches the whole
+    # class of "quoted a 2027 announcement, emitted a 2026 date".
+    #
+    # LIMIT, stated rather than hidden: this does NOT catch a wrong month or day
+    # inside the right year. Requiring the month name would reject numeric and
+    # non-English dates, which is a worse trade — a false reject loses one
+    # event, a false accept sends someone to a closed venue on the wrong day.
+    if dt is not None and ev and str(dt.year) not in ev:
+        reasons.append("date_year_not_in_evidence")
 
     # 5. Confidence, last and lowest-weight.
     if c.confidence < MIN_CONFIDENCE:
@@ -268,22 +294,27 @@ def _to_candidates(payload: dict[str, Any]) -> list[Candidate]:
     return out
 
 
-async def extract(email_text: str, sender: str = "") -> list[Candidate]:
+async def extract(email_text: str, sender: str = "") -> Optional[list[Candidate]]:
     """Ask the model for candidates.
 
-    Returns [] on every failure path, and LOGS AT ERROR each time. A source we
-    could not read must not be indistinguishable from a source with nothing in
-    it — that is the `[]`-is-not-`None` rule this repo already applies to the
-    watchdog's Logflare collector.
+    Returns **None when we could not ask** — no key, no SDK, budget refused,
+    API error, malformed response — and a list (possibly empty) when we did.
+
+    The distinction is the whole point and it is the rule this repo already
+    learned the hard way: `collect_supabase_logs.query()` returned `[]` on every
+    failure path, so three blind days rendered as three calm ones. Here the same
+    collapse would report "this inbox contains no events" when the truth is
+    "we never managed to look", and a dry run measuring precision would score a
+    dead API as a perfect run.
     """
     if not os.getenv("ANTHROPIC_API_KEY"):
         logger.error("[newsletter_llm] ANTHROPIC_API_KEY not set — extraction skipped")
-        return []
+        return None
     try:
         from anthropic import AsyncAnthropic
     except ImportError:
         logger.error("[newsletter_llm] anthropic SDK not installed; pip install anthropic")
-        return []
+        return None
 
     # The same budget gate every other model call in this repo goes through, so
     # one runaway inbox cannot spend the month's allowance.
@@ -293,7 +324,7 @@ async def extract(email_text: str, sender: str = "") -> list[Candidate]:
         tracker.check("newsletter_extract")
     except Exception as e:  # noqa: BLE001 — covers BudgetExceededError + import failure
         logger.warning("[newsletter_llm] budget gate blocked: %s", e)
-        return []
+        return None
 
     client = AsyncAnthropic()
     try:
@@ -307,20 +338,27 @@ async def extract(email_text: str, sender: str = "") -> list[Candidate]:
         )
     except Exception as e:  # noqa: BLE001
         logger.error("[newsletter_llm] API call failed: %s", e)
-        return []
+        return None
 
     for block in resp.content:
         if getattr(block, "type", None) == "tool_use":
             return _to_candidates(getattr(block, "input", {}) or {})
     logger.error("[newsletter_llm] no tool_use block in response")
-    return []
+    return None
 
 
-async def extract_and_verify(email_text: str, sender: str = "") -> list[Verdict]:
-    """Extract, then gate. Returns EVERY candidate with its verdict — rejected
-    ones included, because the rejection reasons ARE the measurement that says
-    whether this is safe to wire up at all."""
-    return [verify(c, email_text) for c in await extract(email_text, sender)]
+async def extract_and_verify(email_text: str, sender: str = "") -> Optional[list[Verdict]]:
+    """Extract, then gate.
+
+    `None` propagates "could not ask"; a list means we asked, and contains
+    EVERY candidate with its verdict — rejected ones included, because the
+    rejection reasons ARE the measurement that says whether this is safe to
+    wire up at all.
+    """
+    candidates = await extract(email_text, sender)
+    if candidates is None:
+        return None
+    return [verify(c, email_text) for c in candidates]
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -332,6 +370,10 @@ def main(argv: Optional[list[str]] = None) -> int:
     with open(args.file, encoding="utf-8", errors="replace") as fh:
         body = fh.read()
     verdicts = asyncio.run(extract_and_verify(body, args.sender))
+    if verdicts is None:
+        print("\nCOULD NOT ASK — see the logged error. This is NOT 'no events found';")
+        print("do not count this run in any precision measurement.")
+        return 2
 
     accepted = [v for v in verdicts if v.accepted]
     print(f"\n{len(verdicts)} candidate(s), {len(accepted)} accepted\n")

@@ -29,7 +29,6 @@ from pipelines.newsletter_llm_extract import (  # noqa: E402
 )
 
 NOW = datetime(2026, 8, 22, tzinfo=timezone.utc)
-SOON = (NOW + timedelta(days=30)).date().isoformat()
 
 EMAIL = """
 Spielwarenmesse 2027 takes place in Nuremberg from 2 to 6 February 2027.
@@ -42,7 +41,10 @@ def _c(**kw) -> Candidate:
     base = dict(
         kind="event",
         title="Spielwarenmesse 2027",
-        starts_at=SOON,
+        # 2027 to match the year in `evidence` — the date-grounding check
+        # rejects a candidate whose year is absent from the span it quotes,
+        # and a fixture that trips it is testing the fixture, not the gate.
+        starts_at="2027-02-02",
         confidence=0.95,
         evidence="Spielwarenmesse 2027 takes place in Nuremberg",
     )
@@ -84,6 +86,31 @@ class TestGrounding:
         whitespace. Strict about CONTENT, not about layout."""
         v = verify(_c(evidence="Spielwarenmesse   2027\n  takes place in Nuremberg"), EMAIL, now=NOW)
         assert v.accepted, v.reasons
+
+
+class TestDateGrounding:
+    """Steps 1-2 ground the PROSE. They say nothing about `starts_at`, which the
+    model composes rather than copies — and the date is the field with the
+    highest cost of being wrong, because it is the one that makes somebody
+    travel. Found by auditing the gate against itself after it was written."""
+
+    def test_a_fabricated_date_is_rejected_even_with_real_evidence(self):
+        """The gap this class exists for: real title, real verbatim evidence,
+        and a date from nowhere. Before the year check this was ACCEPTED."""
+        v = verify(_c(starts_at="2026-11-05"), EMAIL, now=NOW)
+        assert not v.accepted
+        assert "date_year_not_in_evidence" in v.reasons
+
+    def test_a_date_whose_year_is_quoted_is_accepted(self):
+        v = verify(_c(starts_at="2027-02-06"), EMAIL, now=NOW)
+        assert v.accepted, v.reasons
+
+    def test_a_drop_date_is_grounded_too(self):
+        """Drops need no date, but if one is supplied it is held to the same
+        rule — an ungrounded date is ungrounded whatever the row is called."""
+        v = verify(_c(kind="drop", starts_at="2029-01-01"), EMAIL, now=NOW)
+        assert not v.accepted
+        assert "date_year_not_in_evidence" in v.reasons
 
     def test_trivially_short_evidence_is_rejected(self):
         """'2027' appears in every newsletter ever written."""
