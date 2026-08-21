@@ -7,6 +7,7 @@ import {
   Text,
   StyleSheet,
   Pressable,
+  Share,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
@@ -153,10 +154,16 @@ function ItemDetailScreen() {
   const {
     id,
     draft,
-    name = "Unknown item",
-    category = "Not set",
-    collection = "Not set",
-    condition = "Not set",
+    // NOTE: these destructuring defaults fire ONLY on `undefined`. A route
+    // param that arrives as an EMPTY STRING keeps the empty string, which is
+    // why the Condition row rendered a label with nothing beside it while
+    // Collection — set from a picker that writes the literal "Not set" —
+    // looked fine one row above. Normalised below rather than here, because a
+    // default cannot express "or blank".
+    name: rawName = "Unknown item",
+    category: rawCategory = "Not set",
+    collection: rawCollection = "Not set",
+    condition: rawCondition = "Not set",
     value = "0",
     notes: initialNotes = "",
     imageUri,
@@ -168,6 +175,16 @@ function ItemDetailScreen() {
     attributesJson: initialAttributesJson,
     catalogKey,
   } = params;
+
+  // Blank is the same as unset for these four. Doing it once here means every
+  // consumer — the detail card, the save payload, the a11y labels — sees one
+  // representation instead of each guarding for '' separately.
+  const blankAs = (v: string | undefined, fallback: string) =>
+    v == null || v.trim() === '' ? fallback : v;
+  const name = blankAs(rawName, "Unknown item");
+  const category = blankAs(rawCategory, "Not set");
+  const collection = blankAs(rawCollection, "Not set");
+  const condition = blankAs(rawCondition, "Not set");
 
   const isDraft = id === 'draft' || draft === '1';
   const inlineEditPending = useRef(false);
@@ -860,6 +877,26 @@ function ItemDetailScreen() {
     setPullRefreshing(false);
   }, [isDraft, id, setPullRefreshing, refreshAllIntelligence]);
 
+  // Lifted out of ItemQuickActionsRow when Share left that row for Sell.
+  // Optimised for messaging (WhatsApp / iMessage), where people actually
+  // share: the details a recipient needs on their own lines plus a tappable
+  // link. A per-item sparrowcollect.com/item link opens the app but 404s for a
+  // recipient who does not have it, so it links the site.
+  const handleShareItem = useCallback(async () => {
+    try {
+      const val = toNum(editableValue) ?? 0;
+      const message =
+        `Check out my ${editableName} on Sparrow Collect` +
+        (editableCondition && editableCondition !== 'Not set' ? `\nCondition: ${editableCondition}` : '') +
+        (val ? `\nEstimated value: ${formatPrice(val, settings.currency)}` : '') +
+        `\n\nhttps://sparrowcollect.com`;
+      await Share.share({ message });
+    } catch (e) {
+      // Not silent: if the only share path fails the control is decorative.
+      logger.error('[item] share failed:', e);
+    }
+  }, [editableName, editableValue, editableCondition, settings.currency]);
+
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView
@@ -915,6 +952,13 @@ function ItemDetailScreen() {
           scrollEventThrottle={16}
         >
           {/* ── Image Gallery ─────────────────────────────────────────── */}
+          {/* Share lives HERE, top-right over the image, with the same metrics
+              as the marketplace tile (app/listings.tsx `shareBtn`: 30x30,
+              top/right 6, background + 'E6') — the placement the playbook
+              specifies for share. It is deliberately NOT in the nav header:
+              that cluster is bell/bubble/gear, and a fourth icon stops reading
+              as a cluster and starts reading as a toolbar. */}
+          <View>
           <ItemGallerySection
             theme={theme}
             hapticsEnabled={settings.hapticsEnabled}
@@ -940,6 +984,16 @@ function ItemDetailScreen() {
             }}
             onMomentumScrollEnd={setGalleryActiveIndex}
           />
+            <AnimatedPressable
+              onPress={handleShareItem}
+              style={[styles.galleryShareBtn, { backgroundColor: theme.background + 'E6' }]}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Share this item"
+            >
+              <Ionicons name="share-outline" size={16} color={theme.text} />
+            </AnimatedPressable>
+          </View>
 
           {/* Save / Cancel bar — only in edit mode */}
           {!isDraft && id && isEditing && (
@@ -974,12 +1028,28 @@ function ItemDetailScreen() {
           {/* ── Quick Actions ─────────────────────────────────────── */}
           {!isDraft && id && !isEditing && (
             <ItemQuickActionsRow
-              editableName={editableName}
-              editableValue={editableValue}
-              editableCondition={editableCondition}
               isForSale={isForSale}
               onEdit={() => setIsEditing(true)}
               onListForSale={() => listForSaleHook.open()}
+              // Straight to the full sell flow with the item prefilled — the
+              // same handoff app/sell/pick.tsx uses, including its rule that
+              // only a price > 0 seeds the box (a prefilled 0 reads as
+              // "worthless" and fails the server's price > 0 on submit).
+              onSell={() => {
+                fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+                const numeric = toNum(editableValue) ?? 0;
+                router.push({
+                  pathname: '/sell/new',
+                  params: {
+                    itemId: String(id ?? ''),
+                    itemName: editableName,
+                    itemCategory: editableCategory === 'Not set' ? '' : editableCategory,
+                    itemImage: imageUri ?? '',
+                    itemValue: numeric > 0 ? String(Math.round(numeric * 100) / 100) : '',
+                    itemCondition: editableCondition === 'Not set' ? '' : editableCondition,
+                  },
+                });
+              }}
             />
           )}
 
@@ -1463,6 +1533,13 @@ export default function ItemDetailScreenWithBoundary() {
 }
 
 const styles = StyleSheet.create({
+  // Same metrics as app/listings.tsx `shareBtn`, so the affordance is in the
+  // same place and the same size wherever a member meets it.
+  galleryShareBtn: {
+    position: 'absolute', top: 6, right: 6, zIndex: 2,
+    width: 30, height: 30, borderRadius: 15,
+    alignItems: 'center', justifyContent: 'center',
+  },
   safeArea: {
     flex: 1,
   },

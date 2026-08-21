@@ -1,59 +1,43 @@
 /**
- * ItemQuickActionsRow — Edit / Share / List for Sale buttons shown below image.
+ * ItemQuickActionsRow — Edit / Sell buttons shown below the image.
+ *
+ * Share LEFT this row on 2026-08-21 and became a 30x30 icon overlaid on the
+ * gallery, top-right, with the same metrics as the marketplace tile
+ * (app/listings.tsx `shareBtn`) — the placement docs/ui-playbook.md already
+ * specifies for share. Two reasons it could not go in the nav header instead:
+ * that cluster is bell/bubble/gear and a FOURTH icon stops reading as a
+ * cluster and starts reading as a toolbar, which is why the avatar was removed
+ * from it in the first place.
+ *
+ * Sell took the freed slot. It is the REVENUE action and it was previously
+ * only reachable from a collapsed section near the bottom of the screen, below
+ * a request for price feedback — a data-collection ask outranking the thing
+ * that makes money. `List for Sale` (external marketplaces, SELLING_ENABLED)
+ * is a different destination and stays gated.
  */
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Share } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { formatPrice } from '@/lib/format';
 import { AnimatedPressable } from '@/motion';
 import { radius, text, fontWeight as fw, gap } from '@/theme/tokens';
-import { logger } from '@/lib/logger';
 import { SELLING_ENABLED } from '@/config/featureFlags';
 
 interface ItemQuickActionsRowProps {
-  editableName: string;
-  editableValue: string;
-  editableCondition?: string;
   isForSale: boolean;
   onEdit: () => void;
+  /** Opens the full sell flow (app/sell/new) with this item prefilled. */
+  onSell: () => void;
   onListForSale: () => void;
 }
 
-const toNum = (value: string | number | undefined | null): number | undefined => {
-  if (value === undefined || value === null || value === '') return undefined;
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(num)) return undefined;
-  return num;
-};
 
 export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props: ItemQuickActionsRowProps) {
   const { colors: theme } = useAppTheme();
-  const { editableName, editableValue, editableCondition, isForSale, onEdit, onListForSale } = props;
+  const { isForSale, onEdit, onListForSale, onSell } = props;
   const [busy, setBusy] = useState(false);
 
-  const handleShare = useCallback(async () => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      // Optimized for messaging (WhatsApp / iMessage), where users actually
-      // share: the details a recipient needs (name, condition, value) on their
-      // own lines + a tappable link. A per-item sparrowcollect.com/item link
-      // opens the app but 404s for recipients without it, so link the site.
-      const val = toNum(editableValue);
-      const message =
-        `Check out my ${editableName} on Sparrow Collect` +
-        (editableCondition ? `\nCondition: ${editableCondition}` : '') +
-        (val ? `\nEstimated value: ${formatPrice(val)}` : '') +
-        `\n\nhttps://sparrowcollect.com`;
-      await Share.share({ message });
-    } catch (e) {
-      logger.error('[silent-catch] ItemQuickActionsRow.tsx:48:', e);
-      // User cancelled
-    } finally {
-      setBusy(false);
-    }
-  }, [busy, editableName, editableValue, editableCondition]);
+
 
   return (
     <View style={styles.quickActionsRow}>
@@ -67,15 +51,20 @@ export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props
         <Ionicons name="create-outline" size={18} color={theme.accent} />
         <Text style={[styles.quickActionLabel, { color: theme.text }]}>Edit</Text>
       </AnimatedPressable>
+      {/* THE primary action on this screen, and the only filled accent on it.
+          Everything else here is outline or muted — 48 accent usages across
+          this screen and its components meant nothing read as primary. */}
       <AnimatedPressable
-        onPress={handleShare}
+        onPress={onSell}
         disabled={busy}
-        style={[styles.quickActionBtn, { backgroundColor: theme.card, borderColor: theme.border }, busy && { opacity: 0.5 }]}
+        style={[styles.quickActionBtn, { backgroundColor: theme.accent, borderColor: theme.accent }, busy && { opacity: 0.5 }]}
         accessibilityRole="button"
-        accessibilityLabel="Share this item"
+        accessibilityLabel="Sell this on the Sparrow marketplace"
       >
-        <Ionicons name="share-outline" size={18} color={theme.accent} />
-        <Text style={[styles.quickActionLabel, { color: theme.text }]}>Share</Text>
+        {/* accentText, never '#fff': in high-contrast dark the accent fill IS
+            white and a hardcoded white label disappears. */}
+        <Ionicons name="pricetag" size={18} color={theme.accentText} />
+        <Text style={[styles.quickActionLabel, { color: theme.accentText }]}>Sell</Text>
       </AnimatedPressable>
       {/* Second selling entry point — gated with the Seller Dashboard, or a user
           could still create a listing that goes nowhere (no marketplace account
