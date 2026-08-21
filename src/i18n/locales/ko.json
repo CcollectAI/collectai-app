@@ -464,7 +464,9 @@
     "user_policy": "사용자 정책",
     "data_processing": "데이터 처리",
     "condition_guide": "상태 가이드",
-    "condition_guide_desc": "모든 카테고리의 등급 기준"
+    "condition_guide_desc": "모든 카테고리의 등급 기준",
+    "diagnostics": "진단",
+    "diagnostics_desc": "이 기기에 기록된 최근 오류"
   },
   "sponsor_profile": {
     "company_name": "회사명",
@@ -750,5 +752,19 @@
     "empty": "아직 저장한 항목이 없습니다",
     "empty_hint": "상품의 하트를 눌러 여기에 저장하세요",
     "unavailable": "더 이상 이용할 수 없습니다"
+  },
+  "diagnostics": {
+    "title": "진단",
+    "back_title": "설정",
+    "filter_errors": "오류",
+    "filter_all": "전체",
+    "refresh": "새로고침",
+    "share": "로그 공유",
+    "clear": "로그 지우기",
+    "cleared": "로그를 지웠습니다",
+    "share_failed": "로그를 공유하지 못했습니다.",
+    "entries": "{{count}}개 항목",
+    "empty_title": "기록 없음",
+    "empty_body": "앱 사용 중 기록된 오류가 여기에 표시됩니다. 문제가 발생한 화면을 다시 연 뒤 돌아오세요."
   }
 }

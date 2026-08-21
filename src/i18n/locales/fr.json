@@ -464,7 +464,9 @@
     "user_policy": "Règlement des utilisateurs",
     "data_processing": "Traitement des données",
     "condition_guide": "Guide des états",
-    "condition_guide_desc": "Référence de notation pour toutes les catégories"
+    "condition_guide_desc": "Référence de notation pour toutes les catégories",
+    "diagnostics": "Diagnostics",
+    "diagnostics_desc": "Erreurs récentes enregistrées sur cet appareil"
   },
   "sponsor_profile": {
     "company_name": "Nom de l'entreprise",
@@ -750,5 +752,19 @@
     "empty": "Rien d'enregistré pour l'instant",
     "empty_hint": "Touchez le cœur d'une annonce pour l'enregistrer ici",
     "unavailable": "Plus disponible"
+  },
+  "diagnostics": {
+    "title": "Diagnostics",
+    "back_title": "Réglages",
+    "filter_errors": "Erreurs",
+    "filter_all": "Tout",
+    "refresh": "Actualiser",
+    "share": "Partager le journal",
+    "clear": "Effacer le journal",
+    "cleared": "Journal effacé",
+    "share_failed": "Impossible de partager le journal.",
+    "entries": "{{count}} entrées",
+    "empty_title": "Rien d'enregistré",
+    "empty_body": "Les erreurs enregistrées pendant l'utilisation apparaissent ici. Rouvrez l'écran concerné puis revenez."
   }
 }

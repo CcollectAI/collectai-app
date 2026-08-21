@@ -464,7 +464,9 @@
     "user_policy": "Gebruikersbeleid",
     "data_processing": "Gegevensverwerking",
     "condition_guide": "Conditiegids",
-    "condition_guide_desc": "Naslagwerk voor gradering in alle categorieën"
+    "condition_guide_desc": "Naslagwerk voor gradering in alle categorieën",
+    "diagnostics": "Diagnostiek",
+    "diagnostics_desc": "Recente fouten op dit apparaat"
   },
   "sponsor_profile": {
     "company_name": "Bedrijfsnaam",
@@ -750,5 +752,19 @@
     "empty": "Nog niets bewaard",
     "empty_hint": "Tik op het hartje bij een advertentie om het hier te bewaren",
     "unavailable": "Niet meer beschikbaar"
+  },
+  "diagnostics": {
+    "title": "Diagnostiek",
+    "back_title": "Instellingen",
+    "filter_errors": "Fouten",
+    "filter_all": "Alles",
+    "refresh": "Vernieuwen",
+    "share": "Log delen",
+    "clear": "Log wissen",
+    "cleared": "Log gewist",
+    "share_failed": "Kon het log niet delen.",
+    "entries": "{{count}} regels",
+    "empty_title": "Niets vastgelegd",
+    "empty_body": "Fouten die tijdens gebruik worden gelogd verschijnen hier. Open het scherm dat misging opnieuw en kom terug."
   }
 }

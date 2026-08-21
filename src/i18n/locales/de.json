@@ -464,7 +464,9 @@
     "user_policy": "Nutzerrichtlinie",
     "data_processing": "Datenverarbeitung",
     "condition_guide": "Zustands-Leitfaden",
-    "condition_guide_desc": "Bewertungsreferenz für alle Kategorien"
+    "condition_guide_desc": "Bewertungsreferenz für alle Kategorien",
+    "diagnostics": "Diagnose",
+    "diagnostics_desc": "Kürzlich auf diesem Gerät aufgezeichnete Fehler"
   },
   "sponsor_profile": {
     "company_name": "Firmenname",
@@ -750,5 +752,19 @@
     "empty": "Noch nichts gespeichert",
     "empty_hint": "Tippe auf das Herz eines Angebots, um es hier zu speichern",
     "unavailable": "Nicht mehr verfügbar"
+  },
+  "diagnostics": {
+    "title": "Diagnose",
+    "back_title": "Einstellungen",
+    "filter_errors": "Fehler",
+    "filter_all": "Alle",
+    "refresh": "Aktualisieren",
+    "share": "Protokoll teilen",
+    "clear": "Protokoll löschen",
+    "cleared": "Protokoll gelöscht",
+    "share_failed": "Protokoll konnte nicht geteilt werden.",
+    "entries": "{{count}} Einträge",
+    "empty_title": "Nichts aufgezeichnet",
+    "empty_body": "Fehler, die während der Nutzung protokolliert werden, erscheinen hier. Öffne den betroffenen Bildschirm erneut und komm zurück."
   }
 }

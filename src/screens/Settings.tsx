@@ -125,6 +125,28 @@ export default function Settings() {
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
+        {/* Diagnostics. The log ring buffer existed for weeks with getRecentLogs()
+            referenced only in comments and tests — captured, correct and reachable
+            from nowhere. This row is the reader; without it the screen would be a
+            second instance of the same bug. */}
+        <AnimatedPressable
+          style={styles.settingRow}
+          onPress={() => {
+            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+            router.push('/diagnostics' as Href);
+          }}
+          accessibilityRole="link"
+          accessibilityLabel={t('settings.diagnostics')}
+        >
+          <View style={styles.settingInfo}>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.diagnostics')}</Text>
+            <Text style={[styles.settingHint, { color: colors.muted }]}>{t('settings.diagnostics_desc')}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.muted} />
+        </AnimatedPressable>
+
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
         <AnimatedPressable
           style={styles.settingRow}
           onPress={() => {

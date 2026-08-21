@@ -464,7 +464,9 @@
     "user_policy": "ユーザーポリシー",
     "data_processing": "データ処理",
     "condition_guide": "コンディションガイド",
-    "condition_guide_desc": "全カテゴリーのグレーディング基準"
+    "condition_guide_desc": "全カテゴリーのグレーディング基準",
+    "diagnostics": "診断",
+    "diagnostics_desc": "この端末で記録された最近のエラー"
   },
   "sponsor_profile": {
     "company_name": "会社名",
@@ -750,5 +752,19 @@
     "empty": "まだ保存されていません",
     "empty_hint": "出品のハートをタップするとここに保存されます",
     "unavailable": "現在は利用できません"
+  },
+  "diagnostics": {
+    "title": "診断",
+    "back_title": "設定",
+    "filter_errors": "エラー",
+    "filter_all": "すべて",
+    "refresh": "更新",
+    "share": "ログを共有",
+    "clear": "ログを消去",
+    "cleared": "ログを消去しました",
+    "share_failed": "ログを共有できませんでした。",
+    "entries": "{{count}} 件",
+    "empty_title": "記録はありません",
+    "empty_body": "アプリの使用中に記録されたエラーがここに表示されます。問題が起きた画面をもう一度開いてから戻ってください。"
   }
 }

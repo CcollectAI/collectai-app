@@ -230,6 +230,73 @@ in that binary and the RC dashboard serves a `default` offering with both
 packages. **The RevenueCat side is not the problem.** The SDK drops an offering
 whose packages resolve to no StoreKit product, which happens when:
 
+### The `reason=` line is now readable without a cable (2026-08-21)
+
+The three-way diagnostic above was built to end this triage, and for six days
+it could not be read on the device it describes. `logger.error` wrote to
+`console.error` and **nowhere else**. Two independent gaps:
+
+- **Sentry was initialised the whole time and never received a log line.**
+  `app/_layout.tsx` has configured Sentry since 2026-05-12; nothing forwarded
+  `logger.error` into it.
+- **`getRecentLogs()` had no consumer.** `src/lib/logger.ts` retains every
+  level in a 300-entry ring buffer and its own comment says the buffer is
+  *"readable via getRecentLogs() from the diagnostics screen"*. Repo-wide,
+  `getRecentLogs` appeared only in comments, tests and test mocks. There was no
+  diagnostics screen. Captured, correct, reachable from nowhere — the same
+  shape as the five features fixed on 2026-08-20.
+
+So the answer to "which of the three reasons is it?" required plugging the
+phone into a Mac and opening Console.app, which is why the question survived
+several sessions.
+
+Both closed:
+
+| route | how | needs |
+|---|---|---|
+| **Settings → Diagnostics** (`app/diagnostics.tsx`) | reads `getRecentLogs()`, newest first, errors-only by default, with a Share action | nothing — works offline, which matters when the network is what is broken |
+| **Sentry** | `setLogSink()` in `app/_layout.tsx` forwards `error` as an event and `warn` as a breadcrumb | a DSN and a network |
+
+`setLogSink` is **injected, not imported**: `logger.ts` must not depend on
+Sentry — it is the one module that has to keep working when everything else is
+misbehaving.
+
+⚠️ **The forwarder is re-entrant by construction and needs its latch.** Sentry's
+`beforeSend` *and* `beforeBreadcrumb` hooks both call `logger.error(...)` from
+their own catch blocks, so log → sink → Sentry → hook throws → `logger.error` →
+sink → … recurses until the stack blows. `notifySink`'s `inSink` latch stops
+it. `__tests__/lib/loggerSink.test.ts` pins that, and it was **proven by
+removing the latch and watching the test fail** with a blown stack — without
+which the diagnostic channel becomes the crash it was added to report, on
+exactly the builds where something is already wrong.
+
+Log text goes through `beforeSend` / `beforeBreadcrumb`, so the existing PII
+scrub applies to it exactly as it does to exceptions — a new source of strings,
+not a new way to leak them.
+
+### Verified live for build 149 (2026-08-21) — do not re-litigate the RC side
+
+| checked | how | result |
+|---|---|---|
+| key reaches the binary | `strings main.jsbundle \| grep appl_` on the shipped IPA | ✅ `appl_tfjQ…`, 32 chars |
+| RC serves the offering | `GET /v1/subscribers/<probe>/offerings` with that key | ✅ `current_offering_id: default` |
+| package → product | same response | ✅ `$rc_monthly → sparrow_pro_monthly`, `$rc_annual → sparrow_pro_yearly` |
+| paywall actually live | build job env | ✅ `store` profile pinned `EXPO_PUBLIC_BETA_UNLOCK_ALL=false` |
+
+Reported on build 149, TestFlight, **physical device**: "Subscriptions Coming
+Soon". `no-key` is excluded by the binary and RC misconfiguration by the API
+probe, and a device excludes the Simulator — so it is `no-offering`, and the
+remaining causes are the Apple-side items below.
+
+**One correction to that list:** the missing RC↔Apple In-App Purchase `.p8`
+(item 5) **cannot** cause this. It gates granting the `pro` entitlement *after*
+a purchase completes; it never suppresses product listing. Still an open gap,
+just not this one.
+
+ASC remains unqueryable from here: the local `AuthKey_LAU7D8HU29.p8` lives in
+`~/.appstoreconnect/private_keys/` and **its Issuer ID is recorded nowhere**,
+so items 2 and 3 still need a human in the ASC UI.
+
 #### If the paywall shows no products
 
 In order of likelihood, none of which the code can fix:

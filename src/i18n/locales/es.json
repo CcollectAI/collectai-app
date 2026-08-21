@@ -464,7 +464,9 @@
     "user_policy": "Política de usuario",
     "data_processing": "Tratamiento de datos",
     "condition_guide": "Guía de estado",
-    "condition_guide_desc": "Referencia de clasificación para todas las categorías"
+    "condition_guide_desc": "Referencia de clasificación para todas las categorías",
+    "diagnostics": "Diagnóstico",
+    "diagnostics_desc": "Errores recientes registrados en este dispositivo"
   },
   "sponsor_profile": {
     "company_name": "Nombre de la empresa",
@@ -750,5 +752,19 @@
     "empty": "Nada guardado todavía",
     "empty_hint": "Toca el corazón de un anuncio para guardarlo aquí",
     "unavailable": "Ya no está disponible"
+  },
+  "diagnostics": {
+    "title": "Diagnóstico",
+    "back_title": "Ajustes",
+    "filter_errors": "Errores",
+    "filter_all": "Todo",
+    "refresh": "Actualizar",
+    "share": "Compartir registro",
+    "clear": "Borrar registro",
+    "cleared": "Registro borrado",
+    "share_failed": "No se pudo compartir el registro.",
+    "entries": "{{count}} entradas",
+    "empty_title": "Nada registrado",
+    "empty_body": "Los errores registrados durante el uso aparecen aquí. Vuelve a abrir la pantalla que falló y regresa."
   }
 }

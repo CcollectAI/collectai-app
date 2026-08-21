@@ -61,8 +61,56 @@ function retain(level: LogLevel, prefix: string, args: unknown[]) {
     // is misbehaving.
     message = args.map((a) => String(a)).join(' ');
   }
-  buffer.push({ level, at: new Date().toISOString(), message: `${prefix} ${message}`.trim() });
+  const entry: RetainedLog = {
+    level,
+    at: new Date().toISOString(),
+    message: `${prefix} ${message}`.trim(),
+  };
+  buffer.push(entry);
   if (buffer.length > LOG_BUFFER_LIMIT) buffer.shift();
+  notifySink(entry);
+}
+
+/**
+ * Optional forwarder for retained logs (see setLogSink).
+ *
+ * INJECTED, never imported. This file must not `import * as Sentry` — it is
+ * the one module that has to keep working when everything else is
+ * misbehaving, and the logger having its own dependency is how you get a
+ * failure that cannot report itself. app/_layout.tsx owns the Sentry import
+ * and registers a sink there.
+ */
+export type LogSink = (entry: RetainedLog) => void;
+
+let sink: LogSink | null = null;
+let inSink = false;
+
+/**
+ * Register (or clear, with null) a forwarder called for every retained log.
+ *
+ * Reentrancy is NOT theoretical here. Sentry's `beforeSend` and
+ * `beforeBreadcrumb` hooks in app/_layout.tsx both call `logger.error(...)`
+ * from their own catch blocks. Without the `inSink` latch, a sink that hands
+ * the entry to Sentry would re-enter this function from inside Sentry's own
+ * hook and recurse until the stack blew — turning the diagnostic channel into
+ * the crash it was added to report.
+ */
+export function setLogSink(fn: LogSink | null): void {
+  sink = fn;
+}
+
+function notifySink(entry: RetainedLog): void {
+  if (!sink || inSink) return;
+  inSink = true;
+  try {
+    sink(entry);
+  } catch {
+    // A broken sink must never break logging, and must never be reported
+    // THROUGH the sink. Swallowed on purpose; the entry is already in the
+    // ring buffer, which is the durable copy.
+  } finally {
+    inSink = false;
+  }
 }
 
 /** Most recent retained logs, newest last. Optionally filtered by level. */

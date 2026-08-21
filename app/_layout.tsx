@@ -97,10 +97,15 @@ try {
 
 /* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
 import { scrubSentryEvent, scrubSentryBreadcrumb } from '@/lib/sentryScrub';
-import { logger } from '@/lib/logger';
+import { logger, setLogSink } from '@/lib/logger';
 import { safeGoBack } from '@/lib/goBack';
 
-let Sentry: { init: (opts: Record<string, unknown>) => void; wrap: (component: React.ComponentType) => React.ComponentType } | null = null;
+let Sentry: {
+  init: (opts: Record<string, unknown>) => void;
+  wrap: (component: React.ComponentType) => React.ComponentType;
+  captureMessage: (message: string, level?: string) => void;
+  addBreadcrumb: (breadcrumb: Record<string, unknown>) => void;
+} | null = null;
 try {
   Sentry = require("@sentry/react-native");
 } catch (_) {
@@ -139,6 +144,37 @@ if (Sentry && SENTRY_DSN) {
     // Block Sentry SDK from auto-attaching user agent / IP. We override
     // user via setUser({id}) explicitly in AuthProvider.
     sendDefaultPii: false,
+  });
+
+  // Forward retained logs to Sentry.
+  //
+  // Why this exists: `logger.error` wrote to the console and NOWHERE else, so
+  // the one line built to triage the paywall —
+  // "[subscription] iapUnavailable reason=no-offering" — could not be read on
+  // a TestFlight device without a cable and Console.app. Sentry was
+  // initialised the whole time and never received it, and `getRecentLogs()`
+  // had no consumer. The diagnostic existed and was unreachable.
+  //
+  //   error -> a real event. An error nothing captures is exactly the silent
+  //            failure this repo keeps rediscovering.
+  //   warn  -> a breadcrumb, so the event above arrives with its run-up
+  //            attached instead of as one bare line.
+  //   debug/info are not forwarded: they are console noise and would burn
+  //            quota without telling us anything a breadcrumb does not.
+  //
+  // Both paths go through `beforeSend` / `beforeBreadcrumb`, so the PII scrub
+  // configured above applies to log text exactly as it does to exceptions —
+  // this adds a new source of strings, not a new way to leak them.
+  setLogSink((entry) => {
+    if (entry.level === 'error') {
+      Sentry?.captureMessage(entry.message, 'error');
+    } else if (entry.level === 'warn') {
+      Sentry?.addBreadcrumb({
+        category: 'log',
+        level: 'warning',
+        message: entry.message,
+      });
+    }
   });
 }
 

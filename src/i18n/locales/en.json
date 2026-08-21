@@ -464,7 +464,9 @@
     "user_policy": "User Policy",
     "data_processing": "Data Processing",
     "condition_guide": "Condition Guide",
-    "condition_guide_desc": "Grading reference for all categories"
+    "condition_guide_desc": "Grading reference for all categories",
+    "diagnostics": "Diagnostics",
+    "diagnostics_desc": "Recent errors recorded on this device"
   },
   "sponsor_profile": {
     "company_name": "Company name",
@@ -750,5 +752,19 @@
     "empty": "Nothing saved yet",
     "empty_hint": "Tap the heart on a listing to save it here",
     "unavailable": "No longer available"
+  },
+  "diagnostics": {
+    "title": "Diagnostics",
+    "back_title": "Settings",
+    "filter_errors": "Errors",
+    "filter_all": "All",
+    "refresh": "Refresh",
+    "share": "Share log",
+    "clear": "Clear log",
+    "cleared": "Log cleared",
+    "share_failed": "Couldn't share the log.",
+    "entries": "{{count}} entries",
+    "empty_title": "Nothing recorded",
+    "empty_body": "Errors logged while the app runs show up here. Reopen the screen that misbehaved, then come back."
   }
 }
