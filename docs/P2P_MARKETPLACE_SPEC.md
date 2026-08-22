@@ -1174,6 +1174,42 @@ currently invisible to the alert that is the reason the marketplace exists.
 `reaches_target_hit` reports this back honestly, and the screen shows the notice,
 but honesty about a dead end is not the same as a way out of it.
 
+### 8d-ii. What shipping the gallery actually took (2026-08-22)
+
+Three things the multi-photo work turned up that the §8d note did not predict.
+
+**`item_images.label` is CHECK-constrained** to
+`front|back|detail|box|certificate|damage|other`. Anything else is rejected
+outright — a demo seed using a marker string failed the whole transaction. That
+rejection also exposed the uploader passing `undefined` for photos 2..8: it was
+ACCEPTED, because NULL satisfies a CHECK, but it discarded a field the schema
+defines. `sell/new.tsx` now sends `front` for the cover and `detail` for the
+rest. **Do not invent label values here; the constraint will refuse them.**
+
+**⚠️ The API half shipped a build behind the app half.** `ListingOut.image_urls`
+was committed and the client gallery went out in build 151 — while
+`p2p_listing_router.py` on EC2 still hashed differently, so every listing would
+have returned one image no matter what `item_images` held. Caught only because
+seeding demo data prompted an end-to-end check rather than a code read. A
+feature spanning app and server is not shipped until BOTH are verified; hash-diff
+the server file, do not infer it from a commit.
+
+**Demo galleries exist for testing** — 26 frames across the five `DEMO …`
+listings (8/6/5/4/3, including the 8-photo maximum), using real
+`category_items` image URLs so each frame differs. Remove them by ITEM, not by
+label, since the label had to come from the constrained vocabulary:
+
+```sql
+DELETE FROM public.item_images WHERE item_id IN (
+  'b07cb2bf-fc80-40ee-913d-5384e04a7837','3b4e1f11-39de-42a1-a0d6-2d535ff15b2b',
+  'c923b524-9093-4f67-8ecb-46f045f26bc2','43934515-f5af-4bc3-9fdc-b68dd19304c7',
+  'b3f0570f-fc3a-46cf-8b19-f0261493562a');
+```
+
+Confirmed after seeding: those listings resolve 8/6/5/4/3 frames and
+`image_is_catalog` is correctly **false** — the fix that made `item_images`
+outrank the catalogue in the hero COALESCE is working.
+
 ### 8e. Trust: we must build the felt half without the funded half
 
 Buyer Protection is *why* buyers trust strangers on Vinted — money held until

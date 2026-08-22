@@ -2,6 +2,57 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-22
 
+## A loop, a duplicate, and an API that was never deployed (2026-08-22)
+
+**The display-name loop.** Settings' first row pushes `/users/{me}`; a member
+with no display name has no `user_public_profile_v1` row, so that screen offers
+"Add a display name" — which pushed bare `/settings`, whose first row pushes
+`/users/{me}`. Reported as *"you just end in a loop back to settings"*. It was
+worse than a loop: breaking out still left you on a screen where the field is
+behind an Edit button you have to find. Now `/settings?editProfile=1`, read by
+the ROUTE FILE so `check-params` can resolve the contract, opening the editor
+once via a ref.
+
+**Two Sell buttons.** Sell moved into the item screen's top row on 08-21 and
+`SellOnSparrowSection` stayed at the bottom — and they disagreed: the section
+expanded an inline create form while the top row opens `sell/new`, the full flow
+with the 8-photo gallery. Removed, with the stale comment in `sell/pick.tsx`
+that still described it.
+
+**⚠️ The gallery API was never deployed.** `p2p_listing_router.py` hashed
+differently local vs remote, so build 151 — which contains the client gallery —
+would have shown ONE image regardless of the data. Found only because seeding
+demo data prompted an end-to-end check. **A feature is not shipped when the app
+half ships**; hash-diff the server on any change that spans both.
+
+**`item_images.label` is CHECK-constrained** to
+front|back|detail|box|certificate|damage|other. A seed using a marker string was
+rejected outright, and that rejection exposed the uploader sending `undefined`
+for photos 2..8 — accepted, because NULL satisfies a CHECK, but discarding a
+field the schema defines. A constraint you meet by accident is one you will
+break later.
+
+**The splash wordmark** is baked by `scripts/make_splash.py` from the real icon
+and the exact `Roboto_900Black` file `fonts.black` resolves to. `splash.png` had
+been byte-identical to `icon.png` and referenced by nothing.
+
+### The gate fix that was worse than the bug
+
+`check-route-param-handoff` bounds a params body with `\n\s*\}`, so a
+SINGLE-LINE `params: { … }` runs on and swallows the JSX below — it reported a
+correct push as sending a phantom `color` from `{ color: colors.accentText }`
+four lines down.
+
+The obvious repair — `[^{}]*`, stop at the first closing brace — made it PASS
+and silently cut its coverage from **46 params across 23 sites to 27 across 18**,
+because any nested brace or `${}` truncates the object. It was only caught by
+comparing the summary counts before and after.
+
+**A gate that under-reports is worse than one that over-reports**, so the gate
+was reverted untouched and the call site written multi-line like the other 23.
+When a gate blocks you, changing the gate is the last resort, and the test of
+any gate edit is that its COVERAGE NUMBERS do not fall.
+
 ## The events feed is ~95 rows, and the newsletter had no newsletters (2026-08-22)
 
 Measured before fixing anything. 2,859 events, **108 upcoming** — the feature is
