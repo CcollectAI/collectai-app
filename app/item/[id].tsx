@@ -80,7 +80,6 @@ import { ItemForSaleBar } from '@/components/item/ItemForSaleBar';
 import { ItemEditBar } from '@/components/item/ItemEditBar';
 import { ItemPriceSection } from '@/components/item/ItemPriceSection';
 import { ItemNotesEditor } from '@/components/item/ItemNotesEditor';
-import { SellOnSparrowSection } from '@/components/item/SellOnSparrowSection';
 import { ItemCatalogRefresh } from '@/components/item/ItemCatalogRefresh';
 import { supabase } from '@/lib/supabase';
 // SellTimingBadge hidden 2026-07-22 (see render block below) — restore both together.
@@ -1325,21 +1324,14 @@ function ItemDetailScreen() {
                 a lone pill floating between two cards — it broke the flow and
                 gave no clue which fields it changes. */}
 
-            {/* Sell on the member marketplace (P2P Stage 1). Placed with the
-                other user-OWNED actions, above the paywalled sections: this is
-                something you do with YOUR item, not a feature to unlock.
-                See docs/P2P_MARKETPLACE_SPEC.md. */}
-            {!isDraft && id && !isEditing && (
-              <SellOnSparrowSection
-                itemId={id as string}
-                colors={theme}
-                currency={settings.currency}
-                hapticsEnabled={settings.hapticsEnabled}
-                suggestedPrice={priceEstimate?.priceBand?.q50 ?? null}
-                canonicalKey={savedCanonicalKey}
-                hasPhoto={Boolean(imageUri)}
-              />
-            )}
+            {/* "Sell this" removed 2026-08-22. Sell moved into the top action
+                row (it replaced Share), so this was a SECOND entry point to the
+                same thing, further down the same screen — and the two did not
+                even agree: this one expanded an inline create form while the
+                top row opens app/sell/new, the full flow that carries the
+                8-photo gallery. Two impls of one action is how a fix lands on
+                the dead path. The component still exists and is unused; see the
+                note in the commit before deleting it. */}
 
             {/* Notes (editable) — top priority per user feedback */}
             <ItemNotesEditor

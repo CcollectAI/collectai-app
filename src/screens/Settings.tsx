@@ -22,7 +22,7 @@ import { DevSentryCrashSection } from '@/components/settings/DevSentryCrashSecti
 import { MarketplaceConnectionsSection } from '@/components/settings/MarketplaceConnectionsSection';
 import { PaymentHandlesSection } from '@/components/settings/PaymentHandlesSection';
 
-export default function Settings() {
+export default function Settings({ openProfileEditor = false }: { openProfileEditor?: boolean } = {}) {
   const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -71,7 +71,7 @@ export default function Settings() {
           See docs/alerts-and-insights.md § "Two preference stores". */}
 
       {/* Account Section (profile, password, sign out, billing, etc.) */}
-      <ProfileEditSection />
+      <ProfileEditSection openEditorOnMount={openProfileEditor} />
 
       {/* Marketplace connections (eBay OAuth, defaults, listing chain).
           Hidden with the rest of selling: the section invites the user to

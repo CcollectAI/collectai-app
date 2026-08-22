@@ -383,7 +383,33 @@ function UserProfileScreen() {
             </Text>
             <AnimatedPressable
               style={[styles.retryBtn, { borderColor: colors.accent, backgroundColor: colors.accent }]}
-              onPress={() => router.push('/settings' as Href)}
+              // `?editProfile=1`, NOT bare `/settings`.
+              //
+              // Bare /settings was a LOOP: the first row of Settings is the
+              // identity row, which pushes /users/{me}, which lands right back
+              // on this screen because the profile still has no row. Reported
+              // as "you just end in a loop back to settings" — and it is worse
+              // than a loop, because even breaking out of it left you on a
+              // screen where the name field is behind an Edit button you have
+              // to find. This opens the editor.
+              // Multi-line deliberately. check-route-param-handoff bounds the
+              // params body with `([\s\S]*?)\n\s*\}` — it assumes the object
+              // closes on its own line. A SINGLE-LINE params object has no such
+              // newline, so the match runs on and swallows the JSX below: this
+              // push was reported as sending a phantom `color`, picked up from
+              // `{ color: colors.accentText }` four lines down.
+              //
+              // Written to suit the checker rather than fixing the checker,
+              // because the obvious regex fix (`[^{}]*`, stop at the first
+              // brace) silently dropped its coverage from 46 params across 23
+              // sites to 27 across 18 — a gate that under-reports is worse than
+              // one that over-reports. All 23 other push sites are multi-line.
+              onPress={() =>
+                router.push({
+                  pathname: '/settings',
+                  params: { editProfile: '1' },
+                })
+              }
               accessibilityRole="button"
               accessibilityLabel="Open settings to add a display name"
             >

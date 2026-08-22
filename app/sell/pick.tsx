@@ -9,10 +9,16 @@
  * instruction, no sell mode, and nothing marking which tap would do the thing
  * they came for.
  *
- * Opening an item did not rescue it: `SellOnSparrowSection` renders far below
- * the fold, under Add Photo, Edit/Share, Item Details and several more sections.
- * So the flow read as a dead end — reported 2026-08-08 as "there is no button
- * from that workflow to then select an item", which is exactly right.
+ * Opening an item did not rescue it either: the sell entry point on the item
+ * screen was `SellOnSparrowSection`, rendered far below the fold under Add
+ * Photo, Edit/Share, Item Details and several more sections. So the flow read
+ * as a dead end — reported 2026-08-08 as "there is no button from that workflow
+ * to then select an item", which is exactly right.
+ *
+ * (That section was REMOVED on 2026-08-22: Sell is now a top-row action on the
+ * item screen and opens app/sell/new directly. This screen is unaffected — it
+ * answers the "start from selling, pick an item" direction, which the item
+ * screen cannot.)
  *
  * A promise of "select an item from your collection" has to be answered by a
  * screen where selecting an item is the ONLY thing to do. That is this.

@@ -3,7 +3,7 @@
  * Extracted from Settings.tsx.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -34,7 +34,7 @@ import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import { BETA_MODE } from '@/config/featureFlags';
 import { useTranslation } from 'react-i18next';
 
-function ProfileEditSectionInner() {
+function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMount?: boolean }) {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { user, profile, signOut } = useAuthContext();
@@ -46,6 +46,24 @@ function ProfileEditSectionInner() {
   const [editUsername, setEditUsername] = useState(profile?.username ?? '');
   const [editBio, setEditBio] = useState(profile?.bio ?? '');
   const [savingProfile, setSavingProfile] = useState(false);
+
+  // Arrived from "Add a display name" on your own empty public profile
+  // (/settings?editProfile=1). Opening the editor is the whole point of that
+  // trip: landing on Settings with the field still behind an Edit button is
+  // what made the CTA feel like a loop even once the loop itself was gone.
+  //
+  // Prefills the same two fields the Edit row does — the form posts whatever is
+  // in them, so an unpopulated bio would save empty and wipe the existing one.
+  // Runs once: `openEditorOnMount` stays true while the param is in the URL, so
+  // without the ref a dismissed sheet would reopen on the next render.
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (!openEditorOnMount || autoOpenedRef.current) return;
+    autoOpenedRef.current = true;
+    setEditUsername(profile?.username ?? '');
+    setEditBio(profile?.bio ?? '');
+    setEditProfileVisible(true);
+  }, [openEditorOnMount, profile?.username, profile?.bio]);
 
   const [changePasswordVisible, setChangePasswordVisible] = useState(false);
   const [newPassword, setNewPassword] = useState('');

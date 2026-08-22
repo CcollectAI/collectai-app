@@ -292,10 +292,16 @@ function SellNewScreen() {
         let uploaded = 0;
         for (let i = 0; i < photoUris.length; i += 1) {
           try {
-            // Only the first is labelled `front`; it is the one the listing
-            // thumbnail and every existing single-image reader falls back to.
+            // `item_images.label` is CHECK-constrained to
+            // front|back|detail|box|certificate|damage|other (found 2026-08-22
+            // when a seed used a marker string and was rejected). Sending
+            // `undefined` was ACCEPTED — NULL satisfies a CHECK — but it threw
+            // away a field the schema defines: the first photo is the `front`
+            // every single-image reader falls back to, and the rest are
+            // detail shots. Anything outside that vocabulary is rejected, so
+            // do not invent values here.
             await collectorsApi.uploadItemImage(
-              listing.item_id, photoUris[i], i === 0 ? 'front' : undefined,
+              listing.item_id, photoUris[i], i === 0 ? 'front' : 'detail',
             );
             uploaded += 1;
           } catch (e) {
