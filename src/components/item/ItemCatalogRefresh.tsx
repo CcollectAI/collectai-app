@@ -186,7 +186,7 @@ export const ItemCatalogRefresh = React.memo(function ItemCatalogRefresh({
             member has no idea what a catalogue is or what the tap will change.
             It fills in the fields directly above it — brand, set, rarity —
             from the live catalogue, so the label says exactly that. */}
-        {matching ? 'Checking the catalogue…' : 'Fill in details from catalogue'}
+        {matching ? 'Checking the catalogue…' : 'Fill in details from our catalogue'}
       </Text>
     </Pressable>
   );

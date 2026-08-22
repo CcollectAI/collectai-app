@@ -1203,7 +1203,13 @@ function ItemDetailScreen() {
                   </Text>
                 ) : (
                   <>
-                    <Text style={[styles.valuationAmount, { color: theme.text }]}>
+                    {/* Accent, not `text`: this is the one monetary fact on the
+                        screen and the card exists to lead with it. The accent
+                        BUDGET that allows it was freed on 2026-08-22 — 48 teal
+                        usages were cut to one tier per job — so this reads as
+                        the primary thing rather than as more decoration
+                        (docs/ui-playbook.md, "48 accent usages"). */}
+                    <Text style={[styles.valuationAmount, { color: theme.accent }]}>
                       {formatPrice(toNum(editableValue), settings.currency)}
                     </Text>
                     {savedCore?.valueSource ? <ValueSourceChip source={savedCore.valueSource} /> : null}

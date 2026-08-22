@@ -106,7 +106,25 @@ TRUSTED_HOSTS: list[str] = (
 # Rate limiting
 # ---------------------------------------------------------------------------
 
-RATE_LIMIT_RPM: int = int(os.getenv("RATE_LIMIT_RPM", "60"))
+# 600, not 60 (2026-08-22). This is a GLOBAL per-IP budget applied by
+# `rate_limit_middleware` to EVERY path, not a per-endpoint one — so a single
+# member browsing the app spends it on `/billing/status`, `/portfolio/overview`,
+# `/p2p/offers` and the rest, all from one bucket.
+#
+# Measured on prod before changing it: **797 rate-limit rejections in a day**
+# from four IPs, including 45 on `/billing/status` — the call that decides what
+# a paying member is entitled to. One device peaked at ~55 requests/minute
+# simply opening screens, against a limit of 60, so normal use sat on the edge
+# and any burst crossed it. Reported as *"No marketplaces available for this
+# item"*, which was a 429 rendered as an empty state.
+#
+# 60 is a figure for an anonymous public API; this serves a mobile client that
+# fans out dozens of calls per screen, and the per-IP bucket is shared by every
+# device behind one NAT. The expensive endpoints keep their OWN scoped limits
+# (`per_user_rate_limit` / `per_ip_rate_limit`), which is what actually protects
+# them — this middleware is the blunt DoS guard, and it was tuned as if it were
+# the only one.
+RATE_LIMIT_RPM: int = int(os.getenv("RATE_LIMIT_RPM", "600"))
 RATE_LIMIT_ENABLED: bool = os.getenv("RATE_LIMIT_ENABLED", "true").lower() in ("1", "true", "yes")
 PER_USER_RATE_LIMIT_ENABLED: bool = os.getenv(
     "PER_USER_RATE_LIMIT_ENABLED", "true"

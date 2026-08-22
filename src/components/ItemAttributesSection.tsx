@@ -32,6 +32,7 @@ import React from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { getCategoryFields } from '@/constants/categoryFields';
+import { formatCategoryName } from '@/constants/categories';
 import { text, fontWeight } from '@/theme/tokens';
 
 type ItemAttributesSectionProps = {
@@ -149,9 +150,51 @@ export function ItemAttributesSection({
     categoryLabels[f.key] = f.label;
   }
 
+  /**
+   * A brand that only restates the category is not a fact about the item.
+   *
+   * `formatCategoryName('lorcana')` IS the literal string 'Disney Lorcana', so
+   * a Lorcana card rendered Category "Disney Lorcana" and, two rows down,
+   * Brand "Disney Lorcana" — the group key repeated inside the group
+   * (docs/ui-playbook.md, "a grouped list should not repeat its group key in
+   * every member"). Reported as *"is brand not the same as category?"*.
+   *
+   * Compared on a NORMALISED form rather than verbatim: prod stores brand
+   * "Yu-Gi-Oh" against a display name of "Yu-Gi-Oh!", so `===` would miss one
+   * of the two rows this exists for. The SLUG is compared too, since some
+   * categories store their brand as the slug.
+   *
+   * Measured on prod 2026-08-22 rather than assumed — 4 of the 5 brand values
+   * present restate their category (lorcana, yugioh, mtg); the fifth is
+   * "Bunnahabhain" on `whiskey`, a real brand, and this keeps it.
+   *
+   * READ MODE ONLY. In edit mode the row stays: hiding a field is how a wrong
+   * value becomes impossible to correct — the same reason `editableEntries`
+   * below adds back the category's empty fields.
+   */
+  // Diacritics are FOLDED, not stripped. `[^a-z0-9]` alone turns 'Pokémon'
+  // into 'pokmon' while a stored brand of 'Pokemon' becomes 'pokemon', so the
+  // largest category in the app would never match — found by auditing this
+  // very change, not by reading it. The `normalize` guard keeps the failure
+  // pointing the safe way: if the engine lacks it, a redundant row is SHOWN
+  // rather than a real brand hidden.
+  const norm = (v: string) =>
+    (typeof v.normalize === 'function' ? v.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : v)
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '');
+  const categoryAliases = new Set(
+    category ? [norm(category), norm(formatCategoryName(category))].filter(Boolean) : [],
+  );
+  const restatesCategory = (key: string, val: unknown) =>
+    key === 'brand' && typeof val === 'string' && categoryAliases.has(norm(val));
+
   const rawEntries = hasAttributes
     ? Object.entries(attributes).filter(
-        ([, val]) => val !== null && val !== undefined && val !== '',
+        ([key, val]) =>
+          val !== null &&
+          val !== undefined &&
+          val !== '' &&
+          (editable || !restatesCategory(key, val)),
       )
     : [];
 
@@ -184,7 +227,7 @@ export function ItemAttributesSection({
   if (editableEntries.length === 0 && !hasCollections && !hasSubtype) return null;
 
   return (
-    <View style={[styles.section, { borderTopColor: colors.border }]}>
+    <View style={styles.section}>
 
       {/* Subtype row */}
       {hasSubtype && (
@@ -263,15 +306,29 @@ export function ItemAttributesSection({
 }
 
 const styles = StyleSheet.create({
-  // Rows in the details card, not a card of their own: a hairline above them
-  // and nothing else. The metrics below deliberately COPY `ItemDetailsCard`'s
-  // `row` / `label` / `value` — two components drawing the same kind of row at
-  // two type sizes is what made the old nested card read as a different app
-  // (docs/ui-playbook.md, "Two label languages in one form").
+  // Rows in the details card, not a card of their own. The metrics below
+  // deliberately COPY `ItemDetailsCard`'s `row` / `label` / `value` — two
+  // components drawing the same kind of row at two type sizes is what made the
+  // old nested card read as a different app (docs/ui-playbook.md, "Two label
+  // languages in one form").
+  // ONE rhythm with the rows above, and no rule between them (2026-08-22).
+  //
+  // These rows sit in `ItemDetailsCard`, whose card carries `gap: 10` and whose
+  // `row` adds `marginTop: 6` — so Category/Collection/Condition are 16pt
+  // apart. The attribute rows are children of THIS view, not of the card, so
+  // the card's gap never reached them and they sat 6pt apart. Reported as
+  // "collection category condition has different spacing than rarity brand set
+  // code", and it was exactly that: two containers, one of which had the gap.
+  //
+  // `gap: 10` here restates the card's own gap, so 10 + `attributeRow`'s 6 = 16
+  // between attribute rows, and 10 (card) + 6 (row) = 16 from Condition to the
+  // first one. Change the card's gap and this has to change with it.
+  //
+  // The hairline and its 18pt of padding are gone with it: the two groups are
+  // one continuous list of label/value rows, and a rule that separates them
+  // asserts a distinction the data does not have.
   section: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    marginTop: 10,
-    paddingTop: 8,
+    gap: 10,
   },
   attributeRow: {
     flexDirection: 'row',
@@ -303,7 +360,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   collectionsBlock: {
-    marginTop: 8,
+    marginTop: 6,
   },
   tagsRow: {
     flexDirection: 'row',

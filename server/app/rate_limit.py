@@ -9,7 +9,7 @@ Per-user rate limits use a sliding-window counter keyed by ``user_id``
 to create a FastAPI ``Depends()`` callable for expensive endpoints.
 
 Configure via environment variables:
-    RATE_LIMIT_RPM=60        # requests per minute per IP
+    RATE_LIMIT_RPM=600       # requests per minute per IP (global, ALL paths)
     RATE_LIMIT_ENABLED=true  # set to false to disable
 """
 

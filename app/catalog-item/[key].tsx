@@ -64,8 +64,24 @@ function CatalogItemMuseumScreen() {
   const imageUrl = params.image_url || null;
   const paramPrice = params.estimated_price ? parseFloat(params.estimated_price) : null;
 
-  const [links, setLinks] = useState<AffiliateLink[]>([]);
+  /**
+   * `null` is COULD NOT ASK, `[]` is asked-and-there-are-none. They are
+   * different answers and they get different states
+   * ([[learning_empty_answer_rendered_as_zero]]).
+   *
+   * This card used to render a thrown request as "No marketplaces available
+   * for this item." — a confident claim about the market made on the strength
+   * of a request that never came back. Measured 2026-08-22: the device's own
+   * request was in the prod log as
+   * `GET /marketplace/affiliate-links?...&category=yugioh` -> **429**, while
+   * the same query answered 200 with four marketplaces from the server itself.
+   * The links were never missing; the app had spent its per-IP budget.
+   */
+  const [links, setLinks] = useState<AffiliateLink[] | null>([]);
   const [linksLoading, setLinksLoading] = useState(true);
+  // Retry drives the effect through a nonce, so the effect never depends on a
+  // value it also writes (scripts/check-self-cancelling-effects.mjs).
+  const [linksNonce, setLinksNonce] = useState(0);
   const [siblings, setSiblings] = useState<CatalogItemData[]>([]);
   const [adding, setAdding] = useState(false);
   // Favourites for the CATALOGUE half: keyed by canonical_key (bare), which is
@@ -97,7 +113,10 @@ function CatalogItemMuseumScreen() {
         const data = res as { links?: AffiliateLink[] } | undefined;
         if (!cancelled) setLinks(data?.links ?? []);
       } catch (e) {
+        // logger.error, not warn: release builds strip info/warn, so a warn
+        // here is invisible on exactly the builds where this was reported.
         logger.error('[museum] affiliate links failed:', e);
+        if (!cancelled) setLinks(null);
       } finally {
         if (!cancelled) setLinksLoading(false);
       }
@@ -111,7 +130,7 @@ function CatalogItemMuseumScreen() {
     // it does not write it (the price-detail effect does), so it cannot tear
     // itself down the way scripts/check-self-cancelling-effects.mjs guards
     // against.
-  }, [title, category, settings.region, estPrice]);
+  }, [title, category, settings.region, estPrice, linksNonce]);
 
   // "From this set" — sibling catalog items sharing set_code (catalog-only).
   useEffect(() => {
@@ -315,6 +334,18 @@ function CatalogItemMuseumScreen() {
           <Text style={[styles.sectionLabel, { color: colors.muted }]}>WHERE TO BUY</Text>
           {linksLoading ? (
             <ActivityIndicator color={colors.accent} style={{ marginTop: 12 }} />
+          ) : links === null ? (
+            <View style={{ marginTop: 8 }}>
+              <Text style={[styles.priceSub, { color: colors.muted }]}>Couldn&apos;t load marketplaces.</Text>
+              <AnimatedPressable
+                onPress={() => { setLinksLoading(true); setLinksNonce((n) => n + 1); }}
+                style={[styles.retryBtn, { borderColor: colors.accent }]}
+                accessibilityRole="button" accessibilityLabel="Try loading marketplaces again"
+              >
+                <Text style={[styles.buyLabel, { color: colors.accent }]}>Try again</Text>
+                <Ionicons name="refresh" size={16} color={colors.accent} />
+              </AnimatedPressable>
+            </View>
           ) : links.length === 0 ? (
             <Text style={[styles.priceSub, { color: colors.muted, marginTop: 8 }]}>No marketplaces available for this item.</Text>
           ) : (
@@ -404,6 +435,21 @@ const styles = StyleSheet.create({
   siblingName: { fontSize: 11, marginTop: 6 },
   buyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   buyLabel: { fontSize: 15, fontWeight: '600' },
+  // Its OWN style, not a reuse of `buyRow`: that row is a list row carrying
+  // only `borderBottomWidth`, so a button borrowing it would have had no
+  // visible edge — the outline-button-with-no-borderWidth trap
+  // (docs/ui-playbook.md, "What actually catches a UI defect you just wrote").
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginTop: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderRadius: 20,
+  },
   ctaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
   // flex:1 so the watch CTA keeps the full width it had before the
   // heart joined it, rather than both shrinking to content.
