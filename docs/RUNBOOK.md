@@ -51,6 +51,7 @@ that before the unit file was checked. **An empty journal is not evidence.**
 | App Store Connect rejection | Metadata / IAP / privacy issue | [§6 ASC rejection](#6-asc-rejection) |
 | Slow performance on phone | Backend latency or DB pressure | [§7 Slowness](#7-slowness) |
 | Sentry/PostHog flood of errors | Spike in production crashes or events | [§8 Telemetry spike](#8-telemetry-spike) |
+| A screen says it has nothing ("no results", "none available") but the data exists | **Rate limit** — a 429 rendered as an empty state | [§9 Rate limiting](#9-rate-limiting) |
 
 ---
 
@@ -335,6 +336,90 @@ ssh collectai 'set -a; source /opt/collectors/.env; set +a; psql "$DB_DSN_DIRECT
    - Network timeout flood → backend slow or down
    - Image load 4xx → S3 or imageUri host issue
    - Single function throwing → see the file:line in the trace, fix and rebuild
+
+---
+
+## 9. Rate limiting
+
+**Symptoms:** features intermittently empty or failing ACROSS the app, with no
+error and nothing wrong in the data. A card says "No marketplaces available", a
+list says "no results", Pro entitlements read wrong — each on a screen whose
+query, run by hand, returns rows.
+
+**This is the one to check FIRST when a screen makes a confident negative claim.**
+Every layer under a 429 is healthy and will survive any amount of inspection.
+
+```bash
+# How many rejections, and on which paths?
+ssh collectai 'grep -c "Rate limit exceeded for" /opt/collectors/bake.log'
+ssh collectai 'grep "\"status\": 429" /opt/collectors/bake.log | tail -400 \
+  | sed -E "s/.*\"path\": \"([^\"]+)\".*/\1/" | sort | uniq -c | sort -rn | head -20'
+
+# The device's OWN request, with its status — search by the query you can see on screen
+ssh collectai 'grep "affiliate-links" /opt/collectors/bake.log | tail -15'
+
+# Is the endpoint itself healthy? Ask it from the box, bypassing the client.
+ssh collectai 'curl -s -m 20 -o /tmp/x.json -w "HTTP %{http_code}\n" \
+  -H "Host: api.sparrowcollect.com" "http://127.0.0.1:8000/<path>?<params>"; head -c 400 /tmp/x.json'
+```
+
+**Two limiters, and they are easy to confuse:**
+
+| limiter | scope | where |
+|---|---|---|
+| `rate_limit_middleware` | **GLOBAL per-IP, EVERY path, one bucket** | `rate_limit.py:~67`, logs `Rate limit exceeded for <ip> on <path>` |
+| `per_user_rate_limit` / `per_ip_rate_limit` | one endpoint group, named `scope` | `Depends(...)`, logs `Per-user rate limit exceeded: user=… scope=…` |
+
+**The log line tells you which fired** — match the message format, not the path.
+On 2026-08-23 the affiliate endpoint's own 100/min scoped limit never fired; the
+global one did, spent on unrelated screens.
+
+### Fix
+
+```bash
+# Current value
+ssh collectai 'grep "^RATE_LIMIT" /opt/collectors/.env'
+
+# Raise it (back up first), then restart
+ssh collectai 'sudo cp /opt/collectors/.env /opt/collectors/.env.bak.$(date +%Y%m%d%H%M%S) \
+  && sudo sed -i "s/^RATE_LIMIT_RPM=.*/RATE_LIMIT_RPM=600/" /opt/collectors/.env'
+```
+
+⚠️ **Run the nine preflight stages BEFORE restarting.** They are `ExecStartPre`
+on the unit, so any one failing leaves the service DOWN, and a stale schema lock
+only bites on the next restart — prod once sat ~1h unable to come back up for
+exactly that reason.
+
+```bash
+ssh collectai 'cd /opt/collectors && set -a; . ./.env >/dev/null 2>&1; set +a
+for s in preflight_deps preflight_env preflight_worker_imports schema_drift_check \
+         preflight_rls_check preflight_models preflight_router_drift \
+         preflight_schema_lock preflight_rpc_lock; do
+  printf "%-28s " "$s"
+  /opt/collectors/.venv/bin/python /opt/collectors/scripts/$s.py >/dev/null 2>&1 \
+    && echo PASS || echo FAIL
+done'
+
+# Only when all nine PASS:
+ssh collectai 'sudo systemctl restart collectai-bake'
+sleep 60 && curl -s https://api.sparrowcollect.com/healthz
+```
+
+### Sizing it
+
+Measure, do not guess. One member browsing normally peaked at **~55 req/min**
+against a limit of 60, so the app sat permanently on the edge:
+
+```bash
+ssh collectai 'grep "<client-ip>" /opt/collectors/bake.log \
+  | grep -oE "^[0-9-]+ [0-9]{2}:[0-9]{2}" | sort | uniq -c | sort -rn | head'
+```
+
+The bucket is **per IP, not per device or per user**, so everyone behind one NAT
+shares it. Size it for the busiest screen times the number of people plausibly
+on one address, and rely on the scoped per-endpoint limiters for actual abuse
+protection — the global middleware is a blunt DoS guard, not the thing keeping
+expensive routes safe.
 
 ---
 

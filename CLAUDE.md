@@ -2,6 +2,72 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-22
 
+## The app was rate-limiting itself (2026-08-23)
+
+Reported as *"where to buy needs the links for the affiliate links"* — a card on
+the catalogue item screen reading **"No marketplaces available for this item."**
+The obvious reading was the known one: all 16 affiliate IDs are empty on EC2, so
+`build_affiliate_url` returns URLs untagged. That was a red herring; untagged
+links still RENDER.
+
+**The prod log had the device's own request.** Not a reconstruction of it — the
+line itself:
+
+```
+GET /marketplace/affiliate-links?query=Hero%20Mask%20%5BLC02%5D%20(1st%20Edition)
+    &category=yugioh&limit=8&region=europe&item_value_eur=366   → 429
+```
+
+Run from the server, the same query answers **200 with four marketplaces**. The
+links were never missing. The app had spent its own rate limit, the fetch threw,
+and the `catch` left `links` at `[]` — which the card renders as a confident
+factual claim about the market.
+
+**`RATE_LIMIT_RPM` is GLOBAL and per-path.** `rate_limit_middleware` applies one
+per-IP bucket to **every** route, so a single member browsing spends it on
+`/billing/status`, `/portfolio/overview`, `/p2p/offers` and everything else at
+once. Measured before changing anything:
+
+| measurement | value |
+|---|---|
+| rate-limit rejections in a day | **797**, across 4 IPs |
+| 429s on `/billing/status` alone | **45** — the call that decides what a paying member gets |
+| peak for one device simply opening screens | **~55 req/min** against a limit of **60** |
+
+So normal use sat on the edge of the limit and any burst crossed it. 60 is a
+figure for an anonymous public API; this serves a mobile client that fans out
+dozens of calls per screen, and the bucket is shared by every device behind one
+NAT. Raised to **600**. The expensive endpoints keep their own scoped
+`per_user_rate_limit` / `per_ip_rate_limit` guards — those are what actually
+protect them, and this middleware had been tuned as though it were the only one.
+
+**Three lessons, in order of how much time each would have saved:**
+
+1. **Read the status code before re-reading the query.** Every layer below the
+   429 was healthy and would have survived any amount of inspection. An empty
+   list on screen is a claim about the RESPONSE, and the response was never
+   fetched.
+2. **A shared budget is invisible at every call site.** Nothing in
+   `affiliate_links_router.py` mentions the global limiter; its own scoped limit
+   (100/min) never fired. The endpoint that gets throttled is not the endpoint
+   that spent the budget.
+3. **`[]` from a `catch` is the house bug in a new place** —
+   `learning_empty_answer_rendered_as_zero`, which
+   `docs/ui-playbook.md` already records for `market-movers.tsx`. The card now
+   distinguishes could-not-ask (`null`) from asked-and-got-nothing (`[]`), with
+   a retry.
+
+⚠️ **The FE fix does not restore the links.** It changes what a failure SAYS.
+Only the prod `.env` change plus a restart brings the marketplaces back — and
+the affiliate IDs remain a separate, still-open blocker
+(`project_affiliate_ids_unconfigured`): even with links rendering, every buy tap
+earns EUR 0 until an eBay Partner Network campaign ID is set.
+
+**All nine `ExecStartPre` stages were run manually before the restart** — deps,
+env, worker imports, schema drift, RLS, models, router drift, schema lock, RPC
+lock — because a stale lock only bites on the NEXT restart and prod once sat ~1h
+unable to come back up for exactly that reason. All nine pass.
+
 ## A loop, a duplicate, and an API that was never deployed (2026-08-22)
 
 **The display-name loop.** Settings' first row pushes `/users/{me}`; a member

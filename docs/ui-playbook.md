@@ -1469,6 +1469,88 @@ the same condition** — if it is already there, one of the branches just died.
    in a hurry is a checker that lies — the same lesson as the `check:unrendered`
    gate being wrong in both directions.
 
+## Two containers, one `gap` — the rows drift apart (2026-08-23)
+
+Reported from a screenshot: *"the collection category condition has different
+spacing than the list rarity brand set code"*. Both groups are label/value rows
+in the SAME card, and they were 16pt and 6pt apart respectively.
+
+Neither style was wrong. The rows have different PARENTS:
+
+| rows | parent | spacing |
+|---|---|---|
+| Category / Collection / Condition | the card in `ItemDetailsCard` — `gap: 10` | + `row`'s `marginTop: 6` = **16** |
+| Rarity / Brand / Set Code | `ItemAttributesSection`'s own `<View>` — no gap | `attributeRow`'s `marginTop: 6` = **6** |
+
+`ItemAttributesSection`'s styles carry a comment saying they *deliberately COPY*
+`ItemDetailsCard`'s `row`/`label`/`value` — and they do, exactly. Copying the
+CHILD metrics is not enough when the spacing lives on the PARENT. A `gap` is
+invisible from inside the child, so a component extracted out of a card inherits
+its type scale and silently loses its rhythm.
+
+The section now restates `gap: 10` so both groups land on 16, and the hairline
+that separated them is gone: they are one continuous list of label/value rows,
+and a rule between them asserted a distinction the data does not have.
+
+**Generalisable: when you extract rows into a child component, check the
+parent's `gap`/`rowGap`, not just the row styles.** The tell is a group that
+looks tighter than its neighbour while every declared metric matches.
+
+### A brand that only restates the category is not a fact
+
+Same screenshot: *"is brand not the same as category?"* — Category read
+**Disney Lorcana** and, two rows below, Brand read **Disney Lorcana**.
+`formatCategoryName('lorcana')` IS the literal string `'Disney Lorcana'`.
+
+That is the "a grouped list should not repeat its group key in every member"
+rule from the collection row, one card down: the row restated a fact the screen
+had already stated, in the same words.
+
+**Measured on prod before writing the rule**, per
+`learning_keyword_filters_need_per_category_false_positive_audit`:
+
+| category | brand | verdict |
+|---|---|---|
+| lorcana | Disney Lorcana | restates |
+| yugioh | Yu-Gi-Oh | restates |
+| mtg | Magic: The Gathering | restates |
+| whiskey | **Bunnahabhain** | a real brand — kept |
+
+4 of 5 suppressed, 1 kept, and the suppression is **read-mode only**: hiding a
+field in edit mode is how a wrong value becomes impossible to correct, the same
+reason `editableEntries` adds the category's empty fields back.
+
+### The value leads in accent now
+
+The 2026-08-22 pass moved the figure to the top of the valuation card and left
+it in `colors.text`. It is the one monetary fact on the screen, and the accent
+BUDGET to spend on it exists precisely because that same pass cut 48 teal usages
+down to one tier per job. Accent as TEXT on a card is the "secondary" tier that
+table already sanctions — this is not an accent FILL, so `accentText` does not
+enter into it.
+
+### Three defects the audit caught in this very change
+
+All three are entries this playbook already contains, re-earned:
+
+1. **Stripping diacritics is not folding them.** `norm()` was
+   `.toLowerCase().replace(/[^a-z0-9]/g, '')`, which turns `'Pokémon'` into
+   `pokmon` while a stored brand of `'Pokemon'` becomes `pokemon` — so the app's
+   LARGEST category could never match and would have kept the duplicate row the
+   change exists to remove. Now folds NFD first, and the guard around
+   `normalize` keeps the failure pointing the safe way: a redundant row is
+   SHOWN rather than a real brand hidden. Found by asking which category name
+   would break the comparison, not by re-reading it.
+2. **The retry button borrowed a list-row style.** `buyRow` carries only
+   `borderBottomWidth: hairline` — reusing it for a button would have rendered a
+   control with no visible edge. Verbatim the `gotItBtn` trap from the watchlist
+   card ("What actually catches a UI defect you just wrote"), which is filed
+   under *the base style* for exactly this reason.
+3. **A comment still promised the hairline it had just removed.** The style
+   block opened *"a hairline above them and nothing else"* over a style with no
+   border. Comments EXPIRE — and a stale one is worse here than none, because
+   the next reader treats it as the spec.
+
 ## `headerTitleAlign: 'left'` does NOTHING on iOS (2026-08-16)
 
 Reported as "marketplace is still aligned center as a title". The fix for

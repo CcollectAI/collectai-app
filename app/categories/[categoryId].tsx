@@ -397,12 +397,22 @@ export default function CategoryStoreScreenWithBoundary() {
 }
 
 const styles = StyleSheet.create({
+  // NO `marginHorizontal` — the ScrollView's `contentContainer` already pads 16,
+  // and adding another 16 here inset these two cards to 32 while every other
+  // block on the screen (YourItemsRail, the chips, the rails) sat at 16. That
+  // is what "see the alignment" meant: two cards narrower than everything above
+  // and below them.
+  //
+  // `marginBottom` matches `marginTop`, because the next block is
+  // `YourItemsRail`, whose `wrap` owns a `marginBottom` and NO `marginTop`.
+  // Two bordered boxes with zero between them read as overlapping — reported
+  // from a screenshot with the seam circled.
   setsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginHorizontal: 16,
     marginTop: 10,
+    marginBottom: 10,
     padding: 12,
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
@@ -411,7 +421,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginHorizontal: 16,
     marginTop: 12,
     padding: 12,
     borderRadius: radius.lg,
