@@ -92,19 +92,31 @@ def _jsonb_encoder(value: Any) -> str:
     obvious thing to do and was correct before the codec existed. Call sites
     should still be cleaned up; this makes them harmless meanwhile.
 
-    ⚠️ The one ambiguity, stated rather than hidden: a caller wanting to store a
-    genuine STRING whose text happens to be valid JSON (`"123"`, `"null"`) now
-    stores the parsed value instead. No caller in this repo does that — every
-    `str` reaching a jsonb param here is a pre-serialised payload — and the
-    alternative is six tables corrupting daily.
+    ONLY AN OBJECT OR ARRAY IS PASSED THROUGH — and that narrowness is the
+    point, found by auditing this function against the values Python and
+    Postgres disagree about:
+
+        json.loads("NaN") -> nan          SELECT 'NaN'::jsonb -> ERROR
+        json.loads("123") -> 123          a genuine string "123" is NOT 123
+
+    An earlier version passed through anything that parsed, which meant a
+    member typing "NaN" into any field that lands in a jsonb bag would have
+    500'd, and a genuine "123" would have been stored as a number. Requiring a
+    dict or list removes both: every scalar — "hello", "123", "NaN", "true" —
+    falls to `json.dumps` and is stored as the JSON string it is.
+
+    The residual case is a caller who pre-serialises a SCALAR
+    (`json.dumps(5)`) and wants the number back. Nobody in this repo does that;
+    every `str` reaching a jsonb param here is a serialised object or array.
     """
     if isinstance(value, str):
         try:
-            json.loads(value)
+            parsed = json.loads(value)
         except (ValueError, TypeError):
-            # A genuine string value, not serialised JSON — encode it properly.
             return json.dumps(value)
-        return value
+        if isinstance(parsed, (dict, list)):
+            return value  # already-serialised payload — do not re-encode
+        return json.dumps(value)
     return json.dumps(value)
 
 
