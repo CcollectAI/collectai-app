@@ -2,6 +2,103 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-22
 
+## A codec fix broke every caller it was meant to serve (2026-08-23)
+
+Reported from a screenshot: the item screen rendered **raw JSON** where brand,
+rarity and set code belong, with `0` and `1` as the labels.
+
+`app/db.py` registers a jsonb codec with `encoder=json.dumps` — added to fix the
+DECODE side, where jsonb columns were coming back as `str`. It silently broke
+every caller that had already serialised its own payload, and ~25 of them had:
+
+```python
+await conn.execute("... SET attrs = attrs || $3::jsonb", ..., json.dumps(merged))
+```
+
+**Proven against the real pool config rather than reasoned about** — and the
+cast makes no difference, which is the part that misleads:
+
+| bind | result |
+|---|---|
+| `dict` + `$1::jsonb` | **object** |
+| `json.dumps(dict)` + `$1::jsonb` | **string** |
+| `dict` + bare `$1` | object |
+| `json.dumps(dict)` + bare `$1` | **string** |
+
+Then jsonb `||` MERGES two objects but CONCATENATES otherwise — also proven, on
+prod:
+
+```
+'{"a":1}'::jsonb || '{"b":2}'::jsonb           -> {"a": 1, "b": 2}
+'{"a":1}'::jsonb || to_jsonb('{"b": 2}'::text) -> [{"a": 1}, "{\"b\": 2}"]
+```
+
+So **the first double-encoded write turns an object column into an ARRAY**, and
+every write after it appends. `items.attrs` reached
+`[{...}, "{\"set_code\": \"\"}", "{\"value_choice\": \"mine\"}"]`.
+
+**The display was the least of it.** `attrs->>'value_choice'` stopped resolving,
+so the "keep my value, not the model's" choice — built 2026-08-19 specifically
+so a member can outrank the catalogue — was silently not honoured for anyone who
+used it after their first attribute edit. A dead feature with no error, again.
+
+### The sweep is the point, not the fix
+
+Enumerated mechanically over **every jsonb column in `public`**, per
+[[learning_enumerate_mechanically_never_triage_by_judgment]], by generating the
+query from `information_schema` rather than guessing which tables to check:
+
+| column | rows not an object | last write |
+|---|---|---|
+| `mandate_deals.policy_reasons` | 526 | **2026-08-23 03:39** |
+| `supply_snapshots.metadata` | 248 | — |
+| `market_hits.features_json` | 40 | 2026-08-22 |
+| `alert_trigger_history.trigger_value` | 5 | 2026-08-19 |
+| `quick_predictions.raw` | 2 | — |
+| `items.attrs` | 2 (arrays) | 2026-08-22 |
+
+All live, all still being written. Fixed at the chokepoint — CLAUDE.md's own
+*"fix the chokepoint, not the callers"* — because 25 call sites is 25 chances to
+miss one, and passing a pre-serialised string to a jsonb param is the obvious
+thing to write and was correct before the codec existed.
+
+⚠️ **The corrupted ROWS outlive the fix.** The client now flattens an
+array-shaped `attrs` back into one object (empty values never overwrite real
+ones, so `set_code: "gym1"` survives the `""` appended over it). The other five
+tables still need a repair pass.
+
+### Two defects the audit caught in my own fix
+
+1. **The first encoder passed through anything that PARSED.** Python and
+   Postgres disagree: `json.loads("NaN")` succeeds, `SELECT 'NaN'::jsonb` is a
+   hard ERROR — so a member typing "NaN" into any field landing in a jsonb bag
+   would have 500'd, and a genuine `"123"` would have been stored as the number
+   123. Only a dict or list is passed through now; every scalar falls to
+   `json.dumps`.
+2. **A label dedupe that silently deleted data.** `set_name` and `set` both
+   render as "Set" (docs/TAXONOMY.md's two vocabularies, one layer down), so
+   duplicates were collapsed — but on a real row BOTH carried values (`"BLAR"`
+   and `"jdhd"`) and one vanished. Now only an EMPTY duplicate is dropped.
+   **Found by running it against the two ACTUAL corrupted rows instead of a
+   fixture** — the invented fixture had one empty side and could not have shown
+   it.
+
+### Why 3,829 tests could not see any of this
+
+Every test asserts the **parameter handed to a mocked connection**, never what
+that parameter becomes once the codec runs. Both halves were tested; the codec
+seam between them was not — the same shape as the CSV-import 401, where
+`_auth_override()` injected the very thing the client failed to send.
+`server/tests/test_jsonb_encoder.py` targets the codec itself, and 3 of its 3
+key assertions fail against the old encoder.
+
+⚠️ **A `git stash` with nothing to stash pops someone else's stash.** Reaching
+for a test baseline, `git stash` found no local changes (everything was already
+committed) and created nothing — so `git stash pop` restored a **four-month-old
+stash**, leaving 16 files with conflict markers. Use a **worktree** at the
+comparison commit instead: `git worktree add /tmp/baseline <sha>`. Recovery was
+clean only because every modified file was verifiably explained by that stash.
+
 ## The app was rate-limiting itself (2026-08-23)
 
 Reported as *"where to buy needs the links for the affiliate links"* — a card on
