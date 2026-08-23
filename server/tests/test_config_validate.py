@@ -292,9 +292,26 @@ class TestConfigConstants:
         cfg = _reload_config({})
         assert cfg.DB_ENABLED is False
 
-    def test_rate_limit_defaults_to_60(self):
+    def test_rate_limit_defaults_to_600(self):
+        """600, not 60 (changed 2026-08-23).
+
+        `rate_limit_middleware` applies ONE per-IP bucket to every path, so a
+        member browsing spends it on /billing/status, /portfolio/overview and
+        the rest at once. Measured on prod at 60: 797 rejections in a day,
+        45 of them on /billing/status, one device peaking ~55 req/min. A 429
+        was reaching the app as an empty state.
+
+        This pin is deliberate, not incidental — if it fails, the question is
+        whether the number was changed ON PURPOSE with a measurement behind
+        it, not whether to make the test pass.
+        """
         cfg = _reload_config({})
-        assert cfg.RATE_LIMIT_RPM == 60
+        assert cfg.RATE_LIMIT_RPM == 600
+
+    def test_rate_limit_rpm_is_overridable(self):
+        """The env still wins — prod sets it explicitly."""
+        cfg = _reload_config({"RATE_LIMIT_RPM": "120"})
+        assert cfg.RATE_LIMIT_RPM == 120
 
     def test_usd_to_eur_default(self):
         cfg = _reload_config({})
