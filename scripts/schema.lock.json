@@ -6971,78 +6971,6 @@
       "nullable": true,
       "type": "int4"
     },
-    "items_card.acquisition_price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "items_card.archived": {
-      "nullable": true,
-      "type": "bool"
-    },
-    "items_card.category": {
-      "nullable": true,
-      "type": "text"
-    },
-    "items_card.created_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "items_card.id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "items_card.latest_price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "items_card.tag_names": {
-      "nullable": true,
-      "type": "json"
-    },
-    "items_card.thumb_path": {
-      "nullable": true,
-      "type": "text"
-    },
-    "items_card.title": {
-      "nullable": true,
-      "type": "text"
-    },
-    "items_card_archived.acquisition_price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "items_card_archived.archived": {
-      "nullable": true,
-      "type": "bool"
-    },
-    "items_card_archived.category": {
-      "nullable": true,
-      "type": "text"
-    },
-    "items_card_archived.created_at": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "items_card_archived.id": {
-      "nullable": true,
-      "type": "uuid"
-    },
-    "items_card_archived.latest_price": {
-      "nullable": true,
-      "type": "numeric"
-    },
-    "items_card_archived.tag_names": {
-      "nullable": true,
-      "type": "json"
-    },
-    "items_card_archived.thumb_path": {
-      "nullable": true,
-      "type": "text"
-    },
-    "items_card_archived.title": {
-      "nullable": true,
-      "type": "text"
-    },
     "items_scored.actual_price_eur": {
       "nullable": true,
       "type": "float8"
@@ -7156,6 +7084,27 @@
       "default": "now()",
       "nullable": false,
       "type": "timestamptz"
+    },
+    "jsonb_double_encode_backup_20260823.backed_up_at": {
+      "default": "now()",
+      "nullable": true,
+      "type": "timestamptz"
+    },
+    "jsonb_double_encode_backup_20260823.col": {
+      "nullable": true,
+      "type": "text"
+    },
+    "jsonb_double_encode_backup_20260823.original": {
+      "nullable": true,
+      "type": "jsonb"
+    },
+    "jsonb_double_encode_backup_20260823.pk": {
+      "nullable": true,
+      "type": "text"
+    },
+    "jsonb_double_encode_backup_20260823.tbl": {
+      "nullable": true,
+      "type": "text"
     },
     "label_events.action": {
       "default": "'label'::label_action",
@@ -22077,28 +22026,6 @@
       "progress_notes",
       "canonical_ref"
     ],
-    "items_card": [
-      "id",
-      "title",
-      "category",
-      "acquisition_price",
-      "created_at",
-      "archived",
-      "latest_price",
-      "tag_names",
-      "thumb_path"
-    ],
-    "items_card_archived": [
-      "id",
-      "title",
-      "category",
-      "acquisition_price",
-      "created_at",
-      "archived",
-      "latest_price",
-      "tag_names",
-      "thumb_path"
-    ],
     "items_scored": [
       "id",
       "user_id",
@@ -22132,6 +22059,13 @@
       "finished_at",
       "ok",
       "info"
+    ],
+    "jsonb_double_encode_backup_20260823": [
+      "tbl",
+      "col",
+      "pk",
+      "original",
+      "backed_up_at"
     ],
     "label_events": [
       "id",

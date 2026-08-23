@@ -1730,8 +1730,6 @@ Schema-known but no FE/BE code touches them. Often legacy or admin-only:
 - `item_tags` (3 cols)
 - `item_valuation_history` (9 cols)
 - `item_valuation_keys` (6 cols)
-- `items_card` (9 cols)
-- `items_card_archived` (9 cols)
 - `items_scored` (6 cols)
 - `items_with_latest` (16 cols)
 - `job_run_log` (6 cols)

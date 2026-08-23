@@ -432,6 +432,52 @@ expensive routes safe.
 
 ---
 
+## 10. Auditing a column class across the whole DB
+
+**Symptom this exists for:** you need to answer "is this defect anywhere else?"
+and the answer must be trustworthy. On 2026-08-23 a jsonb sweep answered "six
+columns" and the real number was seven — three separate mechanisms each turned
+a dead query into an apparent clean.
+
+```bash
+# Generate the check from information_schema — never hand-list tables.
+# BASE TABLES only: views add no coverage and can throw.
+# ONE STATEMENT PER COLUMN, filtered to bad rows, with a terminal marker.
+psql "$DSN" -f /tmp/sweep_tables.sql   # see scripts/, pattern below
+```
+
+**The four rules, each earned by a false clean:**
+
+| rule | what it prevents |
+|---|---|
+| one statement **per column**, not one `UNION ALL` | a statement timeout on a big table (`market_hits`, 2.7M rows) returning **zero rows**, which reads as "clean" |
+| `-v ON_ERROR_STOP=0` | one bad relation aborting at column 148 of 208, with nothing in the output saying 60 were skipped |
+| cast: `jsonb_typeof(col::jsonb)` | `json` columns (not `jsonb`) erroring out — `jsonb_typeof` refuses them |
+| print `=== SWEEP COMPLETE ===` at the end | an empty result being indistinguishable from a dead one |
+
+`SET statement_timeout = '600s'` and use `DB_DSN_DIRECT` (120s default cap) —
+the pooler caps at 30s.
+
+**Then validate VALUES, not just shapes.** The same sweep flagged
+`feature_dictionary.default_value` for holding booleans/strings/numbers. That is
+a column of *default values*; scalars belong there. Read the actual values of
+every hit before calling any of them a defect.
+
+⚠️ **If the audit ends in DDL, regenerate the schema lock before ANY restart.**
+`preflight_schema_lock` requires live ⊇ `scripts/schema.lock.json`, it is an
+`ExecStartPre`, and a stale lock only bites on the next restart:
+
+```bash
+ssh collectai 'cd /opt/collectors && set -a; . ./.env >/dev/null 2>&1; set +a
+  .venv/bin/python scripts/preflight_schema_lock.py'      # PROVE it fails first
+ssh collectai 'cd /opt/collectors && set -a; . ./.env >/dev/null 2>&1; set +a
+  .venv/bin/python scripts/regen_schema_lock.py'
+# re-run the gate, then pull the lock back into the repo so they cannot drift:
+scp collectai:/opt/collectors/scripts/schema.lock.json scripts/schema.lock.json
+```
+
+---
+
 ## Reference: critical credentials index
 
 If you need to log into something while you're triaging, the path is:

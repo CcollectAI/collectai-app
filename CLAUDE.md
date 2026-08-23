@@ -2,6 +2,68 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-22
 
+## A sweep that stops early looks exactly like a sweep that found nothing (2026-08-23)
+
+The morning's jsonb sweep reported six corrupted columns and was written up as
+having "enumerated mechanically over every jsonb column in `public`". Re-running
+it that evening — after the encoder was finally live — found a **seventh**:
+`user_feedback_events_v1.value_json`, holding
+`"{\"notes\": null, \"value\": \"inaccurate\"}"` since 2026-08-17. A
+price-disagree feedback record, double-encoded, sitting beside two healthy
+objects in the same column.
+
+**Three distinct ways the same sweep returned a false clean**, all found by
+running it again rather than by re-reading it:
+
+1. **A statement timeout.** As one `UNION ALL` across every jsonb column, the
+   query blew the 120s direct-DSN cap on `market_hits` (2.7M rows) and returned
+   **zero rows**. Zero rows is also what "no corruption" looks like. Now one
+   statement per column.
+2. **`ERROR: invalid input syntax for type uuid`.** With `ON_ERROR_STOP` on, one
+   bad relation aborted the run at column **148 of 208** — 60 columns never
+   checked, and the output ended without saying so.
+3. **A `json` column, not `jsonb`.** `items_card_archived.tag_names` is `json`,
+   and `jsonb_typeof()` refuses it without a cast. A hand-written column list
+   would have skipped it in silence.
+
+**The rule: a sweep must report its own completeness.** Row count is not
+evidence of coverage — print a terminal marker (`=== SWEEP COMPLETE ===`) and
+count the checks generated against the checks that ran. An empty result set and
+a dead query are indistinguishable otherwise, and this one hid a live defect for
+six days.
+
+**And validate values, not just shapes.** The same run flagged
+`feature_dictionary.default_value` as holding booleans, strings, numbers and
+nulls. That is **not** corruption — it is a column of *default values*, and
+`true` / `0` / `"raw"` are exactly what belongs there. Reporting it as a hit
+would have been a fabricated defect one line above a real one.
+
+### The one junk file that hard-broke two views
+
+`items_card` and `items_card_archived` both cast the first path segment of every
+object in the `item-images` bucket to uuid:
+
+```sql
+AND (storage.foldername(o.name))[1]::uuid = i.id
+```
+
+That bucket holds exactly **one** object — `Untitled folder/.emptyFolderPlaceholder`,
+the artifact Supabase Studio leaves when someone clicks "new folder" in the
+dashboard and never names it, created 2025-08-25. Both views therefore **threw**
+rather than degraded, for up to a year, with no symptom — because nothing reads
+them. They are leftovers from the app that preceded this codebase, appearing
+only in `docs/schema-lock.md` and `scripts/schema.lock.json`, both GENERATED
+inventories rather than usage. Dropped 2026-08-23.
+
+**A dashboard click wrote unqueryable data into prod**: no migration, no code
+path, no review. When a view casts a value it does not control, guard the cast.
+
+⚠️ **DDL stales the lock, and the lock only bites on the NEXT restart.** The
+drop made `preflight_schema_lock` FAIL — *proven* by running it, not assumed —
+so a restart at that moment would have left prod down, exactly the earlier
+hour-of-downtime incident. Regenerated, re-verified (all nine stages PASS), and
+the lock pulled back into the repo before anything could restart.
+
 ## The item card: every defect was a rule enforced one level too low (2026-08-23)
 
 Two screenshots, six defects, and not one of them was a missing rule. Every
@@ -106,9 +168,13 @@ used it after their first attribute edit. A dead feature with no error, again.
 
 ### The sweep is the point, not the fix
 
-Enumerated mechanically over **every jsonb column in `public`**, per
-[[learning_enumerate_mechanically_never_triage_by_judgment]], by generating the
-query from `information_schema` rather than guessing which tables to check:
+Enumerated over jsonb columns in `public` by generating the query from
+`information_schema` rather than guessing which tables to check:
+
+⚠️ **This sweep was INCOMPLETE, and said so nowhere.** Re-run properly that
+evening it turned up a **seventh** column — `user_feedback_events_v1.value_json`,
+one double-encoded row from 2026-08-17. See "A sweep that stops early looks
+exactly like a sweep that found nothing" below.
 
 | column | rows not an object | last write |
 |---|---|---|
