@@ -2,6 +2,68 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-22
 
+## The item card: every defect was a rule enforced one level too low (2026-08-23)
+
+Two screenshots, six defects, and not one of them was a missing rule. Every
+single one was a rule this repo already holds, applied inside a scope that could
+not see the thing it needed to see. Full UI write-up in `docs/ui-playbook.md`
+("Two containers, one `gap`" and "The same row, rendered by two different
+components"); the pattern is the point here.
+
+| defect | the rule | the scope it could not see |
+|---|---|---|
+| comp prompt inset 32 while every card sat at 16 | don't add a margin inside a padded container | the PARENT's padding |
+| two bordered cards touching | a card owns its own bottom margin | the sibling's margins |
+| "Price seems off?" under a pending comp prompt | one decision at a time | the other block asking about the same number |
+| "Grade" rendered twice | *a kind of row has ONE renderer* | the PARENT's label |
+| Category read `yugioh` | *never show a raw slug* | the OTHER branch of the same ternary |
+| `value_choice` about to render as a row | plumbing is not a fact | the renderer on the far side of the write |
+
+**A `gap` is invisible from inside a child — and so is a LABEL.** That is the
+generalisation worth keeping: whatever a parent owns, the child must be TOLD.
+`reservedLabels` is passed down, derived from the same `isGradingEligible`
+expression that labels the parent's own row rather than restated as a literal.
+
+### Three things measurement changed, that reasoning would have got wrong
+
+1. **`attrs.grade` is on ZERO of 148 prod rows.** The real grade is in
+   `items.condition` (`PSA 9`, `BGS 10`). The duplicate row was
+   `editableEntries` synthesising the category field list — a placeholder for a
+   key nothing writes. Suppressing it *looks* identical either way; only the
+   count says whether it hides data.
+2. **Two "internal-looking" keys are real facts.** All 22 keys live in prod
+   `attrs` were read before the blocklist was drawn. `item_type` (= "Merch")
+   and `sealed` stay; `value_choice`, `intake_timestamp`, `source` go. A
+   name-based guess would have hidden both real ones —
+   `learning_keyword_filters_need_per_category_false_positive_audit`, again.
+3. **The obvious category fix was wrong.** `editableCategory` holds a SLUG when
+   seeded from the row and a display NAME straight after a pick, and
+   `formatCategoryName` is **not idempotent** — `'Yu-Gi-Oh!'` → `'Yu Gi Oh!'`.
+   `categoryDisplayName` discriminates on `CATEGORY_NAME_TO_SLUG`, the same map
+   `updateItem` normalises through. The test pins the mangling as well, so if
+   that ever stops being true the wrapper is redundant and should go.
+
+### The rules had no way to fail, so they were not rules
+
+Row-building is now a pure `buildAttributeRows` with
+`__tests__/components/attributeRows.test.ts` — the FIRST test this component has
+ever had, covering the brand suppression and label dedupe shipped the day before
+as well. Two things it caught:
+
+- **The a11y label was recomputed from the key**, ignoring every disambiguation
+  the builder applied: a row displaying "Grade (captured)" or "Set Name"
+  announced plain "Grade" / "Set". The two rows the dedupe exists to separate
+  were identical to the one user who cannot see them side by side.
+- **The tests passed on first write, which proves nothing.** They now carry the
+  counter-case — with `reservedLabels` omitted, the duplicate "Grade" must come
+  BACK. Without it, a `grade` row that was never synthesised at all would make
+  the rule a no-op wearing a green tick.
+
+⚠️ **None of this is on a device.** Both screenshots were build 152 (submitted
+2026-08-22), so every fix from 08-23 is committed and has never been built.
+Reading a screenshot as evidence about the current code is how a fixed defect
+gets "fixed" twice.
+
 ## A codec fix broke every caller it was meant to serve (2026-08-23)
 
 Reported from a screenshot: the item screen rendered **raw JSON** where brand,
