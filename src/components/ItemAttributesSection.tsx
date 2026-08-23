@@ -114,6 +114,68 @@ function formatLabel(key: string, catLabels?: Record<string, string>): string {
     .join(' ');
 }
 
+/**
+ * Collapse whatever `items.attrs` actually holds into ONE flat object.
+ *
+ * `attrs` is supposed to be a jsonb OBJECT and for 100 of 102 prod rows it is.
+ * Two rows are ARRAYS whose elements are a mix of objects and double-encoded
+ * JSON STRINGS:
+ *
+ *   [{"brand":"Pokemon TCG","rarity":"Rare Holo","set_code":"gym1"},
+ *    "{\"set_code\": \"\"}", "{\"value_choice\": \"mine\"}"]
+ *
+ * Root cause was server-side and is fixed (`server/app/db.py::_jsonb_encoder`):
+ * a pre-serialised payload was encoded twice, and jsonb `||` concatenates
+ * rather than merges when a side is not an object. This function exists anyway,
+ * because the corrupted ROWS outlive the fix and the failure mode is ugly —
+ * `Object.entries` on an array yields keys "0" and "1", and `formatValue` then
+ * JSON.stringifies the objects, so the screen rendered raw JSON as its labels
+ * and values. Reported from a screenshot.
+ *
+ * Later entries win, EXCEPT that an empty value never overwrites a real one:
+ * the corrupting writes carried `{"set_code": ""}`, and letting that blank a
+ * genuine `"gym1"` would destroy data while "repairing" it.
+ */
+function flattenAttributes(raw: unknown): Record<string, unknown> | null {
+  if (!raw || typeof raw !== 'object') return null;
+
+  const parts: Record<string, unknown>[] = [];
+  const push = (candidate: unknown): void => {
+    if (typeof candidate === 'string') {
+      // A double-encoded element. If it does not parse it is not an
+      // attribute bag and there is nothing to show — drop it rather than
+      // rendering the raw text as a value.
+      try {
+        const parsed: unknown = JSON.parse(candidate);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          parts.push(parsed as Record<string, unknown>);
+        }
+      } catch {
+        /* not JSON — nothing renderable */
+      }
+      return;
+    }
+    if (candidate && typeof candidate === 'object' && !Array.isArray(candidate)) {
+      parts.push(candidate as Record<string, unknown>);
+    }
+  };
+
+  if (Array.isArray(raw)) raw.forEach(push);
+  else push(raw);
+
+  if (parts.length === 0) return null;
+
+  const out: Record<string, unknown> = {};
+  for (const part of parts) {
+    for (const [k, v] of Object.entries(part)) {
+      const incomingIsEmpty = v === '' || v === null || v === undefined;
+      if (incomingIsEmpty && out[k] !== undefined && out[k] !== '') continue;
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
 function formatValue(val: unknown): string {
   if (val === null || val === undefined) return '-';
   if (typeof val === 'string') return val;
@@ -134,8 +196,12 @@ export function ItemAttributesSection({
 }: ItemAttributesSectionProps) {
   const { colors } = useAppTheme();
 
+  // Never read `attributes` directly below — two prod rows are arrays of
+  // double-encoded strings and would render as raw JSON. See flattenAttributes.
+  const attrs = flattenAttributes(attributes);
+
   // Don't render anything if no meaningful data
-  const hasAttributes = attributes && Object.keys(attributes).length > 0;
+  const hasAttributes = attrs && Object.keys(attrs).length > 0;
   const hasCollections = collections && collections.length > 0;
   const hasSubtype = !!subtypeId;
 
@@ -189,7 +255,7 @@ export function ItemAttributesSection({
     key === 'brand' && typeof val === 'string' && categoryAliases.has(norm(val));
 
   const rawEntries = hasAttributes
-    ? Object.entries(attributes).filter(
+    ? Object.entries(attrs).filter(
         ([key, val]) =>
           val !== null &&
           val !== undefined &&
@@ -223,8 +289,56 @@ export function ItemAttributesSection({
       })()
     : attributeEntries;
 
+  /**
+   * One LABEL, one row.
+   *
+   * Reported as *"here we are importing duplicate attributes"*: a Yu-Gi-Oh
+   * card showed **Set** twice — once with a value, once empty. Two different
+   * KEYS resolving to the same label: `set_name` (what the catalogue writes,
+   * mapped to 'Set' by KNOWN_LABELS) and `set` (what the yugioh category field
+   * list calls the same fact). That is docs/TAXONOMY.md's "two vocabularies"
+   * one layer down — the keys differ, the fact does not.
+   *
+   * Edit mode makes it visible because `editableEntries` adds back every
+   * category-declared field, so an unused `set` appears beside a populated
+   * `set_name`.
+   *
+   * ONLY an EMPTY duplicate is dropped. If both rows carry a value they are
+   * different data — `set_name: "BLAR"` beside `set: "jdhd"` on a real prod
+   * row — and collapsing them would silently discard something the member
+   * typed. Caught by running this against the two ACTUAL corrupted rows rather
+   * than a fixture: the first version dropped "jdhd" without a trace. In that
+   * case both rows stay and the SECOND is relabelled from its key ("Set Name")
+   * so the screen never shows one label twice.
+   */
+  const labelSlots = new Map<string, number>();
+  const dedupedEntries: [string, unknown, string][] = [];
+  const isFilled = (v: unknown) => v !== '' && v !== null && v !== undefined;
+
+  for (const [key, val] of editableEntries) {
+    const label = formatLabel(key, categoryLabels);
+    const at = labelSlots.get(label);
+    if (at === undefined) {
+      labelSlots.set(label, dedupedEntries.length);
+      dedupedEntries.push([key, val, label]);
+      continue;
+    }
+    const existingVal = dedupedEntries[at][1];
+    if (!isFilled(val)) continue;                       // empty duplicate — drop
+    if (!isFilled(existingVal)) {                        // replace the empty one
+      dedupedEntries[at] = [key, val, label];
+      continue;
+    }
+    // Both carry data: keep both, disambiguate by falling back to the key.
+    const keyLabel = key
+      .split('_')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+    dedupedEntries.push([key, val, keyLabel === label ? `${label} (${key})` : keyLabel]);
+  }
+
   // If after filtering we still have nothing, bail out
-  if (editableEntries.length === 0 && !hasCollections && !hasSubtype) return null;
+  if (dedupedEntries.length === 0 && !hasCollections && !hasSubtype) return null;
 
   return (
     <View style={styles.section}>
@@ -243,10 +357,10 @@ export function ItemAttributesSection({
       )}
 
       {/* Attribute rows */}
-      {editableEntries.map(([key, val]) => (
+      {dedupedEntries.map(([key, val, label]) => (
         <View key={key} style={styles.attributeRow}>
           <Text style={[styles.attributeLabel, { color: colors.muted }]}>
-            {formatLabel(key, categoryLabels)}
+            {label}
           </Text>
           {editable ? (
             <TextInput

@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import logging
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Optional
 
 import asyncpg
 
@@ -47,6 +47,67 @@ def db_configured() -> bool:
     return DB_ENABLED and bool(DB_DSN)
 
 
+def _jsonb_encoder(value: Any) -> str:
+    """Serialise for a jsonb/json parameter, WITHOUT double-encoding.
+
+    THE BUG THIS EXISTS FOR (found 2026-08-23, live and writing daily)
+
+    `encoder=json.dumps` was registered to fix the DECODE side — jsonb columns
+    were coming back as `str`. It silently broke every caller that had already
+    serialised its own payload, and roughly 25 of them had:
+
+        await conn.execute("... SET attrs = attrs || $3::jsonb", ..., json.dumps(merged))
+
+    asyncpg then calls the encoder on that STRING, producing a JSON string
+    scalar rather than an object. Proven against the real pool config, and the
+    cast makes no difference:
+
+        dict + $1::jsonb -> object      str + $1::jsonb -> string
+        dict + bare $1   -> object      str + bare $1   -> string
+
+    Which matters because `||` on jsonb MERGES two objects but CONCATENATES
+    when either side is not an object — also proven, in prod:
+
+        '{"a":1}'::jsonb || '{"b":2}'::jsonb          -> {"a": 1, "b": 2}
+        '{"a":1}'::jsonb || to_jsonb('{"b": 2}'::text) -> [{"a": 1}, "{\"b\": 2}"]
+
+    So the first double-encoded write turns an object column into an ARRAY, and
+    every write after it appends. `items.attrs` reached
+    `[{...}, "{\"set_code\": \"\"}", "{\"value_choice\": \"mine\"}"]` — the
+    attribute rows rendered as raw JSON on the item screen, and
+    `attrs->>'value_choice'` stopped resolving, so a member's "keep my value"
+    choice silently stopped being honoured.
+
+    A sweep of every jsonb column in `public` found the class in six tables,
+    all with writes in the last four days: `mandate_deals.policy_reasons` (526
+    rows), `supply_snapshots.metadata` (248), `market_hits.features_json` (40),
+    `alert_trigger_history.trigger_value`, `quick_predictions.raw`,
+    `items.attrs`.
+
+    WHY THE FIX IS HERE AND NOT AT THE CALL SITES
+
+    CLAUDE.md: *"Fix the chokepoint, not the callers."* Twenty-five call sites
+    is twenty-five chances to miss one, and the next one written will make the
+    same assumption — passing a pre-serialised string to a jsonb param is the
+    obvious thing to do and was correct before the codec existed. Call sites
+    should still be cleaned up; this makes them harmless meanwhile.
+
+    ⚠️ The one ambiguity, stated rather than hidden: a caller wanting to store a
+    genuine STRING whose text happens to be valid JSON (`"123"`, `"null"`) now
+    stores the parsed value instead. No caller in this repo does that — every
+    `str` reaching a jsonb param here is a pre-serialised payload — and the
+    alternative is six tables corrupting daily.
+    """
+    if isinstance(value, str):
+        try:
+            json.loads(value)
+        except (ValueError, TypeError):
+            # A genuine string value, not serialised JSON — encode it properly.
+            return json.dumps(value)
+        return value
+    return json.dumps(value)
+
+
 async def _init_conn(conn: asyncpg.Connection) -> None:
     """Decode json/jsonb into Python objects instead of raw strings.
 
@@ -69,10 +130,10 @@ async def _init_conn(conn: asyncpg.Connection) -> None:
     Those guards keep working — they now take the else branch.
     """
     await conn.set_type_codec(
-        "jsonb", encoder=json.dumps, decoder=json.loads, schema="pg_catalog"
+        "jsonb", encoder=_jsonb_encoder, decoder=json.loads, schema="pg_catalog"
     )
     await conn.set_type_codec(
-        "json", encoder=json.dumps, decoder=json.loads, schema="pg_catalog"
+        "json", encoder=_jsonb_encoder, decoder=json.loads, schema="pg_catalog"
     )
 
 

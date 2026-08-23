@@ -588,7 +588,16 @@ async def update_item_attributes(
                     updated_at = NOW()
                 WHERE id = $2::uuid AND user_id = $1::uuid
                 """,
-                user_id, item_id, json.dumps(merged),
+                # The DICT, not json.dumps(dict). `app/db.py` registers a jsonb
+                # codec, so a pre-serialised string is encoded TWICE and lands
+                # as a JSON string scalar — and `||` then CONCATENATES instead
+                # of merging, turning attrs into an array. That is how this
+                # item's attrs became
+                # `[{...}, "{\"set_code\": \"\"}", "{\"value_choice\": \"mine\"}"]`
+                # and rendered as raw JSON rows on the item screen.
+                # The codec now tolerates both, but the call site should still
+                # be right — see `_jsonb_encoder` for the full writeup.
+                user_id, item_id, merged,
             )
             logger.info("[items] Updated attributes for item=%s, user=%s", item_id, user_id)
             return {"ok": True, "item_id": item_id}
