@@ -897,6 +897,22 @@ function ItemDetailScreen() {
     }
   }, [editableName, editableValue, editableCondition, settings.currency]);
 
+  /**
+   * Is there an UNRESOLVED "which number should we show?" question on screen?
+   *
+   * Hoisted out of the JSX (2026-08-23) because two places now need the same
+   * answer, and two copies of a predicate is how the offers badge and the
+   * offers screen ended up disagreeing about what "needs you" means. A plain
+   * const in the body — not a hook, and not inside one.
+   */
+  const compChoicePending = shouldOfferComp({
+    valueSource: savedCore?.valueSource,
+    currentValue: savedCore?.value,
+    userEstimate: savedCore?.userEstimate,
+    existingChoice:
+      typeof savedAttrs?.value_choice === 'string' ? savedAttrs.value_choice : null,
+  });
+
   return (
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView
@@ -1122,15 +1138,7 @@ function ItemDetailScreen() {
           {/* Asked AFTER the save, never as a modal over it. See
               MarketCompPrompt for why "keep mine" needs the view's choice
               branch to be an honest option at all. */}
-          {shouldOfferComp({
-            valueSource: savedCore?.valueSource,
-            currentValue: savedCore?.value,
-            userEstimate: savedCore?.userEstimate,
-            existingChoice:
-              typeof savedAttrs?.value_choice === 'string'
-                ? savedAttrs.value_choice
-                : null,
-          }) ? (
+          {compChoicePending ? (
             <MarketCompPrompt
               marketValue={savedCore?.value as number}
               userEstimate={savedCore?.userEstimate as number}
@@ -1272,8 +1280,32 @@ function ItemDetailScreen() {
               );
             })()}
 
-            {/* Feedback section — shown for saved items */}
-            {!isDraft && id && (
+            {/* Feedback section — shown for saved items, but NOT while the
+                comp prompt is open.
+
+                Reported as the price area being cluttered and not emphasising
+                anything. The two blocks ask CONTRADICTORY questions about the
+                same number: the prompt asks "our comps say EUR 78, you said
+                EUR 34 — which should we show?", and four lines below,
+                "Price seems off?" asks whether the figure is wrong. Answering
+                the second is meaningless until the first is settled, and
+                stacking them put two accent-weighted asks either side of the
+                one figure they are both about.
+
+                The prompt is the one with a decision behind it, so it wins the
+                slot; the feedback returns the moment a choice is made, because
+                `compChoicePending` reads `attrs.value_choice`.
+
+                `|| showSalePriceInput` is the escape hatch: the sale-price
+                input is the ONE thing in here that is not a contradiction —
+                "what did you sell it for" is a different question from "which
+                number should we show" — and it can already be OPEN, focused,
+                with a typed figure, when a save flips `compChoicePending`
+                true. The typed value itself is safe (the state lives in
+                `useItemDetail`, not in the unmounted child, so it comes back),
+                but unmounting a focused TextInput drops the keyboard mid-entry.
+                Nothing is hidden while it is open. */}
+            {!isDraft && id && (!compChoicePending || showSalePriceInput) && (
               <PriceFeedbackSection
                 theme={theme}
                 showSalePriceInput={showSalePriceInput}
@@ -1635,6 +1667,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: 16,
     gap: 10,
+    // Two bordered cards with nothing between them read as overlapping — the
+    // seam a screenshot was circled around. A container `gap` would have been
+    // the tidier fix and is WRONG here: six direct children of `content`
+    // already own a bottom margin (4/12/12/16/16), so a gap would add to each.
+    marginBottom: 12,
   },
   // name, editableNameInputSimple, dropdownFieldRow, editableValueInput, editableValueRow, currencySymbol moved to ItemDetailsCard
   // priceBandsRow, confidenceSection, priceCardSection, label, explanationBlock/Header/Content/Text moved to ItemPriceSection

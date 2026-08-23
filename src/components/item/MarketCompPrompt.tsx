@@ -132,8 +132,16 @@ export const MarketCompPrompt = React.memo(function MarketCompPrompt({
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 16,
+    // NO `marginHorizontal` — `app/item/[id].tsx`'s scroll `content` already
+    // pads 16, so this was the only card on the screen inset 32 while every
+    // other one sat at 16. That is the reported "the alignment is off".
+    //
+    // `marginBottom` matches `marginTop`: the valuation card directly below
+    // carries its own margins now, but this card must not depend on that —
+    // when it was the only one with a top margin and no bottom one, the two
+    // bordered boxes touched.
     marginTop: 12,
+    marginBottom: 12,
     padding: 14,
     borderWidth: 1,
     borderRadius: radius.md,
