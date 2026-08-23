@@ -50,6 +50,40 @@ Or in App Store Connect:
   it was written. **Read the key ID off the submit output, not from here** — EAS
   holds the key server-side, so this file is a record, not the source of truth.
 
+## Querying the ASC API directly (2026-08-23)
+
+**This is possible, and a doc in this repo said for three months that it was
+not.** `docs/MONETIZATION.md` recorded ASC as *"not checkable from here"*
+because the Issuer ID *"is recorded nowhere"* — true of the key it was looking
+at (`AuthKey_LAU7D8HU29.p8` in `~/.appstoreconnect/private_keys/`), and false
+for the account, which cost several sessions of guessing at Apple-side state.
+
+Everything needed is already on this machine:
+
+| item | value / location |
+|---|---|
+| Key ID | `AM32RK7DAY` (Admin, created 2026-05-20) |
+| Issuer ID | `215c3feb-76f3-4399-a0bb-d2385003e1b1` — a non-secret UUID |
+| Private key | `~/Documents/Sparrow/Keys/AuthKey_AM32RK7DAY.p8` |
+| App ID | `6767359453` (`io.sparrowcollect.app`) |
+
+The Issuer ID is held by **EAS**, not only by Apple — `POST https://api.expo.dev/graphql`
+with the existing `~/.expo/state.json` session, querying
+`account.byName("collectai").appStoreConnectApiKeys`, returns both
+`keyIdentifier` and `issuerIdentifier`. Sign an ES256 JWT with the `.p8` and
+every `api.appstoreconnect.apple.com` endpoint answers 200.
+
+⚠️ **What the API still does NOT expose: the agreements.** There is no endpoint
+returning whether the **Paid Applications Agreement** is active. That one needs
+a human on `appstoreconnect.apple.com/business`. Do not go looking again.
+
+⚠️ **And a subscription's `state` is NOT a proxy for it.** Both products read
+`READY_TO_SUBMIT` — and `docs/PUBLIC_LAUNCH_CHECKLIST.md` records them at
+exactly that status on **2026-05-20**, three months before the agreement
+question was raised. An unchanged value is not evidence of a change. Check the
+timeline of any "status" before treating it as a signal
+([[learning_validate_values_not_just_structure]]).
+
 ## When you'd revoke / rotate
 
 Three reasons to rotate this key:

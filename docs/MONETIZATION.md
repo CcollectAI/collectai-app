@@ -149,7 +149,8 @@ unzipping the shipped `.ipa` and reading the Hermes bundle:
 | RC key reaches the binary | `grep appl_ main.jsbundle` in `builds/sparrow-ios-internal.ipa` and `build116.ipa` | ✅ inlined in both |
 | EAS env plumbing | `eas env:list --environment production` | ✅ key lives in the `production` environment; profiles with no `environment` field still resolve it (EAS auto-assigns) |
 | Beta unlock flag | same bundle grep | ❌ **was broken — see below** |
-| ASC product state / Paid Apps agreement | not checkable from here | ⬜ needs the ASC Issuer ID (the local `AuthKey_LAU7D8HU29.p8` has none recorded) |
+| ASC product state | **checkable — see `docs/ASC_API_KEY.md`** | ✅ 2026-08-23: both products `READY_TO_SUBMIT`, prices in every territory, `en-US` localization, review screenshot uploaded, 175 territories |
+| Paid Apps agreement | **not exposed by any ASC endpoint** | ⬜ needs a human on `appstoreconnect.apple.com/business` — this half really is unqueryable |
 
 **So the "IAP doesn't work" symptom is NOT a RevenueCat misconfiguration.** RC and
 the app binary are both correct. What remains can only fail on Apple's side or on
@@ -293,9 +294,26 @@ remaining causes are the Apple-side items below.
 a purchase completes; it never suppresses product listing. Still an open gap,
 just not this one.
 
-ASC remains unqueryable from here: the local `AuthKey_LAU7D8HU29.p8` lives in
-`~/.appstoreconnect/private_keys/` and **its Issuer ID is recorded nowhere**,
-so items 2 and 3 still need a human in the ASC UI.
+⚠️ **CORRECTED 2026-08-23 — this paragraph was wrong, and it cost sessions.**
+It used to read *"ASC remains unqueryable from here… its Issuer ID is recorded
+nowhere, so items 2 and 3 still need a human in the ASC UI."* That was true of
+the ONE key it looked at (`AuthKey_LAU7D8HU29.p8`) and false of the account: key
+`AM32RK7DAY` has its issuer stored in **EAS**, and `~/Documents/Sparrow/Keys/`
+holds the `.p8`. See `docs/ASC_API_KEY.md`. **"I could not find it" was written
+down as "it does not exist"** — enumerate before declaring a capability
+unavailable ([[feedback_enumerate_before_declaring_unavailable]]).
+
+What the API genuinely cannot answer is the **agreement** itself; no endpoint
+returns it. That half still needs a human on the Business page.
+
+**And this doc's inference about the products was VERIFIED FALSE.** It concluded
+from the submit modal that the subscriptions were *"still missing price, a
+localization, or the review screenshot"*. Measured 2026-08-23: both carry prices
+in every territory, an `en-US` localization, an uploaded review screenshot and
+175-territory availability. The modal's complaints are about the **app version**
+(`1.0`, `build: null` — no binary attached) and about a draft review submission
+holding only the subscription GROUP version, not the two products. A modal that
+names no field is not evidence about which field is missing.
 
 ### ANSWERED 2026-08-21: there is no Paid Applications Agreement
 
