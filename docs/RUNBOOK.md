@@ -385,6 +385,15 @@ ssh collectai 'sudo cp /opt/collectors/.env /opt/collectors/.env.bak.$(date +%Y%
   && sudo sed -i "s/^RATE_LIMIT_RPM=.*/RATE_LIMIT_RPM=600/" /opt/collectors/.env'
 ```
 
+⚠️ **Raising the DEFAULT in `config.py` fixes nothing while `.env` sets the
+variable.** `RATE_LIMIT_RPM: int = int(os.getenv("RATE_LIMIT_RPM", "600"))` —
+the literal is the fallback, and `/opt/collectors/.env` carried an explicit
+`RATE_LIMIT_RPM=60`. Deploying the new default, restarting, and confirming the
+new source line on the box would all have succeeded while the live limit stayed
+at 60. **The `.env` is the value; the code literal is only what happens when the
+`.env` is silent.** True of every setting read through `os.getenv` with a
+default — check the `.env` before believing a config change shipped.
+
 ⚠️ **Run the nine preflight stages BEFORE restarting.** They are `ExecStartPre`
 on the unit, so any one failing leaves the service DOWN, and a stale schema lock
 only bites on the next restart — prod once sat ~1h unable to come back up for

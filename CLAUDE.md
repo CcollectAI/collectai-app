@@ -64,8 +64,41 @@ thing to write and was correct before the codec existed.
 
 ⚠️ **The corrupted ROWS outlive the fix.** The client now flattens an
 array-shaped `attrs` back into one object (empty values never overwrite real
-ones, so `set_code: "gym1"` survives the `""` appended over it). The other five
-tables still need a repair pass.
+ones, so `set_code: "gym1"` survives the `""` appended over it).
+
+### The repair — done, and reversible by construction
+
+All six columns repaired in prod, **823 originals copied into
+`public.jsonb_double_encode_backup_20260823` BEFORE the update**, so every row
+is restorable. Re-swept afterwards:
+
+| column | shape now |
+|---|---|
+| `items.attrs` | object (102) |
+| `mandate_deals.policy_reasons` | **array** (526) — correct; it *is* a list |
+| `supply_snapshots.metadata` | object (16,188) |
+| `market_hits.features_json` | object (2,686,508) |
+| `alert_trigger_history.trigger_value` | object (108) |
+| `quick_predictions.raw` | object (4) |
+
+Two things made it safe rather than lucky:
+
+- **A dry run inside a rolled-back transaction, reconciled by COUNT.** Every
+  table's repaired count had to equal its healthy count plus its corrupted
+  count (`market_hits`: 2,686,468 + 40 = 2,686,508). A repair that silently
+  drops rows reports success exactly like one that does not.
+- **`mandate_deals.policy_reasons` had ZERO healthy rows** — the column has
+  never held a correct value, so there was no shape to repair *towards*. Its
+  reader (`purchase_router.py`) carries a defensive `isinstance(str)` parse, so
+  both the old and repaired shapes work and the repair could not break it.
+  Checked the reader before repairing into a break.
+
+⚠️ **The repair decays until the encoder is DEPLOYED.** Prod ran
+`encoder=json.dumps` for the whole repair window — the fix was committed, not
+shipped. `mandate_deals` writes daily, so the first write after the repair
+re-corrupts what was just fixed. Hash-diffing the whole `server/` tree against
+`/opt/collectors/server/` (not `HEAD~1`, which by then pointed at an app-only
+commit) found **nine** drifted files, not one.
 
 ### Two defects the audit caught in my own fix
 
