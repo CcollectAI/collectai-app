@@ -40,6 +40,67 @@ interface PriceFeedbackSectionProps {
 
 // ── Component ───────────────────────────────────────────────────────────
 
+/**
+ * "Price seems off" — the CORRECTION control, on its own.
+ *
+ * Split out of `PriceFeedbackSection` (2026-08-23) on the report *"shouldn't it
+ * be close to the price"*. It was right: this control acts ON the figure, so it
+ * belongs against the figure. What did NOT belong there is everything around
+ * it — a "Help improve our estimates" heading and an "I sold it for…" button,
+ * which are a favour asked of the member on behalf of the model.
+ *
+ * Splitting them lets each sit where its own job puts it: the correction inside
+ * the valuation card under the number, the contribution last on the screen.
+ * Both still write through the same handlers, so there is one feedback path,
+ * not two.
+ *
+ * Tertiary treatment — `theme.border`, muted text. docs/ui-playbook.md's accent
+ * table gives the outline/accent-text tier to Edit and "I sold it for…"; this is
+ * a quieter thing than either, and the accent budget in this card is already
+ * spent on the figure itself.
+ */
+export const PriceCorrectionRow = React.memo(function PriceCorrectionRow({
+  theme,
+  submittingFeedback,
+  feedbackMessage,
+  onPriceDisagree,
+}: {
+  theme: Pick<PriceFeedbackSectionProps['theme'], 'text' | 'muted' | 'accent' | 'border' | 'card'>;
+  submittingFeedback: boolean;
+  /** Rendered only when this row's OWN action produced it — see `feedbackSource`. */
+  feedbackMessage: string | null;
+  onPriceDisagree: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <View style={s.correctionRow}>
+      {/* The message renders BESIDE the control, never INSTEAD of it.
+          The first version swapped the button out for the message, which reads
+          fine on success ("Thanks for the feedback!") and strands the member on
+          failure: `onPriceDisagree` sets "Failed to submit feedback" through
+          the SAME state, so the one path that needs a retry was the one path
+          that removed the button. A failure state must never consume its own
+          affordance. */}
+      {feedbackMessage ? (
+        <Text style={[s.feedbackMessage, { color: theme.accent, marginBottom: 4 }]}>
+          {feedbackMessage}
+        </Text>
+      ) : null}
+      <Pressable
+        onPress={onPriceDisagree}
+        disabled={submittingFeedback}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={t('price_feedback.price_off_a11y')}
+      >
+        <Text style={[s.correctionText, { color: theme.muted }]}>
+          {submittingFeedback ? '…' : 'Price seems off?'}
+        </Text>
+      </Pressable>
+    </View>
+  );
+});
+
 export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
   theme,
   showSalePriceInput,
@@ -140,20 +201,10 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
           >
             <Text style={[s.feedbackBtnText, { color: theme.accent }]}>I sold it for...</Text>
           </Pressable>
-          <Pressable
-            onPress={onPriceDisagree}
-            disabled={submittingFeedback}
-            style={[
-              s.feedbackBtn,
-              { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={t('price_feedback.price_off_a11y')}
-          >
-            <Text style={[s.feedbackBtnText, { color: theme.text }]}>
-              Price seems off
-            </Text>
-          </Pressable>
+          {/* "Price seems off" is NOT here any more — it lives in
+              `PriceCorrectionRow`, against the number it corrects. Leaving a
+              copy would be two renderers for one control, and they would drift
+              (docs/ui-playbook.md, "One fact, three renderers"). */}
         </View>
       )}
     </View>
@@ -177,6 +228,20 @@ const s = StyleSheet.create({
   feedbackMessage: {
     fontSize: 12,
     marginBottom: 8,
+  },
+  correctionRow: {
+    // NO `marginTop` — this renders as a DIRECT child of the valuation card in
+    // `app/item/[id].tsx`, and that card carries `gap: 10`. A margin here adds
+    // to the gap rather than replacing it. Third time this exact class showed
+    // up in one day's work; the tell is a block that sits lower than its
+    // neighbours while every declared metric looks reasonable.
+    alignItems: 'flex-end',
+  },
+  correctionText: {
+    fontSize: 12,
+    // Underlined rather than coloured: this is the tertiary tier, and the one
+    // accent in this card belongs to the figure directly above it.
+    textDecorationLine: 'underline',
   },
   feedbackButtonsRow: {
     flexDirection: "row",

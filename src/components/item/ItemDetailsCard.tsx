@@ -87,7 +87,18 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
 
   return (
     <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-      {/* Editable Name (draft or edit mode) */}
+      {/* Name — EDIT MODE ONLY, exactly like the value row below.
+          In read mode the title moved ABOVE the valuation card (2026-08-23),
+          because this card is no longer the first thing on the screen: the
+          spec table now sits BELOW the money, and a heading that stayed with
+          it would have introduced "Category / Collection / Grade" while the
+          figure it names sat further up with nothing above it.
+
+          Editing is the same exception the value row already makes: there the
+          name is a form field among the other form fields and belongs with
+          them. `ItemTitleBlock` in `app/item/[id].tsx` renders the read-mode
+          heading, and it is the ONLY other renderer — one fact, one renderer
+          per mode. */}
       {isDraft || isEditing ? (
         <TextInput
           style={[styles.editableNameInputSimple, { color: theme.text, borderBottomColor: theme.border }]}
@@ -98,9 +109,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
           returnKeyType="done"
           accessibilityLabel="Item name"
         />
-      ) : (
-        <Text style={[styles.name, { color: theme.text }]} accessibilityRole="header" accessibilityLabel={`Item: ${editableName}`}>{editableName}</Text>
-      )}
+      ) : null}
 
       {/* Category row */}
       <View style={styles.row} accessibilityLabel={`Category: ${categoryDisplayName(editableCategory)}`}>
@@ -297,11 +306,9 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 10,
   },
-  name: {
-    fontSize: text['2xl'],
-    fontWeight: fontWeight.extrabold,
-    letterSpacing: -0.3,
-  },
+  // `name` removed 2026-08-23 — the read-mode title moved to the screen as
+  // `styles.itemTitle`, which carries these exact metrics. Left here it would
+  // be a dead style that still LOOKS like the definition of the item title.
   editableNameInputSimple: {
     fontSize: text.xl,
     fontWeight: fontWeight.bold,

@@ -1551,6 +1551,116 @@ All three are entries this playbook already contains, re-earned:
    border. Comments EXPIRE — and a stale one is worse here than none, because
    the next reader treats it as the spec.
 
+## The money was in the middle (2026-08-23)
+
+Asked for as *"assess the full card rather than in isolation for a hierarchy of
+user needs"* — after three separate rounds of fixing individual rows had left
+the ORDER untouched. That is the lesson before any of the specifics: **a
+hierarchy complaint cannot be answered one block at a time.** Each fix was
+locally right and the screen still said the wrong thing first.
+
+The item screen used to read: gallery → actions → **the whole spec table**
+(category, collection, grade, rarity, brand, set code, set) → the comp prompt →
+**the value** → notes → build/progress → where-to-buy → Pro.
+
+So between the item's name and what it is worth sat reference data **the owner
+already knows, because they own it** — and the one monetary fact on the screen
+arrived after a scroll.
+
+### The order now, and the need each block serves
+
+| need | blocks |
+|---|---|
+| identify | gallery, **name** |
+| act | Edit · List · **Sell** |
+| **value** | the figure + provenance chip, comps/confidence, **"Price seems off?"** |
+| reference | the spec table |
+| my own record | notes, build, reading progress |
+| — | where to buy |
+| upsell | Pro / upgrade card |
+| the ask | "Help improve our estimates" + "I sold it for…" |
+
+**"Where to buy" deliberately did NOT move up**, though it is an action and the
+first instinct was to promote it: *"these are items the user has in their
+portfolio, so where to buy doesn't make sense that high."* An action is only
+high-value if it is an action the member actually wants HERE — they already own
+this one.
+
+**The ask goes last.** Every other tenant of the valuation card answers "what is
+it worth". "Help improve our estimates" asks — a favour, on behalf of the model,
+and it was sitting directly under the figure.
+
+**But the CORRECTION goes back up.** *"Shouldn't it be close to the price?"* —
+yes. "Price seems off?" acts ON the number, so it belongs against the number;
+what did not belong there was the heading and the "I sold it for…" button around
+it. The block was split (`PriceCorrectionRow`), and because both halves still
+write through one `feedbackMessage`, the hook now records a `feedbackSource` so
+"Thanks for the feedback!" cannot appear under the control that did not cause
+it.
+
+### Two structural constraints that a reorder makes visible
+
+1. **The name was the spec card's HEADER.** Moving the card below the money
+   would have put the item's title under its price. The name had to be hoisted
+   to the screen — read mode only, since in edit mode it is a form field among
+   form fields, which is the exception the value row already makes.
+2. **A gate must still admit exactly what its body draws.** Lifting the feedback
+   block out of the valuation card removed one of the tenants its gate was
+   widened for. Re-checked rather than assumed: the `(!isDraft && id)` term now
+   corresponds to `ItemRefreshBar`, which has no early return, so the card
+   cannot open on a term whose content declines to draw — the 2026-08-22 bug in
+   reverse.
+
+### Highlighting a card without re-inflating the accent count
+
+Asked for as *"highlight and differentiate the card with the tiffany blue/teal
+colour text, highlighted areas"*. The literal reading — teal on the label, the
+chip, the comps — is precisely what "48 accent usages is why nothing read as
+primary" records undoing, and the accent table reserves the FILLED tier for
+Sell, one per screen.
+
+**A tinted SURFACE is a different axis from accent text.** The value block gets
+`accent + '14'` with an `accent + '33'` bottom edge, bleeding to the card's
+inner edges (`marginHorizontal: -16` against the card's `padding: 16`) — the
+same treatment `thinCatPrompt` already uses in this file. The figure keeps its
+accent text, **nothing else gains any**, and the card is differentiated by the
+region rather than by more teal. Alpha suffixes on `theme.accent` rather than a
+new palette entry, so high-contrast dark still matches.
+
+### Six defects the audit found in this very change
+
+The post-completion pass over my own new code, and the count is the point — a
+re-read of the diff found the stale comments; the rest needed the NEIGHBOURING
+file or a question the code could not answer about itself.
+
+1. **A comment that lied about the metrics beside it.** The hoisted title said
+   *"same metrics ItemDetailsCard.name carried"* over `text.xl`/`bold`. The real
+   style was `text['2xl']`/`extrabold`/`-0.3`. Every item title in the app would
+   have shrunk while the comment asserted nothing had changed. Found by opening
+   the style it claimed to copy instead of trusting the sentence.
+2. **`styles.name` left behind, dead.** Worse than unused: it still reads as the
+   definition of the item title.
+3. and 4. **`marginBottom: 12`, then `marginTop: 10`, on direct children of a
+   container with `gap: 10`.** Verbatim "Two containers, one `gap`" — written
+   into this playbook that morning and re-earned twice the same afternoon.
+5. **A failure state that consumed its own affordance.** The correction row
+   swapped the button OUT for the message. Fine on success; on failure
+   `onPriceDisagree` writes "Failed to submit feedback" through the same state,
+   so the one path that needs a retry was the one path with no button. **A
+   message renders beside a control, never instead of it.**
+6. **Three comments that expired the moment the blocks moved** — an "END OF THE
+   VALUATION CARD" marker now closing the spec table, an ask-block comment still
+   describing "four lines below" and a "refresh bar above" it no longer sits
+   near, and a "two places need this answer" note over a predicate down to one
+   reader. Moving code invalidates the prose attached to it, and a stale comment
+   is worse than none because the next reader treats it as the spec.
+
+Also deleted: the `compChoicePending` gate on the ask, and the
+`showSalePriceInput` escape hatch that existed only to soften it. Both were
+correct when the two blocks were four rows apart; from opposite ends of the
+screen there is no contradiction left to resolve. **Carrying a guard past the
+reason for it is how a condition becomes folklore.**
+
 ## The same row, rendered by two different components (2026-08-23)
 
 Reported from a screenshot of the item card in edit mode: *"the red issues in

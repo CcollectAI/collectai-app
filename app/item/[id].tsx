@@ -58,7 +58,7 @@ import { GradingSection } from '@/components/GradingSection';
 import type { GradingLookupResult, PopulationReport, GradingServiceInfo } from '@/components/GradingSection';
 import { ItemGallerySection } from '@/components/ItemGallerySection';
 import type { ItemImage } from '@/components/ItemGallerySection';
-import { PriceFeedbackSection } from '@/components/PriceFeedbackSection';
+import { PriceFeedbackSection, PriceCorrectionRow } from '@/components/PriceFeedbackSection';
 import { DossierReportSection } from '@/components/DossierReportSection';
 import type { DossierData } from '@/components/DossierReportSection';
 import { MarketplacePricesSection } from '@/components/MarketplacePricesSection';
@@ -364,7 +364,7 @@ function ItemDetailScreen() {
     onSaveNotes, onSaveDraft, onSaveEdits,
     showSalePriceInput, setShowSalePriceInput,
     salePrice, setSalePrice,
-    submittingFeedback, feedbackMessage,
+    submittingFeedback, feedbackMessage, feedbackSource,
     onSubmitSalePrice, onPriceDisagree,
     keyboardVisible, keyboardHeight,
     explanationExpanded, setExplanationExpanded,
@@ -900,10 +900,13 @@ function ItemDetailScreen() {
   /**
    * Is there an UNRESOLVED "which number should we show?" question on screen?
    *
-   * Hoisted out of the JSX (2026-08-23) because two places now need the same
-   * answer, and two copies of a predicate is how the offers badge and the
-   * offers screen ended up disagreeing about what "needs you" means. A plain
-   * const in the body — not a hook, and not inside one.
+   * Hoisted out of the JSX (2026-08-23) when two places needed the same answer.
+   * The second consumer — a gate that hid the feedback block while this was
+   * pending — was deleted later the same day, so there is ONE reader again and
+   * this could fold back inline. It stays hoisted because the expression is
+   * four fields of `savedCore`/`savedAttrs` and reads better named than as a
+   * condition in the middle of the tree. A plain const in the body — not a
+   * hook, and not inside one.
    */
   const compChoicePending = shouldOfferComp({
     valueSource: savedCore?.valueSource,
@@ -1069,72 +1072,46 @@ function ItemDetailScreen() {
             />
           )}
 
-          {/* Details card */}
-          <ItemDetailsCard
-            isDraft={isDraft}
-            isEditing={isEditing}
-            editableName={editableName}
-            editableCategory={editableCategory}
-            editableCollection={editableCollection}
-            editableCondition={editableCondition}
-            editableValue={editableValue}
-            isGradingEligible={isGradingEligible}
-            categorySlug={categorySlug}
-            categoryIdMap={CATEGORY_ID_MAP}
-            // The saved-row values, not `useItemDetail`'s parallel copy: that
-            // hook skips the fetch entirely for drafts, so the draft branch had
-            // no attributes at all. `displayAttributes` covers both (route
-            // params while drafting, the fetched row after the save).
-            itemAttributes={displayAttributes ?? itemAttributes}
-            taxonomyVersion={taxonomyVersion}
-            subtypeId={savedSubtypeId ?? subtypeId}
-            itemCollections={displayCollections ?? itemCollections}
-            itemId={id}
-            itemSizeValue={itemSizeValue}
-            sizeSystem={sizeSystem}
-            sizeSaving={sizeSaving}
-            notes={notes}
-            onEditableName={setEditableName}
-            onEditableValue={setEditableValue}
-            onShowCategoryPicker={showCategoryPicker}
-            onShowCollectionPicker={showCollectionPicker}
-            onShowConditionPicker={showConditionPicker}
-            onSizeChange={handleSizeChange}
-            onSizeSystemChange={setSizeSystem}
-            onSizeValueChange={setItemSizeValue}
-            onChangeAttribute={onChangeAttribute}
-            // Rendered by the card, immediately after the attribute rows, so
-            // "fill in details from catalogue" sits with the details it fills.
-            catalogAction={
-              !isDraft && id ? (
-                <ItemCatalogRefresh
-                  itemId={id}
-                  itemTitle={editableName}
-                  itemCategory={categorySlug}
-                  currentAttrs={savedAttrs}
-                  currentCanonicalKey={savedCanonicalKey}
-                  onUpdated={() => {
-                    (async () => {
-                      const { data } = await supabase
-                        .from('items')
-                        .select('attrs, collection_name, canonical_key')
-                        .eq('id', id)
-                        .maybeSingle();
-                      const row = data as { attrs?: Record<string, unknown> | null; collection_name?: string | null; canonical_key?: string | null } | null;
-                      if (row) {
-                        setSavedAttrs(row.attrs ?? null);
-                        setSavedCollectionName(row.collection_name ?? null);
-                        setSavedCanonicalKey(row.canonical_key ?? null);
-                        const sub = (row.attrs as Record<string, unknown> | null | undefined)?.subtype_id;
-                        setSavedSubtypeId(typeof sub === 'string' ? sub : null);
-                      }
-                    })();
-                  }}
-                />
-              ) : null
-            }
-          />
+          {/* ── THE ITEM'S NAME ───────────────────────────────────────
+              Hoisted out of `ItemDetailsCard` (2026-08-23) so the screen can
+              lead with identity and then value. Read mode only: in edit mode
+              the name is a form field and stays in the card with the other
+              fields, exactly as the value row already does. */}
+          {!isDraft && !isEditing && (
+            <Text
+              style={[styles.itemTitle, { color: theme.text }]}
+              accessibilityRole="header"
+              accessibilityLabel={`Item: ${editableName}`}
+            >
+              {editableName}
+            </Text>
+          )}
 
+          {/* ── ORDER OF THIS SCREEN (2026-08-23) ─────────────────────
+              Reported as *"the full card area is not optimized and it looks
+              cluttered — pricing/market price/sell need to logically emphasize
+              certain parts"*, then again as *"assess the full card for a
+              hierarchy of user needs"*.
+
+              The money used to sit in the MIDDLE. Between the item's name and
+              what it is worth sat the whole spec table — category, collection,
+              grade, rarity, brand, set code — reference data the owner already
+              knows, because they own it. So the screen answered "what are its
+              attributes" before "what is it worth", and the one monetary fact
+              arrived after a scroll.
+
+              Now: identify (gallery, name) -> act (Edit/List/Sell) -> VALUE
+              (the figure, its provenance, its comps, and the control that
+              corrects it) -> reference (the spec table) -> the member's own
+              record (notes, progress) -> upsell.
+
+              "Where to buy" deliberately stays LOW despite being an action:
+              these are items the member already OWNS, so a buying link is not
+              a need the top of this screen serves.
+
+              The comp prompt travels WITH the valuation card — it asks which
+              number that card should show, so it is meaningless anywhere
+              else. */}
           {/* Asked AFTER the save, never as a modal over it. See
               MarketCompPrompt for why "keep mine" needs the view's choice
               branch to be an honest option at all. */}
@@ -1204,6 +1181,12 @@ function ItemDetailScreen() {
                 40+ categories with no sold-comp source the figure IS somebody's
                 guess, and the chip is what says so. */}
             {!isDraft && !isEditing ? (
+              <View
+                style={[
+                  styles.valuationHighlight,
+                  { backgroundColor: theme.accent + '14', borderBottomColor: theme.accent + '33' },
+                ]}
+              >
               <View style={styles.valuationLead}>
                 {isUnpriced(editableValue) ? (
                   <Text style={[styles.valuationUnpriced, { color: theme.muted }]}>
@@ -1223,6 +1206,7 @@ function ItemDetailScreen() {
                     {savedCore?.valueSource ? <ValueSourceChip source={savedCore.valueSource} /> : null}
                   </>
                 )}
+              </View>
               </View>
             ) : null}
 
@@ -1280,43 +1264,19 @@ function ItemDetailScreen() {
               );
             })()}
 
-            {/* Feedback section — shown for saved items, but NOT while the
-                comp prompt is open.
-
-                Reported as the price area being cluttered and not emphasising
-                anything. The two blocks ask CONTRADICTORY questions about the
-                same number: the prompt asks "our comps say EUR 78, you said
-                EUR 34 — which should we show?", and four lines below,
-                "Price seems off?" asks whether the figure is wrong. Answering
-                the second is meaningless until the first is settled, and
-                stacking them put two accent-weighted asks either side of the
-                one figure they are both about.
-
-                The prompt is the one with a decision behind it, so it wins the
-                slot; the feedback returns the moment a choice is made, because
-                `compChoicePending` reads `attrs.value_choice`.
-
-                `|| showSalePriceInput` is the escape hatch: the sale-price
-                input is the ONE thing in here that is not a contradiction —
-                "what did you sell it for" is a different question from "which
-                number should we show" — and it can already be OPEN, focused,
-                with a typed figure, when a save flips `compChoicePending`
-                true. The typed value itself is safe (the state lives in
-                `useItemDetail`, not in the unmounted child, so it comes back),
-                but unmounting a focused TextInput drops the keyboard mid-entry.
-                Nothing is hidden while it is open. */}
-            {!isDraft && id && (!compChoicePending || showSalePriceInput) && (
-              <PriceFeedbackSection
+            {/* The CORRECTION, against the number it corrects — *"shouldn't
+                it be close to the price"*. It sat four rows below, wrapped in a
+                "Help improve our estimates" heading that framed a correction as
+                a favour; the favour moved to the end of the screen and this
+                stayed with the figure. `feedbackSource` decides which of the two
+                shows the response, so "Thanks for the feedback!" never appears
+                under the control that did not cause it. */}
+            {!isDraft && id && !isEditing && (
+              <PriceCorrectionRow
                 theme={theme}
-                showSalePriceInput={showSalePriceInput}
-                salePrice={salePrice}
                 submittingFeedback={submittingFeedback}
-                feedbackMessage={feedbackMessage}
-                onShowSalePriceInput={setShowSalePriceInput}
-                onSalePriceChange={setSalePrice}
-                onSubmitSalePrice={onSubmitSalePrice}
+                feedbackMessage={feedbackSource === 'disagree' ? feedbackMessage : null}
                 onPriceDisagree={onPriceDisagree}
-                onCancelSalePrice={() => setShowSalePriceInput(false)}
               />
             )}
 
@@ -1331,7 +1291,81 @@ function ItemDetailScreen() {
           </View>
           ) : null}
 
-          {/* ── END OF THE VALUATION CARD ──────────────────────────────
+          {/* Details card */}
+          <ItemDetailsCard
+            isDraft={isDraft}
+            isEditing={isEditing}
+            editableName={editableName}
+            editableCategory={editableCategory}
+            editableCollection={editableCollection}
+            editableCondition={editableCondition}
+            editableValue={editableValue}
+            isGradingEligible={isGradingEligible}
+            categorySlug={categorySlug}
+            categoryIdMap={CATEGORY_ID_MAP}
+            // The saved-row values, not `useItemDetail`'s parallel copy: that
+            // hook skips the fetch entirely for drafts, so the draft branch had
+            // no attributes at all. `displayAttributes` covers both (route
+            // params while drafting, the fetched row after the save).
+            itemAttributes={displayAttributes ?? itemAttributes}
+            taxonomyVersion={taxonomyVersion}
+            subtypeId={savedSubtypeId ?? subtypeId}
+            itemCollections={displayCollections ?? itemCollections}
+            itemId={id}
+            itemSizeValue={itemSizeValue}
+            sizeSystem={sizeSystem}
+            sizeSaving={sizeSaving}
+            notes={notes}
+            onEditableName={setEditableName}
+            onEditableValue={setEditableValue}
+            onShowCategoryPicker={showCategoryPicker}
+            onShowCollectionPicker={showCollectionPicker}
+            onShowConditionPicker={showConditionPicker}
+            onSizeChange={handleSizeChange}
+            onSizeSystemChange={setSizeSystem}
+            onSizeValueChange={setItemSizeValue}
+            onChangeAttribute={onChangeAttribute}
+            // Rendered by the card, immediately after the attribute rows, so
+            // "fill in details from catalogue" sits with the details it fills.
+            catalogAction={
+              !isDraft && id ? (
+                <ItemCatalogRefresh
+                  itemId={id}
+                  itemTitle={editableName}
+                  itemCategory={categorySlug}
+                  currentAttrs={savedAttrs}
+                  currentCanonicalKey={savedCanonicalKey}
+                  onUpdated={() => {
+                    (async () => {
+                      const { data } = await supabase
+                        .from('items')
+                        .select('attrs, collection_name, canonical_key')
+                        .eq('id', id)
+                        .maybeSingle();
+                      const row = data as { attrs?: Record<string, unknown> | null; collection_name?: string | null; canonical_key?: string | null } | null;
+                      if (row) {
+                        setSavedAttrs(row.attrs ?? null);
+                        setSavedCollectionName(row.collection_name ?? null);
+                        setSavedCanonicalKey(row.canonical_key ?? null);
+                        const sub = (row.attrs as Record<string, unknown> | null | undefined)?.subtype_id;
+                        setSavedSubtypeId(typeof sub === 'string' ? sub : null);
+                      }
+                    })();
+                  }}
+                />
+              ) : null
+            }
+          />
+
+          {/* ── END OF THE CARD STACK ──────────────────────────────────
+
+              (This comment used to say "END OF THE VALUATION CARD". After the
+              2026-08-23 reorder the valuation card closes ~70 lines above and
+              the SPEC table is what ends here — a comment that expired the
+              moment the blocks moved, which is the failure this playbook keeps
+              recording. The history below is still the reason the stack is
+              flat, so it stays.)
+
 
               It used to close 250 lines further down, which meant the
               price, the feedback prompt, the refresh bar, Sell this,
@@ -1513,6 +1547,49 @@ function ItemDetailScreen() {
               )
             )}
 
+            {/* ── THE ASK, LAST ────────────────────────────────────────
+                "Help improve our estimates" + "I sold it for…", after
+                everything the member actually came here for.
+
+                Reported twice: *"i like improving our estimates but is this the
+                right location for example?"*, then *"the location of the market
+                estimate and price fix error aren't changed"* — the first time
+                round I only hid this block conditionally and never moved it.
+
+                It sat directly under the figure, so the valuation card read
+                "EUR 78" -> "Help improve our estimates". The hierarchy this
+                screen expresses is monetary value, and this block has none FOR
+                THE MEMBER: it is a favour asked of them on behalf of the model.
+                Every other tenant of the valuation card answers "what is it
+                worth"; this one asks. An ask goes last.
+
+                "Price seems off?" is NOT here — it went the other way, up
+                against the figure it corrects (`PriceCorrectionRow`), because
+                that one is a correction rather than a favour.
+
+                No `compChoicePending` gate any more. It existed because the two
+                blocks were four rows apart and asked contradictory questions
+                about the same number; from the far end of the screen there is
+                no contradiction left to resolve, so the gate — and the
+                `showSalePriceInput` escape hatch that only existed to soften
+                it — are complexity with nothing behind them. Deleted rather
+                than carried. */}
+            {!isDraft && id && !isEditing && (
+              <PriceFeedbackSection
+                theme={theme}
+                showSalePriceInput={showSalePriceInput}
+                salePrice={salePrice}
+                submittingFeedback={submittingFeedback}
+                feedbackMessage={feedbackSource === 'sale' ? feedbackMessage : null}
+                onShowSalePriceInput={setShowSalePriceInput}
+                onSalePriceChange={setSalePrice}
+                onSubmitSalePrice={onSubmitSalePrice}
+                onPriceDisagree={onPriceDisagree}
+                onCancelSalePrice={() => setShowSalePriceInput(false)}
+              />
+            )}
+
+
             {/* Bottom spacer inside card */}
 
         </Animated.ScrollView>
@@ -1603,6 +1680,52 @@ export default function ItemDetailScreenWithBoundary() {
 }
 
 const styles = StyleSheet.create({
+  // The item's name, now that it leads the screen rather than heading the spec
+  // card. VERBATIM the metrics `ItemDetailsCard.name` carried — checked against
+  // that style rather than described from memory, because the first version of
+  // this block said "same metrics" over `text.xl`/`bold` and would have shrunk
+  // every item title on the app while the comment claimed nothing had changed.
+  //
+  // It matches `valuationAmount` exactly, and that is fine BECAUSE of the tint:
+  // the figure is set apart by an accent surface and accent text, not by
+  // out-sizing the title. Name is the title, value is the headline.
+  itemTitle: {
+    fontSize: text['2xl'],
+    fontWeight: fontWeight.extrabold,
+    letterSpacing: -0.3,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  /**
+   * The value block is a HIGHLIGHTED AREA, not more accent text.
+   *
+   * Asked for as *"highlight and differentiate the card with the tiffany
+   * blue/teal, highlighted areas"*. The tempting version — teal on the label,
+   * the chip, the comps — is exactly what docs/ui-playbook.md's "48 accent
+   * usages is why nothing read as primary" records undoing: teal as default
+   * decoration stops being a signal, and the accent table reserves the FILLED
+   * tier for Sell, one per screen.
+   *
+   * A tinted SURFACE is a different axis from accent text, and the precedent is
+   * already in this file (`thinCatPrompt`, `accent + '14'`). So the figure keeps
+   * its accent text, nothing else gains any, and the region around it is what
+   * differentiates the card. Alpha suffixes rather than a second palette entry
+   * because `theme.accent` differs per theme — including high-contrast dark,
+   * where a hardcoded tint would stop matching.
+   */
+  valuationHighlight: {
+    marginHorizontal: -16,   // bleed to the card's edges; the card pads 16
+    marginTop: -16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    // NO `marginBottom` — `styles.card` carries `gap: 10`, so a margin here
+    // would ADD to it. That is verbatim "Two containers, one `gap`", written
+    // into this playbook this morning and re-earned four hours later.
+    borderTopLeftRadius: radius.md,
+    borderTopRightRadius: radius.md,
+    borderBottomWidth: 1,
+  },
   valuationLead: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 },
   // The money leads. 2xl/extrabold is the page-title spec, used here because
   // this figure is what the screen is about — the item's NAME is the title,

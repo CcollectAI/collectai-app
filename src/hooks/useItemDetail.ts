@@ -99,6 +99,17 @@ export function useItemDetail(params: UseItemDetailParams) {
   const [salePrice, setSalePrice] = useState('');
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  /**
+   * WHICH action produced `feedbackMessage`.
+   *
+   * The two feedback controls were split across the screen on 2026-08-23 —
+   * "Price seems off?" sits against the figure in the valuation card, "I sold
+   * it for…" sits last — but they still share ONE message state. Without a
+   * source, "Thanks for the feedback!" would render in both places at once, or
+   * (worse) under the control that did not cause it. Set on every write to
+   * `feedbackMessage`, including the failure paths.
+   */
+  const [feedbackSource, setFeedbackSource] = useState<'sale' | 'disagree' | null>(null);
 
   // ── Keyboard state ─────────────────────────────────────────────────────
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -341,6 +352,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     if (!salePrice.trim() || !id || isDraft) return;
     setSubmittingFeedback(true);
     setFeedbackMessage(null);
+    setFeedbackSource('sale');
     try {
       await dataProvider.submitFeedback(id, 'sale_price', salePrice.trim());
       const parsedPrice = parseFloat(salePrice.trim().replace(/[^0-9.,]/g, '').replace(',', '.'));
@@ -370,6 +382,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     if (!id || isDraft) return;
     setSubmittingFeedback(true);
     setFeedbackMessage(null);
+    setFeedbackSource('disagree');
     try {
       await dataProvider.submitFeedback(id, 'disagree', 'inaccurate');
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -444,6 +457,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     salePrice, setSalePrice,
     submittingFeedback,
     feedbackMessage,
+    feedbackSource,
     onSubmitSalePrice,
     onPriceDisagree,
 
