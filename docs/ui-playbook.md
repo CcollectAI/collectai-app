@@ -1551,6 +1551,85 @@ All three are entries this playbook already contains, re-earned:
    border. Comments EXPIRE — and a stale one is worse here than none, because
    the next reader treats it as the spec.
 
+## The same row, rendered by two different components (2026-08-23)
+
+Reported from a screenshot of the item card in edit mode: *"the red issues in
+brand/product name writing"*. Three separate defects, and each is a rule this
+playbook already contains, broken one level out from where it was enforced.
+
+### "Grade" twice, four rows apart
+
+`ItemDetailsCard` renders a Condition/Grade row. `ItemAttributesSection`,
+mounted inside that same card, rendered a second one. The list already enforced
+*one label, one row* — but only against ITSELF, so a label the PARENT owned was
+invisible to it. That is "One fact, three renderers" and
+`learning_parent_gap_is_invisible_from_the_child` meeting: **a `gap` is
+invisible from inside a child, and so is a LABEL.**
+
+Measured before fixing: `attrs.grade` is present on **zero of 148 prod rows**.
+The real grade lives in `items.condition` (`PSA 9`, `BGS 10`). The duplicate came
+entirely from `editableEntries` synthesising the yugioh field list in edit mode
+— so the row that looked like data was a placeholder for a key nothing writes.
+
+The parent now passes `reservedLabels`, derived from the same
+`isGradingEligible` expression that labels its own row rather than restated as a
+literal. The semantics deliberately match the in-list rule: an **empty**
+duplicate is dropped, a **filled** one survives as "Grade (captured)". Zero rows
+hit the second branch today, and that is exactly why it needs to exist — the day
+a captured grade appears, hiding it behind the card's "Not set" would be the
+data-destroying half of the label dedupe all over again.
+
+### One instance of a fix landed; the second was never looked at
+
+Category read **`yugioh`**. `docs/TAXONOMY.md` says the promise is *"never shows
+a raw slug"*, and the 2026-08-19 sweep resolved it on the detail screen — but
+only in the READ branch. The EDIT branch printed `editableCategory` verbatim, so
+the one moment a member is actively looking at that field was the one moment it
+showed the database's word for it.
+
+**And the obvious fix was wrong.** `editableCategory` holds a slug when seeded
+from the row and a display NAME straight after a pick, because the picker is
+built from `ALL_CATS.map(c => c.name)`. `formatCategoryName` is **not
+idempotent** — it title-cases on separators, so wrapping it eagerly turns
+`'Yu-Gi-Oh!'` into `'Yu Gi Oh!'`. `categoryDisplayName` discriminates on
+`CATEGORY_NAME_TO_SLUG` membership, the same map `updateItem` normalises
+through, so the read and the write agree by construction.
+`__tests__/lib/categoryVocabulary.test.ts` pins the mangling too — if
+`formatCategoryName` ever stops corrupting that input the wrapper is redundant
+and should go.
+
+### Bookkeeping keys are not facts about the collectible
+
+`attrs` carries plumbing beside the real attributes, and the list rendered all
+of it: *"Value Choice: mine"*, *"Intake Timestamp: 2026-07-26T21:32:30.736662+00:00"*,
+*"Source: open_library"*.
+
+`value_choice` is the one that would have grown: the market-comp prompt writes
+it on **every** answer, so shipping that prompt without a blocklist means a
+member's answer becomes a visible row on the item they answered it about.
+
+All 22 keys present in prod were read before the line was drawn, per
+`learning_keyword_filters_need_per_category_false_positive_audit` — **and two
+that look like plumbing are not**: `item_type` (= "Merch") and `sealed` are real
+facts and stay. Reading the total, or the key names, would have hidden both.
+
+### What the audit of this change caught
+
+The row-building was extracted to a pure `buildAttributeRows` for
+`__tests__/components/attributeRows.test.ts`, because every rule above — plus
+the brand suppression and label dedupe shipped the day before — lived inside a
+component that could only be exercised by rendering it. **A rule with no way to
+fail is a rule nobody can check.** The extraction immediately surfaced one:
+
+- **The a11y label was recomputed from the key**, not taken from the row's
+  resolved label. A row displaying "Grade (captured)" or "Set Name" announced
+  plain "Grade" / "Set" — so the two rows the dedupe exists to tell apart were
+  identical to the one user who cannot see them side by side.
+- **The first version of the test passed immediately, which proves nothing.**
+  It now carries the counter-case: with `reservedLabels` omitted, the duplicate
+  "Grade" must come BACK. Without that, a `grade` row that was never synthesised
+  in the first place would make the rule a no-op wearing a green tick.
+
 ## `headerTitleAlign: 'left'` does NOTHING on iOS (2026-08-16)
 
 Reported as "marketplace is still aligned center as a title". The fix for

@@ -109,6 +109,30 @@ That is fine and the test asserts readability rather than registry membership:
 categories can also be user-typed (`CUSTOM_CATEGORY_SENTINEL`), so membership is
 not a property the app can promise. "Never shows a raw slug" is.
 
+### When one variable holds BOTH vocabularies (2026-08-23)
+
+`formatCategoryName` is the resolver when the value provably came out of
+`items.category`. `app/item/[id].tsx` is the case where that is not knowable:
+`editableCategory` is seeded from the saved row (a **slug**) and the picker
+writes a display **NAME** back into the same state.
+
+`formatCategoryName` is **not idempotent** — it title-cases on separators, so
+`'Yu-Gi-Oh!'` comes back as `'Yu Gi Oh!'`. Applying it eagerly to that state
+fixes the pre-pick render and corrupts the post-pick one.
+
+`categoryDisplayName(value)` handles either: a value found in
+`CATEGORY_NAME_TO_SLUG` is already a display name and is returned untouched,
+anything else goes through `formatCategoryName`. That is the same map
+`updateItem` normalises through (`CATEGORY_NAME_TO_SLUG[x] ?? x`), so the read
+and the write cannot disagree about which vocabulary a value is in.
+
+**Use `formatCategoryName` for a value read straight from the column;
+`categoryDisplayName` for anything a picker may have written into.**
+
+Found because the item card's edit-mode dropdown rendered `yugioh` — the
+2026-08-19 sweep above fixed the read branch of that screen and never looked at
+the edit branch.
+
 ## Mapping Rules
 
 ### Warhammer Books vs Miniatures

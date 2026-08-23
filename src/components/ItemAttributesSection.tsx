@@ -53,6 +53,22 @@ type ItemAttributesSectionProps = {
   editable?: boolean;
   /** Called per keystroke with the attribute key and its new string value. */
   onChangeAttribute?: (key: string, value: string) => void;
+  /**
+   * Labels the PARENT already renders as its own rows.
+   *
+   * docs/ui-playbook.md, "One fact, three renderers": *a kind of row has ONE
+   * renderer*. That rule was enforced INSIDE this list (see the label dedupe
+   * below) and not across the component boundary — so `ItemDetailsCard` drew
+   * its Grade row and this list drew a second one, four rows apart, reported
+   * from a screenshot. A `gap` is invisible from inside a child
+   * (learning_parent_gap_is_invisible_from_the_child) and so is a LABEL.
+   *
+   * Passed down rather than hardcoded here because the parent's label is
+   * conditional — that row says "Grade" for a grading-eligible category and
+   * "Condition" otherwise — so a constant in this file would be right for half
+   * the catalogue.
+   */
+  reservedLabels?: string[];
 };
 
 /**
@@ -104,6 +120,22 @@ const KNOWN_LABELS: Record<string, string> = {
   batch_code: 'Batch Code',
 };
 
+/**
+ * Keys that live in `attrs` as machine bookkeeping and are not facts about the
+ * collectible. Without this they render as ordinary rows: "Value Choice: mine",
+ * "Intake Timestamp: 2026-07-26T21:32:30.736662+00:00", "Source: open_library".
+ *
+ * MEASURED, not guessed — every one of the 22 keys present in prod `attrs` was
+ * read before drawing this line (2026-08-23). The two that LOOK internal and
+ * are not: `item_type` (= "Merch") and `sealed` are real facts and stay.
+ *
+ * `value_choice` is the one that would have grown: `app/item/[id].tsx:579`
+ * writes it every time a member answers the market-comp prompt, so shipping
+ * that prompt without this blocklist means the answer becomes a visible row on
+ * the item it was answered about.
+ */
+const INTERNAL_KEYS = new Set(['value_choice', 'intake_timestamp', 'source']);
+
 function formatLabel(key: string, catLabels?: Record<string, string>): string {
   if (catLabels?.[key]) return catLabels[key];
   if (KNOWN_LABELS[key]) return KNOWN_LABELS[key];
@@ -136,7 +168,7 @@ function formatLabel(key: string, catLabels?: Record<string, string>): string {
  * the corrupting writes carried `{"set_code": ""}`, and letting that blank a
  * genuine `"gym1"` would destroy data while "repairing" it.
  */
-function flattenAttributes(raw: unknown): Record<string, unknown> | null {
+export function flattenAttributes(raw: unknown): Record<string, unknown> | null {
   if (!raw || typeof raw !== 'object') return null;
 
   const parts: Record<string, unknown>[] = [];
@@ -185,28 +217,30 @@ function formatValue(val: unknown): string {
   return JSON.stringify(val);
 }
 
-export function ItemAttributesSection({
-  attributes,
+/**
+ * Build the label/value rows for one item's `attrs`. PURE — no theme, no hooks,
+ * no JSX — so the rules below can be pinned by a test instead of by a re-read.
+ *
+ * Extracted 2026-08-23. Every rule in here (the brand-restates-category
+ * suppression, the empty-duplicate label collapse, the internal-key blocklist,
+ * the parent's reserved labels) shipped with NO test, inside a component that
+ * could only be exercised by rendering it. `feedback_audit_my_diff_with_a_checker_not_a_reread`:
+ * a rule with no way to fail is a rule nobody can check.
+ *
+ * Returns `[key, value, label]` triples, already ordered and de-duplicated.
+ */
+export function buildAttributeRows({
+  attrs,
   category,
-  taxonomyVersion,
-  subtypeId,
-  collections,
   editable = false,
-  onChangeAttribute,
-}: ItemAttributesSectionProps) {
-  const { colors } = useAppTheme();
-
-  // Never read `attributes` directly below — two prod rows are arrays of
-  // double-encoded strings and would render as raw JSON. See flattenAttributes.
-  const attrs = flattenAttributes(attributes);
-
-  // Don't render anything if no meaningful data
-  const hasAttributes = attrs && Object.keys(attrs).length > 0;
-  const hasCollections = collections && collections.length > 0;
-  const hasSubtype = !!subtypeId;
-
-  if (!hasAttributes && !hasCollections && !hasSubtype) return null;
-
+  reservedLabels,
+}: {
+  attrs: Record<string, unknown> | null;
+  category?: string;
+  editable?: boolean;
+  reservedLabels?: string[];
+}): [string, unknown, string][] {
+  const hasAttributes = !!attrs && Object.keys(attrs).length > 0;
   // Get category-aware field ordering
   const categoryFieldDefs = category ? getCategoryFields(category) : [];
   const fieldOrder = categoryFieldDefs.map((f) => f.key);
@@ -260,6 +294,7 @@ export function ItemAttributesSection({
           val !== null &&
           val !== undefined &&
           val !== '' &&
+          !INTERNAL_KEYS.has(key) &&
           (editable || !restatesCategory(key, val)),
       )
     : [];
@@ -315,9 +350,30 @@ export function ItemAttributesSection({
   const dedupedEntries: [string, unknown, string][] = [];
   const isFilled = (v: unknown) => v !== '' && v !== null && v !== undefined;
 
+  /**
+   * The parent's rows occupy their labels before this list starts filling
+   * them. `PARENT_SLOT` is not an index into `dedupedEntries` — nothing of the
+   * parent's lives there — so every read of a slot has to tolerate it.
+   *
+   * The semantics are deliberately the SAME as an in-list duplicate: an empty
+   * one is dropped, a filled one survives under a disambiguated label. On prod
+   * today only the first case fires — `grade` is present on ZERO of 148 rows,
+   * and the row in the screenshot came from `editableEntries` synthesising the
+   * yugioh field list — but the second is what keeps this from being a
+   * data-hiding rule the day a captured value does show up.
+   */
+  const PARENT_SLOT = -1;
+  for (const label of reservedLabels ?? []) labelSlots.set(label, PARENT_SLOT);
+
   for (const [key, val] of editableEntries) {
     const label = formatLabel(key, categoryLabels);
     const at = labelSlots.get(label);
+    if (at === PARENT_SLOT) {
+      // The parent owns this label and holds the real value.
+      if (!isFilled(val)) continue;
+      dedupedEntries.push([key, val, `${label} (captured)`]);
+      continue;
+    }
     if (at === undefined) {
       labelSlots.set(label, dedupedEntries.length);
       dedupedEntries.push([key, val, label]);
@@ -336,6 +392,33 @@ export function ItemAttributesSection({
       .join(' ');
     dedupedEntries.push([key, val, keyLabel === label ? `${label} (${key})` : keyLabel]);
   }
+  return dedupedEntries;
+}
+
+export function ItemAttributesSection({
+  attributes,
+  category,
+  taxonomyVersion,
+  subtypeId,
+  collections,
+  editable = false,
+  onChangeAttribute,
+  reservedLabels,
+}: ItemAttributesSectionProps) {
+  const { colors } = useAppTheme();
+
+  // Never read `attributes` directly below — two prod rows are arrays of
+  // double-encoded strings and would render as raw JSON. See flattenAttributes.
+  const attrs = flattenAttributes(attributes);
+
+  // Don't render anything if no meaningful data
+  const hasAttributes = attrs && Object.keys(attrs).length > 0;
+  const hasCollections = collections && collections.length > 0;
+  const hasSubtype = !!subtypeId;
+
+  if (!hasAttributes && !hasCollections && !hasSubtype) return null;
+
+  const dedupedEntries = buildAttributeRows({ attrs, category, editable, reservedLabels });
 
   // If after filtering we still have nothing, bail out
   if (dedupedEntries.length === 0 && !hasCollections && !hasSubtype) return null;
@@ -372,7 +455,14 @@ export function ItemAttributesSection({
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="done"
-              accessibilityLabel={`${formatLabel(key, categoryLabels)} value`}
+              /* The row's RESOLVED label, not one recomputed from the key.
+                 Surfaced by the extraction: `formatLabel(key, …)` ignores every
+                 disambiguation the builder applied, so a row displaying
+                 "Grade (captured)" or "Set Name" announced plain "Grade" / "Set"
+                 to a screen reader — the two rows the dedupe exists to tell
+                 apart were indistinguishable to the one user who cannot see
+                 them side by side. */
+              accessibilityLabel={`${label} value`}
             />
           ) : (
             <Text

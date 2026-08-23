@@ -19,6 +19,7 @@
  */
 import {
   formatCategoryName,
+  categoryDisplayName,
   CATEGORY_NAME_TO_SLUG,
   CATEGORY_SLUG_TO_NAME,
 } from '@/constants/categories';
@@ -66,6 +67,50 @@ describe('reading: slug -> display name', () => {
     expect(formatCategoryName(null)).toBe('');
     expect(formatCategoryName(undefined)).toBe('');
     expect(formatCategoryName('')).toBe('');
+  });
+});
+
+/**
+ * The item screen holds BOTH vocabularies in one piece of state, at different
+ * moments: `editableCategory` is seeded from `savedCore.category` (a slug —
+ * 148 prod rows, 0 display names, re-measured 2026-08-23) and the picker at
+ * `app/item/[id].tsx:120` writes a display NAME straight back into it.
+ *
+ * So the edit-mode dropdown printed the raw slug `yugioh`, reported from a
+ * screenshot — and the obvious fix, wrapping it in `formatCategoryName`, would
+ * have broken the other half of the same state.
+ */
+describe('either vocabulary: categoryDisplayName', () => {
+  it('resolves a slug, like formatCategoryName does', () => {
+    expect(categoryDisplayName('yugioh')).toBe('Yu-Gi-Oh!');
+    expect(categoryDisplayName('mtg')).toBe('Magic: The Gathering');
+  });
+
+  it('leaves an already-resolved display name ALONE', () => {
+    // This is the whole reason the function exists. formatCategoryName is not
+    // idempotent: it title-cases on separators.
+    expect(categoryDisplayName('Yu-Gi-Oh!')).toBe('Yu-Gi-Oh!');
+    expect(categoryDisplayName('Disney Lorcana')).toBe('Disney Lorcana');
+  });
+
+  it('and formatCategoryName MANGLES that same input — the discriminator', () => {
+    // If this ever stops being true the wrapper is redundant and should go.
+    // Pinning it means the reason survives longer than my memory of it.
+    expect(formatCategoryName('Yu-Gi-Oh!')).toBe('Yu Gi Oh!');
+    expect(formatCategoryName('Yu-Gi-Oh!')).not.toBe(categoryDisplayName('Yu-Gi-Oh!'));
+  });
+
+  it('is idempotent — applying it twice changes nothing', () => {
+    for (const slug of Object.keys(CATEGORY_SLUG_TO_NAME)) {
+      const once = categoryDisplayName(slug);
+      expect(categoryDisplayName(once)).toBe(once);
+    }
+  });
+
+  it('still never shows a raw slug, registry or not', () => {
+    expect(categoryDisplayName('some_new_thing')).toBe('Some New Thing');
+    expect(categoryDisplayName(null)).toBe('');
+    expect(categoryDisplayName('')).toBe('');
   });
 });
 

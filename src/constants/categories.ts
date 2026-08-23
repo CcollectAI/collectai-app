@@ -115,6 +115,34 @@ export function formatCategoryName(slug: string | null | undefined): string {
     .join(' ');
 }
 
+/**
+ * Display text for a category value that may be in EITHER vocabulary.
+ *
+ * `formatCategoryName` resolves a SLUG and is the right function when the value
+ * provably came out of `items.category`. It is NOT idempotent, and that is the
+ * trap: it title-cases on separators, so a display name that has already been
+ * resolved comes back mangled — `'Yu-Gi-Oh!'` → `'Yu Gi Oh!'`,
+ * `'Magic: The Gathering'` → `'Magic: The Gathering'` only by luck of the split.
+ *
+ * The item screen holds both at different moments (2026-08-23): `editableCategory`
+ * is seeded from `savedCore.category` — a slug, all 148 prod rows, zero display
+ * names — but the picker at `app/item/[id].tsx:120` is built from
+ * `ALL_CATS.map(c => c.name)` and writes a display NAME straight back into the
+ * same state. So the dropdown rendered the raw slug `yugioh` before a pick and
+ * the curated name after one, and anything that eagerly wrapped it in
+ * `formatCategoryName` would corrupt the second case.
+ *
+ * Membership in `CATEGORY_NAME_TO_SLUG` is the discriminator, and it is the same
+ * one `updateItem` normalises through (`CATEGORY_NAME_TO_SLUG[x] ?? x`), so the
+ * read and the write agree by construction. See
+ * `__tests__/lib/categoryVocabulary.test.ts`, which pins both directions.
+ */
+export function categoryDisplayName(value: string | null | undefined): string {
+  if (!value) return '';
+  if (CATEGORY_NAME_TO_SLUG[value]) return value; // already a display name
+  return formatCategoryName(value);
+}
+
 /** Categories eligible for professional grading (PSA, CGC, BGS, etc.) */
 export const GRADING_ELIGIBLE_CATEGORIES = new Set<string>([
   'pokemon', 'mtg', 'yugioh', 'sportscards', 'comic_books', 'retro_games',

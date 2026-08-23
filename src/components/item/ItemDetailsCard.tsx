@@ -11,7 +11,7 @@ import { useSettings } from '@/lib/settings';
 import { formatPrice, getCurrencySymbol, UNPRICED_LABEL, isUnpriced, toPriceNum } from '@/lib/format';
 import { ItemAttributesSection } from '@/components/ItemAttributesSection';
 import { CategorySpecificSection } from '@/components/CategorySpecificSection';
-import { formatCategoryName } from '@/constants/categories';
+import { categoryDisplayName } from '@/constants/categories';
 import { Skeleton, SkeletonList } from '@/components/Skeleton';
 import { radius, text, fontWeight } from '@/theme/tokens';
 
@@ -103,17 +103,25 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
       )}
 
       {/* Category row */}
-      <View style={styles.row} accessibilityLabel={`Category: ${formatCategoryName(editableCategory)}`}>
+      <View style={styles.row} accessibilityLabel={`Category: ${categoryDisplayName(editableCategory)}`}>
         <Text style={[styles.label, { color: theme.muted }]}>Category</Text>
         {isDraft || isEditing ? (
           <Pressable
             onPress={onShowCategoryPicker}
             style={[styles.dropdownFieldRow, { borderBottomColor: theme.border }]}
             accessibilityRole="button"
-            accessibilityLabel={`Category: ${editableCategory === 'Unknown category' ? 'not set' : editableCategory}. Tap to change`}
+            accessibilityLabel={`Category: ${editableCategory === 'Unknown category' ? 'not set' : categoryDisplayName(editableCategory)}. Tap to change`}
           >
+            {/* `categoryDisplayName`, not the raw state. Reported from a
+                screenshot: this dropdown read "yugioh". The read-mode branch
+                below already resolved the slug; the EDIT branch printed
+                `editableCategory` verbatim, so the one place a member is
+                actively looking at the field was the one place it showed the
+                database's word for it. Not `formatCategoryName` either — after
+                a pick this state holds a display NAME, which that function
+                would re-title-case into "Yu Gi Oh!". */}
             <Text style={[styles.dropdownFieldTextSmall, { color: editableCategory === 'Unknown category' ? theme.muted : theme.text }]}>
-              {editableCategory === 'Unknown category' ? 'Select category' : editableCategory}
+              {editableCategory === 'Unknown category' ? 'Select category' : categoryDisplayName(editableCategory)}
             </Text>
             <Ionicons name="chevron-down" size={14} color={theme.muted} />
           </Pressable>
@@ -125,13 +133,16 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
             }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
             accessibilityRole="link"
-            accessibilityLabel={`View ${formatCategoryName(editableCategory)} category`}
+            accessibilityLabel={`View ${categoryDisplayName(editableCategory)} category`}
           >
             {/* The curated NAME, while navigation still uses the slug below.
                 `editableCategory` holds whatever `items.category` stores, which
-                is a slug — so this row read "mtg" on every Magic card. */}
+                is a slug — so this row read "mtg" on every Magic card. It can
+                ALSO hold a display name, straight from the picker, which is why
+                this resolves through `categoryDisplayName` rather than
+                `formatCategoryName`: the latter is not idempotent. */}
             <Text style={[styles.value, { color: theme.accent }]}>
-              {formatCategoryName(editableCategory)}
+              {categoryDisplayName(editableCategory)}
             </Text>
             <Ionicons name="chevron-forward" size={14} color={theme.accent} />
           </Pressable>
@@ -244,6 +255,16 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
         // Not on a draft: a draft has no row to PATCH yet.
         editable={isEditing && !isDraft}
         onChangeAttribute={onChangeAttribute}
+        /* The labels THIS card already renders as rows above. Without them the
+           list drew a second "Grade" four rows under the card's own — the
+           playbook's "a kind of row has ONE renderer", broken across a
+           component boundary instead of inside one.
+
+           Derived from the same `isGradingEligible` expression that labels the
+           row itself, rather than restated as a literal: two copies of a
+           predicate is how the offers badge and the offers screen ended up
+           disagreeing about what "needs you" means. */
+        reservedLabels={['Category', 'Collection', isGradingEligible ? 'Grade' : 'Condition']}
       />
 
       {/* Directly under the rows it fills in. Hidden while editing: the member
