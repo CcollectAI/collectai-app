@@ -366,11 +366,15 @@ expose agreements at all — it was a screenshot.
 
 **Two other things are visible on the same page and both matter:**
 
-- ⚠️ **The Apple Developer Program License Agreement has been updated and is
-  unaccepted.** Apple's banner: *"In order to update your existing apps and
-  submit new apps, the Account Holder must review and accept the updated
-  agreement."* This gates app submission, and Apple generally will not let you
-  start a new agreement while it is outstanding — **accept it first**.
+- ✅ **The Apple Developer Program License Agreement is ACCEPTED** — issued
+  2026-08-18, **accepted 2026-08-21**, read off developer.apple.com/account →
+  Agreements on 2026-08-26. It was outstanding when the screenshot below was
+  taken and was signed the same day; this doc recorded the banner and never
+  recorded the signature, so it carried a resolved blocker for five days and
+  sent the next reader to the wrong page. **A blocker is not closed until the
+  line that states it is edited** — see
+  `feedback_reread_docs_before_reassessing`. Nothing now gates app submission
+  from the agreements side except Paid Applications, below.
 - **Digital Services Act compliance is `In Review`** (27 countries). EU trader
   status; it gates EU distribution, not IAP.
 
