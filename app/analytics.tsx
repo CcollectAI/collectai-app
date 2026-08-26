@@ -43,7 +43,7 @@ import {
   type RawPersonalizedInsights,
 } from "@/data/personalizedInsights";
 import { ItemsEmptyState } from "@/components/items";
-import { splitPortfolioByValueSource } from '@/lib/portfolioAnalytics';
+import { splitPortfolioByValueSource, rankPositions } from '@/lib/portfolioAnalytics';
 import { formatPrice } from "@/lib/format";
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { useAsync } from "@/hooks/useAsync";
@@ -316,6 +316,33 @@ function AnalyticsScreen() {
    * model drift instead of profit.
    */
   const valueSplit = useMemo(() => splitPortfolioByValueSource(items), [items]);
+
+  /**
+   * POSITIONS — the question the Items tab cannot answer.
+   *
+   * The deleted "Holdings" card listed name / category / value, which is the
+   * Items tab with fewer columns. What an investment screen owes a member is
+   * WHICH position carries the gain or the loss, and that is a different sort
+   * order and a different set of fields.
+   *
+   * `hasPurchasePrice` is the gate, not a decoration. The server falls back to
+   * the earliest PREDICTION as cost basis when an item has no purchase price,
+   * so `unrealizedPL` on those rows measures how far the MODEL moved — it
+   * arrives as the same number, in the same field, looking identical.
+   * `portfolioAnalyticsStore` states the rule: "anything summing P/L into a
+   * headline must exclude these, or it reports a number the member never
+   * earned". Ranking is a headline, so they are excluded rather than mixed in
+   * and quietly mislabelled as profit.
+   *
+   * The excluded COUNT is kept and shown. On prod today that is 101 of 108
+   * items, and hiding it would make seven positions look like the whole
+   * portfolio — the "aggregate over the wrong population" error.
+   */
+  // Ranking lives in `src/lib/portfolioAnalytics.ts` beside
+  // `splitPortfolioByValueSource`, and is unit-tested there. It decides which
+  // numbers a member is shown as PROFIT — see `rankPositions` for the two
+  // rules (hasPurchasePrice gates it; sort by absolute move so losses surface).
+  const positions = useMemo(() => rankPositions(items), [items]);
 
   /**
    * Split the personalized-insights notes into the two things they actually
@@ -716,6 +743,80 @@ function AnalyticsScreen() {
             (playbook, 2026-08-14: "Two cards for one question, one of which
             could never answer it.") */}
 
+        {/* POSITIONS (Pro+) — what replaced "Holdings".
+            Holdings re-rendered the Items tab. This answers the question the
+            Items tab cannot: which position is carrying the move. Different
+            sort order (absolute P/L, not value), different fields (cost basis,
+            P/L, the valuation band), and it only ever ranks items whose cost
+            basis is real. */}
+        {limits.advanced_analytics && items.length > 0 && (
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.cardHeader}>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Positions</Text>
+              {positions.counted > 0 ? (
+                <Text style={[styles.cardSubtitle, { color: colors.muted }]}>
+                  by unrealised P/L
+                </Text>
+              ) : null}
+            </View>
+
+            {positions.ranked.map((it, idx) => {
+              const pl = it.unrealizedPL ?? 0;
+              const basis = it.costBasis ?? 0;
+              const up = pl >= 0;
+              const pct = basis > 0 ? pl / basis : 0;
+              return (
+                <View
+                  key={it.id}
+                  style={[styles.posRow, { borderTopColor: colors.border }, idx === 0 && styles.posRowFirst]}
+                >
+                  <View style={styles.posLeft}>
+                    <Text style={[styles.posName, { color: colors.text }]} numberOfLines={1}>{it.name}</Text>
+                    {/* Cost -> value, because a P/L figure alone is unreadable
+                        without what it was measured against. */}
+                    <Text style={[styles.posBasis, { color: colors.muted }]} numberOfLines={1}>
+                      {formatPrice(basis, settings.currency ?? 'EUR')}
+                      {'  →  '}
+                      {formatPrice(it.currentValue, settings.currency ?? 'EUR')}
+                    </Text>
+                    {/* The BAND. A point estimate and a range support opposite
+                        decisions, and this is the only place the app shows it
+                        on more than one item at a time. Omitted rather than
+                        faked when the model produced none. */}
+                    {it.q10 != null && it.q90 != null ? (
+                      <Text style={[styles.posBand, { color: colors.muted }]} numberOfLines={1}>
+                        {`range ${formatPrice(it.q10, settings.currency ?? 'EUR')}–${formatPrice(it.q90, settings.currency ?? 'EUR')}`}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View style={styles.posRight}>
+                    <Text style={[styles.posPl, { color: up ? colors.success : colors.danger }]}>
+                      {`${up ? '+' : ''}${formatPrice(pl, settings.currency ?? 'EUR')}`}
+                    </Text>
+                    <Text style={[styles.posPlPct, { color: up ? colors.success : colors.danger }]}>
+                      {formatPct(pct)}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+
+            {/* The population this ranking is NOT about. Stating it is the
+                whole point: without it, seven positions read as the entire
+                collection. It also names the fix, which now exists — the
+                "What you paid" field on an item's own screen. */}
+            {positions.missingBasis > 0 ? (
+              <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
+                <Text style={[styles.footNote, { color: colors.muted }]}>
+                  {positions.counted === 0
+                    ? `No purchase prices on file yet, so there is nothing to rank. Add what you paid on an item's screen and it will appear here.`
+                    : `Ranking the ${positions.counted} ${positions.counted === 1 ? 'item' : 'items'} with a purchase price. ${positions.missingBasis} more have none, so their profit would only measure how far our valuation moved.`}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        )}
+
         {/* Collection Completeness (Pro+) */}
         {limits.advanced_analytics && activeCategories.length > 0 && (
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -1107,6 +1208,22 @@ const styles = StyleSheet.create({
   },
 
   // Items
+
+  posRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingVertical: 12,
+    borderTopWidth: 1,
+  },
+  posRowFirst: { borderTopWidth: 0 },
+  posLeft: { flex: 1, marginRight: 12 },
+  posName: { fontSize: text.md, fontWeight: fontWeight.semibold },
+  posBasis: { fontSize: text.sm, lineHeight: 17, marginTop: 2 },
+  posBand: { fontSize: text.sm, lineHeight: 17, marginTop: 1 },
+  posRight: { alignItems: "flex-end" },
+  posPl: { fontSize: text.md, fontWeight: fontWeight.bold },
+  posPlPct: { fontSize: text.sm, lineHeight: 17, fontWeight: fontWeight.semibold, marginTop: 2 },
 
   // Completeness
   completenessRow: {

@@ -153,3 +153,57 @@ export function sortItemsByPL(items: ItemPL[]): ItemPL[] {
     (a, b) => b.unrealizedPLPercent - a.unrealizedPLPercent
   );
 }
+
+/** One ranked position plus the population it was ranked out of. */
+export type RankedPositions<T> = {
+  ranked: T[];
+  /** Items whose cost basis is REAL — the population the ranking describes. */
+  counted: number;
+  /** Items excluded for having no real cost basis. Must be shown, not hidden. */
+  missingBasis: number;
+};
+
+/**
+ * Rank positions by unrealised P/L for the analytics "Positions" card.
+ *
+ * Extracted from the screen so it can be tested: this function decides which
+ * numbers a member is shown as PROFIT, and that decision is exactly the kind
+ * that should not live untested inside a `useMemo`.
+ *
+ * Two rules it enforces, both of which the screen would otherwise get wrong:
+ *
+ * 1. **`hasPurchasePrice` gates the ranking.** The server falls back to the
+ *    earliest PREDICTION as cost basis when an item has no purchase price, so
+ *    `unrealizedPL` on those rows measures how far the MODEL moved. It arrives
+ *    as the same number, in the same field, and looks identical. Ranking is a
+ *    headline, and `splitPortfolioByValueSource`'s own note applies: summing
+ *    these "reports money the member never spent".
+ * 2. **Sort by ABSOLUTE move, not by gain.** Descending gain buries every loss
+ *    at the bottom, and a loss is the position a member most needs to act on.
+ *
+ * `costBasis > 0` is also required — a zero basis makes the percentage the
+ * caller renders a divide-by-zero.
+ */
+export function rankPositions<
+  T extends {
+    hasPurchasePrice?: boolean;
+    costBasis?: number;
+    unrealizedPL?: number;
+  },
+>(items: T[], limit = 6): RankedPositions<T> {
+  const withBasis = items.filter(
+    (i) =>
+      i.hasPurchasePrice === true &&
+      typeof i.costBasis === "number" &&
+      i.costBasis > 0 &&
+      typeof i.unrealizedPL === "number",
+  );
+  const ranked = [...withBasis].sort(
+    (a, b) => Math.abs(b.unrealizedPL ?? 0) - Math.abs(a.unrealizedPL ?? 0),
+  );
+  return {
+    ranked: ranked.slice(0, limit),
+    counted: withBasis.length,
+    missingBasis: items.length - withBasis.length,
+  };
+}

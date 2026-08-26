@@ -121,6 +121,13 @@ export interface RawPortfolioItem {
   cost_basis?: number;
   realized_pl?: number;
   unrealized_pl?: number;
+  /** The valuation's uncertainty band. `/portfolio/items` has always returned
+   *  these (COALESCE(l.q10,0) / COALESCE(l.q90,0) off the latest prediction)
+   *  and nothing on the client read them until 2026-08-26. A point estimate
+   *  and a range are different trade decisions: "worth EUR 500" and "worth
+   *  EUR 200-1,200" support opposite ones. 0 means no band, not a EUR 0 floor. */
+  q10?: number;
+  q90?: number;
   /** False => unrealized_pl is model drift, not profit. */
   has_purchase_price?: boolean;
   /** Which link of the value chain produced `current_value` (2026-08-19).

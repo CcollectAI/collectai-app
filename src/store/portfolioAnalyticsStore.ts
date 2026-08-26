@@ -240,6 +240,10 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
         typeof it.unrealized_pl === 'number'
           ? it.unrealized_pl
           : undefined,
+      // The server COALESCEs a missing band to 0, so 0 has to mean "no band"
+      // here or every unpriced item would claim a EUR 0 floor.
+      q10: typeof it.q10 === 'number' && it.q10 > 0 ? it.q10 : undefined,
+      q90: typeof it.q90 === 'number' && it.q90 > 0 ? it.q90 : undefined,
       // FALSE means `unrealizedPL` is model drift, not profit — the server
       // falls back to the earliest prediction as cost basis when no purchase
       // price is on file. Anything summing P/L into a headline must exclude

@@ -63,6 +63,11 @@ export interface PortfolioItemSnapshot {
   /** Unrealized mark-to-market P/L on remaining position */
   unrealizedPL?: number;
 
+  /** Valuation band around `currentValue`. Undefined when the model produced
+   *  none — treat 0 as "no band", never as a EUR 0 bound. */
+  q10?: number;
+  q90?: number;
+
   /** 1D percentage change in value, e.g. 0.05 = +5% */
   change1dPct?: number;
 
