@@ -736,6 +736,71 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
     except Exception as e:
         bug("info", "pricing coverage canary could not run", str(e)[:200])
 
+    # --- sold comps the valuation queue cannot see (2026-08-26) ---
+    # The coverage canary above measures the OUTPUT (can a catalogue row reach
+    # a price). This measures the INPUT, and the two failed to agree for eleven
+    # days: lorcana had 5,420 sold comps, ZERO rows in price_predictions ever,
+    # and the canary reported it as "a keying or crosswalk fault". It was not.
+    #
+    # valuation_worker.run_once() filters its queue with `price IS NOT NULL`
+    # (mirroring the partial index idx_market_hits_valuation_queue) while the
+    # value it actually uses is `COALESCE(price_eur, price)`. `price` is the
+    # ORIGINAL-currency price and `price_eur` the EUR normalisation, so a
+    # writer that fills only price_eur produces rows that are perfectly usable
+    # and permanently invisible — processed=false forever, no error anywhere.
+    # `scripts/load_lorcana_direct.py` was such a writer.
+    #
+    # This is the enumerator for that class, not a lorcana check: it asks the
+    # queue's own predicate of the whole table and reports whatever it finds.
+    # Fixing the reader instead would de-align the partial index and put a
+    # 3M-row seq scan on the 30s pooler cap (see the query's own comment), and
+    # docs/DATA_SCALING_PLAN.md §6 rule 1 is "default state = refuse to add an
+    # index" — so the gate lives here and the fix belongs at the writer, which
+    # is what §10 "Writer bugs hide in INSERT column lists" already prescribes.
+    with guard("valuation queue visibility"):
+        blind = await c.fetch(
+            """
+            SELECT split_part(item_ref, ':', 1) AS category,
+                   provider,
+                   count(*) AS rows,
+                   min(seen_at) AS oldest
+              FROM public.market_hits
+             WHERE processed = false
+               AND seen_at > now() - interval '90 days'
+               AND item_ref IS NOT NULL
+               AND (is_listing IS NOT TRUE)
+               AND price IS NULL
+               AND price_eur IS NOT NULL
+             GROUP BY 1, 2
+             ORDER BY 3 DESC
+             LIMIT 10
+            """)
+        if blind:
+            total = sum(r["rows"] for r in blind)
+            named = ", ".join(
+                "%s/%s %d rows since %s"
+                % (r["category"], r["provider"], r["rows"],
+                   r["oldest"].date().isoformat() if r["oldest"] else "?")
+                for r in blind)
+            bug("high",
+                "%d sold comps are invisible to valuation (price NULL, price_eur set)" % total,
+                "These rows carry a usable EUR price and will never be processed: the queue "
+                "filters on `price IS NOT NULL` while it values on COALESCE(price_eur, price). "
+                "They are not errors and nothing logs them — the symptom is a category whose "
+                "coverage stays low while comps keep arriving, which the coverage canary "
+                "misreports as a crosswalk fault. %s" % named,
+                src_link("server/workers/valuation_worker.py"),
+                "SELECT split_part(item_ref,':',1), provider, count(*) FROM market_hits "
+                "WHERE processed=false AND NOT is_listing AND price IS NULL "
+                "AND price_eur IS NOT NULL GROUP BY 1,2;",
+                "Add `price` to that writer's INSERT column list and backfill "
+                "price = price_eur where currency = 'EUR'")
+        else:
+            healthy.append({
+                "check": "valuation queue visibility",
+                "detail": "0 sold comps carry a price_eur the queue's `price IS NOT NULL` "
+                          "filter would drop"})
+
     # --- column drift: reader and writer on different columns ---
     # Two-phase by necessity: the code half needs src/ + app/, which are never
     # deployed here, so a refs blob is generated on the dev box
@@ -749,17 +814,40 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
             healthy.append({"check": "column drift", "detail": "skipped — no refs blob shipped"})
         else:
             age_d = (datetime.now(timezone.utc).timestamp() - refs.stat().st_mtime) / 86400
+            # --json, not the human summary line. Parsing "N HIGH" out of the
+            # digest told an operator that ONE mismatch existed and never
+            # WHICH — the same defect this doc already fixed for tcgcsv_worker
+            # ("a failing worker must say WHY"). It paged daily from 2026-08-22
+            # and finding out cost an SSH plus a re-run of the audit; the
+            # answer, when finally looked up, was that the finding was false.
             r = subprocess.run(
                 ["/opt/collectors/.venv/bin/python",
-                 str(SERVER_ROOT / "scripts" / "audit_column_drift.py"), "--refs", str(refs)],
+                 str(SERVER_ROOT / "scripts" / "audit_column_drift.py"),
+                 "--refs", str(refs), "--json"],
                 capture_output=True, timeout=600, cwd=str(SERVER_ROOT))
-            out = r.stdout.decode()
-            m = re.search(r"(\d+) finding\(s\): (\d+) HIGH", out)
-            n_high = int(m.group(2)) if m else 0
+            # audit_column_drift.py is advisory and ALWAYS exits 0, so a
+            # non-zero code means it died. Without this, a crash produces empty
+            # stdout -> {} -> [] -> "0 findings" in what_went_well: a dead
+            # audit reading as a clean one, which is the exact shape this file
+            # exists to catch. Raise so the enclosing except reports it.
+            if r.returncode != 0:
+                raise RuntimeError("audit exited %d: %s"
+                                   % (r.returncode, r.stderr.decode()[-200:]))
+            drift = json.loads(r.stdout.decode() or "{}").get("findings") or []
+            # DEAD_PAIR is deliberately not counted: both columns unwritten is
+            # not drift, and audit_column_drift.py explains why.
+            highs = [f for f in drift if f.get("confidence") == "HIGH"]
+            n_high = len(highs)
             if n_high:
+                named = "; ".join(
+                    "%s: reads %s (%d non-null) / writes %s (%d non-null)"
+                    % (f["table"], f["read_only_column"], f["read_only_nonnull"],
+                       f["write_only_column"], f["write_only_nonnull"])
+                    for f in highs[:3])
                 bug("high", "column drift: %d reader/writer column mismatch(es)" % n_high,
                     "A column the code READS is entirely NULL while a similarly-named one is "
-                    "written — the feature is starved of input and returns empty without erroring.",
+                    "written — the feature is starved of input and returns empty without "
+                    "erroring. %s" % named,
                     src_link("server/scripts/audit_column_drift.py"),
                     "python3 scripts/audit_column_drift.py --refs scripts/coldrift_refs.json",
                     "Repoint the reader to the column the writer actually fills")
@@ -1060,7 +1148,7 @@ def collect_supabase_logs(hours: int) -> dict:
     catalog-ingest constraint violations per DAY that were invisible everywhere
     else.
     """
-    import subprocess, urllib.parse
+    import subprocess, time, urllib.parse
     from datetime import timedelta
     out: dict = {"available": False}
     tok = _sb_token()
@@ -1096,25 +1184,40 @@ def collect_supabase_logs(hours: int) -> dict:
         url = ("https://api.supabase.com/v1/projects/%s/analytics/endpoints/logs.all"
                "?sql=%s&iso_timestamp_start=%s&iso_timestamp_end=%s"
                % (PROJECT_REF, urllib.parse.quote(sql), start, end))
-        try:
-            r = subprocess.run(["curl", "-s", "--max-time", "45",
-                                "-H", "Authorization: Bearer %s" % tok, url],
-                               capture_output=True, text=True, timeout=60)
-            if r.returncode != 0:
-                failed.append("%s: curl exit %d" % (label, r.returncode))
-                return None
-            payload = json.loads(r.stdout or "{}") or {}
-            if not isinstance(payload, dict) or "result" not in payload:
-                # Management API errors arrive as 200-with-a-body or 4xx JSON;
-                # either way there is no `result` key and we learned nothing.
-                detail = (payload.get("message") or payload.get("error")
-                          or (r.stdout or "")[:120] or "empty response")
-                failed.append("%s: %s" % (label, str(detail)[:160]))
-                return None
-            return payload.get("result") or []
-        except Exception as e:
-            failed.append("%s: %r" % (label, e))
-            return None
+        # RETRY. The `edge_logs` source answers intermittently: measured
+        # 2026-08-26, the same query with the same PAT alternated OK/FAIL
+        # inside one minute (2 of 10 attempts succeeded), while `postgres_logs`
+        # answered on every attempt in the same runs. One shot per sub-query
+        # therefore blinded the API half of the report on roughly half of all
+        # days — and, worse, took the "API returning 5xx" HIGH with it: on
+        # 08-25 and 08-26 that finding vanished from the report while a
+        # successful manual query showed 16 5xx in the same 24h window. A
+        # finding that disappears because we could not ask is the exact defect
+        # the [] -> None change was made to prevent, one level up.
+        last = "no attempt"
+        for attempt in range(3):
+            if attempt:
+                time.sleep(2 * attempt)   # 2s, 4s — flaps clear in seconds
+            try:
+                r = subprocess.run(["curl", "-s", "--max-time", "45",
+                                    "-H", "Authorization: Bearer %s" % tok, url],
+                                   capture_output=True, text=True, timeout=60)
+                if r.returncode != 0:
+                    last = "curl exit %d" % r.returncode
+                    continue
+                payload = json.loads(r.stdout or "{}") or {}
+                if not isinstance(payload, dict) or "result" not in payload:
+                    # Management API errors arrive as 200-with-a-body or 4xx
+                    # JSON; either way there is no `result` key and we learned
+                    # nothing.
+                    last = str(payload.get("message") or payload.get("error")
+                               or (r.stdout or "")[:120] or "empty response")[:160]
+                    continue
+                return payload.get("result") or []
+            except Exception as e:
+                last = repr(e)
+        failed.append("%s: %s (3 attempts)" % (label, last))
+        return None
 
     out["window"] = {"start": start, "end": end}
 
@@ -1266,17 +1369,57 @@ async def main() -> int:
     # like a day with nothing to see — which is how 08-04/05/06 passed as green
     # while catalog ingest was losing every attribute-bearing row.
     if sblogs.get("unavailable"):
+        # Do NOT send the operator to mint a PAT unless the PAT is actually the
+        # problem. `available` is True exactly when postgres_logs answered, and
+        # every sub-query uses the SAME token in the SAME run — so a partial
+        # failure alongside available=True is proof the credential is fine and
+        # the source flapped. Saying "refresh the PAT" there is a wrong
+        # diagnostic printed as fact, which this repo has already paid for
+        # (learning_a_wrong_diagnostic_is_believed_for_sessions): on 2026-08-26
+        # the PAT was a valid sbp_ token, postgres_logs answered, and only
+        # edge_logs was flapping.
+        creds_ok = bool(sblogs.get("available"))
         bugs.append({"severity": "medium",
                      "title": "watchdog could not read part of the Supabase logs",
                      "detail": ("This report is INCOMPLETE — the counts below are missing, "
-                                "not zero: %s" % "; ".join(sblogs["unavailable"])[:400]),
+                                "not zero: %s.%s"
+                                % ("; ".join(sblogs["unavailable"])[:400],
+                                   (" The PAT is NOT the cause: postgres_logs answered with the "
+                                    "same token in this run, so this is the log source flapping "
+                                    "upstream." if creds_ok else
+                                    " No sub-query answered, so the credential is a real "
+                                    "suspect."))),
                      "link": (sblogs.get("links") or {}).get("postgres_logs", ""),
-                     "verify": ("PAT: head -c8 ~/.supabase/access-token (must start sbp_); "
-                                "mint at https://supabase.com/dashboard/account/tokens"),
-                     "suggested_fix": "Refresh the Management API PAT, then re-run with --hours 24 --summary"})
-    if ((sblogs.get("totals") or {}).get("api_5xx") or 0) >= 10:
+                     "verify": ("Re-run in a minute; if only edge_logs/auth_logs fail it is "
+                                "upstream. Credential check: head -c4 ~/.supabase/access-token "
+                                "(must be sbp_)"),
+                     "suggested_fix": (
+                         "Upstream flap — re-run `scripts/watchdog.py --hours 24 --summary`; "
+                         "note that api_5xx / api_4xx are UNKNOWN this run, not zero"
+                         if creds_ok else
+                         "Refresh the Management API PAT at "
+                         "https://supabase.com/dashboard/account/tokens, then re-run")})
+    # `or 0` on a value that is legitimately None converts UNKNOWN into "fine".
+    # The 2026-08-12 change made the TOTAL honest — `api_5xx` correctly read
+    # None on a blind run — and this line then evaluated None to 0 and dropped
+    # the finding entirely. On 08-25 and 08-26 "API returning 5xx" was absent
+    # from the report while the same window really held 16. A missing total is
+    # visible in the JSON; a missing BUG looks exactly like a healthy day.
+    # Three states, not two.
+    _api_5xx = (sblogs.get("totals") or {}).get("api_5xx")
+    if _api_5xx is None:
+        if sblogs.get("unavailable"):
+            bugs.append({"severity": "medium", "title": "API 5xx rate is UNKNOWN this run",
+                         "detail": ("The edge_logs query did not answer, so this report cannot "
+                                    "say whether the API is erroring. This is not a green "
+                                    "result — the same window has previously held 16 5xx while "
+                                    "this finding was silently absent."),
+                         "link": (sblogs.get("links") or {}).get("api_logs", ""),
+                         "verify": "Supabase > Logs > API, or re-run the watchdog",
+                         "suggested_fix": "Re-run; edge_logs answers intermittently"})
+    elif _api_5xx >= 10:
         bugs.append({"severity": "high", "title": "API returning 5xx",
-                     "detail": "%d 5xx responses in %dh" % (sblogs["totals"]["api_5xx"], args.hours),
+                     "detail": "%d 5xx responses in %dh" % (_api_5xx, args.hours),
                      "link": (sblogs.get("links") or {}).get("api_logs", ""),
                      "verify": "Supabase > Logs > API", "suggested_fix": ""})
 

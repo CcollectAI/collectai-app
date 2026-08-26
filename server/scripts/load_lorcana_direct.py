@@ -114,13 +114,34 @@ async def main() -> int:
                 -- excludes is_listing, so a price guide filed as a listing is
                 -- collected and then thrown away, which is exactly why lorcana
                 -- had 17k eBay rows and zero predictions.
+                --
+                -- BOTH price columns, and they are not one column written
+                -- twice. `price` is the price in its ORIGINAL currency and
+                -- `price_eur` the EUR normalisation — marketplace_agent.py:887
+                -- binds raw_price / raw_currency / price_eur in exactly that
+                -- order, and 1,958 USD rows in the last 30 days really do have
+                -- price <> price_eur. They coincide here only because the
+                -- Lorcast mapper already converts, so `currency` is always EUR.
+                --
+                -- Filling ONLY price_eur is what the 2026-08-15 run did, and it
+                -- lost all 5,420 rows: valuation_worker's queue filter is
+                -- `price IS NOT NULL` (mirroring the partial index
+                -- idx_market_hits_valuation_queue) while its SELECT list is
+                -- `COALESCE(price_eur, price)`. A row with only price_eur is
+                -- perfectly usable and permanently invisible — lorcana sat at
+                -- processed=false with ZERO price_predictions for 11 days,
+                -- which the watchdog reported as a crosswalk fault. Same shape
+                -- as the is_listing bug this comment already warns about, one
+                -- column to the left. docs/DATA_SCALING_PLAN.md §10 "Writer
+                -- bugs hide in INSERT column lists" is the standing rule.
                 INSERT INTO public.market_hits
-                    (provider, listing_id, title, price_eur, currency, condition,
-                     item_ref, normalized_key, category, seen_at, is_listing)
-                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, now(), false)
+                    (provider, listing_id, title, price, price_eur, currency,
+                     condition, item_ref, normalized_key, category, seen_at,
+                     is_listing)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, now(), false)
                 ON CONFLICT DO NOTHING
                 """,
-                [(h.provider, h.listing_id, h.title, h.price, h.currency,
+                [(h.provider, h.listing_id, h.title, h.price, h.price, h.currency,
                   h.condition, f"{CATEGORY}:{h.normalized_key}", h.normalized_key,
                   CATEGORY) for h in chunk],
             )

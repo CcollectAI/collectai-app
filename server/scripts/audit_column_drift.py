@@ -225,6 +225,31 @@ async def main() -> int:
                     wo_n = await conn.fetchval('SELECT COUNT(*) FROM public."%s" WHERE "%s" IS NOT NULL' % (table, best))
                 except Exception:
                     continue
+                # DRIFT means the writer is filling the OTHER column. That
+                # requires wo_n > 0, and until 2026-08-26 this line asked only
+                # `ro_n == 0`, so a pair where NEITHER column is written
+                # reported as HIGH — and the watchdog rendered it with the
+                # sentence "a column the code READS is entirely NULL while a
+                # similarly-named one IS WRITTEN", which was simply false for
+                # that pair.
+                #
+                # The instance: market_hits.seller_rating (read) /
+                # seller_score (written), 0 and 0 non-null out of 3,073,177
+                # rows. No INSERT in server/ lists either column; the "reader"
+                # is a key in Firecrawl's extraction JSON schema and the
+                # "writer" is a field on a Pydantic RESPONSE model. Nothing was
+                # drifting, nothing was starved, and it paged HIGH every day
+                # from 2026-08-22 — the false-alarm pattern docs/WATCHDOG.md
+                # is repeatedly warned about.
+                #
+                # Both-dead is still worth saying once, so it is reported —
+                # just not as drift, and not at HIGH.
+                if ro_n == 0 and wo_n > 0:
+                    confidence = "HIGH"      # starved reader, live writer
+                elif ro_n == 0 and wo_n == 0:
+                    confidence = "DEAD_PAIR"  # neither side is written: not drift
+                else:
+                    confidence = "LOW"
                 findings.append({
                     "table": table, "rows": total,
                     "read_only_column": ro, "read_only_nonnull": ro_n,
@@ -232,7 +257,7 @@ async def main() -> int:
                     "similarity": round(score, 2),
                     "readers": sorted(reads.get(ro, []))[:3],
                     "writers": sorted(writes.get(best, []))[:3],
-                    "confidence": "HIGH" if ro_n == 0 else "LOW",
+                    "confidence": confidence,
                 })
     finally:
         await conn.close()
@@ -255,8 +280,10 @@ async def main() -> int:
             for w in f["writers"]:
                 print("        writer: %s" % w)
         hi = sum(1 for f in findings if f["confidence"] == "HIGH")
-        print("\n  %d finding(s): %d HIGH (read column is entirely NULL), %d LOW.\n"
-              % (len(findings), hi, len(findings) - hi))
+        dead = sum(1 for f in findings if f["confidence"] == "DEAD_PAIR")
+        print("\n  %d finding(s): %d HIGH (read column NULL, write column "
+              "populated), %d DEAD_PAIR (neither column written - not drift), "
+              "%d LOW.\n" % (len(findings), hi, dead, len(findings) - hi - dead))
     return 0
 
 

@@ -227,6 +227,18 @@ Original bucket `collectai-datalake` was renamed to `collectai-warehouse-prod-eu
 
 After partitioning, a `null_category_rate` audit alarm fired — 58,995 market_hits rows had NULL category in the last 7 days, all with recoverable `category:` prefix in `item_ref`. Root cause: `persist_comps_to_db` accepted `category` as a kwarg but never included it in the INSERT column list. Adding to the list + backfilling fixed it, but the broader lesson is **every kwarg a writer accepts should have a CI test asserting the resulting row has that column populated**. The R50l essay's "post-write assertion at the writer" rule would have caught this on day 1.
 
+#### It happened again, same table, different column (2026-08-26)
+
+`scripts/load_lorcana_direct.py` listed `price_eur` in its INSERT and not `price`. Unlike `category` there was **no alarm at all**, because nothing downstream errors on it: `valuation_worker` filters its queue with `price IS NOT NULL` (mirroring the partial index `idx_market_hits_valuation_queue`) while it values on `COALESCE(price_eur, price)`. All 5,420 rows were usable, `processed = false`, and structurally unreachable — **zero `price_predictions` for lorcana, ever**, for eleven days.
+
+Three things this adds to the rule above:
+
+1. **A missing column is worse when it is a column the QUEUE filters on.** NULL `category` produced rows that were merely unlabelled. NULL `price` produced rows that no longer exist as far as every reader is concerned. Check the writer's column list against the *predicates* downstream, not just against the schema.
+2. **`price` and `price_eur` are not the same column twice.** `price` is the original-currency amount, `price_eur` the normalisation; they agree on 3,065,233 of 3,067,191 recent rows only because `currency` is almost always EUR, and the 1,958 that differ are all USD. A backfill must therefore be scoped `WHERE currency = 'EUR'` — otherwise it is a currency bug wearing a fix's clothes.
+3. **The post-write assertion belongs IN the backfill too.** `20260826_backfill_lorcast_price_from_price_eur.sql` re-counts the offending shape after its own UPDATE and `RAISE EXCEPTION`s if any row survives, so a backfill that silently no-ops cannot report success. `CREATE ... IF NOT EXISTS`-style idempotence is not the same as verified idempotence.
+
+Since no alarm was possible, the standing check is now the watchdog's **"valuation queue visibility"**, which asks the queue's own predicate of the whole table daily. See `docs/WATCHDOG.md`, "An orphaned comp is not proof of a crosswalk fault".
+
 ### Within-batch dedup is also required (appended 2026-05-02)
 
 Follow-up to the partitioned-table ON CONFLICT issue above. The

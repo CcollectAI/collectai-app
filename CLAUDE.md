@@ -2,6 +2,114 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-26
 
+## The queue filtered on a column the query did not value on (2026-08-26)
+
+Worked today's watchdog: 2 HIGH, 2 MEDIUM, 1 INFO. **One HIGH was real with the
+wrong cause named, one HIGH was false, one MEDIUM carried a wrong remedy and was
+hiding a third HIGH, and one MEDIUM was correct.** Details in
+`docs/WATCHDOG.md`; the transferable part is here.
+
+`valuation_worker.run_once()` selects `COALESCE(price_eur, price)` and filters
+`WHERE price IS NOT NULL`. **The predicate and the projection are different
+questions**, and `market_hits` really does hold two different numbers — `price`
+in the original currency, `price_eur` normalised, differing on 1,958 recent USD
+rows. So a writer that fills only `price_eur` produces rows that are usable by
+every line of the worker except the one that fetches them.
+
+`scripts/load_lorcana_direct.py` was that writer. Consequence, measured:
+
+| | |
+|---|---|
+| lorcast sold comps | 5,420, written in a 2-second window on 2026-08-15 |
+| `processed = true` among them | **0**, for 11 days |
+| `price_predictions` rows for lorcana, ever | **0** |
+| what the watchdog said | "coverage collapsed … a keying or crosswalk fault" |
+
+The crosswalk was intact. **Zero predictions against thousands of comps is not
+a matching failure — a matching failure produces predictions that are wrong or
+missing for *some* items, not an empty table.** That distinction is what turned
+a five-day-old wrong diagnosis around, and it came from asking for the count
+rather than reading the finding.
+
+The class was enumerated with the queue's own predicate before anything was
+edited: **exactly 5,420 rows, all lorcast, out of 2,796,800 sold rows.** No
+judgment triage, and the number bounded the fix.
+
+**Fixed at the writer, not the reader**, on purpose: relaxing the filter to
+`COALESCE(...) IS NOT NULL` de-aligns the partial index whose predicate mirrors
+it, and that index exists because the seq-scan version hit the pooler's 30s cap
+and blew the bake cycle. `DATA_SCALING_PLAN.md` §6 rule 1 refuses new indexes by
+default and §10 already prescribes this exact remedy — *"Writer bugs hide in
+INSERT column lists … add to the list + backfill"* — for the identical defect on
+`category` in the same table. **The doc had the answer before the investigation
+did.**
+
+Three defences shipped, because the fix alone repeats in six months:
+
+1. `price` added to the INSERT column list, with the comment saying why the two
+   columns are not one column twice.
+2. `20260826_backfill_lorcast_price_from_price_eur.sql`, scoped
+   `currency = 'EUR'` so it is a restatement not a currency error, and it
+   **RAISEs if any row is left behind** — a backfill that no-ops must not
+   report success. Applied: 5,420 rows, 0 stragglers, queue now sees lorcana.
+3. A daily watchdog check, **"valuation queue visibility"**, that asks the
+   queue's predicate of the whole table. The coverage canary measures the
+   OUTPUT of pricing; nothing measured the INPUT, so the two disagreed for
+   eleven days with nothing to reconcile them. Proved failing on the real
+   defect *before* the backfill (`high`, naming lorcana/lorcast/5420/08-15),
+   green after.
+
+### A blind sub-query does not remove a number, it removes a FINDING
+
+The `medium` "could not read part of the Supabase logs" told Merle to refresh
+the PAT. The PAT was fine — a valid `sbp_` token that `postgres_logs` answered
+with **in the same run**. Only `edge_logs` was failing, *intermittently*: 2 of
+10 identical requests succeeded inside a minute, and 4 more failed at 25s
+spacing after a 60s cooldown, so not rate limiting either.
+
+The teeth: `api_status_codes` is the input to **"API returning 5xx"**. On 08-25
+and 08-26 that HIGH silently vanished, while the same window really held **16
+5xx**, over the `>= 10` threshold.
+
+The 2026-08-12 `[]`-vs-`None` fix worked exactly as designed — the total read
+`None` — and `((totals or {}).get("api_5xx") or 0) >= 10` evaluated it to
+False. **`or 0` turns UNKNOWN into "fine".** Fixing the number is not fixing
+the alert built on the number; a missing total is visible in the JSON, a
+missing *bug* looks like a healthy day. The finding is now three-state (high /
+`UNKNOWN this run` medium / silent), and sub-queries retry 3× with backoff.
+
+Both halves were verified live: one run retried into success and the 5xx HIGH
+reappeared with `16 in 24h`; a later run had **all 3 attempts fail** and
+correctly reported *"API 5xx rate is UNKNOWN this run"* rather than nothing.
+The blind finding also now exonerates the credential whenever another query on
+the same token answered.
+
+### The false HIGH: a grade that never asked about the writer
+
+"column drift: 1 reader/writer column mismatch" paged daily since 08-22.
+`market_hits.seller_rating` and `seller_score` are **both** 0 non-null out of
+3,073,177 rows; **no INSERT in `server/` lists either one**. The "reader" is a
+key in Firecrawl's extraction JSON schema, the "writer" a field on a Pydantic
+*response* model — neither is SQL.
+
+`audit_column_drift.py` graded `HIGH if ro_n == 0` and never looked at `wo_n`,
+under a headline asserting the sibling *was* written. Drift needs a live writer
+by definition. HIGH now requires `wo_n > 0`; both-dead is a separate
+`DEAD_PAIR`. And the alert **never named the columns** — the "a failing worker
+must say WHY" rule, unapplied here — so it now reads `--json` and names them.
+Both arms mutation-tested against prod: the real pair drops to DEAD_PAIR, and a
+synthetic starved-reader/live-writer pair still fires HIGH.
+
+⚠️ **My first arity checker was itself wrong** — its regex stopped at the `)`
+inside `now()` and reported a column/value mismatch that did not exist. Second
+time this month a checker written during an audit lied. Mutation-test the
+checker, not just the code.
+
+⚠️ **The deployed audit is a separate artefact from the deployed watchdog.**
+The first patched run still emitted the false HIGH because `watchdog.py`
+shells out to `/opt/collectors/server/scripts/audit_column_drift.py`, which was
+still the old file. Three-way code split, again.
+
 ## A parity gate is blind to the key one side never declared (2026-08-26)
 
 Asked to check whether the subscription page's claims are true. Every NUMBER

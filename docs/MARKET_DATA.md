@@ -101,6 +101,24 @@ has 403'd us since 2026-08-01, `market_hits` retention is 1 day, the rows aged
 out and nothing replaced them, and the skip list kept the scraper away. They are
 now removed from SKIP_CATEGORIES so the main scrape covers them.
 
+> ⚠️ **Correction (2026-08-26): `market_hits` retention is one MONTH, not one
+> day.** Read off the box rather than remembered:
+> `/opt/collectors/.env` sets `PARTITION_RETENTION_MONTHS_MARKET_HITS=1`
+> (global default 2), `PARTITION_DROP_ENABLED=true`, and the parent has exactly
+> three children — `market_hits_default`, `y2026m08`, `y2026m09`. The sentence
+> above is the only place that says "1 day" and it is wrong; the chain it
+> describes (tcgcsv 403 → rows age out → nothing replaces them) is still
+> correct, just on a monthly clock.
+>
+> This matters for anything loaded by hand. `partition_drop_worker` drops a
+> partition once its month is **strictly older** than `current_month −
+> retention`, so `y2026m08` survives September and goes at the start of
+> **2026-10**. The 5,420 Lorcast comps loaded on 2026-08-15 therefore have two
+> deadlines: they leave the watchdog's 30-day sold-comp window on **2026-09-14**
+> and leave the database entirely around **2026-10-01**. Nothing is scheduled
+> to replace them — see `docs/WATCHDOG.md`, "An orphaned comp is not proof of a
+> crosswalk fault".
+
 mtg/pokemon/yugioh stay skipped — scryfall/cardmarket/tcgplayer still deliver
 331k/229k/167k rows per 30 days, so the original starvation argument still holds
 for them.

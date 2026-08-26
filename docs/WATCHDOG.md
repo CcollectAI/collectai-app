@@ -439,14 +439,149 @@ disagree:
 `orphaned` and `unmatched` are different findings and the info line says which:
 
 - **orphaned** — a comp landed on a catalogue row and it is still unpriced.
-  This is the crosswalk fault. lorcana: **2,671** items, and it correctly
-  remains the one HIGH.
+  lorcana: **2,671** items, and it correctly remains the one HIGH.
+  ⚠️ **The count was right and the CAUSE named here was wrong** — it was not
+  the crosswalk. See "An orphaned comp is not proof of a crosswalk fault"
+  (2026-08-26) below.
 - **unmatched** — a comp landed for a key with **no catalogue row at all**.
   yugioh: **13,838 of 14,054**. The crosswalk is fine; the *catalogue* is
   missing the items. Calling that "too few comps" would have been a false
   sentence about a category with 587,276 of them.
 
 Result on the same window: `bugs_high` 8 → 2, and the surviving two are real.
+
+## An orphaned comp is not proof of a crosswalk fault (2026-08-26)
+
+The lorcana HIGH above paged for five days straight saying *"the data is there
+and the catalogue cannot reach it — a keying or crosswalk fault, not a sourcing
+one"*, and pointed at `build_catalog_price_crosswalk.py`. Every number in it was
+correct. The sentence explaining them was not.
+
+What the measurements actually said:
+
+| measured | value |
+|---|---|
+| lorcana catalogue | 9,814 (tcgcsv 6,172 / lorcast 2,847 / seed 795) |
+| `catalog_price_refs` rows for lorcana | 5,416 — **all** tcgcsv keys, built 2026-08-15 12:10:44 and never since |
+| lorcast sold comps in 30d | 5,420, written 2026-08-15 12:09:26**–12:09:28** |
+| rows in `price_predictions` for lorcana, **ever** | **0** |
+
+Zero predictions against 5,420 sold comps is not a crosswalk symptom — a
+crosswalk fault would show comps arriving and predictions failing to *match*,
+not failing to *exist*. The comps never reached valuation at all:
+
+```
+valuation_worker.run_once()
+  SELECT COALESCE(price_eur, price) AS price   <- what it VALUES on
+   WHERE processed = false ... AND price IS NOT NULL   <- what it FILTERS on
+```
+
+`scripts/load_lorcana_direct.py` listed `price_eur` in its INSERT and not
+`price`, so every one of the 5,420 rows carried a usable EUR price, was
+`processed = false`, and was **structurally unreachable**. No error, no log
+line, no failing worker: the queue simply never returned them.
+
+`price` is the price in its **original currency** and `price_eur` the EUR
+normalisation (`marketplace_agent.py:887` binds raw_price / raw_currency /
+price_eur in that order). They are equal on 3,065,233 of 3,067,191 recent rows
+purely because `currency` is almost always EUR — the 1,958 that differ are all
+USD. So "price and price_eur are the same thing" is true of the data and false
+of the schema, which is why the omission looked harmless.
+
+**Enumerated mechanically before fixing anything** — the queue's own predicate,
+asked of the whole table rather than of lorcana:
+
+```sql
+SELECT split_part(item_ref,':',1), provider, count(*)
+  FROM market_hits
+ WHERE processed = false AND seen_at > now() - interval '90 days'
+   AND item_ref IS NOT NULL AND (is_listing IS NOT TRUE)
+   AND price IS NULL AND price_eur IS NOT NULL
+ GROUP BY 1,2;
+-- 5,420 rows. ALL lorcana/lorcast. Nothing else in 2,796,800 sold rows.
+```
+
+Three things follow, and the third is the one that matters:
+
+1. **The writer is fixed, not the reader.** Relaxing the filter to
+   `COALESCE(price_eur, price) IS NOT NULL` would de-align the partial index
+   `idx_market_hits_valuation_queue`, whose predicate mirrors it — the query's
+   own comment records that a seq scan there previously hit the 30s pooler cap
+   and blew the 1800s bake cycle. `docs/DATA_SCALING_PLAN.md` §6 rule 1 is
+   "default state = refuse to add an index", and §10 already prescribes the
+   remedy for this exact shape: *"Writer bugs hide in INSERT column lists …
+   add to the list + backfill"*, with a post-write assertion.
+2. **Backfilled** in `20260826_backfill_lorcast_price_from_price_eur.sql`,
+   scoped `currency = 'EUR'` so it is a restatement and not a currency error,
+   and the migration RAISEs if any row is left behind — a backfill that no-ops
+   must not report success.
+3. **A new check, "valuation queue visibility"**, asks the queue's predicate of
+   the whole table every day. The coverage canary measures the OUTPUT; this
+   measures the INPUT, and for eleven days the two disagreed with nothing to
+   reconcile them. `high` when the set is non-empty, naming category, provider
+   and the oldest row.
+
+Also worth keeping: **lorcast is a one-shot**, not a worker. It appears in no
+bake manifest and no pg_cron job; its 5,420 comps were written in a two-second
+window on 08-15 by a script run by hand. Nothing is scheduled to refresh them,
+so this category has two dated deadlines:
+
+| date | what happens |
+|---|---|
+| **2026-09-14** | the comps leave the canary's 30-day window and lorcana flips to *"sold-comp source DIED"* — a true sentence about a source that was never alive |
+| **~2026-10-01** | `market_hits_y2026m08` is dropped (`PARTITION_RETENTION_MONTHS_MARKET_HITS=1`, `PARTITION_DROP_ENABLED=true`, drop when the month is strictly older than `current − retention`), taking the comps out of the database entirely and lorcana back to 0% |
+
+Fixing the plumbing bought eleven days of stranded data back. It did not make
+lorcana a *sourced* category, and the second date is when that becomes visible.
+
+### Two other findings in the same report, checked rather than believed
+
+- **"column drift: 1 reader/writer column mismatch"** was **false**, and had
+  been paging `high` daily since 2026-08-22. `market_hits.seller_rating` and
+  `seller_score` are **both** 0 non-null out of 3,073,177 rows; no INSERT in
+  `server/` lists either. The "reader" is a key in Firecrawl's extraction JSON
+  schema and the "writer" is a field on a Pydantic *response* model — neither
+  touches SQL. `audit_column_drift.py` graded `HIGH if ro_n == 0` without
+  requiring `wo_n > 0`, so a pair where neither side is written scored as
+  drift, under a headline asserting that one of them *was* written. HIGH now
+  requires a live writer; both-dead is a separate `DEAD_PAIR` grade the
+  watchdog does not page on. The finding also never said WHICH columns — the
+  same "a failing worker must say WHY" defect this doc fixes elsewhere — so it
+  now reads them from `--json` and names them.
+- **"watchdog could not read part of the Supabase logs"** was real, and its
+  `suggested_fix` — *"Refresh the Management API PAT"* — was a wrong diagnostic
+  stated as fact. The PAT is a valid `sbp_` token and `postgres_logs` answered
+  with it **in the same run**; only `edge_logs` was failing, and it fails
+  *intermittently*: 2 of 10 identical requests succeeded within one minute,
+  and 4 more failed at 25s spacing after a 60s cooldown, so it is not rate
+  limiting either. Each sub-query now retries 3× with backoff, and the finding
+  says the credential is exonerated whenever another query on the same token
+  answered.
+
+  **This one had teeth.** `api_status_codes` is where "API returning 5xx" comes
+  from, so on 08-25 and 08-26 that `high` finding silently vanished from the
+  report — while a successful manual query over the same 24h window returned
+  **16 5xx**, comfortably over the `>= 10` threshold.
+
+  **The 2026-08-12 `[]`-vs-`None` fix worked and did not prevent this.** The
+  total correctly read `None`. The alert consuming it did not:
+
+  ```python
+  if ((sblogs.get("totals") or {}).get("api_5xx") or 0) >= 10:   # None -> 0 -> False
+  ```
+
+  `or 0` turns UNKNOWN into "fine". A missing *total* is visible in the JSON; a
+  missing *bug* is indistinguishable from a healthy day. **Fixing the number is
+  not fixing the alert built on the number** — verify at the consumer, not just
+  at the collector, and grep for `or 0` on anything that can legitimately be
+  `None`. (Swept: this was the only such consumer; the digest renderer already
+  prints "counts unavailable this run" per section.)
+
+  The finding is now three-state — `high` on a real count, a `medium` saying
+  **"API 5xx rate is UNKNOWN this run"** when the source was blind, silence
+  only when the source answered and the count was low. Retry is a mitigation,
+  not a guarantee: the live run that confirmed this had all **3 attempts** fail,
+  and the report said UNKNOWN instead of saying nothing.
 
 ## A digest that fails to send is worse than a digest that says nothing
 
