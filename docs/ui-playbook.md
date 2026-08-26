@@ -2111,3 +2111,37 @@ a second key would have left an orphan in seven files.
 **The rule: a rename has three surfaces — label, route, title — and they answer
 different questions.** Changing one and checking the other is how this survived
 a documented pass about the very same tab.
+
+## Two toggles that claim the same trigger (2026-08-26)
+
+Renaming the Settings notification row *Deal alerts* → **Target Hit**, the new
+hint read *"When a watched item drops to your target price"*. The row directly
+above it already said *"When an item hits your target price or moves sharply"*.
+
+Both true, both about "your target price", and between them a member cannot
+tell which switch turns off which push. A settings list is a set of promises
+about when the phone buzzes; two rows describing one trigger is the same defect
+as two components rendering one fact, moved into copy.
+
+**The discriminator is never in the label — it is in what the sender actually
+sends.** The worker's own message settled it:
+
+```
+{title} — €{price} on {provider} ({n}% below your target of €{target})
+```
+
+Target Hit fires on a **marketplace listing appearing** below the target;
+price alerts fire on a **valuation moving**. So the hint became *"When a
+watched item is listed for sale below your target price"*.
+
+Two rules worth keeping:
+
+- **When you rewrite one row of a list, read the whole list.** The collision
+  did not exist in either row alone; it existed between them, and re-reading
+  the diff could not show it.
+- **A label may be load-bearing.** `item.label` is also the row's
+  `accessibilityLabel`, so a label written only to look right in the visual
+  list is what a screen-reader user hears as the entire control.
+
+Related: "One fact, three renderers" and "A tab's label and its TITLE are a
+third thing" — the same rule at three scales.

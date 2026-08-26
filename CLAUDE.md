@@ -1,6 +1,99 @@
 # Sparrow Collect - Project Memory
 
-> Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-22
+> Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-26
+
+## A parity gate is blind to the key one side never declared (2026-08-26)
+
+Asked to check whether the subscription page's claims are true. Every NUMBER
+was right — 10 mandates, 25 watchlist slots, 1 Target Hit a day, unlimited on
+Pro — and the doc, `useBillingLimits.ts` and `PLAN_LIMITS` agreed on **27 of 30
+cells**. The three that disagreed were all the same key.
+
+`max_alerts_per_week` (free 1 / pro None / premium None) existed **only on the
+server**. It was enforced the whole time — `alerts_feature_router.py:158`,
+a 403 — and advertised on the free card as *"1 price alert a week"*, while
+being absent from `DEFAULT_LIMITS`, `FORCED_LIMITS` and
+`BillingStatus['limits']`.
+
+**The interesting part is why `check:billing-limits-parity` passed.** It has two
+arms, and the key fell through both:
+
+| arm | why it missed |
+|---|---|
+| keys the FE reads as `limits.X` | nothing reads this one |
+| numeric caps **both tables declare** | the FE declared nothing to compare |
+
+So the gate compared the INTERSECTION of the two tables' keys, and the failure
+mode it needed to catch was one side having a smaller key set. **Declaring the
+key is what switched the gate on**: after the fix, setting the FE value to 2
+exits 1 with `MISMATCH free.max_alerts_per_week: FE=2 BE=1`. Before it, that
+mutation was green. A parity checker has to enumerate the **union**, or it
+cannot see an omission — only a disagreement.
+
+Nothing read the key, so nothing was broken today. The shape is the house one:
+the first client to read `limits.max_alerts_per_week` would have got
+`undefined` on the RevenueCat path, which reads as *no cap* rather than as an
+error.
+
+### A rename that reached the docs, the comments and the push — and no screen
+
+`MONETIZATION.md` has said **Target Hit** since 2026-08-06, the code comments
+say Target Hit, and `_check_watchlist_snipes` sends `title="Target hit"`. But
+**not one user-facing string did**: the paywall sold *"Unlimited deal alerts"*
+and Settings offered *"Deal alerts — when the Smart Deal Agent finds a match"*,
+naming a different product entirely (the Smart Deal Agent is purchase
+mandates). So the push said one thing and the screen that sells it said
+another.
+
+Verified before renaming rather than assumed: the cap at
+`deal_discovery_worker.py:196` sits **inside `_check_watchlist_snipes`**, so
+`max_daily_deal_alerts` really does govern Target Hit — the worker's name is
+legacy. Had it gated mandate deals, relabelling it would have been wrong.
+
+**Label only.** `watchlist_snipe`, the `deal_alerts` preference key and
+`notify_user` category, and `max_daily_deal_alerts` all keep their names —
+renaming a stored identifier orphans live rows. This is the tab
+label/route/title rule (2026-08-19, 08-20) in a third place: a rename has a
+surface for every audience, and docs + comments + a push title are three
+audiences that are not the customer.
+
+⚠️ **The plan-card test's free-card arm fails SILENTLY.** It does
+`const line = freeCard.find(pattern); if (!line) continue;` — so a regex left
+stale by a rename stops checking that cap and the suite stays green. Both
+`/deal alert/i` patterns had to move to `/target hit/i`, and the new
+`/price alert/i` row was added while in there. Mutation-tested all three: wrong
+daily cap, wrong weekly cap and a reverted Pro line each go red.
+
+### The defect the audit found was in the neighbouring row
+
+The new Settings hint read *"When a watched item drops to your target price"* —
+and the row directly above it, `price_alerts`, already said *"When an item hits
+your target price or moves sharply"*. **Two toggles claiming one trigger.** The
+discriminator is in the worker's own message — `"€X on {provider} (N% below
+your target)"` — Target Hit fires on a **marketplace listing**, price alerts on
+a valuation move. Corrected to *"When a watched item is listed for sale below
+your target price"*.
+
+Found by reading the neighbour, not the diff, which is the third session
+running that the neighbouring line was the spec.
+
+### Also settled, by measurement rather than argument
+
+- **`RATE_LIMIT_RPM=600` is live.** `/opt/collectors/.env` reads 600 and the
+  bake has been up since **2026-08-23 17:51:46 CEST**, so the restart carrying
+  it happened. The memory carrying this as ⛔ STILL OWED was stale and is
+  corrected. Still not walked on a device.
+- **`dossier_agent.py` is byte-identical to prod**, so the 2026-08-18 dossier
+  fixes are deployed and "Dossier PDF export" is a claim the app honours —
+  `/dossier/{id}/export` is `require_plan("pro")`, while the JSON endpoints are
+  not, which matches copy that sells the *export*.
+- **"Community access" overclaimed** with `COMMUNITY_GATED = true` hiding the
+  leaderboard and Find Collectors. Now "Community events", the doc's own word.
+- ⚠️ A `grep -r --include=*.py` written during this audit was **eaten by zsh
+  globbing** and reported 0 enforcement sites for every plan flag. Quoted, the
+  real answer is deal_discovery 24, set_completion 9, condition_grading 6.
+  Trusting it would have produced "no Pro entitlement is enforced anywhere" —
+  a checker written in a hurry lies, again.
 
 ## A sweep that stops early looks exactly like a sweep that found nothing (2026-08-23)
 
