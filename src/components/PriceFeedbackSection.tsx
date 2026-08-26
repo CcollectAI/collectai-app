@@ -9,6 +9,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { View, Text, Pressable, TextInput, StyleSheet } from "react-native";
+import { text as textToken } from "@/theme/tokens";
 
 // ── Props interface ─────────────────────────────────────────────────────
 
@@ -230,15 +231,32 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   correctionRow: {
-    // NO `marginTop` — this renders as a DIRECT child of the valuation card in
-    // `app/item/[id].tsx`, and that card carries `gap: 10`. A margin here adds
-    // to the gap rather than replacing it. Third time this exact class showed
-    // up in one day's work; the tell is a block that sits lower than its
-    // neighbours while every declared metric looks reasonable.
-    alignItems: 'flex-end',
+    // THE PARENT CHANGED on 2026-08-26, and with it both metrics here.
+    //
+    // It used to be a direct child of the valuation CARD, which carries
+    // `gap: 10` — hence the old "NO marginTop" note, because a margin would
+    // have added to that gap rather than replaced it. It now renders inside
+    // `styles.valuationHighlight`, the tinted block around the figure, and
+    // that block has NO gap. So the spacing that the card used to provide has
+    // to be stated, or the link collides with the amount above it.
+    //
+    // 2, not 10: `valuationLead` already carries `marginBottom: 4`, so the
+    // visual gap is 6. This is the same "two containers, one gap" trap read
+    // from the other side — the rule is not "never set a margin", it is
+    // "know which container owns the spacing", and the answer changed when
+    // the component moved.
+    marginTop: 2,
+    // LEFT, not flex-end. Right-aligning it made sense against the full card
+    // width; under a left-aligned figure inside a tinted block it reads as a
+    // detached control floating in the corner, which is the opposite of the
+    // "integrate it with the price" this move is for.
+    alignItems: 'flex-start',
   },
   correctionText: {
-    fontSize: 12,
+    // `textToken.sm` IS 12 — this was a raw literal, the class the playbook
+    // closed on `app/listings.tsx` (raw 9/10/11 for as long as the doc had
+    // banned them). Same number, on the scale.
+    fontSize: textToken.sm,
     // Underlined rather than coloured: this is the tertiary tier, and the one
     // accent in this card belongs to the figure directly above it.
     textDecorationLine: 'underline',

@@ -1207,6 +1207,37 @@ function ItemDetailScreen() {
                   </>
                 )}
               </View>
+
+              {/* The correction lives INSIDE the tinted block, under the figure
+                  — not merely inside the same card. It was already in the card
+                  (2026-08-23) but rendered AFTER `ItemPriceSection`, so on a
+                  priced item with bands, an explanation, scarcity and comps it
+                  could sit a screen away from the number it is about. "Against
+                  the number" has to mean the number, not the section.
+
+                  Two gates, and they are not decoration:
+
+                  `id` — the enclosing block is `!isDraft && !isEditing`, while
+                  this control has always required `!isDraft && id &&
+                  !isEditing`. Nesting it without `id` would widen it. The
+                  effective condition is unchanged.
+
+                  `!isUnpriced` — NEW, and it is the thing moving it here
+                  exposes. The block renders "Not priced yet" for an unpriced
+                  item, and "Price seems off?" underneath that asks a member to
+                  dispute a number the screen just said does not exist. It was
+                  survivable while the control sat far below; directly beneath
+                  the label it is two adjacent lines contradicting each other.
+                  `onPriceDisagree` submits a disagreement about a valuation, so
+                  with no valuation there is nothing to disagree with. */}
+              {!isDraft && id && !isEditing && !isUnpriced(editableValue) ? (
+                <PriceCorrectionRow
+                  theme={theme}
+                  submittingFeedback={submittingFeedback}
+                  feedbackMessage={feedbackSource === 'disagree' ? feedbackMessage : null}
+                  onPriceDisagree={onPriceDisagree}
+                />
+              ) : null}
               </View>
             ) : null}
 
@@ -1264,21 +1295,12 @@ function ItemDetailScreen() {
               );
             })()}
 
-            {/* The CORRECTION, against the number it corrects — *"shouldn't
-                it be close to the price"*. It sat four rows below, wrapped in a
-                "Help improve our estimates" heading that framed a correction as
-                a favour; the favour moved to the end of the screen and this
-                stayed with the figure. `feedbackSource` decides which of the two
-                shows the response, so "Thanks for the feedback!" never appears
-                under the control that did not cause it. */}
-            {!isDraft && id && !isEditing && (
-              <PriceCorrectionRow
-                theme={theme}
-                submittingFeedback={submittingFeedback}
-                feedbackMessage={feedbackSource === 'disagree' ? feedbackMessage : null}
-                onPriceDisagree={onPriceDisagree}
-              />
-            )}
+            {/* The CORRECTION moved UP INTO the tinted valuation block on
+                2026-08-26 — it used to render here, which is inside the same
+                card but after `ItemPriceSection`, i.e. potentially a screen
+                below the figure it corrects. See the comment at its new site
+                for the two gates that came with the move. One instance only:
+                a second copy here is how "the fix lands on the dead path". */}
 
             {/* Refresh All Data — compact action bar above data panels */}
             {!isDraft && id && (
