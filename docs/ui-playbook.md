@@ -2227,3 +2227,79 @@ member wants to read it, and moved only while the collection was losing value.
 Verified: `tsc --noEmit` exit 0, and `eslint app/analytics.tsx` reports the
 **same 5 warnings as HEAD** — compared against a `git worktree` baseline, not a
 stash. check:unrendered, check:item-values and check:brand-colors all PASS.
+
+## The item card: a request that was already shipped, and a floor that was not (2026-08-26)
+
+Three things asked for on the item card. Checking them first changed two of the
+three answers.
+
+### "Bring 'Price seems off?' to the top and integrate it into the price section"
+
+**Already done, on 2026-08-23 at 16:28** (`af16271`). `PriceCorrectionRow`
+renders inside the valuation card, immediately after `ItemPriceSection` and
+before `ItemRefreshBar` — which is exactly the requested position, and it is
+what the "The money was in the middle" section above records doing and why.
+
+So the report is almost certainly about a **build**, not the code: the reorder
+landed after the last build was cut, and a device on build 152/153 still shows
+the old order. **Check the commit date against the build before re-doing a
+layout change** — re-implementing this would have meant editing a screen that
+was already correct, and the second implementation is the one that rots.
+
+The rule generalises past this screen: when a UI request describes a state the
+playbook says was already fixed, the disagreement is evidence about *which
+binary is being looked at*, not about the code.
+
+### "Make the notes section smaller" — the box, not the label
+
+`notesInput` opened at `minHeight: 100` and grew to `maxHeight: 220`: the
+largest single element on a screen whose subject is the item's value, for a
+field most items never fill. Now **64** (three lines at `lineHeight: 18` plus
+padding) to **132** (six). `multiline` still grows and then scrolls internally,
+so nothing is truncated.
+
+**The label deliberately did not move.** `ItemNotesEditor.label` is `text.md`
+and so is `ItemDetailsCard.label` — every other label on the screen. Shrinking
+this one alone would have broken the row rhythm it currently matches, which is
+"the parent gap is invisible from the child" applied to type instead of
+spacing. *Smaller* meant the box.
+
+⚠️ **And shrinking a section is not a licence to shrink its control.** The first
+pass took the save button's `paddingVertical` from 10 to 8, which puts a
+full-width primary action at ~30pt — under the 44pt minimum, and it was already
+under at ~34. The padding went back to 10 *and* the button now states
+`minHeight: 44` rather than letting its height fall out of the padding.
+
+### The alignment sweep found a banned type size, not a misalignment
+
+Run as the playbook's own checks rather than by eye, because "none of them were
+found by re-reading the new JSX":
+
+| check | result |
+|---|---|
+| invalid Ionicons names (they render an empty box, never throw) | clean |
+| `accessibilityRole` values fatal on Android, `SafeAreaView` imports | clean on this screen |
+| **banned type sizes** | **9 hits** |
+
+Nine styles across `SellOnSparrowSection` (8) and `ItemPriceSection` (1) were
+still on `textToken.xs` — 10pt, which rule 1 of the type scale bans outright for
+anything a user reads. None qualified for the single exemption (a glyph-sized
+label beside an icon): they are a consent sentence, a demand readout, a warning,
+a link, two hints and a comp's SOURCE — the last being what tells a member
+whether a number came from a sale or an asking price.
+
+All moved to `sm` (12), **the floor, and not one step further**. The 2026-08-11
+follow-up is the reason: bumping everything one step put 12 of 17 styles on
+`md` and flattened the hierarchy. Raise the floor, leave the lead alone.
+`hint` also went `lineHeight` 16 → 17, because 16 on 12pt is 1.33× and the rule
+is ≥ 1.35×.
+
+### One "violation" that was left alone
+
+A line-height ratio check over the whole item card returned exactly one more
+hit: `valuationAmount` at `fontSize: text['2xl']` (24) with `lineHeight: 30` =
+**1.25×**. It stays. The ≥1.35× rule was written about a two-line string whose
+lines collided; this is a single-line display figure where a tight leading is
+the point. **A checker written during a sweep is itself unaudited** — the
+playbook says so about greps, and it is just as true of a ratio test. Fixing
+this one would have been a false positive with a commit message.

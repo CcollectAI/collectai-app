@@ -521,18 +521,49 @@ Three things follow, and the third is the one that matters:
    reconcile them. `high` when the set is non-empty, naming category, provider
    and the oldest row.
 
-Also worth keeping: **lorcast is a one-shot**, not a worker. It appears in no
-bake manifest and no pg_cron job; its 5,420 comps were written in a two-second
-window on 08-15 by a script run by hand. Nothing is scheduled to refresh them,
-so this category has two dated deadlines:
+### ✅ CLOSED the same day — lorcast is a scheduled worker now
 
-| date | what happens |
-|---|---|
-| **2026-09-14** | the comps leave the canary's 30-day window and lorcana flips to *"sold-comp source DIED"* — a true sentence about a source that was never alive |
-| **~2026-10-01** | `market_hits_y2026m08` is dropped (`PARTITION_RETENTION_MONTHS_MARKET_HITS=1`, `PARTITION_DROP_ENABLED=true`, drop when the month is strictly older than `current − retention`), taking the comps out of the database entirely and lorcana back to 0% |
+This section originally ended by recording that **lorcast was a one-shot**: no
+bake manifest entry, no pg_cron job, 5,420 comps written in a two-second window
+on 08-15 by a script run by hand. That gave the category two dated deaths —
+**2026-09-14**, when the comps leave the canary's 30-day window and lorcana
+flips to *"sold-comp source DIED"* (a true sentence about a source that was
+never alive), and **~2026-10-01**, when `market_hits_y2026m08` is dropped
+(`PARTITION_RETENTION_MONTHS_MARKET_HITS=1`, `PARTITION_DROP_ENABLED=true`)
+and takes every lorcana comp with it.
 
-Fixing the plumbing bought eleven days of stranded data back. It did not make
-lorcana a *sourced* category, and the second date is when that becomes visible.
+**Both deadlines are gone.** `workers/lorcast_worker.py` runs daily
+(`SCHEDULES["lorcast_worker"] = 24 * 3600`), on the direct DSN, gated by
+`_HEAVY_LOCK`. The sentence is edited rather than annotated, because a blocker
+closes when the claim is edited and not when the work is done.
+
+Three things that only showed up because it became a worker rather than staying
+a script, none of which the original file was wrong to have:
+
+1. **`logging.basicConfig` at module scope.** Harmless in a CLI; in a worker it
+   reconfigures the ROOT logger for the whole server process as a side effect
+   of importing one module. It moved into the CLI's `main()`.
+2. **A synchronous fetch on the event loop.** `fetch_all_cards()` is blocking
+   urllib, one round trip per set. Called directly it would stall every other
+   worker *and* the API this process serves, for the length of the fetch. Now
+   `await asyncio.to_thread(fetch_all_cards)`.
+3. **No post-write assertion.** The defect this whole section is about leaves no
+   error behind, so the worker now re-counts its own rows for
+   `price IS NULL AND price_eur IS NOT NULL` and raises if any survive. A daily
+   writer needs the check at the writer; the watchdog's table-wide version is
+   the backstop, not the first line.
+
+The write logic lives in **one** place. `scripts/load_lorcana_direct.py` is a
+thin CLI over the same `run_once`, kept because a manual re-run is genuinely
+useful, and it must never grow a second copy of the SQL.
+
+Verified against prod on 2026-08-26: 2,847 cards → 2,847 catalogue rows and
+5,420 price rows in ~4s, exit 0, `price` populated on every row, and the
+table-wide invisible-set checker still 0.
+
+⚠️ **The worker does not run until the bake restarts.** Registering it changes
+code the running service imported at startup. Do NOT restart without running
+the nine preflight gates manually first.
 
 ### Two other findings in the same report, checked rather than believed
 

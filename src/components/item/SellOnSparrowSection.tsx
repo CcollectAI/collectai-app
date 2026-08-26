@@ -336,7 +336,19 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth, borderRadius: radius.sm,
     padding: 11, marginTop: 14,
   },
-  consentText: { flex: 1, fontSize: textToken.xs, lineHeight: 17 },
+// TYPE SCALE, 2026-08-26. Every style below was on `textToken.xs` (10pt),
+// which docs/ui-playbook.md bans outright: "xs (10pt) is for nothing a user
+// needs to read... it survives only where a glyph-sized label sits beside an
+// icon". None of these is that — they are a consent sentence, a demand
+// readout, a warning, a link and two hints, i.e. exactly the status-and-prose
+// the offers screen was reported for twice.
+//
+// Moved to `sm` (12), the documented FLOOR, and not one step further: the
+// 2026-08-11 follow-up records that bumping everything to `md` put 12 of 17
+// styles on one size and flattened the hierarchy. The lead stays where it is;
+// only the floor rises. `hint` also went 16 -> 17 line-height, because 16 on
+// 12pt is 1.33x and the rule is >= 1.35x.
+  consentText: { flex: 1, fontSize: textToken.sm, lineHeight: 17 },
   /**
    * A SECTION, not a card (2026-08-20).
    *
@@ -371,16 +383,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row', gap: 8, alignItems: 'flex-start',
     borderWidth: 1, borderRadius: radius.sm, padding: 10, marginTop: 4,
   },
-  demandText: { fontSize: textToken.xs, lineHeight: 17, fontWeight: fontWeight.semibold },
-  demandHit: { fontSize: textToken.xs, lineHeight: 17, marginTop: 3, fontWeight: fontWeight.bold },
-  demandMiss: { fontSize: textToken.xs, lineHeight: 17, marginTop: 3 },
+  demandText: { fontSize: textToken.sm, lineHeight: 17, fontWeight: fontWeight.semibold },
+  demandHit: { fontSize: textToken.sm, lineHeight: 17, marginTop: 3, fontWeight: fontWeight.bold },
+  demandMiss: { fontSize: textToken.sm, lineHeight: 17, marginTop: 3 },
   warn: {
     flexDirection: 'row', gap: 8, alignItems: 'flex-start',
     borderWidth: 1, borderRadius: radius.sm, padding: 10, marginTop: 4,
   },
-  warnText: { fontSize: textToken.xs, lineHeight: 17 },
-  warnLink: { fontSize: textToken.xs, fontWeight: fontWeight.bold, marginTop: 4 },
-  hint: { fontSize: textToken.xs, lineHeight: 16, marginTop: 2 },
+  warnText: { fontSize: textToken.sm, lineHeight: 17 },
+  warnLink: { fontSize: textToken.sm, fontWeight: fontWeight.bold, marginTop: 4 },
+  hint: { fontSize: textToken.sm, lineHeight: 17, marginTop: 2 },
   cta: { marginTop: 10, paddingVertical: 12, borderRadius: radius.md, alignItems: 'center' },
   ctaSaving: { opacity: 0.8 },
   ctaText: { fontSize: textToken.md, fontWeight: fontWeight.bold },

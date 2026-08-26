@@ -233,6 +233,9 @@ const styles = StyleSheet.create({
   compsTitle: { fontSize: text.md, fontWeight: fontWeight.semibold, marginBottom: 8 },
   compRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   compTitle: { fontSize: text.sm, fontWeight: fontWeight.medium },
-  compSource: { fontSize: text.xs, marginTop: 1 },
+  // `xs` (10pt) is banned for anything a user reads (ui-playbook, type
+  // scale). A comp's SOURCE is what tells a member whether the number
+  // came from a sale or an asking price — it is not decoration.
+  compSource: { fontSize: text.sm, lineHeight: 17, marginTop: 1 },
   compPrice: { fontSize: text.md, fontWeight: fontWeight.bold, marginLeft: 8 },
 });

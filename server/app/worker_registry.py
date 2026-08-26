@@ -65,6 +65,14 @@ SCHEDULES = {
     "feedback_loop_worker": 3600,                # every 1 hour — label_events → catalog
     "marketplace_scrape_worker": 900,            # every 15 min — actual cycles take 10-18 min due to per-adapter 30s timeouts; 5 min interval was firing "overdue" alerts on every run
     "tcgcsv_worker": 24 * 3600,                  # daily — TCGPlayer public price dump (MTG/Pokemon/Yugioh/Lorcana/OPTCG/Digimon)
+    "lorcast_worker": 24 * 3600,                 # daily — Lorcast catalogue + prices for lorcana.
+                                                 # Was a hand-run script (once, 2026-08-15). Scheduled
+                                                 # 2026-08-26: market_hits retention is ONE MONTH, so a
+                                                 # one-shot load expires — the comps left the canary's
+                                                 # 30-day window 09-14 and the partition ~10-01.
+                                                 # Daily matches the source: Lorcast publishes a price
+                                                 # guide, not a sale feed, so there is nothing finer to
+                                                 # collect and the writer clears its own rows per DAY.
     "discogs_worker": 24 * 3600,                 # daily — Discogs lowest asking-price for vinyl/anime_ost/city_pop
     "sanity_probe_worker": 3600,                 # R50l — hourly correctness checks on critical tables
     "discovery_audit_worker": 24 * 3600,         # R50l — daily broad discovery audit (orphan FKs, null rates, flow-through)

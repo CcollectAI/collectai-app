@@ -113,11 +113,17 @@ now removed from SKIP_CATEGORIES so the main scrape covers them.
 > This matters for anything loaded by hand. `partition_drop_worker` drops a
 > partition once its month is **strictly older** than `current_month −
 > retention`, so `y2026m08` survives September and goes at the start of
-> **2026-10**. The 5,420 Lorcast comps loaded on 2026-08-15 therefore have two
-> deadlines: they leave the watchdog's 30-day sold-comp window on **2026-09-14**
-> and leave the database entirely around **2026-10-01**. Nothing is scheduled
-> to replace them — see `docs/WATCHDOG.md`, "An orphaned comp is not proof of a
-> crosswalk fault".
+> **2026-10**. The 5,420 Lorcast comps loaded on 2026-08-15 therefore had two
+> deadlines — out of the watchdog's 30-day sold-comp window on **2026-09-14**,
+> out of the database around **2026-10-01**.
+>
+> ✅ **Both closed 2026-08-26**: Lorcast is now a daily bake worker
+> (`workers/lorcast_worker.py`, `SCHEDULES["lorcast_worker"] = 24 * 3600`), so
+> the comps are re-written every day and no longer age out. The general lesson
+> stands and is why this note exists: **a monthly retention makes every
+> hand-loaded source temporary.** Anything imported by running a script once has
+> an expiry date, whether or not anyone wrote it down. See `docs/WATCHDOG.md`,
+> "An orphaned comp is not proof of a crosswalk fault".
 
 mtg/pokemon/yugioh stay skipped — scryfall/cardmarket/tcgplayer still deliver
 331k/229k/167k rows per 30 days, so the original starvation argument still holds

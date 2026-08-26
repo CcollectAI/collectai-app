@@ -162,6 +162,21 @@ const styles = StyleSheet.create({
   label: {
     fontSize: text.md,
   },
+  // SMALLER, 2026-08-26. It opened at 100pt of empty box and could grow to
+  // 220 — the largest single element on a screen whose subject is the item's
+  // VALUE, for a field most items never fill in. Notes are "my own record" in
+  // the screen's hierarchy of need (playbook, "The money was in the middle"),
+  // i.e. reference, and reference does not get the biggest box.
+  //
+  // 64 is three lines at `lineHeight: 18` plus the 8pt vertical padding, so a
+  // short note still fits without scrolling and an empty one stops reserving a
+  // hole. 132 is six lines — `multiline` keeps growing to that, and the field
+  // scrolls internally beyond it, so nothing is truncated or unreachable.
+  //
+  // The LABEL is deliberately unchanged at `text.md`: every other label on this
+  // screen (ItemDetailsCard.label) is text.md, and shrinking this one alone
+  // would break the row rhythm it currently matches. "Smaller" here is the box,
+  // not the heading.
   notesInput: {
     marginTop: 8,
     borderWidth: 1,
@@ -170,12 +185,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: text.md,
     lineHeight: 18,
-    minHeight: 100,
-    maxHeight: 220,
+    minHeight: 64,
+    maxHeight: 132,
   },
+  // The BOX shrank; the control did not. At `paddingVertical: 8` around a
+  // text.md line this button measures ~30pt, and at the previous 10 it was
+  // ~34 — both under the 44pt minimum touch target, on a full-width primary
+  // action. Shrinking the section is not a licence to shrink its control, so
+  // the height is now stated rather than left to fall out of the padding.
   primarySaveBtn: {
-    marginTop: 10,
+    marginTop: 8,
     paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
     borderRadius: radius.md,
     alignItems: 'center',
   },

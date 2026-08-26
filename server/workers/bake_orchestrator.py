@@ -84,6 +84,13 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     #   category_items are unaffected — this worker only ADDS. discogs_worker
     #   below is a separate source and stays on.
     ("discogs_worker",          "pipelines.import_discogs", "run_once", True),
+    # Lorcast: the ONLY price source lorcana has. tcgcsv used to feed it and has
+    # been 403-blocked since 2026-08-01 (above), which took the category to 0%.
+    # Enabled 2026-08-26 — until then this ran as a hand-run script, exactly
+    # once, and `market_hits` retention is ONE MONTH, so the data it wrote was
+    # always going to expire. Direct DSN, ~2,847 catalogue rows + ~5,420 price
+    # rows, a few seconds of writes; the HTTP fetch is off-loop via to_thread.
+    ("lorcast_worker",          "workers.lorcast_worker",   "run_once", True),
     # Sanity probe — must stay. Observability. If this is off, we're flying blind.
     ("sanity_probe_worker",     "workers.sanity_probe_worker",        "run_once", True),
 
@@ -276,6 +283,10 @@ _HEAVY_WORKERS: frozenset[str] = frozenset({
     "marketplace_scrape_worker",
     "tcgcsv_worker",
     "discogs_worker",
+    # Bulk asyncpg upserts into category_items + market_hits on the direct DSN
+    # — same pressure profile as tcgcsv/discogs, so serialize it through the
+    # same gate rather than letting it land mid-valuation-cycle.
+    "lorcast_worker",
     # Deal discovery scrapes marketplaces + bulk-writes market_hits, same DB
     # pressure profile as the other heavies — serialize it through the gate.
     "deal_discovery",
