@@ -344,21 +344,40 @@ in every territory, an `en-US` localization, an uploaded review screenshot and
 holding only the subscription GROUP version, not the two products. A modal that
 names no field is not evidence about which field is missing.
 
-### ANSWERED 2026-08-21: there is no Paid Applications Agreement
+### SUPERSEDED 2026-08-26: the Paid Applications Agreement is ACTIVE
 
-Screenshotted from ASC → Business. The Agreements table contains exactly one
-row:
+Read off ASC → Business on 2026-08-26. **All three prerequisites are Active,
+and have been since 21 aug 2026** — the SAME DAY as the screenshot below:
 
-| type | countries | effective | status |
-|---|---|---|---|
-| **Free Apps Agreement** | All | 9 jul 2026 – 7 mei 2027 | Active (New Agreement Available) |
+| item | detail | status |
+|---|---|---|
+| **Paid Apps Agreement** | All Countries, 21 aug 2026 – 7 mei 2027 | **Active** |
+| Free Apps Agreement | All Countries, 21 aug 2026 – 7 mei 2027 | Active |
+| Bank account | Nederland, EUR bank / USD royalties | Active |
+| Tax form | U.S. Certificate of Foreign Status (W-8BEN), submitted 21 aug 2026 | Active |
 
-**There is no Paid Applications row at all** — it has never been requested, so
-it is not "pending", it does not exist. Until it does, StoreKit returns **zero
-products in every environment**, sandbox and TestFlight included. That is the
-whole of `reason=no-offering`, and it is why every RC-side check kept coming
-back healthy: RevenueCat was right, the binary was right, and Apple had nothing
-to sell.
+⚠️ **This doc then asserted the opposite for five days, and it was believed.**
+Every subsequent session explained the empty paywall with an agreement that had
+already been signed, which is the whole cost of recording a blocker and not
+recording its resolution. **Third stale blocker found in one week** — after
+`RATE_LIMIT_RPM=60` (fixed 08-23, still written as owed) and the Program
+License Agreement (accepted 08-21, still written as outstanding). All three
+share one cause and one fix: *a blocker is closed when the sentence asserting
+it is edited, not when the work is done.*
+
+**So `reason=no-offering` no longer has its documented explanation.** If the
+paywall still fails to load plans on a build made after 21 aug, the cause is
+something else and must be re-derived from evidence rather than inherited from
+this section — the remaining candidates are items 3, 4 and 5 of the checklist
+below (products not in a purchasable state, no sandbox tester signed in, or the
+RC ↔ Apple `.p8` credential, which `docs/ASC_API_KEY.md` still records as never
+created). Do not re-blame the agreement.
+
+**The original finding, kept because the REASONING was sound and only the
+timing was wrong:** with no Paid Applications Agreement, StoreKit returns zero
+products in every environment, sandbox and TestFlight included — which is why
+every RC-side check kept coming back healthy. RevenueCat was right, the binary
+was right, and Apple had nothing to sell.
 
 This closes the question the doc had been carrying as *"not checkable from
 here"* since 2026-08-15. It was never an API question — the ASC API does not
