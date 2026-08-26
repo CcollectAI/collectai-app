@@ -2235,20 +2235,51 @@ three answers.
 
 ### "Bring 'Price seems off?' to the top and integrate it into the price section"
 
-**Already done, on 2026-08-23 at 16:28** (`af16271`). `PriceCorrectionRow`
-renders inside the valuation card, immediately after `ItemPriceSection` and
-before `ItemRefreshBar` — which is exactly the requested position, and it is
-what the "The money was in the middle" section above records doing and why.
+First answer: **already done, 2026-08-23 16:28** (`af16271`) — it moved into the
+valuation card then, and a device on build 152/153 predates that commit. That
+part still holds, and it is worth keeping as a habit: **check the commit date
+against the build before re-doing a layout change**, because the second
+implementation is the one that rots.
 
-So the report is almost certainly about a **build**, not the code: the reorder
-landed after the last build was cut, and a device on build 152/153 still shows
-the old order. **Check the commit date against the build before re-doing a
-layout change** — re-implementing this would have meant editing a screen that
-was already correct, and the second implementation is the one that rots.
+**But "already in the card" was not the request.** Re-read as *"make this more
+integrated"* it is a different and correct complaint: `PriceCorrectionRow`
+rendered *after* `ItemPriceSection`, so on a priced item carrying bands, an
+explanation, scarcity and comps, the control sat a screen below the figure it
+corrects. Same card, nowhere near the number.
 
-The rule generalises past this screen: when a UI request describes a state the
-playbook says was already fixed, the disagreement is evidence about *which
-binary is being looked at*, not about the code.
+It now renders inside `styles.valuationHighlight` — the tinted block around the
+figure — directly under the amount and its provenance chip. **"Against the
+number" has to mean the number, not the section**, and the distance between
+those two readings is however long `ItemPriceSection` happens to be for that
+item.
+
+Two gates travelled with it, and only one is cosmetic:
+
+- **`id`** — the enclosing block is `!isDraft && !isEditing`; this control has
+  always been `!isDraft && id && !isEditing`. Nesting it without re-stating
+  `id` would have silently widened it. Effective condition unchanged.
+- **`!isUnpriced`** — new, and it is what the move *exposed*. The block renders
+  "Not priced yet" for an unpriced item, and "Price seems off?" directly
+  beneath that asks a member to dispute a number the screen has just said does
+  not exist. `onPriceDisagree` submits a disagreement about a valuation, so
+  with no valuation there is nothing to disagree with. It was survivable while
+  the control sat far below; adjacent, the two lines contradict each other.
+  **Moving a control next to its subject makes it inherit that subject's
+  states** — that is the general form.
+
+And the parent changed, so both of the row's metrics had to. It was a direct
+child of the card (`gap: 10`), which is why it carried an explicit "NO
+`marginTop`" note; the tinted block has **no** gap, so the spacing it used to
+inherit now has to be stated (`marginTop: 2`, against `valuationLead`'s
+`marginBottom: 4`). `alignItems` went `flex-end` → `flex-start`: right-aligning
+read fine across the full card width and reads as a detached control in the
+corner once it sits under a left-aligned figure. **"Two containers, one gap"
+from the other side — the rule is not "never set a margin", it is "know which
+container owns the spacing", and the answer changes when a component moves.**
+
+⚠️ `correctionText` was `fontSize: 12`, a raw literal — `textToken.sm` *is* 12.
+The import it then needed did not exist, which would have thrown at runtime;
+`tsc` caught it, a re-read of the diff had not.
 
 ### "Make the notes section smaller" — the box, not the label
 
