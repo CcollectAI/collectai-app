@@ -365,10 +365,26 @@ License Agreement (accepted 08-21, still written as outstanding). All three
 share one cause and one fix: *a blocker is closed when the sentence asserting
 it is edited, not when the work is done.*
 
-**So `reason=no-offering` no longer has its documented explanation.** If the
-paywall still fails to load plans on a build made after 21 aug, the cause is
-something else and must be re-derived from evidence rather than inherited from
-this section — the remaining candidates are items 3, 4 and 5 of the checklist
+**✅ CONFIRMED ON DEVICE 2026-08-26: the plans load.** Merle opened the
+subscription screen on build 153 (built 08-23, two days after the agreement went
+active) and StoreKit served the offering. `reason=no-offering` is **closed** —
+the diagnosis was right and the agreement was the whole of it.
+
+⚠️ **Loading plans is NOT a working purchase, and the gap between them is where
+the money is.** What is proven: Apple serves the products, the RC key is
+inlined, the `store` profile pins the paywall on. What is NOT proven: that a
+completed purchase actually GRANTS `pro`. That needs the RC ↔ Apple In-App
+Purchase `.p8` (or app-specific shared secret) in RC → Apps → iOS, which
+`docs/ASC_API_KEY.md` records as **never created**. Without it a purchase
+completes at StoreKit and RevenueCat cannot verify the transaction, so
+`customerInfo.entitlements.active` stays empty — the member is charged and stays
+Free. Item 5 of the checklist below, and the only one still open.
+
+**The next test is a sandbox purchase**, not another look at the paywall.
+
+(Historical, kept for the reasoning:) if a build made after 21 aug had failed to
+load plans, the cause would have had to be re-derived from evidence rather than
+inherited from this section — the remaining candidates are items 3, 4 and 5 of the checklist
 below (products not in a purchasable state, no sandbox tester signed in, or the
 RC ↔ Apple `.p8` credential, which `docs/ASC_API_KEY.md` still records as never
 created). Do not re-blame the agreement.
