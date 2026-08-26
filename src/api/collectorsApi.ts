@@ -229,6 +229,9 @@ export const collectorsApi = {
   // Item Attributes / Size
   updateItemAttributes: itemsApi.updateItemAttributes,
 
+  // Cost basis — server-side so the FX conversion happens (see itemsApi)
+  updateItemPurchase: itemsApi.updateItemPurchase,
+
   // Grading Service Integration
   gradingLookup: gradingApi.gradingLookup,
   gradingPopulation: gradingApi.gradingPopulation,

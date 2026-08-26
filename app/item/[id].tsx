@@ -224,12 +224,22 @@ function ItemDetailScreen() {
   //
   // Params stay the fast path (no flash of placeholder when they are supplied);
   // this is the fallback so a bare id is enough.
+  // Runtime narrowing for a TEXT column. Kept beside its only caller: this is
+  // the one place a raw DB currency string enters typed code on this screen.
+  const isCurrencyCode = (v: unknown): v is CurrencyCode =>
+    typeof v === 'string' && (['EUR', 'USD', 'GBP', 'JPY', 'KRW', 'AUD', 'CAD'] as const).includes(v as CurrencyCode);
+
   const [savedCore, setSavedCore] = useState<{
     name?: string | null; category?: string | null; condition?: string | null;
     value?: number | null; imageUrl?: string | null; notes?: string | null;
     valueSource?: string | null;
     /** What the member typed — needed to offer "keep mine" against the comp. */
     userEstimate?: number | null;
+    /** RAW cost basis + the currency it is in. The EUR half is deliberately
+     *  NOT carried here: this feeds an EDIT field, and showing the
+     *  normalisation in a field labelled JPY is the ~170x error in reverse. */
+    purchasePrice?: number | null;
+    purchaseCurrency?: CurrencyCode | null;
   } | null>(null);
   useEffect(() => {
     if (isDraft || !id) return;
@@ -237,7 +247,7 @@ function ItemDetailScreen() {
     (async () => {
       const { data, error } = await supabase
         .from('items')
-        .select('attrs, collection_name, canonical_key, name, title, category, condition, estimated_value, predicted_price_eur, image_url, notes')
+        .select('attrs, collection_name, canonical_key, name, title, category, condition, estimated_value, predicted_price_eur, image_url, notes, purchase_price, purchase_currency')
         .eq('id', id)
         .maybeSingle();
       if (cancelled || error || !data) return;
@@ -246,6 +256,7 @@ function ItemDetailScreen() {
         name?: string | null; title?: string | null; category?: string | null; condition?: string | null;
         estimated_value?: number | null; predicted_price_eur?: number | null; image_url?: string | null;
         notes?: string | null;
+        purchase_price?: number | null; purchase_currency?: string | null;
       };
       // THE value, from the one definition of it — not this screen's own
       // guess at the chain. Reading `predicted_price_eur ?? estimated_value`
@@ -288,6 +299,14 @@ function ItemDetailScreen() {
           null,
         valueSource: viewValue?.source ?? null,
         userEstimate: row.estimated_value ?? row.predicted_price_eur ?? null,
+        purchasePrice: row.purchase_price ?? null,
+        // NARROWED, not cast. `items.purchase_currency` is TEXT and only the
+        // seven supported codes are legal per its CHECK, but a row predating
+        // that constraint (or written by a pipeline) can hold anything, and
+        // `getCurrencySymbol` would then render a symbol for a currency we do
+        // not support. An unrecognised code reads as "unknown", so the field
+        // falls back to the member's own setting rather than to a wrong glyph.
+        purchaseCurrency: isCurrencyCode(row.purchase_currency) ? row.purchase_currency : null,
         imageUrl: row.image_url ?? null,
         notes: row.notes ?? null,
       });
@@ -322,6 +341,13 @@ function ItemDetailScreen() {
     id, isDraft,
     initialName: name, initialCategory: category, initialCollection: collection,
     initialCondition: condition, initialValue: value, initialNotes: initialNotes,
+    // RAW half, and the currency it is in — see the note on the state itself.
+    // `savedCore` is the fetched row; before it lands these are empty, which is
+    // correct: an empty field means "not set", and the adopt-effect below fills
+    // it once the row arrives, the same way name/category/condition are handled.
+    initialPurchasePrice:
+      savedCore?.purchasePrice != null ? String(savedCore.purchasePrice) : '',
+    initialPurchaseCurrency: savedCore?.purchaseCurrency ?? null,
     imageUri, categorySlug: categorySlugRaw, q50,
     q10, q90, confidence,
     initialAttributes,
@@ -350,6 +376,13 @@ function ItemDetailScreen() {
     if (savedCore.notes && !detail.notes) {
       detail.setNotes(savedCore.notes);
     }
+    // Cost basis, same reason as notes: the hook is constructed before the row
+    // arrives, so `initialPurchasePrice` is '' on the first render and the
+    // field would show empty for an item that HAS a purchase price. Guarded on
+    // the field still being empty so a member mid-edit is never overwritten.
+    if (savedCore.purchasePrice != null && !detail.editablePurchasePrice) {
+      detail.setEditablePurchasePrice(String(savedCore.purchasePrice));
+    }
     adoptedCoreRef.current = true;
   }, [savedCore, detail]);
   const {
@@ -358,6 +391,7 @@ function ItemDetailScreen() {
     editableCategory, setEditableCategory,
     editableCollection, setEditableCollection,
     editableCondition, setEditableCondition,
+    editablePurchasePrice, setEditablePurchasePrice,
     editableValue, setEditableValue,
     notes, setNotes,
     savingNotes, savingDraft, saveError,
@@ -1322,6 +1356,8 @@ function ItemDetailScreen() {
             editableCollection={editableCollection}
             editableCondition={editableCondition}
             editableValue={editableValue}
+            editablePurchasePrice={editablePurchasePrice}
+            purchaseCurrency={savedCore?.purchaseCurrency ?? null}
             isGradingEligible={isGradingEligible}
             categorySlug={categorySlug}
             categoryIdMap={CATEGORY_ID_MAP}
@@ -1340,6 +1376,7 @@ function ItemDetailScreen() {
             notes={notes}
             onEditableName={setEditableName}
             onEditableValue={setEditableValue}
+            onEditablePurchasePrice={setEditablePurchasePrice}
             onShowCategoryPicker={showCategoryPicker}
             onShowCollectionPicker={showCollectionPicker}
             onShowConditionPicker={showConditionPicker}

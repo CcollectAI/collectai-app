@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
+import type { CurrencyCode } from '@/data/types';
 import { formatPrice, getCurrencySymbol, UNPRICED_LABEL, isUnpriced, toPriceNum } from '@/lib/format';
 import { ItemAttributesSection } from '@/components/ItemAttributesSection';
 import { CategorySpecificSection } from '@/components/CategorySpecificSection';
@@ -24,6 +25,13 @@ interface ItemDetailsCardProps {
   editableCollection: string;
   editableCondition: string;
   editableValue: string;
+  /** RAW cost basis as typed, in `purchaseCurrency`. '' when unset. */
+  editablePurchasePrice: string;
+  /** The currency the field above is denominated in. Typed as `CurrencyCode`
+   *  rather than `string` because `getCurrencySymbol` only accepts the seven
+   *  supported codes — a loose `string` here compiled the call and would have
+   *  handed it whatever the column happened to hold. */
+  purchaseCurrency?: CurrencyCode | null;
   /** `v_item_values_v1.value_source` — where the figure beside it came from.
    *  Undefined while the row loads, or when the view could not answer; the
    *  chip renders nothing rather than claiming a provenance. */
@@ -41,6 +49,7 @@ interface ItemDetailsCardProps {
   notes: string;
   onEditableName: (v: string) => void;
   onEditableValue: (v: string) => void;
+  onEditablePurchasePrice: (v: string) => void;
   onShowCategoryPicker: () => void;
   onShowCollectionPicker: () => void;
   onShowConditionPicker: () => void;
@@ -67,10 +76,11 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
     loading,
     isDraft, isEditing,
     editableName, editableCategory, editableCollection, editableCondition, editableValue,
+    editablePurchasePrice, purchaseCurrency,
     isGradingEligible, categorySlug, categoryIdMap,
     itemAttributes, taxonomyVersion, subtypeId, itemCollections,
     itemId, itemSizeValue, sizeSystem, sizeSaving, notes,
-    onEditableName, onEditableValue,
+    onEditableName, onEditableValue, onEditablePurchasePrice,
     onShowCategoryPicker, onShowCollectionPicker, onShowConditionPicker,
     onChangeAttribute, catalogAction,
     onSizeChange, onSizeSystemChange, onSizeValueChange,
@@ -235,6 +245,45 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
               keyboardType="decimal-pad"
               returnKeyType="done"
               accessibilityLabel={`Estimated value in ${settings.currency}`}
+            />
+          </View>
+      </View>
+      ) : null}
+
+      {/* WHAT YOU PAID — the cost basis, and until 2026-08-26 it could only be
+          entered at creation. There was no field for it anywhere on this
+          screen, so an item added without one could never gain one; measured
+          on prod, 7 of 108 items had a purchase price. Everything downstream
+          that says "gain" is built on this number, and `/portfolio/items`
+          falls back to the earliest PREDICTION when it is missing — so for the
+          rest of the collection the reported profit is model drift.
+
+          It sits directly under Estimated value because the two are the same
+          question asked twice ("what is it worth" / "what did it cost"), and a
+          member reading one wants the other beside it.
+
+          The CURRENCY LABEL is `purchaseCurrency` when the row already has
+          one, NOT `settings.currency`. An item bought in JPY keeps its JPY
+          figure; re-labelling that as the viewer's currency is how a stored
+          amount silently changes meaning. Only a fresh entry uses the member's
+          current setting, and the save path sends that currency explicitly so
+          the server converts rather than the trigger assuming EUR. */}
+      {isDraft || isEditing ? (
+      <View style={styles.row} accessibilityLabel="What you paid">
+        <Text style={[styles.label, { color: theme.muted }]}>What you paid</Text>
+          <View style={styles.editableValueRow}>
+            <Text style={[styles.currencySymbol, { color: theme.muted }]}>
+              {getCurrencySymbol(purchaseCurrency || settings.currency)}
+            </Text>
+            <TextInput
+              style={[styles.editableValueInput, { color: theme.text, borderBottomColor: theme.border, fontWeight: fontWeight.bold }]}
+              value={editablePurchasePrice}
+              onChangeText={onEditablePurchasePrice}
+              placeholder="Not set"
+              placeholderTextColor={theme.muted ?? '#64748B'}
+              keyboardType="decimal-pad"
+              returnKeyType="done"
+              accessibilityLabel={`What you paid, in ${purchaseCurrency || settings.currency}`}
             />
           </View>
       </View>

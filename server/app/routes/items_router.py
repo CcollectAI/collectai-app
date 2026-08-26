@@ -604,3 +604,110 @@ async def update_item_attributes(
     except Exception as e:
         logger.error("[items] DB error updating attributes: %s", e)
         raise error_response(500, "Failed to update attributes", code="DB_ERROR")
+
+
+# ---- Update purchase price (the cost-basis capture path) ----
+#
+# WHY THIS ENDPOINT EXISTS (2026-08-26)
+# -------------------------------------
+# A purchase price could only ever be entered at CREATION (`add-manual.tsx`).
+# The item screen has no field for it, so a member who added an item without one
+# could never add it afterwards. Measured on prod: **7 of 108 items** carry a
+# purchase price. Everything downstream that says "gain" is built on cost basis,
+# and `/portfolio/items` falls back to the earliest PREDICTION when there is no
+# purchase price — so for ~93% of the collection the "profit" is model drift.
+# That is the root cause of the analytics screen being unable to answer an
+# investment question, and it is a capture gap, not an analytics one.
+#
+# WHY IT IS A SERVER ROUTE AND NOT A CLIENT PATCH
+# -----------------------------------------------
+# The obvious fix — add `purchase_price` to the `supabase.from('items').update()`
+# in `useItemDetail.onSaveEdits` — is a currency bug waiting to happen.
+# `items` carries BOTH `purchase_price` (raw, in `purchase_currency`) and
+# `purchase_price_eur` (FX-normalised), and every EUR reader sums the second.
+# `trg_items_sync_paired_columns` derives the missing half, but ONLY for the
+# identity case, and its guard is:
+#
+#     COALESCE(UPPER(BTRIM(NEW.purchase_currency)), 'EUR') = 'EUR'
+#
+# A NULL currency is therefore treated as EUR. A client patch that writes
+# `purchase_price` without `purchase_currency` would have the database copy a
+# JPY amount straight into `purchase_price_eur` — the ~170x error this repo has
+# already shipped once, from this exact column pair. The database cannot call
+# the FX service; docs/ARCHITECTURE.md says so and says conversion is app-side.
+#
+# So the price is converted HERE, with `convert_to_eur`, and BOTH halves plus
+# the currency are written explicitly. The trigger's identity branch then has
+# nothing left to guess at.
+
+
+class UpdateItemPurchaseRequest(BaseModel):
+    """`purchase_price = None` CLEARS the cost basis (both halves)."""
+    purchase_price: Optional[float] = Field(None, ge=0)
+    # Defaulted, never inferred. The whole point of this endpoint is that the
+    # currency travels WITH the amount.
+    purchase_currency: str = Field("EUR", pattern=r"^[A-Za-z]{3}$")
+    purchased_at: Optional[str] = None
+
+
+@router.patch(
+    "/items/{item_id}/purchase",
+    dependencies=[Depends(_items_write_limit)],
+    summary="Set or clear an item's purchase price",
+    description=(
+        "Writes purchase_price (raw), purchase_price_eur (FX-normalised) and "
+        "purchase_currency together. Send purchase_price=null to clear."
+    ),
+)
+async def update_item_purchase(
+    item_id: str,
+    payload: UpdateItemPurchaseRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    pool = get_db_pool()
+    if pool is None:
+        return {"ok": True, "item_id": item_id}
+
+    currency = payload.purchase_currency.upper()
+    price = payload.purchase_price
+    # Clearing sets BOTH halves to NULL. Nulling only the raw half would leave a
+    # stale EUR figure behind that every analytics reader still sums — the
+    # column pair has to move together in both directions.
+    price_eur = await convert_to_eur(price, currency) if price is not None else None
+
+    try:
+        async with pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE items
+                   SET purchase_price     = $3,
+                       purchase_price_eur = $4,
+                       purchase_currency  = $5,
+                       purchased_at       = COALESCE($6::timestamptz, purchased_at),
+                       updated_at         = NOW()
+                 WHERE id = $2::uuid AND user_id = $1::uuid
+             RETURNING id, purchase_price, purchase_price_eur, purchase_currency
+                """,
+                user_id, item_id, price, price_eur, currency, payload.purchased_at,
+            )
+            if row is None:
+                # Not found OR not theirs — one message for both, so the
+                # endpoint cannot be used to probe which item ids exist.
+                raise error_response(404, "Item not found", code="NOT_FOUND")
+
+            logger.info(
+                "[items] purchase price set item=%s user=%s %s %s -> EUR %s",
+                item_id, user_id, price, currency, price_eur,
+            )
+            return {
+                "ok": True,
+                "item_id": str(row["id"]),
+                "purchase_price": float(row["purchase_price"]) if row["purchase_price"] is not None else None,
+                "purchase_price_eur": float(row["purchase_price_eur"]) if row["purchase_price_eur"] is not None else None,
+                "purchase_currency": row["purchase_currency"],
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("[items] DB error updating purchase price: %s", e)
+        raise error_response(500, "Failed to update purchase price", code="DB_ERROR")

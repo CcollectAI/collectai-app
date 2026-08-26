@@ -50,6 +50,10 @@ interface UseItemDetailParams {
   initialCollection: string;
   initialCondition: string;
   initialValue: string;
+  /** RAW purchase price as typed, in `initialPurchaseCurrency`. '' when unset. */
+  initialPurchasePrice: string;
+  /** The currency that raw figure is in. Falls back to the member's setting. */
+  initialPurchaseCurrency?: string | null;
   initialNotes: string;
   imageUri: string | undefined;
   categorySlug: string;
@@ -72,7 +76,8 @@ interface UseItemDetailParams {
 export function useItemDetail(params: UseItemDetailParams) {
   const {
     id, isDraft, initialName, initialCategory, initialCollection,
-    initialCondition, initialValue, initialNotes, imageUri, categorySlug, q50,
+    initialCondition, initialValue, initialPurchasePrice, initialPurchaseCurrency,
+    initialNotes, imageUri, categorySlug, q50,
     q10, q90, confidence,
     initialAttributes, catalogKey,
   } = params;
@@ -87,6 +92,10 @@ export function useItemDetail(params: UseItemDetailParams) {
   const [editableCollection, setEditableCollection] = useState(initialCollection);
   const [editableCondition, setEditableCondition] = useState(initialCondition);
   const [editableValue, setEditableValue] = useState(initialValue);
+  // COST BASIS. Seeded from the RAW half, never from purchase_price_eur: the
+  // field is denominated in `initialPurchaseCurrency`, so putting the EUR
+  // normalisation in it would show a JPY buyer a euro figure labelled JPY.
+  const [editablePurchasePrice, setEditablePurchasePrice] = useState(initialPurchasePrice);
 
   // ── Notes & save state ─────────────────────────────────────────────────
   const [notes, setNotes] = useState(initialNotes || '');
@@ -336,6 +345,36 @@ export function useItemDetail(params: UseItemDetailParams) {
         const { error: patchError } = await supabase.from('items').update(extraPatch).eq('id', id);
         if (patchError) throw new Error(patchError.message);
       }
+      // COST BASIS goes through the SERVER, not into `extraPatch`.
+      //
+      // `items` carries purchase_price (raw) AND purchase_price_eur, every EUR
+      // reader sums the second, and `trg_items_sync_paired_columns` only copies
+      // raw -> eur for the identity case — its guard is
+      // `COALESCE(UPPER(BTRIM(purchase_currency)), 'EUR') = 'EUR'`, so a NULL
+      // currency is treated AS EUR. Adding purchase_price to the PostgREST
+      // patch above would therefore file a JPY amount as euros: the ~170x error
+      // this repo has already shipped from this exact column pair. The database
+      // cannot call FX (docs/ARCHITECTURE.md); the server can, and does.
+      //
+      // Only sent when it actually CHANGED — an unrelated rename must not
+      // rewrite the cost basis, and must not re-convert it at today's rate.
+      const trimmedPurchase = editablePurchasePrice.trim();
+      if (trimmedPurchase !== (initialPurchasePrice ?? '').trim()) {
+        const parsedPurchase = trimmedPurchase === ''
+          ? null
+          : parseFloat(trimmedPurchase.replace(',', '.'));
+        if (parsedPurchase !== null && (isNaN(parsedPurchase) || parsedPurchase < 0)) {
+          throw new Error('Enter a purchase price of 0 or more, or leave it blank');
+        }
+        await collectorsApi.updateItemPurchase(
+          id,
+          parsedPurchase,
+          // The currency the FIELD is in: the one it was stored in if we have
+          // it, else the member's current setting. Never inferred server-side.
+          (initialPurchaseCurrency || settings.currency || 'EUR') as string,
+        );
+      }
+
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Changes saved', type: 'success' });
       setIsEditing(false);
@@ -345,7 +384,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     } finally {
       setSavingNotes(false);
     }
-  }, [id, isDraft, editableName, editableCategory, editableCollection, editableCondition, editableValue, settings.hapticsEnabled, showToast]);
+  }, [id, isDraft, editableName, editableCategory, editableCollection, editableCondition, editableValue, editablePurchasePrice, initialPurchasePrice, initialPurchaseCurrency, settings.currency, settings.hapticsEnabled, showToast]);
 
   // ── Feedback handlers ──────────────────────────────────────────────────
   const onSubmitSalePrice = useCallback(async () => {
@@ -442,6 +481,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     editableCollection, setEditableCollection,
     editableCondition, setEditableCondition,
     editableValue, setEditableValue,
+    editablePurchasePrice, setEditablePurchasePrice,
 
     // Notes & save
     notes, setNotes,

@@ -29,7 +29,9 @@ export type ScreenItem = {
   editionLabel?: string;
   source?: string;
   isManual?: boolean;
+  purchasePrice?: number | null;
   purchasePriceEur?: number | null;
+  purchaseCurrency?: string | null;
   purchasedAt?: string | null;
   /** `v_item_values_v1.value_source` — carried so the row can say whether the
    *  figure is comp-backed or somebody's estimate. Dropping it here would make
@@ -62,7 +64,9 @@ export function mapDataItemToScreenItem(it: DataItem): ScreenItem {
     editionLabel: it.editionLabel,
     source,
     isManual: source === 'manual' && !it.priceBand,
+    purchasePrice: it.purchasePrice ?? null,
     purchasePriceEur: it.purchasePriceEur ?? null,
+    purchaseCurrency: it.purchaseCurrency ?? null,
     purchasedAt: it.purchasedAt ?? null,
     valueSource: it.valueSource ?? null,
   };

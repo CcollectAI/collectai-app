@@ -65,7 +65,13 @@ type ItemRow = {
   // Acquisition columns. Schema-lock-confirmed (scripts/schema.lock.json):
   // items has both purchase_price (raw, in purchase_currency) and
   // purchase_price_eur (FX-normalized for analytics). We only need the EUR
-  // form on the list row; raw + currency are kept for the future detail view.
+  // form on the list row; the RAW half is selected too as of 2026-08-26,
+  // because the item screen now lets a member EDIT the purchase price and an
+  // edit form has to show what they actually typed — rendering the EUR
+  // normalisation into a JPY field would be the ~170x error in reverse.
+  // Read-back only; writes go through PATCH /items/{id}/purchase so the FX
+  // conversion stays server-side.
+  purchase_price?: number | null;
   purchase_price_eur?: number | null;
   purchase_currency?: string | null;
   purchased_at?: string | null;
@@ -226,6 +232,7 @@ function mapItemRow(r: ItemRow, resolvedValue?: number, valueSource?: string | n
     year: typeof r.year === 'number' ? r.year : undefined,
     series: r.series ?? undefined,
     editionLabel: r.edition_label ?? undefined,
+    purchasePrice: r.purchase_price ?? null,
     purchasePriceEur: r.purchase_price_eur ?? null,
     purchaseCurrency: (r.purchase_currency as Item['purchaseCurrency']) ?? null,
     purchasedAt: r.purchased_at ?? null,
@@ -273,7 +280,7 @@ async function mapRowsWithValues(data: unknown): Promise<Item[]> {
   });
 }
 
-const ITEMS_SELECT = 'id, title, category, updated_at, attrs, collection_name, image_url, condition, brand, year, series, edition_label, estimated_value, predicted_price_eur, purchase_price_eur, purchase_currency, purchased_at, purchase_notes, quick_predictions(q50_eur, confidence, created_at)';
+const ITEMS_SELECT = 'id, title, category, updated_at, attrs, collection_name, image_url, condition, brand, year, series, edition_label, estimated_value, predicted_price_eur, purchase_price, purchase_price_eur, purchase_currency, purchased_at, purchase_notes, quick_predictions(q50_eur, confidence, created_at)';
 
 /**
  * Your active collection, optionally narrowed to ONE category.

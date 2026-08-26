@@ -122,6 +122,36 @@ export const updateItemAttributes = (itemId: string, attributes: Record<string, 
     },
   );
 
+// Purchase price — the COST BASIS capture path.
+//
+// Deliberately a server call, not a `supabase.from('items').update()`. `items`
+// carries purchase_price (raw) AND purchase_price_eur (FX-normalised), every
+// EUR reader sums the second, and the database CANNOT convert: the paired-
+// column trigger only copies raw -> eur when the currency is EUR, treating a
+// NULL currency AS EUR. A client patch that wrote the amount without the
+// currency would therefore file a JPY figure as euros — the ~170x error this
+// repo has already shipped from this exact pair. The server converts with
+// `convert_to_eur` and writes both halves plus the currency together.
+//
+// `purchasePrice: null` CLEARS the cost basis (both halves).
+export const updateItemPurchase = (
+  itemId: string,
+  purchasePrice: number | null,
+  purchaseCurrency: string,
+  purchasedAt?: string,
+) =>
+  patch<{
+    ok: boolean;
+    item_id: string;
+    purchase_price: number | null;
+    purchase_price_eur: number | null;
+    purchase_currency: string;
+  }>(`/items/${encodeURIComponent(itemId)}/purchase`, {
+    purchase_price: purchasePrice,
+    purchase_currency: purchaseCurrency,
+    ...(purchasedAt !== undefined ? { purchased_at: purchasedAt } : {}),
+  });
+
 // Item Images (multi-photo per item)
 export const listItemImages = (itemId: string) =>
   get<{

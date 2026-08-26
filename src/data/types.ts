@@ -113,6 +113,7 @@ export type Item = {
   // Item shape, so the items screen showed predicted price only and the user's
   // actual cost was invisible. Optional: items added before this surface
   // existed, or added via QuickScan without a price entered, will be undefined.
+  purchasePrice?: number | null;        // RAW cost basis, in purchaseCurrency — what the member typed
   purchasePriceEur?: number | null;     // EUR-normalized cost basis
   purchaseCurrency?: CurrencyCode | null;  // currency at time of purchase (display only)
   purchasedAt?: string | null;          // ISO date string of acquisition
