@@ -278,7 +278,7 @@ function SubscriptionScreen() {
   const PRO_FEATURES = [
     '10 purchase mandates',
     'Unlimited watchlist',
-    'Unlimited deal alerts',
+    'Unlimited Target Hit alerts',
     'Deal discovery',
     'Condition grading',
     // Qualified 2026-08-19. Measured on prod: `category_items.set_name`
@@ -296,10 +296,10 @@ function SubscriptionScreen() {
 
   const FREE_FEATURES = [
     '25 watchlist items',
-    '1 deal alert a day',
+    '1 Target Hit alert a day',
     '1 price alert a week',
     'Basic valuation',
-    'Community access',
+    'Community events',
   ];
 
   // Named the three causes apart so the __DEV__ hint below can say which one

@@ -67,6 +67,7 @@ change looking plausible; it is `test_free_user_gets_0`.
 |--|------|-----------------------------|
 | **Watchlist items** | **25** | **Unlimited** |
 | **Target Hit alerts** | **1 / day** | **Unlimited** |
+| **Price alerts created** | **1 / week** | **Unlimited** |
 | Purchase mandates | 0 | 10 |
 | Deal discovery | No | Yes |
 | Dossier PDF export | No | Yes |
@@ -77,14 +78,42 @@ change looking plausible; it is `test_free_user_gets_0`.
 | Community events | Yes | Yes |
 | Ads | Yes | No |
 
+> **The paywall says "Target Hit" as of 2026-08-26.** The 2026-08-06 rename had
+> reached this doc, the code comments and the push itself
+> (`_check_watchlist_snipes` sends `title="Target hit"`) — but **no other
+> user-facing string**. The subscription card sold "deal alerts" and Settings
+> offered "Deal alerts — when the Smart Deal Agent finds a match", naming a
+> different product. Both now say Target Hit. The STORED identifiers are
+> deliberately unchanged: the notification type stays `watchlist_snipe`, the
+> preference key and `notify_user` category stay `deal_alerts`, and the limit
+> stays `max_daily_deal_alerts`. Renaming those orphans live rows.
+>
 > **Watchlist slots are the Target Hit lever (added 2026-08-06).** The alert
 > can only fire on something you are watching, so slots ARE reach — that is why
 > the paid tier gates them rather than gating the notification itself.
-> `max_watchlist_items` (25 / None) and `max_daily_deal_alerts` (1 / None) live
-> in `PLAN_LIMITS` (billing_router.py), are mirrored in `DEFAULT_LIMITS` +
-> `FORCED_LIMITS` (useBillingLimits.ts) and in the `BillingStatus['limits']`
-> type (src/api/types.ts). All three must agree — see
-> `learning_billing_limits_fe_be_contract`. The watchlist cap is enforced
+> `max_watchlist_items` (25 / None), `max_daily_deal_alerts` (1 / None) and
+> `max_alerts_per_week` (1 / None) live in `PLAN_LIMITS` (billing_router.py),
+> are mirrored in `DEFAULT_LIMITS` + `FORCED_LIMITS` (useBillingLimits.ts) and
+> in the `BillingStatus['limits']` type (src/api/types.ts). All three must
+> agree — see `learning_billing_limits_fe_be_contract`.
+>
+> **`max_alerts_per_week` was server-only until 2026-08-26.** It was enforced
+> the whole time (`alerts_feature_router.py:158`, 403) and advertised on the
+> free card, but existed in neither the FE limits nor the type — so the first
+> client to read `limits.max_alerts_per_week` would have got `undefined` on the
+> RevenueCat/default path, which reads as "no cap" rather than as an error.
+> Added to both. The row above was missing from this table for the same reason:
+> the copy stated a limit the spec did not carry.
+>
+> **`check:billing-limits-parity` could not see it, and declaring it is what
+> turned the gate on.** The gate has two arms: agreement for keys the FE reads
+> as `limits.X` (this one is read nowhere), and agreement for numeric caps
+> **both tables declare** — and the FE declared nothing, so the key fell
+> through both. Proven by mutation after the fix: setting the FE value to 2
+> now exits 1 with `MISMATCH free.max_alerts_per_week: FE=2 BE=1`. It would
+> have passed forever beforehand. **A parity gate is blind to exactly the
+> failure of one side omitting a key, unless it enumerates the UNION of both
+> sides' keys.** The watchlist cap is enforced
 > server-side in `watchlist_router.add_to_watchlist` (403 `PLAN_LIMIT_WATCHLIST`),
 > not only in the client; the alert cap is read from the same table by
 > `deal_discovery_worker`, which no longer declares its own constants.

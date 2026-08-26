@@ -58,6 +58,13 @@ const DEFAULT_LIMITS: BillingStatus['limits'] = {
   max_mandates: 0,
   max_watchlist_items: 25,
   max_daily_deal_alerts: 1,
+  // Price-alert creation cap per rolling 7 days. Mirrors
+  // PLAN_LIMITS['free']['max_alerts_per_week'] (billing_router.py), which
+  // alerts_feature_router enforces with a 403. It lived ONLY on the server
+  // until 2026-08-25, so the first client to read `limits.max_alerts_per_week`
+  // would have got `undefined` on the RevenueCat/default path — a cap that
+  // silently reads as "no cap". null = unlimited.
+  max_alerts_per_week: 1,
   deal_discovery: false,
   dossier_pdf: false,
   advanced_analytics: false,
@@ -71,6 +78,7 @@ const FORCED_LIMITS: Record<'pro' | 'premium', BillingStatus['limits']> = {
     max_mandates: 10,
     max_watchlist_items: null,
     max_daily_deal_alerts: null,
+    max_alerts_per_week: null,
     deal_discovery: true,
     dossier_pdf: true,
     advanced_analytics: true,
@@ -82,6 +90,7 @@ const FORCED_LIMITS: Record<'pro' | 'premium', BillingStatus['limits']> = {
     max_mandates: 50,
     max_watchlist_items: null,
     max_daily_deal_alerts: null,
+    max_alerts_per_week: null,
     deal_discovery: true,
     dossier_pdf: true,
     advanced_analytics: true,

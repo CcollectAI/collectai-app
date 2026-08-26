@@ -54,7 +54,14 @@ const DEFAULT_PREFS: NotificationPrefs = {
 
 const TOGGLE_ITEMS: { key: keyof NotificationPrefs; label: string; hint: string }[] = [
   { key: 'price_alerts', label: 'Price alerts', hint: 'When an item hits your target price or moves sharply' },
-  { key: 'deal_alerts', label: 'Deal alerts', hint: 'When the Smart Deal Agent finds a match' },
+  // Label only. `deal_alerts` is the STORED preference key and the `category`
+  // deal_discovery_worker passes to notify_user — renaming it would orphan
+  // every existing preference row, the same reason Target Hit's stored
+  // notification type is still `watchlist_snipe`.
+  // The hint used to name the Smart Deal Agent, which is a different product
+  // (purchase mandates). This toggle governs `_check_watchlist_snipes`, whose
+  // push already ships with the title "Target hit".
+  { key: 'deal_alerts', label: 'Target Hit', hint: 'When a watched item is listed for sale below your target price' },
   { key: 'value_changes', label: 'Portfolio value', hint: 'Summaries when your collection value moves' },
   { key: 'item_value_changes', label: 'Item value changes', hint: 'When a single item you own changes in value' },
   { key: 'weekly_digest', label: 'Weekly digest', hint: 'One summary of your collection each week' },

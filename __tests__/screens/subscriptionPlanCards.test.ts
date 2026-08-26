@@ -81,7 +81,8 @@ describe('subscription plan cards match the limits they sell', () => {
   it('every numeric cap named on the Free card matches DEFAULT_LIMITS', () => {
     const caps: Array<[RegExp, string]> = [
       [/watchlist/i, 'max_watchlist_items'],
-      [/deal alert/i, 'max_daily_deal_alerts'],
+      [/target hit/i, 'max_daily_deal_alerts'],
+      [/price alert/i, 'max_alerts_per_week'],
     ];
     for (const [pattern, key] of caps) {
       const line = freeCard.find((f) => pattern.test(f));
@@ -115,7 +116,7 @@ describe('subscription plan cards match the limits they sell', () => {
     for (const key of ['max_watchlist_items', 'max_daily_deal_alerts']) {
       if (pro[key] !== 'null') continue;
       const claim = proCard.find((f) =>
-        key === 'max_watchlist_items' ? /watchlist/i.test(f) : /deal alert/i.test(f));
+        key === 'max_watchlist_items' ? /watchlist/i.test(f) : /target hit/i.test(f));
       expect(claim).toBeDefined();
       expect(claim).toMatch(/unlimited/i);
     }

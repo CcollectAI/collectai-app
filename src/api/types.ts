@@ -125,6 +125,8 @@ export interface BillingStatus {
     max_watchlist_items?: number | null;
     /** Target Hits per rolling 24h. null = unlimited. */
     max_daily_deal_alerts?: number | null;
+    /** Price alerts creatable per rolling 7 days. null = unlimited. */
+    max_alerts_per_week?: number | null;
     deal_discovery: boolean;
     dossier_pdf: boolean;
     advanced_analytics: boolean;
