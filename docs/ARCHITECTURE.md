@@ -158,6 +158,37 @@ things it deliberately does not do:
   service. App-side conversion is `app/lib/fx_service.py::convert_to_eur`,
   wired into all three server writers.
 
+⚠️ **Read the guard before adding a fourth writer** (2026-08-26). It is:
+
+```sql
+IF NEW.purchase_price_eur IS NULL
+   AND NEW.purchase_price IS NOT NULL
+   AND COALESCE(UPPER(BTRIM(NEW.purchase_currency)), 'EUR') = 'EUR' THEN
+    NEW.purchase_price_eur := NEW.purchase_price;
+END IF;
+```
+
+`COALESCE(..., 'EUR')` means **a NULL currency is treated AS EUR**. So "the
+trigger derives the missing half" is true only when the currency is present and
+EUR, or absent. A writer that sends `purchase_price` *without*
+`purchase_currency` does not get a no-op — it gets a JPY amount copied into the
+euro column, which is the ~170x error already recorded for this pair.
+
+That is why cost basis is captured through **`PATCH /items/{item_id}/purchase`**
+(`routes/items_router.py`, added 2026-08-26) and not by adding the column to the
+client's `supabase.from('items').update()` in `useItemDetail.onSaveEdits`. The
+route converts and writes `purchase_price`, `purchase_price_eur` and
+`purchase_currency` together, so the trigger's identity branch has nothing left
+to infer. **`purchase_price = null` clears BOTH halves** — nulling only the raw
+one strands a stale EUR figure that every analytics reader still sums.
+
+Until that route existed a purchase price could only be entered at CREATION
+(`add-manual.tsx`); the item screen had no field at all, so an item added
+without one could never gain one. Measured on prod 2026-08-26: **7 of 108 items
+had a purchase price**, which is why `/portfolio/items` was falling back to the
+earliest prediction as cost basis for almost the whole collection and reporting
+model drift as profit.
+
 #### `user_settings`: currency / region / locale — code and CHECK must agree
 
 `PUT /settings` writes three constrained columns. Each has a code-side allow-list
