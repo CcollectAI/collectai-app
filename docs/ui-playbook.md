@@ -2145,3 +2145,85 @@ Two rules worth keeping:
 
 Related: "One fact, three renderers" and "A tab's label and its TITLE are a
 third thing" — the same rule at three scales.
+
+## An analytics card that re-renders another screen (2026-08-26)
+
+Reported as *"on the professional plan analytics we have to remove the holdings
+because that is literally the same as the items overview screen"*, plus *"move
+the cost basis summary into the performance card because this is the full
+investment related analytics overview so it should be grouped together"*.
+
+Both were right, and measuring them first changed what "move" meant.
+
+### Holdings was the Items tab, minus the parts that make it useful
+
+It drew name / category / current value per row — exactly what `ItemsListItem`
+draws, without the thumbnail or the value-source chip, capped at 8 with no way
+to reach the rest. Its one differentiator was a 24h percentage behind
+`item.change1dPct !== undefined`, and **`/portfolio/items` has never returned
+`change_1d_pct`** — the same fact that deleted the "Movers" card on 2026-08-14.
+
+**The trap: it only looked distinct in development.** The six rows of the
+dev-forced mock snapshot DO set `change1dPct`, so on a dev build the card
+showed a column that production could never draw. Reading the code on a laptop
+made it look like it answered a question the Items tab does not.
+
+The screens answer different questions and the duplicate was on the wrong one:
+*what do I own and what is each worth* is the Items tab; *how is the collection
+doing* is Performance → Allocations → Category Performance.
+
+### "Move it into Performance" required moving nothing
+
+All three figures on the Cost Basis Summary card read the same three fields of
+the same `pl` object the Performance card above already renders:
+
+| Cost Basis Summary | = | already on Performance |
+|---|---|---|
+| Total Invested | `pl.startValue` | "from EUR X" on the delta line |
+| Current Value | `pl.currentValue` | the hero figure |
+| Unrealized P/L | `pl.deltaAbs` | the hero delta |
+
+So the merge was a deletion. **When a "move this into that" turns out to be a
+duplicate, say so rather than performing the move** — copying the tiles across
+would have produced the same numbers twice inside one card.
+
+Two of its behaviours were not carried over, because both were wrong rather
+than merely duplicated:
+
+1. **"Total Invested" was a mislabel.** `pl.startValue` is the portfolio's
+   value at the start of the window, not what the member spent — the server
+   falls back to the earliest prediction as cost basis when an item has no
+   purchase price. `portfolioAnalytics.ts` states the rule this broke in so
+   many words: summing that fallback into "what you paid" *"reports money the
+   member never spent"*. The honest figure was already on the same screen as
+   **"You paid"** (`valueSplit.purchaseTotal`, real purchase prices only). The
+   screen was showing two different numbers that both claimed to be the cost of
+   the collection.
+2. **Its P/L was ungated.** Performance shows the delta only when
+   `pl.hasBaseline`; this card printed `deltaAbs` unconditionally, so on an
+   account with no earlier value to measure against it stated a gain the card
+   directly above it deliberately refuses to state — the same contradiction
+   that removed the percentage badge on 2026-08-20, one card down.
+
+The progress bar went too. `width: min(100, (current/start) * 100)` pins at
+100% for **any** gain, so it carried no information in exactly the case a
+member wants to read it, and moved only while the collection was losing value.
+
+### The housekeeping the deletion forced
+
+- **14 style keys went dead** (`itemRow`…`itemPct`, `dcaRow`…`dcaBarFill`) and
+  were removed with the JSX. A style left behind is worse than unused: it still
+  reads as the definition of a row somebody might re-add.
+- **Two comments expired the moment the cards did** — the screen's file header
+  still advertised "Winners & losers section" and "Full items breakdown", and
+  the `getCollectionTrends` note still pointed at "the Cost Basis Summary card
+  below". Third session running that moving code invalidated the prose attached
+  to it.
+- `src/components/analytics/WinnersLosersSection.tsx` is now an **orphan file**,
+  imported by nothing. `check:unrendered` passes because it only catches a
+  component that is imported and not rendered; a file nobody imports at all is
+  invisible to it. Left in place and recorded here rather than deleted blind.
+
+Verified: `tsc --noEmit` exit 0, and `eslint app/analytics.tsx` reports the
+**same 5 warnings as HEAD** — compared against a `git worktree` baseline, not a
+stash. check:unrendered, check:item-values and check:brand-colors all PASS.

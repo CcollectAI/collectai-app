@@ -2,11 +2,20 @@
  * Portfolio Analytics Screen — Pro-grade analytics dashboard
  *
  * Features:
- * - P/L summary with max drawdown
+ * - Performance: current value, gain vs starting value, the paid/market/
+ *   estimated split, max drawdown and cost-basis coverage. This is the ONE
+ *   investment card — "Cost Basis Summary" was merged into it on 2026-08-26
+ *   because all three of its figures read the same `pl` fields.
  * - Portfolio tier badge (Diamond/Gold/Silver)
  * - Category allocations visualization
- * - Winners & losers section
- * - Full items breakdown
+ * - Category performance (7d) + category health
+ * - Collection completeness, prediction accuracy, demand heat
+ *
+ * NOT here, on purpose:
+ * - a per-item list ("Holdings", removed 2026-08-26) — that is the Items tab,
+ *   and this screen answers "how is the collection doing", not "what do I own"
+ * - "Winners & losers" (removed 2026-08-14) — it read `change_1d_pct`, which
+ *   /portfolio/items has never returned
  */
 
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
@@ -145,10 +154,12 @@ function AnalyticsScreen() {
   //
   // getCollectionTrends(30) used to lead this list. It was dropped 2026-07-24:
   // its three payloads were each already on this screen from another source —
-  // total_history duplicates the Home portfolio chart, dca_history duplicates
-  // the Cost Basis Summary card below, and per_category_gain_loss duplicates
-  // categoryStats.change_7d_pct. Its result was stored in state nothing read,
-  // so it cost three DB queries per screen open and rendered nothing.
+  // total_history duplicates the Home portfolio chart, dca_history duplicated
+  // the Cost Basis Summary card (itself merged into Performance on 2026-08-26,
+  // so that figure now lives on the delta line), and per_category_gain_loss
+  // duplicates categoryStats.change_7d_pct. Its result was stored in state
+  // nothing read, so it cost three DB queries per screen open and rendered
+  // nothing.
   useEffect(() => {
     let cancelled = false;
     Promise.allSettled([
@@ -680,42 +691,30 @@ function AnalyticsScreen() {
             trend direction and a median. Two cards for one question, one of
             which could never answer it. */}
 
-        {/* Items Summary (Pro+) */}
-        {limits.advanced_analytics && items.length > 0 && (
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.cardHeader}>
-              <Text style={[styles.cardTitle, { color: colors.text }]}>Holdings</Text>
-              <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{items.length} {items.length === 1 ? 'item' : 'items'}</Text>
-            </View>
+        {/* The "Holdings" card was REMOVED here on 2026-08-26, reported as
+            "literally the same as the items overview screen". It was.
 
-            {items.slice(0, 8).map((item, idx) => (
-              <View
-                key={item.id}
-                style={[styles.itemRow, { borderTopColor: colors.border }, idx === 0 && styles.itemRowFirst]}
-              >
-                <View style={styles.itemLeft}>
-                  <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
-                  <Text style={[styles.itemCategory, { color: colors.muted }]}>{item.category}</Text>
-                </View>
-                <View style={styles.itemRight}>
-                  <Text style={[styles.itemValue, { color: colors.text }]}>{formatPrice(item.currentValue, settings.currency ?? 'EUR')}</Text>
-                  {item.change1dPct !== undefined && (
-                    <Text
-                      style={[
-                        styles.itemPct,
-                        (item.change1dPct ?? 0) >= 0
-                          ? { color: colors.success }
-                          : { color: colors.danger },
-                      ]}
-                    >
-                      {formatPct(item.change1dPct)}
-                    </Text>
-                  )}
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
+            It drew name / category / current value per row — which is exactly
+            what `ItemsListItem` draws on the Items tab, minus the thumbnail and
+            the value-source chip, and capped at 8 with no way to see the rest.
+            A second, worse rendering of a screen the member already has.
+
+            Its ONE differentiator never drew. The row rendered a 24h percentage
+            behind `item.change1dPct !== undefined`, and `/portfolio/items` has
+            never returned `change_1d_pct` — the same fact that deleted the
+            "Movers" card on 2026-08-14, verified against prod then and
+            unchanged since (the endpoint returns category, cost_basis,
+            current_value, id, name, q10, q90, unrealized_pl). Only the
+            dev-forced mock snapshot sets it, so the percentage was visible in
+            development and never in production. That is why the duplication
+            was easy to miss from the code: on a dev build the card looked like
+            it said something the Items tab does not.
+
+            "What do I own, and what is each worth" is the Items tab's question.
+            This screen answers "how is the collection doing", which is the
+            Performance / Allocations / Category Performance chain above.
+            (playbook, 2026-08-14: "Two cards for one question, one of which
+            could never answer it.") */}
 
         {/* Collection Completeness (Pro+) */}
         {limits.advanced_analytics && activeCategories.length > 0 && (
@@ -784,48 +783,42 @@ function AnalyticsScreen() {
           </View>
         )}
 
-        {/* ── M3: Cost Basis / DCA Overlay (Pro+) ── */}
-        {limits.advanced_analytics && pl && (
-          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.cardHeader}>
-              <Ionicons name="wallet-outline" size={18} color={colors.accent} />
-              <Text style={[styles.cardTitle, { color: colors.text }]}>Cost Basis Summary</Text>
-            </View>
-            <View style={styles.dcaRow}>
-              <View style={styles.dcaStat}>
-                <Text style={[styles.dcaLabel, { color: colors.muted }]}>Total Invested</Text>
-                <Text style={[styles.dcaValue, { color: colors.text }]}>
-                  {formatPrice(pl.startValue, settings.currency ?? 'EUR')}
-                </Text>
-              </View>
-              <View style={styles.dcaStat}>
-                <Text style={[styles.dcaLabel, { color: colors.muted }]}>Current Value</Text>
-                <Text style={[styles.dcaValue, { color: colors.text }]}>
-                  {formatPrice(pl.currentValue, settings.currency ?? 'EUR')}
-                </Text>
-              </View>
-              <View style={styles.dcaStat}>
-                <Text style={[styles.dcaLabel, { color: colors.muted }]}>Unrealized P/L</Text>
-                <Text style={[styles.dcaValue, { color: isPositive ? colors.success : colors.danger }]}>
-                  {isPositive ? '+' : ''}{formatPrice(pl.deltaAbs, settings.currency ?? 'EUR')}
-                </Text>
-              </View>
-            </View>
-            {pl.startValue > 0 && (
-              <View style={[styles.dcaBar, { backgroundColor: colors.border + '40' }]}>
-                <View
-                  style={[
-                    styles.dcaBarFill,
-                    {
-                      backgroundColor: isPositive ? colors.success : colors.danger,
-                      width: `${Math.min(100, Math.max(5, (pl.currentValue / pl.startValue) * 100))}%`,
-                    },
-                  ]}
-                />
-              </View>
-            )}
-          </View>
-        )}
+        {/* The "Cost Basis Summary" card was REMOVED here on 2026-08-26 and
+            MERGED INTO the Performance card above — which required moving
+            nothing, because all three of its figures were already there,
+            reading the same three fields of the same `pl` object:
+
+              Total Invested  = pl.startValue    -> "from EUR X" on the delta line
+              Current Value   = pl.currentValue  -> the hero figure
+              Unrealized P/L  = pl.deltaAbs      -> the hero delta
+
+            Investment analytics now live in ONE card, which is what was asked
+            for. Two things are deliberately not carried over, because both
+            were wrong rather than merely duplicated:
+
+            1. "Total Invested" was a MISLABEL. `pl.startValue` is the
+               portfolio's value at the start of the window, not what the member
+               spent — the server falls back to the earliest prediction as cost
+               basis when an item has no purchase price. `portfolioAnalytics.ts`
+               states the rule this broke: summing that fallback into "what you
+               paid" "reports money the member never spent". The honest figure
+               is already on the Performance card as "You paid"
+               (`valueSplit.purchaseTotal`, real purchase prices only), and the
+               footer says how many items it can possibly apply to. The screen
+               was showing two different numbers that both claimed to be what
+               the collection cost.
+
+            2. The P/L was UNGATED. Performance shows the delta only when
+               `pl.hasBaseline`; this card printed `deltaAbs` unconditionally,
+               so on an account with no earlier value to measure against it
+               stated a gain the card above deliberately refuses to state. Same
+               defect as the "0.00% beside +EUR 8,070" contradiction that
+               removed the badge on 2026-08-20, one card down.
+
+            The progress bar went with it. `width: min(100, (current/start)*100)`
+            is pinned at 100% for ANY gain, so it was blank of information in
+            exactly the case a member wants to read it, and only moved when the
+            collection was losing value. */}
 
         {/* ── M4: Prediction Accuracy (Premium) ── */}
         {limits.advanced_analytics && predictionAccuracy && predictionAccuracy.length > 0 && (
@@ -1114,43 +1107,6 @@ const styles = StyleSheet.create({
   },
 
   // Items
-  itemRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    // borderTopColor set inline via colors.border
-  },
-  itemRowFirst: {
-    borderTopWidth: 0,
-  },
-  itemLeft: {
-    flex: 1,
-    marginRight: 12,
-  },
-  itemName: {
-    fontSize: text.md,
-    fontWeight: fontWeight.semibold,
-    // color set inline via colors.text
-  },
-  itemCategory: {
-    fontSize: text.sm,
-    // color set inline via colors.muted
-    marginTop: 2,
-  },
-  itemRight: {
-    alignItems: "flex-end",
-  },
-  itemValue: {
-    fontSize: text.md,
-    fontWeight: fontWeight.bold,
-    // color set inline via colors.text
-  },
-  itemPct: {
-    fontSize: text.sm,
-    fontWeight: fontWeight.semibold,
-    marginTop: 2,
-  },
 
   // Completeness
   completenessRow: {
@@ -1253,34 +1209,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     // Nudge down so the dot optically centres on the first line of text.
     marginTop: 6,
-  },
-  dcaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 8,
-    marginBottom: 12,
-  },
-  dcaStat: {
-    flex: 1,
-    alignItems: "center",
-  },
-  dcaLabel: {
-    fontSize: text.sm,
-    fontWeight: fontWeight.medium,
-    marginBottom: 4,
-  },
-  dcaValue: {
-    fontSize: text.md,
-    fontWeight: fontWeight.bold,
-  },
-  dcaBar: {
-    height: 6,
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  dcaBarFill: {
-    height: 6,
-    borderRadius: 3,
   },
 
 });
