@@ -1,7 +1,7 @@
 /**
  * Items-related API methods: provenance, progress, attributes, images, photos, for-sale toggle.
  */
-import { get, post, del, patch, put, postMultipart, API_BASE } from "./httpClient";
+import { get, post, del, patch, put, postMultipart, API_BASE, getAuthHeaders } from "./httpClient";
 import type { ServerUploadResponse } from "./types";
 
 // Photo upload — server-side optimized (preferred)
@@ -89,6 +89,32 @@ export const getDossierSummary = (itemId: string) =>
 
 export const getDossierExportUrl = (itemId: string) =>
   `${API_BASE}/dossier/${encodeURIComponent(itemId)}/export`;
+
+/**
+ * Fetch the dossier export as HTML, WITH the bearer token.
+ *
+ * `getDossierExportUrl` above was being handed straight to `Linking.openURL`,
+ * which opens the system browser — and the system browser has no session. The
+ * endpoint is `Depends(get_current_user_id)` + `require_plan("pro")`, so a Pro
+ * member tapping "Export Report" left the app and landed on a white page
+ * reading `{"detail":"Authentication required"}`. A sold feature, on the tier
+ * that pays for it, that has never worked.
+ *
+ * The URL helper is kept because the URL itself is fine; what was wrong was
+ * giving an authenticated address to something that cannot authenticate.
+ */
+export const fetchDossierExportHtml = async (itemId: string): Promise<string> => {
+  const res = await fetch(getDossierExportUrl(itemId), {
+    headers: await getAuthHeaders(),
+  });
+  if (!res.ok) {
+    // Carry the server's own reason. A 403 here means the plan gate rejected
+    // them, which is a different conversation from a 500, and the caller can
+    // only say something useful if it knows which.
+    throw new Error(`Export failed (${res.status})`);
+  }
+  return res.text();
+};
 
 // Progress Tracking
 export const getItemProgress = (itemId: string) =>

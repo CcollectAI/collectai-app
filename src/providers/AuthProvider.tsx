@@ -78,6 +78,21 @@ export type AuthContextValue = {
   profile: Profile | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  /** Re-read the caller's own `profiles` row after they have changed it.
+   *
+   *  Added 2026-08-27. `PATCH /settings/profile` persisted correctly — verified
+   *  against prod, the row held the new username and bio — and the app went on
+   *  rendering the OLD values, because `profile` lives in this context and
+   *  nothing could ask it to reload. From a member's seat that is
+   *  indistinguishable from "my edit did not save", which is exactly how it was
+   *  reported.
+   *
+   *  Deliberately NOT `loadProfile`: that one does `setProfile(null)` in its
+   *  catch, which is right for a hydrate (no session, no profile) and wrong
+   *  here — a transient timeout immediately after a successful save would wipe
+   *  the name the member just set and prove them right. This one keeps what is
+   *  on screen when the re-read fails. */
+  refreshProfile: () => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -300,6 +315,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [loadProfile]);
 
+  /** See the note on `AuthContextValue.refreshProfile`. Reads the same three
+   *  columns `loadProfile` does, and — unlike it — leaves the current profile
+   *  alone when the read fails, so a flaky network cannot erase an edit that
+   *  already landed. */
+  const refreshProfile = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await withTimeout(
+        supabase
+          .from('profiles')
+          .select('id, username, created_at, referred_by_code, bio')
+          .eq('id', user.id)
+          .single(),
+        PROFILE_READ_TIMEOUT_MS,
+        'AuthProvider.refreshProfile',
+      );
+      if (error) throw error;
+      if (data) setProfile(data as Profile);
+    } catch (e) {
+      // logger.error, not warn: warn is stripped in release builds, and a
+      // refresh that silently does nothing is the whole reported bug.
+      logger.error('[AuthProvider] profile refresh failed (keeping current):', e);
+    }
+  }, [user]);
+
+
   const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
@@ -315,7 +356,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

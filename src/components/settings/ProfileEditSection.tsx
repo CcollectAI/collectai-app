@@ -37,7 +37,7 @@ import { useTranslation } from 'react-i18next';
 function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMount?: boolean }) {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
-  const { user, profile, signOut } = useAuthContext();
+  const { user, profile, signOut, refreshProfile } = useAuthContext();
   const { showToast } = useToast();
   const router = useRouter();
   const { t } = useTranslation();
@@ -151,6 +151,14 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
         // so the modal closed and a CONFIRMATION haptic fired on a write that
         // never landed.
         await updateProfile({ username: editUsername.trim(), bio: editBio.trim() });
+        // RE-READ, or the save is invisible. The PATCH persists — verified
+        // against prod — but `profile` lives in AuthProvider's context and
+        // nothing here could ask it to reload, so the screen kept rendering the
+        // old username and bio and the edit read as "it didn't save". A write
+        // that lands and is not shown is indistinguishable from one that
+        // didn't. Awaited, so the modal closes onto fresh values rather than
+        // flashing the stale ones.
+        await refreshProfile();
       }
       setEditProfileVisible(false);
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });

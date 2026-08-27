@@ -232,6 +232,10 @@ export const collectorsApi = {
   // Cost basis — server-side so the FX conversion happens (see itemsApi)
   updateItemPurchase: itemsApi.updateItemPurchase,
 
+  // Dossier export — fetched WITH auth, then shared as a file. Opening the
+  // URL in the browser 401s; see fetchDossierExportHtml.
+  fetchDossierExportHtml: itemsApi.fetchDossierExportHtml,
+
   // Grading Service Integration
   gradingLookup: gradingApi.gradingLookup,
   gradingPopulation: gradingApi.gradingPopulation,

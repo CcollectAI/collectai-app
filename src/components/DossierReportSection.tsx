@@ -7,16 +7,20 @@
  *
  * Extracted from app/item/[id].tsx to reduce file size.
  */
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   View,
   Text,
   Pressable,
   ActivityIndicator,
-  Linking,
+  Alert,
   StyleSheet,
 } from "react-native";
+// `/legacy`, matching app/(tabs)/items.tsx: the package's main entry no
+// longer exports `documentDirectory`, and tsc says so.
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
 import { collectorsApi } from "@/api/collectorsApi";
@@ -74,6 +78,7 @@ export const DossierReportSection = React.memo(function DossierReportSection({
   formatPrice,
   toNum,
 }: DossierReportSectionProps) {
+  const [exporting, setExporting] = useState(false);
   const { t } = useTranslation();
   return (
     <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
@@ -147,19 +152,61 @@ export const DossierReportSection = React.memo(function DossierReportSection({
             </View>
           )}
           {/* Export button */}
+          {/* FETCH, then share — do not open the URL.
+              `/dossier/{id}/export` is `Depends(get_current_user_id)` +
+              `require_plan("pro")`, and `Linking.openURL` hands it to the
+              system browser, which has no session. A Pro member tapping this
+              left the app and landed on a white page reading
+              `{"detail":"Authentication required"}` — a sold feature, on the
+              tier that pays for it, that had never worked.
+              Same shape as every other authed-URL bug in this repo: an address
+              built for our API given to something that cannot authenticate. */}
           <Pressable
-            onPress={() => {
-              const url = collectorsApi.getDossierExportUrl(itemId);
-              Linking.openURL(url).catch((err) => {
-                logger.warn("[ItemDetail] Failed to open URL", err);
-              });
+            disabled={exporting}
+            onPress={async () => {
+              if (exporting) return;
+              setExporting(true);
+              try {
+                const html = await collectorsApi.fetchDossierExportHtml(itemId);
+                const filename = `Sparrow Collect_Report_${itemId.slice(0, 8)}.html`;
+                if (!FileSystem.documentDirectory) {
+                  throw new Error("File storage not available on this platform");
+                }
+                const filePath = `${FileSystem.documentDirectory}${filename}`;
+                await FileSystem.writeAsStringAsync(filePath, html);
+                if (await Sharing.isAvailableAsync()) {
+                  await Sharing.shareAsync(filePath, {
+                    mimeType: "text/html",
+                    dialogTitle: "Export Report",
+                    UTI: "public.html",
+                  });
+                } else {
+                  // Saved but not shareable is still a result, and saying so
+                  // beats a button that appears to do nothing.
+                  Alert.alert("Report saved", `Saved as ${filename}`);
+                }
+              } catch (err) {
+                logger.error("[ItemDetail] dossier export failed:", err);
+                Alert.alert(
+                  "Export failed",
+                  (err as Error)?.message || "Could not build the report. Please try again.",
+                );
+              } finally {
+                setExporting(false);
+              }
             }}
             style={[s.dossierExportBtn, { borderColor: theme.border }]}
             accessibilityRole="button"
             accessibilityLabel={t('dossier.export_pdf_a11y')}
           >
-            <Ionicons name="share-outline" size={16} color={theme.accent} />
-            <Text style={[s.dossierExportText, { color: theme.accent }]}>{t('dossier.export_report')}</Text>
+            {exporting ? (
+              <ActivityIndicator size="small" color={theme.accent} />
+            ) : (
+              <Ionicons name="share-outline" size={16} color={theme.accent} />
+            )}
+            <Text style={[s.dossierExportText, { color: theme.accent }]}>
+              {exporting ? 'Preparing…' : t('dossier.export_report')}
+            </Text>
           </Pressable>
         </View>
       )}
