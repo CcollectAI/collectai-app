@@ -53,19 +53,31 @@ export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props
       </AnimatedPressable>
       {/* THE primary action on this screen, and the only filled accent on it.
           Everything else here is outline or muted — 48 accent usages across
-          this screen and its components meant nothing read as primary. */}
-      <AnimatedPressable
-        onPress={onSell}
-        disabled={busy}
-        style={[styles.quickActionBtn, { backgroundColor: theme.accent, borderColor: theme.accent }, busy && { opacity: 0.5 }]}
-        accessibilityRole="button"
-        accessibilityLabel="Sell this on the Sparrow marketplace"
-      >
-        {/* accentText, never '#fff': in high-contrast dark the accent fill IS
-            white and a hardcoded white label disappears. */}
-        <Ionicons name="pricetag" size={18} color={theme.accentText} />
-        <Text style={[styles.quickActionLabel, { color: theme.accentText }]}>Sell</Text>
-      </AnimatedPressable>
+          this screen and its components meant nothing read as primary.
+
+          HIDDEN ONCE THE ITEM IS LISTED (2026-08-27). An item already for sale
+          renders a "Listed for sale" badge with an "Unlist" button directly
+          above this row; offering "Sell" underneath asked the member to do a
+          thing they have already done, next to the control for undoing it.
+          The screen was telling them two different states of the same fact.
+
+          When it is listed, Edit takes the full width rather than leaving a
+          gap where the primary action was — a row that keeps its slot empty
+          reads as a control that failed to load. */}
+      {!isForSale ? (
+        <AnimatedPressable
+          onPress={onSell}
+          disabled={busy}
+          style={[styles.quickActionBtn, { backgroundColor: theme.accent, borderColor: theme.accent }, busy && { opacity: 0.5 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Sell this on the Sparrow marketplace"
+        >
+          {/* accentText, never '#fff': in high-contrast dark the accent fill IS
+              white and a hardcoded white label disappears. */}
+          <Ionicons name="pricetag" size={18} color={theme.accentText} />
+          <Text style={[styles.quickActionLabel, { color: theme.accentText }]}>Sell</Text>
+        </AnimatedPressable>
+      ) : null}
       {/* Second selling entry point — gated with the Seller Dashboard, or a user
           could still create a listing that goes nowhere (no marketplace account
           can be connected). Gating only the dashboard would have missed this. */}

@@ -2334,3 +2334,82 @@ lines collided; this is a single-line display figure where a tight leading is
 the point. **A checker written during a sweep is itself unaudited** — the
 playbook says so about greps, and it is just as true of a ratio test. Fixing
 this one would have been a false positive with a commit message.
+
+## A screenshot is a test case, and five of them were (2026-08-27)
+
+Five TestFlight screenshots of build 154 produced eleven defects. Every one is
+a rule this playbook already holds; what is worth recording is the *shape* of
+each miss, because none of them was found by reading the JSX.
+
+| reported as | what it actually was |
+|---|---|
+| "the LEGO details line seems odd and misplaced" | a bordered heading with an empty body — a gate admitting content its children declined to draw. Five categories, not one |
+| "the market prices are way off" | `EUR 1,620,277,371` — a scraped page counter filed as a comp. The display path had **no bound of any kind** |
+| "price seems off is duplicated" | not duplicated; the *ask* sat a screen below the *correction*, and from a member's seat that is one question asked twice |
+| "the export report doesn't work" | an authenticated URL handed to `Linking.openURL`. The browser has no session, so a **paying** member got raw JSON |
+| "profile additions don't persist" | they persisted. Nothing could ask the context to re-read them |
+
+### The one that generalises: a paid surface has to justify itself
+
+*"Why would a paid user want to see these? … all choices need to be
+intentional."* The Market Prices section listed five suruga_ya products under a
+Japanese vinyl record, three of them different records, beneath an EUR 8,015
+estimate every visible row contradicted.
+
+The estimate was **right** — Summer Magic Bayou is a real four-figure card. The
+comps under it were wrong. Both halves of that sentence matter: the first
+instinct was that a EUR 8,015 valuation on a vinyl screen must be the broken
+part, and chasing that would have "fixed" the one number that was correct.
+
+The fix was not a filter bolted on. It was to make the section answer its own
+question — relevance-gated comps, ported from the server's
+`_is_plausible_tcg_listing`, and an honest empty state when nothing survives.
+**An unsupported estimate should look unsupported**, which is what "no listings
+matching this item" achieves and what five wrong rows actively concealed.
+
+### Deleting a reader twice is a sign the number is missing
+
+"Movers" was deleted 2026-08-14 and "Holdings" lost its percentage 2026-08-26,
+both for rendering `change_1d_pct`, which `/portfolio/items` has never returned.
+Both times the fix was to delete the reader. **Nobody asked why the number did
+not exist.** It was computable the whole time: `price_predictions` keeps
+history, and 66,172 of 71,858 item_refs span >= 7 days.
+
+When a feature is deleted twice for reading an empty column, the third response
+should be to look at the writer.
+
+### NULL is a claim, and `or 0` erases it
+
+Three separate places this week turned "unknown" into a number:
+
+- `((totals or {}).get("api_5xx") or 0) >= 10` — the 5xx alert vanished for two
+  days while the window really held 16
+- `float(r["change_7d_pct"] or 0)` would have made "no week-old prediction"
+  read as "moved 0.0%"
+- `h["source"] or "unknown"` labelled **100%** of comps "Unknown" while
+  `provider` sat populated in the next column
+
+The 2026-08-12 `[]`-vs-`None` work fixed the collector and not the consumers.
+**Fixing the number is not fixing the alert built on the number.**
+
+### What a "UI sweep" actually means here
+
+Asked for an "alignment and professional UI sweep", the useful pass was
+mechanical, not visual: invalid icon names (render an empty box, never throw),
+Android-fatal `accessibilityRole`s, banned type sizes, line-height ratios. That
+found **9 styles still on 10pt** across the item card. Reading the JSX found
+nothing.
+
+⚠️ And the sweep's own checker lied twice in one day: a ratio test flagged a
+deliberate 1.25x display line-height, and a grep for leftover `openURL` matched
+the phrase inside an explanatory comment. **A comment is not a reference,
+including in your own checks** — and a checker written during an audit is
+itself unaudited.
+
+### Render the component, or the build finds it for you
+
+The export bug was type-correct and shipped. `tsc` cannot prove a component
+mounts. `@testing-library/react-native` was already a dependency; three suites
+now mount the changed components in CI — asserting the `=== 1` boundary at 0/1/
+2/5/undefined, that an empty-attribute LEGO item draws **no** heading while one
+with `set_number` does, and that pressing Export never calls `Linking.openURL`.

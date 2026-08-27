@@ -2,6 +2,76 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-26
 
+## Five screenshots, eleven defects, and three of my own (2026-08-27)
+
+Build 154 went to TestFlight and came back as five photographs. Every defect in
+them was a rule this repo already holds, broken one level out from where it was
+enforced — the pattern is in `docs/ui-playbook.md`. What belongs here is the
+part about **measurement changing the answer**, which happened five times.
+
+### Where I was wrong, and the data said so
+
+1. **"The EUR 8,015 estimate is absurd."** It is a scryfall price for MTG
+   Summer Magic *Bayou* — a real four-figure card. The estimate was the one
+   correct thing on that screen; the comps beneath it were wrong. Chasing my
+   first instinct would have "fixed" the right number.
+2. **"Grade-mixing is the credibility gap."** The research says so, loudly. The
+   data says only **150 of 71,860 items (0.2%)** have comps spanning multiple
+   conditions — because `condition` is 100% populated and **2,926,015 of
+   2,927,565 rows are the literal string `NM`**. A constant, not a signal.
+3. **"The profile write doesn't land."** It landed. My query ordered by
+   `created_at DESC LIMIT 8`, Postgres sorts NULLs FIRST on DESC, and rows with
+   a null timestamp pushed the real one past the limit. **A partial answer
+   reading as a complete one** — in my own check, on the same day I fixed three
+   of them in the product.
+4. **"These files are orphaned."** A barrel file re-exported one. `tsc` caught
+   it; my grep had not. **A barrel re-export is a reference.**
+5. **"diversity_factor just needs the provider fallback."** It does — and that
+   doubles the confidence score on **45.7%** of items. Measuring the blast
+   radius turned a one-word fix into a decision.
+
+### The reject list I shipped, and audited an hour later
+
+I ported `_TCG_REJECT_TOKENS` to a filter running on EVERY category and kept its
+substring matching. `"tin"` is inside S·tin·g, Con·tin·ental, Tin·tin,
+Pain·tin·g, Quen·tin, Chris·tin·a: **7 of 9 real titles rejected**, while the
+section claimed "no listings matching this item" — worse than the noise it
+replaced, because it looks authoritative.
+
+The galling part is that I **quoted**
+`learning_keyword_filters_need_per_category_false_positive_audit` in the commit
+that introduced it. I applied "read every match" to the relevance rule and not
+to the list I pasted in beside it. **Quoting a learning is not applying it.**
+
+### `or 0` erases a NULL, three times over
+
+The 2026-08-12 `[]`-vs-`None` work made the collector honest and left every
+consumer alone. `((totals or {}).get("api_5xx") or 0) >= 10` evaluated an
+unknown to False, so "API returning 5xx" silently vanished for two days while
+the window held 16. **Fixing the number is not fixing the alert built on it.**
+
+Same shape twice more: `h["source"] or "unknown"` labelled 100% of comps
+"Unknown" with `provider` populated in the adjacent column, and
+`float(change_7d_pct or 0)` would have turned "no measurement" into "0.0%".
+
+### Deleted twice means the writer is missing
+
+"Movers" (08-14) and "Holdings"' percentage (08-26) were both deleted for
+reading `change_1d_pct`, which the server has never returned. Both times the fix
+was deleting the READER. Nobody asked why the number did not exist — it was
+computable throughout, and 66,172 of 71,858 item_refs have the history for it.
+
+**When a feature is deleted twice for reading an empty column, look at the
+writer.**
+
+### Render the component
+
+The export bug — an authed URL handed to `Linking.openURL`, so a paying member
+got `{"detail":"Authentication required"}` in a browser — was perfectly
+type-correct and reached TestFlight. `@testing-library/react-native` was already
+a dependency. Three suites now mount the changed components in CI, including one
+that presses Export and asserts `Linking.openURL` is never called.
+
 ## The queue filtered on a column the query did not value on (2026-08-26)
 
 Worked today's watchdog: 2 HIGH, 2 MEDIUM, 1 INFO. **One HIGH was real with the

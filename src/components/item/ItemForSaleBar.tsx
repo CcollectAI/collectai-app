@@ -45,8 +45,15 @@ export const ItemForSaleBar = React.memo(function ItemForSaleBar({ askingPriceVa
       >
         <RNAnimated.View style={[styles.activeDot, { backgroundColor: theme.success, opacity: pulseAnim }]} />
         <Ionicons name="pricetag" size={14} color={theme.success} />
+        {/* "Listed for sale", not "Listed". On its own, "Listed" is ambiguous
+            on a collection screen — listed WHERE, and for what? The badge sits
+            beside an "Unlist" button and above "Sell", so the reading it has to
+            survive is a member scanning a shelf of their own items. The
+            accessibilityLabel directly above has always said "listed for sale";
+            the visible label now matches it, which is the same label/a11y
+            divergence the tab-title rule covers. */}
         <Text style={[styles.forSaleBadgeText, { color: theme.success }]}>
-          Listed{askingPriceValue ? ` ${formatPrice(parseMoney(askingPriceValue) ?? 0, settings.currency)}` : ''}
+          Listed for sale{askingPriceValue ? ` ${formatPrice(parseMoney(askingPriceValue) ?? 0, settings.currency)}` : ''}
         </Text>
       </View>
       {/* Routes into the selling flow, so it follows SELLING_ENABLED too —
