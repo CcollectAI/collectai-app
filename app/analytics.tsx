@@ -43,7 +43,7 @@ import {
   type RawPersonalizedInsights,
 } from "@/data/personalizedInsights";
 import { ItemsEmptyState } from "@/components/items";
-import { splitPortfolioByValueSource, rankPositions } from '@/lib/portfolioAnalytics';
+import { splitPortfolioByValueSource, rankPositions, rankMovers } from '@/lib/portfolioAnalytics';
 import { formatPrice } from "@/lib/format";
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { useAsync } from "@/hooks/useAsync";
@@ -343,6 +343,10 @@ function AnalyticsScreen() {
   // numbers a member is shown as PROFIT — see `rankPositions` for the two
   // rules (hasPurchasePrice gates it; sort by absolute move so losses surface).
   const positions = useMemo(() => rankPositions(items), [items]);
+  // Movers: see `rankMovers`. Real data as of 2026-08-27 — the server now
+  // computes a per-item 7d move from price_predictions history, which is the
+  // thing that was missing both times this card was deleted.
+  const movers = useMemo(() => rankMovers(items), [items]);
 
   /**
    * Split the personalized-insights notes into the two things they actually
@@ -742,6 +746,54 @@ function AnalyticsScreen() {
             Performance / Allocations / Category Performance chain above.
             (playbook, 2026-08-14: "Two cards for one question, one of which
             could never answer it.") */}
+
+        {/* MOVERS (Pro+) — deleted 2026-08-14, rebuilt 2026-08-27 on data that
+            now exists. It answers "what changed this week", which is the
+            sell/hold question; Positions below answers "what am I up on".
+            Rendered only when something actually moved — a Movers card with
+            two empty columns is the bordered-and-empty shape this screen has
+            been burned by before. */}
+        {limits.advanced_analytics && (movers.gainers.length > 0 || movers.losers.length > 0) && (
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.cardHeader}>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>Movers</Text>
+              <Text style={[styles.cardSubtitle, { color: colors.muted }]}>last 7 days</Text>
+            </View>
+            {[...movers.gainers, ...movers.losers].map((it, idx) => {
+              const pct = it.change7dPct ?? 0;
+              const up = pct > 0;
+              return (
+                <View
+                  key={it.id}
+                  style={[styles.posRow, { borderTopColor: colors.border }, idx === 0 && styles.posRowFirst]}
+                >
+                  <View style={styles.posLeft}>
+                    <Text style={[styles.posName, { color: colors.text }]} numberOfLines={1}>{it.name}</Text>
+                    <Text style={[styles.posBasis, { color: colors.muted }]} numberOfLines={1}>{it.category}</Text>
+                  </View>
+                  <View style={styles.posRight}>
+                    <Text style={[styles.posPl, { color: colors.text }]}>
+                      {formatPrice(it.currentValue, settings.currency ?? 'EUR')}
+                    </Text>
+                    <Text style={[styles.posPlPct, { color: up ? colors.success : colors.danger }]}>
+                      {formatPct(pct)}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+            {/* The population this board is NOT about. An item with no
+                7-day-old prediction has no measurable move, which is a
+                different statement from "it did not move". */}
+            {movers.unmeasured > 0 ? (
+              <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
+                <Text style={[styles.footNote, { color: colors.muted }]}>
+                  {`Measured on the ${movers.measured} ${movers.measured === 1 ? 'item' : 'items'} we have a week of history for. ${movers.unmeasured} more are too new to compare.`}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        )}
 
         {/* POSITIONS (Pro+) — what replaced "Holdings".
             Holdings re-rendered the Items tab. This answers the question the

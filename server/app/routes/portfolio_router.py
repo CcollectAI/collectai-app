@@ -391,6 +391,36 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     WHERE i.user_id = $1
                     ORDER BY pp.item_ref, pp.generated_at DESC
                 ),
+                -- PER-ITEM 7-DAY MOVE (added 2026-08-27).
+                --
+                -- The client has wanted this twice. "Movers" was deleted on
+                -- 2026-08-14 and "Holdings" on 2026-08-26, both because they
+                -- rendered `change_1d_pct`, which this endpoint has never
+                -- returned — so the column was always undefined and the
+                -- feature never drew a row. The answer both times was to
+                -- delete the reader; the actual gap was that nothing COMPUTED
+                -- the number.
+                --
+                -- It is computable: `price_predictions` keeps history, and
+                -- measured 2026-08-27, 66,172 of 71,858 item_refs have
+                -- predictions spanning >= 7 days. `change_7d_pct` on the
+                -- CATEGORY endpoint is a different figure (a category total),
+                -- so this is not a duplicate of it.
+                --
+                -- DISTINCT ON picks the newest prediction at or before the
+                -- cutoff; an item with no prediction that old yields NULL, and
+                -- NULL must reach the client as "unknown" rather than as 0% —
+                -- a flat line and a missing measurement are not the same
+                -- claim, which is the mistake `change_1d_pct` shipped.
+                week_ago AS (
+                    SELECT DISTINCT ON (pp.item_ref)
+                        pp.item_ref, pp.q50 AS q50_7d
+                    FROM price_predictions pp
+                    JOIN items i ON i.canonical_ref = pp.item_ref
+                    WHERE i.user_id = $1
+                      AND pp.generated_at <= now() - interval '7 days'
+                    ORDER BY pp.item_ref, pp.generated_at DESC
+                ),
                 earliest AS (
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50 AS first_q50
@@ -419,6 +449,11 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     iv.value_eur AS current_value,
                     COALESCE(l.q10, 0) AS q10,
                     COALESCE(l.q90, 0) AS q90,
+                    -- NULL, not 0, when there is no 7-day-old prediction to
+                    -- compare against. See the week_ago CTE.
+                    CASE WHEN w.q50_7d IS NOT NULL AND w.q50_7d > 0 AND l.q50 IS NOT NULL
+                         THEN round(((l.q50 - w.q50_7d) / w.q50_7d)::numeric, 4)
+                    END AS change_7d_pct,
                     -- What the user actually PAID, falling back to the earliest
                     -- prediction only when there is no purchase price on file.
                     -- This was `COALESCE(e.first_q50, 0)` alone, which made
@@ -464,6 +499,9 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                 LEFT JOIN LATERAL public.item_value_v1(i) iv ON TRUE
                 LEFT JOIN latest l ON l.item_ref = i.canonical_ref
                 LEFT JOIN earliest e ON e.item_ref = i.canonical_ref
+                -- LEFT: an item with no 7-day-old prediction keeps its row and
+                -- gets a NULL move, rather than dropping out of the portfolio.
+                LEFT JOIN week_ago w ON w.item_ref = i.canonical_ref
                 -- LEFT, and case-insensitive: an item may name a set we hold no
                 -- catalogue row for, and that item must still come back. It
                 -- simply arrives with set_size NULL and counts toward nothing.
@@ -497,6 +535,14 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     "value_source": r["value_source"],
                     "q10": round(float(r["q10"] or 0), 2),
                     "q90": round(float(r["q90"] or 0), 2),
+                    # None stays None. `float(x or 0)` here would turn "we have
+                    # no 7-day-old prediction" into "this item moved 0.0%",
+                    # which is a claim we cannot support — and is precisely the
+                    # shape that made change_1d_pct useless twice over.
+                    "change_7d_pct": (
+                        float(r["change_7d_pct"])
+                        if r["change_7d_pct"] is not None else None
+                    ),
                     # Nullable on purpose, both of them. `null` means "this item
                     # names no set" / "we hold no catalogue row for that set" —
                     # which is NOT the same as a set of size 0, and the client

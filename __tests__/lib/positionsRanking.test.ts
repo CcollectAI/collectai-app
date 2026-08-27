@@ -72,3 +72,41 @@ describe('rankPositions', () => {
     expect(r.missingBasis).toBe(0);
   });
 });
+
+/**
+ * `rankMovers` — the card that was deleted twice for reading a column the
+ * server never returned. The server computes it now; these pin the semantics
+ * that made the previous attempts worthless.
+ */
+import { rankMovers } from '@/lib/portfolioAnalytics';
+
+const mv = (id: string, change7dPct?: number) => ({ id, change7dPct });
+
+describe('rankMovers', () => {
+  it('treats a MISSING move as unmeasured, never as flat', () => {
+    const r = rankMovers([mv('a', 0.5), mv('none'), mv('b', -0.2)]);
+    expect(r.measured).toBe(2);
+    expect(r.unmeasured).toBe(1);
+    expect([...r.gainers, ...r.losers].map((i) => i.id)).not.toContain('none');
+  });
+
+  it('excludes a genuine 0% from both boards', () => {
+    const r = rankMovers([mv('flat', 0), mv('up', 0.1), mv('down', -0.1)]);
+    expect(r.gainers.map((i) => i.id)).toEqual(['up']);
+    expect(r.losers.map((i) => i.id)).toEqual(['down']);
+    expect(r.measured).toBe(3); // flat IS measured, just not a mover
+  });
+
+  it('orders gainers biggest-first and losers worst-first', () => {
+    const r = rankMovers([mv('a', 0.1), mv('b', 0.9), mv('c', -0.1), mv('d', -0.9)]);
+    expect(r.gainers.map((i) => i.id)).toEqual(['b', 'a']);
+    expect(r.losers.map((i) => i.id)).toEqual(['d', 'c']);
+  });
+
+  it('honours the limit without distorting the counts', () => {
+    const many = Array.from({ length: 10 }, (_, i) => mv(`g${i}`, (i + 1) / 100));
+    const r = rankMovers(many, 3);
+    expect(r.gainers).toHaveLength(3);
+    expect(r.measured).toBe(10);
+  });
+});

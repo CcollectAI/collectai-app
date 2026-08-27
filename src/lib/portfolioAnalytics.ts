@@ -207,3 +207,52 @@ export function rankPositions<
     missingBasis: items.length - withBasis.length,
   };
 }
+
+/** One mover plus the population it was ranked out of. */
+export type RankedMovers<T> = {
+  gainers: T[];
+  losers: T[];
+  /** Items with a measurable 7-day move — the population this describes. */
+  measured: number;
+  /** Items with no 7-day-old prediction to compare against. NOT "flat". */
+  unmeasured: number;
+};
+
+/**
+ * Rank items by their 7-day price move, for the analytics "Movers" card.
+ *
+ * THIS HAS BEEN DELETED TWICE. "Movers" went on 2026-08-14 and "Holdings"
+ * lost its percentage column on 2026-08-26, both because they rendered
+ * `change_1d_pct`, which `/portfolio/items` has never returned — the column was
+ * always undefined and the feature never drew a row. Both times the fix was to
+ * delete the reader. The actual gap was that nothing COMPUTED the number.
+ *
+ * It is computed now: `week_ago` in `portfolio_router.py` reads
+ * `price_predictions` history, and 66,172 of 71,858 item_refs have predictions
+ * spanning >= 7 days (measured 2026-08-27). So this ranks real data.
+ *
+ * `undefined` means "no 7-day-old prediction", NOT "flat". Items without a
+ * measurement are counted and reported separately rather than sorted in at 0%,
+ * because a flat line and a missing measurement are different claims and
+ * conflating them is what made the previous two attempts worthless.
+ */
+export function rankMovers<T extends { change7dPct?: number }>(
+  items: T[],
+  limit = 3,
+): RankedMovers<T> {
+  const measured = items.filter((i) => typeof i.change7dPct === "number");
+  const sorted = [...measured].sort(
+    (a, b) => (b.change7dPct ?? 0) - (a.change7dPct ?? 0),
+  );
+  return {
+    // A 0% move is neither a gain nor a loss; listing it under one of them
+    // would pad a thin board with non-events.
+    gainers: sorted.filter((i) => (i.change7dPct ?? 0) > 0).slice(0, limit),
+    losers: sorted
+      .filter((i) => (i.change7dPct ?? 0) < 0)
+      .reverse()
+      .slice(0, limit),
+    measured: measured.length,
+    unmeasured: items.length - measured.length,
+  };
+}
