@@ -74,7 +74,10 @@ def _build_evidence(hits: list[dict]) -> tuple[list[str], dict, str]:
     # Group by source
     source_groups: dict[str, list[dict]] = {}
     for h in hits:
-        src = h["source"] or "unknown"
+        # provider is the fallback, NOT "unknown". See the note on the
+        # SELECT: `source` is empty on 100% of rows and `provider` on none of
+        # them, so "unknown" was never the truth — it was a column choice.
+        src = h["source"] or h.get("provider") or "unknown"
         source_groups.setdefault(src, []).append(h)
 
     source_summaries: list[dict] = []
@@ -115,6 +118,23 @@ def _build_evidence(hits: list[dict]) -> tuple[list[str], dict, str]:
         # A completed member-to-member trade (p2p_offers -> _sold_comp_hook).
         # Named explicitly: the fallback below would render it "Sparrow P2p".
         "sparrow_p2p": "Sparrow member",
+        # Added 2026-08-27 with the provider fallback. Until then these never
+        # reached this map — everything grouped as "unknown" — so the
+        # `.replace("_"," ").title()` fallback had never been seen on them.
+        # It renders "Suruga Ya", "Crawl4Ai" and "Pricecharting", which is the
+        # same defect the sparrow_p2p line above exists to prevent.
+        "scryfall": "Scryfall",
+        "lorcast": "Lorcast",
+        "pricecharting": "PriceCharting",
+        "suruga_ya": "Suruga-ya",
+        "yahoo_auctions": "Yahoo! Auctions",
+        "mercari_us": "Mercari",
+        "booth": "BOOTH",
+        # NOT a marketplace — it is our own scraper, and naming it tells a
+        # member nothing about where the money changed hands. "a listing we
+        # found" is the honest description of what it is.
+        "crawl4ai": "a listed price",
+        "firecrawl_ml": "a listed price",
     }
     parts: list[str] = []
     for s in source_summaries:
@@ -275,6 +295,15 @@ async def run_once():
         # cycles instead of one cycle trying (and failing) to process it all.
         hit_rows = await conn.fetch("""
             SELECT id, item_ref, source,
+                   -- `provider` is the SOURCE'S REAL NAME and `source` is a
+                   -- mirror of it that only two writers ever populate.
+                   -- Measured 2026-08-27 over 90 days: source is empty on
+                   -- 2,926,839 of 2,927,565 sold comps (100.0%) while provider
+                   -- is present on ALL of them. `_build_evidence` grouped on
+                   -- `source or "unknown"`, so essentially every valuation in
+                   -- the app explained itself as "Based on N Unknown sale(s)"
+                   -- with the real answer sitting in the next column.
+                   provider,
                    COALESCE(price_eur, price)::numeric AS price,
                    COALESCE(observed_at, seen_at) AS observed_at,
                    condition, attrs
@@ -299,6 +328,7 @@ async def run_once():
             groups.setdefault(ref, []).append({
                 "id": row["id"],
                 "source": row["source"],
+                "provider": row["provider"],
                 "price": row["price"],
                 "observed_at": row["observed_at"],
                 "condition": row["condition"],
@@ -473,6 +503,24 @@ async def run_once():
             # member sale is unchanged (min(1, 1/2) and the 0-source else branch
             # are both 0.5). Only the 1-external + 1-member case changes, from
             # 1.0 back to 0.5 — which is exactly the inflation being removed.
+            # ⚠️ DELIBERATELY STILL `source`, NOT the provider fallback used for
+            # the LABEL above — and that makes this factor dormant, on purpose,
+            # pending a decision.
+            #
+            # `source` is empty on 100% of rows (2,926,839 of 2,927,565 sold
+            # comps, measured 2026-08-27), so `unique_sources` is 0 for every
+            # item and `diversity_factor` always takes the `else 0.5` branch.
+            # It has never varied.
+            #
+            # Switching it to `h["source"] or h["provider"]` is a one-word
+            # change and it is NOT cosmetic: measured over the same window,
+            # 32,818 of 71,860 items (45.7%) have comps from two providers and
+            # would go 0.5 -> 1.0, i.e. their confidence score DOUBLES. That is
+            # arguably the correct number — two independent markets agreeing is
+            # exactly what this factor was written to reward — but it changes
+            # what the app claims about certainty on half the catalogue, and
+            # PICP calibration is measured against these scores. A scoring
+            # change of that size is a product decision, not a drive-by fix.
             unique_sources = len({
                 h["source"] for h in hits
                 if h["source"] and h["source"] != "sparrow_p2p"

@@ -1276,6 +1276,40 @@ function ItemDetailScreen() {
                 )}
               </View>
 
+              {/* HOW MUCH EVIDENCE IS BEHIND THE FIGURE — required on the card,
+                  not buried in "Why this price?".
+
+                  Reported 2026-08-27 against an item whose estimate read
+                  EUR 8,015 "Based on 1 Unknown sale". One comp and ten comps
+                  are different claims, and the card was presenting them
+                  identically: same size, same weight, same confidence of tone.
+                  `_MIN_COMPS_RELIABLE = 3` already caps the stored confidence
+                  below three comps — the number existed, the SCREEN just never
+                  said it.
+
+                  Deliberately muted and small. This qualifies the figure; it
+                  must not compete with it. */}
+              {!isDraft && !isEditing && !isUnpriced(editableValue)
+                && evidenceData?.evidence_summary?.total_comps != null ? (
+                <Text style={[styles.valuationBasis, { color: theme.muted }]}>
+                  {(() => {
+                    const n = evidenceData.evidence_summary!.total_comps;
+                    if (n === 0) {
+                      // Not "0 sales": a figure with no comps behind it did not
+                      // come from the market at all, and saying "based on 0"
+                      // invites the reader to average nothing.
+                      return 'No recorded sales behind this yet';
+                    }
+                    const noun = n === 1 ? 'recorded sale' : 'recorded sales';
+                    // Below the reliability floor, SAY so. The confidence score
+                    // is already capped here; this is the same fact in words.
+                    return n < 3
+                      ? `Based on ${n} ${noun} — treat as an early estimate`
+                      : `Based on ${n} ${noun}`;
+                  })()}
+                </Text>
+              ) : null}
+
               {/* The correction lives INSIDE the tinted block, under the figure
                   — not merely inside the same card. It was already in the card
                   (2026-08-23) but rendered AFTER `ItemPriceSection`, so on a
@@ -1847,6 +1881,9 @@ const styles = StyleSheet.create({
   // An absence of data is not a headline: muted and body-sized, so "Not yet
   // priced" does not shout the way a real figure should.
   valuationUnpriced: { fontSize: text.md, fontWeight: fontWeight.semibold },
+  // Qualifies the figure above it, so it sits at caption weight. `sm` is the
+  // floor the type scale allows for something a member reads.
+  valuationBasis: { fontSize: text.sm, lineHeight: 17, marginTop: 2 },
   // The unpriced state is a SENTENCE, not a label. It gets `text` colour at
   // md/semibold for the lead — readable, but nowhere near the 2xl/extrabold
   // accent a real figure gets, because an absence must not outrank a number.
