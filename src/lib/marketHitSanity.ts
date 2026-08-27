@@ -69,3 +69,92 @@ export function filterImplausibleHits<T extends SanityCheckable>(
   });
   return { kept, dropped: hits.length - kept.length };
 }
+
+// ── Relevance ───────────────────────────────────────────────────────────────
+
+/**
+ * Titles that are demonstrably not the item itself.
+ *
+ * Ported verbatim from `_TCG_REJECT_TOKENS` in
+ * `server/workers/marketplace_scrape_scheduler.py`, where every entry was added
+ * against an OBSERVED false positive rather than guessed. Kept in one order so
+ * the two lists can be diffed by eye.
+ */
+const REJECT_TOKENS = [
+  "custom", "proxy", "playmat", "sleeve", "token", "alter", "altered",
+  "sticker", "poster", "art print", "hand-painted", "hand painted",
+  "digital", "code card", "empty box", "binder",
+  "tin", "bundle", "booster", " pack", "packs", "sealed", "lot of",
+  "collection box", "elite trainer", "blister", "display",
+];
+
+/**
+ * Significant tokens of a title.
+ *
+ * The server splits on `[^a-z0-9]+` and keeps tokens of length >= 3. That works
+ * for "Bayou" and returns NOTHING for
+ * "ウッドストック 愛と平和と音楽の3日間" — Japanese has no spaces and no latin
+ * letters, so a latin-only tokeniser yields an empty list and
+ * `_is_plausible_tcg_listing` then rejects every listing. Porting it unchanged
+ * would have emptied the comps on exactly the item that prompted this work.
+ *
+ * So: latin/digit runs of >= 3, PLUS CJK runs of >= 2 (a two-character
+ * compound is already meaningful in Japanese, where three latin letters are
+ * not).
+ */
+export function significantTokens(title: string): string[] {
+  if (!title) return [];
+  const lower = title.toLowerCase();
+  const latin = (lower.match(/[a-z0-9]+/g) ?? []).filter((t) => t.length >= 3);
+  const cjk = (lower.match(/[぀-ヿ㐀-䶿一-鿿]{2,}/g) ?? []);
+  return [...latin, ...cjk];
+}
+
+/**
+ * Is this listing plausibly the same item we searched for?
+ *
+ * Mirrors `_is_plausible_tcg_listing`, minus the TCG category-marker arm (that
+ * rule's `accept` table only covers six TCG categories, and this runs for every
+ * category). What carries over is the part that does the work: **every
+ * significant token of the item's title must appear in the listing's title.**
+ *
+ * Deliberately conservative, for the reason the server states: the failure
+ * modes are not symmetrical. A false negative costs one hidden listing; a false
+ * positive puts an unrelated record under a valuation as though it were
+ * evidence for it — which is the reported bug.
+ */
+export function isPlausibleListing(listingTitle: string, itemTitle: string): boolean {
+  if (!listingTitle || !itemTitle) return false;
+  const lt = listingTitle.toLowerCase();
+  if (REJECT_TOKENS.some((tok) => lt.includes(tok))) return false;
+  const tokens = significantTokens(itemTitle);
+  // Nothing substantial to match on. Claiming relevance from no evidence is
+  // what produced the original screenshot, so say "none" instead.
+  if (tokens.length === 0) return false;
+  return tokens.every((t) => lt.includes(t));
+}
+
+export type RelevanceCheckable = SanityCheckable & { title?: string | null };
+
+/**
+ * Sanity AND relevance, in the order they should be applied.
+ *
+ * Returns the two drop counts separately because they mean different things:
+ * `droppedImplausiblePrice` is an adapter emitting non-prices, and
+ * `droppedIrrelevant` is a search returning other products. Collapsing them
+ * would hide which one is happening.
+ */
+export function filterComps<T extends RelevanceCheckable>(
+  hits: T[],
+  itemTitle: string,
+  valuation?: number | null,
+): { kept: T[]; droppedImplausiblePrice: number; droppedIrrelevant: number } {
+  const { kept: priced, dropped: droppedImplausiblePrice } =
+    filterImplausibleHits(hits, valuation);
+  const kept = priced.filter((h) => isPlausibleListing(h.title ?? "", itemTitle));
+  return {
+    kept,
+    droppedImplausiblePrice,
+    droppedIrrelevant: priced.length - kept.length,
+  };
+}

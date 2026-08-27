@@ -31,7 +31,6 @@ import { HeaderActions } from '@/components/HeaderActions';
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useTabBarInset } from "@/hooks/useTabBarInset";
 import { featureFlags } from "@/config/featureFlags";
-import { InsightsCard } from "@/components/home/InsightsCard";
 import { AdBanner } from "@/components/ads/AdBanner";
 import { AutoSetProgressList } from "@/components/AutoSetProgressList";
 import { AlertsCard } from "@/components/home/AlertsCard";
@@ -46,7 +45,6 @@ import { getCategoryByName, getCategoryById } from "@/data/categories";
 // 2026-08-11. `ItemRow` stays: it types loadItemsFromCollection, extractItems
 // and the `items` state that still drives the value chart and stats tile.
 import { type ItemRow } from "@/components/home/TopItemsList";
-import { usePortfolioInsights } from "@/hooks/usePortfolioInsights";
 import { useHasEverHadItems } from "@/hooks/useHasEverHadItems";
 import { StartCollectingCard } from "@/components/home/StartCollectingCard";
 import { useAlertsFeed } from "@/hooks/useAlertsFeed";
@@ -288,12 +286,10 @@ function PortfolioScreen() {
   const [scrubPoint, setScrubPoint] = useState<TimeSeriesPoint | null>(null);
 
 
-  // Data insights & alerts (feature flagged). `insights` still feeds
-  // <InsightsCard/> below; only the duplicate CTA that also read it is gone.
-  const { insights } = usePortfolioInsights({
-    period: range.toLowerCase() as '7d' | '30d',
-    enabled: featureFlags.FEATURE_DATA_INSIGHTS_ALERTS
-  });
+  // `usePortfolioInsights` went with the card on 2026-08-27. Its ONLY reader
+  // was <InsightsCard/>; keeping the call would leave a fetch on every Home
+  // open whose result nothing renders, which is the dead-path shape this
+  // codebase keeps rediscovering. `useAlertsFeed` below is separate and stays.
 
   const { alerts, markAsRead } = useAlertsFeed({
     limit: 5,
@@ -864,13 +860,20 @@ function PortfolioScreen() {
         {/* Ad slot — invisible until FEATURE_ADS is enabled */}
         <AdBanner placement="portfolio_banner" />
 
-        {featureFlags.FEATURE_DATA_INSIGHTS_ALERTS && insights && limits.advanced_analytics && (
-          <InsightsCard
-            insights={insights}
-            tierSummary={tierSummary}
-            onViewDetails={handleAnalyticsPress}
-          />
-        )}
+        {/* The "Portfolio Insights" card was REMOVED here on 2026-08-27.
+            It was gated on `limits.advanced_analytics`, so it was never a free
+            surface — it was a PAID card re-rendering the paid analytics screen:
+            total value, period change, top movers and a "View Full Insights"
+            link, all of which /analytics answers properly and in more depth
+            (Performance, Positions, Allocations, Category Performance).
+            Paying twice for the same four numbers is not value, it is clutter
+            on the one screen a member opens most.
+
+            The route survives, ungated: the chart's "Analytics" button above
+            (`handleAnalyticsPress`, ~line 741) has no plan check on purpose, so
+            a free member still lands on /analytics and meets the paywall there
+            rather than at the door. That is the entry point; this was a second
+            rendering of the destination. */}
 
         {/* No spacer: `bottomInset` on contentContainerStyle now reserves the
             bar's real height. The 100/80 literal that used to live here was a

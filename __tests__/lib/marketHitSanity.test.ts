@@ -54,3 +54,51 @@ describe('filterImplausibleHits', () => {
     expect(r.kept).toEqual([hit(justInside)]);
   });
 });
+
+/**
+ * Relevance, tested against the ACTUAL rows from the reported screenshot
+ * (IMG_3924): a Japanese vinyl item whose "Market Prices" section listed five
+ * suruga_ya products, three of which were entirely different records.
+ */
+import { filterComps, isPlausibleListing, significantTokens } from '@/lib/marketHitSanity';
+
+// The item, and the five titles as they appeared.
+const ITEM = 'ウッドストック 愛と平和と音楽の3日間 40周年';
+const ROWS = [
+  { title: 'SONIC LOST WORLD ORIGINAL SOUNDTRACK', price: 28 },        // different record
+  { title: 'ディレクターズカット ウッドストック 愛と平和と音楽の3日間 40周年', price: 22 }, // same film, director's cut
+  { title: '南佳孝 / ラジオな曲たち2', price: 20 },                      // different record
+  { title: 'BLACK BOTTOM BRASS BAND / ワッショイ', price: 19 },          // different record
+  { title: 'ウッドストック 愛と平和と音楽の3日間 40周年', price: 11 },      // the item
+];
+
+describe('relevance (the reported vinyl screen)', () => {
+  it('tokenises a Japanese title at all — the server rule would return NOTHING', () => {
+    // `[^a-z0-9]+` yields [] here, and the server then rejects every listing.
+    expect(ITEM.toLowerCase().match(/[a-z0-9]+/g)?.filter((t) => t.length >= 3) ?? []).toHaveLength(0);
+    expect(significantTokens(ITEM).length).toBeGreaterThan(0);
+  });
+
+  it('keeps the two rows that ARE this record and drops the three that are not', () => {
+    const r = filterComps(ROWS, ITEM, 8015);
+    expect(r.kept.map((h) => h.price).sort((a, b) => a - b)).toEqual([11, 22]);
+    expect(r.droppedIrrelevant).toBe(3);
+    expect(r.droppedImplausiblePrice).toBe(0);
+  });
+
+  it('separates the two reasons a row can be dropped', () => {
+    const withJunk = [...ROWS, { title: ITEM, price: 1_620_277_371 }];
+    const r = filterComps(withJunk, ITEM, 8015);
+    expect(r.droppedImplausiblePrice).toBe(1); // the page counter
+    expect(r.droppedIrrelevant).toBe(3);       // the other records
+  });
+
+  it('rejects accessories that carry the item name', () => {
+    expect(isPlausibleListing('MTG Card Sleeves - Bayou', 'Bayou')).toBe(false);
+    expect(isPlausibleListing('Bayou MTG Magic the Gathering card', 'Bayou')).toBe(true);
+  });
+
+  it('returns NOTHING rather than guessing when the item has no usable title', () => {
+    expect(filterComps(ROWS, '', 8015).kept).toHaveLength(0);
+  });
+});

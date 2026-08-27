@@ -8,7 +8,7 @@ import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 import type { MarketHit } from '@/components/MarketplacePricesSection';
 import type { DossierData } from '@/components/DossierReportSection';
-import { filterImplausibleHits } from '@/lib/marketHitSanity';
+import { filterComps } from '@/lib/marketHitSanity';
 
 type AffiliateLink = { source: string; url: string; affiliate_url: string; label: string };
 
@@ -64,13 +64,28 @@ export function useItemMarketplace(
       // Statistics" rendered at EUR 1,620,277,371 in this very section, on the
       // Pro tier. This path had no bound of any kind — it rendered whatever
       // the endpoint returned.
-      const { kept: results, dropped } = filterImplausibleHits(raw, itemValue);
-      if (dropped > 0) {
+      // SANITY *and* RELEVANCE. `marketplaceSearch` is a keyword search, so it
+      // returns other products: the reported screen showed five suruga_ya rows
+      // under a Japanese vinyl record, three of which were entirely different
+      // records, beneath an EUR 8,015 estimate that every visible row
+      // contradicted. Comps shown under a valuation are read as EVIDENCE for
+      // it, so anything that is not this item has to go.
+      const { kept: results, droppedImplausiblePrice, droppedIrrelevant } =
+        filterComps(raw, itemName, itemValue);
+      if (droppedImplausiblePrice > 0) {
         // logger.error, not warn: warn is stripped in release builds, and a
         // silently-filtered row is exactly the signal that tells us an adapter
         // is producing junk. The display is fixed here; the SOURCE is not.
         logger.error(
-          `[useItemMarketplace] dropped ${dropped} implausible comp(s) of ${raw.length} for "${itemName}" — an adapter is returning non-prices`,
+          `[useItemMarketplace] dropped ${droppedImplausiblePrice} implausible comp(s) of ${raw.length} for "${itemName}" — an adapter is returning non-prices`,
+        );
+      }
+      // Separate line, separate cause: this one is the SEARCH returning other
+      // products, not an adapter emitting non-prices. Collapsing them would
+      // hide which is happening.
+      if (droppedIrrelevant > 0) {
+        logger.error(
+          `[useItemMarketplace] dropped ${droppedIrrelevant} irrelevant comp(s) of ${raw.length} for "${itemName}" — keyword search returned other products`,
         );
       }
       setMarketResults(results);

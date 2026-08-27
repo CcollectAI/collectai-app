@@ -170,7 +170,12 @@ export const MarketplacePricesSection = React.memo(function MarketplacePricesSec
       )}
       {marketExpanded && marketResults.length === 0 && !marketLoading && !marketError && (
         <Text style={[s.emptyText, { color: theme.muted }]}>
-          No listings found for this item.
+          {/* Precise, because as of 2026-08-27 this is reached by FILTERING as
+              well as by finding nothing: results that are other products are
+              dropped before they get here (src/lib/marketHitSanity.ts). Saying
+              "no listings" when we found five of something else would be the
+              same overclaim in the other direction. */}
+          No listings matching this item were found.
         </Text>
       )}
     </View>
