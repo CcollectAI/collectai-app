@@ -18,6 +18,16 @@ import type { CurrencyCode } from '@/data/types';
 import { formatPrice } from '@/lib/format';
 
 type PriceCardProps = {
+  /** How many sold comps the figure is built on. `undefined` = unknown.
+   *
+   *  ONE comp is not a valuation. The method collectors actually follow is
+   *  "the median sale price across multiple comparable transactions" — a
+   *  median of one is the observation itself, and `weighted_quantile` returns
+   *  q10 = q50 = q90 for it, so the range degenerates to "EUR X - EUR X".
+   *  Calling that an "Estimated Value" with a confidence badge claims more
+   *  than the data supports; naming it the single sale it is claims exactly
+   *  as much. */
+  compCount?: number;
   estimate: PriceEstimate;
   onWhyThisPrice?: () => void;
   showRangeBar?: boolean;
@@ -29,6 +39,7 @@ export function PriceCard({
   onWhyThisPrice,
   showRangeBar = true,
   compact = false,
+  compCount,
 }: PriceCardProps) {
   const { colors } = useAppTheme();
   const confidenceColor = getConfidenceColor(estimate.confidenceTier);
@@ -46,7 +57,9 @@ export function PriceCard({
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.label, { color: colors.muted }]}>Estimated Value</Text>
+        <Text style={[styles.label, { color: colors.muted }]}>
+          {compCount === 1 ? 'Last recorded sale' : 'Estimated Value'}
+        </Text>
         <View style={[styles.confidenceBadge, { backgroundColor: confidenceColor + '20' }]}>
           <View style={[styles.confidenceDot, { backgroundColor: confidenceColor }]} />
           <Text style={[styles.confidenceText, { color: confidenceColor }]}>
@@ -60,10 +73,18 @@ export function PriceCard({
         {formatPrice(estimate.priceBand.q50, estimate.currency)}
       </Text>
 
-      {/* Range text */}
-      <Text style={[styles.rangeText, { color: colors.muted }]}>
-        Range: {formatPrice(estimate.priceBand.q10, estimate.currency)} – {formatPrice(estimate.priceBand.q90, estimate.currency)}
-      </Text>
+      {/* Range text. Suppressed at a single comp: q10 = q50 = q90 there, so
+          this renders "Range: EUR 8,015 - EUR 8,015", which reads as a precise
+          interval and is in fact the absence of one. */}
+      {compCount === 1 ? (
+        <Text style={[styles.rangeText, { color: colors.muted }]}>
+          One sale — not enough for a range yet
+        </Text>
+      ) : (
+        <Text style={[styles.rangeText, { color: colors.muted }]}>
+          Range: {formatPrice(estimate.priceBand.q10, estimate.currency)} – {formatPrice(estimate.priceBand.q90, estimate.currency)}
+        </Text>
+      )}
 
       {/* Range bar */}
       {showRangeBar && !compact && (

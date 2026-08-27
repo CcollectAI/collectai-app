@@ -1365,6 +1365,7 @@ function ItemDetailScreen() {
 
             {/* Price display — PriceCard, legacy bands, confidence, explanation, scarcity, comps */}
             <ItemPriceSection
+              compCount={evidenceData?.evidence_summary?.total_comps}
               priceEstimate={priceEstimate}
               onWhyThisPrice={() => setShowPriceExplanation(true)}
               q10={q10}

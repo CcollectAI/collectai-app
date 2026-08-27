@@ -133,15 +133,16 @@ export const DossierReportSection = React.memo(function DossierReportSection({
               )}
             </View>
           )}
-          {/* Market comps count */}
-          {dossierData.market_comps?.length > 0 && (
-            <View style={s.dossierRow}>
-              <Text style={[s.dossierRowLabel, { color: theme.muted }]}>{t('dossier.similar_listings')}</Text>
-              <Text style={[s.dossierRowValue, { color: theme.text }]}>
-                {dossierData.market_comps.length} found
-              </Text>
-            </View>
-          )}
+          {/* "Similar Listings — N found" was REMOVED here on 2026-08-27.
+              It was the SAME keyword search as the "Market Prices" section
+              lower down the same screen, under a second name and reduced to a
+              count. Two renderers of one query, and the count was the least
+              useful form of it: "10 found" says nothing about whether any of
+              the ten is this item — which, measured on the reported vinyl
+              screen, three of five were not.
+              Market Prices now filters for relevance
+              (src/lib/marketHitSanity.ts) and shows the rows themselves, so it
+              is strictly better than a number was. */}
           {/* Authenticity signals */}
           {dossierData.authenticity_signals?.length > 0 && (
             <View style={s.dossierRow}>

@@ -29,6 +29,8 @@ interface MarketComp {
 }
 
 interface ItemPriceSectionProps {
+  /** Sold-comp count behind the figure — see PriceCard.compCount. */
+  compCount?: number;
   priceEstimate: PriceEstimate | null;
   onWhyThisPrice: () => void;
   // Legacy fields (when feature flag is off)
@@ -60,6 +62,7 @@ export const ItemPriceSection = React.memo(function ItemPriceSection({
   scarcityData,
   marketComps,
   toNum,
+  compCount,
 }: ItemPriceSectionProps) {
   const { colors: theme } = useAppTheme();
 
@@ -73,6 +76,7 @@ export const ItemPriceSection = React.memo(function ItemPriceSection({
             onWhyThisPrice={onWhyThisPrice}
             showRangeBar={true}
             compact={false}
+            compCount={compCount}
           />
         </View>
       )}
