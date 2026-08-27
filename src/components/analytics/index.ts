@@ -5,4 +5,3 @@
 export { PortfolioTierBadge } from './PortfolioTierBadge';
 export { PredictionAccuracySection } from './PredictionAccuracySection';
 export type { PredictionAccuracyEntry } from './PredictionAccuracySection';
-export { WinnersLosersSection } from './WinnersLosersSection';
