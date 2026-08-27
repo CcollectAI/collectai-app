@@ -8,6 +8,7 @@ import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 import type { MarketHit } from '@/components/MarketplacePricesSection';
 import type { DossierData } from '@/components/DossierReportSection';
+import { filterImplausibleHits } from '@/lib/marketHitSanity';
 
 type AffiliateLink = { source: string; url: string; affiliate_url: string; label: string };
 
@@ -16,6 +17,9 @@ export function useItemMarketplace(
   isDraft: boolean,
   itemName: string,
   category: string,
+  /** The item's own valuation, used ONLY as a sanity reference for comps.
+   *  Optional: an unpriced item must still get its comp list. */
+  itemValue?: number | null,
 ) {
   const { showToast } = useToast();
 
@@ -54,7 +58,21 @@ export function useItemMarketplace(
     setMarketError(false);
     try {
       const data = await collectorsApi.marketplaceSearch(itemName, { category }) as { results?: MarketHit[]; hits?: MarketHit[] };
-      const results = data.results || data.hits || [];
+      const raw = data.results || data.hits || [];
+      // A member must never be the thing that catches a scraped page counter
+      // filed as a price. Reported 2026-08-27: a crawl4ai row titled "Site
+      // Statistics" rendered at EUR 1,620,277,371 in this very section, on the
+      // Pro tier. This path had no bound of any kind — it rendered whatever
+      // the endpoint returned.
+      const { kept: results, dropped } = filterImplausibleHits(raw, itemValue);
+      if (dropped > 0) {
+        // logger.error, not warn: warn is stripped in release builds, and a
+        // silently-filtered row is exactly the signal that tells us an adapter
+        // is producing junk. The display is fixed here; the SOURCE is not.
+        logger.error(
+          `[useItemMarketplace] dropped ${dropped} implausible comp(s) of ${raw.length} for "${itemName}" — an adapter is returning non-prices`,
+        );
+      }
       setMarketResults(results);
       setMarketScannedAt(new Date().toISOString());
       setMarketExpanded(true);
@@ -67,7 +85,7 @@ export function useItemMarketplace(
     } finally {
       setMarketLoading(false);
     }
-  }, [itemName, category]);
+  }, [itemName, category, itemValue]);
 
   const loadDossier = useCallback(async () => {
     if (!itemId || isDraft) return;

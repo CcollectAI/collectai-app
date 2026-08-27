@@ -183,7 +183,16 @@ function CategorySpecificSectionInner({
       )}
 
       {/* ── LEGO-Specific Features ──────────────────────── */}
-      {categorySlug === "lego" && (
+      {/* GATE = exactly what the body draws (2026-08-27). Reported from a
+          screenshot: an item screen showing a bordered "LEGO Details" heading
+          with a yellow cube icon and NOTHING under it. The block was gated on
+          the category alone while every child inside it was gated on an
+          attribute, so an item with none of those attributes got the heading
+          and an empty box — "a card opened by a condition its own children
+          then decline to satisfy", which docs/ui-playbook.md lists as one of
+          the four seams that catch a UI defect. A heading is a promise that
+          something follows it. */}
+      {categorySlug === "lego" && (!!itemAttributes?.retirement_date || !!itemAttributes?.set_number) && (
         <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
           <View style={s.sectionHeaderRow}>
             <View style={s.sectionHeaderLeft}>
@@ -294,7 +303,7 @@ function CategorySpecificSectionInner({
       )}
 
       {/* ── Comic Books ─────────────────────────────────── */}
-      {categorySlug === "comic_books" && (
+      {categorySlug === "comic_books" && (itemAttributes?.key_issue === true || itemAttributes?.signed === true || !!itemAttributes?.grade) && (
         <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
           <View style={s.sectionHeaderRow}>
             <View style={s.sectionHeaderLeft}>
@@ -401,7 +410,7 @@ function CategorySpecificSectionInner({
       )}
 
       {/* ── Whiskey ──────────────────────────────────────── */}
-      {categorySlug === "whiskey" && (
+      {categorySlug === "whiskey" && (!!itemAttributes?.age_statement || itemAttributes?.sealed === true) && (
         <View>
           {!!itemAttributes?.age_statement && (
             <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
@@ -651,7 +660,7 @@ function CategorySpecificSectionInner({
       )}
 
       {/* ── Pattern: Sportscards ──────────────────────────── */}
-      {categorySlug === "sportscards" && (
+      {categorySlug === "sportscards" && !!itemAttributes?.variant && (
         <View>
           {!!itemAttributes?.variant && (
             <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
@@ -663,7 +672,7 @@ function CategorySpecificSectionInner({
       )}
 
       {/* ── Pattern: Retro Games (standalone) ────────────── */}
-      {categorySlug === "retro_games" && (
+      {categorySlug === "retro_games" && !!itemAttributes?.completeness && (
         <View>
           {!!itemAttributes?.completeness && (
             <View style={[s.vaultedBadge, { backgroundColor: itemAttributes.completeness === "sealed" ? colors.successBg : colors.warningBg }]}>

@@ -568,7 +568,15 @@ function ItemDetailScreen() {
   } = grading;
 
   // Marketplace, affiliates, dossier, provenance (extracted to useItemMarketplace hook)
-  const marketplace = useItemMarketplace(id, isDraft, editableName, editableCategory);
+  // The item's own value is passed as the comps' sanity REFERENCE — see
+  // `filterImplausibleHits`. q50 first because it is the model's figure;
+  // falling back to the editable value covers a catalogue-priced item with no
+  // band. Undefined for an unpriced item, which correctly leaves only the
+  // absolute bound in play rather than emptying its comp list.
+  const marketplace = useItemMarketplace(
+    id, isDraft, editableName, editableCategory,
+    toNum(q50) ?? toNum(editableValue) ?? null,
+  );
   const {
     marketResults, marketLoading, marketExpanded, setMarketExpanded,
     marketScannedAt, marketError, loadMarketResults,
@@ -1223,9 +1231,35 @@ function ItemDetailScreen() {
               >
               <View style={styles.valuationLead}>
                 {isUnpriced(editableValue) ? (
-                  <Text style={[styles.valuationUnpriced, { color: theme.muted }]}>
-                    {UNPRICED_LABEL}
-                  </Text>
+                  /* THE UNPRICED STATE, rebuilt 2026-08-27 — reported as "I
+                     don't think it looks professional or good", and it was:
+                     a tall tinted block whose entire content was the muted
+                     words "Not yet priced", followed by a "Powered by Sparrow
+                     Collect" byline and a Refresh button. The one row with any
+                     emphasis on it was our own brand name, on a card that had
+                     failed to answer its only question.
+
+                     Three things wrong, all fixed here rather than restyled:
+                     - an ABSENCE was given the same big tinted region as a
+                       figure, so emptiness looked like the headline
+                     - it did not say WHY, and "not yet" implies something is
+                       coming without saying what or when
+                     - it offered no way forward except Refresh, which is what
+                       you press when you already believe an answer exists
+
+                     Now it states the reason and gives the member the two
+                     things that actually resolve it: their own valuation, or
+                     the catalogue. Same muted weight as before — this is still
+                     not a headline — but it is a sentence and a route out. */
+                  <View style={styles.unpricedBlock}>
+                    <Text style={[styles.unpricedLead, { color: theme.text }]}>
+                      {UNPRICED_LABEL}
+                    </Text>
+                    <Text style={[styles.unpricedWhy, { color: theme.muted }]}>
+                      We have no confirmed sales for this one yet. Add what it
+                      is worth to you, or fill in the details so we can match it.
+                    </Text>
+                  </View>
                 ) : (
                   <>
                     {/* Accent, not `text`: this is the one monetary fact on the
@@ -1274,6 +1308,26 @@ function ItemDetailScreen() {
               ) : null}
               </View>
             ) : null}
+
+            {/* THE ASK, immediately under the correction. It is a sibling of
+                the tinted block, not a child: the tint marks what the item is
+                WORTH, and a request for help is not part of that fact — it
+                follows it. Being inside the same CARD is what makes them read
+                as one conversation about one number. */}
+            {!isDraft && id && !isEditing && (
+              <PriceFeedbackSection
+                theme={theme}
+                showSalePriceInput={showSalePriceInput}
+                salePrice={salePrice}
+                submittingFeedback={submittingFeedback}
+                feedbackMessage={feedbackSource === 'sale' ? feedbackMessage : null}
+                onShowSalePriceInput={setShowSalePriceInput}
+                onSalePriceChange={setSalePrice}
+                onSubmitSalePrice={onSubmitSalePrice}
+                onPriceDisagree={onPriceDisagree}
+                onCancelSalePrice={() => setShowSalePriceInput(false)}
+              />
+            )}
 
             {/* Price display — PriceCard, legacy bands, confidence, explanation, scarcity, comps */}
             <ItemPriceSection
@@ -1633,20 +1687,20 @@ function ItemDetailScreen() {
                 `showSalePriceInput` escape hatch that only existed to soften
                 it — are complexity with nothing behind them. Deleted rather
                 than carried. */}
-            {!isDraft && id && !isEditing && (
-              <PriceFeedbackSection
-                theme={theme}
-                showSalePriceInput={showSalePriceInput}
-                salePrice={salePrice}
-                submittingFeedback={submittingFeedback}
-                feedbackMessage={feedbackSource === 'sale' ? feedbackMessage : null}
-                onShowSalePriceInput={setShowSalePriceInput}
-                onSalePriceChange={setSalePrice}
-                onSubmitSalePrice={onSubmitSalePrice}
-                onPriceDisagree={onPriceDisagree}
-                onCancelSalePrice={() => setShowSalePriceInput(false)}
-              />
-            )}
+            {/* "Help improve our estimates" MOVED UP on 2026-08-27, next to
+                the correction. Reported as reading like a duplicate: the top of
+                the card asks "Price seems off?" and the bottom of the screen
+                asked for the price again under its own heading, and from a
+                member's seat those are one question asked twice, a screen
+                apart.
+
+                They are genuinely different — a CORRECTION disputes our
+                valuation, a SALE PRICE reports what an item actually fetched —
+                and the 2026-08-23 split says so. That is an argument for
+                keeping both controls, not for keeping them far apart: "if they
+                are separate then at least put the ask/correction together".
+                Both now sit in the valuation card, under the figure they are
+                both about. */}
 
 
             {/* Bottom spacer inside card */}
@@ -1793,6 +1847,12 @@ const styles = StyleSheet.create({
   // An absence of data is not a headline: muted and body-sized, so "Not yet
   // priced" does not shout the way a real figure should.
   valuationUnpriced: { fontSize: text.md, fontWeight: fontWeight.semibold },
+  // The unpriced state is a SENTENCE, not a label. It gets `text` colour at
+  // md/semibold for the lead — readable, but nowhere near the 2xl/extrabold
+  // accent a real figure gets, because an absence must not outrank a number.
+  unpricedBlock: { gap: 4 },
+  unpricedLead: { fontSize: text.md, fontWeight: fontWeight.semibold },
+  unpricedWhy: { fontSize: text.sm, lineHeight: 18 },
   // Same metrics as app/listings.tsx `shareBtn`, so the affordance is in the
   // same place and the same size wherever a member meets it.
   galleryShareBtn: {
