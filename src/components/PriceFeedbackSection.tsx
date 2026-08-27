@@ -1,8 +1,9 @@
 /**
  * Price feedback section for item detail screen.
  *
- * Renders "Help improve our estimates" header, sale price input row,
- * "I sold it for..." and "Price seems off" buttons.
+ * Renders the sale-capture block ("Sold it? Your price becomes the comp"),
+ * its input row and the "I sold it for..." button. "Price seems off" lives in
+ * PriceCorrectionRow, against the figure.
  *
  * Extracted from app/item/[id].tsx to reduce file size.
  */
@@ -117,13 +118,28 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
   const { t } = useTranslation();
   return (
     <View style={[s.feedbackBlock, { borderTopColor: theme.border }]}>
-      {/* Muted and small: the VALUE is now directly above this, so this line
-          is a follow-up question about that number rather than the title of a
-          section. As a `text`-coloured 14/600 header it read as the heading of
-          the whole card, which is how a request for help ended up outranking
-          the figure it is about. */}
+      {/* THE EXCHANGE, not the favour (2026-08-27).
+          It read "Help improve our estimates" — a request on behalf of the
+          model, with nothing offered back, and `price_ground_truths` holds
+          NINE rows to show for it. That number is the constraint on the whole
+          data moat: docs/MONETIZATION.md's paid product is "sold comps and
+          price history", and ~62,000 catalogue items have no price data at all
+          because `ebay_caller.sold_comps()` returns [] — so for those items a
+          Sparrow member's sale is the ONLY sold comp in existence.
+          A member who tells us what they got should be told what that buys
+          them, because it genuinely buys them something.
+
+          Still MUTED, and that constraint predates this rewrite: the value is
+          directly above, so this is a follow-up to that number, not the title
+          of the card. As a `text`-coloured 14/600 header it once outranked the
+          figure it is about. A better offer is not a licence to shout. */}
       <Text style={[s.feedbackHeader, { color: theme.muted }]} accessibilityRole="header">
-        Help improve our estimates
+        Sold it? Your price becomes the comp
+      </Text>
+      <Text style={[s.feedbackSubhead, { color: theme.muted }]}>
+        For most items here, a member sale is the only real sale price that
+        exists. Add yours and it prices this item — for you and everyone else
+        holding one.
       </Text>
 
       {feedbackMessage && (
@@ -251,6 +267,14 @@ const s = StyleSheet.create({
     // detached control floating in the corner, which is the opposite of the
     // "integrate it with the price" this move is for.
     alignItems: 'flex-start',
+  },
+  feedbackSubhead: {
+    // Caption tier: this explains the heading above it, so it must recede from
+    // it. `sm` is the floor the type scale allows for readable text.
+    fontSize: textToken.sm,
+    lineHeight: 17,
+    marginTop: 2,
+    marginBottom: 8,
   },
   correctionText: {
     // `textToken.sm` IS 12 — this was a raw literal, the class the playbook
