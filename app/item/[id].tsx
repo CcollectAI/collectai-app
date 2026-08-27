@@ -44,6 +44,7 @@ import { collectorsApi } from "@/api/collectorsApi";
 import { enrichOnDemand } from "@/api/marketplaceApi";
 import logger from "@/utils/logger";
 import { formatPrice, getCurrencySymbol, isUnpriced, UNPRICED_LABEL } from "@/lib/format";
+import { computeItemDelta } from '@/lib/portfolioAnalytics';
 import { ValueSourceChip } from "@/components/ValueSourceChip";
 import type { CurrencyCode } from "@/data/types";
 import { AnimatedPressable } from "@/motion";
@@ -240,6 +241,12 @@ function ItemDetailScreen() {
      *  normalisation in a field labelled JPY is the ~170x error in reverse. */
     purchasePrice?: number | null;
     purchaseCurrency?: CurrencyCode | null;
+    /** The NORMALISED cost basis, carried SEPARATELY and used only for
+     *  arithmetic against the (EUR) valuation — never to populate the edit
+     *  field above. Both halves exist here on purpose: the raw one is what the
+     *  member typed and must be shown back in their own currency, the EUR one
+     *  is the only half that can legally be subtracted from `value`. */
+    purchasePriceEur?: number | null;
   } | null>(null);
   useEffect(() => {
     if (isDraft || !id) return;
@@ -247,7 +254,7 @@ function ItemDetailScreen() {
     (async () => {
       const { data, error } = await supabase
         .from('items')
-        .select('attrs, collection_name, canonical_key, name, title, category, condition, estimated_value, predicted_price_eur, image_url, notes, purchase_price, purchase_currency')
+        .select('attrs, collection_name, canonical_key, name, title, category, condition, estimated_value, predicted_price_eur, image_url, notes, purchase_price, purchase_price_eur, purchase_currency')
         .eq('id', id)
         .maybeSingle();
       if (cancelled || error || !data) return;
@@ -256,7 +263,7 @@ function ItemDetailScreen() {
         name?: string | null; title?: string | null; category?: string | null; condition?: string | null;
         estimated_value?: number | null; predicted_price_eur?: number | null; image_url?: string | null;
         notes?: string | null;
-        purchase_price?: number | null; purchase_currency?: string | null;
+        purchase_price?: number | null; purchase_price_eur?: number | null; purchase_currency?: string | null;
       };
       // THE value, from the one definition of it — not this screen's own
       // guess at the chain. Reading `predicted_price_eur ?? estimated_value`
@@ -300,6 +307,7 @@ function ItemDetailScreen() {
         valueSource: viewValue?.source ?? null,
         userEstimate: row.estimated_value ?? row.predicted_price_eur ?? null,
         purchasePrice: row.purchase_price ?? null,
+        purchasePriceEur: row.purchase_price_eur ?? null,
         // NARROWED, not cast. `items.purchase_currency` is TEXT and only the
         // seven supported codes are legal per its CHECK, but a row predating
         // that constraint (or written by a pipeline) can hold anything, and
@@ -582,7 +590,7 @@ function ItemDetailScreen() {
     marketScannedAt, marketError, loadMarketResults,
     affiliateLinks,
     dossierData, dossierLoading, dossierExpanded, setDossierExpanded,
-    dossierError, loadDossier,
+    dossierError, dossierLoaded, loadDossier,
   } = marketplace;
 
   // Price trend (extracted to useItemPriceTrend hook)
@@ -1276,6 +1284,49 @@ function ItemDetailScreen() {
                 )}
               </View>
 
+              {/* WHAT IT DID FOR THE MEMBER — added 2026-08-27.
+                  The card led with EUR 95 and said nothing about the EUR 58
+                  that was paid for it, so the one number a collector opens an
+                  item to see — did this go up — was the one number absent, on
+                  the paid tier. `cost_basis`/`unrealized_pl` are returned by
+                  the server and mapped by the client store already; the ITEM
+                  screen simply never rendered them
+                  (`learning_complete_feature_reachable_from_nowhere`).
+
+                  Directly under the figure, because it is about the figure.
+                  Above "Based on N recorded sales": that line qualifies how
+                  much to trust the number, which is a weaker claim than what
+                  the number MEANS for the holder.
+
+                  EUR against EUR — `purchasePriceEur`, never `purchasePrice`.
+                  See `computeItemDelta`.
+
+                  Null renders NOTHING. An item with no cost basis has no P/L,
+                  and "+EUR 0 (0%)" would state a measured break-even for a
+                  member who simply never told us what they paid. */}
+              {!isDraft && !isEditing && !isUnpriced(editableValue) ? (() => {
+                const delta = computeItemDelta(
+                  savedCore?.purchasePriceEur,
+                  toNum(editableValue),
+                );
+                if (!delta) return null;
+                // Break-even is its own state: neither green nor red, because
+                // colouring zero implies a direction it does not have.
+                const tone = delta.pl > 0 ? theme.success
+                  : delta.pl < 0 ? theme.danger
+                  : theme.muted;
+                const sign = delta.pl > 0 ? '+' : delta.pl < 0 ? '-' : '';
+                return (
+                  <Text style={[styles.valuationDelta, { color: tone }]}>
+                    {sign}{formatPrice(Math.abs(delta.pl), settings.currency)}
+                    {' ('}{sign}{Math.abs(delta.pct).toFixed(1)}%{') '}
+                    <Text style={{ color: theme.muted }}>
+                      on {formatPrice(toNum(savedCore?.purchasePriceEur), settings.currency)} paid
+                    </Text>
+                  </Text>
+                );
+              })() : null}
+
               {/* HOW MUCH EVIDENCE IS BEHIND THE FIGURE — required on the card,
                   not buried in "Why this price?".
 
@@ -1649,7 +1700,13 @@ function ItemDetailScreen() {
                       dossierExpanded={dossierExpanded}
                       dossierError={dossierError}
                       onToggleExpanded={() => {
-                        if (!dossierData && !dossierError) loadDossier();
+                        // `dossierLoaded`, NOT `!dossierData`. A report that
+                        // comes back legitimately EMPTY leaves dossierData null
+                        // with no error, so the old test stayed true forever:
+                        // every tap re-fetched and the section could never be
+                        // collapsed. "Have we asked" and "was the answer empty"
+                        // are different questions.
+                        if (!dossierLoaded) loadDossier();
                         else setDossierExpanded(!dossierExpanded);
                       }}
                       onRetry={() => loadDossier()}
@@ -1666,7 +1723,12 @@ function ItemDetailScreen() {
                     marketError={marketError}
                     editableName={editableName}
                     onToggleExpanded={() => {
-                      if (marketResults.length === 0 && !marketError) loadMarketResults();
+                      // Same defect, same fix: a search that legitimately
+                      // returns zero rows left `marketResults.length === 0`
+                      // true forever, so every tap re-ran the search instead of
+                      // collapsing. `marketScannedAt` is set on BOTH the success
+                      // and the error path, so it answers "have we asked".
+                      if (!marketScannedAt) loadMarketResults();
                       else setMarketExpanded(!marketExpanded);
                     }}
                     onRetry={() => loadMarketResults()}
@@ -1875,6 +1937,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   valuationLead: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 },
+  // Sits between the figure and the evidence line. 15/700 — below the amount
+  // (which is the headline) and above `valuationBasis` (which is a caption),
+  // because it is the second-most-important monetary fact on the card.
+  valuationDelta: { fontSize: 15, fontWeight: '700', marginBottom: 4 },
   // The money leads. 2xl/extrabold is the page-title spec, used here because
   // this figure is what the screen is about — the item's NAME is the title,
   // and its VALUE is the headline.

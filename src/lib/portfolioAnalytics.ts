@@ -256,3 +256,36 @@ export function rankMovers<T extends { change7dPct?: number }>(
     unmeasured: items.length - measured.length,
   };
 }
+
+/**
+ * The item card's cost-basis delta: what this one item has gained or lost.
+ *
+ * WHY IT TAKES *EUR* ARGUMENTS, EXPLICITLY NAMED
+ * ----------------------------------------------
+ * `items` carries the cost basis twice — `purchase_price` in
+ * `purchase_currency`, and `purchase_price_eur` normalised — and the item
+ * screen's valuation is EUR (`v_item_values_v1.valueEur`, falling back to
+ * `predicted_price_eur`). Subtracting the RAW half from an EUR valuation is
+ * `learning_a_currency_column_needs_the_currency_applied`: two money fields,
+ * one conversion, ~170x wrong for a JPY purchase. The parameter names are the
+ * guard — a caller passing `purchasePrice` here has to ignore the name to do it.
+ *
+ * Returns null rather than a zero when there is nothing to say. A member who
+ * never entered what they paid has no P/L, and rendering "+€0 (0%)" for them
+ * states a gain of nothing as though it were measured
+ * (`learning_empty_answer_rendered_as_zero`). `cost <= 0` returns null for the
+ * same reason: a percentage against a zero basis is not a number, and "paid
+ * nothing" is a placeholder rather than a purchase.
+ */
+export function computeItemDelta(
+  costBasisEur: number | null | undefined,
+  valueEur: number | null | undefined,
+): { pl: number; pct: number } | null {
+  if (costBasisEur == null || valueEur == null) return null;
+  const cost = Number(costBasisEur);
+  const value = Number(valueEur);
+  if (!Number.isFinite(cost) || !Number.isFinite(value)) return null;
+  if (cost <= 0) return null;
+  const pl = value - cost;
+  return { pl, pct: (pl / cost) * 100 };
+}

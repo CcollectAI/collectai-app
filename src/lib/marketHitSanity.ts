@@ -138,12 +138,72 @@ export function significantTokens(title: string): string[] {
 }
 
 /**
+ * Strip the qualifiers a CATALOGUE name carries that a marketplace title does
+ * not.
+ *
+ * MEASURED 2026-08-27, from the sim on a Pro account:
+ *
+ *     [useItemMarketplace] dropped 3 irrelevant comp(s) of 3 for
+ *     "Rayquaza ex (Emerald 097)" — keyword search returned other products
+ *
+ * Three of three. Not a tuning problem — a structural one. Our own comp titles
+ * for that card, straight out of `market_hits`, are:
+ *
+ *     Rayquaza ex (Cardmarket) · Rayquaza ex (holofoil) · Rayquaza EX · Rayquaza
+ *
+ * NONE of them carries a set name or a card number, because the sources emit a
+ * card name plus a finish/marketplace suffix. The item, however, is NAMED from
+ * the catalogue as "Rayquaza ex (Emerald 097)", so requiring every significant
+ * token of THAT to appear in the listing requires "emerald" AND "097" — which
+ * no comp we hold will ever contain. Every card whose catalogue name carries a
+ * parenthetical set/number had its Market Prices section emptied, on the paid
+ * tier, silently.
+ *
+ * This restores the rule `docs/MARKET_DATA.md` actually specifies. Gate 2 there
+ * is "requires a category marker plus every **card-name** token" — the card
+ * NAME. Tokenising the full display title was my own deviation from the doc
+ * when porting `_is_plausible_tcg_listing` to the display path.
+ *
+ * ACCEPTED LIMITATION, and it is the doc's, not a new one: card-name tokens
+ * alone cannot separate printings. "Rayquaza C LV.X Holo DP47" is a different
+ * card that passes this gate. MARKET_DATA.md says so plainly — after gate 2
+ * eBay still returned "Bayou Dragonfly"/"Bayou Groff", "so no keyword rule can
+ * separate them" — and it names the price band as the gate that works and the
+ * structured catalogue (EPID) as the real fix, with an explicit instruction NOT
+ * to attempt it with more keyword rules. So this does not add any. Showing a
+ * same-name different-printing comp is the bounded harm the doc already
+ * accepts; showing NOTHING on a paid feature was not.
+ */
+export function stripQualifiers(title: string): string {
+  return title
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\[[^\]]*\]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * The tokens a listing must contain to count as this item.
+ *
+ * Falls back to the UNSTRIPPED title when stripping leaves nothing significant
+ * (an item named only "(Promo)"), because `isPlausibleListing` treats an empty
+ * token list as "reject everything" — so an over-eager strip would recreate the
+ * very bug this fixes.
+ */
+export function relevanceTokens(itemTitle: string): string[] {
+  const stripped = significantTokens(stripQualifiers(itemTitle));
+  return stripped.length > 0 ? stripped : significantTokens(itemTitle);
+}
+
+/**
  * Is this listing plausibly the same item we searched for?
  *
  * Mirrors `_is_plausible_tcg_listing`, minus the TCG category-marker arm (that
  * rule's `accept` table only covers six TCG categories, and this runs for every
  * category). What carries over is the part that does the work: **every
- * significant token of the item's title must appear in the listing's title.**
+ * significant token of the item's CARD NAME must appear in the listing's
+ * title** — the card name, per docs/MARKET_DATA.md gate 2, not the catalogue
+ * display title with its set/number qualifiers (see `stripQualifiers`).
  *
  * Deliberately conservative, for the reason the server states: the failure
  * modes are not symmetrical. A false negative costs one hidden listing; a false
@@ -154,7 +214,7 @@ export function isPlausibleListing(listingTitle: string, itemTitle: string): boo
   if (!listingTitle || !itemTitle) return false;
   const lt = listingTitle.toLowerCase();
   if (containsRejectToken(lt)) return false;
-  const tokens = significantTokens(itemTitle);
+  const tokens = relevanceTokens(itemTitle);
   // Nothing substantial to match on. Claiming relevance from no evidence is
   // what produced the original screenshot, so say "none" instead.
   if (tokens.length === 0) return false;

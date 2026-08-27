@@ -38,6 +38,12 @@ export function useItemMarketplace(
   const [dossierLoading, setDossierLoading] = useState(false);
   const [dossierExpanded, setDossierExpanded] = useState(false);
   const [dossierError, setDossierError] = useState(false);
+  /** Have we ASKED yet? Distinct from "did the answer have anything in it".
+   *  The screen's toggle used to infer "not loaded" from `!dossierData`, so a
+   *  successful-but-empty report re-fetched on every tap and could never be
+   *  collapsed. `marketScannedAt` already plays this role on the marketplace
+   *  side; the dossier had no equivalent. */
+  const [dossierLoaded, setDossierLoaded] = useState(false);
 
   // Provenance ("Item History") removed 2026-07-22 — the standalone section was
   // a subset of the dossier (which already returns provenance[]) and empty for
@@ -109,11 +115,13 @@ export function useItemMarketplace(
     try {
       const data = await collectorsApi.getDossier(itemId);
       setDossierData(data || null);
+      setDossierLoaded(true);
       setDossierExpanded(true);
     } catch (err) {
       logger.error('[useItemMarketplace] dossier error:', err);
       setDossierData(null);
       setDossierError(true);
+      setDossierLoaded(true);
       setDossierExpanded(true);
     } finally {
       setDossierLoading(false);
@@ -128,6 +136,6 @@ export function useItemMarketplace(
     affiliateLinks,
     // Dossier
     dossierData, dossierLoading, dossierExpanded, setDossierExpanded,
-    dossierError, loadDossier,
+    dossierError, dossierLoaded, loadDossier,
   };
 }

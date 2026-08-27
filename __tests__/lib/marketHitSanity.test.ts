@@ -60,7 +60,7 @@ describe('filterImplausibleHits', () => {
  * (IMG_3924): a Japanese vinyl item whose "Market Prices" section listed five
  * suruga_ya products, three of which were entirely different records.
  */
-import { filterComps, isPlausibleListing, significantTokens } from '@/lib/marketHitSanity';
+import { filterComps, isPlausibleListing, significantTokens, stripQualifiers, relevanceTokens } from '@/lib/marketHitSanity';
 
 // The item, and the five titles as they appeared.
 const ITEM = 'ウッドストック 愛と平和と音楽の3日間 40周年';
@@ -139,5 +139,51 @@ describe('reject list — false positives', () => {
   ];
   it.each(JUNK)('still rejects %s', (listing, item) => {
     expect(isPlausibleListing(listing, item)).toBe(false);
+  });
+});
+
+/**
+ * The Rayquaza regression, measured on the sim 2026-08-27:
+ *   "dropped 3 irrelevant comp(s) of 3" — the whole section, emptied.
+ *
+ * Every listing title below is a REAL row from `market_hits`, not invented.
+ * The item is named from the catalogue, the comps are not, and that mismatch
+ * is the bug.
+ */
+describe('card-name relevance (the emptied Market Prices section)', () => {
+  const ITEM = 'Rayquaza ex (Emerald 097)';
+  const REAL_COMPS = [
+    'Rayquaza ex (Cardmarket)',
+    'Rayquaza ex (holofoil)',
+    'Rayquaza EX',
+    'Rayquaza',
+  ];
+
+  it('keeps the real comps that the set/number tokens were rejecting', () => {
+    for (const listing of REAL_COMPS) {
+      expect(isPlausibleListing(listing, ITEM)).toBe(true);
+    }
+  });
+
+  it('still rejects a different card entirely', () => {
+    expect(isPlausibleListing('Charizard (holofoil)', ITEM)).toBe(false);
+    expect(isPlausibleListing('Groudon ex (Cardmarket)', ITEM)).toBe(false);
+  });
+
+  it('strips parenthetical AND bracketed qualifiers', () => {
+    expect(stripQualifiers('Rayquaza ex (Emerald 097)')).toBe('Rayquaza ex');
+    expect(stripQualifiers('Franky [ST-14] (Normal)')).toBe('Franky');
+    expect(stripQualifiers('LEGO Ferguson Tractor')).toBe('LEGO Ferguson Tractor');
+  });
+
+  it('falls back to the unstripped title rather than rejecting everything', () => {
+    // Stripping leaves nothing significant; an empty token list means "reject
+    // every listing", which is the bug this fix is about.
+    expect(relevanceTokens('(Promo)')).toEqual(significantTokens('(Promo)'));
+    expect(isPlausibleListing('Some Promo Card', '(Promo)')).toBe(true);
+  });
+
+  it('does not let a qualifier-only strip weaken an accessory rejection', () => {
+    expect(isPlausibleListing('MTG Card Sleeves - Bayou', 'Bayou (Summer Magic)')).toBe(false);
   });
 });
