@@ -75,18 +75,45 @@ export function filterImplausibleHits<T extends SanityCheckable>(
 /**
  * Titles that are demonstrably not the item itself.
  *
- * Ported verbatim from `_TCG_REJECT_TOKENS` in
+ * From `_TCG_REJECT_TOKENS` in
  * `server/workers/marketplace_scrape_scheduler.py`, where every entry was added
- * against an OBSERVED false positive rather than guessed. Kept in one order so
- * the two lists can be diffed by eye.
+ * against an OBSERVED false positive rather than guessed.
+ *
+ * ⚠️ MATCHED ON WORD BOUNDARIES, NOT AS SUBSTRINGS — and that is not a
+ * stylistic difference. The server does `tok in lt`, which is safe there
+ * because it only ever runs on six TCG categories. Run over EVERY category, as
+ * it is here, plain substring matching rejected **7 of 9** real titles in a
+ * one-minute audit: `tin` is inside S·tin·g, Con·tin·ental, Tin·tin,
+ * Pain·tin·g, Quen·tin and Chris·tin·a. A vinyl collection would have lost most
+ * of its comps to a rule written about Pokémon tins.
+ *
+ * `learning_keyword_filters_need_per_category_false_positive_audit`: read EVERY
+ * match, never the total. `__tests__/lib/marketHitSanity.test.ts` pins those
+ * nine titles so this cannot regress.
+ *
+ * `alter`/`altered` were DROPPED from the general list. They mean "altered art"
+ * in a TCG context and are a band name ("Alter Bridge") outside it — the one
+ * false positive word boundaries do not fix. The token rule still has to pass,
+ * so an altered-art listing carrying the full card name is the residual risk,
+ * and that is the right way round: a hidden real comp costs less than a wrong
+ * one shown as evidence.
  */
 const REJECT_TOKENS = [
-  "custom", "proxy", "playmat", "sleeve", "token", "alter", "altered",
+  "custom", "proxy", "playmat", "sleeve", "sleeves", "token",
   "sticker", "poster", "art print", "hand-painted", "hand painted",
   "digital", "code card", "empty box", "binder",
-  "tin", "bundle", "booster", " pack", "packs", "sealed", "lot of",
+  "tin", "tins", "bundle", "booster", "pack", "packs", "sealed", "lot of",
   "collection box", "elite trainer", "blister", "display",
 ];
+
+/** Word-boundary test. `\b` alone is wrong for multi-word entries like
+ *  "art print" and "lot of", so the whole phrase is escaped and bounded. */
+function containsRejectToken(lower: string): boolean {
+  return REJECT_TOKENS.some((tok) => {
+    const escaped = tok.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, "i").test(lower);
+  });
+}
 
 /**
  * Significant tokens of a title.
@@ -126,7 +153,7 @@ export function significantTokens(title: string): string[] {
 export function isPlausibleListing(listingTitle: string, itemTitle: string): boolean {
   if (!listingTitle || !itemTitle) return false;
   const lt = listingTitle.toLowerCase();
-  if (REJECT_TOKENS.some((tok) => lt.includes(tok))) return false;
+  if (containsRejectToken(lt)) return false;
   const tokens = significantTokens(itemTitle);
   // Nothing substantial to match on. Claiming relevance from no evidence is
   // what produced the original screenshot, so say "none" instead.

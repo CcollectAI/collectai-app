@@ -102,3 +102,42 @@ describe('relevance (the reported vinyl screen)', () => {
     expect(filterComps(ROWS, '', 8015).kept).toHaveLength(0);
   });
 });
+
+/**
+ * FALSE-POSITIVE AUDIT of the reject list.
+ *
+ * `learning_keyword_filters_need_per_category_false_positive_audit`: read EVERY
+ * match, never the total. The list came from a TCG-only worker where substring
+ * matching is safe; run over every category it rejected 7 of these 9 real
+ * titles, because "tin" sits inside Sting, Continental, Tintin, Painting,
+ * Quentin and Christina. These nine are pinned so that cannot come back.
+ */
+describe('reject list — false positives', () => {
+  const LEGITIMATE = [
+    "Sting - Ten Summoner's Tales",
+    'The Continental - Original Soundtrack',
+    'Tintin au Tibet - Herge',
+    'Painting the Sky - Live',
+    'LEGO Creator Botanical Garden',
+    'Quentin Tarantino Collection',
+    'Christina Aguilera - Stripped',
+    'Alter Bridge - Blackbird',
+    'Woodstock 40th Anniversary',
+  ];
+
+  it.each(LEGITIMATE)('does not reject %s', (title) => {
+    // Matching itself against itself isolates the reject list: the token rule
+    // trivially passes, so a `false` here can only be the keyword list.
+    expect(isPlausibleListing(title, title)).toBe(true);
+  });
+
+  const JUNK: [string, string][] = [
+    ['MTG Card Sleeves - Bayou', 'Bayou'],
+    ['Pokemon Mega Moonlit ex Tin Bundle Sealed', 'Mega Moonlit ex'],
+    ['Custom Magic card proxy Bayou', 'Bayou'],
+    ['Booster Pack Display Box Bayou', 'Bayou'],
+  ];
+  it.each(JUNK)('still rejects %s', (listing, item) => {
+    expect(isPlausibleListing(listing, item)).toBe(false);
+  });
+});
