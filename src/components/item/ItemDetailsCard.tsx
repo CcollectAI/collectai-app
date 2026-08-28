@@ -86,6 +86,19 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
     onSizeChange, onSizeSystemChange, onSizeValueChange,
   } = props;
 
+  /** The picker writes the literal string "Not set", and `app/item/[id].tsx`
+   *  normalises a blank column to the same sentinel (`blankAs`), so there is
+   *  ONE value meaning "unset" rather than three ("" / null / "Not set")
+   *  — docs/ui-playbook.md, *"A destructuring default cannot express 'or
+   *  blank'"*, which is the bug that left `""` unrecovered here before. */
+  const isFieldSet = (v: string | null | undefined) =>
+    !!v && v !== 'Not set';
+  /** Read mode hides an unset optional row; edit and draft mode always show it,
+   *  because the row IS the way to set it. */
+  const inReadMode = !isDraft && !isEditing;
+  const showCollectionRow = !inReadMode || isFieldSet(editableCollection);
+  const showConditionRow = !inReadMode || isFieldSet(editableCondition);
+
   if (loading) {
     return (
       <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -168,7 +181,24 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
         )}
       </View>
 
-      {/* Collection row */}
+      {/* AN UNSET OPTIONAL FIELD IS NOT A ROW (2026-08-28).
+          Reported as *"Collection: Not set"* taking a full line to say nothing.
+          Measured before fixing rather than assumed: 73 of 112 prod items have
+          no collection and 76 of 112 no condition, so this is the COMMON case —
+          two-thirds of members were reading a details card padded with its own
+          blanks.
+
+          `ItemAttributesSection` already states the rule for the rows directly
+          below these: *"Read mode lists only what exists — an empty row is
+          noise. But edit mode listing only what exists means a missing rarity
+          can never be added."* These two rows are the same kind of row and were
+          simply not covered by it, so the card was internally inconsistent: the
+          attribute list hid its blanks while the card above printed its own.
+
+          Edit and draft mode are UNCHANGED — that is the half that matters. A
+          field hidden because it is empty is a field that can never be filled
+          (`learning_removing_the_opener_strands_the_sheet`). */}
+      {showCollectionRow ? (
       <View style={styles.row} accessibilityLabel={`Collection: ${editableCollection}`}>
         <Text style={[styles.label, { color: theme.muted }]}>Collection</Text>
         {isDraft || isEditing ? (
@@ -187,8 +217,10 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
           <Text style={[styles.value, { color: theme.text }]}>{editableCollection}</Text>
         )}
       </View>
+      ) : null}
 
-      {/* Condition / Grade row */}
+      {/* Condition / Grade row — same rule, same reason. */}
+      {showConditionRow ? (
       <View style={styles.row} accessibilityLabel={`${isGradingEligible ? 'Grade' : 'Condition'}: ${editableCondition}`}>
         <Text style={[styles.label, { color: theme.muted }]}>
           {isGradingEligible ? 'Grade' : 'Condition'}
@@ -209,6 +241,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
           <Text style={[styles.value, { color: theme.text }]} accessibilityLabel={`${isGradingEligible ? 'Grade' : 'Condition'}: ${editableCondition}`}>{editableCondition}</Text>
         )}
       </View>
+      ) : null}
 
       {/* Value row — EDIT MODE ONLY.
           In read mode the figure moved to the valuation card below, where the
@@ -322,7 +355,17 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
            row itself, rather than restated as a literal: two copies of a
            predicate is how the offers badge and the offers screen ended up
            disagreeing about what "needs you" means. */
-        reservedLabels={['Category', 'Collection', isGradingEligible ? 'Grade' : 'Condition']}
+        reservedLabels={[
+          'Category',
+          // RESERVED ONLY WHILE THE ROW IS DRAWN. A label reserved by a parent
+          // that has stopped rendering it deletes the child's copy of the same
+          // fact and shows neither — the strand-the-opener shape, one component
+          // up. These two now hide when unset, so the reservation has to move
+          // with them or a captured `collection`/`grade` attribute would vanish
+          // behind a row that is no longer there.
+          ...(showCollectionRow ? ['Collection'] : []),
+          ...(showConditionRow ? [isGradingEligible ? 'Grade' : 'Condition'] : []),
+        ]}
       />
 
       {/* Directly under the rows it fills in. Hidden while editing: the member

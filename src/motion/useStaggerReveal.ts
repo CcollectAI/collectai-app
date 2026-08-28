@@ -60,11 +60,39 @@ export function useStaggerReveal(options: StaggerRevealOptions): StaggerRevealRe
   const translates = useRef<Animated.Value[]>([]);
   const hasRevealed = useRef(false);
 
-  // Ensure we have enough animated values
+  // Ensure we have enough animated values.
+  //
+  // A VALUE CREATED AFTER THE FIRST REVEAL STARTS VISIBLE (2026-08-28).
+  //
+  // Found on the sim: the Items list showed a "LEGO" heading and a "Collection
+  // total EUR 900" footer with a row-shaped BLANK between them. The row was
+  // rendering — it was stranded at opacity 0. Relaunching the app fixed it,
+  // which is what identified the cause: those items were added to the list
+  // while the app was already open.
+  //
+  // The three lines that combine into it:
+  //   1. new values were created at 0 whenever `enabled`,
+  //   2. `reveal()` early-returns once `hasRevealed.current` is set, and
+  //   3. the auto-start effect keys on `count > 0`, which does NOT change when
+  //      the list grows from 8 items to 9.
+  // So anything appended after the first reveal was created invisible and had
+  // nothing left that would ever animate it up. Pull-to-refresh, pagination and
+  // an optimistic add all reach it.
+  //
+  // Fixed HERE rather than by re-running the reveal, deliberately. Re-revealing
+  // the tail is prettier, and its failure mode is a row that stays invisible —
+  // the bug being fixed. This version's failure mode is a row that appears
+  // without an animation. On a list of things a member owns, "unanimated" is a
+  // cosmetic loss and "invisible" is the item looking sold, lost or deleted, so
+  // the safe direction is not symmetric (`learning_silent_fallbacks_hide_dead_
+  // features` — the construct that degrades to empty is the one that hides).
   if (opacities.current.length < animateCount) {
+    // `startHidden` is evaluated per batch, not per hook: the FIRST batch is
+    // what the stagger exists to animate.
+    const startHidden = enabled && !hasRevealed.current;
     for (let i = opacities.current.length; i < animateCount; i++) {
-      opacities.current.push(new Animated.Value(enabled ? 0 : 1));
-      translates.current.push(new Animated.Value(enabled ? fromY : 0));
+      opacities.current.push(new Animated.Value(startHidden ? 0 : 1));
+      translates.current.push(new Animated.Value(startHidden ? fromY : 0));
     }
   }
 

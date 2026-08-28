@@ -288,6 +288,49 @@ export function buildAttributeRows({
   const restatesCategory = (key: string, val: unknown) =>
     key === 'brand' && typeof val === 'string' && categoryAliases.has(norm(val));
 
+  /**
+   * A `false` on an attribute this category does not even declare is
+   * bookkeeping, not a fact about the item.
+   *
+   * Reported 2026-08-28: a PSA 9 Rayquaza — `item_type: "Single"` — rendered
+   * **"Sealed: No"**. A slabbed single cannot be sealed, so the row asserted
+   * the absence of a property the item cannot have.
+   *
+   * MEASURED, not assumed, and the measurement is the whole argument. Across
+   * all 112 prod items there is exactly ONE boolean attribute in existence:
+   *
+   *     key     | val   | category | n
+   *     sealed  | false | pokemon  | 3
+   *
+   * Not one `true`. And `POKEMON_FIELDS` in `src/constants/categoryFields.ts`
+   * does not list `sealed` — the key arrives from an importer, not from
+   * anything a Pokemon member was asked. So today this row can only ever say
+   * "No", to a question the category never poses
+   * (`learning_bookkeeping_keys_render_as_facts`: read the VALUES, not the key
+   * names).
+   *
+   * The discriminator is the category's own declared field list, NOT a keyword
+   * rule about "sealed" — that list is already the app's statement of which
+   * attributes mean something where. So a LEGO set or a video game, whose
+   * categories DO declare `sealed`, keeps "Sealed: No", because loose-vs-MISB
+   * is a real price driver there. And `true` always survives everywhere: a
+   * sealed box is never noise.
+   *
+   * READ MODE ONLY, like `restatesCategory` directly above and for the same
+   * reason — hiding a field in edit mode is how a wrong value becomes
+   * impossible to correct.
+   *
+   * With NO category we have no vocabulary to judge against, so the row is
+   * SHOWN — the same direction the `normalize` guard above fails in, and for
+   * the same reason: a redundant row is a smaller harm than a hidden fact.
+   *
+   * Strictly `=== false`, the boolean. A string `'false'` is a different value
+   * with a different provenance (an importer that stringified it), it is real
+   * captured data, and `attributeRows.test.ts` pins it as such.
+   */
+  const isUndeclaredNegative = (key: string, val: unknown) =>
+    val === false && !!category && !fieldOrder.includes(key);
+
   const rawEntries = hasAttributes
     ? Object.entries(attrs).filter(
         ([key, val]) =>
@@ -295,7 +338,7 @@ export function buildAttributeRows({
           val !== undefined &&
           val !== '' &&
           !INTERNAL_KEYS.has(key) &&
-          (editable || !restatesCategory(key, val)),
+          (editable || (!restatesCategory(key, val) && !isUndeclaredNegative(key, val))),
       )
     : [];
 
