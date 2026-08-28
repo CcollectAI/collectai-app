@@ -54,6 +54,55 @@ is the snipe's **exact-identity** arm. A €1.20 novel would have fired a Target
 Hit against an €8015 target reading "100% below your target" — the identical bug
 removed on 2026-08-04. All test rows were deleted.
 
+### The fourth defence is on the DISPLAY path, and it tokenises differently (2026-08-27)
+
+The three gates above run at INGEST, on `market_hits`. `Market Prices` on the
+item card is a *live* `POST /marketplace/search`, so none of them apply to it —
+it rendered whatever the endpoint returned. That is how a crawl4ai row titled
+"Site Statistics" reached a Pro member's screen at **€1,620,277,371**.
+
+`src/lib/marketHitSanity.ts` is that gate. Two rules, and they are not the same
+rules as gate 2:
+
+- **Arithmetic on the price** (`filterImplausibleHits`) — the absolute bound
+  agrees with `valuation_worker._MAX_SANE_PRICE_EUR` (20,000,000), plus a very
+  loose multiple of the item's own valuation.
+- **Relevance** (`isPlausibleListing`) — every significant token of the item's
+  **card name** must appear in the listing title.
+
+⚠️ **Card NAME, not the item's display title.** Porting gate 2 verbatim broke
+this, and the failure was total rather than partial:
+
+    [useItemMarketplace] dropped 3 irrelevant comp(s) of 3 for
+    "Rayquaza ex (Emerald 097)" — keyword search returned other products
+
+Three of three. Our own `market_hits` titles for that card are `Rayquaza ex
+(Cardmarket)`, `Rayquaza ex (holofoil)`, `Rayquaza EX`, `Rayquaza` — **not one
+carries a set name or a card number**, because the sources emit a card name plus
+a finish or marketplace suffix. The item is *named from the catalogue*, so
+requiring every token of its display title required `emerald` AND `097`, which
+no comp we hold can ever contain. Every card whose catalogue name carries a
+parenthetical set/number had the section emptied, silently, on the paid tier.
+
+`stripQualifiers` removes `(...)` and `[...]` before tokenising, falling back to
+the unstripped title when stripping leaves nothing significant — an empty token
+list means "reject everything", which is the bug itself.
+
+**This does not add keyword rules, and must not.** The accepted cost is the one
+this document already names above: card-name tokens cannot separate printings,
+so a same-name different-printing comp can appear under a valuation. Showing a
+wrong printing is bounded harm; showing NOTHING on a paid feature was not. The
+real fix is still EPID.
+
+### An empty result is not "not loaded yet"
+
+Both collapsible Pro sections inferred "have we fetched" from "is the result
+non-empty" (`!dossierData`, `marketResults.length === 0`). A successful-but-
+empty response left that test true forever, so every tap re-ran the request and
+the section could never be collapsed. They now gate on `dossierLoaded` and
+`marketScannedAt`, which are set on **both** the success and the error path.
+Same shape as `learning_empty_answer_rendered_as_zero`, one layer up.
+
 ### Known limitation: printing precision
 
 The gates make the pass safe, not exact. Verified with everything on:

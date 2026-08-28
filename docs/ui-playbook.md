@@ -2413,3 +2413,112 @@ mounts. `@testing-library/react-native` was already a dependency; three suites
 now mount the changed components in CI — asserting the `=== 1` boundary at 0/1/
 2/5/undefined, that an empty-attribute LEGO item draws **no** heading while one
 with `set_number` does, and that pressing Export never calls `Linking.openURL`.
+
+## The populated card says what the empty one cannot (2026-08-28)
+
+Every defect below was found by opening **one item that had real data in it** on
+the simulator. The same screen with an empty item had been read several times
+and looked fine. An empty state exercises the absence branch of every rule on
+the screen; it cannot show you a row that renders the wrong fact, a number
+missing beside a number that is present, or a filter that rejects everything it
+is given.
+
+### The number the screen exists for was the one number absent
+
+The card led with **€95** and never mentioned the **€58** paid for it. Not a
+styling problem — `cost_basis` and `unrealized_pl` are returned by the server
+and already mapped by the client store, and the item screen simply never
+rendered them. `learning_complete_feature_reachable_from_nowhere`: the code was
+correct and ran nowhere.
+
+Placed directly under the figure and **above** "Based on N recorded sales",
+because that line qualifies how much to trust the number while this one says
+what the number *means for the holder* — the stronger claim goes first.
+
+⚠️ **EUR against EUR.** `items` carries the cost basis twice —
+`purchase_price` in `purchase_currency`, and `purchase_price_eur`. The screen's
+valuation is EUR. `computeItemDelta` therefore takes **explicitly named** EUR
+arguments, so a caller passing the raw half has to ignore the parameter name to
+do it (`learning_a_currency_column_needs_the_currency_applied`, ~170x wrong for
+a JPY purchase). Both halves are now carried on the screen on purpose: the raw
+one still feeds the edit field, in the member's own currency.
+
+No cost basis renders **nothing**, never `+€0 (0.0%)`. A member who never told
+us what they paid has no P/L, and a zero states a measured break-even.
+
+### An empty row is noise — and the rule already existed one component down
+
+"Collection: Not set" took a full line to say nothing.
+`ItemAttributesSection` had stated the rule for the rows immediately below it —
+*"Read mode lists only what exists — an empty row is noise. But edit mode
+listing only what exists means a missing rarity can never be added"* — and the
+card above it was never covered by it. The card was internally inconsistent:
+the attribute list hid its blanks while the card printed its own.
+
+**Measured before fixing: 73 of 112 items have no collection, 76 of 112 no
+condition.** Two-thirds of members, not an edge case.
+
+⚠️ **`reservedLabels` has to move with the row.** The card tells the attribute
+list which labels it draws so the same fact is not rendered twice. A label
+reserved by a parent that has *stopped* drawing it deletes the child's copy and
+shows neither — `learning_removing_the_opener_strands_the_sheet`, one component
+up. The reservation is now derived from the same booleans that gate the rows.
+
+### A `false` on an undeclared field is bookkeeping, not a fact
+
+A PSA 9 single rendered **"Sealed: No"** — the absence of a property a slabbed
+card cannot have.
+
+Enumerated rather than judged, per
+`learning_keyword_filters_need_per_category_false_positive_audit`. Across all
+112 prod items there is exactly **one** boolean attribute in existence:
+
+| key | val | category | n |
+|---|---|---|---|
+| sealed | false | pokemon | 3 |
+
+Not one `true`. And `POKEMON_FIELDS` never declares `sealed` — the key arrives
+from an importer, not from anything a Pokémon member was asked.
+
+**The discriminator is the category's own declared field list, not the word
+"sealed".** That list is already the app's statement of which attributes mean
+something where, so using it is not a keyword rule. LEGO and whiskey *do*
+declare it and keep "Sealed / New in Box: No", because loose-vs-MISB is a real
+price driver there. `true` survives everywhere. With no category the row is
+**shown** — the same direction the diacritic-fold guard beside it fails in: a
+redundant row beats a hidden fact.
+
+The test asserting the LEGO case failed first, and the code was right — LEGO
+labels the field "Sealed / New in Box". **A test written from memory of a label
+is a test of the memory.**
+
+### A row can render and still be invisible
+
+The Items list showed a `LEGO` heading and a `Collection total €900` footer with
+a row-shaped **blank** between them. The row was not missing; it was mounted at
+opacity 0.
+
+Relaunching the app made it appear, and that is what identified the cause rather
+than the symptom: those items had been added while the app was open. Three lines
+in `useStaggerReveal` combine into it — new values are created at `0`,
+`reveal()` early-returns once it has latched, and the auto-start effect keys on
+`count > 0`, which **does not change when a list grows from 8 items to 9**.
+Anything appended after the first reveal was created invisible with nothing left
+that would ever animate it up. Pull-to-refresh, pagination and an optimistic add
+all reach it.
+
+**Fixed by creating late arrivals visible, not by re-running the reveal.**
+Re-revealing the tail is prettier and its failure mode is a row that stays
+invisible — the bug being fixed. This version's failure mode is a row that
+appears without an animation. On a list of things a member owns those are not
+symmetric: *unanimated* is a cosmetic loss, *invisible* reads as sold, lost or
+deleted. When a fix has two directions, pick the one whose failure is the
+smaller lie.
+
+### Four suites were passing and gating nothing
+
+`verify:prebuild` names its jest files explicitly. Four were never in the list —
+including one added the previous day, which I had assumed was gated because the
+suite count went up (it had; a *different* file's tests accounted for the rise).
+**A test file is not a gate until the gate names it.** Now 37 suites / 314
+tests.

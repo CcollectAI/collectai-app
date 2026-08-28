@@ -2005,3 +2005,57 @@ production, the caller is the bug.
 `iss: $SUPABASE_JWT_ISSUER`, or `get_current_user_id` rejects it. Then call
 `http://127.0.0.1:8000` on the box with `Host: api.sparrowcollect.com`. This is
 read-only; do not reset a user's password to get a token.
+
+### Three "is this rendering right?" questions, three different bugs (2026-08-28)
+
+Asked why `Valuation Report` and `Market Prices` were empty on a populated item.
+The visible answer was correct — both lazy-load on first tap — and underneath it
+were two real defects plus a third found on the way. None was the one the
+screenshot suggested.
+
+**Read the log before theorising about the network.** The device log said it
+outright:
+
+    [useItemMarketplace] dropped 3 irrelevant comp(s) of 3 for
+    "Rayquaza ex (Emerald 097)" — keyword search returned other products
+
+Three of three is not a tuning problem, it is a structural one. The filter was
+mine, added six days earlier, and it required tokens (`emerald`, `097`) that our
+own comps structurally never carry. See `docs/MARKET_DATA.md`, "The fourth
+defence is on the DISPLAY path".
+
+**Measure the column before writing a rule about it.** Every fix below was sized
+against prod first, and each measurement changed the fix:
+
+- `sealed`: exactly **3 rows** in the whole DB, all `false`, on a category that
+  never declares the field → the rule keys on the *declared field list*, not on
+  the word.
+- Empty `Collection` / `Condition` rows: **73 and 76 of 112 items** → the common
+  case, so worth a rule rather than a special case.
+- Boolean attrs overall: **one key in existence** → confirmed the rule could not
+  hide anything else.
+
+**"Unknown item" was RLS, not the timeout the toast was showing.** Supabase
+answered in 250 ms from the laptop; the deep link pointed at an item owned by a
+*different* account than the simulator was signed into. A zero-row RLS result
+and a 15 s timeout render identically. `learning_a_wrong_diagnostic_is_believed_
+for_sessions` — verify the artefact before believing its logs.
+
+**A relaunch that fixes it is evidence, not a workaround.** The invisible list
+row appeared after a cold start, which is what pointed at "added while the app
+was open" and from there at the stagger hook. The symptom disappearing under a
+specific condition names the cause.
+
+**Simulator input is unreliable and it lies quietly.** `cliclick` moves the
+pointer and reports success while the Simulator window is in pointer-capture
+mode (`iPhone 17 – Press esc to stop capture`) and swallows every synthetic
+event. Escape releases it; it re-enters on its own. Navigate with
+`simctl openurl` and relaunch with `simctl terminate` + `launch` rather than
+tapping. When input stops landing, **stop driving the sim and say which findings
+are device-verified and which are test-verified** — do not let a flaky harness
+turn into a claim.
+
+**A test file is not a gate until `verify:prebuild` names it.** Four suites were
+green and gating nothing, including one added the day before. The suite count
+had gone up, which is exactly why I did not notice — a *different* file's tests
+accounted for the rise.
