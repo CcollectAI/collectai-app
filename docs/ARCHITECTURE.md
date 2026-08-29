@@ -836,10 +836,30 @@ before "fixing" either:
   Note the two sides read *different* columns: `items.attrs` but
   `category_items.attributes_json` (see `learning_verify_table_columns_before_sql`).
 - `/data-moat/prediction-accuracy` → `total_ground_truths: 0` because
-  `price_ground_truths` has never had a row. The write chain **is** fully
+  `price_ground_truths` had never had a row. The write chain **is** fully
   wired: item detail (`useItemDetail.ts:289`) → `submitVerifiedSale` →
   `POST /feedback/verified-sale` → `record_price_ground_truth`. It only fills
   when a user marks an item sold, which no test data does.
+
+  **Updated 2026-08-29: it now holds 9 rows** — still effectively empty, and
+  now load-bearing in a way it was not when this was written. The model
+  promotion gate in `workers/model_retrain_worker.py` draws its holdout from
+  this table, so on the 2026-08-29 retrain **53 of 54 categories were promoted
+  with `holdout_n = 0`** (reason: *"no_holdout — first train or empty
+  ground_truth"*) while **lorcana was REVERTED on a holdout of 3**
+  (`new_mae=24.23 > old_mae=2.82 * 1.05`).
+
+  That rule was incoherent — zero evidence promoted, three samples rejected, so
+  the gate was strictly *more* permissive the less it knew, and an 8.6x MAE
+  ratio measured on three points is noise turned into a decision. The gate now
+  requires `MODEL_RETRAIN_MIN_HOLDOUT` (default 20) before it may revert;
+  below that it promotes and logs the MAEs at WARNING, because declining to
+  ACT on a weak signal is not the same as discarding it.
+
+  **The gate stays effectively inert until there are users.** Nothing in the
+  codebase can populate this table — it is a launch dependency, not a bug. Do
+  not "fix" it by seeding rows: a synthetic ground truth would make the gate
+  confidently wrong rather than honestly quiet.
 
 The same class, but rendering a *wrong* value rather than none — the leaderboard
 showed **XP as money** (fixed 2026-07-31):

@@ -270,6 +270,50 @@ async def _export_scan_corrections(conn, category: str, cutoff: datetime) -> int
 HOLDOUT_FRACTION = float(os.getenv("MODEL_RETRAIN_HOLDOUT_FRAC", "0.20"))
 PROMOTION_TOLERANCE = float(os.getenv("MODEL_RETRAIN_TOLERANCE", "1.05"))  # new MAE allowed up to 5% worse
 
+# Minimum holdout before the gate is allowed to REVERT a freshly trained model.
+#
+# The 2026-08-29 run exposed the rule as incoherent: 53 categories had
+# holdout_n=0 and were ALL promoted ("no_holdout — first train or empty
+# ground_truth"), while lorcana had holdout_n=3 and was REVERTED on
+# new_mae=24.23 > old_mae=2.82 * 1.05. Zero evidence promoted; three samples
+# rejected. The gate was strictly more permissive the less it knew, and an
+# 8.6x MAE ratio measured on three points is noise, not a finding.
+#
+# The evidence base cannot grow on its own: `price_ground_truths` holds NINE
+# rows in total, and docs/ARCHITECTURE.md:838 records why — it fills only when
+# a real user marks an item sold, and there are no users yet. So this will keep
+# biting until launch.
+#
+# Below this threshold the gate promotes (consistent with the n=0 path) and
+# logs the numbers at WARNING. Declining to ACT on a weak signal is not the
+# same as discarding it.
+MIN_HOLDOUT_FOR_GATE = int(os.getenv("MODEL_RETRAIN_MIN_HOLDOUT", "20"))
+
+
+def should_revert(old_mae: float | None, new_mae: float | None,
+                  holdout_n: int, tolerance: float = PROMOTION_TOLERANCE
+                  ) -> tuple[bool, str]:
+    """Decide whether to revert to the previous model. Returns (revert, reason).
+
+    Pure and module-level so the rule can be tested against known-good and
+    known-bad inputs -- inline in retrain_category it could only be verified by
+    reading it, which is how the n=0-promotes / n=3-rejects inversion survived.
+    """
+    if old_mae is None or new_mae is None or holdout_n <= 0:
+        return False, "no_holdout — first train or empty ground_truth"
+    if holdout_n < MIN_HOLDOUT_FOR_GATE:
+        return False, (
+            f"insufficient holdout (n={holdout_n} < {MIN_HOLDOUT_FOR_GATE}) — "
+            f"promoted unevaluated; new_mae={new_mae:.2f} vs "
+            f"old_mae={old_mae:.2f} recorded but NOT acted on"
+        )
+    if new_mae > old_mae * tolerance:
+        return True, (
+            f"regression: new_mae={new_mae:.2f} > old_mae={old_mae:.2f}"
+            f" * tol={tolerance} (holdout n={holdout_n})"
+        )
+    return False, f"promoted: new_mae={new_mae:.2f} vs old_mae={old_mae:.2f} (n={holdout_n})"
+
 
 def _score_model_on_holdout(model_artifact: dict, holdout_records: list[dict]) -> float | None:
     """Score a model artifact's q50 MAE on a list of {features, price} dicts.
@@ -539,23 +583,27 @@ def _retrain_category(category: str) -> dict:
             if new_artifact:
                 new_mae = _score_model_on_holdout(new_artifact, holdout_records)
 
-        # ── Promotion gate: revert symlink if regression > tolerance ──
-        if (
-            old_mae is not None and new_mae is not None
-            and new_mae > old_mae * PROMOTION_TOLERANCE
-            and old_version
-            and artifacts_root
-        ):
+        # ── Promotion gate ──
+        # The rule lives in should_revert() so it can be tested; see the
+        # MIN_HOLDOUT_FOR_GATE comment for why n=3 must not revert while n=0
+        # promotes.
+        _revert, _gate_reason = should_revert(old_mae, new_mae, len(holdout_records))
+        if _revert and not (old_version and artifacts_root):
+            # We would revert but cannot — say so instead of silently promoting.
+            logger.warning(
+                "[model_retrain] %s: %s — but no previous version to revert to; "
+                "the new model stands", category, _gate_reason)
+            _revert = False
+        if not _revert and _gate_reason.startswith("insufficient holdout"):
+            logger.warning("[model_retrain] %s: %s", category, _gate_reason)
+        if _revert:
             try:
                 active_link = artifacts_root / category / "active"
                 if active_link.is_symlink():
                     active_link.unlink()
                 active_link.symlink_to(old_version)
                 promoted = False
-                reason = (
-                    f"regression: new_mae={new_mae:.2f} > old_mae={old_mae:.2f}"
-                    f" * tol={PROMOTION_TOLERANCE} — reverted to {old_version}"
-                )
+                reason = f"{_gate_reason} — reverted to {old_version}"
                 logger.warning("[model_retrain] %s: %s", category, reason)
             except Exception as e:
                 logger.warning("[model_retrain] revert symlink failed for %s: %s", category, e)
