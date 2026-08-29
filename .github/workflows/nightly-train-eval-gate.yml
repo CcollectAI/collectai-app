@@ -98,13 +98,36 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           GATE_IMPROVE_PCT: "3"
         run: |
-          # Run eval gate if eval script exists
-          if [ -f scripts/eval_mae_and_gate.py ]; then
-            CATEGORY="${{ github.event.inputs.category || 'pokemon' }}"
-            python scripts/eval_mae_and_gate.py "$CATEGORY"
-          else
-            echo "Eval script not found, skipping gate check"
-          fi
+          # ⛔ THIS STEP HAS NEVER GATED ANYTHING. Corrected message 2026-08-29.
+          #
+          # It used to test `[ -f scripts/eval_mae_and_gate.py ]` and, on
+          # failure, echo "Eval script not found, skipping gate check" and
+          # SUCCEED. Three things were wrong with that:
+          #
+          #   1. The script is not missing. It is at REPO ROOT
+          #      (scripts/eval_mae_and_gate.py) while this step sets
+          #      `working-directory: server`, so the test was always false.
+          #      "Not found" was true of the path, not of the file — which is
+          #      why nobody chased it. Confirmed in run 33244113380.
+          #   2. Repointing the path is not enough: the command passes a
+          #      POSITIONAL argument, and the script takes none. Its
+          #      --artifact-prefix is required=True. It would die on argparse.
+          #   3. Gating is moot anyway, because nothing survives this job:
+          #      train_price writes artifacts/<cat>/<ver>/model.json to the
+          #      RUNNER's disk, contains zero S3 code (the ARTIFACT_BUCKET env
+          #      above is read by nothing), and --register is a no-op
+          #      (MODEL_REGISTRY_WRITE_ENABLED defaults false). The runner is
+          #      then destroyed. Serving reads model_registry + S3, so no model
+          #      trained here has ever reached production.
+          #
+          # Left non-failing on purpose: the steps ABOVE do real work
+          # (export_feedback writes to the DB), and a job that reddens nightly
+          # for a known, documented, undecided reason is one people learn to
+          # scroll past. But it must stop implying a gate ran. Wiring the chain
+          # (S3 upload + model_registry write + correct invocation) is a
+          # decision, not a patch. See docs/INGEST.md.
+          echo "::warning::Model gate NOT run — the eval chain is not wired (artifacts never leave this runner). See the comment in this workflow and docs/INGEST.md."
+          echo "Trained artifacts are discarded with this runner; no gate was applied and no model was promoted."
 
       - name: Upload artifacts on failure
         if: failure() && env.HAS_SECRETS == 'true'
