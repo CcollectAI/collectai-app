@@ -126,6 +126,36 @@ exit code is swallowed is not a gate.** (The same step's
 `pip install httpx boto3 || true` was masking a failed install into an
 `ImportError` three steps later — removed.)
 
+### Swept the other 11 workflows, and found the same lie twice more
+
+8/8 `success` on every scheduled workflow is compatible with "ran fine" AND
+"never ran". The discriminating query is the STEP list:
+
+```bash
+gh run view "$rid" --json jobs -q '.jobs[].steps[] | "\(.conclusion)\t\(.name)"'
+```
+
+`nightly-eval`: "Check secrets" **success**, every other step **skipped**. It
+has never run. `HAS_SECRETS` gated on `secrets.S3_DATA_BUCKET` — unset, and
+never used by that workflow — while the warning text named the two Supabase
+secrets instead, which is the tell that gate and job had drifted. And the run
+step passes no arguments to a script whose `--artifact-prefix` is
+`required=True`. Two independent fatal bugs, each hidden by the other.
+
+I nearly shipped the wrong fix: correcting the gate alone would have turned
+eight silent green runs into a nightly argparse traceback. **Turning a silent
+lie into a loud one is not progress** — schedule disabled, reasons written into
+the file, `workflow_dispatch` kept.
+
+`nightly-train-eval-gate` trains models every night and **has never gated
+one**: its step sets `working-directory: server`, the script is at repo root,
+so `[ -f scripts/... ]` is false and it logs "Eval script not found, skipping
+gate check" and succeeds. Six callers invoke that one script three
+incompatible ways; two wrap it in `|| true`.
+
+**A green checkmark is a claim about an exit code, never about whether the job
+did anything.** For anything that can skip itself, ask which steps ran.
+
 ### I wrote the wrong-population aggregate INTO the commit that fixed silent failures
 
 Adding a "wrote N of M rows — K LOST" summary, I reported

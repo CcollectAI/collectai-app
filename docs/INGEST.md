@@ -241,6 +241,53 @@ Verified, not assumed:
 - The same step's `pip install httpx boto3 || true` was removed — it masked a
   failed install into an `ImportError` three steps later.
 
+### The same class, swept across the other 11 workflows (2026-08-29)
+
+Having fixed the nightly ingest, the obvious question was whether any other
+scheduled job reports success while doing nothing. **One did, and a second is
+still open.**
+
+`gh run list` showed 8/8 `success` for every scheduled workflow — which is
+exactly the reading that is compatible with both "ran fine" and "never ran".
+The discriminating query is the STEP list, not the conclusion:
+
+```bash
+rid=$(gh run list --workflow=<w>.yml --limit 1 --json databaseId -q '.[0].databaseId')
+gh run view "$rid" --json jobs -q '.jobs[].steps[] | "\(.conclusion)\t\(.name)"'
+```
+
+A job whose "Check secrets" step **succeeded** and whose every other step is
+`skipped` has run zero lines of work and reported success.
+
+| workflow | verdict |
+|---|---|
+| `nightly-eval` | ⛔ **never ran** — schedule disabled 2026-08-29 |
+| `nightly-train-eval-gate` | ⚠️ runs, but its gate step has never gated |
+| `nightly-training`, `nightly-prune`, `ingest-ebay` | genuinely run |
+| `sanity-e2e` | runs, and fails visibly — honest |
+
+**`nightly-eval` had two independent fatal bugs.** `HAS_SECRETS` gated on
+`secrets.S3_DATA_BUCKET` — unset, and never referenced by the workflow — so
+every `if: env.HAS_SECRETS == 'true'` step skipped. And the run step invokes
+`eval_mae_and_gate.py` with no arguments while `--artifact-prefix` is
+`required=True`. Fixing only the gate would have traded silence for a nightly
+argparse traceback, so the schedule is disabled and the reasons are written in
+the file. **Turning a silent lie into a loud one is not progress.**
+
+**`nightly-train-eval-gate` still trains models nightly and gates none of
+them.** Its "Evaluate & Gate" step sets `working-directory: server`, the script
+lives at repo root, so `[ -f scripts/eval_mae_and_gate.py ]` is false and it
+logs `Eval script not found, skipping gate check` — successfully. Confirmed in
+run `33244113380`. Repointing the path is not enough: it then passes a
+positional argument the script's argparse does not accept. Six callers invoke
+this one script three mutually incompatible ways (`nightly_multi.sh:38` has the
+only correct form), and two of them wrap it in `|| true`.
+
+The generalisable rule, and the reason this sits in a doc rather than a commit
+message: **a green checkmark is a claim about the job's exit code, never about
+whether it did anything.** For any job that can skip itself, the check is
+"which steps actually executed", and that question has to be asked on purpose.
+
 Before trusting a fix to a pipeline in this directory:
 
 ```bash
