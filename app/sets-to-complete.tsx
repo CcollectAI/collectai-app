@@ -150,15 +150,33 @@ const SetsToCompleteScreen: React.FC = () => {
    * is what makes a vague empty state a broken promise rather than a rough
    * edge (learning_a_written_promise_to_users_is_a_spec).
    */
+  /**
+   * SCOPED, when a category was passed. Everything below reasons about "what
+   * can this screen show you", and in a category-scoped view that question is
+   * about your items IN THAT CATEGORY — not your whole portfolio.
+   *
+   * Reading the unscoped list here produced a false sentence: open "Finish a
+   * set" from a category you own nothing in, and the screen said "Scan or add
+   * more items to start tracking which collections you're close to finishing",
+   * which implies you have some here and are merely not close. The true
+   * sentence is that you own nothing in this category yet. Same defect the
+   * whiskey/LEGO branch below was written to fix, one scope out.
+   */
+  const scopedItems = useMemo(
+    () => (categoryId ? items.filter((it) => it.category === categoryId) : items),
+    [items, categoryId],
+  );
   const uncoveredCategories = useMemo(
-    () => unsupportedSetCategories(items),
-    [items],
+    () => unsupportedSetCategories(scopedItems),
+    [scopedItems],
   );
   const hasOnlyUncovered =
-    items.length > 0 && uncoveredCategories.length > 0 &&
-    items.every((it) => !it.category || uncoveredCategories.includes(
+    scopedItems.length > 0 && uncoveredCategories.length > 0 &&
+    scopedItems.every((it) => !it.category || uncoveredCategories.includes(
       it.category.trim().toLowerCase(),
     ));
+  /** Nothing owned HERE — distinct from "owned, but no set is near done". */
+  const ownsNothingInScope = Boolean(categoryId) && scopedItems.length === 0 && items.length >= 0;
 
   const candidates: SizedCollectionScore[] = useMemo(() => {
     if (!items.length) return [];
@@ -329,17 +347,21 @@ const SetsToCompleteScreen: React.FC = () => {
             <View style={styles.emptyCard}>
               <Ionicons name="cube-outline" size={36} color={colors.muted} />
               <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                {hasOnlyUncovered
-                  ? "Set tracking doesn't cover these categories yet"
-                  : "No sets near completion yet"}
+                {ownsNothingInScope
+                  ? "You don't have any items in this category yet"
+                  : hasOnlyUncovered
+                    ? "Set tracking doesn't cover these categories yet"
+                    : "No sets near completion yet"}
               </Text>
               <Text style={[styles.empty, { color: colors.muted }]}>
-                {hasOnlyUncovered
-                  ? `Progress needs a set list — how many pieces make a full set — and we only have those for ${SET_TRACKING_CATEGORY_LABELS} today. Your ${uncoveredCategories
-                      .slice(0, 3)
-                      .map((c) => c.replace(/_/g, " "))
-                      .join(", ")} items aren't covered, so adding more won't change this screen.`
-                  : "Scan or add more items to start tracking which collections you're close to finishing."}
+                {ownsNothingInScope
+                  ? "This screen shows what you're still missing from sets you've already started, so it needs at least two items from one set. Add something in this category and it will start tracking."
+                  : hasOnlyUncovered
+                    ? `Progress needs a set list — how many pieces make a full set — and we only have those for ${SET_TRACKING_CATEGORY_LABELS} today. Your ${uncoveredCategories
+                        .slice(0, 3)
+                        .map((c) => c.replace(/_/g, " "))
+                        .join(", ")} items aren't covered, so adding more won't change this screen.`
+                    : "Scan or add more items to start tracking which collections you're close to finishing."}
               </Text>
             </View>
           )}

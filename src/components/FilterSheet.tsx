@@ -3,7 +3,7 @@
  * Supports category, price range, condition, and saved presets.
  */
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Pressable,
   ScrollView,
   TextInput,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -85,6 +86,12 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
  *  memo on this component for callers that omit the prop. */
 const NO_CATEGORY_LABELS: Record<string, string> = {};
 
+/** Anchored category-menu geometry. Module scope like the rest of this file's
+ *  constants; rotation is not a supported case for a menu dismissed on any
+ *  outside tap. */
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const MENU_W = 260;
+
 const PRESETS_KEY = '@collectai/filter_presets';
 
 const DEFAULT_CONFIG: FilterConfig = {
@@ -119,6 +126,37 @@ function FilterSheetInner({
   // that. Folding the two together made the whole section vanish while the
   // menu was open.
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  // Where the trigger sits in WINDOW coordinates, so the menu can open against
+  // it. Measured on press rather than on layout: this sheet slides in, so a
+  // layout-time rect is stale by the time anyone taps.
+  const categoryTriggerRef = useRef<View>(null);
+  const [categoryAnchor, setCategoryAnchor] = useState<{ x: number; y: number; h: number } | null>(null);
+  const openCategoryMenu = useCallback(() => {
+    // OPEN FIRST, anchor after.
+    //
+    // The first version gated setCategoryMenuOpen(true) on the measureInWindow
+    // CALLBACK. `measureInWindow` exists on the ref but only fires once native
+    // layout has happened, so any environment where it does not call back —
+    // and it silently does not, rather than throwing — left the trigger
+    // completely dead. Caught by the tests, which pressed the trigger and
+    // found no menu.
+    //
+    // Anchoring is an enhancement over a control that must work regardless, so
+    // a missing measurement now degrades to the centred fallback instead of to
+    // nothing. Same reason the `catch` below does not re-raise.
+    setCategoryAnchor(null);
+    setCategoryMenuOpen(true);
+    const node = categoryTriggerRef.current as unknown as {
+      measureInWindow?: (cb: (x: number, y: number, w: number, h: number) => void) => void;
+    } | null;
+    try {
+      node?.measureInWindow?.((x, y, _w, h) => {
+        if (typeof y === 'number' && typeof h === 'number') setCategoryAnchor({ x, y, h });
+      });
+    } catch {
+      // Keep the centred fallback.
+    }
+  }, []);
 
   // Load presets on mount
   useEffect(() => {
@@ -388,8 +426,9 @@ function FilterSheetInner({
                     The trigger states the selection rather than just naming the
                     control, because "Category" alone makes you open it to learn
                     what you already picked. */}
+                <View ref={categoryTriggerRef} collapsable={false} style={styles.bubbleTriggerWrap}>
                 <Pressable
-                  onPress={() => setCategoryMenuOpen(true)}
+                  onPress={openCategoryMenu}
                   style={[styles.bubbleTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
                   accessibilityRole="button"
                   accessibilityLabel={
@@ -407,6 +446,7 @@ function FilterSheetInner({
                   </Text>
                   <Ionicons name="chevron-down" size={16} color={colors.muted} />
                 </Pressable>
+                </View>
               </View>
             )}
 
@@ -426,7 +466,21 @@ function FilterSheetInner({
                     is tapped — without this every row press also dismissed. */}
                 <Pressable
                   onPress={(e) => e.stopPropagation()}
-                  style={[styles.menuCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  style={[
+                    styles.menuCard,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                    categoryAnchor
+                      ? {
+                          position: 'absolute',
+                          // Clamped so a trigger near the right edge does not
+                          // push the menu off-screen, and one near the bottom
+                          // does not open below the fold.
+                          left: Math.max(12, Math.min(categoryAnchor.x, SCREEN_W - MENU_W - 12)),
+                          top: Math.min(categoryAnchor.y + categoryAnchor.h + 6, SCREEN_H - 220),
+                          width: MENU_W,
+                        }
+                      : null,
+                  ]}
                 >
                   <Text style={[styles.menuTitle, { color: colors.text }]}>Category</Text>
                   <ScrollView style={styles.menuScroll} keyboardShouldPersistTaps="handled">
@@ -798,8 +852,16 @@ const styles = StyleSheet.create({
     // it for one modal would change every call site.
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     flex: 1,
+    // Centring is the FALLBACK only — when the trigger could not be measured.
+    // With an anchor the card is absolutely positioned against it, because an
+    // iOS menu belongs to its trigger; a centred sheet is a dialog that
+    // happens to contain the same list.
     justifyContent: 'center',
     paddingHorizontal: 24,
+  },
+  bubbleTriggerWrap: {
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
   },
   menuCard: {
     borderWidth: 1,
