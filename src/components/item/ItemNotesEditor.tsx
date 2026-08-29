@@ -57,10 +57,20 @@ export const ItemNotesEditor = React.memo(function ItemNotesEditor({
   // is why hasChanges is computed against the last SAVED value written by
   // handleSave, not by this effect.
   const hydratedRef = useRef(false);
+  // Has the MEMBER typed? From `notes` alone this component cannot tell the
+  // server value landing ('' -> "…") from the first keystroke ('' -> "a"), and
+  // guessing wrong is data loss in one direction: adopting typed text as the
+  // saved baseline disables Save and skips the blur write, so the note is
+  // discarded exactly as before. Caught by the blur test, which is the only
+  // reason this ref exists.
+  const userTypedRef = useRef(false);
+  const handleChangeNotes = useCallback((t: string) => {
+    userTypedRef.current = true;
+    onChangeNotes(t);
+  }, [onChangeNotes]);
+
   useEffect(() => {
-    // Only adopt while the user has not started editing, so a resync can never
-    // overwrite a baseline the member's own save just set.
-    if (hydratedRef.current) return;
+    if (hydratedRef.current || userTypedRef.current) return;
     if (notes) {
       setLastSaved(notes);
       hydratedRef.current = true;
@@ -92,6 +102,30 @@ export const ItemNotesEditor = React.memo(function ItemNotesEditor({
     setLastSaved(notes);
     Keyboard.dismiss();
   }, [onSaveNotes, notes]);
+
+  /**
+   * Save when the field loses focus, if anything is unsaved.
+   *
+   * Until 2026-08-29 `onSaveNotes` had exactly ONE caller — the Save button —
+   * so a member who typed a note and navigated away lost it silently. Reported
+   * as "the notes on the item card dont persist because after making a note it
+   * doesnt hold or appear after clicking to other screens", and the wording is
+   * the tell: after MAKING a note, not after saving one.
+   *
+   * That is the same shape as the bug this component was written to fix — a
+   * "Notes saved locally" toast over a writer that wrote nothing. That fix made
+   * the WRITE real and left the DISCARD in place.
+   *
+   * Guarded on `hasChanges` so merely focusing and leaving never writes back a
+   * value the server already holds. Blur, not unmount: an async write fired
+   * from a torn-down screen resolves into a toast on whatever replaced it.
+   */
+  const handleBlur = useCallback(() => {
+    if (notes !== lastSaved) {
+      onSaveNotes();
+      setLastSaved(notes);
+    }
+  }, [notes, lastSaved, onSaveNotes]);
 
   return (
     <View
@@ -130,8 +164,9 @@ export const ItemNotesEditor = React.memo(function ItemNotesEditor({
         placeholderTextColor={theme.muted}
         multiline
         value={notes}
-        onChangeText={onChangeNotes}
+        onChangeText={handleChangeNotes}
         onFocus={handleFocus}
+        onBlur={handleBlur}
         textAlignVertical="top"
         blurOnSubmit={false}
         accessibilityLabel="Item notes"

@@ -2583,3 +2583,49 @@ documentation, it is a second opinion that lost.** Pinned by
 `__tests__/components/itemNotesEditor.test.tsx`, which rerenders with the
 server value and asserts Save is disabled; restoring the empty deps turns it
 red.
+
+## A field that only saves on a button press discards what you typed (2026-08-29)
+
+Reported as *"the notes on the item card dont persist because after making a
+note it doesnt hold or appear after clicking to other screens"*. The wording is
+the diagnosis: after **making** a note, not after saving one.
+
+`onSaveNotes` had exactly ONE caller — the Save button's own handler. No blur
+save, no unmount save, no autosave. Text typed and not explicitly saved lived
+in React state and went with the screen.
+
+Everything downstream was already correct and had been checked first: the write
+(`updateItem` patches `notes` and throws on failure), the RLS UPDATE policies,
+the detail screen's own select (which does include `notes`), the reconciliation
+from `savedCore`, and the render. **The bug was that the save was never
+called** — which no amount of reading the save path could reveal.
+
+This is the same shape as the bug this component was originally written to fix:
+a *"Notes saved locally"* toast over a writer that wrote nothing. That fix made
+the WRITE real and left the DISCARD in place. **Fixing the writer is not fixing
+the moment the writer is invoked.**
+
+Now saved on blur when `notes !== lastSaved`. Blur rather than unmount: an
+async write fired from a torn-down screen resolves into a toast on whatever
+replaced it.
+
+### The fix's own bug, which was worse than the bug
+
+The baseline resync could not tell **the server value arriving** (`'' → "…"`)
+from **the first keystroke** (`'' → "a"`) — from the `notes` prop alone they are
+identical. The first version adopted typed text as the saved baseline, which
+disabled Save *and* skipped the blur write, discarding the note exactly as
+before. The component now tracks whether `onChangeText` has fired.
+
+Two harness lessons, both of which produced a green or red run for the wrong
+reason:
+
+- **Simulating typing by re-rendering with a new prop tests a path no person
+  can take.** It bypasses `onChangeText`, which is the very signal the fix
+  depends on. Type through the input, then re-render with the parent's value.
+- The test file imported `render, screen` and used `fireEvent`. `ReferenceError`
+  reads like a component failure at a glance; it was the test.
+
+All three guarantees are mutation-tested: removing the blur save, making it
+unconditional, and dropping the typed-vs-server distinction each turn exactly
+one test red.
