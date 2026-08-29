@@ -428,7 +428,6 @@ class SupabaseIngest:
 
     def __init__(self, batch_size: int = 200, stats: IngestStats | None = None):
         self.batch_size = batch_size
-        self.client = get_http_client()
         self.stats = stats or IngestStats()
         if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
             logger.warning("SUPABASE_URL / SUPABASE_SERVICE_KEY not set. "
@@ -436,6 +435,26 @@ class SupabaseIngest:
             self.enabled = False
         else:
             self.enabled = True
+
+    @property
+    def client(self) -> httpx.Client:
+        """Resolve the shared client per call, never cache it on the instance.
+
+        `import_all.py:288` runs pipelines in a ThreadPoolExecutor, and several
+        of them call the MODULE-GLOBAL `close_http_client()` when they
+        individually finish (`import_sneakers.py:3380` and :3402, and the same
+        import in import_funko / import_mtg / import_retro_handhelds /
+        import_jp_magazine). That closes the client every *other* thread is
+        still writing through.
+
+        Measured on the 2026-08-28 nightly run: the pipelines that finished
+        last — Comic Books, Plush, Vintage Toys — lost roughly 50 batches to
+        `Cannot send a request, as the client has been closed.`, and the job
+        still reported success. Caching the client in __init__ is what made a
+        sibling's shutdown fatal; `get_http_client()` already rebuilds a closed
+        client, so asking it each time makes the close harmless.
+        """
+        return get_http_client()
 
     def upsert_catalog(self, items: list[CatalogItem]) -> int:
         """Upsert catalog items into category_items table. Returns count inserted."""
@@ -469,20 +488,78 @@ class SupabaseIngest:
         # PostgREST requires ?on_conflict=<columns> AND Prefer: resolution=merge-duplicates
         # for UPSERT behavior. Without this, unique constraint violations return 409.
         url = f"{SUPABASE_URL}/rest/v1/category_items?on_conflict=category,item_key"
-        for i in range(0, len(rows), self.batch_size):
-            batch = rows[i:i + self.batch_size]
+
+        # Group by KEY SET before batching.
+        #
+        # PostgREST compiles a bulk insert into ONE statement with ONE column
+        # list, so it rejects the whole array with
+        #   400 {"code":"PGRST102","message":"All object keys must match"}
+        # if the objects do not agree on their keys. `to_row()` adds image_url,
+        # barcode and attributes_json CONDITIONALLY, and a real catalogue page
+        # mixes rows that have an image with rows that do not — so a single
+        # batch routinely carried two key sets. That cost 42 of the 107 failed
+        # batches on the 2026-08-28 nightly run, silently: the loop below logs
+        # the error and continues, so the job still reported success.
+        #
+        # Grouping rather than PADDING the rows to a common key set is
+        # deliberate. The request carries Prefer: resolution=merge-duplicates,
+        # which updates exactly the columns present in the payload and leaves
+        # absent ones alone. Padding a row that simply has no image with
+        # `image_url: None` would therefore BLANK an image the catalogue
+        # already holds — a data-loss "fix" wearing a fix's clothes, the same
+        # shape as the price/price_eur backfill trap in DATA_SCALING_PLAN.md
+        # §10. Sending fewer columns is always safe; sending NULL is not.
+        by_keyset: dict[frozenset, list[dict]] = {}
+        for row in rows:
+            by_keyset.setdefault(frozenset(row.keys()), []).append(row)
+        if len(by_keyset) > 1:
+            logger.info(
+                "[catalog] %d rows span %d different column sets; posting as "
+                "%d separate groups so PostgREST does not reject the batch",
+                len(rows), len(by_keyset), len(by_keyset),
+            )
+
+        batches = [
+            group[i:i + self.batch_size]
+            for group in by_keyset.values()
+            for i in range(0, len(group), self.batch_size)
+        ]
+        # `n` is a batch ORDINAL, not the row offset the old message printed --
+        # grouping means batches are no longer contiguous slices of `rows`, so
+        # an offset would name a position that does not exist. Say how many
+        # rows went with it, since that is the number actually at risk.
+        failed_batches = 0     # THIS call only. self.stats.catalog_errors is
+                               # cumulative across every pipeline sharing one
+                               # IngestStats (see SupabaseIngest(stats=stats)
+                               # in crawl4ai_enrich / firecrawl_enrich), so
+                               # reporting it here would describe the whole run
+                               # while naming this call's row count.
+        for n, batch in enumerate(batches, 1):
             try:
                 resp = self.client.post(url, headers=_headers(), json=batch)
                 if resp.status_code in (200, 201):
                     total += len(batch)
                 else:
+                    failed_batches += 1
                     self.stats.catalog_errors += 1
-                    logger.error(f"Upsert catalog batch {i}: {resp.status_code} "
+                    logger.error(f"Upsert catalog batch {n}/{len(batches)} "
+                                 f"({len(batch)} rows LOST): {resp.status_code} "
                                  f"{resp.text[:200]}")
             except Exception as e:
+                failed_batches += 1
                 self.stats.catalog_errors += 1
-                logger.error(f"Upsert catalog batch {i} failed: {e}")
+                logger.error(f"Upsert catalog batch {n}/{len(batches)} "
+                             f"({len(batch)} rows LOST) failed: {e}")
         self.stats.catalog_upserted += total
+        if total < len(rows):
+            # Say it once, in the writer's own voice. The caller reads a count
+            # that EXCLUDES the failures, so a partial write is otherwise
+            # indistinguishable from a small catalogue -- which is how 107
+            # dropped batches passed as a green nightly run on 2026-08-28.
+            logger.error(
+                "[catalog] wrote %d of %d rows — %d LOST across %d failed batch(es)",
+                total, len(rows), len(rows) - total, failed_batches,
+            )
         return total
 
     def upsert_market_hits(self, hits: list[MarketHit]) -> int:

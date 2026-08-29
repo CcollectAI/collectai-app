@@ -638,7 +638,7 @@ catalog row, nightly, for weeks.
 end to end:
 
 ```bash
-gh repo view --json defaultBranchRef        # -> feature/all-enhancements
+gh repo view --json defaultBranchRef        # -> feature/all-enhancements  (until 2026-08-29; now feat/marketplace-and-target-hit)
 gh run list --workflow=nightly-ingest.yml   # -> ran feature/all-enhancements, "success", 04:41Z
 git show origin/feature/all-enhancements:server/pipelines/import_common.py | grep attributes_json
 #   284:  row["attributes_json"] = json.dumps(self.attributes_json)   <- pre-fix
@@ -661,6 +661,25 @@ Two ways out, both requiring a decision rather than a deploy:
    Fixes every scheduled workflow at once; also changes the default PR base.
 2. **Merge the fix into `feature/all-enhancements`** and keep it as default.
    Fixes tonight's run; the drift returns with the next fix.
+
+> ✅ **RESOLVED 2026-08-29 — option 1 was taken.** The default branch is now
+> `feat/marketplace-and-target-hit`:
+>
+> ```bash
+> gh repo edit CcollectAI/collectai-app --default-branch feat/marketplace-and-target-hit
+> gh repo view --json defaultBranchRef -q .defaultBranchRef.name   # -> feat/marketplace-and-target-hit
+> ```
+>
+> Verified at the time of the change: all 12 workflow files exist on the new
+> default, and its `import_common.py` carries the within-batch dedupe. **The
+> `gh repo edit` must run as the `CcollectAI` account** — the repo owner;
+> `SammySamEU` is the usual active account and gets `HTTP 404` on the edit.
+>
+> **This does not make the drift impossible, it moves it.** The default branch
+> is now a *working* branch, so whatever is unpushed on the laptop still does
+> not run. The check below is therefore still the right one — it just has a new
+> expected answer. And PR #3 / PR #4 now target a branch that is no longer the
+> default; retarget or close them.
 
 Until one is done, treat `category_items_attrs_is_object` in the watchdog as
 **expected daily noise from a known cause** — which is its own hazard, and the

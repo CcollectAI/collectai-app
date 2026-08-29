@@ -269,6 +269,45 @@ must also `DISTINCT ON` the input by the columns participating in the
 unique key. Defense in depth — even if the caller "should" dedup. The
 atomic-rollback amplification (one bad row → 100 lost) is too costly.
 
+### The batch also has to agree on its COLUMNS (appended 2026-08-29)
+
+Same amplification, one layer up, on the PostgREST path rather than the RPC
+path. `upsert_catalog` posts an array of row objects, and PostgREST compiles it
+into a single INSERT with a single column list — so it rejects the whole array
+with `400 PGRST102 "All object keys must match"` when the objects disagree on
+their keys. `CatalogItem.to_row()` adds `image_url`, `barcode` and
+`attributes_json` only when populated, so any batch mixing rows that have an
+image with rows that do not was rejected in full. 42 of the 107 batches lost in
+the 2026-08-28 nightly run, silently.
+
+**The obvious fix is a data-loss bug.** Padding every row to the union of keys
+makes the batch legal, and `Prefer: resolution=merge-duplicates` then writes
+`image_url = NULL` over an image the catalogue already holds — because the
+merge updates exactly the columns present in the payload. This is §10's
+`price`/`price_eur` trap in a different costume: *a restatement that quietly
+changes the value is a bug wearing a fix's clothes*. The correct fix groups
+rows by key set and posts each group separately. **Sending fewer columns is
+safe; sending NULL is a write.**
+
+**Extend the generalizable rule to:** any batch-INSERT path must normalise its
+input on *both* axes before the write — deduplicate by the unique key, and
+partition by the column set. Neither is the caller's job to get right, because
+the cost of getting it wrong is the whole batch rather than the offending row.
+
+**And the third one is not about SQL at all.** ~50 more batches in the same run
+died on `Cannot send a request, as the client has been closed.`
+`import_all.py` runs pipelines in a `ThreadPoolExecutor` while six of those
+pipelines call the module-global `close_http_client()` when they individually
+finish, closing the client every other thread is still writing through. Fixed by
+making `SupabaseIngest.client` a property that re-resolves per call, so a
+sibling's shutdown is harmless — *fix the shared resource, not the six
+callers*, or the next pipeline becomes the seventh.
+
+All three shared one property that is the real defect: **the writer logs the
+failure and returns a success count that excludes it**, so the workflow reports
+`success` while a fifth of the catalogue never lands. See `docs/INGEST.md`,
+"The three ways a catalog batch is rejected".
+
 ### Retention worked exactly as designed and still armed a landmine (appended 2026-08-02)
 
 The DB reached 7305 MB and read as "near cap". Nothing was broken:

@@ -72,6 +72,64 @@ type-correct and reached TestFlight. `@testing-library/react-native` was already
 a dependency. Three suites now mount the changed components in CI, including one
 that presses Export and asserts `Linking.openURL` is never called.
 
+## A nightly job reported success while dropping a fifth of the catalogue (2026-08-29)
+
+The watchdog's "API returning 5xx — 16 in 24h" resolved to **one GitHub Actions
+run**: `nightly-ingest`, which logged **107 failed catalog batches** — up to
+~21k rows — and exited **0**. Attribution came from the client IP in
+`edge_logs`: `4.154.215.8` is Azure (a runner), not EC2 (`51.21.210.195`), not a
+laptop. Three unrelated causes hiding behind one green checkmark:
+
+| n | rejection | cause |
+|---|---|---|
+| 15 | `21000` ON CONFLICT twice | no within-batch dedupe **on the branch that runs** |
+| 42 | `PGRST102` all keys must match | `to_row()` adds `image_url`/`barcode`/`attributes_json` conditionally |
+| ~50 | client has been closed | a sibling pipeline called the module-global `close_http_client()` mid-run |
+
+**The obvious fix for the middle one is a data-loss bug.** Padding rows to a
+common key set makes the batch legal, and `merge-duplicates` then writes
+`image_url = NULL` over an image already in the catalogue. Group by key set
+instead. *Sending fewer columns is safe; sending NULL is a write.* Same shape as
+the `price`/`price_eur` trap in `DATA_SCALING_PLAN.md` §10.
+
+**Fix the shared resource, not the six callers.** Six pipelines import
+`close_http_client`; auditing them would have left the seventh to be written.
+`SupabaseIngest.client` is now a property resolved per call, so a sibling's
+shutdown is harmless.
+
+### The delivery problem was the whole of finding #1
+
+The dedupe had existed since 2026-07-29 and never ran, because GitHub cron runs
+the **default branch** and that was `feature/all-enhancements`, last touched
+2026-08-12. **PR #4 fixed exactly this and sat open for 8 days.** Repointed the
+default to `feat/marketplace-and-target-hit`. Two things worth keeping:
+
+- `gh repo edit` needs the **`CcollectAI`** account; the usual active account
+  `SammySamEU` gets a bare `HTTP 404`, which reads as "no such repo".
+- **This moves the drift, it does not end it.** The default is now a *working*
+  branch, so anything unpushed still does not run — hours of lag instead of 17
+  days. Do not let the ✅ read as more than that.
+
+### I wrote the wrong-population aggregate INTO the commit that fixed silent failures
+
+Adding a "wrote N of M rows — K LOST" summary, I reported
+`self.stats.catalog_errors` beside this call's row count. That counter is
+**shared** — `crawl4ai_enrich.py:404` and `firecrawl_enrich.py:381` both do
+`SupabaseIngest(stats=stats)` — so the line would state a whole-run figure as a
+fact about one upsert. [[learning_aggregate_over_the_wrong_population]], written
+by me, an hour after quoting the doc that contains it.
+
+It was caught only because Merle asked for a recheck. The tests I had already
+written were all green: they covered the three bugs I set out to fix and said
+nothing about the diagnostic I added while fixing them. **New code written
+during a fix is unaudited code — including, especially, the code that reports
+the fix worked.** Now pinned by
+`test_loss_report_counts_only_this_calls_failed_batches`, mutation-tested.
+
+Same pass: `test_to_row` had been red for a month **pinning the pre-2026-07-25
+double-encode bug** — it passed only while the writer was wrong. A red test is
+evidence about the doc, not automatically about the code.
+
 ## The queue filtered on a column the query did not value on (2026-08-26)
 
 Worked today's watchdog: 2 HIGH, 2 MEDIUM, 1 INFO. **One HIGH was real with the

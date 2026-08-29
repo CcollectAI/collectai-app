@@ -149,7 +149,16 @@ class TestCatalogItem:
         assert row["category"] == "pokemon"
         assert row["item_key"] == "test-item"
         assert "attributes_json" in row
-        assert json.loads(row["attributes_json"]) == {"set": "Base Set"}
+        # Must be the DICT, not json.dumps(dict). httpx serialises the whole
+        # payload itself, so pre-encoding here made PostgREST store a JSONB
+        # *string* and trip category_items_attrs_is_object -- 598-680 rejected
+        # catalog writes a night until the 2026-07-25 fix. This assertion used
+        # to read json.loads(row["attributes_json"]), which PINNED the bug:
+        # it passed only while the writer was wrong, and has been failing ever
+        # since the writer was corrected.
+        assert isinstance(row["attributes_json"], dict), \
+            "attributes_json must be a dict; a str double-encodes into JSONB"
+        assert row["attributes_json"] == {"set": "Base Set"}
 
     def test_to_row_omits_empty_optional_fields(self):
         item = CatalogItem(

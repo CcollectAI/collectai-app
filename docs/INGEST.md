@@ -126,6 +126,74 @@ never resolved: `schedule:` workflows run the repo's **default branch**, and the
 default branch *is* `feature/all-enhancements`. See the expanded section in
 `docs/DEPLOYMENT.md` for the two ways out.
 
+**Unchanged from 2026-08-12 to 2026-08-29** — the branch's last commit was
+2026-08-12, and PR #4 (`fix/ingest-within-batch-dedupe`) had been open and
+unmerged since 2026-08-21, as had PR #3. It was never blocked on code.
+
+✅ **Closed 2026-08-29.** The default branch is now
+`feat/marketplace-and-target-hit`, which carries the dedupe, so the next
+scheduled run picks it up. See `docs/DEPLOYMENT.md`. Note the drift has *moved*
+rather than vanished: the default is now a working branch, so anything unpushed
+still does not run — keep using the `gh run list` check below, with
+`feat/marketplace-and-target-hit` as the expected ref.
+
+### The three ways a catalog batch is rejected (measured 2026-08-28)
+
+Actions run `33181755459` logged **107 failed catalog batches** — up to ~21k
+catalogue rows dropped — and still reported **success**, because
+`upsert_catalog` logs the HTTP error and moves to the next batch. The job's exit
+code has never reflected write failures. Attribution came from the client IP in
+`edge_logs`: `4.154.215.8` is Azure (an Actions runner), not EC2
+(`51.21.210.195`) and not a laptop.
+
+| n | rejection | cause | state |
+|---|---|---|---|
+| 15 | `500 21000 ON CONFLICT DO UPDATE command cannot affect row a second time` | a batch carried the same `(category, item_key)` twice | fixed 2026-07-29 on the working branch; **still absent from the branch that runs** |
+| 42 | `400 PGRST102 All object keys must match` | `to_row()` adds `image_url` / `barcode` / `attributes_json` **conditionally**, so one batch carried several key sets | fixed 2026-08-29 — `upsert_catalog` now groups rows by key set before batching |
+| ~50 | `Cannot send a request, as the client has been closed.` | a sibling pipeline called the module-global `close_http_client()` while other threads were still writing | fixed 2026-08-29 — `SupabaseIngest.client` is a property that re-resolves per call |
+
+Three rules fall out of this, and the first two are the same rule at different
+layers:
+
+1. **A bulk PostgREST insert is ONE statement.** One duplicate conflict target,
+   or one row with a different column list, takes the whole batch down. Both
+   need normalising *before* the POST, never after the error.
+2. **Do not pad rows to a common key set.** The request carries
+   `Prefer: resolution=merge-duplicates`, which updates the columns present in
+   the payload and leaves absent ones alone — so padding a row that has no
+   image with `image_url: None` would **blank an image already in the
+   catalogue**. Group by key set instead. Sending fewer columns is always safe;
+   sending NULL is not. Same trap as the `price` / `price_eur` backfill in
+   `DATA_SCALING_PLAN.md` §10.
+3. **A process-global resource must not be closed by one of N concurrent
+   users.** `import_all.py` runs pipelines in a `ThreadPoolExecutor`; any
+   pipeline that imports `close_http_client` can strand every other thread. The
+   fix is to stop caching the client, not to audit the callers — there are six
+   of them and the next new pipeline would have been the seventh.
+
+**All four PostgREST bulk writers were enumerated before declaring this fixed**,
+rather than fixing the two the log happened to name. A batch writer needs both
+properties; only one writer was missing one:
+
+| writer | table | within-batch dedupe | stable key set |
+|---|---|---|---|
+| `import_common.upsert_catalog` | `category_items` | ✓ 2026-07-29 | ✗ → **fixed 2026-08-29** |
+| `import_common.upsert_market_hits` | `market_hits` | n/a — one dict literal | ✓ |
+| `import_tcgcsv.upsert_catalog_rows` | `category_items` | ✓ `seen` set, per call | ✓ |
+| `newsletter_scraper._upsert_events` | `events` | ✓ | ✓ |
+
+Note the two catalogue writers solve the key-set rule **differently on purpose**.
+`newsletter_scraper._event_to_row` pads every field to `None`; `upsert_catalog`
+groups instead. Padding is safe where one scraper owns the whole row, and unsafe
+on `category_items`, which several pipelines enrich — there, a `None` blanks a
+column another pipeline populated.
+
+The checker is `server/tests/test_import_catalog_writer.py`. Its `FakePostgrest`
+encodes the **server's** rules rather than our code's shape, and both fixes were
+mutation-tested: restoring the cached client reproduces the exact
+`client has been closed` error, and collapsing the key-set grouping reproduces
+`PGRST102`.
+
 Before trusting a fix to a pipeline in this directory:
 
 ```bash
