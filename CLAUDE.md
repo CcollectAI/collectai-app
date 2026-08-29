@@ -156,6 +156,27 @@ incompatible ways; two wrap it in `|| true`.
 **A green checkmark is a claim about an exit code, never about whether the job
 did anything.** For anything that can skip itself, ask which steps ran.
 
+### The checker was wrong four times in one session
+
+`CLAUDE.md` already carried "Mutation-test the checker, not just the code" from
+the 2026-08-26 arity-checker bug. I then wrote four more broken checkers in one
+sitting:
+
+| checker | wrong how | the tell I already had |
+|---|---|---|
+| pytest helper passing `title` twice | `TypeError` — **all 4 tests red** | one covered code I knew was correct |
+| a fake `get_http_client` that did not rebuild a closed client | stub **weaker than production** | the real fix did not turn it green |
+| an AST undefined-name scan ignoring `AnnAssign` | flagged a module-level dict as undefined | the module imported fine |
+| a grep for "is the old string gone?" | matched **its own comment** quoting the old string | reported it present right after deletion |
+
+Two are false alarms; two are the dangerous kind that stay red or green for a
+reason unrelated to the code, which is how you fix the wrong thing.
+
+**Run every checker against a known-good AND a known-bad input before believing
+either verdict.** One run is a result, two are a signal — and that alone catches
+all four. If a check fails everything, suspect the check. If the real fix does
+not flip the result, suspect the harness before hunting a second bug.
+
 ### I wrote the wrong-population aggregate INTO the commit that fixed silent failures
 
 Adding a "wrote N of M rows — K LOST" summary, I reported
