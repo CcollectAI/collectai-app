@@ -199,11 +199,38 @@ change looking plausible; it is `test_free_user_gets_0`.
   - Authorization header: the value of `REVENUECAT_WEBHOOK_AUTH` on the box
     (`ssh collectai 'grep ^REVENUECAT_WEBHOOK_AUTH= /opt/collectors/.env'`)
 
-  Verify it fired: `grep -c revenuecat-webhook /opt/collectors/bake.log` goes
-  above 0, and a `subscriptions` row appears for the purchasing user. Until
-  that count moves, **no purchase has reached the database**, whatever the app
-  shows.
-- Beta override: `EXPO_PUBLIC_BETA_UNLOCK_ALL=true` (set on `production` build profile) bypasses RC entirely for TestFlight testing. The `store` build profile sets it `false` for App Store submission.
+  **Verify with a check that DISCRIMINATES.** `grep -c revenuecat-webhook` is
+  not one — it counts your own probes and any browser that opens the URL. On
+  2026-08-29 that count read `4` while zero deliveries had happened: two were
+  `401` probes of mine, one a browser `GET` (405), one a log line. Use:
+
+  ```bash
+  # accepted? (200 on a POST, not 401/405)
+  ssh collectai 'grep -a revenuecat-webhook /opt/collectors/bake.log | grep -a "\"status\": 200"'
+  # the only check that matters
+  ssh collectai 'cd /opt/collectors && set -a; . ./.env; set +a; psql "$DB_DSN_DIRECT" -c "select plan,status,created_at from subscriptions order by created_at desc limit 3;"'
+  ```
+
+  | seen | meaning |
+  |---|---|
+  | `"status": 200` | working — a purchase will now write the row |
+  | `401` + *rejected webhook with bad Authorization header* | reaching us, secret wrong. The GOOD failure. Watch for a trailing newline off the `.env` grep, or a `Bearer ` prefix |
+  | `405` on a `GET` | the URL is CORRECT (405 = wrong method, not wrong path). Not a delivery |
+  | nothing new | not saved in the dashboard, or the Sandbox/Production environment is not enabled — TestFlight purchases are SANDBOX |
+
+  **The rest of the chain is verified sound, so this will work the moment the
+  dashboard is right** (all measured 2026-08-29):
+
+  - `subscriptions_user_id_key UNIQUE (user_id)` exists, so the handler's
+    `ON CONFLICT (user_id) DO UPDATE` upgrades an existing `free` row to `pro`
+    rather than throwing. ⚠️ That matters: signup already creates a `free` row,
+    and the upsert's `except` **logs and returns 200**, so a missing constraint
+    would have shown RevenueCat success while nothing changed.
+  - `AuthProvider.tsx:251` calls `Purchases.logIn(session.user.id)`, so
+    `app_user_id` is the Supabase uid the handler casts with `$1::uuid`. Without
+    it the id would be an `$RCAnonymousID` and the handler skips the
+    `subscriptions` write entirely.
+- Beta override: `EXPO_PUBLIC_BETA_UNLOCK_ALL` bypasses RC entirely when `true`. ⚠️ **Corrected 2026-08-29: BOTH `store` and `production` set it `false` in `eas.json`** — this line used to say `production` sets it `true`, which would mean shipped builds gave Pro away. Measured, not assumed; re-read `eas.json` rather than trusting this sentence.
 
 ### Verified live state (2026-08-15) — measured, not assumed
 
