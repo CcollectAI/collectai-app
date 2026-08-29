@@ -754,6 +754,41 @@ The INSERTs name their columns explicitly, so all 54 rows landed regardless.
 Column and index corrected to `created_at`, index created, and the warning now
 says what actually broke. See `learning_create_if_not_exists_silently_noops`.
 
+### The gate that reverted lorcana was measuring three points (2026-08-29)
+
+The revert above read as the promotion gate working. It was not. All 54
+decisions, from `model_promotion_log`:
+
+| holdout_n | categories | outcome |
+|---|---|---|
+| **0** | **53** | ALL promoted — *"no_holdout — first train or empty ground_truth"* |
+| 3 | 1 (lorcana) | reverted on `new_mae=24.23 > old_mae=2.82 * 1.05` |
+
+**Zero evidence promoted; three samples rejected.** The rule was strictly more
+permissive the less it knew, and an 8.6x MAE ratio measured on three points is
+noise turned into a decision — not a fact about lorcana's model. Lorcana was
+held on a 138-day-old artifact on the strength of three numbers while 53
+categories shipped unevaluated.
+
+**Why the holdout is empty:** `price_ground_truths` holds **9 rows in total**.
+`docs/ARCHITECTURE.md:838` already recorded the cause — the write chain is
+fully wired (item detail → `submitVerifiedSale` → `POST /feedback/verified-sale`
+→ `record_price_ground_truth`) and fills **only when a real user marks an item
+sold**. There are none. ⚠️ **A launch dependency, not a bug. Do not seed the
+table** — synthetic ground truth makes the gate confidently wrong instead of
+honestly quiet.
+
+`MODEL_RETRAIN_MIN_HOLDOUT` (default 20) is now required before the gate may
+revert. Below it the model is promoted — consistent with the n=0 path — and the
+MAEs are logged at WARNING and kept in the reason string, because **declining
+to act on a weak signal is not the same as discarding it**.
+
+The generalisable rule, and the reason this is in the doc: **a threshold
+applied to an unstated sample size is not a measurement.** Any gate that
+compares two numbers must state n, and must behave monotonically in it — more
+evidence may never be more permissive than less. That property is asserted
+directly in `server/tests/test_model_promotion_gate.py`.
+
 ## Related audits
 
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes

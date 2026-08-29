@@ -156,6 +156,33 @@ incompatible ways; two wrap it in `|| true`.
 **A green checkmark is a claim about an exit code, never about whether the job
 did anything.** For anything that can skip itself, ask which steps ran.
 
+### A gate that rejects on n=3 and promotes on n=0
+
+Re-enabling `model_retrain_worker` refreshed 53 of 54 stale models, and
+reverted lorcana on `new_mae=24.23 > old_mae=2.82 * 1.05`. I called that "the
+promotion gate earning its keep" in the same breath. Then I read the column I
+had not looked at:
+
+| holdout_n | categories | outcome |
+|---|---|---|
+| 0 | 53 | ALL promoted |
+| 3 | 1 (lorcana) | reverted |
+
+The gate had evaluated **one** category, on **three** samples, and promoted the
+rest blind — strictly more permissive the less it knew. `price_ground_truths`
+holds 9 rows in total, and `ARCHITECTURE.md` had already written down why: it
+fills only when a real user marks an item sold, and there are no users.
+
+**A threshold applied to an unstated sample size is not a measurement.** The
+MAE ratio was the number I looked at; `holdout_n` sat in the same row and
+settled it. Now `should_revert()` requires a minimum holdout before it may
+revert, and a test asserts the rule is monotonic in evidence — the defect
+stated directly rather than an example of it.
+
+I reported the wrong conclusion confidently before checking the sample size.
+That is [[learning_aggregate_over_the_wrong_population]] wearing a different
+hat: not the wrong population, but no stated population at all.
+
 ### The checker was wrong four times in one session
 
 `CLAUDE.md` already carried "Mutation-test the checker, not just the code" from
