@@ -194,6 +194,53 @@ mutation-tested: restoring the cached client reproduces the exact
 `client has been closed` error, and collapsing the key-set grouping reproduces
 `PGRST102`.
 
+### The run now FAILS when it drops rows (2026-08-29)
+
+The three bugs above were each a few lines. What made them expensive was that
+`nightly-ingest` **exited 0 while dropping 107 batches**, so nobody looked for
+seven weeks. Fixing the causes without fixing the silence just moves the cost to
+the fourth cause.
+
+`import_all` runs each pipeline in-process via `importlib`, and every pipeline
+builds its **own** `IngestStats` — so nothing upstream could ever see a write
+failure. The tally is therefore a process-global in `import_common`, at the
+writer chokepoint every catalog and market-hit write already passes through:
+
+```python
+record_write_loss(rows_lost, failed_batches)   # called BY the writers
+write_loss_summary()  -> {"rows_lost": int, "failed_batches": int}
+write_loss_exit_code() -> 1 if any row was fetched and then not written
+```
+
+`import_all.main()` calls `reset_write_losses()` at the start and exits 1 if
+`rows_lost > 0`. A process-global rather than a parameter threaded through ~50
+pipelines, for the same reason `client` became a property: the next new pipeline
+is the one that forgets.
+
+**What it deliberately does NOT fail on.** Only rows we *held and then lost*
+count. `api.pokemontcg.io` returned 500 twenty-plus times in that same run;
+failing the nightly on third-party weather is how a red build becomes something
+people scroll past. Upstream fetch failures are logged and do not gate.
+
+Wired into all three writers — `upsert_catalog`, `upsert_market_hits`, and
+`import_tcgcsv.upsert_catalog_rows`. The last is **not** reachable from
+`import_all` (tcgcsv is absent from its tier lists) so it does not gate the
+nightly; it is recorded anyway, because leaving a known instance of a class you
+just fixed is how the class returns — and it had been logging its losses at
+WARNING, one level below what anyone greps for.
+
+Verified, not assumed:
+
+- The tally is written from a `ThreadPoolExecutor` (`--parallel N`), so it takes
+  a lock. Proven under contention: 32,000 concurrent increments, zero lost.
+- `nightly-ingest.yml` runs `python -m pipelines.import_all` as the **last**
+  command of its `run:` block with no `continue-on-error`, so the exit code
+  really does reach GitHub. A gate whose exit code is swallowed is not a gate.
+- Both recordings mutation-tested: removing either writer's
+  `record_write_loss` turns the gate green while rows are visibly lost.
+- The same step's `pip install httpx boto3 || true` was removed — it masked a
+  failed install into an `ImportError` three steps later.
+
 Before trusting a fix to a pipeline in this directory:
 
 ```bash

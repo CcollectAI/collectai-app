@@ -43,7 +43,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install httpx boto3 || true
+          # No `|| true`. It masked a failed install, and the run then died
+          # further down with an ImportError whose real cause was three steps
+          # back. pip is a no-op when the package is already present, so the
+          # only thing the swallow ever hid was a genuine failure.
+          pip install httpx boto3
 
       - name: Run import_all.py (all tiers)
         working-directory: server

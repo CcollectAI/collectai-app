@@ -217,3 +217,85 @@ def test_loss_report_counts_only_this_calls_failed_batches(ingest, caplog):
     assert summary, "a partial write must report itself"
     assert "1 LOST across 1 failed batch(es)" in summary[0], \
         f"loss report leaked the shared counter: {summary[0]}"
+
+
+# ---------------------------------------------------------------------------
+# The run must FAIL when it fetched rows and then lost them
+# ---------------------------------------------------------------------------
+#
+# This is the defect underneath all three bugs above. 107 batches were dropped
+# on 2026-08-28 and `nightly-ingest` exited 0, so nothing looked at it for
+# weeks. Fixing the three causes without fixing the silence just means the
+# fourth cause costs another month to find.
+#
+# The line drawn on purpose: a WRITE loss (we had the rows and dropped them) is
+# a bug and fails the run. An upstream FETCH failure (pokemontcg.io returning
+# 500, as it did 20+ times in the same run) is weather -- it must not fail the
+# nightly, or the signal drowns in alert fatigue.
+
+
+def test_a_clean_run_records_no_write_loss(ingest):
+    ing, server = ingest
+    import_common.reset_write_losses()
+    ing.upsert_catalog([_item("a"), _item("b")])
+    assert import_common.write_loss_summary()["rows_lost"] == 0
+    assert import_common.write_loss_exit_code() == 0
+
+
+def test_a_partial_catalog_write_is_recorded_and_fails_the_run(ingest):
+    ing, server = ingest
+    import_common.reset_write_losses()
+    import_common.get_http_client()
+    import_common._shared_http_client.post = lambda *a, **k: FakeResp(
+        500, '{"code":"XX000","message":"boom"}')
+
+    ing.upsert_catalog([_item("a"), _item("b"), _item("c")])
+
+    summary = import_common.write_loss_summary()
+    assert summary["rows_lost"] == 3, summary
+    assert summary["failed_batches"] == 1, summary
+    assert import_common.write_loss_exit_code() == 1, \
+        "a run that fetched rows and then dropped them must not exit 0"
+
+
+def test_an_upstream_fetch_failure_does_not_fail_the_run(ingest):
+    """A source being down is not our bug. Only rows we HELD and lost count."""
+    ing, server = ingest
+    import_common.reset_write_losses()
+    ing.stats.transform_errors += 5          # e.g. pokemontcg.io 500s upstream
+    ing.stats.record_warning("api.pokemontcg.io returned 500")
+    assert import_common.write_loss_exit_code() == 0
+
+
+def test_losses_reset_between_runs(ingest):
+    ing, server = ingest
+    import_common.reset_write_losses()
+    import_common.get_http_client()
+    import_common._shared_http_client.post = lambda *a, **k: FakeResp(500, "boom")
+    ing.upsert_catalog([_item("a")])
+    assert import_common.write_loss_exit_code() == 1
+    import_common.reset_write_losses()
+    assert import_common.write_loss_exit_code() == 0, \
+        "a resumed run must not inherit the previous run's losses"
+
+
+def test_market_hits_losses_also_fail_the_run(ingest):
+    """The market_hits writer got the same treatment as upsert_catalog, and an
+    untested second path is how the first one stayed broken. Exercise it."""
+    from pipelines.import_common import MarketHit
+    ing, server = ingest
+    import_common.reset_write_losses()
+    import_common.get_http_client()
+    import_common._shared_http_client.post = lambda *a, **k: FakeResp(500, "boom")
+
+    hits = [
+        MarketHit(provider="ebay", listing_id=f"L{i}", title=f"t{i}", price=1.0,
+                  currency="EUR", condition="NM", normalized_key=f"k{i}",
+                  category="pokemon")
+        for i in range(3)
+    ]
+    ing.upsert_market_hits(hits)
+
+    summary = import_common.write_loss_summary()
+    assert summary["rows_lost"] == 3, summary
+    assert import_common.write_loss_exit_code() == 1

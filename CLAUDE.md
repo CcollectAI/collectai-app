@@ -110,6 +110,22 @@ default to `feat/marketplace-and-target-hit`. Two things worth keeping:
   branch, so anything unpushed still does not run — hours of lag instead of 17
   days. Do not let the ✅ read as more than that.
 
+### The silence was the bug; the three causes were just its symptoms
+
+`nightly-ingest` now **exits 1 when it drops rows**. Each pipeline runs
+in-process with its own `IngestStats`, so nothing upstream could see a write
+failure — the tally is a process-global at the writer chokepoint, reset at the
+start of `main()`. Only rows we *held and lost* gate it; upstream 500s from
+`api.pokemontcg.io` do not, because a nightly that goes red on third-party
+weather is one people learn to scroll past.
+
+Checked the outermost layer too, which is the one that is easy to skip: the
+workflow runs `import_all` as the last command of its `run:` block with no
+`continue-on-error`, so the exit code actually reaches GitHub. **A gate whose
+exit code is swallowed is not a gate.** (The same step's
+`pip install httpx boto3 || true` was masking a failed install into an
+`ImportError` three steps later — removed.)
+
 ### I wrote the wrong-population aggregate INTO the commit that fixed silent failures
 
 Adding a "wrote N of M rows — K LOST" summary, I reported

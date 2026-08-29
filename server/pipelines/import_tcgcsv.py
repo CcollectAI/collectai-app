@@ -47,6 +47,7 @@ from pipelines.import_common import (
     SUPABASE_SERVICE_KEY,
     _headers,
     get_http_client,
+    record_write_loss,
 )
 
 logging.basicConfig(
@@ -414,6 +415,7 @@ def upsert_catalog_rows(rows: list[dict], batch_size: int = 200) -> int:
         return 0
     import json as _json
     written = 0
+    failed_batches = 0
     client = get_http_client()
     url = f"{SUPABASE_URL}/rest/v1/category_items?on_conflict=category,item_key"
     headers = {**_headers(), "Prefer": "resolution=merge-duplicates,return=minimal"}
@@ -426,11 +428,26 @@ def upsert_catalog_rows(rows: list[dict], batch_size: int = 200) -> int:
         try:
             r = client.post(url, headers=headers, json=chunk, timeout=60.0)
             if r.status_code >= 300:
-                logger.warning("catalog upsert HTTP %d: %s", r.status_code, r.text[:200])
+                failed_batches += 1
+                logger.error("catalog upsert HTTP %d (%d rows LOST): %s",
+                             r.status_code, len(chunk), r.text[:200])
                 continue
             written += len(chunk)
         except Exception as e:
-            logger.warning("catalog upsert failed: %s", e)
+            failed_batches += 1
+            logger.error("catalog upsert failed (%d rows LOST): %s", len(chunk), e)
+    if written < len(rows):
+        # This writer is not reachable from import_all (tcgcsv is absent from
+        # its tier lists), so it does not gate the nightly. It is recorded
+        # anyway: it is the same silent-partial-write class as upsert_catalog,
+        # and leaving a known instance of a class I just fixed is how the class
+        # comes back. It was also logging losses at WARNING, one level below
+        # the errors anyone greps for.
+        logger.error(
+            "[tcgcsv catalog] wrote %d of %d rows — %d LOST across %d failed batch(es)",
+            written, len(rows), len(rows) - written, failed_batches,
+        )
+        record_write_loss(len(rows) - written, failed_batches)
     return written
 
 

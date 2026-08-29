@@ -33,6 +33,9 @@ from pipelines.import_common import (
     logger,
     setup_logging,
     IngestStats,
+    reset_write_losses,
+    write_loss_summary,
+    write_loss_exit_code,
 )
 
 # All categories organized by tier
@@ -222,6 +225,10 @@ def main():
                         help="Resume the most recent interrupted run")
     args = parser.parse_args()
 
+    # Start the write-loss tally at zero. It is process-global, so a test or a
+    # caller that imported this module earlier must not bleed into this run.
+    reset_write_losses()
+
     if args.list:
         for tier_num, tier in ALL_TIERS.items():
             logger.info(f"\n=== Tier {tier_num} ===")
@@ -355,12 +362,45 @@ def main():
     if results["failed"]:
         logger.info(f"  Failed:    {', '.join(results['failed'])}")
 
-    # Non-zero exit code on failures (#4)
+    # Rows we FETCHED and then failed to write.
+    #
+    # Until 2026-08-29 this run exited 0 no matter how many rows it dropped:
+    # each pipeline builds its own IngestStats, so nothing here could see a
+    # write failure. On 2026-08-28 that meant 107 dropped catalog batches --
+    # up to ~21k rows -- behind a green checkmark, and three separate bugs
+    # went unnoticed for weeks as a result. See docs/INGEST.md.
+    #
+    # Deliberately NOT tripped by upstream fetch failures: api.pokemontcg.io
+    # returned 500 twenty-plus times in that same run, and failing the nightly
+    # on third-party weather is how a red build becomes something people
+    # scroll past.
+    losses = write_loss_summary()
+    if losses["rows_lost"]:
+        logger.error(
+            "  Rows LOST: %d across %d failed batch(es) — these were fetched "
+            "and then not written",
+            losses["rows_lost"], losses["failed_batches"],
+        )
+
+    exit_code = 0
     if results["failed"]:
         logger.error(f"{len(results['failed'])} categories failed — exiting with code 1")
-        sys.exit(1)
+        exit_code = 1
+    if write_loss_exit_code():
+        logger.error(
+            "%d rows were dropped by the writers — exiting with code 1. "
+            "A partial write is a failed run, not a small catalogue.",
+            losses["rows_lost"],
+        )
+        exit_code = 1
 
+    # Close the checkpoint BEFORE exiting. This used to sit after an
+    # unconditional sys.exit(1), so a failing run never closed its own resume
+    # database -- exactly the run whose checkpoint --resume needs next.
     checkpoint_conn.close()
+
+    if exit_code:
+        sys.exit(exit_code)
 
 
 if __name__ == "__main__":

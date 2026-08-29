@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import sys
+import threading
 import time
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
@@ -420,6 +421,58 @@ def close_http_client() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Write-loss accounting (the run must fail when it drops rows)
+# ---------------------------------------------------------------------------
+#
+# `import_all` runs each pipeline in-process via importlib, and every pipeline
+# builds its OWN IngestStats -- so nothing upstream could ever see a write
+# failure. On 2026-08-28 the nightly dropped 107 catalog batches and exited 0.
+# Three separate bugs hid behind that single green checkmark for weeks; the
+# silence, not the bugs, is what made them expensive.
+#
+# This is a PROCESS-level tally rather than a parameter threaded through every
+# pipeline, for the same reason `client` became a property: there are ~50
+# pipelines and the next new one would have been the one that forgot. Every
+# catalog and market-hit write already funnels through SupabaseIngest, so
+# recording here cannot be bypassed by a caller.
+#
+# It counts ONLY rows we held and then failed to write. An upstream fetch
+# failure (api.pokemontcg.io returned 500 twenty times in that same run) is not
+# recorded and must not fail the nightly -- otherwise the signal drowns in
+# third-party weather and gets ignored, which is the state we just left.
+_write_losses: dict[str, int] = {"rows_lost": 0, "failed_batches": 0}
+_write_loss_lock = threading.Lock()
+
+
+def record_write_loss(rows_lost: int, failed_batches: int) -> None:
+    """Record rows that were fetched, held, and then not written."""
+    if rows_lost <= 0 and failed_batches <= 0:
+        return
+    with _write_loss_lock:
+        _write_losses["rows_lost"] += max(0, rows_lost)
+        _write_losses["failed_batches"] += max(0, failed_batches)
+
+
+def write_loss_summary() -> dict[str, int]:
+    with _write_loss_lock:
+        return dict(_write_losses)
+
+
+def reset_write_losses() -> None:
+    """Clear the tally. Call at the START of a run, never at the end --
+    `import_all --resume` starts a fresh process, and a tally that cleared
+    itself on read would let the second reader see a clean run."""
+    with _write_loss_lock:
+        _write_losses["rows_lost"] = 0
+        _write_losses["failed_batches"] = 0
+
+
+def write_loss_exit_code() -> int:
+    """0 if every row we fetched was written, 1 otherwise."""
+    return 1 if write_loss_summary()["rows_lost"] > 0 else 0
+
+
+# ---------------------------------------------------------------------------
 # Supabase Ingest Client
 # ---------------------------------------------------------------------------
 
@@ -560,6 +613,7 @@ class SupabaseIngest:
                 "[catalog] wrote %d of %d rows — %d LOST across %d failed batch(es)",
                 total, len(rows), len(rows) - total, failed_batches,
             )
+            record_write_loss(len(rows) - total, failed_batches)
         return total
 
     def upsert_market_hits(self, hits: list[MarketHit]) -> int:
@@ -607,6 +661,7 @@ class SupabaseIngest:
                 dropped_bad_item_ref,
             )
         total = 0
+        failed_batches = 0     # THIS call only -- self.stats is shared.
         for i in range(0, len(rows), self.batch_size):
             batch = rows[i:i + self.batch_size]
             try:
@@ -618,13 +673,23 @@ class SupabaseIngest:
                 if resp.status_code in (200, 201):
                     total += len(batch)
                 else:
+                    failed_batches += 1
                     self.stats.market_hits_errors += 1
-                    logger.error(f"Upsert market_hits batch {i}: {resp.status_code} "
+                    logger.error(f"Upsert market_hits batch {i} "
+                                 f"({len(batch)} rows LOST): {resp.status_code} "
                                  f"{resp.text[:200]}")
             except Exception as e:
+                failed_batches += 1
                 self.stats.market_hits_errors += 1
-                logger.error(f"Upsert market_hits batch {i} failed: {e}")
+                logger.error(f"Upsert market_hits batch {i} "
+                             f"({len(batch)} rows LOST) failed: {e}")
         self.stats.market_hits_upserted += total
+        if total < len(rows):
+            logger.error(
+                "[market_hits] wrote %d of %d rows — %d LOST across %d failed batch(es)",
+                total, len(rows), len(rows) - total, failed_batches,
+            )
+            record_write_loss(len(rows) - total, failed_batches)
         return total
 
     def close(self):
