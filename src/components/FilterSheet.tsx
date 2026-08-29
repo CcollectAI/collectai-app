@@ -114,6 +114,11 @@ function FilterSheetInner({
   const [showPresetModal, setShowPresetModal] = useState(false);
   const [presetName, setPresetName] = useState('');
   const [expandedSection, setExpandedSection] = useState<string | null>('sort');
+  // Anchored category menu (2026-08-29). Separate from `expandedSection`: the
+  // section still expands to reveal the TRIGGER, and the menu is a layer above
+  // that. Folding the two together made the whole section vanish while the
+  // menu was open.
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
 
   // Load presets on mount
   useEffect(() => {
@@ -370,43 +375,106 @@ function FilterSheetInner({
             </Pressable>
             {expandedSection === 'category' && (
               <View style={styles.sectionContent}>
-                <View style={styles.chipGrid}>
-                  {availableCategories.map((category) => {
-                    // Label for humans, `category` for the filter value.
-                    const label = categoryLabels[category] ?? category;
-                    return (
-                    <Pressable
-                      key={category}
-                      style={[
-                        styles.chip,
-                        { borderColor: colors.border },
-                        config.categories.includes(category) && {
-                          backgroundColor: colors.accent + '15',
-                          borderColor: colors.accent,
-                        },
-                      ]}
-                      onPress={() => handleToggleCategory(category)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`${label}${config.categories.includes(category) ? ', selected' : ''}`}
-                    >
-                      <Text
-                        style={[
-                          styles.chipText,
-                          {
-                            color: config.categories.includes(category)
-                              ? colors.accent
-                              : colors.text,
-                          },
-                        ]}
-                      >
-                        {label}
-                      </Text>
-                    </Pressable>
-                    );
-                  })}
-                </View>
+                {/* Bubble menu, not a chip grid (2026-08-29, by request:
+                    "i dont want chips menus but rather bubble ios menus").
+
+                    STILL MULTI-SELECT. `config.categories` is an array and the
+                    marketplace genuinely filters on several at once, so this is
+                    a pill TRIGGER over an anchored checklist rather than a
+                    CompactSelect — swapping to that primitive would have looked
+                    right and silently removed multi-category filtering, which
+                    nobody asked for.
+
+                    The trigger states the selection rather than just naming the
+                    control, because "Category" alone makes you open it to learn
+                    what you already picked. */}
+                <Pressable
+                  onPress={() => setCategoryMenuOpen(true)}
+                  style={[styles.bubbleTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    config.categories.length === 0
+                      ? 'Category, all categories'
+                      : `Category, ${config.categories.length} selected`
+                  }
+                >
+                  <Text style={[styles.bubbleTriggerText, { color: colors.text }]} numberOfLines={1}>
+                    {config.categories.length === 0
+                      ? 'All categories'
+                      : config.categories.length === 1
+                        ? (categoryLabels[config.categories[0]] ?? config.categories[0])
+                        : `${config.categories.length} selected`}
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color={colors.muted} />
+                </Pressable>
               </View>
             )}
+
+            <Modal
+              visible={categoryMenuOpen}
+              transparent
+              animationType="fade"
+              onRequestClose={() => setCategoryMenuOpen(false)}
+            >
+              <Pressable
+                onPress={() => setCategoryMenuOpen(false)}
+                style={styles.menuBackdrop}
+                accessibilityRole="button"
+                accessibilityLabel="Close category menu"
+              >
+                {/* Stop the backdrop press from closing when the sheet itself
+                    is tapped — without this every row press also dismissed. */}
+                <Pressable
+                  onPress={(e) => e.stopPropagation()}
+                  style={[styles.menuCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                >
+                  <Text style={[styles.menuTitle, { color: colors.text }]}>Category</Text>
+                  <ScrollView style={styles.menuScroll} keyboardShouldPersistTaps="handled">
+                    {/* "All categories" clears rather than selecting a value —
+                        an empty array already means unfiltered everywhere
+                        downstream, so this must not invent a sentinel. */}
+                    <Pressable
+                      onPress={() => setConfig((prev) => ({ ...prev, categories: [] }))}
+                      style={styles.menuRow}
+                      accessibilityRole="button"
+                      accessibilityLabel={`All categories${config.categories.length === 0 ? ', selected' : ''}`}
+                    >
+                      <Text style={[styles.menuRowText, { color: colors.text }]}>All categories</Text>
+                      {config.categories.length === 0 && (
+                        <Ionicons name="checkmark" size={18} color={colors.accent} />
+                      )}
+                    </Pressable>
+                    {availableCategories.map((category) => {
+                      // Label for humans, `category` for the filter value.
+                      const label = categoryLabels[category] ?? category;
+                      const selected = config.categories.includes(category);
+                      return (
+                        <Pressable
+                          key={category}
+                          onPress={() => handleToggleCategory(category)}
+                          style={styles.menuRow}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${label}${selected ? ', selected' : ''}`}
+                        >
+                          <Text style={[styles.menuRowText, { color: colors.text }]} numberOfLines={1}>
+                            {label}
+                          </Text>
+                          {selected && <Ionicons name="checkmark" size={18} color={colors.accent} />}
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                  <Pressable
+                    onPress={() => setCategoryMenuOpen(false)}
+                    style={[styles.menuDone, { backgroundColor: colors.accent }]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Done choosing categories"
+                  >
+                    <Text style={[styles.menuDoneText, { color: colors.background }]}>Done</Text>
+                  </Pressable>
+                </Pressable>
+              </Pressable>
+            </Modal>
               </>
             )}
 
@@ -706,6 +774,72 @@ const styles = StyleSheet.create({
   },
   sortOptionText: {
     fontSize: 14,
+  },
+  // Bubble trigger + anchored menu, replacing the category chip grid.
+  bubbleTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    maxWidth: '100%',
+  },
+  bubbleTriggerText: {
+    fontSize: 14,
+    fontWeight: '600',
+    flexShrink: 1,
+  },
+  menuBackdrop: {
+    // Literal, matching the two backdrops already in this file. The `colors`
+    // prop here is a narrow six-token subset with no `overlay`, and widening
+    // it for one modal would change every call site.
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  menuCard: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingTop: 14,
+    paddingBottom: 10,
+    paddingHorizontal: 6,
+    maxHeight: '70%',
+  },
+  menuTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+  },
+  menuScroll: {
+    flexGrow: 0,
+  },
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+  },
+  menuRowText: {
+    fontSize: 15,
+    flexShrink: 1,
+  },
+  menuDone: {
+    marginTop: 8,
+    marginHorizontal: 6,
+    borderRadius: 10,
+    paddingVertical: 11,
+    alignItems: 'center',
+  },
+  menuDoneText: {
+    fontSize: 15,
+    fontWeight: '700',
   },
   chipGrid: {
     flexDirection: 'row',

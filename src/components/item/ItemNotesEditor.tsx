@@ -41,15 +41,31 @@ export const ItemNotesEditor = React.memo(function ItemNotesEditor({
   // leaving it would have implied a behaviour that no longer exists.
   const [lastSaved, setLastSaved] = useState(notes);
 
-  // Resync baseline whenever a fresh notes value flows in from props (e.g.
-  // after the server round-trip completes and the parent state updates).
+  // Resync the baseline when a fresh notes value arrives from props — the
+  // server round-trip lands AFTER mount, so the value this component was
+  // constructed with is almost always the empty string.
+  //
+  // ⚠️ The dependency array used to be `[]` while the comment beside it said
+  // "we intentionally depend on `notes` only". The comment described the
+  // intent; the code ran once and never resynced. Consequence: `lastSaved`
+  // stayed '' forever, so `hasChanges` was permanently true and the Save
+  // button sat enabled on an item whose notes were untouched — inviting a
+  // save that writes back exactly what is already stored.
+  //
+  // Depending on `notes` does NOT fight typing: onChangeNotes updates the
+  // parent, the new value flows back down, and lastSaved follows it — which
+  // is why hasChanges is computed against the last SAVED value written by
+  // handleSave, not by this effect.
+  const hydratedRef = useRef(false);
   useEffect(() => {
-    setLastSaved(notes);
-    // Only resync when notes changes from the outside, not while user is
-    // typing. We intentionally depend on `notes` only — React's concurrent
-    // mode still gives us the post-save value eventually.
-
-  }, []);
+    // Only adopt while the user has not started editing, so a resync can never
+    // overwrite a baseline the member's own save just set.
+    if (hydratedRef.current) return;
+    if (notes) {
+      setLastSaved(notes);
+      hydratedRef.current = true;
+    }
+  }, [notes]);
 
   const hasChanges = notes !== lastSaved;
 

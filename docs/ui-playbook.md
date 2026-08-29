@@ -2522,3 +2522,64 @@ including one added the previous day, which I had assumed was gated because the
 suite count went up (it had; a *different* file's tests accounted for the rise).
 **A test file is not a gate until the gate names it.** Now 37 suites / 314
 tests.
+
+## A chip grid and a menu are not interchangeable (2026-08-29)
+
+Requested as *"the marketplace filters section has category as a list of chips
+rather than a drop down bubble menu ... i dont want chips menus but rather
+bubble ios menus"*. `FilterSheet`'s Category section now renders a pill trigger
+over an anchored checklist instead of a wrapped chip grid.
+
+**The trap, and why the obvious implementation is wrong.** `CompactSelect`
+already exists and is exactly the requested look — a pill with a chevron
+opening an anchored popover. It is also **single-select**
+(`value: string | null`, `onChange: (v: string) => void`), while
+`config.categories` is an **array** and the marketplace genuinely filters on
+several categories at once. Dropping it in would have looked right, satisfied
+the request as literally worded, and silently removed multi-category filtering
+that nobody asked to lose. The change here is a trigger + checklist, keeping
+`handleToggleCategory` untouched.
+
+Three details that are behaviour, not styling, and are pinned by tests:
+
+- **The trigger states the selection** — "All categories" / the single label /
+  "N selected". A trigger that only names the control makes you open it to
+  learn what you already picked.
+- **"All categories" CLEARS the array**, it does not select a sentinel. An
+  empty array already means unfiltered to every downstream reader; a value like
+  `'all'` would be a category nothing ever equals.
+- **The menu is separate state from `expandedSection`.** Folding them together
+  made the whole section disappear while the menu was open.
+
+`FilterSheet` is shared by `app/listings.tsx` (Member Marketplace) and
+`app/(tabs)/items.tsx`, so both surfaces changed together — deliberately, per
+this doc's own rule that when N files draw one thing they drift.
+
+⚠️ The `colors` prop here is a **narrow six-token subset**
+(`background, card, text, muted, accent, border`) — no `overlay`, no
+`accentText`. `tsc` caught both on the first attempt. The backdrop uses the
+literal this file already uses twice; the Done label uses `colors.background`.
+
+## The comment said one thing and the dependency array said another (2026-08-29)
+
+`ItemNotesEditor` tracked a `lastSaved` baseline so Save could disable when
+there was nothing to save:
+
+```tsx
+useEffect(() => {
+  setLastSaved(notes);
+  // ... We intentionally depend on `notes` only ...
+}, []);            // <- empty
+```
+
+The notes value arrives from the server AFTER mount, so the component is almost
+always constructed with `''`. With empty deps the baseline never resynced,
+`hasChanges` was permanently true, and opening an item with existing notes
+showed an enabled Save button with nothing to save — inviting a write-back of
+the value already stored.
+
+**A comment describing a dependency the array does not contain is not
+documentation, it is a second opinion that lost.** Pinned by
+`__tests__/components/itemNotesEditor.test.tsx`, which rerenders with the
+server value and asserts Save is disabled; restoring the empty deps turns it
+red.

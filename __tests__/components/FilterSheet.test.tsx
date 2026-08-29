@@ -105,3 +105,78 @@ describe('FilterSheet', () => {
     expect(screen.getByLabelText('Close filters')).toBeTruthy();
   });
 });
+
+/**
+ * Category control — bubble menu, not chips (2026-08-29).
+ *
+ * Requested as "i dont want chips menus but rather bubble ios menus". The risk
+ * in that change is silent: the category filter is MULTI-select
+ * (`config.categories` is an array and the marketplace really does filter on
+ * several at once), and the obvious implementation — swapping in the existing
+ * single-select CompactSelect — would look exactly right and quietly remove
+ * that. These pin the behaviour, not the styling.
+ */
+describe('FilterSheet — category bubble menu', () => {
+  const openCategorySection = () => {
+    fireEvent.press(screen.getByLabelText(/^Category filter/));
+  };
+
+  it('shows a single trigger, not one control per category', () => {
+    renderFilterSheet();
+    openCategorySection();
+    // The trigger states the selection. Three categories are available, so a
+    // chip grid would render three separate controls here.
+    expect(screen.getByLabelText('Category, all categories')).toBeTruthy();
+    expect(screen.queryByLabelText('pokemon')).toBeNull();
+    expect(screen.queryByLabelText('lego')).toBeNull();
+  });
+
+  it('opens a menu listing every category', () => {
+    renderFilterSheet();
+    openCategorySection();
+    fireEvent.press(screen.getByLabelText('Category, all categories'));
+    expect(screen.getByLabelText('pokemon')).toBeTruthy();
+    expect(screen.getByLabelText('lego')).toBeTruthy();
+    expect(screen.getByLabelText('funko')).toBeTruthy();
+    expect(screen.getByLabelText(/^All categories/)).toBeTruthy();
+  });
+
+  it('KEEPS multi-select — two categories can be chosen at once', async () => {
+    const onApply = jest.fn();
+    renderFilterSheet({ onApply });
+    openCategorySection();
+    fireEvent.press(screen.getByLabelText('Category, all categories'));
+    fireEvent.press(screen.getByLabelText('pokemon'));
+    fireEvent.press(screen.getByLabelText(/^lego/));
+    fireEvent.press(screen.getByLabelText('Done choosing categories'));
+    fireEvent.press(screen.getByText('Apply Filters'));
+    await waitFor(() => expect(onApply).toHaveBeenCalled());
+    const applied = onApply.mock.calls[0][0] as FilterConfig;
+    expect(applied.categories.sort()).toEqual(['lego', 'pokemon']);
+  });
+
+  it('"All categories" CLEARS rather than inventing a sentinel value', async () => {
+    const onApply = jest.fn();
+    renderFilterSheet({
+      currentConfig: { ...defaultConfig, categories: ['pokemon'] },
+      onApply,
+    });
+    openCategorySection();
+    fireEvent.press(screen.getByLabelText('Category, 1 selected'));
+    fireEvent.press(screen.getByLabelText(/^All categories/));
+    fireEvent.press(screen.getByLabelText('Done choosing categories'));
+    fireEvent.press(screen.getByText('Apply Filters'));
+    await waitFor(() => expect(onApply).toHaveBeenCalled());
+    // An empty array already means "unfiltered" to every downstream reader.
+    // A sentinel like 'all' would be a value no category ever equals.
+    expect((onApply.mock.calls[0][0] as FilterConfig).categories).toEqual([]);
+  });
+
+  it('the trigger says what is selected without opening it', () => {
+    renderFilterSheet({
+      currentConfig: { ...defaultConfig, categories: ['pokemon', 'lego'] },
+    });
+    openCategorySection();
+    expect(screen.getByLabelText('Category, 2 selected')).toBeTruthy();
+  });
+});
