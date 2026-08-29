@@ -15,15 +15,20 @@ jobs:
       # never been seen by anyone. `-rf` prints the failed-test summary so the
       # log is actionable rather than just red.
       #
-      # `continue-on-error: true` is STILL SET, deliberately and temporarily.
-      # It is the reason this suite went unwatched: the step could not fail
-      # the build, so the result was decorative. Removing it today would turn
-      # every PR red on 27 known-stale failures, which is how a gate gets
-      # ignored a second time.
+      # ✅ `continue-on-error` REMOVED 2026-08-29. The suite is green under
+      # this exact command and env: 3,817 passed, 0 failed. This step can now
+      # fail the build, which is the whole point — until today it could not,
+      # so the result was decorative and the suite went unwatched.
+      # Progress: 82 failing (2026-07-27 start) -> 27 -> 9 -> 0.
       #
-      # ⚠ REMOVE `continue-on-error` once the suite is green. That is the
-      # whole point of this change; leaving it is not "done".
-      # Progress: 82 failing (2026-07-27 start) -> 27 and dropping.
+      # The last two were invisible locally: ci-min sets `DB_DSN: ""`, and
+      # test_catalog_learning_worker guarded its mock DSN with
+      # os.environ.setdefault — which only fires on an ABSENT key, not an
+      # empty one. They passed on a laptop and failed here, every time.
+      # If you add a test that needs a DSN, set it when falsy, not absent.
+      #
+      # ⚠ Do not re-add continue-on-error to get a red build merged. Fix the
+      # test or delete it; a gate that cannot fail is not a gate.
       - run: .venv/bin/pytest -q -rf --timeout=30 --ignore=server/tests/test_inference.py
         env:
           DB_ENABLED: "false"
@@ -31,7 +36,6 @@ jobs:
           DEV_MODE: "true"
           CI: "true"
           RATE_LIMIT_ENABLED: "false"
-        continue-on-error: true
       # FE column-drift gate — diffs every supabase.from('table').select(...)
       # call in src/ + app/ against scripts/schema.lock.json. Reads the
       # lock file from the repo, so no DB access is needed in CI.

@@ -43,17 +43,27 @@ def _make_hit_row(
     hit_id="h1",
     item_ref="watches:rolex-submariner",
     source="ebay",
+    provider="ebay",
     price=150.0,
     observed_at=None,
     condition=None,
     attrs=None,
 ):
+    # `provider` is not optional. valuation_worker.py:331 reads row["provider"]
+    # unconditionally, so a row without it raises KeyError before any assertion
+    # in this file runs -- which is exactly how three tests here sat red.
+    #
+    # Note the prod shape these stand in for: `source` is EMPTY on 100% of sold
+    # comps (2,926,839 of 2,927,565, measured 2026-08-27) and `provider` is the
+    # populated one. The default above keeps both set so existing assertions
+    # hold; do not read it as evidence that `source` is populated in the wild.
     if observed_at is None:
         observed_at = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=5)
     return _DictRow(
         id=hit_id,
         item_ref=item_ref,
         source=source,
+        provider=provider,
         price=price,
         observed_at=observed_at,
         condition=condition,

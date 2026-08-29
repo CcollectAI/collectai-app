@@ -29,7 +29,15 @@ os.environ.setdefault("DB_ENABLED", "false")
 os.environ.setdefault("DEV_MODE", "true")
 os.environ.setdefault("CATALOG_LEARNING_ENABLED", "true")
 # run_once() returns all-zeros immediately without one.
-os.environ.setdefault("DB_DSN", "postgresql://mock/mock")
+#
+# NOT setdefault. `ci-min.yml` runs this suite with `DB_DSN: ""`, and
+# setdefault only fires when the key is ABSENT -- an empty string is a present
+# value, so it no-opped and the guard tripped anyway. These two tests therefore
+# passed locally (DB_DSN unset) and failed in CI (DB_DSN set to ""), which is
+# why they sat in the "known-stale" pile behind continue-on-error.
+# Same shape as `or 0` turning UNKNOWN into "fine": empty is not absent.
+if not os.environ.get("DB_DSN"):
+    os.environ["DB_DSN"] = "postgresql://mock/mock"
 
 
 # ===========================================================================

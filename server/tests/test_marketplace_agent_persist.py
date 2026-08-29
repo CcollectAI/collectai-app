@@ -18,6 +18,25 @@ os.environ.setdefault("DEV_MODE", "true")
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 
 
+def _mock_direct_conn() -> "AsyncMock":
+    """A stand-in for the connection persist_comps_to_db actually opens.
+
+    These tests used to patch `app.db.get_conn`. That stopped being the seam on
+    2026-04-27, when persist_comps_to_db moved to its own
+    `asyncpg.connect(DB_DSN_DIRECT)` to escape the pooler's 30s statement cap
+    (marketplace_agent.py:660). The patch then applied to a function no longer
+    in the path, the real connect ran, and every one of these failed with
+    `Connect call failed ('127.0.0.1', 5432)` -- a test pinning an architecture
+    the code had left behind. `import asyncpg as _asyncpg` inside the function
+    still resolves the shared module object, so patching `asyncpg.connect`
+    reaches it.
+    """
+    conn = AsyncMock()
+    conn.execute = AsyncMock()
+    conn.close = AsyncMock()
+    return conn
+
+
 def _make_result(hits_data: list[dict]) -> "AggregationResult":
     """Build an AggregationResult from simplified hit dicts."""
     from app.agents.marketplace_agent import ScoredMarketHit, AggregationResult
@@ -59,13 +78,9 @@ class TestPersistCompsAttrs:
         }
         result = _make_result([hit])
 
-        mock_conn = AsyncMock()
-        mock_conn.execute = AsyncMock()
-        mock_ctx = AsyncMock()
-        mock_ctx.__aenter__ = AsyncMock(return_value=mock_conn)
-        mock_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_conn = _mock_direct_conn()
 
-        with patch("app.db.get_conn", return_value=mock_ctx), \
+        with patch("asyncpg.connect", AsyncMock(return_value=mock_conn)), \
              patch("app.db.db_configured", return_value=True):
             agent = MarketplaceAgent()
             count = await agent.persist_comps_to_db(result, normalized_key="pokemon:charizard")
@@ -93,13 +108,9 @@ class TestPersistCompsAttrs:
         }
         result = _make_result([hit])
 
-        mock_conn = AsyncMock()
-        mock_conn.execute = AsyncMock()
-        mock_ctx = AsyncMock()
-        mock_ctx.__aenter__ = AsyncMock(return_value=mock_conn)
-        mock_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_conn = _mock_direct_conn()
 
-        with patch("app.db.get_conn", return_value=mock_ctx), \
+        with patch("asyncpg.connect", AsyncMock(return_value=mock_conn)), \
              patch("app.db.db_configured", return_value=True):
             agent = MarketplaceAgent()
             count = await agent.persist_comps_to_db(result)
@@ -123,13 +134,9 @@ class TestPersistCompsAttrs:
         }
         result = _make_result([hit])
 
-        mock_conn = AsyncMock()
-        mock_conn.execute = AsyncMock()
-        mock_ctx = AsyncMock()
-        mock_ctx.__aenter__ = AsyncMock(return_value=mock_conn)
-        mock_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_conn = _mock_direct_conn()
 
-        with patch("app.db.get_conn", return_value=mock_ctx), \
+        with patch("asyncpg.connect", AsyncMock(return_value=mock_conn)), \
              patch("app.db.db_configured", return_value=True):
             agent = MarketplaceAgent()
             count = await agent.persist_comps_to_db(result)
@@ -152,13 +159,9 @@ class TestPersistCompsAttrs:
         }
         result = _make_result([hit])
 
-        mock_conn = AsyncMock()
-        mock_conn.execute = AsyncMock()
-        mock_ctx = AsyncMock()
-        mock_ctx.__aenter__ = AsyncMock(return_value=mock_conn)
-        mock_ctx.__aexit__ = AsyncMock(return_value=False)
+        mock_conn = _mock_direct_conn()
 
-        with patch("app.db.get_conn", return_value=mock_ctx), \
+        with patch("asyncpg.connect", AsyncMock(return_value=mock_conn)), \
              patch("app.db.db_configured", return_value=True):
             agent = MarketplaceAgent()
             # Must not raise TypeError for unexpected kwarg

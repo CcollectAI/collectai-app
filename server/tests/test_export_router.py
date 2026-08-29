@@ -141,10 +141,16 @@ class TestInsuranceReportHtmlNoPool:
         assert resp.status_code == 200
         assert "text/html" in resp.headers.get("content-type", "")
 
-    def test_html_contains_collectai_branding(self):
+    def test_html_contains_sparrow_branding(self):
+        # Renamed from CollectAI on 2026-05-04. This asserted the OLD name and
+        # had therefore been red ever since -- pinning a brand the rename
+        # deliberately removed. The export does carry branding
+        # (export_router.py:255 logo, :312 footer, :452 methodology); only the
+        # name this test looked for had changed.
         resp = client.get("/export/insurance-report")
         assert resp.status_code == 200
-        assert "CollectAI" in resp.text
+        assert "Sparrow Collect" in resp.text
+        assert "CollectAI" not in resp.text, "the pre-rename name must not resurface"
 
     def test_html_default_format(self):
         """Default format (no param) should be html."""

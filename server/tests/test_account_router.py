@@ -161,11 +161,22 @@ class TestDeleteAccount:
         # First execute is `SET LOCAL statement_timeout` — must succeed.
         # Then the first real DELETE throws UndefinedTableError (table missing
         # in this env), and the remaining DELETEs all succeed.
-        conn.execute = AsyncMock(
-            side_effect=[None]
-            + [asyncpg.UndefinedTableError("table not found")]
-            + [None] * 20
-        )
+        # Count-INDEPENDENT on purpose. This used to be a fixed list of 22
+        # side effects ([None] + [error] + [None]*20). Every table added to the
+        # deletion path since pushed the real call count past 22, and the mock
+        # then raised StopIteration -- so the test failed for running out of
+        # fixture, not for any behaviour of the code. A test whose fixture
+        # encodes a table count breaks every time the contract legitimately
+        # grows. Raise once, succeed forever after.
+        _calls = {"n": 0}
+
+        async def _execute(*_a, **_kw):
+            _calls["n"] += 1
+            if _calls["n"] == 2:      # 1 is SET LOCAL statement_timeout
+                raise asyncpg.UndefinedTableError("table not found")
+            return None
+
+        conn.execute = AsyncMock(side_effect=_execute)
         mock_get_pool.return_value = pool
         mock_get_admin.return_value = None
 

@@ -25,7 +25,22 @@ from main import app  # noqa: E402
 
 client = TestClient(app)
 
-DEV_USER_ID = os.environ.get("DEV_USER_ID", "dev-user-local")
+# Resolve the dev identity the way app/auth.py:58 does, from app.config --
+# NOT from os.environ here.
+#
+# app.config reads DEV_USER_ID once, at ITS import. Other test modules mutate
+# the env at THEIR import (tests/test_b2_paid_gates_e2e.py:19 does an
+# os.environ.setdefault at module scope). Reading the env again here therefore
+# gave a value the running app did not agree with, depending purely on
+# collection order -- so `POST /social/block/<id>` stopped being a self-block
+# and returned 200 instead of 400. The test passed alone and failed in the full
+# suite, which is the signature of exactly this.
+#
+# Asking app.config for the value the app is actually using makes the two
+# impossible to desync, whatever any other module does to the environment.
+from app.config import DEV_USER_ID as _CONFIGURED_DEV_USER_ID  # noqa: E402
+
+DEV_USER_ID = _CONFIGURED_DEV_USER_ID or "dev-user-local"
 TARGET_USER_ID = "00000000-0000-0000-0000-000000000099"
 
 
