@@ -165,6 +165,44 @@ change looking plausible; it is `test_free_user_gets_0`.
 - Entitlement identifier: **`pro`** (lowercase) — must match `PRO_ENTITLEMENT_ID` in `src/lib/purchases.ts:5`.
 - Offering: **`default`** with packages `$rc_monthly` (linked to `sparrow_pro_monthly`) and `$rc_annual` (linked to `sparrow_pro_yearly`). `app/subscription.tsx:151` reads these exact identifiers — other names produce a "Coming soon" UI.
 - **FE source of truth: `Purchases.getCustomerInfo()`** from `react-native-purchases`. Backend `/billing/status` endpoint is vestigial for iOS — kept for future web/Android.
+
+  ⛔ **"Vestigial" is true of the PAYWALL and false of every gated ENDPOINT.**
+  Corrected 2026-08-29. `getCustomerInfo()` unlocks the UI, but the server
+  gates on its own `subscriptions` table:
+  `require_plan("pro")` → `get_user_plan()` →
+  `SELECT plan FROM subscriptions WHERE user_id = $1 AND status IN ('active','trialing')`,
+  defaulting to `free` when there is no row. Nothing in the app ever tells the
+  server about a purchase — verified: no FE code posts `customerInfo` anywhere.
+  The ONLY path from a mobile purchase to that table is the RevenueCat webhook.
+
+  **Measured on prod 2026-08-29:**
+
+  | | |
+  |---|---|
+  | `/billing/revenuecat-webhook` registered in the running app | ✅ yes |
+  | `REVENUECAT_WEBHOOK_AUTH` set in `/opt/collectors/.env` | ✅ yes |
+  | times the webhook has ever been called | **0** (`grep -c revenuecat-webhook bake.log`) |
+  | `pro`/`premium` rows in `subscriptions` | 4, all created **2026-07-20**, no Stripe IDs — seed data |
+
+  So a paying member sees Pro in the app and `403 PLAN_REQUIRED` from every
+  Pro **server** feature: `/purchase/deals` (Sparrow's Watch shows its upgrade
+  banner), the dossier export, and anything else behind `require_plan`. The FE
+  is right, the server is right, and nothing connects them.
+
+  **This is a LAUNCH BLOCKER, not one account.** Every customer who pays at
+  launch gets the same experience.
+
+  **Fix is configuration, not code** — RevenueCat → project → Integrations →
+  Webhooks:
+
+  - URL: `https://api.sparrowcollect.com/billing/revenuecat-webhook`
+  - Authorization header: the value of `REVENUECAT_WEBHOOK_AUTH` on the box
+    (`ssh collectai 'grep ^REVENUECAT_WEBHOOK_AUTH= /opt/collectors/.env'`)
+
+  Verify it fired: `grep -c revenuecat-webhook /opt/collectors/bake.log` goes
+  above 0, and a `subscriptions` row appears for the purchasing user. Until
+  that count moves, **no purchase has reached the database**, whatever the app
+  shows.
 - Beta override: `EXPO_PUBLIC_BETA_UNLOCK_ALL=true` (set on `production` build profile) bypasses RC entirely for TestFlight testing. The `store` build profile sets it `false` for App Store submission.
 
 ### Verified live state (2026-08-15) — measured, not assumed

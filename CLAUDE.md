@@ -183,6 +183,49 @@ I reported the wrong conclusion confidently before checking the sample size.
 That is [[learning_aggregate_over_the_wrong_population]] wearing a different
 hat: not the wrong population, but no stated population at all.
 
+### A paying member is denied by the server that never heard about the purchase (2026-08-29)
+
+Reported as *"the pro membership plan i paid for should give me sparrow watch
+... i should not get the upgrade banner because i am already paying"*.
+
+The FE is correct and the server is correct. `getCustomerInfo()` unlocks the
+UI; `require_plan("pro")` reads the `subscriptions` table and defaults to
+`free` with no row. **No FE code posts entitlement to the server** — the only
+path from a mobile purchase to that table is the RevenueCat webhook, and
+`grep -c revenuecat-webhook bake.log` is **0**, ever. All four pro/premium rows
+are 2026-07-20 seed data with no Stripe IDs.
+
+`MONETIZATION.md` said the backend was *"vestigial for iOS"*. True of the
+paywall, false of every `require_plan` endpoint — and that sentence is why
+nobody looked. Corrected there.
+
+Worth noting how it was found: the screen's own comment already said *"a 403
+here means the user isn't on a plan that includes deal discovery"*, so the UI
+was reporting a real server answer. **Chasing the banner would have found
+nothing; the question was who returns the 403 and why.**
+
+### The writer was fine — it was never called (2026-08-29)
+
+*"the notes on the item card dont persist because after making a note it doesnt
+hold or appear."* I checked the write, the RLS UPDATE policies, the detail
+screen's select (which does include `notes`), the reconciliation and the
+render. All correct — and two theories built on them were wrong.
+
+`onSaveNotes` had **one caller**: the Save button. No blur save, no unmount
+save, no autosave. Typed text lived in React state and went with the screen.
+
+The wording was the diagnosis: after **making** a note, not after saving one.
+Same shape as the bug the component was written to fix — a "Notes saved
+locally" toast over a writer that wrote nothing. That fix made the WRITE real
+and left the DISCARD. **Fixing the writer is not fixing the moment the writer
+is invoked**, and no amount of reading the save path can show a call that does
+not happen.
+
+⚠️ My fix's own bug was worse than the bug: the baseline resync could not tell
+the server value arriving (`'' -> "…"`) from the first keystroke (`'' -> "a"`),
+so it adopted typed text as *saved*, disabling Save and skipping the blur
+write. Caught by the test, not by reading.
+
 ### The checker was wrong four times in one session
 
 `CLAUDE.md` already carried "Mutation-test the checker, not just the code" from
