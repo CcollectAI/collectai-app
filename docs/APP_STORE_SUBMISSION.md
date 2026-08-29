@@ -274,6 +274,32 @@ team `3DX8FBF7S6` (`eas.json`), so it does not prompt.
 > anyone it is available. This has been reported as "the build never arrived"
 > when it had simply not finished processing.
 
+> ⚠️ **The output path already holds the PREVIOUS build's IPA.**
+> `--output ./builds/sparrow-ios-local.ipa` is a fixed path that is only
+> overwritten when the build *succeeds*. So before and during a build, a
+> complete, valid, submittable IPA of the **last** release is sitting there.
+>
+> That breaks the obvious ways of waiting for a build: `[ -f
+> builds/sparrow-ios-local.ipa ]` is true immediately, and `ls builds/` looks
+> finished. Caught on 2026-08-28 — a "wait for the artefact" loop returned at
+> once against build 154's file while 155 was still compiling. Submitting there
+> would have re-uploaded 154 and reported it as 155, and the submission would
+> have *succeeded*.
+>
+> **Wait on the build PROCESS, and compare the artefact's mtime to the one you
+> recorded before starting:**
+>
+> ```bash
+> stat -f "%m" builds/sparrow-ios-local.ipa > /tmp/stale_mtime.txt   # BEFORE
+> # ... build ...
+> while pgrep -f eas-cli-local-build-plugin >/dev/null; do sleep 60; done
+> [ "$(stat -f "%m" builds/sparrow-ios-local.ipa)" -gt "$(cat /tmp/stale_mtime.txt)" ] \
+>   || echo "STALE — the build produced no new artefact"
+> ```
+>
+> Then still read `CFBundleVersion` below. Two independent checks, because a
+> failed build leaves a *plausible* file rather than no file.
+
 **Verify what you actually shipped.** `app.json`'s `buildNumber` is ignored, so
 read the number out of the artefact rather than the config:
 
