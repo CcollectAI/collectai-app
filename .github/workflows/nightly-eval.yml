@@ -1,18 +1,62 @@
+# ⛔ NOT WIRED — schedule disabled 2026-08-29. This job has never once run.
+#
+# It reported **success on every run** while doing nothing, which is worse than
+# being switched off, because a green checkmark is read as "the evaluator ran
+# and the model passed". Two independent bugs, either of which alone was fatal:
+#
+#   1. `HAS_SECRETS` gated on `secrets.S3_DATA_BUCKET`, which is not set and
+#      which this workflow never references. Every real step is
+#      `if: env.HAS_SECRETS == 'true'`, so all of them skipped and the job
+#      passed. The warning text even named the two Supabase secrets rather
+#      than the one being checked — the tell that gate and job had drifted.
+#   2. The run step invokes `python scripts/eval_mae_and_gate.py` with NO
+#      arguments, but `--artifact-prefix` is `required=True` and the script
+#      also needs `DATASET_BUCKET` (or `--datasets-prefix`), `--gate-config`
+#      and AWS credentials — none of which this workflow passes. It passes
+#      Supabase secrets instead, which the script never reads. So even with
+#      bug 1 fixed it would die on argparse every night.
+#
+# The correct invocation already exists in `scripts/nightly_multi.sh:38`:
+#   eval_mae_and_gate.py --artifact-prefix "$ART_BASE" --categories "$CATS" \
+#                        --gate-config config/gate.yaml
+# Wiring that up needs the real S3 artifact/dataset prefixes as secrets, which
+# is a decision rather than a patch — hence disabled-and-documented rather than
+# made to fail loudly every night. `workflow_dispatch` is kept so it can be
+# tested once configured. See docs/INGEST.md.
+#
+# ⚠️ Related and NOT fixed here: `nightly-train-eval-gate.yml`'s "Evaluate &
+# Gate" step runs with `working-directory: server` while the script lives at
+# repo root, so its `[ -f scripts/eval_mae_and_gate.py ]` test is false and it
+# logs "Eval script not found, skipping gate check" — successfully. That job
+# trains models nightly and has never evaluated or gated one.
 name: Nightly Eval + Gate
 on:
-  schedule: [{ cron: "19 1 * * *" }]
+  # schedule: [{ cron: "19 1 * * *" }]   # re-enable once the args above are wired
   workflow_dispatch: {}
 jobs:
   eval:
     runs-on: ubuntu-latest
     env:
-      HAS_SECRETS: ${{ secrets.S3_DATA_BUCKET != '' }}
+      # Gate on the secret this job ACTUALLY uses.
+      #
+      # This read `secrets.S3_DATA_BUCKET` until 2026-08-29 — a secret that is
+      # not set and that this workflow never references. Every real step is
+      # `if: env.HAS_SECRETS == 'true'`, so all of them skipped and the job
+      # reported **success**: eight consecutive green runs in which the
+      # evaluator never executed once. The warning text below even named the
+      # two Supabase secrets rather than the one being checked, which is the
+      # tell that the gate and the job had drifted apart.
+      HAS_SECRETS: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE_KEY != '' }}
     steps:
       - name: Check secrets
         if: env.HAS_SECRETS != 'true'
         run: |
-          echo "::warning::Skipping — required secrets not configured (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)"
-          exit 0
+          # exit 1, not 0. This is a SCHEDULED job: secrets are always
+          # available on a schedule trigger, so a missing one is a
+          # misconfiguration, not a fork PR. Exiting 0 turned that
+          # misconfiguration into a green checkmark.
+          echo "::error::Required secrets not configured (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) — the evaluator did NOT run"
+          exit 1
       - uses: actions/checkout@v4
         if: env.HAS_SECRETS == 'true'
       - uses: actions/setup-python@v5

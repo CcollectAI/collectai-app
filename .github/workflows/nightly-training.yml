@@ -11,8 +11,13 @@ jobs:
       - name: Check secrets
         if: env.HAS_SECRETS != 'true'
         run: |
-          echo "::warning::Skipping — required secrets not configured (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, S3_DATA_BUCKET, AWS credentials)"
-          exit 0
+          # exit 1, not 0. On a SCHEDULED trigger secrets are always
+          # available, so a missing one is a misconfiguration — and every
+          # real step below is gated on HAS_SECRETS, so exiting 0 reported a
+          # job that did nothing as success. That is exactly how
+          # nightly-eval.yml ran zero times while showing 8 green checkmarks.
+          echo "::error::Required secrets not configured (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, S3_DATA_BUCKET, AWS credentials) — this job did NOT run"
+          exit 1
       - uses: actions/checkout@v4
         if: env.HAS_SECRETS == 'true'
       - uses: actions/setup-python@v5
