@@ -91,6 +91,25 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     # always going to expire. Direct DSN, ~2,847 catalogue rows + ~5,420 price
     # rows, a few seconds of writes; the HTTP fetch is off-loop via to_thread.
     ("lorcast_worker",          "workers.lorcast_worker",   "run_once", True),
+    # Model retraining. RE-ENABLED 2026-08-29 after the line below it lied for
+    # four months: it read "handled by nightly GHA workflow", and that workflow
+    # trains 36 categories onto the GitHub runner's disk and destroys it —
+    # train_price.py has ZERO S3 code, --register is a no-op, and artifacts
+    # upload only `if: failure()`. Serving reads THIS box's artifacts/, so
+    # nothing GitHub trained has ever reached production.
+    #
+    # Consequence, measured 2026-08-29: 53 of 54 `active` models dated from
+    # 2026-04-10 — 138 days. Nothing reported it, because preflight_models
+    # validates a model FILE and never its AGE, and calibration_worker measures
+    # the predictions without asking when the model behind them was fitted.
+    #
+    # This worker needs none of what the GHA path needs: it exports market_hits
+    # from the DB, retrains via train_price, writes to the box's own disk, and
+    # carries its OWN promotion gate — it scores the current active model on a
+    # holdout and atomically reverts the symlink if the new MAE regresses past
+    # MODEL_RETRAIN_TOLERANCE (1.05). Weekly via SCHEDULES; already in
+    # _HEAVY_WORKERS so it serialises behind _HEAVY_LOCK like valuation.
+    ("model_retrain_worker",    "workers.model_retrain_worker",       "run_once", True),
     # Sanity probe — must stay. Observability. If this is off, we're flying blind.
     ("sanity_probe_worker",     "workers.sanity_probe_worker",        "run_once", True),
 
@@ -186,7 +205,11 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
 
     # ── Skipped / on-demand ──
     # vision_ingest — on-demand only (interval=0)
-    # model_retrain_worker — handled by nightly GHA workflow
+    # model_retrain_worker — RE-ENABLED 2026-08-29, see the manifest entry above.
+    #   This line used to read "handled by nightly GHA workflow". It was not:
+    #   that workflow's artifacts never leave the runner. The sentence is
+    #   edited rather than annotated, because a wrong claim left in place is
+    #   how it gets believed a second time.
     # task_worker — polls every 5s, handled separately in main.py
 ]
 
