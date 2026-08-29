@@ -123,6 +123,55 @@ def src_link(path: str, line: int | None = None) -> str:
     return "%s/%s%s" % (REPO, path, "#L%d" % line if line else "")
 
 
+def serving_artifact_roots() -> list[Path]:
+    """Candidate artifact roots, in the order model_loader tries them.
+
+    Mirrors app/ml/model_loader.py::_artifacts_root so the watchdog inspects
+    exactly what serving loads, rather than a path that merely looks right.
+    """
+    return [Path("/opt/collectors/server/artifacts"),
+            Path.cwd() / "artifacts",
+            Path(__file__).resolve().parents[1] / "artifacts"]
+
+
+def serving_model_ages(roots: list[Path], now: datetime | None = None
+                       ) -> list[tuple[str, int]]:
+    """[(category, age_in_days)] for every resolvable `active` model.json.
+
+    Returns [] when nothing is resolvable — the caller MUST treat that as
+    "could not ask", never as "models are fresh". Module-level and
+    now-injectable so it can be tested against real fixture trees; the same
+    logic inline in the report body could only ever be tested by reading it.
+    """
+    root = next((r for r in roots if r.is_dir()), None)
+    if root is None:
+        return []
+    now = now or datetime.now(timezone.utc)
+    ages: list[tuple[str, int]] = []
+    for cat_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+        active = cat_dir / "active"
+        target = None
+        # `active` is a symlink on the box, but preflight_models also accepts a
+        # plain file containing the version name — accept both, or this reports
+        # a false UNKNOWN on a box that is actually fine.
+        if active.is_symlink() or active.is_dir():
+            resolved = active.resolve()
+            target = resolved if resolved.is_dir() else None
+        elif active.is_file():
+            try:
+                cand = cat_dir / active.read_text().strip()
+                target = cand if cand.is_dir() else None
+            except Exception:
+                target = None
+        if target is None:
+            continue
+        mj = target / "model.json"
+        if mj.is_file():
+            fitted = datetime.fromtimestamp(mj.stat().st_mtime, timezone.utc)
+            ages.append((cat_dir.name, (now - fitted).days))
+    return ages
+
+
 # ---------------------------------------------------------------------------
 # 1. ACTIVITY — what users did
 # ---------------------------------------------------------------------------
@@ -800,6 +849,79 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
                 "check": "valuation queue visibility",
                 "detail": "0 sold comps carry a price_eur the queue's `price IS NOT NULL` "
                           "filter would drop"})
+
+    # --- serving model age: nothing anywhere reported this ---
+    #
+    # On 2026-08-29, 53 of 54 `active` models on the box dated from 2026-04-10
+    # — 141 days — and not one check said so. `scripts/preflight_models.py`
+    # validates a model FILE (finite coefficients, structure) and never its
+    # AGE; `calibration_worker` measures PICP/ACE/MAE of the predictions but
+    # never asks when the model behind them was fitted. A model can be
+    # well-formed, pass every gate, and be a season out of date.
+    #
+    # Retraining is scheduled and delivers nothing: nightly-train-eval-gate
+    # trains 36 categories onto the GitHub runner's disk, has no S3 upload
+    # (train_price contains zero S3 code), a no-op --register, and the runner is
+    # then destroyed. docs/INGEST.md has the full chain.
+    #
+    # Tiering follows this doc rather than the alarm I first wanted to raise.
+    # "A daily siren is how a channel stops being read", and a delivery chain
+    # that was never wired is a STRUCTURAL gap, not a regression with a date —
+    # so it is ONE aggregated medium stating the totals, the same shape as the
+    # 45-categories-no-sold-comp finding. `high` is reserved for the case that
+    # really is anomalous rather than merely unwired.
+    #
+    # Root resolution mirrors app/ml/model_loader.py::_artifacts_root, so this
+    # inspects exactly what serving loads and not a path that merely looks right.
+    with guard("serving model age"):
+        roots = serving_artifact_roots()
+        ages = serving_model_ages(roots)
+
+        if not ages:
+            # UNKNOWN, not healthy — "reporting nothing must never look like
+            # all-clear". A missing directory is could-not-ask, and on a dev box
+            # there are simply no artifacts, which is also not evidence.
+            bug("medium", "serving model age is UNKNOWN this run",
+                "No resolvable `active` model.json under any of: %s. This is "
+                "not evidence that the models are fresh — it is evidence the "
+                "check could not run."
+                % ", ".join(str(r) for r in roots),
+                src_link("server/scripts/watchdog.py"),
+                "ssh collectai 'ls -la /opt/collectors/server/artifacts/*/active'",
+                "")
+        else:
+            STALE_DAYS, ALARM_DAYS = 90, 270
+            stale = sorted((a for a in ages if a[1] > STALE_DAYS), key=lambda a: -a[1])
+            oldest_cat, oldest_days = max(ages, key=lambda a: a[1])
+            named = ", ".join("%s %dd" % (c, d) for c, d in stale[:8])
+            detail = (
+                "These are the artifacts app/ml/model_loader.py serves from "
+                "disk. They are well-formed — preflight_models passes them — "
+                "and simply old. Retraining is scheduled but delivers nothing: "
+                "nightly-train-eval-gate writes artifacts to the GitHub "
+                "runner's disk, has no S3 upload, a no-op --register, and the "
+                "runner is then destroyed. %s" % named)
+            verify = ("ssh collectai 'for d in /opt/collectors/server/artifacts/*/; "
+                      "do [ -L \"$d/active\" ] && readlink \"$d/active\"; done "
+                      "| cut -c1-8 | sort | uniq -c'")
+            fix = ("Decide how trained artifacts reach the box (train in the "
+                   "bake, or upload to S3 and pull), then retrain")
+            if oldest_days > ALARM_DAYS:
+                bug("high",
+                    "%d of %d serving models are over %d days old (oldest %s at %dd)"
+                    % (len(stale), len(ages), ALARM_DAYS, oldest_cat, oldest_days),
+                    detail, src_link("server/pipelines/train_price.py"), verify, fix)
+            elif stale:
+                bug("medium",
+                    "%d of %d serving models are older than %d days (oldest %s at %dd)"
+                    % (len(stale), len(ages), STALE_DAYS, oldest_cat, oldest_days),
+                    detail, src_link("server/pipelines/train_price.py"), verify, fix)
+            else:
+                healthy.append({
+                    "check": "serving model age",
+                    "detail": "all %d serving models fitted within %d days "
+                              "(oldest is %s at %dd)"
+                              % (len(ages), STALE_DAYS, oldest_cat, oldest_days)})
 
     # --- column drift: reader and writer on different columns ---
     # Two-phase by necessity: the code half needs src/ + app/, which are never

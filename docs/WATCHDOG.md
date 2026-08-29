@@ -673,6 +673,59 @@ keeps "missing" (`None`) distinguishable from "empty" (`0`).
 This is the same defect class as the `check-unrendered` gate counting a
 component named only in a `//` comment: **a comment is not a reference.**
 
+## A model can be well-formed, pass every gate, and be a season old (2026-08-29)
+
+Chasing the broken model gate in `nightly-train-eval-gate` turned up the
+downstream fact, which is worse than the gate:
+
+```
+53 of 54 `active` models on the box date from 2026-04-10  -- 138 days
+ 1 of 54 (retro_games) was retrained by hand on 2026-07-22
+```
+
+**Nothing anywhere reported this.** `scripts/preflight_models.py` validates a
+model FILE — finite coefficients, structure — and never its AGE, so all 54
+passed the startup gate every restart. `calibration_worker` measures PICP/ACE/
+MAE of the *predictions* but never asks when the model behind them was fitted.
+Between them they answer "is this model valid?" and "are its outputs
+calibrated?", and neither answers "is this model current?".
+
+The refresh path is scheduled and delivers nothing. `nightly-train-eval-gate`
+trains 36 categories every night onto the GitHub runner's disk;
+`train_price.py` contains **zero S3 code** (`ARTIFACT_BUCKET` in that workflow
+is read by nothing), `--register` is a no-op (`MODEL_REGISTRY_WRITE_ENABLED`
+defaults false), artifacts upload only `if: failure()`, and the runner is then
+destroyed. Serving reads `artifacts/<cat>/active/model.json` from the box's own
+disk. The two halves have never been connected. Full chain in `docs/INGEST.md`.
+
+### Why this is ONE medium and not 53 highs
+
+This doc's own rule — *"a daily siren is how a channel stops being read"* — and
+the precedent set by the 45-categories-no-sold-comp finding. A delivery chain
+that was never wired is a **structural** gap, not a regression with a date, so
+it is one aggregated finding stating the totals:
+
+| condition | verdict |
+|---|---|
+| oldest active model > 270d | `high` — anomalous, not merely unwired |
+| any active model > 90d | **one `medium`**, naming the count and the oldest |
+| all within 90d | healthy, **stating the ceiling**: *"all 54 fitted within 90 days (oldest X at Nd)"* |
+| no resolvable `active` model.json | `medium` **UNKNOWN** — could not ask, never all-clear |
+
+`serving_artifact_roots()` mirrors `app/ml/model_loader.py::_artifacts_root` in
+order, so the check inspects exactly what serving loads. If those drift apart
+the watchdog reports confidently about the wrong files, so a test pins it.
+
+The measurement lives in module-level `serving_model_ages()` rather than inline
+in the report body — inline, it could only ever have been verified by reading
+it. `server/tests/test_watchdog_model_age.py` runs it against real fixture
+trees **known-bad and known-good**, because a check that has only ever produced
+one verdict has not been shown to discriminate. Three mutations proven to fail
+it: dropping plain-file `active` support, counting a category with no `active`
+pointer as fresh, and reading the version dir's mtime instead of the
+`model.json`'s. Then run against prod, where it returned 53/54 and `medium` —
+matching an independent shell count of the symlink targets.
+
 ## Related audits
 
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes
