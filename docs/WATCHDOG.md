@@ -726,6 +726,34 @@ pointer as fresh, and reading the version dir's mtime instead of the
 `model.json`'s. Then run against prod, where it returned 53/54 and `medium` —
 matching an independent shell count of the symlink targets.
 
+### Outcome, same day: 53 stale -> 1, and the one that stayed is real
+
+`model_retrain_worker` was re-enabled in the bake (`cb6fdd1`) and ran at 14:08.
+Result measured against the same check:
+
+| | before | after |
+|---|---|---|
+| active models > 90d | **53 of 54** | **1 of 54** |
+| oldest | action_figures, 138d | lorcana, 138d |
+
+**The survivor is not a false alarm.** The worker's own promotion gate scored
+the freshly trained lorcana model and refused it —
+`new_mae=24.23 > old_mae=2.82 * tol=1.05 — reverted to 20260410_085331` — so
+lorcana is still served by the April artifact *because nothing better could be
+built*. The finding now says something worth acting on: one category cannot
+produce a better model, which points at its comp supply rather than at the
+retrain path. 53 promoted, 1 reverted, all 54 decisions in
+`model_promotion_log`.
+
+⚠️ **`_ensure_promotion_log_table` had been warning on every run**
+(`column "decided_at" does not exist`) and the message said the whole ensure
+failed. It had not: the live table shipped with `created_at`, and
+`CREATE TABLE IF NOT EXISTS` is **name**-idempotent, not **shape**-idempotent —
+it saw the table, no-opped, and only the `CREATE INDEX ... (decided_at)` failed.
+The INSERTs name their columns explicitly, so all 54 rows landed regardless.
+Column and index corrected to `created_at`, index created, and the warning now
+says what actually broke. See `learning_create_if_not_exists_silently_noops`.
+
 ## Related audits
 
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes

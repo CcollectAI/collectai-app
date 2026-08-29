@@ -331,13 +331,23 @@ async def _ensure_promotion_log_table() -> None:
                 holdout_n       integer,
                 promoted        boolean NOT NULL,
                 reason          text,
-                decided_at      timestamptz NOT NULL DEFAULT now()
+                -- `created_at`, NOT `decided_at`. The live table has shipped
+                -- with created_at since it was first created, and
+                -- CREATE TABLE IF NOT EXISTS is NAME-idempotent, not
+                -- SHAPE-idempotent: it saw the table, no-opped, and never
+                -- reconciled the column. The CREATE INDEX below then failed on
+                -- `column "decided_at" does not exist` on every run, logged as
+                -- "_ensure_promotion_log_table failed" — which reads as "the
+                -- promotion log is broken" when in fact only the index was
+                -- missing and all 54 rows of the 2026-08-29 run landed fine.
+                -- See learning_create_if_not_exists_silently_noops.
+                created_at      timestamptz NOT NULL DEFAULT now()
             )
             """
         )
         await conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_model_promotion_log_decided_at "
-            "ON public.model_promotion_log (decided_at DESC)"
+            "CREATE INDEX IF NOT EXISTS idx_model_promotion_log_created_at "
+            "ON public.model_promotion_log (created_at DESC)"
         )
     finally:
         await conn.close()
@@ -679,7 +689,12 @@ async def run_once():
     try:
         await _ensure_promotion_log_table()
     except Exception as e:
-        logger.warning("[model_retrain] _ensure_promotion_log_table failed: %s", e)
+        # Say what actually broke. The INSERTs name their columns explicitly
+        # and rely on the timestamp default, so promotion logging survives a
+        # failure here — the old message implied the opposite.
+        logger.warning(
+            "[model_retrain] promotion-log table/index setup failed (%s); "
+            "promotion decisions are still logged, the index may be missing", e)
 
     retrain_results = []
     promoted_count = 0
