@@ -230,6 +230,29 @@ change looking plausible; it is `test_free_user_gets_0`.
     `app_user_id` is the Supabase uid the handler casts with `$1::uuid`. Without
     it the id would be an `$RCAnonymousID` and the handler skips the
     `subscriptions` write entirely.
+- ⚠️ **`4a1d7970-…420a` is `pro` by MANUAL BACKFILL (2026-08-29), not by a
+  webhook.** Do not read that row as evidence the RevenueCat integration works
+  — it is the same trap as the four `2026-07-20 16:49:49.885759` seed rows in
+  `subscriptions` / `subscription_events`, which are identical to the
+  microsecond and have empty `store`/`environment`. **A `pro` row proves
+  nothing about the pipe.** The pipe is proven only by a
+  `subscription_events` row with a RECENT timestamp and a populated
+  `environment`, which as of 2026-08-29 has never existed.
+
+  The purchase predated the webhook and **RevenueCat does not replay past
+  events to a newly added webhook**, so this backfill was required regardless
+  of whether the config is right. Applied as:
+
+  ```sql
+  UPDATE public.subscriptions
+     SET plan='pro', status='active', provider='revenuecat', updated_at=now()
+   WHERE user_id='4a1d7970-69a6-4575-aff3-8e1c52ae420a';
+  ```
+
+  **Still open:** a dashboard test event produced NO server traffic at all — not
+  a 401, nothing. So it is not a secret mismatch; nothing is being sent. Prime
+  suspect is the webhook's **Events filter** (App / Event type, both marked
+  *Required*) being incomplete, which makes a saved webhook match no events.
 - Beta override: `EXPO_PUBLIC_BETA_UNLOCK_ALL` bypasses RC entirely when `true`. ⚠️ **Corrected 2026-08-29: BOTH `store` and `production` set it `false` in `eas.json`** — this line used to say `production` sets it `true`, which would mean shipped builds gave Pro away. Measured, not assumed; re-read `eas.json` rather than trusting this sentence.
 
 ### Verified live state (2026-08-15) — measured, not assumed
