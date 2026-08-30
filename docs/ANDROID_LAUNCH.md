@@ -11,29 +11,54 @@ Run the gate rather than reading this list:
 npm run preflight:android      # exit 0 = ready to build and submit
 ```
 
-## Status check — 2026-08-20 (re-verified, nothing has moved)
+## Status check — 2026-08-30 (re-verified, nothing has moved)
 
-Checked while preparing an iOS submission. **All three console blockers are
-still open, and they are still a chain**, so none can be skipped:
+Ten days on from the 08-20 check, `npm run preflight:android` **still exits 1
+with the same three blockers**, all of them console/browser work that cannot be
+done from this repo:
 
 ```
 Play enrolment ($25, browser) → service account JSON → { RevenueCat Android key, FCM }
 ```
 
-Evidence, not memory:
+Evidence, not memory — `npm run preflight:android`, 2026-08-30:
 
-- `node scripts/preflight_android.mjs` → **3 blocker(s) — not ready for Google Play.**
-- `./sparrow-play-service-account.json` — **absent from the repo**, and
-  `eas.json`'s submit profile points at exactly that path, so
-  `eas submit --platform android` cannot run.
-- `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` unset → `initPurchases()` returns early
-  → the subscription screen shows its unavailable state. **An Android build
-  that cannot take money is not submittable**, whatever else is green.
+| Result | Check |
+|--------|-------|
+| PASS | `android.package = io.sparrowcollect.app`, adaptive icon |
+| PASS | `SafeAreaView` always from `react-native-safe-area-context` |
+| PASS | every `accessibilityRole` valid on Android (the 08-01 fatal) |
+| PASS | Play listing images within Console limits |
+| PASS | every `<Modal>` handles the back button (`onRequestClose`) |
+| PASS | both `assetlinks.json` name the package with a real fingerprint |
+| **FAIL** | FCM unconfigured — no `google-services.json`, no `android.googleServicesFile` |
+| **FAIL** | `./sparrow-play-service-account.json` absent |
+| **FAIL** | `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` unset on the EAS production env |
 
-So the current split is: **iOS can be built and submitted today; Android cannot
-be submitted at all until the enrolment happens.** An Android AAB can still be
-built locally (`npm run build:android:local`) for sideload testing — that path
-does not depend on any of the three.
+⚠️ **Measure the gate's exit code without a pipe.** `npm run preflight:android \
+| tail` reports `$?` from `tail`, which is 0 even as the gate prints
+"3 blocker(s)". Run it bare, or use `${PIPESTATUS[0]}`. A gate whose failure is
+swallowed by the command that reads it is the `ci-min` disease with extra steps.
+
+### A trap that is not yet a failure: App Links after Play App Signing
+
+Both `assetlinks.json` files currently list **one** fingerprint — the upload
+key — and that is correct today. The moment Play App Signing is enabled at
+enrolment, Play re-signs the app with a *different* key, and every Play Store
+install stops matching. App Links then break **only in production**, while
+sideloaded and local builds keep working, which is the worst possible split
+because the debug path cannot reproduce it.
+
+So this is sequenced, not optional: after enrolment, copy the SHA-256 from
+**Play Console → Setup → App integrity → App signing key**, add it alongside the
+upload key in *both* `web/.well-known/assetlinks.json` and
+`public/.well-known/assetlinks.json`, and redeploy `web/` (see
+`docs/AUTH_AND_WEB_DEPLOY.md`). The preflight already WARNs on the single-entry
+state so it cannot be forgotten silently.
+
+**Current split is unchanged: iOS builds and submits today; Android cannot be
+submitted at all until enrolment happens.** A local AAB for sideload testing
+(`npm run build:android:local`) still works and depends on none of the three.
 
 ## The shape of the problem
 

@@ -55,13 +55,9 @@ import { ConfettiBurst, ConfettiBurstRef } from '@/components/ConfettiBurst';
 import { ListForSaleModal } from '@/components/ListForSaleModal';
 import { useListForSale } from '@/hooks/useListForSale';
 import { ItemProgressSection } from '@/components/ItemProgressSection';
-import { GradingSection } from '@/components/GradingSection';
-import type { GradingLookupResult, PopulationReport, GradingServiceInfo } from '@/components/GradingSection';
 import { ItemGallerySection } from '@/components/ItemGallerySection';
 import type { ItemImage } from '@/components/ItemGallerySection';
 import { PriceFeedbackSection, PriceCorrectionRow } from '@/components/PriceFeedbackSection';
-import { DossierReportSection } from '@/components/DossierReportSection';
-import type { DossierData } from '@/components/DossierReportSection';
 import { MarketplacePricesSection } from '@/components/MarketplacePricesSection';
 import type { MarketHit } from '@/components/MarketplacePricesSection';
 import { BuildProjectSection } from '@/components/BuildProjectSection';
@@ -589,8 +585,6 @@ function ItemDetailScreen() {
     marketResults, marketLoading, marketExpanded, setMarketExpanded,
     marketScannedAt, marketError, loadMarketResults,
     affiliateLinks,
-    dossierData, dossierLoading, dossierExpanded, setDossierExpanded,
-    dossierError, dossierLoaded, loadDossier,
   } = marketplace;
 
   // Price trend (extracted to useItemPriceTrend hook)
@@ -1663,7 +1657,16 @@ function ItemDetailScreen() {
                 trust. The /grading/* BE endpoints stay (server-gated to
                 Pro+) so we can flip the FE back on once a real API is
                 wired. The condition_grading limit flag and the
-                useItemGrading hook are intentionally untouched. */}
+                useItemGrading hook are intentionally untouched.
+                2026-08-30: the `GradingSection` value+type IMPORTS were dropped
+                — they were the only thing keeping a shelved component in this
+                file, and a type-only import from the same module was masking
+                the value one from `check:unrendered` (the module path contains
+                the component name). Restoring grading means re-adding the
+                import and the JSX; nothing else moved.
+                ⚠️ STILL DEAD and deliberately left for a separate decision: the
+                14-line `useItemGrading` destructuring below line 560. Not one
+                of its names is referenced anywhere in this file. */}
 
             {/* ═══════════════ PRO FEATURES (bottom) ═══════════════ */}
             {/* Paywall-gated analytics features — shown last with realistic
@@ -1692,29 +1695,21 @@ function ItemDetailScreen() {
             {!isDraft && id && (
               limits.advanced_analytics ? (
                 <>
-                  {VALUATION_ELIGIBLE_CATEGORIES.has(categorySlug) && (
-                    <DossierReportSection
-                      theme={theme}
-                      dossierData={dossierData}
-                      dossierLoading={dossierLoading}
-                      dossierExpanded={dossierExpanded}
-                      dossierError={dossierError}
-                      onToggleExpanded={() => {
-                        // `dossierLoaded`, NOT `!dossierData`. A report that
-                        // comes back legitimately EMPTY leaves dossierData null
-                        // with no error, so the old test stayed true forever:
-                        // every tap re-fetched and the section could never be
-                        // collapsed. "Have we asked" and "was the answer empty"
-                        // are different questions.
-                        if (!dossierLoaded) loadDossier();
-                        else setDossierExpanded(!dossierExpanded);
-                      }}
-                      onRetry={() => loadDossier()}
-                      itemId={id}
-                      formatPrice={(v, c) => formatPrice(v, c as CurrencyCode)}
-                      toNum={toNum}
-                    />
-                  )}
+                  {/* Valuation Report (dossier) — SHELVED 2026-08-30.
+                      Same call as Condition Grading and the Price Trend chart
+                      above, for the same reason: the report is thin, and
+                      MONETIZATION.md does not justify charging for it in this
+                      state. It was already double-gated (Pro AND
+                      VALUATION_ELIGIBLE_CATEGORIES) because prod comps exist
+                      only for those categories, so outside them it rendered
+                      empty — a Pro feature that fails on most of the catalogue.
+                      The /dossier BE route, `dossier_pdf` limit flag and the
+                      useItemMarketplace dossier state are intentionally LEFT IN
+                      PLACE so this is one JSX block to restore.
+                      ⚠️ Shelving the FE is only half of it: the paywall bullet
+                      and the MONETIZATION.md row came out in the same commit.
+                      Selling a shelved feature is what "Condition grading" had
+                      been doing on the Pro card since 2026-05-02. */}
                   <MarketplacePricesSection
                     theme={theme}
                     marketResults={marketResults}

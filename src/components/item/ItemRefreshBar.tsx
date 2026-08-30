@@ -26,9 +26,18 @@ export const ItemRefreshBar = React.memo(function ItemRefreshBar({ predictionAt,
       <View style={styles.refreshBarLeft}>
         <Ionicons name="sparkles" size={16} color={theme.accent} />
         <Text style={[styles.refreshBarLabel, { color: theme.muted }]}>
+          {/* The fallback states the STATUS, not the brand. It read
+              'Powered by Sparrow Collect' until 2026-08-30. That is the same
+              byline removed from the unpriced valuation block on 08-27 for the
+              same reason — "the one row with any emphasis on it was our own
+              brand name, on a card that had failed to answer its only
+              question" — and it came straight back on the same screen through a
+              different component, because the earlier fix edited the block and
+              not this bar. Both render when there is no prediction, so the user
+              saw the byline in exactly the state it was removed from. */}
           {predictionAt
             ? `Last analyzed ${relativeTime(predictionAt)}`
-            : 'Powered by Sparrow Collect'}
+            : 'Not analyzed yet'}
         </Text>
       </View>
       <Pressable

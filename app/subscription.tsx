@@ -280,7 +280,18 @@ function SubscriptionScreen() {
     'Unlimited watchlist',
     'Unlimited Target Hit alerts',
     'Deal discovery',
-    'Condition grading',
+    /* 'Condition grading' REMOVED 2026-08-30 — it had been on this card for
+       ~4 months while unreachable. The FE was SHELVED 2026-05-02 (see the
+       comment in app/item/[id].tsx); `GradingSection` is still IMPORTED there
+       but never rendered, so nothing a subscriber could tap existed. The rule
+       at the top of this list — "anything here has to be a limit the app
+       actually enforces" — was already written; the card just was not re-read
+       against it when the feature was shelved.
+       'Dossier PDF export' came out at the same time and for the same reason
+       (SHELVED 2026-08-30). Both BE routes and limit flags stay, so restoring
+       either is: un-shelve the JSX, put the bullet back, update
+       MONETIZATION.md. `npm run check:paywall-claims` now fails if a bullet
+       names a feature whose component is not rendered. */
     // Qualified 2026-08-19. Measured on prod: `category_items.set_name`
     // coverage is 71-100% across the six TCG categories and **0.0%** in all 50
     // others (zero rows, not sparse), and every non-TCG catalogue row is
@@ -290,7 +301,6 @@ function SubscriptionScreen() {
     // test matches on them.
     'Set completion tracker (trading-card sets)',
     'Advanced analytics',
-    'Dossier PDF export',
     'No ads',
   ];
 

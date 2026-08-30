@@ -79,8 +79,19 @@ function parseImports(src) {
   let m;
   while ((m = re.exec(src)) !== null) {
     const [raw, typeOnly, clause, source] = m;
-    if (typeOnly) continue;
+    // NOTE 2026-08-30: this used to `continue` on a type-only import, which
+    // dropped it from `out` entirely — so its raw text was never stripped from
+    // the body below. That was a HOLE, not a shortcut: a module PATH contains
+    // the component's name, so
+    //     import type { GradingLookupResult } from '@/components/GradingSection';
+    // left the literal string `GradingSection` sitting in the body and made the
+    // VALUE import one line above it look used. `app/item/[id].tsx` imported
+    // GradingSection and never rendered it for ~4 months while this gate said
+    // PASS, and the paywall sold "Condition grading" the whole time.
+    // Type-only imports are still not CHECKED — a type is not a tree — but they
+    // must be REMOVED from the body, which is why they are collected now.
     const names = [];
+    if (typeOnly) { out.push({ names, source, raw, typeOnly: true }); continue; }
     // `import Default, { A, B as C, type D } from` — take both halves.
     const braced = clause.match(/\{([\s\S]*)\}/);
     const beforeBrace = clause.split('{')[0].replace(/,\s*$/, '').trim();
@@ -93,7 +104,7 @@ function parseImports(src) {
         names.push(spec.includes(' as ') ? spec.split(/\s+as\s+/)[1].trim() : spec);
       }
     }
-    out.push({ names, source, raw });
+    out.push({ names, source, raw, typeOnly: false });
   }
   return out;
 }
@@ -109,6 +120,7 @@ for (const rootDir of ROOTS) {
     for (const imp of imports) body = body.replace(imp.raw, '');
 
     for (const imp of imports) {
+      if (imp.typeOnly) continue;   // collected only so its raw is stripped above
       if (!imp.source.includes('components/')) continue;
       for (const name of imp.names) {
         if (!/^[A-Z][A-Za-z0-9_]*$/.test(name)) continue;

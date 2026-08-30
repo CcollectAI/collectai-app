@@ -70,13 +70,22 @@ change looking plausible; it is `test_free_user_gets_0`.
 | **Price alerts created** | **1 / week** | **Unlimited** |
 | Purchase mandates | 0 | 10 |
 | Deal discovery | No | Yes |
-| Dossier PDF export | No | Yes |
-| Condition Grading (item card) | No | Yes |
+| ~~Dossier PDF export~~ **SHELVED 2026-08-30** | — | — |
+| ~~Condition Grading (item card)~~ **SHELVED 2026-05-02** | — | — |
 | Set Completion — **trading-card sets only**, see note | No | Yes |
-| Advanced analytics (price trend, history, market prices) | No | Yes |
+| Advanced analytics — **market prices only** (price trend shelved, history removed) | No | Yes |
 | Basic valuation | Yes | Yes |
 | Community events | Yes | Yes |
 | Ads | Yes | No |
+
+> **Shelved rows are struck through on purpose rather than deleted.** Two of
+> them — Condition Grading and the Dossier PDF export — were sold on the Pro
+> card in `app/subscription.tsx` while their FE was shelved, Condition Grading
+> for roughly four months. A row that quietly disappears from this table is how
+> that happens again: the next person cannot tell "we never offered it" from
+> "we stopped offering it", and the paywall bullet is the thing nobody re-reads.
+> `npm run check:paywall-claims` now enforces the direction that actually
+> matters — every bullet on the Pro card must name a feature the app renders.
 
 > **The paywall says "Target Hit" as of 2026-08-26.** The 2026-08-06 rename had
 > reached this doc, the code comments and the push itself
