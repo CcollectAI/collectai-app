@@ -72,6 +72,7 @@ import { MarketCompPrompt, shouldOfferComp } from '@/components/item/MarketCompP
 import { ItemQuickActionsRow } from '@/components/item/ItemQuickActionsRow';
 import { ItemShopSection } from '@/components/item/ItemShopSection';
 import { ItemRefreshBar } from '@/components/item/ItemRefreshBar';
+import { describeComps } from '@/lib/compProvenance';
 import { ItemDraftActions } from '@/components/item/ItemDraftActions';
 import { ItemForSaleBar } from '@/components/item/ItemForSaleBar';
 import { ItemEditBar } from '@/components/item/ItemEditBar';
@@ -840,7 +841,13 @@ function ItemDetailScreen() {
       `Category: ${editableCategory}`,
     ];
     if (evidenceData?.evidence_summary?.total_comps) {
-      keyFactors.push(`Based on ${evidenceData.evidence_summary.total_comps} comparable sales`);
+      // "comparable sales" was the same false claim as the basis line above.
+      keyFactors.push(
+        describeComps(
+          evidenceData.evidence_summary.sources,
+          evidenceData.evidence_summary.total_comps,
+        ) ?? '',
+      );
     } else {
       keyFactors.push('Based on recent market activity');
     }
@@ -1337,21 +1344,19 @@ function ItemDetailScreen() {
               {!isDraft && !isEditing && !isUnpriced(editableValue)
                 && evidenceData?.evidence_summary?.total_comps != null ? (
                 <Text style={[styles.valuationBasis, { color: theme.muted }]}>
-                  {(() => {
-                    const n = evidenceData.evidence_summary!.total_comps;
-                    if (n === 0) {
-                      // Not "0 sales": a figure with no comps behind it did not
-                      // come from the market at all, and saying "based on 0"
-                      // invites the reader to average nothing.
-                      return 'No recorded sales behind this yet';
-                    }
-                    const noun = n === 1 ? 'recorded sale' : 'recorded sales';
-                    // Below the reliability floor, SAY so. The confidence score
-                    // is already capped here; this is the same fact in words.
-                    return n < 3
-                      ? `Based on ${n} ${noun} — treat as an early estimate`
-                      : `Based on ${n} ${noun}`;
-                  })()}
+                  {/* Was "Based on N recorded sales". That was FALSE and it
+                      was false on the one line whose job is to be trustworthy:
+                      99.98% of the rows behind a valuation carry no sale
+                      timestamp at all -- they are daily price-index
+                      observations from Scryfall, TCGplayer and Cardmarket.
+                      `describeComps` also names the providers and the MARKET,
+                      which is the "which price did you measure" question that
+                      docs/COLLECTOR_DEMAND.md §1 says no competitor answers.
+                      It drops any clause it cannot state truthfully. */}
+                  {describeComps(
+                    evidenceData?.evidence_summary?.sources,
+                    evidenceData.evidence_summary!.total_comps,
+                  )}
                 </Text>
               ) : null}
 

@@ -19,6 +19,7 @@
  * so every buy tap is monetized.
  */
 import React, { useEffect, useState, useCallback } from 'react';
+import { compNoun } from '@/lib/compProvenance';
 import { View, Text, ScrollView, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -275,13 +276,20 @@ function CatalogItemMuseumScreen() {
             <Text style={[styles.priceMuted, { color: colors.muted }]}>No recent sales data</Text>
           )}
           <Text style={[styles.priceSub, { color: colors.muted }]}>
+            {/* "comps" read as completed sales and is not: 99.98% of the
+                rows behind these numbers are daily price-index observations
+                with no sale timestamp (docs/COLLECTOR_DEMAND.md §1). The noun
+                comes from `compNoun` so the item card and this screen cannot
+                drift into describing the same rows two ways. This endpoint
+                returns only a count -- no `sources` -- so it makes no provider
+                or market claim, which is the honest floor. */}
             {estPrice == null
-              ? 'Estimated from the latest marketplace comp'
+              ? 'Estimated from the latest market observation'
               : (priceDetail && priceDetail.comps_count >= 3)
-                ? `Median of ${priceDetail.comps_count} recent comps`
+                ? `Median of ${priceDetail.comps_count} recent ${compNoun(null, priceDetail.comps_count)}`
                 : (priceDetail && priceDetail.comps_count > 0)
-                  ? `Based on ${priceDetail.comps_count} recent comp${priceDetail.comps_count === 1 ? '' : 's'}`
-                  : 'Estimated from the latest marketplace comp'}
+                  ? `Based on ${priceDetail.comps_count} recent ${compNoun(null, priceDetail.comps_count)}`
+                  : 'Estimated from the latest market observation'}
           </Text>
           {!limits?.advanced_analytics && (
             <AnimatedPressable
