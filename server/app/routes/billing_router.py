@@ -16,6 +16,7 @@ import hmac
 import json
 import logging
 import time
+import uuid
 from collections import OrderedDict
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -1047,6 +1048,47 @@ async def _handle_ticket_checkout_completed(pool: Any, session: dict):
 # version. Verify against a real sample payload in the RevenueCat dashboard
 # (Integrations -> Webhooks -> Send test event) before trusting the amounts.
 
+def _rc_identified_user_id(app_user_id: str | None) -> str | None:
+    """Return `app_user_id` only when it is something `::uuid` will accept.
+
+    `subscription_events.user_id` and `subscriptions.user_id` are UUID columns
+    and the handler binds with `$n::uuid`, so a non-UUID value does not degrade
+    — it raises `invalid input syntax for type uuid` and takes the whole insert
+    with it.
+
+    Live on 2026-08-30: the moment RevenueCat's Events filter was corrected and
+    it started delivering, every POST returned 500 with
+    `revenuecat: ledger insert failed`, because a TEST event's app_user_id is
+    literally `test_app_user_id`. The handler already dropped `$RCAnonymousID:`
+    ids for the same reason; it just did not generalise.
+
+    Dropping to NULL is not data loss: `app_user_id` is a TEXT column that
+    stores whatever RevenueCat sent, so the ledger still records the event and
+    the payout it represents. Only the FK-shaped join is skipped, which is
+    correct — we genuinely cannot identify that user.
+
+    A real member's id IS a uuid (AuthProvider calls Purchases.logIn with the
+    Supabase uid), so this guard changes nothing for real traffic. It stops the
+    500s that make RevenueCat retry and eventually disable the webhook.
+    """
+    if not app_user_id:
+        return None
+    candidate = str(app_user_id)
+    # Kept for readability, though the UUID check below already subsumes it —
+    # `$RCAnonymousID:...` is not parseable as a UUID either. Mutation-testing
+    # proved that: deleting this branch leaves every test green. It stays as a
+    # named statement of a real RevenueCat concept, NOT as a load-bearing
+    # guard, and removing it would not change behaviour.
+    if candidate.startswith("$RCAnonymousID"):
+        return None
+    try:
+        uuid.UUID(candidate)
+    except (ValueError, AttributeError, TypeError):
+        return None
+    return candidate
+
+
+
 @router.post("/revenuecat-webhook", summary="Handle RevenueCat webhook")
 async def revenuecat_webhook(
     request: Request,
@@ -1091,7 +1133,7 @@ async def revenuecat_webhook(
 
     # app_user_id is our auth.users.id (purchases.ts calls Purchases.logIn).
     # Anonymous RevenueCat ids ($RCAnonymousID:...) cannot be attributed.
-    user_id = app_user_id if app_user_id and not str(app_user_id).startswith("$RCAnonymousID") else None
+    user_id = _rc_identified_user_id(app_user_id)
 
     # Fall back to the profile's stored code when the subscriber attribute is
     # missing — e.g. a user who upgraded from a build predating setAttributes.
