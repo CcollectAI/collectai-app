@@ -789,6 +789,49 @@ compares two numbers must state n, and must behave monotonically in it — more
 evidence may never be more permissive than less. That property is asserted
 directly in `server/tests/test_model_promotion_gate.py`.
 
+### The billing webhook did not say WHY either (2026-08-30)
+
+This doc has set "a failing worker must say WHY" since the tcgcsv finding. The
+RevenueCat handler did not follow it, and it cost a day.
+
+It logged `revenuecat: ledger insert failed for 38A420F6-…` and nothing else on
+that line. The traceback *was* in `bake.log` — but traceback lines do not
+contain the word `revenuecat`, so every grep scoped to the integration missed
+it, and two hypotheses (NOT NULL columns, revenue parsing) were investigated
+while the real cause sat unread:
+
+```
+ForeignKeyViolationError: violates foreign key constraint
+"subscription_events_user_id_fkey"
+DETAIL: Key (user_id)=(2b7db244-…) is not present in table "users".
+```
+
+**Two lessons, and the second is about the searcher, not the code:**
+
+1. `_rc_exc_detail()` now renders one grep-able line with the exception type,
+   its message, and — for asyncpg — `constraint_name` and `detail`. The
+   *detail* is what identified the bug; a type name alone would not have.
+2. **When a log "has no traceback", widen the filter before forming a
+   hypothesis.** The answer was there the whole time behind a filter of my own
+   making.
+
+⚠️ **The fix nearly shipped the failure mode it was fixing.** The
+subscriptions-upsert handler is `except Exception:` with no binding, and
+`_rc_exc_detail(exc)` was written into it reusing the ledger block's name.
+Python deletes an except-clause name when the block ends, so that is a
+`NameError` raised *while reporting a failure* — converting a diagnosable error
+into a silent one. `ast.parse` accepts it, because the name is syntactically
+valid; only reading the actual `except` clause caught it. Proven, not reasoned:
+
+```python
+try: raise ValueError('first')
+except ValueError as exc: pass
+print(exc)   # NameError: name 'exc' is not defined
+```
+
+**A logger must never be able to throw.** Every attribute read in
+`_rc_exc_detail` is defensive for the same reason.
+
 ## Related audits
 
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes
