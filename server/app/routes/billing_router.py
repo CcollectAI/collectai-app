@@ -1088,6 +1088,50 @@ def _rc_identified_user_id(app_user_id: str | None) -> str | None:
     return candidate
 
 
+async def _rc_resolve_user_id(app_user_id: str | None, pool) -> str | None:
+    """The id, only if it is a UUID *and* a real row in `auth.users`.
+
+    `_rc_identified_user_id` proves the FORMAT. This proves EXISTENCE, and the
+    two are different failures a day apart:
+
+      2026-08-30 13:35  invalid input syntax for type uuid: "test_app_user_id"
+      2026-08-30 14:26  violates foreign key constraint
+                        subscription_events_user_id_fkey
+                        Key (user_id)=(2b7db244-…) is not present in "users"
+
+    RevenueCat's test events invent a random UUID. It passes the format check
+    and then fails the FK, and both `subscription_events.user_id` and
+    `subscriptions.user_id` reference `auth.users(id)`.
+
+    NULL is the designed state for this: the events FK is ON DELETE SET NULL,
+    so the schema already says an event may outlive or precede its user. The
+    ledger still records the event and its payout via the `app_user_id` TEXT
+    column; only the identified-user join is skipped.
+
+    Returns None without querying when the format is already wrong, and None
+    when there is no pool — absent a database we cannot prove the user exists,
+    and claiming it is what raises 500s that make RevenueCat retry and
+    eventually disable the webhook.
+    """
+    candidate = _rc_identified_user_id(app_user_id)
+    if not candidate or pool is None:
+        return None
+    try:
+        exists = await pool.fetchval(
+            "SELECT 1 FROM auth.users WHERE id = $1::uuid", candidate
+        )
+    except Exception as exc:
+        _log.warning("revenuecat: could not verify user %s: %s", candidate, exc)
+        return None
+    if not exists:
+        _log.info(
+            "revenuecat: app_user_id %s is a well-formed uuid but not a known "
+            "user — recording the event unidentified", candidate,
+        )
+        return None
+    return candidate
+
+
 
 @router.post("/revenuecat-webhook", summary="Handle RevenueCat webhook")
 async def revenuecat_webhook(
@@ -1133,7 +1177,7 @@ async def revenuecat_webhook(
 
     # app_user_id is our auth.users.id (purchases.ts calls Purchases.logIn).
     # Anonymous RevenueCat ids ($RCAnonymousID:...) cannot be attributed.
-    user_id = _rc_identified_user_id(app_user_id)
+    user_id = await _rc_resolve_user_id(app_user_id, pool)
 
     # Fall back to the profile's stored code when the subscriber attribute is
     # missing — e.g. a user who upgraded from a build predating setAttributes.
