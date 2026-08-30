@@ -424,14 +424,52 @@ It is honest to record that the workflow did not go green.
 
 I proved the delete worked by running `DELETE FROM auth.users` in a rolled-back
 transaction — as a **superuser**. GoTrue runs as `supabase_auth_admin`. The
-Postgres log shows `permission denied for table marketplace_listings` alongside
-the FK errors, which points at a privilege problem on a cascade target rather
-than a constraint. `SET LOCAL ROLE supabase_auth_admin` is itself denied from
-the app DSN, so it could not be reproduced from here.
+Postgres log shows `permission denied for table marketplace_listings`.
+`SET LOCAL ROLE supabase_auth_admin` is itself denied from the app DSN, so it
+could not be reproduced from the server.
 
 ⚠️ **Verifying as the wrong principal is not verifying.** "It works when I run
 it" and "it works when the caller runs it" are different claims, and a superuser
 psql session can prove neither one about a service role.
+
+#### What the FK theory got wrong (corrected 2026-08-30)
+
+The first read was "another NO ACTION FK". It is not. Measured:
+
+| fact | value |
+|------|-------|
+| `marketplace_listings_user_id_fkey` | **already `ON DELETE CASCADE`** |
+| owner of `public.marketplace_listings` | `postgres` |
+| RLS on that table | **enabled** |
+| `supabase_auth_admin` grants on it | **NONE** |
+| non-internal triggers on `auth.users` | one, `AFTER INSERT` — not the delete path |
+
+So the cascade is wired correctly and the delete still fails, which makes this a
+**privilege** question, not a constraint question. Note the ambiguity that
+remains: PostgreSQL runs RI cascade actions with the referencing table's owner's
+privileges, which argues the cascade should succeed regardless of
+`supabase_auth_admin`'s grants — yet the log names exactly that table. Those two
+facts do not currently reconcile, and **that gap is the reason this is not
+being patched by guessing a `GRANT`.**
+
+#### The one discriminating test — run it in the Supabase SQL Editor
+
+`scripts/diagnose_gotrue_delete.sql` does the thing no session on the EC2 box
+can: `SET LOCAL ROLE supabase_auth_admin`, issue GoTrue's own `DELETE`, and
+`ROLLBACK`. The SQL Editor connects as `postgres` and may assume the role; the
+app DSN may not. It is safe — nothing outside a rolled-back transaction.
+
+Two outcomes, two different fixes:
+
+- **`DELETE 1`** → privileges are fine and the 500 is coming from somewhere else
+  (a GoTrue-side error, or a different table). Do **not** grant anything; go
+  back to the Postgres log with the `error_id`.
+- **`permission denied for table <X>`** → `<X>` is the real blocker, and it may
+  not be `marketplace_listings`. Grant on *that* table, re-run, repeat until it
+  returns `DELETE 1`. Never grant on the whole schema to make an error go away.
+
+Until that output exists, any `GRANT` here is a guess dressed as a fix.
+
 
 **The cost of a permanently-red gate** is the theme here: it had been failing on
 every push for long enough that nobody read it, and it was sitting on top of a
