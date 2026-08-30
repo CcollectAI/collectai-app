@@ -192,12 +192,58 @@ change looking plausible; it is `test_free_user_gets_0`.
   **This is a LAUNCH BLOCKER, not one account.** Every customer who pays at
   launch gets the same experience.
 
-  **Fix is configuration, not code** — RevenueCat → project → Integrations →
-  Webhooks:
+  ⛔ **"Fix is configuration, not code" — WRONG, corrected 2026-08-30. It was
+  BOTH, and the config bug was hiding the code bug.**
+
+  **Cause 1 (config).** The webhook's **Events filter → App** was set to
+  `Test Store (Test Store)`, not the real app. Every event from
+  `io.sparrowcollect.app` was filtered out before being sent, which is why the
+  server saw nothing — not the secret, not the URL, not the environment. The
+  panel said so plainly (`No Events to show`) and it took a screenshot to find:
+  **no server-side symptom could have distinguished this from a dozen other
+  causes.** When a sender reports nothing sent, read the SENDER's own console.
+
+  **Cause 2 (code), revealed the instant cause 1 was fixed.** RevenueCat began
+  delivering and every POST returned **500**:
+
+  ```
+  revenuecat: ledger insert failed for 38A420F6-…
+  POST /billing/revenuecat-webhook  status 500   (x3)
+  ```
+
+  Auth passed and the handler ran; the ledger INSERT threw. `user_id` binds to
+  `$3::uuid` and a RevenueCat **test** event's `app_user_id` is literally
+  `test_app_user_id`:
+
+  ```
+  select 'test_app_user_id'::uuid;
+  ERROR: invalid input syntax for type uuid: "test_app_user_id"
+  ```
+
+  Ruled out first: every INSERT column exists in the live table (not schema
+  drift), and `occurred_at` has a `now()` fallback so neither NOT NULL column
+  was at fault. Fixed by `_rc_identified_user_id()` (`3134e8a`) — a non-UUID id
+  stores `user_id = NULL` and keeps the value in the `app_user_id` TEXT column,
+  so the ledger still records the event and its payout; only the
+  identified-user join is skipped, which is correct.
+
+  **This never affected real purchases** — a member's id IS a uuid, because
+  `AuthProvider` calls `Purchases.logIn(session.user.id)`. It affected test
+  events, and the 500s would have made RevenueCat retry and eventually throttle
+  or disable the webhook.
+
+  ⚠️ **The handler logged `ledger insert failed` without the reason.** The
+  `_log.exception` traceback never reached `bake.log`, so the cause had to be
+  reconstructed from the schema and a cast probe. Same defect
+  `docs/WATCHDOG.md` fixes elsewhere: **a failing writer must say WHY.**
+
+  Config reference — RevenueCat → project → Integrations → Webhooks:
 
   - URL: `https://api.sparrowcollect.com/billing/revenuecat-webhook`
   - Authorization header: the value of `REVENUECAT_WEBHOOK_AUTH` on the box
     (`ssh collectai 'grep ^REVENUECAT_WEBHOOK_AUTH= /opt/collectors/.env'`)
+  - **Events filter → App must be the REAL app**, not `Test Store`. Event type:
+    All events. Environment: Both Production and Sandbox.
 
   **Verify with a check that DISCRIMINATES.** `grep -c revenuecat-webhook` is
   not one — it counts your own probes and any browser that opens the URL. On
