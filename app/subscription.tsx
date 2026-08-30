@@ -282,8 +282,10 @@ function SubscriptionScreen() {
     'Deal discovery',
     /* 'Condition grading' REMOVED 2026-08-30 — it had been on this card for
        ~4 months while unreachable. The FE was SHELVED 2026-05-02 (see the
-       comment in app/item/[id].tsx); `GradingSection` is still IMPORTED there
-       but never rendered, so nothing a subscriber could tap existed. The rule
+       comment in app/item/[id].tsx). `GradingSection` was imported there and
+       never rendered, so nothing a subscriber could tap existed; the dead
+       import came out in this same commit, which leaves the component
+       ORPHANED — see the grading-infrastructure audit in docs/MONETIZATION.md. The rule
        at the top of this list — "anything here has to be a limit the app
        actually enforces" — was already written; the card just was not re-read
        against it when the feature was shelved.
@@ -437,12 +439,24 @@ function SubscriptionScreen() {
 
         {!isBetaUnlocked && (
           <View style={styles.actionsRow}>
+            {/* Restore and Manage are REQUIRED, not decorative: App Store
+                Review 3.1.1 rejects an IAP app with no restore path, and
+                Manage is the cancel route docs/APP_REVIEW_NOTES.md:136 points
+                Apple at. They stay.
+                Restyled 2026-08-30 to the app's own control idiom — icon +
+                soft tint + accent-weight label — which every other secondary
+                control already uses (ItemRefreshBar, the dossier export, the
+                filter pills). They kept the screen's brand tokens (`brand.*`
+                is used 75x app-wide, so it is not off-palette) but wore a hard
+                1.5px ring and no icon, which is why they read as bolted on.
+                Still the SECONDARY tier per docs/ui-playbook.md: the filled
+                CTA on this screen belongs to the plan cards, one per screen. */}
             <AnimatedPressable
               style={[
                 styles.secondaryBtn,
                 {
-                  borderColor: colors.brand.dark,
-                  backgroundColor: colors.brand.base + '18',
+                  borderColor: colors.brand.dark + '55',
+                  backgroundColor: colors.brand.base + '14',
                 },
               ]}
               onPress={handleRestore}
@@ -452,9 +466,21 @@ function SubscriptionScreen() {
               {restoring ? (
                 <ActivityIndicator size="small" color={colors.brand.dark} />
               ) : (
-                <Text style={[styles.secondaryBtnText, { color: colors.brand.dark }]}>
-                  Restore Purchases
-                </Text>
+                <>
+                  <Ionicons name="refresh-outline" size={16} color={colors.brand.dark} />
+                  {/* Label stays the full "Restore Purchases". It was briefly
+                      shortened to "Restore" for the two-up row and that broke
+                      two things at once: the error state above tells the user
+                      to "Use Restore Purchases below", and App Store reviewers
+                      look for the explicit wording. numberOfLines guards the
+                      narrow-screen case instead of the copy doing it. */}
+                  <Text
+                    style={[styles.secondaryBtnText, { color: colors.brand.dark }]}
+                    numberOfLines={1}
+                  >
+                    Restore Purchases
+                  </Text>
+                </>
               )}
             </AnimatedPressable>
 
@@ -463,15 +489,19 @@ function SubscriptionScreen() {
                 style={[
                   styles.secondaryBtn,
                   {
-                    borderColor: colors.brand.dark,
-                    backgroundColor: colors.brand.base + '18',
+                    borderColor: colors.brand.dark + '55',
+                    backgroundColor: colors.brand.base + '14',
                   },
                 ]}
                 onPress={handleManage}
                 accessibilityRole="button"
                 accessibilityLabel={t('subscription.manage_a11y')}
               >
-                <Text style={[styles.secondaryBtnText, { color: colors.brand.dark }]}>
+                <Ionicons name="settings-outline" size={16} color={colors.brand.dark} />
+                <Text
+                  style={[styles.secondaryBtnText, { color: colors.brand.dark }]}
+                  numberOfLines={1}
+                >
                   {t('subscription.manage')}
                 </Text>
               </AnimatedPressable>
@@ -625,16 +655,22 @@ const styles = StyleSheet.create({
   },
   secondaryBtn: {
     flex: 1,
-    borderWidth: 1.5,
-    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 7,
+    borderWidth: 1,
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   secondaryBtnText: {
-    fontSize: 15,
+    // 15 -> 14: two buttons now sit side by side WITH icons, and
+    // "Restore Purchases" at 15/700 overflows a 320pt screen. Shrinking the
+    // type is the fix that keeps the words; shrinking the words was not.
+    fontSize: 14,
     fontWeight: '700',
     letterSpacing: 0.2,
+    flexShrink: 1,
   },
   legalText: {
     fontSize: 11,

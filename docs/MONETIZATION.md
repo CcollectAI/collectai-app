@@ -87,6 +87,47 @@ change looking plausible; it is `test_free_user_gets_0`.
 > `npm run check:paywall-claims` now enforces the direction that actually
 > matters — every bullet on the Pro card must name a feature the app renders.
 
+### Grading infrastructure — what is actually alive (audited 2026-08-30)
+
+Traced end to end after the paywall fix, because "shelved" turned out to mean
+four different things in four places. **Two independent grading systems share a
+name**, and only one of them is dead:
+
+**ALIVE — vision condition grading (free, in the scan flow)**
+
+| piece | state |
+|---|---|
+| `server/app/agents/intake/condition_grading.py` | called by `intake/orchestrator.py:250` on every scan with defects and no grade |
+| `server/app/ml/condition_grader.py` | live, feeds the intake result |
+| `app/condition-guide.tsx` | reachable from Settings → routed in `_layout.tsx:510` |
+| `src/components/category/CategoryTipsSection.tsx` | rendered |
+
+**DEAD — the Pro "Condition Grading" feature (PSA/CGC lookup)**
+
+| piece | state |
+|---|---|
+| `src/components/GradingSection.tsx` | **ORPHANED** — zero importers as of this commit |
+| `src/components/category/CategoryGradingGuide.tsx` | **exported from the barrel, rendered nowhere** |
+| `src/hooks/useItemGrading.ts` | called in `app/item/[id].tsx:558`, but **not one** of its 14 destructured values is referenced |
+| `collectorsApi.gradingLookup/gradingPopulation/gradingServices` | only consumer is the dead hook |
+| `server/app/features/grading_router.py` | **mounted and live** (`/lookup`, `/population`, `/services`, `main.py:293` + `_v1`) with **no FE caller** |
+| `condition_grading` limit flag | still `true` for pro on FE and BE |
+
+So the BE is serving three Pro-gated endpoints nothing calls, and a component
+tree exists for a feature no screen mounts. That is
+`learning_complete_feature_reachable_from_nowhere` at feature scale.
+
+⚠️ **`check:unrendered` cannot see `CategoryGradingGuide`.** That gate asks
+"is an IMPORTED component in the tree?" — this one is never imported at all,
+only re-exported from `src/components/category/index.ts`. A barrel export is a
+blind spot on a different axis, and it is not closed.
+
+**The decision this needs (not made here):** either wire the Pro grading feature
+to a real PSA/CGC API and un-shelve it, or delete the four dead FE pieces and
+retire `condition_grading` from the limits on both sides. Leaving it half-alive
+is what let the paywall sell it for four months. Nothing above changes the FREE
+vision grading, which is a different system that happens to share the word.
+
 > **The paywall says "Target Hit" as of 2026-08-26.** The 2026-08-06 rename had
 > reached this doc, the code comments and the push itself
 > (`_check_watchlist_snipes` sends `title="Target hit"`) — but **no other
