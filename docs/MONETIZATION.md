@@ -227,6 +227,41 @@ change looking plausible; it is `test_free_user_gets_0`.
   so the ledger still records the event and its payout; only the
   identified-user join is skipped, which is correct.
 
+  **Cause 3 (code), revealed the instant cause 2 was fixed.** The next delivery
+  (14:26) still 500'd, one layer deeper:
+
+  ```
+  ForeignKeyViolationError: violates foreign key constraint
+  "subscription_events_user_id_fkey"
+  DETAIL: Key (user_id)=(2b7db244-13cb-478d-b612-ddf4acb60841)
+          is not present in table "users".
+  ```
+
+  RevenueCat's test events invent a **random UUID**. It passes the format check
+  and then fails the FK — both `subscription_events.user_id` and
+  `subscriptions.user_id` reference `auth.users(id)`.
+
+  | 13:35 | `invalid input syntax for type uuid` | **format** |
+  | 14:26 | FK violation on a valid uuid | **existence** |
+
+  **Format-valid is not existence-valid**, and each fix exposed the next. Fixed
+  by `_rc_resolve_user_id()` (`099ef92`), which proves existence against
+  `auth.users`. NULL is the DESIGNED state here, not a fallback: the events FK
+  is `ON DELETE SET NULL`, so the schema already says an event may outlive or
+  precede its user.
+
+  **Verified against prod before claiming it fixed** — the deployed resolver,
+  run against the live database: `test_app_user_id` → None, `2b7db244-…` →
+  None, `$RCAnonymousID:…` → None, a real `auth.users` row → kept; and the
+  exact ledger INSERT that raised the FK violation now SUCCEEDS (in a
+  rolled-back transaction, so prod was unchanged).
+
+  ⚠️ **The traceback was in `bake.log` the whole time.** Searches filtered for
+  lines containing `revenuecat`, and traceback lines do not contain it — so the
+  filter hid the answer and two hypotheses (NOT NULL columns, revenue parsing)
+  were formed without it. **When a log "has no traceback", widen the filter
+  before forming a hypothesis.**
+
   **This never affected real purchases** — a member's id IS a uuid, because
   `AuthProvider` calls `Purchases.logIn(session.user.id)`. It affected test
   events, and the 500s would have made RevenueCat retry and eventually throttle
