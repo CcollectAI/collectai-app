@@ -69,6 +69,18 @@ export const CATEGORIES: Category[] = [
   { slug: 'plush_collectibles', name: 'Plush Collectibles', tint: '#F472B6' },
   { slug: 'pens', name: 'Fountain Pens', tint: '#065F46' },
   { slug: 'watches', name: 'Watches', tint: '#92400E' },
+  // Added 2026-08-30. `jewellery` was defined in src/data/categories.ts (union
+  // type + accentColor/iconName) and in src/ingest/taxonomy_mapper.py, and
+  // marketplaceApi routes it to authenticated sale above EUR 1000 — but it was
+  // missing from THIS list, and this is the one the ADD and SELL flows read
+  // (add-manual, quickscan, sell/pick, sell/new, search, items, wishlist).
+  // So the category could be browsed from categories/index and nothing could
+  // ever be put in it: 435 catalogue rows and 5,425 eBay price rows reachable
+  // from nowhere. Two category lists with no parity gate is
+  // learning_duplicated_value_chain_drifts_silently; `npm run check:category-parity`
+  // now fails on any slug present in one and not the other.
+  // tint mirrors data/categories.ts accentColor so the two cannot disagree.
+  { slug: 'jewellery', name: 'Jewellery', tint: '#0ABAB5' },
   { slug: 'sneakers', name: 'Sneakers', tint: '#1D4ED8' },
   { slug: 'retro_handhelds', name: 'Retro Handhelds', tint: '#7E57C2' },
 

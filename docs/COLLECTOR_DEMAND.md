@@ -274,6 +274,60 @@ and disc grade **separately** — precisely the Discogs complaint in §2), figur
 6. **LEGO purchase price / condition / sealed-vs-used** is the widest open gap in
    a non-TCG live category. §7.
 
+## Category & price coverage — measured 2026-08-30
+
+Two corrections to an earlier read of this, both from measuring instead of
+sampling.
+
+**1. `jewellery` exists, and it was unfillable.** A first pass grepped only
+`src/constants/categories.ts` and reported no jewellery category. The app
+defines categories **twice**: that file (`{slug,name,tint}`, read by the ADD and
+SELL flows — add-manual, quickscan, sell/pick, sell/new, search, items,
+wishlist) and `src/data/categories.ts` (union type + `{accentColor,iconName}`,
+read by categories/index, onboarding, guides, leaderboard). `jewellery` was in
+the second and **not the first** — so it could be browsed and nothing could ever
+be put in it, while holding 435 catalogue rows, 5,425 eBay price rows, a
+`taxonomy_mapper` entry and a `marketplaceApi` rule routing it to authenticated
+sale above €1000. Fixed, plus `npm run check:category-parity`, which fails on
+any slug present in one list and not the other (mutation-proven both ways).
+
+**2. Price coverage is far wider than "4 categories" — but almost none of it is
+sold data.** The first table counted only rows that pass `is_listing IS NOT
+TRUE`. Counting everything:
+
+| category | sold (feeds valuation) | asking-only | items |
+|---|---|---|---|
+| mtg | 1,608,058 | 583 | 32,621 |
+| pokemon | 831,303 | 646 | 19,788 |
+| yugioh | 838,970 | 3 | 14,058 |
+| lorcana | 32,520 | 60,784 | 11,435 |
+| **digimon** | **0** | 40,557 | 5,035 |
+| **one_piece_tcg** | **1** | 63,368 | 4,701 |
+| watches | 0 | 9,437 | 896 |
+| action_figures | 0 | 18,477 | 865 |
+| pens | 0 | 9,512 | 695 |
+| whiskey | 0 | 3,624 | 463 |
+| **jewellery** | **0** | 5,425 | 390 |
+| warhammer | 0 | 10,945 | 345 |
+| …~40 more | 0 | thousands each | — |
+
+So the data is **there**. What is missing is *sold* data: the valuation filter
+excludes 100% of it outside the big four. `digimon` and `one_piece_tcg` sit in
+`VALUATION_ELIGIBLE_CATEGORIES` with **0 and 1** sold rows respectively — the
+Valuation Report is gated to six categories, two of which cannot price anything.
+
+**This reframes the launch question.** It is not "seed more categories" —
+seeding adds unpriceable items. Every one of these categories already has
+thousands of real eBay observations that we refuse to use because they are
+asking prices. Competitors *do* use asking prices and are criticised for it
+(§1) — but they show a number, and we show "Not priced yet".
+
+The middle path now exists in code: `src/lib/compProvenance.ts` can say
+*"Based on 5,425 asking prices · eBay · not completed sales"*. That is honest,
+it is more than a competitor discloses, and it turns ~40 dead categories into
+live ones. **It is a product decision, not a build problem** — the labelling
+machinery shipped on 2026-08-30.
+
 ## Sources
 
 - [Is Collectr Accurate? Collectr vs Pokedata on the Same 25 Cards — TCGinvest](https://tcginvest.io/blog/pokemon-collection-value-different-apps)
