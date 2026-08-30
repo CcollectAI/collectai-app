@@ -190,7 +190,7 @@ Every row below was checked in code or on prod, not inferred from the research.
 
 | # | Complaint | What Sparrow actually does | Verdict |
 |---|---|---|---|
-| 1 | Apps show asking prices as value | **`valuation_worker.py:315` filters `AND (is_listing IS NOT TRUE)` — "exclude asking-price rows".** Prod: **91.4% of 3.62M comps are completed sales**, 8.6% listings, 0 NULL | **Ahead — and silent about it** |
+| 1 | Apps show asking prices as value | `valuation_worker.py:315` filters `AND (is_listing IS NOT TRUE)`, which excludes 310,759 rows flagged as listings. **But the corpus it admits is NOT completed sales** — see the correction below | **⛔ CORRECTED — we have the same problem** |
 | 1b | Nobody discloses method or sample size | `catalog-item/[key].tsx:281` says *"Median of N recent comps"*. The **item card does not** — `ValueSourceChip` collapses `catalog_daily`/`catalog_model`/`quick_scan` into one label, "Market estimate" | **Right disclosure, wrong screen** |
 | 2 | Thin markets break a single number | q10/q50/q90 in `PriceBand`, `_MIN_COMPS_FOR_MODEL = 3`, `_LOW_COMP_CONF_CAP` below it. `CompSource` carries `source`, `count`, `avgPrice`, `dateRange` | Design ✓, **data ✗** |
 | 3 | EU/US markets differ ~31% | 7 currencies convert, but nothing states **which market** a comp came from | **Gap** |
@@ -202,12 +202,50 @@ Every row below was checked in code or on prod, not inferred from the research.
 
 ### The two that change what we build
 
-**§1 is the headline and we are hiding it.** The single loudest complaint in the
-category is that apps quote asking prices. **Ours structurally cannot** — the
-filter is in the query and the data is 91% sold. Competitors sit 7–25% above the
-completed-sale median; we sit *on* it by construction. Nothing in the UI says so.
-The chip says "Market estimate", which is the same vague reassurance everyone
-else gives. The fix is copy plus one number, not a feature.
+### ⛔ CORRECTION (same day): our comps are not completed sales
+
+This document first claimed *"91.4% of comps are completed sales — we sit on the
+sold median by construction."* **That was wrong**, and it was wrong in the exact
+way the research condemns: a column called `is_listing` was read as if the name
+settled the question, without checking what the rows are.
+
+Measured on prod, over the 3.31M rows that `is_listing IS NOT TRUE` admits:
+
+| provider | rows | share | `observed_at` NULL | `ended_at` NULL |
+|---|---|---|---|---|
+| scryfall | 1,608,058 | 48.6% | **1,608,058** | **1,608,058** |
+| tcgplayer | 945,688 | 28.6% | **945,688** | **945,688** |
+| cardmarket | 723,739 | 21.9% | **723,739** | **723,739** |
+| lorcast | 32,520 | 1.0% | **32,520** | **32,520** |
+| ebay | 1,002 | 0.03% | 1,002 | 1,002 |
+| pricecharting | 815 | 0.02% | 1 | 1 |
+
+**99.98% of the comps feeding valuations carry no sale timestamp at all.** A
+completed sale has a time. These are **catalogue price-index snapshots** from
+Scryfall / TCGplayer / Cardmarket price APIs — roughly 49 rows per card for
+scryfall, 28 for tcgplayer, 22 for cardmarket. Only **814 pricecharting rows**
+have a real `ended_at`.
+
+Three consequences:
+
+1. **We cannot say "median of N completed sales."** `catalog-item/[key].tsx:281`
+   already says *"Median of N recent comps"* — where N counts snapshots. That
+   copy is closer to misleading than to the differentiator it looked like.
+2. **Temporal decay is still collapsed.** `marketplace_agent.py` documents that
+   readers "order/decay on `observed_at`" and that a NULL there made
+   "temporal-decay weighting collapse to a constant" — recorded as a 2026-05-02
+   fix. It is still NULL on 99.98% of rows, so the fix did not reach the bulk
+   write path.
+3. **The honest claim is different and still good.** TCGplayer Market Price and
+   Cardmarket trend are sales-derived indices, and Scryfall republishes both. So
+   the truthful label is *"market price index, TCGplayer/Cardmarket"* — not
+   "asking price", not "completed sales". That is a real answer to §1's
+   *"which of those three did you use"*, and it is one we can state today.
+
+**What §1 becomes:** not "advertise that we use sold data" (we largely do not),
+but "state the method we actually use, name the provider, and stop counting
+snapshots as if they were sales." That is still the cheapest high-value change
+here — it is now a *correctness* fix as well as a marketing one.
 
 **§7 is `learning_a_ported_gate_carries_the_wrong_vocabulary` in the schema.**
 "Mint / Near Mint / Excellent" is TCG language. A **sealed** LEGO set and an
