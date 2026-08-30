@@ -288,6 +288,66 @@ message: **a green checkmark is a claim about the job's exit code, never about
 whether it did anything.** For any job that can skip itself, the check is
 "which steps actually executed", and that question has to be asked on purpose.
 
+### First run on the corrected branch: 107 batches -> 14, and the gate fired
+
+The 2026-08-30 nightly was the first to run on the repointed default branch.
+Measured against `33181755459` (08-28, old code):
+
+| class | 08-28 | 08-30 |
+|---|---|---|
+| `PGRST102` all keys must match | 42 | **0** |
+| `client has been closed` | ~50 | **0** |
+| `21000` within-batch duplicate | 15 | **0** |
+| failed batches | **107** | **14** |
+
+And the write-loss gate did its job — the run went **red** instead of silently
+green:
+
+```
+Rows LOST: 2412 across 14 failed batch(es) — these were fetched and then not written
+2412 rows were dropped by the writers — exiting with code 1.
+```
+
+⚠️ A `grep -c 21000` on that run returns 1. It is a FALSE POSITIVE — an mtg
+progress line reading `| page 120 | (21000)`. Read the match, do not count it.
+
+### The 14 that remain were transport, not logic
+
+```
+12x  Server disconnected without sending a response
+ 1x  The read operation timed out
+ 1x  [SSL: WRONG_VERSION_NUMBER] wrong version number
+```
+
+The classic stale keep-alive: Supabase closes an idle pooled connection, httpx
+reuses it, the write dies. The writer had **no retry**, so one blip cost 200
+rows permanently. `_post_with_retry()` now retries transport failures with
+exponential backoff (`INGEST_POST_ATTEMPTS`, default 3).
+
+**Retrying is safe HERE and not in general.** These upserts are
+`ON CONFLICT ... DO UPDATE`, so a replay is a no-op. `DATA_SCALING_PLAN.md` §10
+records the opposite: retrying a `market_hits` load duplicated 3,000 rows
+because the conflict clause could not fire against a generated PK. **Check
+idempotence before copying this pattern.**
+
+**An HTTP response is never retried, however bad.** `PGRST102` and `21000` are
+the server's judgement of this exact payload — they fail identically on replay,
+three times as slowly, and hide nothing. Only the *absence* of a response is
+retried.
+
+There was a second reason to do this now: the gate makes the nightly red on any
+dropped row, so without a retry it would redden on ordinary blips and train
+everyone to ignore a gate built the day before.
+
+⚠️ **Mutation-testing found two of my own tests non-discriminating.** Widening
+the retryable tuple to bare `Exception`, and deleting the `break` before the
+final sleep, both left every test green — the first because the "deterministic
+rejection" case uses an HTTP *response* rather than an exception, the second
+because the `for` loop already bounds attempts so counting them cannot see it.
+Fixed by asserting on a non-transport exception, and by counting SLEEPS rather
+than attempts. **A mutation that survives means the test is wrong, not that the
+code is fine.**
+
 Before trusting a fix to a pipeline in this directory:
 
 ```bash

@@ -299,3 +299,141 @@ def test_market_hits_losses_also_fail_the_run(ingest):
     summary = import_common.write_loss_summary()
     assert summary["rows_lost"] == 3, summary
     assert import_common.write_loss_exit_code() == 1
+
+
+# ---------------------------------------------------------------------------
+# Transient transport failures must be retried, deterministic ones must not
+# ---------------------------------------------------------------------------
+#
+# The 2026-08-30 nightly (first run on the corrected default branch) lost 2,412
+# rows across 14 batches. The three bugs fixed on 08-29 were at ZERO —
+# PGRST102: 0, "client has been closed": 0 — and every remaining failure was
+# transport-level:
+#
+#     12x  Server disconnected without sending a response
+#      1x  The read operation timed out
+#      1x  [SSL: WRONG_VERSION_NUMBER] wrong version number
+#
+# That is the classic stale keep-alive: Supabase closes an idle pooled
+# connection, httpx reuses it, the write dies. The writer had NO retry, so one
+# blip lost 200 rows permanently.
+#
+# Retrying is safe here BY CONSTRUCTION and not in general: these upserts are
+# `ON CONFLICT ... DO UPDATE`, so a replay is a no-op. Contrast
+# DATA_SCALING_PLAN.md §10, where retrying a market_hits load duplicated 3,000
+# rows because the conflict clause could not fire against a generated PK.
+#
+# A deterministic rejection (PGRST102, 21000) must NOT be retried: it will fail
+# identically, three times as slowly, and the retry would hide nothing.
+
+import httpx
+
+
+class _FlakyServer(FakeServer):
+    """Raises a transport error on the first `fail_times` posts, then behaves."""
+
+    def __init__(self, fail_times: int, exc: Exception | None = None):
+        super().__init__()
+        self.fail_times = fail_times
+        self.attempts = 0
+        self.exc = exc or httpx.RemoteProtocolError("Server disconnected without sending a response.")
+
+
+class _FlakyClient(FakePostgrest):
+    def post(self, url, headers=None, json=None, timeout=None):
+        self.server.attempts += 1
+        if self.server.attempts <= self.server.fail_times:
+            raise self.server.exc
+        return super().post(url, headers=headers, json=json, timeout=timeout)
+
+
+@pytest.fixture
+def flaky(monkeypatch):
+    def _build(fail_times: int, exc: Exception | None = None):
+        server = _FlakyServer(fail_times, exc)
+        monkeypatch.setattr(import_common, "_shared_http_client", None, raising=False)
+        monkeypatch.setattr(import_common, "get_http_client",
+                            lambda: _ensure(server))
+        # no real sleeping in tests
+        monkeypatch.setattr(import_common.time, "sleep", lambda *_a, **_k: None)
+        holder = {}
+
+        def _ensure(s=server):
+            cur = import_common._shared_http_client
+            if cur is None or cur.is_closed:
+                import_common._shared_http_client = _FlakyClient(s)
+            return import_common._shared_http_client
+
+        monkeypatch.setattr(import_common, "get_http_client", _ensure)
+        ing = SupabaseIngest(batch_size=200)
+        ing.enabled = True
+        return ing, server
+    return _build
+
+
+def test_a_transient_disconnect_is_retried_and_the_rows_land(flaky):
+    ing, server = flaky(fail_times=2)
+    written = ing.upsert_catalog([_item("a"), _item("b")])
+    assert written == 2, "rows lost to a blip that a retry would have recovered"
+    assert server.attempts == 3, "should have retried twice before succeeding"
+    assert len(server.accepted) == 2
+
+
+def test_a_read_timeout_is_retried(flaky):
+    ing, server = flaky(fail_times=1, exc=httpx.ReadTimeout("The read operation timed out"))
+    assert ing.upsert_catalog([_item("a")]) == 1
+
+
+def test_retries_are_bounded_and_the_loss_is_still_reported(flaky):
+    """A permanently broken transport must not retry forever, and must still
+    count as lost — a retry that silently gives up is the old bug again."""
+    import_common.reset_write_losses()
+    ing, server = flaky(fail_times=99)
+    written = ing.upsert_catalog([_item("a")])
+    assert written == 0
+    assert server.attempts <= 5, "bounded"
+    assert import_common.write_loss_summary()["rows_lost"] == 1
+    assert import_common.write_loss_exit_code() == 1
+
+
+def test_a_deterministic_rejection_is_NOT_retried(ingest):
+    """PGRST102/21000 fail identically on replay. Retrying them wastes the
+    window and hides nothing."""
+    ing, server = ingest
+    import_common.get_http_client()
+    calls = {"n": 0}
+
+    def always_400(url, headers=None, json=None, timeout=None):
+        calls["n"] += 1
+        return FakeResp(400, '{"code":"PGRST102","message":"All object keys must match"}')
+
+    import_common._shared_http_client.post = always_400
+    ing.upsert_catalog([_item("a")])
+    assert calls["n"] == 1, "an HTTP rejection must be posted exactly once"
+
+
+def test_a_NON_transport_exception_is_not_retried(flaky):
+    """Only the absence of a response is retried.
+
+    Widening the retryable tuple to bare Exception would replay genuine bugs —
+    a TypeError in our own payload construction would be attempted three times
+    and reported as a transport blip. Caught by mutation-testing: the earlier
+    "deterministic rejection" test uses an HTTP RESPONSE, so it could not see
+    a change to the EXCEPTION tuple at all.
+    """
+    ing, server = flaky(fail_times=99, exc=TypeError("a bug in our own payload"))
+    ing.upsert_catalog([_item("a")])
+    assert server.attempts == 1, "a non-transport error must be attempted exactly once"
+
+
+def test_it_does_not_sleep_after_the_final_attempt(flaky, monkeypatch):
+    """The `break` before the last sleep is the only thing stopping a pointless
+    delay on the way out. The for-loop already bounds the ATTEMPTS, so counting
+    attempts cannot detect its removal — count the SLEEPS."""
+    slept: list[float] = []
+    ing, server = flaky(fail_times=99)
+    monkeypatch.setattr(import_common.time, "sleep", lambda d: slept.append(d))
+    ing.upsert_catalog([_item("a")])
+    assert len(slept) == import_common._POST_ATTEMPTS - 1, \
+        f"expected {import_common._POST_ATTEMPTS - 1} sleeps between {import_common._POST_ATTEMPTS} attempts, got {len(slept)}"
+    assert slept == sorted(slept), "backoff must not shrink"

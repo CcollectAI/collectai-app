@@ -476,6 +476,60 @@ def write_loss_exit_code() -> int:
 # Supabase Ingest Client
 # ---------------------------------------------------------------------------
 
+# Transport-level failures worth retrying. httpx.TransportError is the base for
+# ConnectError, ReadTimeout, RemoteProtocolError, PoolTimeout, ConnectTimeout
+# and the SSL wrappers — i.e. every way the connection can fail WITHOUT the
+# server having judged the request.
+_RETRYABLE_POST = (httpx.TransportError,)
+_POST_ATTEMPTS = int(os.getenv("INGEST_POST_ATTEMPTS", "3"))
+_POST_BASE_DELAY_S = float(os.getenv("INGEST_POST_BASE_DELAY_S", "0.5"))
+
+
+def _post_with_retry(client, url, *, headers, json, timeout=None):
+    """POST a batch, retrying only TRANSPORT failures.
+
+    The 2026-08-30 nightly — the first on the corrected default branch — lost
+    2,412 rows across 14 batches. The three bugs fixed the day before were at
+    zero (PGRST102: 0, "client has been closed": 0); every remaining failure
+    was transport-level:
+
+        12x  Server disconnected without sending a response
+         1x  The read operation timed out
+         1x  [SSL: WRONG_VERSION_NUMBER] wrong version number
+
+    That is the classic stale keep-alive — Supabase closes an idle pooled
+    connection, httpx reuses it, the write dies — and the writer had no retry,
+    so one blip cost 200 rows permanently.
+
+    ⚠️ Retrying is safe HERE and not in general. These upserts are
+    `ON CONFLICT ... DO UPDATE`, so a replay is a no-op. `DATA_SCALING_PLAN.md`
+    §10 records the opposite case: retrying a market_hits load duplicated 3,000
+    rows because the conflict clause could not fire against a generated PK.
+    Do not copy this into a writer whose replay is not idempotent.
+
+    An HTTP RESPONSE is never retried, however bad. PGRST102 and 21000 are the
+    server's judgement of this exact payload — they fail identically on replay,
+    three times as slowly, and hide nothing. Only the absence of a response is
+    retried.
+    """
+    last: Exception | None = None
+    for attempt in range(_POST_ATTEMPTS):
+        try:
+            return client.post(url, headers=headers, json=json, timeout=timeout) \
+                if timeout is not None else client.post(url, headers=headers, json=json)
+        except _RETRYABLE_POST as e:
+            last = e
+            if attempt == _POST_ATTEMPTS - 1:
+                break
+            delay = _POST_BASE_DELAY_S * (2 ** attempt)
+            logger.warning(
+                "[ingest] transport failure on attempt %d/%d (%s) — retrying in %.1fs",
+                attempt + 1, _POST_ATTEMPTS, e, delay,
+            )
+            time.sleep(delay)
+    raise last  # type: ignore[misc]
+
+
 class SupabaseIngest:
     """Batch upsert helper for Supabase PostgREST API."""
 
@@ -589,7 +643,7 @@ class SupabaseIngest:
                                # while naming this call's row count.
         for n, batch in enumerate(batches, 1):
             try:
-                resp = self.client.post(url, headers=_headers(), json=batch)
+                resp = _post_with_retry(self.client, url, headers=_headers(), json=batch)
                 if resp.status_code in (200, 201):
                     total += len(batch)
                 else:
@@ -665,7 +719,8 @@ class SupabaseIngest:
         for i in range(0, len(rows), self.batch_size):
             batch = rows[i:i + self.batch_size]
             try:
-                resp = self.client.post(
+                resp = _post_with_retry(
+                    self.client,
                     f"{SUPABASE_URL}/rest/v1/market_hits",
                     headers=_headers(),
                     json=batch,
