@@ -69,6 +69,12 @@ _ALLOWED_TABLES = (
     "user_settings",
     "user_category_follows",
     "event_attendees",
+    # FKs to auth.users with NO ACTION — a row here blocks DELETE FROM
+    # auth.users outright (measured 2026-08-30). Their owner column is not
+    # `user_id`, so each also needs an _OWNER_COLUMN entry above.
+    "task_queue",
+    "chat_reports",
+    "event_announcements",
     # alerts & notifications
     "alert_endpoints",
     "alert_rules",
@@ -162,6 +168,27 @@ _ALLOWED_TABLES = (
 # reason. Anonymised instead where the row itself is not user content.
 # The audit script treats this as the allowlist: an entry here is a decision,
 # a missing table is a bug.
+# Tables in _ALLOWED_TABLES whose owner column is NOT `user_id`.
+#
+# The loop below hardcodes `WHERE user_id = $1` and, on UndefinedColumnError,
+# logs at ERROR and RE-RAISES — deliberately, so a partial erasure can never
+# report success. That makes adding a table with a different owner column
+# actively dangerous: it does not skip that table, it ABORTS every account
+# deletion. Name and column must be added together.
+#
+# Added 2026-08-30 after measuring the FKs to auth.users that block a delete:
+#   select conrelid::regclass, conname, confdeltype from pg_constraint
+#    where contype='f' and confrelid='auth.users'::regclass
+#      and confdeltype not in ('c','n');
+# Ten tables came back NO ACTION; five were already cleared, five were not.
+# See tests/test_account_deletion_fk_coverage.py, which enumerates them.
+_OWNER_COLUMN: dict[str, str] = {
+    "task_queue": "created_by",
+    "chat_reports": "reporter",
+    "event_announcements": "author_user_id",
+}
+
+
 _RETAINED_TABLES: dict[str, str] = {
     "market_hits": (
         "Shared market observations, not user content. MEASURED 2026-07-25: 0 of "
@@ -198,9 +225,11 @@ async def _do_account_delete(conn: asyncpg.Connection, user_id: str) -> None:
 
         for table in _ALLOWED_TABLES:
             assert table.isidentifier(), f"Invalid table name: {table}"
+            owner_col = _OWNER_COLUMN.get(table, "user_id")
+            assert owner_col.isidentifier(), f"Invalid column name: {owner_col}"
             try:
                 await conn.execute(
-                    f'DELETE FROM "{table}" WHERE user_id = $1',
+                    f'DELETE FROM "{table}" WHERE "{owner_col}" = $1',
                     user_id,
                 )
             except asyncpg.UndefinedTableError:
@@ -217,10 +246,10 @@ async def _do_account_delete(conn: asyncpg.Connection, user_id: str) -> None:
                 # re-raised, so the request fails loudly rather than reporting
                 # success on a partial erasure.
                 logger.error(
-                    "[account] %s is in _ALLOWED_TABLES but has no user_id column — "
+                    "[account] %s is in _ALLOWED_TABLES but has no %s column — "
                     "account deletion ABORTED. Either remove it from the list (if it "
                     "cascades) or delete it through its owning table.",
-                    table,
+                    table, owner_col,
                 )
                 raise
 
