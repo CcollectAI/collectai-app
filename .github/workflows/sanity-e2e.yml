@@ -52,10 +52,36 @@ jobs:
           : "${SUPA_REF:?}"; : "${ANON_KEY:?}"; : "${SERVICE_ROLE_KEY:?}"; : "${TEST_EMAIL:?}"; : "${TEST_PASSWORD:?}"
           AUTH_URL="https://${SUPA_REF}.supabase.co/auth/v1"
           ADMIN_HDR=(-H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" -H "Content-Type: application/json")
-          urlenc(){ printf '%s' "$1" | sed -e 's/%/%25/g' -e 's/@/%40/g' -e 's/+/%2B/g'; }
-          ENC_EMAIL="$(urlenc "$TEST_EMAIL")"
-          get_user_json(){ curl -sS "${AUTH_URL}/admin/users?email=${ENC_EMAIL}" "${ADMIN_HDR[@]}"; }
-          get_user_id(){ get_user_json | sed -n 's/.*"id":"\([0-9a-fA-F-]\{36\}\)".*/\1/p' | head -n1; }
+          # NOT ?email= — GoTrue has no email filter on the admin list
+          # endpoint and returns HTTP 500 "Database error finding users" when
+          # given one. Measured 2026-08-30:
+          #   GET /admin/users?email=x    -> 500
+          #   GET /admin/users?per_page=8 -> 200
+          # That 500 is why every run died at "cannot resolve user id" (a 500
+          # body carries no id) and why create then 422'd on a user the delete
+          # had never removed. It also produced 32 /admin/users 5xx in one day,
+          # which became the bulk of the watchdog's "API returning 5xx".
+          #
+          # Page through and match client-side, which is the supported API.
+          # The python is a ONE-LINER on purpose: this block is indented inside
+          # the YAML, a heredoc would carry that indentation into the script,
+          # and python raises IndentationError on a uniformly indented file
+          # where bash would not care.
+          match_id(){ TEST_EMAIL="$TEST_EMAIL" python3 -c 'import json,sys,os; d=json.load(sys.stdin); e=os.environ["TEST_EMAIL"].strip().lower(); print(next((u["id"] for u in d.get("users",[]) if (u.get("email") or "").strip().lower()==e), ""))' 2>/dev/null; }
+          get_user_id(){
+            local page=1 body id
+            while [ "$page" -le 25 ]; do
+              body="$(curl -sS "${AUTH_URL}/admin/users?page=${page}&per_page=50" "${ADMIN_HDR[@]}")" || return 0
+              id="$(printf '%s' "$body" | match_id)"
+              if [ -n "$id" ]; then printf '%s' "$id"; return 0; fi
+              # Stop at the first empty page rather than assuming one page is
+              # the whole directory — a 51st user must not make this silently
+              # stop finding people.
+              printf '%s' "$body" | grep -q '"users":\s*\[\s*\]' && break
+              page=$((page+1))
+            done
+            printf ''
+          }
 
           echo "→ Admin check"
           curl -sS -o /dev/null -w "%{http_code}\n" "${AUTH_URL}/admin/users?per_page=1" "${ADMIN_HDR[@]}" | grep -q '^200$'

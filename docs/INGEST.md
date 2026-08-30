@@ -264,7 +264,7 @@ A job whose "Check secrets" step **succeeded** and whose every other step is
 | `nightly-eval` | ⛔ **never ran** — schedule disabled 2026-08-29 |
 | `nightly-train-eval-gate` | ⚠️ runs, but its gate step has never gated |
 | `nightly-training`, `nightly-prune`, `ingest-ebay` | genuinely run |
-| `sanity-e2e` | runs, and fails visibly — honest |
+| `sanity-e2e` | ⚠️ ran and failed on EVERY push — see below (fixed 2026-08-30) |
 
 **`nightly-eval` had two independent fatal bugs.** `HAS_SECRETS` gated on
 `secrets.S3_DATA_BUCKET` — unset, and never referenced by the workflow — so
@@ -347,6 +347,55 @@ because the `for` loop already bounds attempts so counting them cannot see it.
 Fixed by asserting on a non-transport exception, and by counting SLEEPS rather
 than attempts. **A mutation that survives means the test is wrong, not that the
 code is fine.**
+
+### "Fails visibly — honest" was too generous (2026-08-30)
+
+The line above used to read *"runs, and fails visibly — honest"*, written after
+seeing it fail once. It failed on **every push**, and a gate that always fails
+is not honest — it is noise that cannot signal anything.
+
+Chasing it found a defect far outside CI. `GET /auth/v1/admin/users?email=…`
+returns **HTTP 500 "Database error finding users"** — GoTrue has no email
+filter on that endpoint. Measured:
+
+```
+GET /admin/users?email=x     -> 500
+GET /admin/users?per_page=8  -> 200
+GET /admin/users?per_page=9  -> 500   <- and this is the real find
+```
+
+`per_page ≤ 8` worked and `≥ 9` did not, with 31 users. Paging one at a time
+showed **only page 2 failing**. Five rows held `NULL` in `confirmation_token`,
+`recovery_token`, `email_change_token_new` and `email_change`; GoTrue scans
+those into Go `string` fields and a NULL raises. All five were seed/test
+accounts inserted by direct SQL that bypassed GoTrue's defaults — which is why
+real signups were unaffected.
+
+**Causation was proven before touching anything**: bad rows were entirely
+contained in the one failing page, and no bad row appeared on any of the three
+passing pages. Fixed with `COALESCE(col, '')` on the token columns; all four
+pages then returned 200.
+
+**The blast radius was never CI.** The same 500 breaks the Supabase dashboard's
+Users page and any admin tooling that lists users, and it generated 32
+`/admin/users` 5xx in a single day — which had become the *majority* of the
+watchdog's "API returning 5xx" HIGH. A red test was the only thing pointing at
+it.
+
+Two things worth carrying:
+
+- **A permanently-red gate hides the thing it was built to find.** This is the
+  `ci-min` disease one day later, in a different workflow.
+- ⚠️ **The workflow's own 5xx were self-inflicted noise.** `sanity-e2e` runs on
+  `push: branches: ["**"]`, so ten pushes in a day meant ten hard-delete /
+  recreate cycles against prod auth. Before reading a spike in
+  `/auth/v1/admin/users` as a product regression, check how many times you
+  pushed.
+
+⚠️ Remaining, not fixed: `e2e-buyer@test.local` has a **NULL `created_at`**, so
+GoTrue omits it — the admin API returns 30 of 31 users. Harmless (a leftover
+test account, no longer 500s) but it means *listable* and *exists* are not the
+same set.
 
 Before trusting a fix to a pipeline in this directory:
 
