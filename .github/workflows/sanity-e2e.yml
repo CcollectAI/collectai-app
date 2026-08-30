@@ -83,13 +83,27 @@ jobs:
             printf ''
           }
 
+          # Assert on a status code and SAY what it was. `| grep -q` under
+          # `set -e` fails with no output at all, so a run dies on a bare
+          # "exit 1" and the next person theorises instead of reading. Same
+          # rule the watchdog applies to workers: a failing step must say WHY.
+          expect_code(){ # expect_code <label> <regex> <code>
+            printf '   %s -> HTTP %s\n' "$1" "$3"
+            [[ "$3" =~ $2 ]] || { echo "   ✗ $1 expected $2, got $3"; return 1; }
+          }
+
           echo "→ Admin check"
-          curl -sS -o /dev/null -w "%{http_code}\n" "${AUTH_URL}/admin/users?per_page=1" "${ADMIN_HDR[@]}" | grep -q '^200$'
+          ADMIN_CODE=$(curl -sS -o /dev/null -w "%{http_code}" "${AUTH_URL}/admin/users?per_page=1" "${ADMIN_HDR[@]}")
+          expect_code "admin list" '^200$' "$ADMIN_CODE"
 
           USER_ID="$(get_user_id || true)"
           if [[ -n "${USER_ID:-}" ]]; then
             echo "→ Hard delete ${USER_ID}"
-            curl -sS -o /dev/null -w "%{http_code}\n" -X DELETE "${AUTH_URL}/admin/users/${USER_ID}?should_soft_delete=false" "${ADMIN_HDR[@]}" | grep -q '^200$'
+            # 2xx, not exactly 200. GoTrue answers DELETE with 200 in some
+            # versions and 204 in others, and requiring one of them is a
+            # version pin nobody declared. The code is printed either way.
+            DEL_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X DELETE "${AUTH_URL}/admin/users/${USER_ID}?should_soft_delete=false" "${ADMIN_HDR[@]}")
+            expect_code "hard delete" '^2[0-9][0-9]$' "$DEL_CODE"
             for i in $(seq 1 30); do sleep 1; USER_ID="$(get_user_id || true)"; [[ -z "${USER_ID:-}" ]] && break; done
           fi
 
@@ -97,20 +111,22 @@ jobs:
           CREATE_JSON=$(printf '{"email":"%s","password":"%s","email_confirm":true}' "$TEST_EMAIL" "$TEST_PASSWORD")
           CREATE_RESP=$(curl -sS -w '\n%{http_code}\n' -X POST "${AUTH_URL}/admin/users" "${ADMIN_HDR[@]}" --data-raw "$CREATE_JSON")
           CR_CODE="${CREATE_RESP##*$'\n'}"; CR_BODY="${CREATE_RESP%$'\n'"$CR_CODE"}"
+          printf '   create -> HTTP %s\n' "$CR_CODE"
           if [[ "$CR_CODE" =~ ^2 ]]; then
             USER_ID=$(printf '%s' "$CR_BODY" | sed -n 's/.*"id":"\([0-9a-fA-F-]\{36\}\)".*/\1/p' | head -n1)
           else
             USER_ID="$(get_user_id || true)"
           fi
-          [[ -n "${USER_ID:-}" ]] || { echo "cannot resolve user id"; exit 1; }
+          [[ -n "${USER_ID:-}" ]] || { echo "   ✗ cannot resolve user id (create=$CR_CODE body=${CR_BODY:0:200})"; exit 1; }
 
           echo "→ Ensure password"
           PATCH_JSON=$(printf '{"password":"%s","email_confirm":true}' "$TEST_PASSWORD")
           PATCH_CODE=$(curl -sS -o /dev/null -w "%{http_code}\n" -X PATCH "${AUTH_URL}/admin/users/${USER_ID}" "${ADMIN_HDR[@]}" --data-raw "$PATCH_JSON")
           if [[ "$PATCH_CODE" = "405" ]]; then
-            curl -sS -o /dev/null -w "%{http_code}\n" -X PUT "${AUTH_URL}/admin/users/${USER_ID}" "${ADMIN_HDR[@]}" --data-raw "$PATCH_JSON" | grep -q '^2'
+            PUT_CODE=$(curl -sS -o /dev/null -w "%{http_code}" -X PUT "${AUTH_URL}/admin/users/${USER_ID}" "${ADMIN_HDR[@]}" --data-raw "$PATCH_JSON")
+            expect_code "password PUT" '^2[0-9][0-9]$' "$PUT_CODE"
           else
-            [[ "$PATCH_CODE" =~ ^2 ]] || exit 1
+            expect_code "password PATCH" '^2[0-9][0-9]$' "$PATCH_CODE"
           fi
 
           echo "→ Login"
