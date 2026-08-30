@@ -184,6 +184,38 @@ bullet immediately.
 
 ---
 
+## Verified against the codebase (2026-08-30)
+
+Every row below was checked in code or on prod, not inferred from the research.
+
+| # | Complaint | What Sparrow actually does | Verdict |
+|---|---|---|---|
+| 1 | Apps show asking prices as value | **`valuation_worker.py:315` filters `AND (is_listing IS NOT TRUE)` — "exclude asking-price rows".** Prod: **91.4% of 3.62M comps are completed sales**, 8.6% listings, 0 NULL | **Ahead — and silent about it** |
+| 1b | Nobody discloses method or sample size | `catalog-item/[key].tsx:281` says *"Median of N recent comps"*. The **item card does not** — `ValueSourceChip` collapses `catalog_daily`/`catalog_model`/`quick_scan` into one label, "Market estimate" | **Right disclosure, wrong screen** |
+| 2 | Thin markets break a single number | q10/q50/q90 in `PriceBand`, `_MIN_COMPS_FOR_MODEL = 3`, `_LOW_COMP_CONF_CAP` below it. `CompSource` carries `source`, `count`, `avgPrice`, `dateRange` | Design ✓, **data ✗** |
+| 3 | EU/US markets differ ~31% | 7 currencies convert, but nothing states **which market** a comp came from | **Gap** |
+| 4 | Missing item, no manual escape hatch | `app/add-manual.tsx` exists; the `/catalog/match` lookup is **advisory, never required** | ✓ **already solved** |
+| 5 | Cost basis ignores fees and tax | `cost_basis` + `unrealized_pl` ship from `purchase_price`. `grading_fee`, `shipping_cost`, `marketplace_fee`, `tax_paid` — **none exist** | **Gap — biggest opportunity** |
+| 6 | Half-working grading draws 2-star reviews | Shelved 2026-05-02, no PSA/CGC API, FE imports removed 2026-08-30 | ✓ **correct as-is** |
+| 7 | No LEGO purchase price / condition / sealed-vs-used | `CONDITION_OPTIONS_GENERAL = ['Not set','Mint','Near Mint','Excellent','Good','Fair','Poor']` — a **card-grading vocabulary applied to every non-TCG category** | **Gap** |
+| 8 | Paywalling free features / paying for accuracy | Pro sells caps and access, never accuracy. Audited and gated 2026-08-30 | ✓ **right side of the line** |
+
+### The two that change what we build
+
+**§1 is the headline and we are hiding it.** The single loudest complaint in the
+category is that apps quote asking prices. **Ours structurally cannot** — the
+filter is in the query and the data is 91% sold. Competitors sit 7–25% above the
+completed-sale median; we sit *on* it by construction. Nothing in the UI says so.
+The chip says "Market estimate", which is the same vague reassurance everyone
+else gives. The fix is copy plus one number, not a feature.
+
+**§7 is `learning_a_ported_gate_carries_the_wrong_vocabulary` in the schema.**
+"Mint / Near Mint / Excellent" is TCG language. A **sealed** LEGO set and an
+opened-but-perfect one are both "Mint" and are not the same asset. The same break
+hits every non-TCG live category: whiskey (fill level, seal, box), vinyl (sleeve
+and disc grade **separately** — precisely the Discogs complaint in §2), figures
+(box vs figure). One condition list cannot carry four vocabularies.
+
 ## What this implies, ranked
 
 1. **Make provenance the product claim, and prove it.** §1 is a category-wide
