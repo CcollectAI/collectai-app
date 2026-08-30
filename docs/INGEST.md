@@ -397,6 +397,47 @@ GoTrue omits it — the admin API returns 30 of 31 users. Harmless (a leftover
 test account, no longer 500s) but it means *listable* and *exists* are not the
 same set.
 
+### sanity-e2e: three real defects found, and it is STILL red (2026-08-30)
+
+Chasing one permanently-red workflow surfaced three genuine production defects.
+It is honest to record that the workflow did not go green.
+
+**Fixed and verified:**
+
+1. `GET /auth/v1/admin/users?email=…` returns **500** — GoTrue has no email
+   filter there. The script used it for every lookup, so a 500 body carried no
+   id and the run died at *"cannot resolve user id"*. Now pages and matches
+   client-side; verified against prod for a page-1 user, a page-4 user, and an
+   address that does not exist.
+2. **Five rows with NULL token columns** (`confirmation_token`,
+   `recovery_token`, `email_change_token_new`, `email_change`) broke user
+   listing entirely — GoTrue scans them into Go `string`s. `per_page ≤ 8`
+   worked, `≥ 9` did not; only the page containing those rows failed. This also
+   broke the **Supabase dashboard's Users page** and produced 32 `/admin/users`
+   5xx in a day. `COALESCE(col,'')` fixed it; all pages now 200.
+3. **Ten FKs to `auth.users` with NO ACTION** blocked `DELETE FROM auth.users`.
+   Nine now CASCADE; `sponsor_companies` is deliberately excluded (deleting a
+   company because its admin left is the wrong semantics) and the migration
+   asserts it is the only one left.
+
+**Still failing**, and the useful part is why my verification was wrong:
+
+I proved the delete worked by running `DELETE FROM auth.users` in a rolled-back
+transaction — as a **superuser**. GoTrue runs as `supabase_auth_admin`. The
+Postgres log shows `permission denied for table marketplace_listings` alongside
+the FK errors, which points at a privilege problem on a cascade target rather
+than a constraint. `SET LOCAL ROLE supabase_auth_admin` is itself denied from
+the app DSN, so it could not be reproduced from here.
+
+⚠️ **Verifying as the wrong principal is not verifying.** "It works when I run
+it" and "it works when the caller runs it" are different claims, and a superuser
+psql session can prove neither one about a service role.
+
+**The cost of a permanently-red gate** is the theme here: it had been failing on
+every push for long enough that nobody read it, and it was sitting on top of a
+defect that broke the Supabase dashboard for everyone. `ci-min` was the same
+disease the day before.
+
 Before trusting a fix to a pipeline in this directory:
 
 ```bash
