@@ -1088,6 +1088,40 @@ def _rc_identified_user_id(app_user_id: str | None) -> str | None:
     return candidate
 
 
+def _rc_exc_detail(exc: BaseException) -> str:
+    """One-line "why" for a webhook failure, safe to interpolate into a log.
+
+    On 2026-08-30 the handler logged `ledger insert failed for <id>` and
+    nothing else on that line. The traceback existed in bake.log, but on lines
+    that do not contain "revenuecat" — so every grep scoped to the integration
+    missed it, and two wrong hypotheses were formed while the real cause (an FK
+    violation naming the offending key) sat unread.
+
+    asyncpg's `detail` is the part that matters: it carried
+    `Key (user_id)=(2b7db244-…) is not present in table "users"`, which is the
+    sentence that identified the bug. `constraint_name` says which rule broke.
+
+    Newlines are collapsed so one failure is one grep-able line, and every
+    attribute read is defensive — a logger that throws while reporting a
+    failure turns a diagnosable error into a silent one.
+    """
+    parts = [type(exc).__name__]
+    try:
+        msg = str(exc).strip()
+        if msg:
+            parts.append(msg)
+    except Exception:  # pragma: no cover - str() on a hostile exception
+        pass
+    for attr in ("constraint_name", "detail"):
+        try:
+            val = getattr(exc, attr, None)
+        except Exception:  # pragma: no cover
+            val = None
+        if val:
+            parts.append(f"{attr}={val}")
+    return " | ".join(" ".join(str(p).split()) for p in parts)
+
+
 async def _rc_resolve_user_id(app_user_id: str | None, pool) -> str | None:
     """The id, only if it is a UUID *and* a real row in `auth.users`.
 
@@ -1209,7 +1243,10 @@ async def revenuecat_webhook(
         )
     except Exception as exc:
         # 500 so RevenueCat retries — losing a revenue event loses a payout.
-        _log.exception("revenuecat: ledger insert failed for %s", event_id)
+        _log.exception(
+            "revenuecat: ledger insert failed for %s — %s",
+            event_id, _rc_exc_detail(exc),
+        )
         raise error_response(500, "Failed to record subscription event") from exc
 
     # Current-state row. Only for identified users on entitlement-changing events.
@@ -1236,10 +1273,18 @@ async def revenuecat_webhook(
                 user_id, app_user_id, event.get("product_id"),
                 plan if is_active else "free", status, expires_at,
             )
-        except Exception:
+        except Exception as sub_exc:
+            # `as sub_exc`, and NOT reusing `exc` from the ledger block above:
+            # Python deletes an except-clause name when that block ends, so
+            # referencing it here raises NameError — a crash while REPORTING a
+            # failure, which converts a diagnosable error into a silent one.
+            #
             # The ledger already landed, so revenue is not lost. Log loudly and
             # return 200 — a retry would be a no-op on the ledger anyway.
-            _log.exception("revenuecat: subscriptions upsert failed for user %s", user_id)
+            _log.exception(
+                "revenuecat: subscriptions upsert failed for user %s — %s",
+                user_id, _rc_exc_detail(sub_exc),
+            )
 
     _log.info(
         "revenuecat: %s user=%s plan=%s revenue=%s%s code=%s",
