@@ -166,6 +166,21 @@ change looking plausible; it is `test_free_user_gets_0`.
 - Offering: **`default`** with packages `$rc_monthly` (linked to `sparrow_pro_monthly`) and `$rc_annual` (linked to `sparrow_pro_yearly`). `app/subscription.tsx:151` reads these exact identifiers — other names produce a "Coming soon" UI.
 - **FE source of truth: `Purchases.getCustomerInfo()`** from `react-native-purchases`. Backend `/billing/status` endpoint is vestigial for iOS — kept for future web/Android.
 
+  ✅ **RESOLVED 2026-08-30 14:34 — the webhook delivers.** Two test events
+  returned `200` and wrote ledger rows with `environment = SANDBOX`:
+
+  ```
+  TEST | SANDBOX | 63e2ab50-… | 2026-08-30 12:34:58Z
+  TEST | SANDBOX | 63896d74-… | 2026-08-30 12:34:55Z
+  ```
+
+  ⚠️ **What that proves and what it does not.** Proven: delivery, the shared
+  secret, and the ledger write. **NOT yet proven: the `subscriptions` upsert
+  for a real member** — both test events carried unidentified users, so the
+  handler correctly SKIPPED that half. The first real sandbox purchase is what
+  exercises it. Until then, "billing works" means the pipe works, not that a
+  customer's plan flips.
+
   ⛔ **"Vestigial" is true of the PAYWALL and false of every gated ENDPOINT.**
   Corrected 2026-08-29. `getCustomerInfo()` unlocks the UI, but the server
   gates on its own `subscriptions` table:
