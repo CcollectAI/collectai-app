@@ -231,11 +231,15 @@ Three consequences:
 1. **We cannot say "median of N completed sales."** `catalog-item/[key].tsx:281`
    already says *"Median of N recent comps"* — where N counts snapshots. That
    copy is closer to misleading than to the differentiator it looked like.
-2. **Temporal decay is still collapsed.** `marketplace_agent.py` documents that
-   readers "order/decay on `observed_at`" and that a NULL there made
-   "temporal-decay weighting collapse to a constant" — recorded as a 2026-05-02
-   fix. It is still NULL on 99.98% of rows, so the fix did not reach the bulk
-   write path.
+2. ~~Temporal decay is still collapsed.~~ **ALSO WRONG — corrected same day.**
+   `valuation_worker.py` selects `COALESCE(observed_at, seen_at)` precisely for
+   this case, and **`seen_at` is populated on 100% of rows** (2026-08-01 →
+   08-30, the retention window). Decay works. The real, narrower defect:
+   `upsert_market_hits` never wrote `sold_at` into the row, so the three
+   importers that supply the SOURCE'S OWN price date — `import_pokemon`
+   (TCGplayer + Cardmarket `updatedAt`) and `import_lorcana` — had it silently
+   discarded, and those rows decayed on *when we fetched* instead of *when the
+   price was computed*. Fixed 2026-08-30.
 3. **The honest claim is different and still good.** TCGplayer Market Price and
    Cardmarket trend are sales-derived indices, and Scryfall republishes both. So
    the truthful label is *"market price index, TCGplayer/Cardmarket"* — not

@@ -341,6 +341,46 @@ class PriceObservation:
         return json.dumps({"features": self.features, "price": self.price})
 
 
+def parse_observed_at(raw: str | None) -> str | None:
+    """Normalise an importer's `sold_at` into an ISO timestamp, or None.
+
+    WHY (2026-08-30): `MarketHit` has carried a `sold_at` field since it was
+    written, and `upsert_market_hits` never put it in the row dict -- captured
+    and dropped. Three importers populate it with the SOURCE'S OWN price date:
+    import_pokemon (TCGplayer `updatedAt` and Cardmarket `updatedAt`) and
+    import_lorcana. All of it was discarded, so every row fell back to
+    `seen_at` -- when WE happened to fetch, not when the price was computed.
+
+    Returning None on anything unparseable is deliberate and load-bearing:
+    valuation_worker selects `COALESCE(observed_at, seen_at)`, so a NULL keeps
+    exactly today's behaviour. This can only make the timestamp more accurate,
+    never less -- there is no input for which it degrades the current state.
+
+    A bare date is widened to midnight UTC rather than bound as-is: the column
+    is timestamptz and binding a bare `date` is the trap recorded in
+    learning_items_paired_columns_trigger.
+    """
+    if not raw or not isinstance(raw, str):
+        return None
+    txt = raw.strip()
+    if not txt:
+        return None
+    # pokemontcg.io uses "2026/08/29"; Cardmarket and Lorcast use ISO.
+    txt = txt.replace("/", "-")
+    if txt.endswith("Z"):
+        txt = txt[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(txt)
+    except ValueError:
+        try:
+            dt = datetime.strptime(txt[:10], "%Y-%m-%d")
+        except ValueError:
+            return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
+
+
 @dataclass
 class MarketHit:
     """One row in the market_hits table."""
@@ -687,7 +727,25 @@ class SupabaseIngest:
         """
         if not self.enabled:
             return 0
-        rows = []
+        rows, dropped_bad_item_ref = self.build_market_hit_rows(hits)
+        if dropped_bad_item_ref:
+            self.stats.market_hits_errors += dropped_bad_item_ref
+            logger.error(
+                "upsert_market_hits dropped %d rows with malformed item_ref",
+                dropped_bad_item_ref,
+            )
+        return self._post_market_hit_rows(rows)
+
+    def build_market_hit_rows(self, hits: list[MarketHit]) -> tuple[list[dict], int]:
+        """Turn MarketHits into PostgREST row dicts. Pure -- no I/O.
+
+        Split out of `upsert_market_hits` on 2026-08-30 so it can actually be
+        TESTED. The first version of the observed_at tests reimplemented this
+        loop inside the test file, so mutating the real writer left them green:
+        reverting the fix entirely and writing None instead of omitting the key
+        BOTH passed. A test that pins its own copy of the logic pins nothing.
+        """
+        rows: list[dict] = []
         dropped_bad_item_ref = 0
         for h in hits:
             item_ref = f"{h.category}:{h.normalized_key}" if (h.category and h.normalized_key) else None
@@ -696,7 +754,8 @@ class SupabaseIngest:
             if item_ref is not None and ":" not in item_ref:
                 dropped_bad_item_ref += 1
                 continue
-            rows.append({
+            observed_at = parse_observed_at(h.sold_at)
+            row = {
                 "provider": h.provider,
                 "listing_id": h.listing_id,
                 "title": h.title,
@@ -707,13 +766,20 @@ class SupabaseIngest:
                 "normalized_key": h.normalized_key,
                 "category": h.category,
                 "item_ref": item_ref,
-            })
-        if dropped_bad_item_ref:
-            self.stats.market_hits_errors += dropped_bad_item_ref
-            logger.error(
-                "upsert_market_hits dropped %d rows with malformed item_ref",
-                dropped_bad_item_ref,
-            )
+            }
+            # The key is OMITTED, not set to None, when the source gave no
+            # date. This upsert runs with `resolution=merge-duplicates`, so a
+            # NULL in the payload would overwrite an observed_at a previous run
+            # had correctly written -- the same reason this writer deliberately
+            # does not pad rows to a common key set. Omission also keeps the
+            # reader's COALESCE(observed_at, seen_at) fallback intact, so a row
+            # without a source date behaves exactly as it does today.
+            if observed_at:
+                row["observed_at"] = observed_at
+            rows.append(row)
+        return rows, dropped_bad_item_ref
+
+    def _post_market_hit_rows(self, rows: list[dict]) -> int:
         total = 0
         failed_batches = 0     # THIS call only -- self.stats is shared.
         for i in range(0, len(rows), self.batch_size):
