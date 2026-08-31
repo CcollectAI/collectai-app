@@ -19,6 +19,8 @@ from app.errors import error_response
 from app.config import API_SHARED_SECRET, SIGNALS_BASE_URL
 from app.rate_limit import per_user_rate_limit
 from app.lib.db_helpers import get_db_pool
+from app.lib.comp_market import market_of_evidence, split_by_market
+import json as _json
 
 router = APIRouter(tags=["Portfolio"])
 
@@ -385,7 +387,17 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                 """
                 WITH latest AS (
                     SELECT DISTINCT ON (pp.item_ref)
-                        pp.item_ref, pp.q50, pp.q10, pp.q90
+                        pp.item_ref, pp.q50, pp.q10, pp.q90,
+                        -- WHICH MARKET the comps came from (2026-08-31).
+                        -- EU and US price the same card ~31% apart
+                        -- (docs/COLLECTOR_DEMAND.md §3) and we blend them, then
+                        -- convert everything to EUR at ingest -- so the
+                        -- `currency` column reads 'EUR' for all of it and the
+                        -- market of origin is ERASED at storage. The provider
+                        -- names inside evidence_summary are the only surviving
+                        -- signal, which is why this carries the whole jsonb
+                        -- rather than a column.
+                        pp.evidence_summary
                     FROM price_predictions pp
                     JOIN items i ON i.canonical_ref = pp.item_ref
                     WHERE i.user_id = $1
@@ -504,6 +516,7 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     -- months (learning_join_vocabulary_slug_vs_display_name), so
                     -- it is stated here rather than left to be rediscovered.
                     i.collection_name,
+                    l.evidence_summary,
                     s.total_items AS set_size
                 FROM items i
                 LEFT JOIN LATERAL public.item_value_v1(i) iv ON TRUE
@@ -525,9 +538,19 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
             )
 
             items = []
+            market_rows = []
             for r in rows:
                 cv = float(r["current_value"] or 0)
                 cb = float(r["cost_basis"] or 0)
+                # asyncpg hands jsonb back as a str; the helper only reads dicts.
+                _ev = r["evidence_summary"]
+                if isinstance(_ev, str):
+                    try:
+                        _ev = _json.loads(_ev)
+                    except (ValueError, TypeError):
+                        _ev = None
+                item_market = market_of_evidence(_ev)
+                market_rows.append({"value": cv, "market": item_market})
                 items.append({
                     "id": r["id"],
                     "name": r["name"],
@@ -543,6 +566,9 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     # caller must not add it to a figure it calls "market
                     # value" — see docs/ARCHITECTURE.md value-sources.
                     "value_source": r["value_source"],
+                    # 'US' | 'EU' | 'mixed' | None. None means we could not
+                    # tell, NOT that it is domestic -- see comp_market.py.
+                    "market": item_market,
                     "q10": round(float(r["q10"] or 0), 2),
                     "q90": round(float(r["q90"] or 0), 2),
                     # None stays None. `float(x or 0)` here would turn "we have
@@ -562,7 +588,13 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     "set_size": int(r["set_size"]) if r["set_size"] is not None else None,
                 })
 
-            return {"items": items}
+            return {"items": items,
+                # WHICH MARKETS the collection's value rests on. The item card
+                # can already say this; the TOTAL could not, so a US member saw
+                # an unlabelled, EU-weighted number
+                # (docs/COLLECTOR_DEMAND.md, US-market readiness).
+                "market_split": split_by_market(market_rows),
+            }
     except Exception as e:
         _logger.error("[portfolio/items] DB error: %s", e)
         try:

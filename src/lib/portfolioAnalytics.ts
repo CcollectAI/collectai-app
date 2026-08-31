@@ -289,3 +289,44 @@ export function computeItemDelta(
   const pl = value - cost;
   return { pl, pct: (pl / cost) * 100 };
 }
+
+/**
+ * Which MARKET the comp-backed part of a collection rests on.
+ *
+ * docs/COLLECTOR_DEMAND.md §3: EU and US price the same card ~31% apart, before
+ * any methodology difference. We blend them — TCGplayer is 28.6% of the corpus,
+ * Cardmarket and Scryfall's `eur` fields ~70% — and convert everything to EUR at
+ * ingest, so the currency column reads 'EUR' for all of it. The item card can
+ * already name the market; the portfolio TOTAL could not, which left a US member
+ * reading an unlabelled, EU-weighted number.
+ *
+ * Same rule as `splitPortfolioByValueSource`: **include and mark, never hide**.
+ * An item whose market is unknown counts toward `unknownCount`, never silently
+ * into one side — a total labelled "EU" because we could not tell would be worse
+ * than one that admits the gap.
+ */
+export function summariseMarkets(
+  rawItems: Partial<PortfolioLikeItem & { valueSource?: string; market?: string }>[],
+): { us: number; eu: number; mixed: number; unknownCount: number; label: string | null } {
+  let us = 0, eu = 0, mixed = 0, unknownCount = 0;
+  for (const it of rawItems ?? []) {
+    // Only COMP-BACKED items have a market. An estimate has no provider behind
+    // it, so counting it either way would invent provenance.
+    if (!MARKET_SOURCES.has(it.valueSource ?? '')) continue;
+    if (it.market === 'US') us += 1;
+    else if (it.market === 'EU') eu += 1;
+    else if (it.market === 'mixed') mixed += 1;
+    else unknownCount += 1;
+  }
+  const named = us + eu + mixed;
+  if (named === 0) return { us, eu, mixed, unknownCount, label: null };
+  const parts: string[] = [];
+  if (us > 0) parts.push('US');
+  if (eu > 0) parts.push('EU');
+  // `mixed` items already span both, so they add no NEW market name — they only
+  // guarantee both are present.
+  if (mixed > 0 && !parts.includes('US')) parts.push('US');
+  if (mixed > 0 && !parts.includes('EU')) parts.push('EU');
+  parts.sort();
+  return { us, eu, mixed, unknownCount, label: `${parts.join(' + ')} market${parts.length > 1 ? 's' : ''}` };
+}

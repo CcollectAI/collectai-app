@@ -42,6 +42,8 @@ export interface PortfolioItemSnapshot {
    *  demo rows and on any caller predating 2026-08-19 — treat as unknown, not
    *  as market. */
   valueSource?: string;
+  /** 'US' | 'EU' | 'mixed'; undefined = could not tell, NOT domestic. */
+  market?: string;
   id: string;
   name: string;
   category: string;

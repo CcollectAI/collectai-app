@@ -43,7 +43,7 @@ import {
   type RawPersonalizedInsights,
 } from "@/data/personalizedInsights";
 import { ItemsEmptyState } from "@/components/items";
-import { splitPortfolioByValueSource, rankPositions, rankMovers } from '@/lib/portfolioAnalytics';
+import { splitPortfolioByValueSource, summariseMarkets, rankPositions, rankMovers } from '@/lib/portfolioAnalytics';
 import { formatPrice } from "@/lib/format";
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { useAsync } from "@/hooks/useAsync";
@@ -316,6 +316,7 @@ function AnalyticsScreen() {
    * model drift instead of profit.
    */
   const valueSplit = useMemo(() => splitPortfolioByValueSource(items), [items]);
+  const marketSummary = useMemo(() => summariseMarkets(items), [items]);
 
   /**
    * POSITIONS — the question the Items tab cannot answer.
@@ -560,8 +561,20 @@ function AnalyticsScreen() {
                       ? formatPrice(valueSplit.marketTotal, settings.currency ?? 'EUR')
                       : '—'}
                   </Text>
+                  {/* WHICH markets that figure rests on. EU and US price the
+                      same card ~31% apart and we blend them, so a total with no
+                      market named is an unlabelled, EU-weighted number for a US
+                      member (docs/COLLECTOR_DEMAND.md, US-market readiness).
+                      Appended to the existing count rather than given a row of
+                      its own: it QUALIFIES the figure above, and a fourth
+                      column would compete with it.
+                      Renders nothing when no market is determinable — 84% of
+                      stored predictions predate the 2026-08-27 provider fix and
+                      say 'unknown', and "EU" by default would be the overclaim
+                      this whole line exists to avoid. */}
                   <Text style={[styles.splitMeta, { color: colors.muted }]}>
                     {valueSplit.marketCount} comp-backed
+                    {marketSummary.label ? ` · ${marketSummary.label}` : ''}
                   </Text>
                 </View>
                 {/* Named as an estimate, not hidden. For the 40+ categories

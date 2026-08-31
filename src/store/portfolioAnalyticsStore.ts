@@ -251,6 +251,13 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
       hasPurchasePrice: it.has_purchase_price === true,
       valueSource:
         typeof it.value_source === 'string' ? it.value_source : undefined,
+      // WHICH MARKET the comps behind this item came from: 'US' | 'EU' |
+      // 'mixed', or undefined when we cannot tell. EU and US price the same
+      // card ~31% apart and we blend them, converting to EUR at ingest -- so
+      // the currency column reads 'EUR' for all of it and the provider names
+      // are the only surviving signal. Server-side map:
+      // server/app/lib/comp_market.py, pinned to src/lib/compProvenance.ts.
+      market: typeof it.market === 'string' ? it.market : undefined,
       change1dPct:
         typeof it.change_1d_pct === 'number'
           ? it.change_1d_pct
