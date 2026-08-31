@@ -72,10 +72,27 @@ async def _fetch_live_rates() -> Dict[str, float] | None:
         return None
 
 
-async def get_rates() -> Dict[str, float]:
-    """Return foreign→EUR conversion rates (e.g. {"USD": 0.92, "GBP": 1.16, ...}).
+# A FALLBACK IS CACHED BRIEFLY, LIVE RATES ARE CACHED FOR THE FULL TTL.
+#
+# Until 2026-08-31 both took `_CACHE_TTL`, which prod sets to 28800 (8 hours,
+# not the "1 hour" this module's docstring claimed —
+# learning_env_var_beats_the_code_default). So a SINGLE transient failure to
+# reach Frankfurter froze the hardcoded fallback for eight hours, and the
+# hardcoded USD rate was 0.92 against a live ECB rate of 0.8589 — **7.1% wrong**,
+# applied to every ingest conversion and every client display in that window,
+# and surfaced only as one `warning` in bake.log.
+#
+# That is the silent-fallback shape exactly: a degraded value that is
+# indistinguishable from a good one downstream, made durable by a cache.
+# A short TTL means the next call retries instead of inheriting the blip.
+_FALLBACK_TTL = 300  # 5 minutes
 
-    Cached for 1 hour.  Falls back to config defaults if API unreachable.
+
+async def get_rates() -> Dict[str, float]:
+    """Return foreign→EUR conversion rates (e.g. {"USD": 0.86, "GBP": 1.17, ...}).
+
+    Live rates are cached for `FX_CACHE_TTL`; a FALLBACK is cached for
+    `_FALLBACK_TTL` so an outage cannot pin stale rates for the full window.
     """
     cached = cache_get(_CACHE_KEY)
     if cached is not None:
@@ -83,8 +100,37 @@ async def get_rates() -> Dict[str, float]:
 
     live = await _fetch_live_rates()
     rates = live if live else dict(_FALLBACK_TO_EUR)
-    cache_set(_CACHE_KEY, rates, ttl=_CACHE_TTL)
+    cache_set(_CACHE_KEY, rates, ttl=_CACHE_TTL if live else _FALLBACK_TTL)
+    if not live:
+        # ERROR, not warning: this is money being converted at a known-wrong
+        # rate, not a degraded nicety. It names the rate so the log says HOW
+        # wrong rather than merely THAT something failed.
+        logger.error(
+            "[fx_service] LIVE RATES UNAVAILABLE — converting at hardcoded "
+            "fallbacks (USD=%s). Every price converted in the next %ds is "
+            "wrong by however far this has drifted from the ECB rate.",
+            _FALLBACK_TO_EUR.get("USD"), _FALLBACK_TTL,
+        )
     return rates
+
+
+def rates_are_live(rates: Dict[str, float]) -> bool:
+    """Whether `rates` came from the API rather than the hardcoded fallback.
+
+    Compares by VALUE, not by a flag set at fetch time: the cache round-trips
+    through JSON and a flag would have to survive that. Identity with the
+    fallback dict is the honest test, and a live rate that happens to equal the
+    fallback to full float precision is not a case worth engineering for.
+    """
+    # The key must be PRESENT. `rates.get(k, 0.0)` alone reported an empty dict
+    # as live, because 0.0 differs from every fallback -- absence read as
+    # freshness, which is the failure this whole function exists to catch.
+    # Caught by its own test before release.
+    return any(
+        k in rates and abs(rates[k] - v) > 1e-9
+        for k, v in _FALLBACK_TO_EUR.items()
+        if k != "EUR"
+    )
 
 
 async def get_rates_from_eur() -> Dict[str, float]:
