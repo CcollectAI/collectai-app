@@ -73,6 +73,7 @@ import { ItemQuickActionsRow } from '@/components/item/ItemQuickActionsRow';
 import { ItemShopSection } from '@/components/item/ItemShopSection';
 import { ItemRefreshBar } from '@/components/item/ItemRefreshBar';
 import { describeComps } from '@/lib/compProvenance';
+import { conditionOptionsFor, CONDITION_LABELS } from '@/lib/conditionVocabulary';
 import { ItemDraftActions } from '@/components/item/ItemDraftActions';
 import { ItemForSaleBar } from '@/components/item/ItemForSaleBar';
 import { ItemEditBar } from '@/components/item/ItemEditBar';
@@ -112,8 +113,12 @@ const NOTES_KEYBOARD_MARGIN = 16;
 
 // Predefined options for dropdown menus
 const COLLECTION_OPTIONS =['Not set', 'Base Set', 'Jungle', 'Fossil', 'Team Rocket', 'Gym Heroes', 'Neo Genesis', 'Other'];
-const CONDITION_OPTIONS_GENERAL = ['Not set', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor'];
-const CONDITION_OPTIONS_GRADED = ['Not set', 'PSA 10', 'PSA 9', 'PSA 8', 'PSA 7', 'BGS 10', 'BGS 9.5', 'CGC 9.8', 'CGC 9.6', 'Raw', 'Mint', 'Near Mint', 'Excellent', 'Good', 'Fair', 'Poor'];
+// Grading tiers stay hardcoded: PSA/BGS/CGC are the market's own vocabulary,
+// not ours to per-categorise. The GENERAL list is now derived per category --
+// see conditionOptionsFor. A sealed LEGO set and an opened-but-perfect one were
+// both "Mint" under the old single list, and sealed-vs-opened is the entire
+// value axis for boxed collectibles (docs/COLLECTOR_DEMAND.md §7).
+const GRADED_TIERS = ['PSA 10', 'PSA 9', 'PSA 8', 'PSA 7', 'BGS 10', 'BGS 9.5', 'CGC 9.8', 'CGC 9.6', 'Raw'];
 
 const CATEGORY_OPTIONS = [...ALL_CATS.map((c) => c.name), 'Other'];
 const CATEGORY_ID_MAP: Record<string, string> = {
@@ -553,7 +558,15 @@ function ItemDetailScreen() {
 
   // ── Grading service state ────────────────────────────────────────────
   const isGradingEligible = GRADING_ELIGIBLE_CATEGORIES.has(categorySlug);
-  const conditionOptions = isGradingEligible ? CONDITION_OPTIONS_GRADED : CONDITION_OPTIONS_GENERAL;
+  // Labels, not slugs: the picker writes what it displays and `updateItem`
+  // normalises back to a slug at the write chokepoint, exactly as the category
+  // picker does (docs/TAXONOMY.md).
+  const conditionOptions = React.useMemo(() => {
+    const perCategory = conditionOptionsFor(categorySlug).map((slug) => CONDITION_LABELS[slug]);
+    return isGradingEligible
+      ? ['Not set', ...GRADED_TIERS, ...perCategory]
+      : ['Not set', ...perCategory];
+  }, [categorySlug, isGradingEligible]);
 
   // Grading management (extracted to useItemGrading hook)
   const grading = useItemGrading(categorySlug, editableName);

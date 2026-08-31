@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { formatConditionName } from '@/lib/conditionVocabulary';
 import {
   View,
   Text,
@@ -181,7 +182,7 @@ export function ItemGalleryGrid({
                   <Text style={styles.itemPrice}>{formatPrice(item.value)}</Text>
                   {item.condition ? (
                     <Text style={styles.itemCondition} numberOfLines={1}>
-                      {item.condition}
+                      {formatConditionName(item.condition)}
                     </Text>
                   ) : null}
                 </View>

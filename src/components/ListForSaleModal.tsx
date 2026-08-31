@@ -10,6 +10,7 @@
  */
 
 import React, { useCallback, useMemo } from 'react';
+import { sameCondition } from '@/lib/conditionVocabulary';
 import {
   View,
   Text,
@@ -331,7 +332,10 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                 contentContainerStyle={styles.conditionRow}
               >
                 {CONDITION_LABELS.map((c) => {
-                  const isActive = condition === c;
+                  // `condition === c` compared a SCANNED value (near_mint)
+                  // against this list's display names ('Near Mint'), so every
+                  // scanned item silently lost its pre-selection here.
+                  const isActive = sameCondition(condition, c);
                   return (
                     <Pressable
                       key={c}

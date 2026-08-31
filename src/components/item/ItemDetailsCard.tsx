@@ -3,6 +3,7 @@
  * Includes ItemAttributesSection and CategorySpecificSection.
  */
 import React from 'react';
+import { conditionDisplayName } from '@/lib/conditionVocabulary';
 import { View, Text, TextInput, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -219,9 +220,24 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
       </View>
       ) : null}
 
-      {/* Condition / Grade row — same rule, same reason. */}
+      {/* Condition / Grade row — same rule, same reason.
+
+          `conditionDisplayName`, NOT the raw value (2026-08-31). This one
+          variable holds BOTH vocabularies: it is seeded from `items.condition`
+          (a slug, e.g. `near_mint` from the scan path) and the picker writes a
+          display NAME back into the same state. docs/TAXONOMY.md names this
+          exact case for category and the resolver mirrors `categoryDisplayName`:
+          a value already in the name->slug map is returned untouched, anything
+          else is resolved. Rendering the raw value printed `near_mint` and
+          `new_sealed` on the card, and "never shows a raw slug" is the one
+          thing that doc says the app promises.
+
+          Applied in FIVE places below — the row a11y label, the picker button
+          a11y label, the picker button text, the read-mode text and its a11y
+          label. Missing one is how the read branch gets fixed and the edit
+          branch does not (learning_a_sweep_fixes_the_read_branch_not_the_edit_branch). */}
       {showConditionRow ? (
-      <View style={styles.row} accessibilityLabel={`${isGradingEligible ? 'Grade' : 'Condition'}: ${editableCondition}`}>
+      <View style={styles.row} accessibilityLabel={`${isGradingEligible ? 'Grade' : 'Condition'}: ${conditionDisplayName(editableCondition)}`}>
         <Text style={[styles.label, { color: theme.muted }]}>
           {isGradingEligible ? 'Grade' : 'Condition'}
         </Text>
@@ -230,15 +246,15 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
             onPress={onShowConditionPicker}
             style={[styles.dropdownFieldRow, { borderBottomColor: theme.border }]}
             accessibilityRole="button"
-            accessibilityLabel={`${isGradingEligible ? 'Grade' : 'Condition'}: ${editableCondition}. Tap to change`}
+            accessibilityLabel={`${isGradingEligible ? 'Grade' : 'Condition'}: ${conditionDisplayName(editableCondition)}. Tap to change`}
           >
             <Text style={[styles.dropdownFieldTextSmall, { color: editableCondition === 'Not set' ? theme.muted : theme.text }]}>
-              {editableCondition}
+              {conditionDisplayName(editableCondition)}
             </Text>
             <Ionicons name="chevron-down" size={14} color={theme.muted} />
           </Pressable>
         ) : (
-          <Text style={[styles.value, { color: theme.text }]} accessibilityLabel={`${isGradingEligible ? 'Grade' : 'Condition'}: ${editableCondition}`}>{editableCondition}</Text>
+          <Text style={[styles.value, { color: theme.text }]} accessibilityLabel={`${isGradingEligible ? 'Grade' : 'Condition'}: ${conditionDisplayName(editableCondition)}`}>{conditionDisplayName(editableCondition)}</Text>
         )}
       </View>
       ) : null}

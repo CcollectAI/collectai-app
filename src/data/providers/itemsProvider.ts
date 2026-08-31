@@ -3,6 +3,7 @@
  */
 
 import { API_LIMITS } from '@/constants/apiLimits';
+import { toConditionSlug } from '@/lib/conditionVocabulary';
 import { CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 import type {
   CurrencyCode,
@@ -377,7 +378,15 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
       canonical_key: input.canonicalKey,
       image_url: input.imageUrl,
       brand: input.brand,
-      condition: input.condition,
+      // Normalised HERE, at the write chokepoint, for the same reason as
+      // category above: the manual picker writes display names ('Near Mint')
+      // and the scan path writes slugs ('near_mint'), and both land in this one
+      // column. Measured on prod 2026-08-31: new_sealed 10, near_mint 8,
+      // mint 5, Sealed 1, Mint 1, NM 1 -- both vocabularies live at once, and
+      // `near_mint` rendered raw on the item card, which docs/TAXONOMY.md says
+      // the app never does. Graded values (PSA 9, BGS 10) are not slugs and
+      // pass through untouched.
+      condition: toConditionSlug(input.condition) ?? undefined,
       year: input.year,
       series: input.series,
       edition_label: input.editionLabel,
@@ -613,7 +622,7 @@ export async function persistQuickscanDraft(input: QuickscanDraft): Promise<Pers
         typeof input.estimatedValue === 'number' && !Number.isNaN(input.estimatedValue)
           ? input.estimatedValue
           : undefined,
-      condition: input.condition ?? undefined,
+      condition: toConditionSlug(input.condition) ?? undefined,   // same chokepoint rule as createItem
     });
   } catch (e) {
     logger.error('[SupabaseDataProvider] persistQuickscanDraft error:', e);

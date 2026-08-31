@@ -1,4 +1,5 @@
 import React, { memo } from "react";
+import { formatConditionName } from '@/lib/conditionVocabulary';
 import { View, Text } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -76,7 +77,7 @@ function ItemCard({ item }: ItemCardProps) {
             >
               <Ionicons name="shield-checkmark-outline" size={10} color={theme.colors.brand.base} />
               <Text style={{ fontSize: 10, fontWeight: "600", color: theme.colors.brand.base }}>
-                {item.condition}
+                {formatConditionName(item.condition)}
               </Text>
             </View>
           ) : null}
