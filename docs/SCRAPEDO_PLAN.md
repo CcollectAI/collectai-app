@@ -9,8 +9,14 @@ GET https://api.scrape.do/info
 ```
 
 **1,000 of 1,000 remaining.** The account is live and the key is set on prod
-(`SCRAPEDO_API_KEY`, `SCRAPEDO_ENABLED=true`). Nothing has spent a single
-request this month.
+(`SCRAPEDO_API_KEY`, 43 chars). Nothing has spent a single request this month.
+
+⚠️ **Correction — `SCRAPEDO_ENABLED` is `false`, not `true`.** An earlier pass
+here reported it as "SET", which is *presence*, not *value*. Reading the value
+showed `false`, and `configured()` is `SCRAPEDO_ENABLED and bool(API_KEY)` — so
+every call short-circuits before the HTTP request. Proven by spending zero
+credits on a live `sold_comps("LEGO 10307 Eiffel Tower", "lego")`: 0 hits,
+`RemainingMonthlyRequest` unchanged at 1000, and `configured() == False`.
 
 > ⚠️ Note on naming: this is **Scrape.do**, not Crawl4AI. Crawl4AI is
 > self-hosted, has no quota, and *has* been running — 8,159 rows across 1,755
@@ -88,11 +94,50 @@ zero-sold categories now have a real `ended_at` comp. If the answer is near zero
 because the pages do not parse, that is worth knowing in month one rather than
 month six.
 
+## THREE switches, and all three must be on
+
+This is why "the key is set" was never enough. They are independent, and each
+one alone silently disables the adapter:
+
+| # | Switch | Where | State |
+|---|---|---|---|
+| 1 | `SCRAPEDO_ENABLED` | prod `.env` | **`false`** ⛔ **← the remaining blocker** |
+| 2 | `DISABLED_ADAPTERS` | `marketplace_routing.py` | ✅ removed 2026-08-31 |
+| 3 | `ADAPTER_CATEGORY_ROUTING` | `marketplace_routing.py` | ✅ narrowed from `None` to 11 zero-sold categories |
+
+## The one step left — yours, because it is a prod env change
+
+```bash
+# 1. flip the killswitch
+ssh collectai
+sudo sed -i 's/^SCRAPEDO_ENABLED=false/SCRAPEDO_ENABLED=true/' /opt/collectors/.env
+grep '^SCRAPEDO_ENABLED=' /opt/collectors/.env        # must print true
+
+# 2. deploy the code, then run the preflight chain MANUALLY before restarting
+#    (preflight is ExecStartPre — a failure there hard-downs the API)
+cd /opt/collectors && set -a; . ./.env; set +a
+.venv/bin/python scripts/preflight_schema_lock.py     # must say PASS
+
+# 3. restart
+sudo systemctl restart collectai-bake.service
+```
+
+Then confirm it is actually spending:
+
+```bash
+curl -s "https://api.scrape.do/info?token=$SCRAPEDO_API_KEY" | jq .RemainingMonthlyRequest
+```
+
+It should fall below 1000 within a scrape cycle. If it does not, `configured()`
+is still false — check the value, not the presence.
+
 ## Status
 
 | | |
 |---|---|
-| Meter built | ❌ not yet |
-| Removed from `DISABLED_ADAPTERS` | ❌ not yet — deliberately, until the meter exists |
-| Routing narrowed | ❌ `None` today, meaning every category |
+| Meter built | ✅ `app/lib/scrapedo_quota.py`, 9 tests, mutation-proven |
+| Wired into the client | ✅ `scrapedo_client.scrape()` calls `allow()` before the request |
+| Removed from `DISABLED_ADAPTERS` | ✅ |
+| Routing narrowed | ✅ 11 categories with zero sold comps; pokemon and mtg excluded |
+| `SCRAPEDO_ENABLED` on prod | ❌ **`false` — the one step left** |
 | Requests used this month | **0 of 1,000** |

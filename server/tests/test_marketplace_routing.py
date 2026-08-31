@@ -80,7 +80,7 @@ class TestSourceReliability:
 
 class TestAdapterCategoryRouting:
     EXPECTED_UNRESTRICTED = {
-        "ebay", "firecrawl", "crawl4ai", "scrapedo",
+        "ebay", "firecrawl", "crawl4ai",
         "google_shopping", "mercari_us", "vinted", "mavin",
     }
 
@@ -91,6 +91,13 @@ class TestAdapterCategoryRouting:
         "pricecharting", "yahoo_auctions", "stockx", "discogs",
         "cardmarket", "bricklink", "etsy", "comc", "reverb",
         "abebooks", "grailed",
+        # MOVED from UNRESTRICTED on 2026-08-31. `None` means every category,
+        # which was right while scrapedo was an unmetered generic fetcher and is
+        # wrong now that it runs on a 1,000-request monthly free tier: pointed at
+        # everything, the budget goes to pokemon (831,303 comps) and mtg (1.6M)
+        # instead of the categories with no sold comps at all. Narrowed to 11 of
+        # those. See docs/SCRAPEDO_PLAN.md.
+        "scrapedo",
     }
 
     def test_has_all_expected_adapters(self):

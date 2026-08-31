@@ -107,7 +107,22 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
     "ebay": None,
     "firecrawl": None,
     "crawl4ai": None,
-    "scrapedo": None,
+    # NARROWED from None on 2026-08-31. `None` means EVERY category, and the
+    # free tier is 1,000 requests a month — pointed at everything, the budget
+    # goes to pokemon (831,303 comps already) and mtg (1.6M) rather than to the
+    # categories that have no sold data at all.
+    #
+    # These are the ones with real user holdings and ZERO comps that pass
+    # `is_listing IS NOT TRUE`. Scrape.do earns its keep here because
+    # `_build_search_url(..., sold=True)` appends `&LH_Complete=1&LH_Sold=1` —
+    # eBay SOLD listings, which carry a real sale date. It is the only route to
+    # genuine sold comps that does not wait on the eBay Marketplace Insights
+    # application (docs/EBAY_MARKETPLACE_INSIGHTS.md).
+    "scrapedo": {
+        "lego", "watches", "whiskey", "vinyl_records", "jewellery",
+        "action_figures", "anime_figures", "fragrances", "sneakers",
+        "comic_books", "funko",
+    },
     "google_shopping": None,
     "mercari_us": None,
     "vinted": None,
@@ -228,7 +243,12 @@ DISABLED_ADAPTERS: Set[str] = {
     "chrono24", "comc", "depop", "etsy", "gumtree", "keh", "kleinanzeigen",
     "ktown4u", "leboncoin", "marktplaats", "masterofmalt", "mavin",
     "mercari_us", "mpb", "popmart", "scalemates",
-    "scrapedo", "stockx", "wallapop", "whatnot", "whisky_auctioneer",
+    # "scrapedo" RE-ENABLED 2026-08-31 — metered, narrowed, and it is the tool
+    # for the blocks that disabled the neighbours in this set. Measured before
+    # switching on: 1,000 of 1,000 monthly requests unused, key set on prod,
+    # account active. It now passes app/lib/scrapedo_quota.allow(), which reads
+    # Scrape.do's OWN RemainingMonthlyRequest and fails CLOSED when it cannot.
+    "stockx", "wallapop", "whatnot", "whisky_auctioneer",
     "130point",
 }
 

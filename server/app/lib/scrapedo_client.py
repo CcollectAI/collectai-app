@@ -21,6 +21,7 @@ import httpx
 
 from app.config import SCRAPEDO_API_KEY, SCRAPEDO_ENABLED
 from app.lib.spend_tracker import spend_tracker, BudgetExceededError
+from app.lib import scrapedo_quota
 from workers.circuit_breaker import scrapedo_circuit, CircuitOpenError
 
 logger = logging.getLogger(__name__)
@@ -85,6 +86,15 @@ async def scrape_url(
         logger.warning("[Scrape.do] call blocked by spend budget")
         return None
 
+    # HARD monthly REQUEST cap, separate from the EUR spend budget above.
+    # spend_tracker compares one shared EUR pool across every provider, and
+    # scrapedo costs EUR 0.001/call — the entire 1,000-request free tier is
+    # EUR 1, so that budget can never block before Scrape.do's own cap is gone.
+    # This meters against Scrape.do's OWN RemainingMonthlyRequest, which
+    # survives the restarts an in-memory counter does not.
+    if not await scrapedo_quota.allow():
+        return None
+
     try:
         scrapedo_circuit.check()
     except CircuitOpenError:
@@ -113,6 +123,10 @@ async def scrape_url(
         resp.raise_for_status()
         scrapedo_circuit.record_success()
         spend_tracker.record("scrapedo")
+        # Decrement our cached view too. Between /info refreshes the cached
+        # count would otherwise sit flat for the full TTL, making a burst
+        # inside that window invisible until the next refresh.
+        scrapedo_quota.note_request_made()
         return resp.text
     except httpx.HTTPStatusError as e:
         logger.error("[Scrape.do] HTTP %d for %s", e.response.status_code, url)
