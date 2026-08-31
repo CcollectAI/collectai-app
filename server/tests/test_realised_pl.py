@@ -157,8 +157,12 @@ class TestTheSQLItself:
         assert "acquisition_fees_eur = CASE WHEN $9 THEN $8 ELSE acquisition_fees_eur END" in src
 
     def test_clearing_the_price_clears_the_fees(self):
+        # `clearing`, not `price is None` -- with price now gated on
+        # model_fields_set too, an OMITTED price is also None and must NOT
+        # clear anything.
         src = self._src("routes/items_router.py")
-        assert "if price is None:" in src and "fees, fees_eur = None, None" in src
+        assert "clearing = price_provided and price is None" in src
+        assert "if clearing:" in src and "fees, fees_eur = None, None" in src
 
 
 class TestOmittedIsNotNull:
@@ -190,8 +194,11 @@ class TestOmittedIsNotNull:
         import pathlib
         src = (pathlib.Path(__file__).resolve().parents[1]
                / "app" / "routes" / "items_router.py").read_text()
-        assert 'fees_provided = ("acquisition_fees" in payload.model_fields_set) or price is None' in src
-        # The CASE is what makes the flag do anything.
+        assert 'fees_provided = ("acquisition_fees" in payload.model_fields_set) or clearing' in src
+        assert 'price_provided = "purchase_price" in payload.model_fields_set' in src
+        # The CASE is what makes each flag do anything.
+        assert "purchase_price       = CASE WHEN $10 THEN $3 ELSE purchase_price     END" in src
+        assert "purchase_price_eur   = CASE WHEN $10 THEN $4 ELSE purchase_price_eur END" in src
         assert "acquisition_fees     = CASE WHEN $9 THEN $7 ELSE acquisition_fees     END" in src
         assert "acquisition_fees_eur = CASE WHEN $9 THEN $8 ELSE acquisition_fees_eur END" in src
 

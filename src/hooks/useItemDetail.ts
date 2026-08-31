@@ -52,6 +52,8 @@ interface UseItemDetailParams {
   initialValue: string;
   /** RAW purchase price as typed, in `initialPurchaseCurrency`. '' when unset. */
   initialPurchasePrice: string;
+  /** RAW acquisition fees as typed, in the SAME currency. '' when unset. */
+  initialAcquisitionFees?: string;
   /** The currency that raw figure is in. Falls back to the member's setting. */
   initialPurchaseCurrency?: string | null;
   initialNotes: string;
@@ -76,7 +78,7 @@ interface UseItemDetailParams {
 export function useItemDetail(params: UseItemDetailParams) {
   const {
     id, isDraft, initialName, initialCategory, initialCollection,
-    initialCondition, initialValue, initialPurchasePrice, initialPurchaseCurrency,
+    initialCondition, initialValue, initialPurchasePrice, initialAcquisitionFees, initialPurchaseCurrency,
     initialNotes, imageUri, categorySlug, q50,
     q10, q90, confidence,
     initialAttributes, catalogKey,
@@ -96,6 +98,10 @@ export function useItemDetail(params: UseItemDetailParams) {
   // field is denominated in `initialPurchaseCurrency`, so putting the EUR
   // normalisation in it would show a JPY buyer a euro figure labelled JPY.
   const [editablePurchasePrice, setEditablePurchasePrice] = useState(initialPurchasePrice);
+  // Same currency as the price by construction — the save path sends ONE
+  // currency for both, because a fee in one currency against a price in another
+  // is not a shape a single purchase has.
+  const [editableAcquisitionFees, setEditableAcquisitionFees] = useState(initialAcquisitionFees ?? '');
 
   // ── Notes & save state ─────────────────────────────────────────────────
   const [notes, setNotes] = useState(initialNotes || '');
@@ -359,19 +365,32 @@ export function useItemDetail(params: UseItemDetailParams) {
       // Only sent when it actually CHANGED — an unrelated rename must not
       // rewrite the cost basis, and must not re-convert it at today's rate.
       const trimmedPurchase = editablePurchasePrice.trim();
-      if (trimmedPurchase !== (initialPurchasePrice ?? '').trim()) {
-        const parsedPurchase = trimmedPurchase === ''
-          ? null
-          : parseFloat(trimmedPurchase.replace(',', '.'));
-        if (parsedPurchase !== null && (isNaN(parsedPurchase) || parsedPurchase < 0)) {
-          throw new Error('Enter a purchase price of 0 or more, or leave it blank');
-        }
+      const trimmedFees = editableAcquisitionFees.trim();
+      const purchaseChanged = trimmedPurchase !== (initialPurchasePrice ?? '').trim();
+      const feesChanged = trimmedFees !== (initialAcquisitionFees ?? '').trim();
+
+      const parseMoney = (raw: string, label: string): number | null => {
+        if (raw === '') return null;
+        const n = parseFloat(raw.replace(',', '.'));
+        if (isNaN(n) || n < 0) throw new Error(`Enter ${label} of 0 or more, or leave it blank`);
+        return n;
+      };
+
+      if (purchaseChanged || feesChanged) {
+        // UNDEFINED for a field that did not change, so the server omits it
+        // entirely. Resending an unchanged price makes it re-convert through
+        // convert_to_eur at TODAY'S rate, so a non-EUR cost basis would drift
+        // every time an unrelated field was saved — and it is what lets fees be
+        // edited on their own. `null` still CLEARS; the two are different
+        // states and the route distinguishes them via model_fields_set.
         await collectorsApi.updateItemPurchase(
           id,
-          parsedPurchase,
+          purchaseChanged ? parseMoney(trimmedPurchase, 'a purchase price') : undefined,
           // The currency the FIELD is in: the one it was stored in if we have
           // it, else the member's current setting. Never inferred server-side.
           (initialPurchaseCurrency || settings.currency || 'EUR') as string,
+          undefined,
+          feesChanged ? parseMoney(trimmedFees, 'fees') : undefined,
         );
       }
 
@@ -384,7 +403,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     } finally {
       setSavingNotes(false);
     }
-  }, [id, isDraft, editableName, editableCategory, editableCollection, editableCondition, editableValue, editablePurchasePrice, initialPurchasePrice, initialPurchaseCurrency, settings.currency, settings.hapticsEnabled, showToast]);
+  }, [id, isDraft, editableName, editableCategory, editableCollection, editableCondition, editableValue, editablePurchasePrice, initialPurchasePrice, editableAcquisitionFees, initialAcquisitionFees, initialPurchaseCurrency, settings.currency, settings.hapticsEnabled, showToast]);
 
   // ── Feedback handlers ──────────────────────────────────────────────────
   const onSubmitSalePrice = useCallback(async () => {
@@ -482,6 +501,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     editableCondition, setEditableCondition,
     editableValue, setEditableValue,
     editablePurchasePrice, setEditablePurchasePrice,
+    editableAcquisitionFees, setEditableAcquisitionFees,
 
     // Notes & save
     notes, setNotes,

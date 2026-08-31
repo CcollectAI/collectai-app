@@ -687,33 +687,40 @@ async def update_item_purchase(
     # column (~170x). Converting here means the trigger has nothing to infer.
     fees = payload.acquisition_fees
     fees_eur = await convert_to_eur(fees, currency) if fees is not None else None
-    # Clearing the PRICE clears the fees too. Fees on a purchase that no longer
-    # has a price are not a cost basis, they are an orphan number that
-    # portfolio_router would keep adding to a model estimate.
-    if price is None:
-        fees, fees_eur = None, None
-
     # OMITTED is not the same as NULL, and conflating them was a live
-    # regression (caught by audit before release, 2026-08-31). `acquisition_fees`
-    # defaults to None, so a caller that PATCHes only the price -- which is
-    # EXACTLY what the shipped app sends, since it predates this field -- would
-    # have written NULL over fees the member had already entered. Every price
-    # edit would silently wipe them.
+    # regression (caught by audit before release, 2026-08-31). A nullable field
+    # with a default cannot express "leave it alone" on its own; only
+    # `model_fields_set` can. Applied to BOTH fields:
     #
-    # `model_fields_set` is the only thing that distinguishes "the caller did
-    # not mention fees" from "the caller means null". Clearing the price still
-    # clears the fees regardless, because that rule is about coherence of the
-    # row, not about what the caller typed.
-    fees_provided = ("acquisition_fees" in payload.model_fields_set) or price is None
+    #   * fees -- the shipped app sends only `purchase_price`, so an
+    #     unconditional write would have nulled fees on every price edit.
+    #   * price -- so a member can edit FEES ALONE without the client resending
+    #     an unchanged amount. Resending it is not harmless: the server
+    #     re-converts through convert_to_eur at TODAY'S rate, so a non-EUR cost
+    #     basis would drift a little every time an unrelated field was saved.
+    #     `useItemDetail` already refuses to resend an unchanged price for that
+    #     reason; this makes the route able to honour it.
+    #
+    # Explicit null still CLEARS -- that semantic is unchanged and documented on
+    # the request model. Omission is the new, third state.
+    price_provided = "purchase_price" in payload.model_fields_set
+    clearing = price_provided and price is None
+    fees_provided = ("acquisition_fees" in payload.model_fields_set) or clearing
+    # Clearing the PRICE clears the fees too, whether or not the caller
+    # mentioned them: fees on a purchase with no price are an orphan number that
+    # portfolio_router would add to a model estimate. Coherence of the ROW, not
+    # of the payload.
+    if clearing:
+        fees, fees_eur = None, None
 
     try:
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
                 """
                 UPDATE items
-                   SET purchase_price       = $3,
-                       purchase_price_eur   = $4,
-                       purchase_currency    = $5,
+                   SET purchase_price       = CASE WHEN $10 THEN $3 ELSE purchase_price     END,
+                       purchase_price_eur   = CASE WHEN $10 THEN $4 ELSE purchase_price_eur END,
+                       purchase_currency    = CASE WHEN $10 THEN $5 ELSE purchase_currency  END,
                        purchased_at         = COALESCE($6::timestamptz, purchased_at),
                        -- $9 = "the caller addressed fees at all". Without it
                        -- an omitted field is indistinguishable from an
@@ -726,7 +733,7 @@ async def update_item_purchase(
                        acquisition_fees, acquisition_fees_eur
                 """,
                 user_id, item_id, price, price_eur, currency, payload.purchased_at,
-                fees, fees_eur, fees_provided,
+                fees, fees_eur, fees_provided, price_provided,
             )
             if row is None:
                 # Not found OR not theirs — one message for both, so the

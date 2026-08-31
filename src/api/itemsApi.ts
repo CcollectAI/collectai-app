@@ -159,12 +159,24 @@ export const updateItemAttributes = (itemId: string, attributes: Record<string, 
 // repo has already shipped from this exact pair. The server converts with
 // `convert_to_eur` and writes both halves plus the currency together.
 //
-// `purchasePrice: null` CLEARS the cost basis (both halves).
+// THREE states, not two (2026-08-31). `purchased_at` has always been spread in
+// only when defined; `purchase_price` and `acquisition_fees` now follow the same
+// rule, and the server reads `model_fields_set` to honour it:
+//
+//   null       -> CLEAR the field (price null clears the fees too)
+//   undefined  -> LEAVE IT ALONE, key omitted from the body entirely
+//   a number   -> set it
+//
+// Omission is not a nicety. Resending an unchanged `purchase_price` makes the
+// server re-convert it through `convert_to_eur` at TODAY'S rate, so a non-EUR
+// cost basis drifts a little every time an unrelated field is saved. It is also
+// what lets a member edit fees ALONE.
 export const updateItemPurchase = (
   itemId: string,
-  purchasePrice: number | null,
+  purchasePrice: number | null | undefined,
   purchaseCurrency: string,
   purchasedAt?: string,
+  acquisitionFees?: number | null,
 ) =>
   patch<{
     ok: boolean;
@@ -172,10 +184,13 @@ export const updateItemPurchase = (
     purchase_price: number | null;
     purchase_price_eur: number | null;
     purchase_currency: string;
+    acquisition_fees: number | null;
+    acquisition_fees_eur: number | null;
   }>(`/items/${encodeURIComponent(itemId)}/purchase`, {
-    purchase_price: purchasePrice,
+    ...(purchasePrice !== undefined ? { purchase_price: purchasePrice } : {}),
     purchase_currency: purchaseCurrency,
     ...(purchasedAt !== undefined ? { purchased_at: purchasedAt } : {}),
+    ...(acquisitionFees !== undefined ? { acquisition_fees: acquisitionFees } : {}),
   });
 
 // Item Images (multi-photo per item)

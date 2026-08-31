@@ -44,3 +44,40 @@ export const getCategoryHealth = () => get("/portfolio/category-health");
 
 export const getCategoryCrossCorrelation = (category: string) =>
   get(`/portfolio/category-correlation?category=${encodeURIComponent(category)}`);
+
+/**
+ * Realised profit and loss — what the member ACTUALLY made, after every fee on
+ * both sides. `unrealized_pl` elsewhere is a projection against a live estimate;
+ * this is the only figure in the app that reports a closed position.
+ *
+ * ⚠️ `profit` is `null`, never 0, when the sold item has no recorded purchase
+ * price. There is no basis to subtract, and rendering the whole net proceeds as
+ * profit is the `None or 0` failure that turns UNKNOWN into a confident number.
+ * `sales_without_cost_basis` says how many rows that applies to, and
+ * `total_profit` EXCLUDES them — a caller that ignores it is quoting a total
+ * that quietly under-counts.
+ */
+export type RealisedSale = {
+  id: string;
+  item_id: string | null;
+  item_name: string | null;
+  category: string | null;
+  sold_at: string | null;
+  sale_price: number | null;
+  currency: string | null;
+  net_proceeds: number | null;
+  cost_basis: number | null;
+  cost_basis_known: boolean;
+  profit: number | null;
+  fees: { platform: number; payment_processing: number; shipping: number };
+};
+
+export type RealisedPL = {
+  sales: RealisedSale[];
+  count: number;
+  total_profit: number;
+  total_net_proceeds: number;
+  sales_without_cost_basis: number;
+};
+
+export const getRealisedPL = () => get<RealisedPL>("/portfolio/realised-pl");

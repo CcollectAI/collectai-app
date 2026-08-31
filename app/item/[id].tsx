@@ -118,6 +118,8 @@ const COLLECTION_OPTIONS =['Not set', 'Base Set', 'Jungle', 'Fossil', 'Team Rock
 // see conditionOptionsFor. A sealed LEGO set and an opened-but-perfect one were
 // both "Mint" under the old single list, and sealed-vs-opened is the entire
 // value axis for boxed collectibles (docs/COLLECTOR_DEMAND.md §7).
+const NOOP_SET = (_: string) => {};
+
 const GRADED_TIERS = ['PSA 10', 'PSA 9', 'PSA 8', 'PSA 7', 'BGS 10', 'BGS 9.5', 'CGC 9.8', 'CGC 9.6', 'Raw'];
 
 const CATEGORY_OPTIONS = [...ALL_CATS.map((c) => c.name), 'Other'];
@@ -242,6 +244,7 @@ function ItemDetailScreen() {
      *  NOT carried here: this feeds an EDIT field, and showing the
      *  normalisation in a field labelled JPY is the ~170x error in reverse. */
     purchasePrice?: number | null;
+    acquisitionFees?: number | null;
     purchaseCurrency?: CurrencyCode | null;
     /** The NORMALISED cost basis, carried SEPARATELY and used only for
      *  arithmetic against the (EUR) valuation — never to populate the edit
@@ -256,7 +259,7 @@ function ItemDetailScreen() {
     (async () => {
       const { data, error } = await supabase
         .from('items')
-        .select('attrs, collection_name, canonical_key, name, title, category, condition, estimated_value, predicted_price_eur, image_url, notes, purchase_price, purchase_price_eur, purchase_currency')
+        .select('attrs, collection_name, canonical_key, name, title, category, condition, estimated_value, predicted_price_eur, image_url, notes, purchase_price, purchase_price_eur, purchase_currency, acquisition_fees')
         .eq('id', id)
         .maybeSingle();
       if (cancelled || error || !data) return;
@@ -266,6 +269,7 @@ function ItemDetailScreen() {
         estimated_value?: number | null; predicted_price_eur?: number | null; image_url?: string | null;
         notes?: string | null;
         purchase_price?: number | null; purchase_price_eur?: number | null; purchase_currency?: string | null;
+        acquisition_fees?: number | null;
       };
       // THE value, from the one definition of it — not this screen's own
       // guess at the chain. Reading `predicted_price_eur ?? estimated_value`
@@ -309,6 +313,10 @@ function ItemDetailScreen() {
         valueSource: viewValue?.source ?? null,
         userEstimate: row.estimated_value ?? row.predicted_price_eur ?? null,
         purchasePrice: row.purchase_price ?? null,
+        // RAW half, like purchasePrice: the field is denominated in
+        // purchase_currency, so seeding it from the EUR half would relabel a
+        // JPY fee as euros the moment the member opened edit mode.
+        acquisitionFees: row.acquisition_fees ?? null,
         purchasePriceEur: row.purchase_price_eur ?? null,
         // NARROWED, not cast. `items.purchase_currency` is TEXT and only the
         // seven supported codes are legal per its CHECK, but a row predating
@@ -357,6 +365,8 @@ function ItemDetailScreen() {
     // it once the row arrives, the same way name/category/condition are handled.
     initialPurchasePrice:
       savedCore?.purchasePrice != null ? String(savedCore.purchasePrice) : '',
+    initialAcquisitionFees:
+      savedCore?.acquisitionFees != null ? String(savedCore.acquisitionFees) : '',
     initialPurchaseCurrency: savedCore?.purchaseCurrency ?? null,
     imageUri, categorySlug: categorySlugRaw, q50,
     q10, q90, confidence,
@@ -393,6 +403,15 @@ function ItemDetailScreen() {
     if (savedCore.purchasePrice != null && !detail.editablePurchasePrice) {
       detail.setEditablePurchasePrice(String(savedCore.purchasePrice));
     }
+    // Fees adopt on the SAME terms. Without this the row renders empty for a
+    // member who has already entered fees — and worse, the save path compares
+    // the field against `initialAcquisitionFees` ('' before the row lands), so
+    // an empty box would read as unchanged and their figure would sit there
+    // invisible. Half-wiring a field is how it looks broken while being
+    // correct one layer down.
+    if (savedCore.acquisitionFees != null && !detail.editableAcquisitionFees) {
+      detail.setEditableAcquisitionFees(String(savedCore.acquisitionFees));
+    }
     adoptedCoreRef.current = true;
   }, [savedCore, detail]);
   const {
@@ -402,6 +421,7 @@ function ItemDetailScreen() {
     editableCollection, setEditableCollection,
     editableCondition, setEditableCondition,
     editablePurchasePrice, setEditablePurchasePrice,
+    editableAcquisitionFees, setEditableAcquisitionFees,
     editableValue, setEditableValue,
     notes, setNotes,
     savingNotes, savingDraft, saveError,
@@ -1500,6 +1520,10 @@ function ItemDetailScreen() {
           ) : null}
 
           {/* Details card */}
+          {/* Fees are PRO. Passed as '' with a no-op setter for a free member rather
+                than wrapping the row in a gate: a wrapper hides the JSX but leaves
+                the STATE alive, and the save path would still send whatever was
+                left in it. Gate the data, not the pixels. */}
           <ItemDetailsCard
             isDraft={isDraft}
             isEditing={isEditing}
@@ -1509,6 +1533,9 @@ function ItemDetailScreen() {
             editableCondition={editableCondition}
             editableValue={editableValue}
             editablePurchasePrice={editablePurchasePrice}
+            editableAcquisitionFees={limits.advanced_analytics ? editableAcquisitionFees : ''}
+            onEditableAcquisitionFees={limits.advanced_analytics ? setEditableAcquisitionFees : NOOP_SET}
+            showAcquisitionFees={!!limits.advanced_analytics}
             purchaseCurrency={savedCore?.purchaseCurrency ?? null}
             isGradingEligible={isGradingEligible}
             categorySlug={categorySlug}

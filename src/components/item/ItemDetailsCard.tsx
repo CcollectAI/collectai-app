@@ -28,6 +28,11 @@ interface ItemDetailsCardProps {
   editableValue: string;
   /** RAW cost basis as typed, in `purchaseCurrency`. '' when unset. */
   editablePurchasePrice: string;
+  editableAcquisitionFees: string;
+  onEditableAcquisitionFees: (v: string) => void;
+  /** Pro only. False hides the row entirely rather than disabling it — a
+      disabled money field beside an editable one reads as broken, not gated. */
+  showAcquisitionFees: boolean;
   /** The currency the field above is denominated in. Typed as `CurrencyCode`
    *  rather than `string` because `getCurrencySymbol` only accepts the seven
    *  supported codes — a loose `string` here compiled the call and would have
@@ -77,7 +82,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
     loading,
     isDraft, isEditing,
     editableName, editableCategory, editableCollection, editableCondition, editableValue,
-    editablePurchasePrice, purchaseCurrency,
+    editablePurchasePrice, editableAcquisitionFees, onEditableAcquisitionFees, showAcquisitionFees, purchaseCurrency,
     isGradingEligible, categorySlug, categoryIdMap,
     itemAttributes, taxonomyVersion, subtypeId, itemCollections,
     itemId, itemSizeValue, sizeSystem, sizeSaving, notes,
@@ -333,6 +338,40 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
               keyboardType="decimal-pad"
               returnKeyType="done"
               accessibilityLabel={`What you paid, in ${purchaseCurrency || settings.currency}`}
+            />
+          </View>
+      </View>
+      ) : null}
+
+      {/* FEES — tax, postage, grading. Renders directly under "What you paid"
+          because it is the same question's second half: the cost basis is the
+          two added together, and a member who sees only the first believes a
+          number that is too low. docs/COLLECTOR_DEMAND.md §5 measured the gap
+          against the category — a EUR 900 card with EUR 56.25 tax has a
+          EUR 956.25 basis, and selling at EUR 1000 is a LOSS once the sale's
+          own fees land, not the EUR 100 gain every app reports.
+
+          EDIT MODE ONLY, and only alongside the price, for the same reason the
+          price row is: in read mode the money lives in the valuation card.
+          Same currency as the purchase, never the viewer's — a fee in one
+          currency against a price in another is not a thing a single purchase
+          has, and the save path sends one currency for both. */}
+      {showAcquisitionFees && (isDraft || isEditing) ? (
+      <View style={styles.row} accessibilityLabel="Fees, tax and shipping paid">
+        <Text style={[styles.label, { color: theme.muted }]}>+ Fees &amp; tax</Text>
+          <View style={styles.editableValueRow}>
+            <Text style={[styles.currencySymbol, { color: theme.muted }]}>
+              {getCurrencySymbol(purchaseCurrency || settings.currency)}
+            </Text>
+            <TextInput
+              style={[styles.editableValueInput, { color: theme.text, borderBottomColor: theme.border, fontWeight: fontWeight.bold }]}
+              value={editableAcquisitionFees}
+              onChangeText={onEditableAcquisitionFees}
+              placeholder="Not set"
+              placeholderTextColor={theme.muted ?? '#64748B'}
+              keyboardType="decimal-pad"
+              returnKeyType="done"
+              accessibilityLabel={`Fees, tax and shipping paid, in ${purchaseCurrency || settings.currency}`}
             />
           </View>
       </View>
