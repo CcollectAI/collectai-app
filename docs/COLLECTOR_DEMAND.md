@@ -233,12 +233,12 @@ Every row re-verified in code or on prod for this pass, not carried forward.
 
 | # | Complaint | Status | Evidence |
 |---|---|---|---|
-| 1 | Apps quote asking prices as value | **⚠️ LABELLED, NOT SOLVED** | Our comps are price-index observations, not sales. The item card no longer *calls* them sales (`describeComps`), which is honest — but the underlying data is unchanged |
+| 1 | Apps quote asking prices as value | **✅ BETTER THAN LABELLED** | We ingest Cardmarket `averageSellPrice` and TCGplayer `market` — both **sales-derived**, not asking prices. Our own label currently *undersells* this. See below |
 | 1b | Nobody discloses method / sample / source | **✅ DONE** | Item card: *"Based on N price observations · TCGplayer, Cardmarket · US + EU markets"*. Catalog screen reads `market_hits_daily.comps_count` — 5,457,641 rows, current to today |
 | 2 | Thin markets break a single number | **❌ OPEN — data** | Design is right (q10/q50/q90, `_MIN_COMPS_FOR_MODEL`, confidence cap). Blocked on eBay Marketplace Insights |
 | 3 | EU/US ~31% apart, unsurfaced | **✅ DONE** | Item card + portfolio total both name the market; `comp_market.py` pinned to `compProvenance.ts` by a parsing test |
 | 4 | Missing item, no manual escape hatch | **✅ ALREADY SOLVED** | `add-manual.tsx`; catalogue match is advisory, never required |
-| 5 | Cost basis ignores fees and tax | **⚠️ HALF DONE** | Buy side shipped end to end (columns, route, three query sites, Pro-gated FE field). `GET /portfolio/realised-pl` exists and **renders nowhere** |
+| 5 | Cost basis ignores fees and tax | **✅ DONE for unrealized** | Fees reach the analytics page: `cost_basis` → `costBasis` → `purchaseTotal` ("You paid") and `unrealizedPL = currentValue − costBasis`, all fee-aware. Pro-gated. Only *realised* P/L (closed sales) lacks a screen — a different number |
 | 6 | Half-working grading draws 2-star reviews | **✅ CORRECT AS-IS** | Shelved, no PSA/CGC API, dead imports removed |
 | 7 | Condition can't express sealed-vs-used | **✅ DONE** | `conditionOptionsFor()` per category; boxed / spirits / vinyl / cards |
 | 8 | Paywalling free features, paying for accuracy | **✅ DONE** | Pro sells caps and access, never accuracy; `check:paywall-claims` enforces it |
@@ -249,16 +249,44 @@ Every row re-verified in code or on prod for this pass, not carried forward.
 here that is not a code change. 45 categories and ~62k rows are unpriceable
 because `ebay_caller.py:410 sold_comps()` returns `[]`.
 
-**§5 — realised P/L has no screen.** The endpoint computes the research's exact
-case (−104.05) and nothing calls it. By this repo's own standard
-(`learning_complete_feature_reachable_from_nowhere`) that is not shipped.
+**§5 — only the REALISED half.** The fee-aware cost basis reaches the analytics
+page today: `/portfolio/items.cost_basis` → `costBasis` → `purchaseTotal` and
+`unrealizedPL`. What has no screen is `GET /portfolio/realised-pl`, the closed-
+position view over `marketplace_sales`. Different number, and `marketplace_sales`
+has 0 rows, so the screen has nothing to show until a sale is recorded through
+the app.
 
-**§1 — the deepest one, and it is a data problem wearing a labelling fix.** The
-category's loudest complaint is that apps quote asking prices. We do not quote
-asking prices, but we do not quote completed sales either: **99.98% of our comps
-are catalogue price-index snapshots** with no sale timestamp. Saying so plainly
-is better than every competitor manages, and it is not the same as having the
-data. Only 814 pricecharting rows are real sales.
+### §1 — we are in a better position than our own label claims
+
+Checked what the importers actually read, rather than what the column names
+suggest:
+
+| provider | share | field ingested | what it is |
+|---|---|---|---|
+| cardmarket | 21.9% | `averageSellPrice` (→ `avg30`) | **average SELL price — completed sales** |
+| tcgplayer | 28.6% | `market` | **TCGplayer Market Price — sales-derived** |
+| scryfall | 48.6% | `eur` / `eur_foil` | Cardmarket-sourced; **which Cardmarket field is unverified** |
+| pricecharting | 0.02% | — | real sales, with `ended_at` |
+
+So **~50% of the corpus is verifiably sales-derived**, and none of it is asking
+prices — the complaint the whole category is judged on does not apply to us. Our
+current wording, "price observations", is *more conservative than the truth*.
+
+**Suggested, in order:**
+
+1. **Say what it is.** *"Median of N daily Cardmarket average-sell and TCGplayer
+   market prices"* is accurate, stronger than what we say now, and still not the
+   overclaim "completed sales". One string change.
+2. **Verify the Scryfall field.** It is the largest single slice at 48.6% and the
+   only one whose meaning is assumed. If it is Cardmarket's trend rather than a
+   sell average, the label must say so for MTG.
+3. **Scale PriceCharting.** The one source giving rows with a real `ended_at` —
+   814 rows across 177 items today. No application, no partner approval.
+4. **eBay Marketplace Insights** for raw sold comps. The real unlock, and the one
+   that also fixes §2. User-side.
+
+Note the ordering: 1 and 2 are honesty about data we already have; 3 and 4 are
+new data. Doing 3 and 4 first would leave us still describing good data badly.
 
 **Coverage.** ~40 categories hold thousands of eBay rows each, all
 `is_listing = true`, all excluded from valuation. The labelling machinery to
