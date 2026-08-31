@@ -309,6 +309,46 @@ Recovering the original amount would mean storing the source currency and
 amount alongside the EUR half. Until then, a member outside the eurozone sees
 comps carrying the FX of their ingest day, over a one-month retention window.
 
+#### Metering a third-party free tier (2026-08-31)
+
+`app/lib/scrapedo_quota.py` guards Scrape.do's **1,000 requests a month**. The
+shape generalises to any capped external API, and two things about it are
+deliberate.
+
+**The source of truth is THEIRS.** It reads Scrape.do's own
+`RemainingMonthlyRequest` from `GET /info` rather than counting locally. A local
+counter is a *belief* that resets on every deploy; their count survives
+restarts, and a bake restart mid-month is exactly when a local counter would
+quietly hand back a full budget. Verified before relying on it: calling `/info`
+does **not** consume quota.
+
+**It fails CLOSED.** When the remaining count cannot be read at all, the call is
+blocked and logged at ERROR. A scraped comp is optional enrichment — missing one
+costs a row, while failing open against a hard cap costs the month. A stale
+cached count is preferred to no count, so one flaky request cannot take the
+adapter dark, but "we could not ask" never renders as "plenty left".
+
+⚠️ **`spend_tracker` does NOT cover this, despite appearances.** It has a
+monthly reset, per-provider costs and a `check()` before every call — but it
+compares one **shared EUR pool** across every provider, and scrapedo is
+€0.001/call. The whole 1,000-request tier is €1 against a €150 budget, so it
+can never block before the hard cap is gone. It is also in-memory. Extend it for
+cost; use a request meter for a request cap.
+
+#### A feature can be off in three independent places
+
+Scrape.do was disabled by all three at once, and each alone is silent:
+
+| # | Switch | Where |
+|---|---|---|
+| 1 | `SCRAPEDO_ENABLED` | prod `.env` — `configured()` short-circuits before any HTTP call |
+| 2 | `DISABLED_ADAPTERS` | `marketplace_routing.py` — checked *before* category routing |
+| 3 | `ADAPTER_CATEGORY_ROUTING` | `None` means every category; a narrow set can exclude the one you are testing |
+
+**Checking one and reporting "it is enabled" is how a dead integration looks
+configured.** Check the VALUE of the env flag, not its presence: an earlier pass
+here recorded `SCRAPEDO_ENABLED` as "SET" when it was `false`.
+
 #### `user_settings`: currency / region / locale — code and CHECK must agree
 
 `PUT /settings` writes three constrained columns. Each has a code-side allow-list

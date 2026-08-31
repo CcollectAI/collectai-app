@@ -299,6 +299,16 @@ current wording, "price observations", is *more conservative than the truth*.
    §1 and §2 together. Step-by-step in **`docs/EBAY_MARKETPLACE_INSIGHTS.md`**,
    including the exact use-case wording to paste into the form.
 
+**An interim route to real sold comps, while that application waits.**
+`scrapedo_caller._build_search_url(..., sold=True)` appends
+`&LH_Complete=1&LH_Sold=1` — the **eBay sold-listings** search, whose rows carry
+an actual sale date. The Scrape.do free tier is **1,000 requests a month and was
+entirely unused**; it is now metered, narrowed to the 11 categories with zero
+sold comps, and off the code killswitch. At ~33/day it will not refill a
+catalogue, but it is the only source of genuine `ended_at` rows we can add this
+month without waiting on an approval. One prod env flip remains —
+`docs/SCRAPEDO_PLAN.md`.
+
 The ordering mattered: 1 and 2 were honesty about data we already had, and doing
 3 or 4 first would have left us describing good data badly.
 
