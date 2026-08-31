@@ -466,7 +466,17 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     -- The EUR half is the right one: current_value is q50,
                     -- which is EUR, so summing raw purchase_price here would
                     -- mix currencies on the same axis.
-                    COALESCE(i.purchase_price_eur, e.first_q50, 0) AS cost_basis,
+                    -- Fees are added ONLY to a real purchase price (2026-08-31).
+                    -- Adding them to the `first_q50` fallback would attach a
+                    -- member's tax and postage to a MODEL ESTIMATE, which is
+                    -- the drift-as-profit bug this COALESCE already exists to
+                    -- flag -- made worse by a number that looks like evidence.
+                    -- The CASE keeps the two branches honestly separate:
+                    -- real basis + real fees, or an estimate on its own.
+                    CASE WHEN i.purchase_price_eur IS NOT NULL
+                         THEN i.purchase_price_eur + COALESCE(i.acquisition_fees_eur, 0)
+                         ELSE COALESCE(e.first_q50, 0)
+                    END AS cost_basis,
                     -- Which SIDE of that COALESCE was used. Without this the
                     -- client cannot tell profit from model drift: for an item
                     -- with no purchase price, cost_basis is the earliest
@@ -931,3 +941,130 @@ async def category_correlation(
     except Exception as e:
         _logger.error("[portfolio/category-correlation] DB error: %s", e)
         return {"correlations": []}
+
+
+@router.get(
+    "/portfolio/realised-pl",
+    summary="Realised profit and loss on items actually sold",
+)
+async def realised_pl(user_id: str = Depends(get_current_user_id)):
+    """What a member ACTUALLY made, after every fee on both sides.
+
+    docs/COLLECTOR_DEMAND.md §5 is the whole reason this exists: collectors
+    track prices and not their true cost basis, and the worked example is a
+    EUR 956.25 card sold for EUR 1000 that looks like a EUR 44 profit and is a
+    EUR 104 LOSS once the platform fee and postage land. Nothing in this app
+    could show that -- `unrealized_pl` is a projection against a live estimate,
+    and `useListForSale` computes a net BEFORE a sale, not after one.
+
+    Both halves already existed and had never been joined:
+
+      * SELL side -- `marketplace_sales` stores `net_proceeds`, computed at
+        marketplace_listing_router.py:983 as
+        `sale_price - platform_fee - payment_processing_fee - shipping_cost_actual`.
+      * BUY side -- `items.purchase_price_eur` plus `acquisition_fees_eur`,
+        added 2026-08-31; before that the basis was the sticker price and every
+        gain was overstated.
+
+    ⚠️ `cost_basis_known` is returned per row and is NOT decoration. A sale
+    whose item has no recorded purchase price has NO basis, and subtracting
+    zero would render the entire net proceeds as pure profit -- the
+    `None or 0` failure that turns UNKNOWN into a confident number
+    (learning_a_blind_source_deletes_the_finding_not_just_the_number). Those
+    rows carry `profit: null` and are summed separately, never into `total`.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+
+    try:
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT s.id,
+                       s.sold_at,
+                       s.sale_price,
+                       s.currency,
+                       s.net_proceeds,
+                       s.platform_fee,
+                       s.payment_processing_fee,
+                       s.shipping_cost_actual,
+                       i.id       AS item_id,
+                       i.name     AS item_name,
+                       i.category,
+                       i.purchase_price_eur,
+                       i.acquisition_fees_eur,
+                       -- Mirrors the CASE in /portfolio/items exactly. Two
+                       -- endpoints answering "what did you pay" must not drift.
+                       CASE WHEN i.purchase_price_eur IS NOT NULL
+                            THEN i.purchase_price_eur + COALESCE(i.acquisition_fees_eur, 0)
+                       END AS cost_basis
+                  FROM marketplace_sales s
+                  JOIN marketplace_listings l ON l.id = s.listing_id
+                  LEFT JOIN items i ON i.id = l.item_id
+                 WHERE s.user_id = $1::uuid
+                 ORDER BY s.sold_at DESC
+                 LIMIT 200
+                """,
+                user_id,
+            )
+
+        return summarise_realised_sales(rows)
+    except Exception as e:
+        _logger.error("[portfolio/realised-pl] DB error: %s", e)
+        raise error_response(500, "Failed to load realised P/L", code="DB_ERROR")
+
+
+def summarise_realised_sales(rows) -> dict:
+    """Turn sale rows into the P/L payload. Pure -- no I/O, so it is TESTABLE.
+
+    Split out deliberately: a test that reimplements this loop pins nothing.
+    Proven the hard way on 2026-08-30, when the observed_at tests copied the
+    writer's row-building into the test file and stayed green while the fix was
+    reverted (learning_tests_that_pin_a_stub).
+    """
+    sales = []
+    total_profit = 0.0
+    total_proceeds = 0.0
+    unknown_basis = 0
+    for r in rows:
+        basis = float(r["cost_basis"]) if r["cost_basis"] is not None else None
+        net = float(r["net_proceeds"]) if r["net_proceeds"] is not None else None
+        # Rounded HERE, not just in the totals: an unrounded per-sale figure
+        # reaches the client as -104.04999999999995 and renders that way.
+        profit = round(net - basis, 2) if (basis is not None and net is not None) else None
+        if profit is None:
+            unknown_basis += 1
+        else:
+            total_profit += profit
+        if net is not None:
+            total_proceeds += net
+        sales.append({
+            "id": str(r["id"]),
+            "item_id": str(r["item_id"]) if r["item_id"] else None,
+            "item_name": r["item_name"],
+            "category": r["category"],
+            "sold_at": r["sold_at"].isoformat() if r["sold_at"] else None,
+            "sale_price": float(r["sale_price"]) if r["sale_price"] is not None else None,
+            "currency": r["currency"],
+            "net_proceeds": net,
+            "cost_basis": basis,
+            "cost_basis_known": basis is not None,
+            "profit": profit,
+            "fees": {
+                "platform": float(r["platform_fee"] or 0),
+                "payment_processing": float(r["payment_processing_fee"] or 0),
+                "shipping": float(r["shipping_cost_actual"] or 0),
+            },
+        })
+
+    return {
+        "sales": sales,
+        "count": len(sales),
+        # `total_profit` covers ONLY the rows with a known basis. Stating how
+        # many were excluded is the difference between a total and a total that
+        # quietly under-counts.
+        "total_profit": round(total_profit, 2),
+        "total_net_proceeds": round(total_proceeds, 2),
+        "sales_without_cost_basis": unknown_basis,
+    }

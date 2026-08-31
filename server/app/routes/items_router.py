@@ -648,6 +648,12 @@ class UpdateItemPurchaseRequest(BaseModel):
     # currency travels WITH the amount.
     purchase_currency: str = Field("EUR", pattern=r"^[A-Za-z]{3}$")
     purchased_at: Optional[str] = None
+    # Tax, inbound shipping, grading submission -- what a member paid to ACQUIRE
+    # the item beyond the sticker price. In `purchase_currency`, the SAME
+    # currency as purchase_price: a fee in one currency and a price in another
+    # is not a thing this endpoint accepts, because it is not a thing a single
+    # purchase is. docs/COLLECTOR_DEMAND.md §5.
+    acquisition_fees: Optional[float] = Field(None, ge=0)
 
 
 @router.patch(
@@ -674,21 +680,37 @@ async def update_item_purchase(
     # stale EUR figure behind that every analytics reader still sums — the
     # column pair has to move together in both directions.
     price_eur = await convert_to_eur(price, currency) if price is not None else None
+    # Fees are a SECOND pair with the same contract, converted with the same
+    # currency in the same call. Not left to trg_items_sync_paired_columns: that
+    # trigger's guard reads `COALESCE(UPPER(BTRIM(purchase_currency)),'EUR')`,
+    # so a NULL currency is treated AS EUR and a JPY amount lands in the euro
+    # column (~170x). Converting here means the trigger has nothing to infer.
+    fees = payload.acquisition_fees
+    fees_eur = await convert_to_eur(fees, currency) if fees is not None else None
+    # Clearing the PRICE clears the fees too. Fees on a purchase that no longer
+    # has a price are not a cost basis, they are an orphan number that
+    # portfolio_router would keep adding to a model estimate.
+    if price is None:
+        fees, fees_eur = None, None
 
     try:
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
                 """
                 UPDATE items
-                   SET purchase_price     = $3,
-                       purchase_price_eur = $4,
-                       purchase_currency  = $5,
-                       purchased_at       = COALESCE($6::timestamptz, purchased_at),
-                       updated_at         = NOW()
+                   SET purchase_price       = $3,
+                       purchase_price_eur   = $4,
+                       purchase_currency    = $5,
+                       purchased_at         = COALESCE($6::timestamptz, purchased_at),
+                       acquisition_fees     = $7,
+                       acquisition_fees_eur = $8,
+                       updated_at           = NOW()
                  WHERE id = $2::uuid AND user_id = $1::uuid
-             RETURNING id, purchase_price, purchase_price_eur, purchase_currency
+             RETURNING id, purchase_price, purchase_price_eur, purchase_currency,
+                       acquisition_fees, acquisition_fees_eur
                 """,
                 user_id, item_id, price, price_eur, currency, payload.purchased_at,
+                fees, fees_eur,
             )
             if row is None:
                 # Not found OR not theirs — one message for both, so the
@@ -696,8 +718,8 @@ async def update_item_purchase(
                 raise error_response(404, "Item not found", code="NOT_FOUND")
 
             logger.info(
-                "[items] purchase price set item=%s user=%s %s %s -> EUR %s",
-                item_id, user_id, price, currency, price_eur,
+                "[items] purchase set item=%s user=%s price=%s fees=%s %s -> EUR %s / %s",
+                item_id, user_id, price, fees, currency, price_eur, fees_eur,
             )
             return {
                 "ok": True,
@@ -705,6 +727,8 @@ async def update_item_purchase(
                 "purchase_price": float(row["purchase_price"]) if row["purchase_price"] is not None else None,
                 "purchase_price_eur": float(row["purchase_price_eur"]) if row["purchase_price_eur"] is not None else None,
                 "purchase_currency": row["purchase_currency"],
+                "acquisition_fees": float(row["acquisition_fees"]) if row["acquisition_fees"] is not None else None,
+                "acquisition_fees_eur": float(row["acquisition_fees_eur"]) if row["acquisition_fees_eur"] is not None else None,
             }
     except HTTPException:
         raise

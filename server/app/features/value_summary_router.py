@@ -236,9 +236,18 @@ async def get_value_summary(
                 -- test (pp.q50 > purchase_price) and overstated the saving for
                 -- any user not on EUR. See the paired-columns note in
                 -- docs/ARCHITECTURE.md.
-                i.purchase_price_eur AS purchase_price,
+                -- Fee-aware since 2026-08-31, and it has to be: this screen
+                -- and /portfolio/items both answer "what did you pay", and two
+                -- readers of one fact that disagree is
+                -- learning_duplicated_value_chain_drifts_silently. A "smart
+                -- buy" computed on the sticker price would also promote items
+                -- whose saving is entirely eaten by the tax and postage paid
+                -- for them -- the worst possible thing to congratulate someone
+                -- for. COALESCE(...,0) so a row with no fees recorded behaves
+                -- exactly as it does today.
+                (i.purchase_price_eur + COALESCE(i.acquisition_fees_eur, 0)) AS purchase_price,
                 pp.q50 AS market_value,
-                (pp.q50 - i.purchase_price_eur) AS saved
+                (pp.q50 - i.purchase_price_eur - COALESCE(i.acquisition_fees_eur, 0)) AS saved
             FROM items i
             JOIN LATERAL (
                 SELECT q50 FROM price_predictions
@@ -249,8 +258,12 @@ async def get_value_summary(
             WHERE i.user_id = $1::uuid AND NOT i.archived
               AND i.purchase_price_eur IS NOT NULL
               AND i.purchase_price_eur > 0
-              AND pp.q50 > i.purchase_price_eur
-            ORDER BY (pp.q50 - i.purchase_price_eur) DESC
+              -- The FILTER moves with the projection. Filtering on the sticker
+              -- price while displaying a fee-aware saving would list items with
+              -- a NEGATIVE saving -- the queue-vs-projection disagreement in
+              -- learning_queue_filter_disagrees_with_its_own_projection.
+              AND pp.q50 > (i.purchase_price_eur + COALESCE(i.acquisition_fees_eur, 0))
+            ORDER BY (pp.q50 - i.purchase_price_eur - COALESCE(i.acquisition_fees_eur, 0)) DESC
             LIMIT 20
             """,
             user_id,
