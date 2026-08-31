@@ -74,9 +74,19 @@ change looking plausible; it is `test_free_user_gets_0`.
 | ~~Condition Grading (item card)~~ **SHELVED 2026-05-02** | — | — |
 | Set Completion — **trading-card sets only**, see note | No | Yes |
 | Advanced analytics — **market prices only** (price trend shelved, history removed) | No | Yes |
+| Acquisition fees & realised P/L (item card + `/portfolio/realised-pl`) | No | Yes |
 | Basic valuation | Yes | Yes |
 | Community events | Yes | Yes |
 | Ads | Yes | No |
+
+> ⚠️ **The purchase-price field itself is still FREE, and that is deliberate.**
+> Only the FEES row and the realised P/L are gated (`limits.advanced_analytics`,
+> 2026-08-31). "What you paid" has shipped free since the item card had a
+> purchase field, and moving an existing free field behind the paywall is the
+> complaint pattern §8 of docs/COLLECTOR_DEMAND.md found drawing the sharpest
+> reviews in the category — OnlyDrams got named for exactly that. If it should
+> be gated, that is a product decision to take deliberately, with the row above
+> updated and the Pro bullet added, not a side effect of shipping fees.
 
 > **Shelved rows are struck through on purpose rather than deleted.** Two of
 > them — Condition Grading and the Dossier PDF export — were sold on the Pro

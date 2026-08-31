@@ -230,6 +230,27 @@ paired-column bug wearing a different hat. **Any future optional field on a
 PATCH route inherits this problem** — a nullable field with a default cannot
 express "leave it alone" without checking what the caller actually set.
 
+`purchase_price` is gated the same way (`$10`), which makes the route **three
+state**, not two:
+
+| caller sends | effect |
+|---|---|
+| a number | set it |
+| `null` explicitly | CLEAR it (a null price clears the fees too) |
+| nothing at all | leave the column untouched |
+
+That third state is load-bearing, not tidiness. Resending an unchanged
+`purchase_price` makes the server re-convert it through `convert_to_eur` at
+**today's** rate, so a non-EUR cost basis drifts a little every time an
+unrelated field is saved — `useItemDetail` has always refused to resend an
+unchanged price for that reason, and until now the route could not honour it.
+It is also the only thing that lets a member edit **fees alone**.
+
+Verified on a real row in a rolled-back transaction rather than asserted:
+price-omitted leaves a USD 900 amount *and its EUR half* untouched while fees
+change; price-given with fees omitted leaves fees at 70; an explicit null
+clears both.
+
 **Where the fee-aware basis lives — three sites that must agree:**
 
 | site | expression |
