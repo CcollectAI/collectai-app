@@ -381,12 +381,30 @@ important."* Traced end to end rather than answered from the config.
 28.6% of the price corpus**, so US market data is live, not planned. No EU-only
 tax or territory assumption exists anywhere in the code.
 
-**Gap 1 — the market of origin is invisible above the item card.** Prices are
-blended US (TCGplayer) and EU (Cardmarket + Scryfall's `eur` fields, ~70%) into
-one median. Research puts those markets ~31% apart. `src/lib/compProvenance.ts`
-can now say *"TCGplayer, Cardmarket · US + EU markets"* and does so on the item
-card — but the **portfolio totals still make no market claim at all**, so a US
-member's collection value is an unlabelled, EU-weighted number. Open.
+**Gap 1 — CLOSED 2026-08-31.** Prices are blended US (TCGplayer, 28.6%) and EU
+(Cardmarket + Scryfall's `eur` fields, ~70%) into one median, and those markets
+sit ~31% apart. The item card could name it; the portfolio total could not.
+
+It needed no new data: `price_predictions.evidence_summary` already carries the
+provider names, populated on **1,742,491 of 1,742,491** rows. `/portfolio/items`
+now returns a per-item `market` and a `market_split`, and the analytics screen
+renders *"N comp-backed · EU + US markets"* under the Market column —
+qualifying that figure rather than taking a column of its own.
+
+Three rules it holds to, each with a test that fails if broken:
+
+- **Nothing rather than a guess.** 84% of stored predictions predate the
+  2026-08-27 provider fix and say `unknown` (verified: zero unknown rows written
+  since 08-28). Defaulting those to "EU" would be the overclaim the line exists
+  to prevent.
+- **Estimate-backed items are excluded.** An estimate has no provider behind it,
+  so counting it as either market invents provenance.
+- **Unknowns are counted, never folded into a side** — the include-and-mark rule
+  `splitPortfolioByValueSource` already states.
+
+`server/app/lib/comp_market.py` mirrors `src/lib/compProvenance.ts`, and
+`test_comp_market.py` **parses the TS file** rather than restating the pairs —
+restating them would make the test a third copy, and a third copy drifts too.
 
 **Gap 2 — smaller than first reported, and the real risk was elsewhere.** The
 first read was "US users inherit FX drift on every conversion". **Not true**,

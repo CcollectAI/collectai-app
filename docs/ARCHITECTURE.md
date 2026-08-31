@@ -281,6 +281,34 @@ counted in `sales_without_cost_basis` rather than summed. Subtracting a missing
 basis renders the entire proceeds as pure profit — `None or 0` turning UNKNOWN
 into a confident number.
 
+#### Market of origin — erased at ingest, recovered from `provider`
+
+`market_hits.currency` reads `'EUR'` on **99.97%** of rows, and that is not
+evidence of a European price: `import_pokemon.py` does
+`to_eur(market_price, "USD")` on TCGplayer's US figures and stores
+`currency="EUR"`. All 959,655 TCGplayer rows have `price = price_eur`. **The
+source currency and amount are discarded**, so the currency column cannot tell
+EU from US — and the two markets price the same card ~31% apart.
+
+`provider` is the only surviving signal. Two maps key on it and **must agree**:
+
+| | |
+|---|---|
+| `server/app/lib/comp_market.py` | `PROVIDER_MARKET`, used by `/portfolio/items` |
+| `src/lib/compProvenance.ts` | same map, used by the item card |
+
+`server/tests/test_comp_market.py::test_matches_the_frontend_map` parses the TS
+file and compares. It does not restate the pairs — that would be a third copy,
+and a third copy drifts too.
+
+Each mapping is verified in the IMPORTER, never assumed from the brand:
+`scryfall` is **EU** because `import_mtg.py` reads `eur`/`eur_foil`, which
+Scryfall sources from Cardmarket — despite Scryfall being a US site.
+
+Recovering the original amount would mean storing the source currency and
+amount alongside the EUR half. Until then, a member outside the eurozone sees
+comps carrying the FX of their ingest day, over a one-month retention window.
+
 #### `user_settings`: currency / region / locale — code and CHECK must agree
 
 `PUT /settings` writes three constrained columns. Each has a code-side allow-list
