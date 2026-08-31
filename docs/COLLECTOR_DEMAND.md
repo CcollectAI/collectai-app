@@ -227,21 +227,42 @@ bullet immediately.
 
 ---
 
-## Verified against the codebase (2026-08-30)
+## Verified against the codebase — re-checked 2026-08-31
 
-Every row below was checked in code or on prod, not inferred from the research.
+Every row re-verified in code or on prod for this pass, not carried forward.
 
-| # | Complaint | What Sparrow actually does | Verdict |
+| # | Complaint | Status | Evidence |
 |---|---|---|---|
-| 1 | Apps show asking prices as value | `valuation_worker.py:315` filters `AND (is_listing IS NOT TRUE)`, which excludes 310,759 rows flagged as listings. **But the corpus it admits is NOT completed sales** — see the correction below | **⛔ CORRECTED — we have the same problem** |
-| 1b | Nobody discloses method or sample size | `catalog-item/[key].tsx:281` says *"Median of N recent comps"*. The **item card does not** — `ValueSourceChip` collapses `catalog_daily`/`catalog_model`/`quick_scan` into one label, "Market estimate" | **Right disclosure, wrong screen** |
-| 2 | Thin markets break a single number | q10/q50/q90 in `PriceBand`, `_MIN_COMPS_FOR_MODEL = 3`, `_LOW_COMP_CONF_CAP` below it. `CompSource` carries `source`, `count`, `avgPrice`, `dateRange` | Design ✓, **data ✗** |
-| 3 | EU/US markets differ ~31% | 7 currencies convert, but nothing states **which market** a comp came from | **Gap** |
-| 4 | Missing item, no manual escape hatch | `app/add-manual.tsx` exists; the `/catalog/match` lookup is **advisory, never required** | ✓ **already solved** |
-| 5 | Cost basis ignores fees and tax | ~~none exist~~ **FIXED 2026-08-31** — `items.acquisition_fees`/`_eur` via `PATCH /items/{id}/purchase`; `cost_basis` fee-aware in all three query sites; new `GET /portfolio/realised-pl` joins the sell half. The research case reproduces at **−104.05** | **✓ backend; no FE surface yet** |
-| 6 | Half-working grading draws 2-star reviews | Shelved 2026-05-02, no PSA/CGC API, FE imports removed 2026-08-30 | ✓ **correct as-is** |
-| 7 | No LEGO purchase price / condition / sealed-vs-used | ~~card-grading vocabulary on all 56 categories~~ **FIXED 2026-08-31** — `conditionOptionsFor()` gives boxed collectibles sealed/opened-complete/opened-incomplete/built, spirits fill-and-seal, vinyl Goldmine. Purchase price still has no fee/tax fields (§5) | **condition ✓, cost basis still open** |
-| 8 | Paywalling free features / paying for accuracy | Pro sells caps and access, never accuracy. Audited and gated 2026-08-30 | ✓ **right side of the line** |
+| 1 | Apps quote asking prices as value | **⚠️ LABELLED, NOT SOLVED** | Our comps are price-index observations, not sales. The item card no longer *calls* them sales (`describeComps`), which is honest — but the underlying data is unchanged |
+| 1b | Nobody discloses method / sample / source | **✅ DONE** | Item card: *"Based on N price observations · TCGplayer, Cardmarket · US + EU markets"*. Catalog screen reads `market_hits_daily.comps_count` — 5,457,641 rows, current to today |
+| 2 | Thin markets break a single number | **❌ OPEN — data** | Design is right (q10/q50/q90, `_MIN_COMPS_FOR_MODEL`, confidence cap). Blocked on eBay Marketplace Insights |
+| 3 | EU/US ~31% apart, unsurfaced | **✅ DONE** | Item card + portfolio total both name the market; `comp_market.py` pinned to `compProvenance.ts` by a parsing test |
+| 4 | Missing item, no manual escape hatch | **✅ ALREADY SOLVED** | `add-manual.tsx`; catalogue match is advisory, never required |
+| 5 | Cost basis ignores fees and tax | **⚠️ HALF DONE** | Buy side shipped end to end (columns, route, three query sites, Pro-gated FE field). `GET /portfolio/realised-pl` exists and **renders nowhere** |
+| 6 | Half-working grading draws 2-star reviews | **✅ CORRECT AS-IS** | Shelved, no PSA/CGC API, dead imports removed |
+| 7 | Condition can't express sealed-vs-used | **✅ DONE** | `conditionOptionsFor()` per category; boxed / spirits / vinyl / cards |
+| 8 | Paywalling free features, paying for accuracy | **✅ DONE** | Pro sells caps and access, never accuracy; `check:paywall-claims` enforces it |
+
+### What is honestly NOT fixed
+
+**§2 — the thin-market data.** The single biggest quality gap, and the one item
+here that is not a code change. 45 categories and ~62k rows are unpriceable
+because `ebay_caller.py:410 sold_comps()` returns `[]`.
+
+**§5 — realised P/L has no screen.** The endpoint computes the research's exact
+case (−104.05) and nothing calls it. By this repo's own standard
+(`learning_complete_feature_reachable_from_nowhere`) that is not shipped.
+
+**§1 — the deepest one, and it is a data problem wearing a labelling fix.** The
+category's loudest complaint is that apps quote asking prices. We do not quote
+asking prices, but we do not quote completed sales either: **99.98% of our comps
+are catalogue price-index snapshots** with no sale timestamp. Saying so plainly
+is better than every competitor manages, and it is not the same as having the
+data. Only 814 pricecharting rows are real sales.
+
+**Coverage.** ~40 categories hold thousands of eBay rows each, all
+`is_listing = true`, all excluded from valuation. The labelling machinery to
+surface them honestly now exists; the product decision has not been taken.
 
 ### The two that change what we build
 
