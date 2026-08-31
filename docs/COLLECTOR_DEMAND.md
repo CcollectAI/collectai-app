@@ -371,6 +371,51 @@ it is more than a competitor discloses, and it turns ~40 dead categories into
 live ones. **It is a product decision, not a build problem** — the labelling
 machinery shipped on 2026-08-30.
 
+## US-market readiness — measured 2026-08-31
+
+Asked directly: *"is the app now also ready for US users, this is very
+important."* Traced end to end rather than answered from the config.
+
+**Ready.** USD is a supported currency; `region='americas'` routes to
+`EBAY_US`, TCGplayer, Mercari US, Whatnot, COMC, StockX; **TCGplayer is already
+28.6% of the price corpus**, so US market data is live, not planned. No EU-only
+tax or territory assumption exists anywhere in the code.
+
+**Gap 1 — the market of origin is invisible above the item card.** Prices are
+blended US (TCGplayer) and EU (Cardmarket + Scryfall's `eur` fields, ~70%) into
+one median. Research puts those markets ~31% apart. `src/lib/compProvenance.ts`
+can now say *"TCGplayer, Cardmarket · US + EU markets"* and does so on the item
+card — but the **portfolio totals still make no market claim at all**, so a US
+member's collection value is an unlabelled, EU-weighted number. Open.
+
+**Gap 2 — smaller than first reported, and the real risk was elsewhere.** The
+first read was "US users inherit FX drift on every conversion". **Not true**,
+verified end to end: the server converts at the live ECB rate (0.858885 today)
+and `/fx/rates` returns `rates_from_eur.USD = 1.1643`, so a $10 TCGplayer card
+round-trips to **$10.00**.
+
+What *is* true, and was a live defect:
+
+| | |
+|---|---|
+| `USD_TO_EUR` fallback | **0.92** vs live ECB **0.85889** — 7.1% wrong |
+| FE `DEFAULT_RATES.USD` | **1.08** vs live **1.1643** — 7.2% wrong, same direction |
+| fallback cache TTL | was `FX_CACHE_TTL` = **28800s (8h)**, same as live rates |
+
+So one transient failure to reach Frankfurter pinned a 7.1%-wrong USD rate for
+**eight hours** across every ingest conversion and every client display, logged
+once at `warning`. Fixed 2026-08-31: a fallback now caches for 300s and logs at
+ERROR naming the rate. The module docstring also claimed "cached for 1 hour"
+while prod set 8 — `learning_env_var_beats_the_code_default`.
+
+**Residual and unavoidable:** `market_hits` stores EUR, converted at ingest-day
+rates, with a one-month retention. A US member therefore sees month-old comps
+carrying that month's FX, not today's — typically 1–3% for EUR/USD. Fixing it
+properly means storing the source currency and amount alongside the EUR half,
+which is a schema change, not a patch. **The original USD is currently
+discarded**: all 959,655 TCGplayer rows carry `currency='EUR'` and
+`price = price_eur`.
+
 ## Sources
 
 - [Is Collectr Accurate? Collectr vs Pokedata on the Same 25 Cards — TCGinvest](https://tcginvest.io/blog/pokemon-collection-value-different-apps)
