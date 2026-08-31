@@ -149,10 +149,55 @@ class TestTheSQLItself:
     def test_the_purchase_route_writes_BOTH_halves_of_the_fee_pair(self):
         # Writing one half of a paired column never throws; the reader defaults
         # and the feature renders empty (docs/ARCHITECTURE.md).
+        # Both halves move together, and BOTH are gated by the same $9 flag.
+        # A pair where only one half is conditional is the paired-column bug
+        # wearing a different hat: one edit and the two columns disagree.
         src = self._src("routes/items_router.py")
-        assert "acquisition_fees     = $7" in src
-        assert "acquisition_fees_eur = $8" in src
+        assert "acquisition_fees     = CASE WHEN $9 THEN $7 ELSE acquisition_fees     END" in src
+        assert "acquisition_fees_eur = CASE WHEN $9 THEN $8 ELSE acquisition_fees_eur END" in src
 
     def test_clearing_the_price_clears_the_fees(self):
         src = self._src("routes/items_router.py")
         assert "if price is None:" in src and "fees, fees_eur = None, None" in src
+
+
+class TestOmittedIsNotNull:
+    """A caller that does not mention fees must not erase them.
+
+    Found by auditing my own new code on 2026-08-31, BEFORE release.
+    `acquisition_fees` defaults to None, and the first version of the route
+    wrote it unconditionally -- so the shipped app, which predates the field and
+    sends only `purchase_price`, would have wiped a member's fees on every
+    price edit. Verified against the real database in a rolled-back transaction
+    as well as here.
+    """
+
+    def _payload(self, **kw):
+        from app.routes.items_router import UpdateItemPurchaseRequest
+        return UpdateItemPurchaseRequest(**kw)
+
+    def test_pydantic_cannot_distinguish_omitted_from_null_by_VALUE(self):
+        # Both are None; only model_fields_set separates them. This is the
+        # whole reason the route cannot just check `if fees is None`.
+        omitted = self._payload(purchase_price=900.0, purchase_currency="EUR")
+        explicit = self._payload(purchase_price=900.0, purchase_currency="EUR",
+                                 acquisition_fees=None)
+        assert omitted.acquisition_fees is explicit.acquisition_fees is None
+        assert "acquisition_fees" not in omitted.model_fields_set
+        assert "acquisition_fees" in explicit.model_fields_set
+
+    def test_the_route_gates_the_write_on_model_fields_set(self):
+        import pathlib
+        src = (pathlib.Path(__file__).resolve().parents[1]
+               / "app" / "routes" / "items_router.py").read_text()
+        assert 'fees_provided = ("acquisition_fees" in payload.model_fields_set) or price is None' in src
+        # The CASE is what makes the flag do anything.
+        assert "acquisition_fees     = CASE WHEN $9 THEN $7 ELSE acquisition_fees     END" in src
+        assert "acquisition_fees_eur = CASE WHEN $9 THEN $8 ELSE acquisition_fees_eur END" in src
+
+    def test_clearing_the_price_still_clears_fees_even_if_unmentioned(self):
+        # Coherence of the ROW beats what the caller typed: fees on a purchase
+        # with no price would be added to a model estimate by portfolio_router.
+        p = self._payload(purchase_price=None, purchase_currency="EUR")
+        fees_provided = ("acquisition_fees" in p.model_fields_set) or p.purchase_price is None
+        assert fees_provided is True

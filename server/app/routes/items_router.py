@@ -693,6 +693,19 @@ async def update_item_purchase(
     if price is None:
         fees, fees_eur = None, None
 
+    # OMITTED is not the same as NULL, and conflating them was a live
+    # regression (caught by audit before release, 2026-08-31). `acquisition_fees`
+    # defaults to None, so a caller that PATCHes only the price -- which is
+    # EXACTLY what the shipped app sends, since it predates this field -- would
+    # have written NULL over fees the member had already entered. Every price
+    # edit would silently wipe them.
+    #
+    # `model_fields_set` is the only thing that distinguishes "the caller did
+    # not mention fees" from "the caller means null". Clearing the price still
+    # clears the fees regardless, because that rule is about coherence of the
+    # row, not about what the caller typed.
+    fees_provided = ("acquisition_fees" in payload.model_fields_set) or price is None
+
     try:
         async with pool.acquire() as conn:
             row = await conn.fetchrow(
@@ -702,15 +715,18 @@ async def update_item_purchase(
                        purchase_price_eur   = $4,
                        purchase_currency    = $5,
                        purchased_at         = COALESCE($6::timestamptz, purchased_at),
-                       acquisition_fees     = $7,
-                       acquisition_fees_eur = $8,
+                       -- $9 = "the caller addressed fees at all". Without it
+                       -- an omitted field is indistinguishable from an
+                       -- explicit null and every price-only edit wipes them.
+                       acquisition_fees     = CASE WHEN $9 THEN $7 ELSE acquisition_fees     END,
+                       acquisition_fees_eur = CASE WHEN $9 THEN $8 ELSE acquisition_fees_eur END,
                        updated_at           = NOW()
                  WHERE id = $2::uuid AND user_id = $1::uuid
              RETURNING id, purchase_price, purchase_price_eur, purchase_currency,
                        acquisition_fees, acquisition_fees_eur
                 """,
                 user_id, item_id, price, price_eur, currency, payload.purchased_at,
-                fees, fees_eur,
+                fees, fees_eur, fees_provided,
             )
             if row is None:
                 # Not found OR not theirs — one message for both, so the
