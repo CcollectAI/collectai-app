@@ -138,6 +138,7 @@ readers key on different halves:
 | `name` ↔ `title` | Home portfolio and `/portfolio/overview` read `name`; the Items tab falls back to `title` |
 | `purchased_at` ↔ `purchase_date` | `ITEMS_SELECT` (`itemsProvider.ts`) reads `purchased_at`; the CSV export reads `purchase_date` |
 | `purchase_price` ↔ `purchase_price_eur` | The analytics Cost Basis / DCA series sums the EUR half |
+| `acquisition_fees` ↔ `acquisition_fees_eur` | Added 2026-08-31. Same contract, same route, same currency — see below |
 
 Writing one half and not the other **never throws**. A `SELECT` of the
 unwritten half returns NULL and every reader defaults (`?? 0`, `'Untitled'`),
@@ -188,6 +189,59 @@ without one could never gain one. Measured on prod 2026-08-26: **7 of 108 items
 had a purchase price**, which is why `/portfolio/items` was falling back to the
 earliest prediction as cost basis for almost the whole collection and reporting
 model drift as profit.
+
+#### Acquisition fees — the second half of a true cost basis (2026-08-31)
+
+`items.acquisition_fees` / `acquisition_fees_eur` hold tax, inbound shipping and
+grading submission — what was paid to ACQUIRE the item beyond the sticker price.
+Until they existed, `cost_basis` was the sticker price and **every gain in the
+app was overstated** for anyone who paid postage: docs/COLLECTOR_DEMAND.md §5's
+worked case is a €956.25 basis reported as €900.
+
+They follow the pair contract above exactly, and one rule is worth stating
+twice:
+
+⚠️ **They are deliberately NOT in `trg_items_sync_paired_columns`.** That
+trigger's guard treats a NULL currency AS EUR, which is how a JPY amount is
+copied into a euro column (~170x). `PATCH /items/{item_id}/purchase` converts
+fees with `convert_to_eur` using the SAME `purchase_currency` in the SAME call,
+so there is nothing left for a trigger to infer. A fee in one currency and a
+price in another is not a shape this endpoint accepts, because it is not a shape
+a single purchase has.
+
+**Clearing the price clears the fees.** Fees on a purchase that no longer has a
+price are an orphan number, and `/portfolio/items` would add them to the
+`first_q50` model estimate.
+
+**Where the fee-aware basis lives — three sites that must agree:**
+
+| site | expression |
+|---|---|
+| `/portfolio/items` | `CASE WHEN purchase_price_eur IS NOT NULL THEN purchase_price_eur + COALESCE(acquisition_fees_eur,0) ELSE COALESCE(first_q50,0) END` |
+| `/portfolio/realised-pl` | the same CASE, verbatim |
+| `value_summary_router` | projection **and filter**, both fee-aware |
+
+Fees are added ONLY to a real purchase price. Attaching real tax to the
+`first_q50` fallback would dress model drift up as evidence — the bug that
+COALESCE already exists to flag.
+
+`tests/test_realised_pl.py::TestTheSQLItself` pins all three. It exists because
+mutation testing showed the arithmetic tests passed `cost_basis` in
+pre-computed, so deleting the fee term from the SQL left every one of them
+green.
+
+#### Realised P/L — the sell half was built and never joined
+
+`GET /portfolio/realised-pl` joins `marketplace_sales` → `marketplace_listings`
+→ `items`. The sell side needed nothing new: `net_proceeds` has been stored
+since the listing router existed, computed as
+`sale_price − platform_fee − payment_processing_fee − shipping_cost_actual`.
+It had **0 rows and no reader**.
+
+A sale whose item has no purchase price reports `profit: null`, not 0, and is
+counted in `sales_without_cost_basis` rather than summed. Subtracting a missing
+basis renders the entire proceeds as pure profit — `None or 0` turning UNKNOWN
+into a confident number.
 
 #### `user_settings`: currency / region / locale — code and CHECK must agree
 
