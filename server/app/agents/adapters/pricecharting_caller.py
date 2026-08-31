@@ -31,6 +31,16 @@ logger = logging.getLogger(__name__)
 PRICECHARTING_BASE = "https://www.pricecharting.com/api"
 
 # Categories that benefit from PriceCharting data
+# ⚠️ THIS LIST ROUTES NOTHING. Verified 2026-08-31: no module reads it. The list
+# that actually gates a PriceCharting call is
+# `ADAPTER_CATEGORIES["pricecharting"]` in app/agents/marketplace_routing.py,
+# and the two are pinned to each other by
+# tests/test_pricecharting_categories.py::test_the_two_lists_agree.
+#
+# Editing this one alone is exactly the mistake that produced it: a list that
+# shares the concept but is not the one consumed
+# (feedback_same_name_is_not_the_same_thing). Kept as documentation of what the
+# adapter can answer, never as a gate.
 SUPPORTED_CATEGORIES = [
     "retro_games",
     "retro_handhelds",

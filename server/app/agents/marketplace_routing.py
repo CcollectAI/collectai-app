@@ -143,8 +143,23 @@ ADAPTER_CATEGORY_ROUTING: Dict[str, Optional[Set[str]]] = {
     "ktown4u": {"kpop", "kpop_lightsticks", "blind_box"},
     "comicbookrealm": {"comic_books"},
     "masterofmalt": {"whiskey"},
-    "pricecharting": {"retro_games", "retro_handhelds", "pokemon", "nintendo_merch", "sportscards",
-                      "funko", "comic_books"},
+    # PriceCharting is the only adapter whose rows carry a real `ended_at` -- an
+    # actual completed sale. Every entry below was PROBED against the live
+    # adapter on 2026-08-31, not inferred from what the site appears to cover.
+    #
+    # ⛔ `sportscards` REMOVED: probed with "1986 Fleer Michael Jordan" and
+    # returned ZERO results. It had been routed here since the adapter was
+    # written, so every sportscards lookup paid the request and got nothing --
+    # a dead route is indistinguishable from a working one from the outside
+    # (learning_dont_allowlist_dead_assert_dead).
+    #
+    # ✅ The four TCGs ADDED: each returned real products with prices, and each
+    # has a console guard in pricecharting_caller._CATEGORY_CONSOLE_ALLOW built
+    # from its OBSERVED console string ("Magic Alpha", "Yugioh Legend Of Blue
+    # Eyes White Dragon", "Lorcana Promo", "One Piece Promo").
+    "pricecharting": {"retro_games", "retro_handhelds", "pokemon", "nintendo_merch",
+                      "funko", "comic_books",
+                      "mtg", "yugioh", "lorcana", "one_piece_tcg"},
     "yahoo_auctions": {
         "bandai_premium", "jp_event", "jp_magazine", "ghibli", "anime_figures",
         "retro_pokemon", "vtuber", "gunpla", "anime_bluray", "anime_soundtrack",

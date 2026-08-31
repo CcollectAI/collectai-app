@@ -9,6 +9,47 @@ guess is worse than none.
 from app.agents.adapters.pricecharting_caller import (
     SUPPORTED_CATEGORIES, _CATEGORY_CONSOLE_ALLOW,
 )
+from app.agents.marketplace_routing import ADAPTER_CATEGORY_ROUTING, DISABLED_ADAPTERS
+
+ROUTED = ADAPTER_CATEGORY_ROUTING["pricecharting"]
+
+
+class TestTheListThatActuallyRoutes:
+    """The adapter's SUPPORTED_CATEGORIES gates NOTHING.
+
+    Found by auditing the first version of this change on 2026-08-31: six
+    categories were added to `SUPPORTED_CATEGORIES`, which no module reads, and
+    the change routed nothing. The real gate is
+    `ADAPTER_CATEGORY_ROUTING["pricecharting"]`. Editing a list that shares the
+    concept but is not the one consumed is
+    feedback_same_name_is_not_the_same_thing, and these tests exist so the next
+    edit cannot land on the decoy.
+    """
+
+    def test_the_two_lists_agree(self):
+        assert set(SUPPORTED_CATEGORIES) == ROUTED, (
+            "SUPPORTED_CATEGORIES documents the adapter; ADAPTER_CATEGORY_ROUTING "
+            "gates it. They must not drift -- a category in the doc list only is "
+            "a change that does nothing."
+        )
+
+    def test_the_probed_categories_are_ROUTED_not_merely_listed(self):
+        for c in ("mtg", "yugioh", "lorcana", "one_piece_tcg", "comic_books", "funko"):
+            assert c in ROUTED, f"{c} probed live but is not routed"
+
+    def test_SPORTSCARDS_IS_NOT_ROUTED(self):
+        """It was, and it returns zero results.
+
+        Routed since the adapter was written, so every sportscards lookup paid a
+        request and got nothing back. Probed 2026-08-31 with "1986 Fleer Michael
+        Jordan": 0 results.
+        """
+        assert "sportscards" not in ROUTED
+
+    def test_the_adapter_is_not_disabled(self):
+        # Routing a category to a disabled adapter is a third way for this to
+        # look configured and do nothing.
+        assert "pricecharting" not in DISABLED_ADAPTERS
 
 
 class TestTheAllowlist:
