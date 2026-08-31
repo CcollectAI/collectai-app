@@ -134,6 +134,49 @@ most concrete "collectors would pay for this" signal found, and it needs **no ne
 data source** — it is arithmetic over fields the user already enters, plus a
 per-marketplace fee table we can hardcode.
 
+### The two halves of a P/L, traced 2026-08-31
+
+I first told Merle this was a choice — "acquisition fees only" **or** "full
+realised P/L" — and that sale price was not stored. **Both wrong.** They are two
+halves of one equation, and the sell half is largely built:
+
+```
+realised P/L  =  net_proceeds   −   true cost basis
+                 ^^^^^^^^^^^^       ^^^^^^^^^^^^^^^
+                 BUILT              MISSING the fee half
+```
+
+**Sell side — schema and endpoint exist, and are unused.** `marketplace_sales`
+carries `sale_price`, `shipping_cost_actual`, `platform_fee`,
+`payment_processing_fee`, `sold_at` and a **stored** `net_proceeds`, computed at
+`marketplace_listing_router.py:983` as
+`sale_price − total_fees − shipping_cost_actual` — precisely the arithmetic the
+research says nobody does. `marketplace_listings` adds `estimated_fees`,
+`estimated_net`, `fee_percentage`, `shipping_cost` and `item_id`, so a sale
+joins back to the item.
+
+Measured: **0 rows in `marketplace_sales`**, 5 listings at `status='sold'`, and
+`net_proceeds` is rendered **nowhere** in the app. `useListForSale.ts` computes a
+*projected* net for the ListForSale modal, which is live — but that is an
+estimate before a sale, not a realised result after one.
+
+**Buy side — the only genuinely missing data.** `items` has `purchase_price`,
+`purchase_price_eur`, `purchase_currency`, `purchase_date`. There is no
+`acquisition_fees`, no tax, no inbound shipping, no grading-submission cost. So
+`portfolioAnalytics.totalUnrealizedPL` is computed against the sticker price and
+**overstates every gain** for anyone who paid tax or postage — the
+$900-not-$956.25 error, shipped.
+
+**What P/L needs that acquisition alone does not give you:** the sale price, the
+platform fee, the processing fee, the outbound shipping actually paid, and the
+sale date. All five have columns. What is absent is (a) the acquisition-side fee
+half, and (b) any surface that joins sale → listing → item → cost basis.
+
+So the honest sequencing is **both, in order**: acquisition fees make the basis
+true, and the realised P/L is then a join and a screen rather than a data model.
+Doing either alone ships half an equation — a true cost with no outcome, or an
+outcome measured against a wrong cost.
+
 ## 6. Grading: narrow support, and a feature that half-works
 
 Collectr **supports PSA only** — no BGS, CGC or Beckett — and its *"Grading Price
