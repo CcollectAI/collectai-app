@@ -12,7 +12,7 @@ import re
 import pytest
 
 from app.lib.comp_market import (
-    PROVIDER_MARKET, market_of_sources, market_of_evidence, split_by_market,
+    PROVIDER_MARKET, market_of_sources, market_of_evidence,
 )
 
 FE_MAP = (pathlib.Path(__file__).resolve().parents[2]
@@ -77,34 +77,3 @@ class TestMarketOfSources:
     @pytest.mark.parametrize("bad", [None, "a string", 42, {}, {"sources": None}])
     def test_a_malformed_summary_is_None_not_a_crash(self, bad):
         assert market_of_evidence(bad) is None
-
-
-class TestSplitByMarket:
-    def test_totals_and_counts_per_market(self):
-        out = split_by_market([
-            {"value": 10.0, "market": "US"}, {"value": 5.5, "market": "US"},
-            {"value": 20.0, "market": "EU"}, {"value": 1.0, "market": "mixed"},
-        ])
-        assert out["us_total"] == 15.5 and out["us_count"] == 2
-        assert out["eu_total"] == 20.0 and out["eu_count"] == 1
-        assert out["mixed_total"] == 1.0
-
-    def test_an_UNKNOWN_market_is_included_and_marked_never_dropped(self):
-        """`splitPortfolioByValueSource`'s rule: include and mark, never hide.
-
-        Dropping them would show a member a portfolio worth less than they know
-        it is -- a bigger lie than an honest "we cannot say for these".
-        """
-        out = split_by_market([{"value": 30.0, "market": None}])
-        assert out["unknown_total"] == 30.0 and out["unknown_count"] == 1
-
-    def test_the_totals_add_up_to_the_whole_collection(self):
-        rows = [{"value": 10, "market": "US"}, {"value": 20, "market": "EU"},
-                {"value": 5, "market": None}, {"value": 1, "market": "mixed"}]
-        out = split_by_market(rows)
-        assert (out["us_total"] + out["eu_total"] + out["mixed_total"]
-                + out["unknown_total"]) == 36.0
-
-    def test_empty_in_zeroes_out(self):
-        out = split_by_market([])
-        assert all(out[k] == 0 for k in out)

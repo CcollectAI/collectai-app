@@ -68,27 +68,3 @@ def market_of_evidence(evidence_summary: Any) -> Optional[str]:
     if not isinstance(evidence_summary, dict):
         return None
     return market_of_sources(evidence_summary.get("sources"))
-
-
-def split_by_market(rows: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
-    """Aggregate item values by the market their comps came from.
-
-    Mirrors `splitPortfolioByValueSource` in src/lib/portfolioAnalytics.ts and
-    keeps its rule: **include and mark, never hide**. An item whose market
-    cannot be determined lands in `unknown_total` rather than being dropped --
-    a member whose portfolio silently shrank would be told a smaller lie than
-    one whose portfolio is honestly labelled "we cannot say for these".
-    """
-    out = {
-        "us_total": 0.0, "eu_total": 0.0, "mixed_total": 0.0, "unknown_total": 0.0,
-        "us_count": 0, "eu_count": 0, "mixed_count": 0, "unknown_count": 0,
-    }
-    for r in rows:
-        value = float(r.get("value") or 0)
-        market = r.get("market")
-        key = {"US": "us", "EU": "eu", "mixed": "mixed"}.get(market or "", "unknown")
-        out[f"{key}_total"] += value
-        out[f"{key}_count"] += 1
-    for k in ("us_total", "eu_total", "mixed_total", "unknown_total"):
-        out[k] = round(out[k], 2)
-    return out

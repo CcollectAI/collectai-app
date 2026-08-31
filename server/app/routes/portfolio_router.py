@@ -19,8 +19,7 @@ from app.errors import error_response
 from app.config import API_SHARED_SECRET, SIGNALS_BASE_URL
 from app.rate_limit import per_user_rate_limit
 from app.lib.db_helpers import get_db_pool
-from app.lib.comp_market import market_of_evidence, split_by_market
-import json as _json
+from app.lib.comp_market import market_of_evidence
 
 router = APIRouter(tags=["Portfolio"])
 
@@ -538,19 +537,20 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
             )
 
             items = []
-            market_rows = []
             for r in rows:
                 cv = float(r["current_value"] or 0)
                 cb = float(r["cost_basis"] or 0)
-                # asyncpg hands jsonb back as a str; the helper only reads dicts.
-                _ev = r["evidence_summary"]
-                if isinstance(_ev, str):
-                    try:
-                        _ev = _json.loads(_ev)
-                    except (ValueError, TypeError):
-                        _ev = None
-                item_market = market_of_evidence(_ev)
-                market_rows.append({"value": cv, "market": item_market})
+                # NO isinstance-str guard here, deliberately. app/db.py registers
+                # a jsonb type codec with `decoder=json.loads` on every pooled
+                # connection, so this arrives as a dict — and that file's own
+                # docstring names local `isinstance(row[...], str)` guards as
+                # "the tell that the drift was being patched downstream instead
+                # of at the source". The first version of this line carried one,
+                # plus a comment asserting the opposite of what the codec does.
+                # `market_of_evidence` returns None for anything that is not a
+                # dict, so a connection without the codec degrades to "no market
+                # claim" rather than to a wrong one.
+                item_market = market_of_evidence(r["evidence_summary"])
                 items.append({
                     "id": r["id"],
                     "name": r["name"],
@@ -588,13 +588,7 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     "set_size": int(r["set_size"]) if r["set_size"] is not None else None,
                 })
 
-            return {"items": items,
-                # WHICH MARKETS the collection's value rests on. The item card
-                # can already say this; the TOTAL could not, so a US member saw
-                # an unlabelled, EU-weighted number
-                # (docs/COLLECTOR_DEMAND.md, US-market readiness).
-                "market_split": split_by_market(market_rows),
-            }
+            return {"items": items}
     except Exception as e:
         _logger.error("[portfolio/items] DB error: %s", e)
         try:
