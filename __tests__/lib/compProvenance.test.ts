@@ -11,22 +11,22 @@ import {
 const S = (source: string, count = 10) => ({ source, count });
 
 describe('compNoun — never call an observation a sale', () => {
-  it('index providers give "price observations", NOT sales', () => {
-    expect(compNoun([S('scryfall'), S('tcgplayer')], 24)).toBe('price observations');
+  it('index providers give "market prices", NOT sales', () => {
+    expect(compNoun([S('scryfall'), S('tcgplayer')], 24)).toBe('market prices');
   });
   it('singular form', () => {
-    expect(compNoun([S('scryfall')], 1)).toBe('price observation');
+    expect(compNoun([S('scryfall')], 1)).toBe('market price');
   });
   it('only providers with REAL sale timestamps earn the word "sale"', () => {
     expect(compNoun([S('pricecharting')], 5)).toBe('recorded sales');
     expect(compNoun([S('sparrow_p2p')], 1)).toBe('recorded sale');
   });
   it('a MIX degrades to observations — one index row makes "sales" false', () => {
-    expect(compNoun([S('pricecharting'), S('scryfall')], 9)).toBe('price observations');
+    expect(compNoun([S('pricecharting'), S('scryfall')], 9)).toBe('market prices');
   });
   it('unknown sources are observations, not sales', () => {
-    expect(compNoun(null, 3)).toBe('price observations');
-    expect(compNoun([S('ebay')], 3)).toBe('price observations');
+    expect(compNoun(null, 3)).toBe('market prices');
+    expect(compNoun([S('ebay')], 3)).toBe('market prices');
   });
 });
 
@@ -67,17 +67,17 @@ describe('providerNames', () => {
 describe('describeComps — every clause must be earned', () => {
   it('states count, providers and market', () => {
     expect(describeComps([S('tcgplayer', 12), S('cardmarket', 12)], 24))
-      .toBe('Based on 24 price observations · TCGplayer, Cardmarket · US + EU markets');
+      .toBe('Based on 24 market prices · TCGplayer, Cardmarket · US + EU markets');
   });
   it('names a single market when only one is present', () => {
     expect(describeComps([S('scryfall', 20)], 20))
-      .toBe('Based on 20 price observations · Scryfall · EU market');
+      .toBe('Based on 20 market prices · Scryfall · EU market');
   });
   it('OMITS the market clause when no provider is mapped', () => {
-    expect(describeComps([S('ebay', 4)], 4)).toBe('Based on 4 price observations · eBay');
+    expect(describeComps([S('ebay', 4)], 4)).toBe('Based on 4 market prices · eBay');
   });
   it('omits the provider clause when sources are absent', () => {
-    expect(describeComps(null, 7)).toBe('Based on 7 price observations');
+    expect(describeComps(null, 7)).toBe('Based on 7 market prices');
   });
   it('flags below the reliability floor (_MIN_COMPS_RELIABLE = 3)', () => {
     expect(describeComps([S('scryfall', 2)], 2)).toContain('treat as an early estimate');

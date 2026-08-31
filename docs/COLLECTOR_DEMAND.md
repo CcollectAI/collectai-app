@@ -272,21 +272,35 @@ So **~50% of the corpus is verifiably sales-derived**, and none of it is asking
 prices — the complaint the whole category is judged on does not apply to us. Our
 current wording, "price observations", is *more conservative than the truth*.
 
-**Suggested, in order:**
+**Done 2026-08-31 — 1, 2 and 3:**
 
-1. **Say what it is.** *"Median of N daily Cardmarket average-sell and TCGplayer
-   market prices"* is accurate, stronger than what we say now, and still not the
-   overclaim "completed sales". One string change.
-2. **Verify the Scryfall field.** It is the largest single slice at 48.6% and the
-   only one whose meaning is assumed. If it is Cardmarket's trend rather than a
-   sell average, the label must say so for MTG.
-3. **Scale PriceCharting.** The one source giving rows with a real `ended_at` —
-   814 rows across 177 items today. No application, no partner approval.
-4. **eBay Marketplace Insights** for raw sold comps. The real unlock, and the one
-   that also fixes §2. User-side.
+1. ✅ **Said what it is.** `compNoun` now returns **"market prices"**, not "price
+   observations". Accurate for a sales-derived index, and not the overclaim
+   "completed sales". "recorded sales" stays reserved for providers whose rows
+   carry an actual sale time.
+2. ✅ **Verified the Scryfall field** — the 48.6% slice that was assumed.
+   Scryfall's own documentation: EUR comes from Cardmarket using the **Trend
+   Price, one-day average, seven-day average, average price, or suggested
+   price, whichever is available.** So it is a sales-derived *index* with a
+   listing-derived fallback — which is exactly why the word is "market prices"
+   and not "sales".
+3. ✅ **Scaled PriceCharting, 4 categories → 10.** It is the only source whose
+   rows carry a real `ended_at`. Added `mtg`, `yugioh`, `lorcana`,
+   `one_piece_tcg`, `comic_books`, `funko` — **each probed against the live
+   adapter first**, with its `console` token read from the response rather than
+   guessed.
 
-Note the ordering: 1 and 2 are honesty about data we already have; 3 and 4 are
-new data. Doing 3 and 4 first would leave us still describing good data badly.
+   ⛔ **`sportscards` was probed and returned ZERO results**, so it was
+   deliberately NOT added and a test names its absence. An allowlist entry for a
+   dead source is indistinguishable from a working one until someone measures
+   it.
+
+4. ⏳ **eBay Marketplace Insights** — your hands, and the real unlock: it fixes
+   §1 and §2 together. Step-by-step in **`docs/EBAY_MARKETPLACE_INSIGHTS.md`**,
+   including the exact use-case wording to paste into the form.
+
+The ordering mattered: 1 and 2 were honesty about data we already had, and doing
+3 or 4 first would have left us describing good data badly.
 
 **Coverage.** ~40 categories hold thousands of eBay rows each, all
 `is_listing = true`, all excluded from valuation. The labelling machinery to

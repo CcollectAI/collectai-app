@@ -106,20 +106,39 @@ export function marketOf(sources: CompSourceLike[] | null | undefined): Market |
 }
 
 /**
- * The noun for what we counted. "sales" is reserved for providers that really
- * do supply sales; everything else is an observation, because that is what it
- * is.
+ * The noun for what we counted.
+ *
+ * Three tiers, and the middle one is the point. Verified 2026-08-31 by reading
+ * the importers and each source's own documentation, rather than inferring from
+ * the column names:
+ *
+ *   cardmarket  21.9%  `averageSellPrice` (→ avg30)  COMPLETED SALES average
+ *   tcgplayer   28.6%  `market`                      TCGplayer Market Price,
+ *                                                    computed from recent sales
+ *   scryfall    48.6%  `eur` / `eur_foil`            Cardmarket TREND PRICE,
+ *                                                    falling back to 1-day,
+ *                                                    7-day, average, or
+ *                                                    SUGGESTED price
+ *   pricecharting        rows with a real `ended_at`  actual sales
+ *
+ * So "market prices" is the honest word for the bulk of it: sales-DERIVED, but
+ * aggregated by the source and — for Scryfall's fallback — occasionally a
+ * suggested figure. Not "completed sales", which we cannot evidence per row.
+ * Not "observations" either, which is vaguer than the truth and was what this
+ * said until today.
+ *
+ * "sales" stays reserved for providers whose rows carry an actual sale time.
  */
 export function compNoun(sources: CompSourceLike[] | null | undefined, n: number): string {
   const allSold = !!sources?.length && sources.every((s) => s?.source && SOLD_PROVIDERS.has(s.source));
   if (allSold) return n === 1 ? 'recorded sale' : 'recorded sales';
-  return n === 1 ? 'price observation' : 'price observations';
+  return n === 1 ? 'market price' : 'market prices';
 }
 
 /**
  * One muted line under the figure: how many, from whom, from where.
  *
- * Shape: "Based on 24 price observations · TCGplayer, Cardmarket · US + EU"
+ * Shape: "Based on 24 market prices · TCGplayer, Cardmarket · US + EU markets"
  * Every clause is dropped when it cannot be stated truthfully, so the line
  * degrades to just the count rather than inventing provenance.
  */

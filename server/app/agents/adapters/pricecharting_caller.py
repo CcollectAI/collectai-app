@@ -36,6 +36,28 @@ SUPPORTED_CATEGORIES = [
     "retro_handhelds",
     "pokemon",  # Pokemon game cartridges
     "nintendo_merch",  # amiibo pricing
+    # Added 2026-08-31. PriceCharting is the ONLY source in this repo whose rows
+    # carry a real `ended_at` — an actual completed sale — and it was reaching
+    # four categories. Everything below was PROBED before being allowlisted
+    # (learning_dont_allowlist_dead_assert_dead), with the `console` value read
+    # from the live response rather than guessed:
+    #   mtg            "Magic Alpha"                          Black Lotus EUR 61,888
+    #   yugioh         "Yugioh Legend Of Blue Eyes..."        Blue-Eyes 1st Ed
+    #   lorcana        "Lorcana Fabled" / "Lorcana Promo"     Elsa Snow Queen
+    #   one_piece_tcg  "One Piece Promo"                      Monkey D. Luffy
+    #   comic_books    "Comic Books Amazing Spider Man"       ASM #300 EUR 425
+    #   funko          "Funko Pop Heroes"                     Batman #41
+    #
+    # ⛔ sportscards was probed and returned ZERO results for
+    # "1986 Fleer Michael Jordan". Deliberately NOT added: an allowlist entry
+    # for a dead source is indistinguishable from one that works until someone
+    # measures it.
+    "mtg",
+    "yugioh",
+    "lorcana",
+    "one_piece_tcg",
+    "comic_books",
+    "funko",
 ]
 
 # Console name mapping for PriceCharting queries
@@ -101,6 +123,14 @@ _MAX_PRODUCTS_PER_QUERY = 3  # top few search candidates; bounds requests/item
 _CATEGORY_CONSOLE_ALLOW: Dict[str, tuple[str, ...]] = {
     "funko": ("funko",),
     "comic_books": ("comic",),
+    # Added with the categories themselves, 2026-08-31. Every token below was
+    # taken from an OBSERVED `console` value, not guessed — a guard built from a
+    # guess either drops everything or admits everything, and both look like a
+    # working adapter from the outside.
+    "mtg": ("magic",),                  # "Magic Alpha"
+    "yugioh": ("yugioh",),              # "Yugioh Legend Of Blue Eyes White Dragon"
+    "lorcana": ("lorcana",),            # "Lorcana Fabled", "Lorcana Promo"
+    "one_piece_tcg": ("one piece", "one-piece"),   # "One Piece Promo"
 }
 
 # Relevance guard, layer 2 (product). Layer 1 only proves the result came from the
