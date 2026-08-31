@@ -197,7 +197,7 @@ Every row below was checked in code or on prod, not inferred from the research.
 | 4 | Missing item, no manual escape hatch | `app/add-manual.tsx` exists; the `/catalog/match` lookup is **advisory, never required** | ✓ **already solved** |
 | 5 | Cost basis ignores fees and tax | `cost_basis` + `unrealized_pl` ship from `purchase_price`. `grading_fee`, `shipping_cost`, `marketplace_fee`, `tax_paid` — **none exist** | **Gap — biggest opportunity** |
 | 6 | Half-working grading draws 2-star reviews | Shelved 2026-05-02, no PSA/CGC API, FE imports removed 2026-08-30 | ✓ **correct as-is** |
-| 7 | No LEGO purchase price / condition / sealed-vs-used | `CONDITION_OPTIONS_GENERAL = ['Not set','Mint','Near Mint','Excellent','Good','Fair','Poor']` — a **card-grading vocabulary applied to every non-TCG category** | **Gap** |
+| 7 | No LEGO purchase price / condition / sealed-vs-used | ~~card-grading vocabulary on all 56 categories~~ **FIXED 2026-08-31** — `conditionOptionsFor()` gives boxed collectibles sealed/opened-complete/opened-incomplete/built, spirits fill-and-seal, vinyl Goldmine. Purchase price still has no fee/tax fields (§5) | **condition ✓, cost basis still open** |
 | 8 | Paywalling free features / paying for accuracy | Pro sells caps and access, never accuracy. Audited and gated 2026-08-30 | ✓ **right side of the line** |
 
 ### The two that change what we build

@@ -109,6 +109,45 @@ That is fine and the test asserts readability rather than registry membership:
 categories can also be user-typed (`CUSTOM_CATEGORY_SENTINEL`), so membership is
 not a property the app can promise. "Never shows a raw slug" is.
 
+## `items.condition` follows this same rule (2026-08-31)
+
+The category work above was reasoned through once; condition had the identical
+defect and now uses the identical shape. `src/lib/conditionVocabulary.ts`:
+
+| category | condition | role |
+|---|---|---|
+| `CATEGORY_NAME_TO_SLUG` | `CONDITION_NAME_TO_SLUG` | display name → slug, applied on WRITE |
+| `formatCategoryName` | `formatConditionName` | resolve a value read straight from the column |
+| `categoryDisplayName` | `conditionDisplayName` | resolve state a PICKER may have written into |
+
+**Measured on prod before fixing** (the category note's own standard): two
+vocabularies were live at once — `new_sealed` 10, `near_mint` 8, `mint` 5 from
+the scan path (`app/ml/openai_vision.py` emits snake_case), against `Sealed`,
+`Mint`, `NM`, `Good`, `Excellent` from the picker. Unlike the category case this
+was **live, not latent**: `near_mint` rendered raw on the item card.
+
+Two consequences worth keeping:
+
+- **`sameCondition()` exists because equality was wrong.** `ListForSaleModal`
+  compared `condition === c` against its own Title Case list, so a scanned item
+  never matched and silently lost its pre-selection. Any cross-vocabulary
+  comparison must normalise both sides.
+- **Graded values are not slugs.** `PSA 9` / `BGS 10` pass through every
+  resolver untouched, the same way `books` title-cases without being in the
+  category registry. Membership is not a property either column can promise.
+
+Condition additionally varies BY CATEGORY, which category does not:
+`conditionOptionsFor(category)` returns sealed/opened for boxed collectibles,
+fill-and-seal for spirits, Goldmine for vinyl, card grading otherwise. A single
+list could not say SEALED, so a sealed LEGO set and an opened one were both
+"Mint" — see docs/COLLECTOR_DEMAND.md §7.
+
+⚠️ **Vinyl is half-solved on purpose.** Goldmine grades the SLEEVE and the DISC
+separately and this column is single-valued, so the sleeve grade belongs in
+notes until there is a second field. That is the Discogs complaint in
+COLLECTOR_DEMAND §2, and pretending one field covers it would be the overclaim
+this file exists to prevent.
+
 ### When one variable holds BOTH vocabularies (2026-08-23)
 
 `formatCategoryName` is the resolver when the value provably came out of
