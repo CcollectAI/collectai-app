@@ -213,6 +213,23 @@ a single purchase has.
 price are an orphan number, and `/portfolio/items` would add them to the
 `first_q50` model estimate.
 
+⚠️ **Omitted is not null, and the route must tell them apart.** `acquisition_fees`
+defaults to `None`, so a caller that PATCHes only the price — which is exactly
+what the shipped app sends, since it predates the field — looks identical to a
+caller asking to clear the fees. The first version wrote it unconditionally and
+would have wiped a member's fees on **every price edit**. Pydantic cannot
+separate the two by value; `payload.model_fields_set` is the only discriminator:
+
+```python
+fees_provided = ("acquisition_fees" in payload.model_fields_set) or price is None
+```
+
+and both halves of the pair are gated by that same flag in SQL
+(`CASE WHEN $9 THEN $7 ELSE acquisition_fees END`). Gating one half only is the
+paired-column bug wearing a different hat. **Any future optional field on a
+PATCH route inherits this problem** — a nullable field with a default cannot
+express "leave it alone" without checking what the caller actually set.
+
 **Where the fee-aware basis lives — three sites that must agree:**
 
 | site | expression |
