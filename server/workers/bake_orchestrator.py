@@ -960,11 +960,51 @@ async def _instance_health_monitor(
                             str(worker_runs_stale_minutes),
                         )
                         if wr_recent == 0:
-                            issues.append((
-                                "worker_runs_stalled",
-                                f"no worker_runs in last {worker_runs_stale_minutes}min — "
-                                "orchestrator may be wedged",
-                            ))
+                            # SAME exemption as ingest_stalled directly above,
+                            # and for the same reason — it was applied to that
+                            # check in 2026-08 and not to this one, so this one
+                            # kept paging.
+                            #
+                            # Every worker queues behind _HEAVY_LOCK. While a
+                            # heavy worker legitimately holds it, NOTHING writes
+                            # a worker_runs row, so `wr_recent == 0` is the
+                            # normal state, not a wedge. Measured 2026-09-01:
+                            # valuation_worker held the gate for 1466.9s after a
+                            # restart and lorcast/discogs/model_retrain each
+                            # logged "waited ~1467s" — a page for 24 minutes of
+                            # correct behaviour. Its recent runs are 850s,
+                            # 1053s, 1509s, 1234s, 1371s, so that duration is
+                            # ordinary and this would fire after EVERY restart.
+                            #
+                            # docs/WATCHDOG.md: "a check on a scheduled artefact
+                            # must encode the schedule. Absent is only a bug
+                            # once the thing that creates it should have run."
+                            # Here the thing that creates the rows is blocked on
+                            # a lock, by design.
+                            holder = _HEAVY_HOLDER
+                            held_s = (
+                                time.monotonic() - holder[1] if holder else 0.0
+                            )
+                            if holder is None or held_s > _HEAVY_GATE_SANE_CAP_S:
+                                extra = (
+                                    f" (heavy gate held by {holder[0]} for "
+                                    f"{held_s/60:.0f}min — likely wedged)"
+                                    if holder else ""
+                                )
+                                issues.append((
+                                    "worker_runs_stalled",
+                                    f"no worker_runs in last "
+                                    f"{worker_runs_stale_minutes}min — "
+                                    f"orchestrator may be wedged{extra}",
+                                ))
+                            else:
+                                logger.info(
+                                    "[bake_orchestrator] no worker_runs for "
+                                    "%dmin but heavy gate held by %s for "
+                                    "%.0fmin — benign queueing, not paging",
+                                    worker_runs_stale_minutes, holder[0],
+                                    held_s / 60,
+                                )
                         # Matview freshness: alert if a matview worker hasn't
                         # run in >6x its expected interval (scheduler wedged).
                         # matview_demand=600s (10m), matview_supply=1800s (30m).

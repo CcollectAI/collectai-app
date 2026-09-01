@@ -248,6 +248,32 @@ not the data.
 **The general rule:** a check on a scheduled artefact must encode the schedule.
 "Absent" is only a bug once the thing that creates it should have run.
 
+### The same rule, missed one check over (2026-09-01)
+
+The orchestrator paged *"no worker runs in 19 mins — orchestrator may be
+wedged."* It was not wedged. bake restarted at 11:34, `valuation_worker` took
+`_HEAVY_LOCK` and ran **1466.9s** — its ordinary duration; recent runs are 850s,
+1053s, 1509s, 1234s, 1371s — and `lorcast`, `discogs` and `model_retrain` each
+logged *"waited ~1467s for heavy gate"*.
+
+**Every worker queues behind that lock, so while it is held nothing writes a
+`worker_runs` row.** `wr_recent == 0` is the normal state during a heavy run,
+not evidence of a wedge — and because it is triggered by a RESTART, it would
+have fired after every deploy.
+
+The galling part: `ingest_stalled`, ten lines above in the same function,
+already had this exemption, added when it *"fired a daily false page"* for
+exactly the same reason. It was applied to that check and never to this one —
+the fix landing on one instance instead of the class.
+
+`worker_runs_stalled` now shares the guard verbatim, and
+`test_worker_stall_heavy_gate.py` asserts **both** checks use it, so the next
+divergence fails the build rather than the pager. A genuinely wedged holder
+still pages: past `_HEAVY_GATE_SANE_CAP_S` (3h, against a worst observed
+valuation run of ~2.75h), or with no holder at all. The benign case is logged
+at INFO naming the holder and how long it has held — a check that goes quiet
+without saying why is indistinguishable from a check that broke.
+
 ## A failing worker must say WHY, not just that it failed
 
 `tcgcsv_worker` had been erroring since 2026-08-01 with:
