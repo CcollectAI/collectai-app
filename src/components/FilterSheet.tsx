@@ -154,7 +154,12 @@ function FilterSheetInner({
         if (typeof y === 'number' && typeof h === 'number') setCategoryAnchor({ x, y, h });
       });
     } catch {
-      // Keep the centred fallback.
+      // best-effort: measureInWindow is a native call that can fail on a
+      // detached node mid-transition. The menu ALREADY opens before this
+      // runs and falls back to centred, so there is nothing to report — a
+      // toast here would announce a failure the member cannot see and does
+      // not care about. The failure mode this replaced was the opposite: the
+      // menu only opened IF measure called back, which made it a dead control.
     }
   }, []);
 

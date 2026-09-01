@@ -1007,6 +1007,13 @@ async def realised_pl(user_id: str = Depends(get_current_user_id)):
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 """
+                -- archived-exempt: a completed sale ARCHIVES the item
+                -- (p2p_offers_router.py:597 sets archived = TRUE when a trade
+                -- completes), so `NOT i.archived` here would hide every sale
+                -- and this endpoint would return empty forever. Realised P/L is
+                -- BY DEFINITION about items the member no longer owns; the
+                -- archived flag is what marks them sold, not what disqualifies
+                -- them. Caught by check:archived-filter before the first build.
                 SELECT s.id,
                        s.sold_at,
                        s.sale_price,

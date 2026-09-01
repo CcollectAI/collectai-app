@@ -105,9 +105,10 @@ function notifySink(entry: RetainedLog): void {
   try {
     sink(entry);
   } catch {
-    // A broken sink must never break logging, and must never be reported
-    // THROUGH the sink. Swallowed on purpose; the entry is already in the
-    // ring buffer, which is the durable copy.
+    // best-effort: a broken sink must never break logging, and must never be
+    // reported THROUGH the sink — that is an infinite loop, not a diagnostic.
+    // The entry is already in the ring buffer, which is the durable copy, so
+    // the failure is recoverable by reading that rather than by a log line.
   } finally {
     inSink = false;
   }

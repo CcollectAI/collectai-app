@@ -366,7 +366,24 @@ function OffersScreen() {
   const committed = useMemo(
     () => offers
       .filter((o) => o.status === 'accepted' || o.status === 'shipped')
-      .reduce((sum, o) => sum + (o.amount || 0), 0),
+      // Until 2026-09-01 this coerced a missing amount to zero inside the sum.
+      // `amount` is typed non-null (p2pApi.ts:310), so a missing one means the
+      // API drifted — and folding it in as zero made the committed total
+      // quietly SMALLER than what is actually at stake, with nothing anywhere
+      // saying so. Skipping it under-counts too, but it under-counts LOUDLY.
+      //
+      // NB: the old expression is deliberately NOT quoted here. Written out
+      // literally it matches check:silent's own regex, so the comment
+      // explaining the fix re-triggers the finding it fixed — the
+      // grep-matches-its-own-comment trap, from the checker's side.
+      .reduce((sum, o) => {
+        const amt = Number(o.amount);
+        if (!Number.isFinite(amt)) {
+          logger.error('[offers] committed total skipped an offer with no numeric amount', o.id);
+          return sum;
+        }
+        return sum + amt;
+      }, 0),
     [offers],
   );
 

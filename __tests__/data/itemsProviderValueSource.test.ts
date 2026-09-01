@@ -103,11 +103,17 @@ describe('persistQuickscanDraft keeps what the scan found', () => {
     scanBand: { q10: 150, q50: 187.5, q90: 240, confidence: 83 },
   };
 
-  it('persists the estimate and the condition', async () => {
+  it('persists the estimate, and NORMALISES the condition to a slug', async () => {
+    // Updated 2026-09-01. The draft carries a display name ('Near Mint') and
+    // the column stores a SLUG — items.condition held both vocabularies at
+    // once until `toConditionSlug` was added at this write chokepoint
+    // (docs/TAXONOMY.md; measured on prod: new_sealed 10, near_mint 8, mint 5
+    // alongside Sealed, Mint, NM). Asserting the display name here would pin
+    // the drift the normalisation removed.
     await persistQuickscanDraft(draft);
     expect(mockPostBody).toMatchObject({
       estimated_value: 187.5,
-      condition: 'Near Mint',
+      condition: 'near_mint',
       canonical_key: 'base1-base1-4',
     });
   });

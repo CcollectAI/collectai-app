@@ -6670,6 +6670,14 @@
       "nullable": true,
       "type": "text"
     },
+    "items.acquisition_fees": {
+      "nullable": true,
+      "type": "numeric"
+    },
+    "items.acquisition_fees_eur": {
+      "nullable": true,
+      "type": "numeric"
+    },
     "items.acquisition_price": {
       "nullable": true,
       "type": "numeric"
@@ -22024,7 +22032,9 @@
       "progress_status",
       "progress_pct",
       "progress_notes",
-      "canonical_ref"
+      "canonical_ref",
+      "acquisition_fees",
+      "acquisition_fees_eur"
     ],
     "items_scored": [
       "id",

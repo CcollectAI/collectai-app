@@ -183,7 +183,10 @@ export function flattenAttributes(raw: unknown): Record<string, unknown> | null 
           parts.push(parsed as Record<string, unknown>);
         }
       } catch {
-        /* not JSON — nothing renderable */
+        // best-effort: this is a TYPE TEST, not an operation that failed.
+        // `candidate` is an arbitrary attr value and most are plain strings;
+        // JSON.parse throwing is the normal answer to "is this JSON", and
+        // logging it would fire on nearly every attribute of every item.
       }
       return;
     }
