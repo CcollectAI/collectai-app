@@ -131,6 +131,38 @@ iPhone → Settings → Privacy & Security → Analytics & Improvements → Anal
 
 **Symptoms:** API endpoints return 5xx or timeout. App shows error toasts everywhere.
 
+> ### ⚠️ First: is the box dead, or just busy?
+>
+> `collectai-bake.service` runs the API **and all 20 workers in ONE uvicorn
+> process** (`--workers 1`). Any synchronous CPU-bound call inside a worker
+> blocks the event loop, and every HTTP request — `/healthz` included — hangs
+> for its full duration. `systemctl is-active` says `active` the whole time.
+>
+> This produced a recurring nightly Telegram page ("healthz unreachable")
+> that looked like an outage and was really a retrain. Measured 2026-09-01:
+> `/healthz` normally answers in ~60ms; during a `model_retrain_worker` cycle
+> it returned **curl exit 28 for 6+ minutes** — `QuantileRegressor` is a scipy
+> linear program over ~100k rows and it never yields.
+>
+> **Check this before touching DNS, nginx or the instance:**
+> ```bash
+> ssh collectai "systemctl is-active collectai-bake.service"     # active?
+> ssh collectai "tail -30 /opt/collectors/bake.log | grep -vE 'httpx|HTTP Request'"
+> ```
+> A log frozen mid-worker with the service `active` is a blocked loop, not a
+> dead backend. **Do not restart** — a restart re-triggers the same worker.
+>
+> **The fix, whenever you find a new one:** the offending call must go through
+> `await asyncio.to_thread(...)`. Two were fixed on 2026-09-01
+> (`model_retrain_worker.py` `_retrain_category`, `vision_reclassifier_worker.py`
+> `pipeline.fit/predict`). To find others:
+> ```bash
+> grep -rn "\.fit(\|train_category\|\.predict(" server/workers/
+> ```
+> then confirm the enclosing function is `async def` and the call is not
+> already wrapped. Proof it worked: `/healthz` held 200 at 56–125ms across 12
+> polls *during* an active retrain.
+
 ### First diagnose
 
 ```bash

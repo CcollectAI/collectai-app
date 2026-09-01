@@ -424,6 +424,63 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
     except Exception:
         pass
 
+    # --- events: a parsed date that produced no timestamp ---
+    #
+    # Added 2026-09-01. `_compose_starts_at` parsed date and time as ONE
+    # string with "%Y-%m-%d %H:%M" and swallowed the ValueError into
+    # `return None`, so Ticketmaster's HH:MM:SS times took the date down with
+    # them: 509 of 588 rows (86.6%) landed with starts_at NULL while Postgres
+    # stored the very same value in events.time without complaint. Nothing
+    # errored and nothing filtered on starts_at, so it was invisible for
+    # months. `date IS NOT NULL AND starts_at IS NULL` is the exact shape of
+    # that defect and costs one index-free count on a ~3k-row table.
+    try:
+        orphan = await c.fetchval(
+            "SELECT count(*) FROM public.events "
+            "WHERE date IS NOT NULL AND starts_at IS NULL"
+        )
+        if orphan:
+            bug("high", "events have a date but no starts_at",
+                "%d row(s) parsed a date and produced no timestamp — a time "
+                "format the composer does not accept is being dropped "
+                "silently (see _compose_starts_at)" % orphan,
+                tbl_link("events"),
+                "SELECT source, count(*), min(time), max(time) FROM public.events "
+                "WHERE date IS NOT NULL AND starts_at IS NULL GROUP BY source;")
+        else:
+            healthy.append({"check": "events starts_at composition",
+                            "detail": "no dated row is missing its timestamp"})
+    except Exception as e:
+        # NOT `pass`. A probe that dies quietly reads exactly like a clean
+        # run, which is the failure mode this whole file exists to catch.
+        bug("medium", "events starts_at probe failed", str(e)[:200],
+            tbl_link("events"), "")
+
+    # --- events: is there actually a feed to show? ---
+    #
+    # Mirrors rpc_list_personalized_events_v1's gate exactly. Measuring
+    # anything else is how the 2026-08-22 note concluded the feed was
+    # "effectively SeatGeek" when Ticketmaster was in fact 81% of it: that
+    # count used `starts_at > now()`, a column no user-facing reader consults
+    # and the one Ticketmaster had broken.
+    try:
+        feed_n = await c.fetchval(
+            "SELECT count(*) FROM public.events "
+            "WHERE status='published' AND date >= CURRENT_DATE "
+            "  AND (quality_score IS NULL OR quality_score >= 40) "
+            "  AND (source IS NULL OR source NOT IN ('newsletter'))"
+        )
+        if feed_n is not None and feed_n < 25:
+            bug("high", "events feed is nearly empty",
+                "%d upcoming published events pass the display gate" % feed_n,
+                tbl_link("events"), "")
+        else:
+            healthy.append({"check": "events feed depth",
+                            "detail": "%d upcoming events pass the display gate" % feed_n})
+    except Exception as e:
+        bug("medium", "events feed-depth probe failed", str(e)[:200],
+            tbl_link("events"), "")
+
     # --- partition runway: writes fail (or land in _default) without next month ---
     try:
         for parent in ("market_hits", "price_predictions", "price_history"):

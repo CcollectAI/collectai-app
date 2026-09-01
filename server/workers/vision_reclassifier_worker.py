@@ -150,8 +150,12 @@ async def run_once() -> dict[str, int]:
             max_iter=500, C=1.0, multi_class="auto", n_jobs=-1,
         )),
     ])
-    pipeline.fit(X_train, y_train)
-    holdout_pred = pipeline.predict(X_test)
+    # OFF-LOOP, same reason as model_retrain_worker: this runs inside
+    # `async def run_once()` in the single-process bake service, and a
+    # TfidfVectorizer + LogisticRegression fit blocks every HTTP request
+    # (including /healthz) for its full duration.
+    await asyncio.to_thread(pipeline.fit, X_train, y_train)
+    holdout_pred = await asyncio.to_thread(pipeline.predict, X_test)
     accuracy = accuracy_score(y_test, holdout_pred)
 
     logger.info(

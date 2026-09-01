@@ -751,7 +751,20 @@ async def run_once():
     error_count = 0
 
     for category in ALL_CATEGORIES:
-        result = _retrain_category(category)
+        # OFF-LOOP. `_retrain_category` is fully synchronous and CPU-bound: it
+        # runs sklearn Ridge + QuantileRegressor over ~100k rows per category,
+        # and QuantileRegressor is a scipy linear program that can hold the CPU
+        # for minutes on its own. Called directly (as it was until 2026-09-01)
+        # it blocks THIS PROCESS'S event loop -- and the bake service runs the
+        # API and every worker in ONE uvicorn process with --workers 1, so
+        # every HTTP request, /healthz included, hangs for the whole retrain.
+        # That is what the nightly "healthz unreachable" Telegram page was:
+        # not a dead box, a busy one. Measured: /healthz went from ~60ms to
+        # >30s (curl exit 28) for 6+ minutes on a single pokemon category.
+        # to_thread is enough because the heavy math is numpy/scipy, which
+        # release the GIL, and the function opens its own psycopg2 connection
+        # rather than sharing the loop's asyncpg pool.
+        result = await asyncio.to_thread(_retrain_category, category)
         retrain_results.append(result)
         st = result["status"]
         if st == "ok":

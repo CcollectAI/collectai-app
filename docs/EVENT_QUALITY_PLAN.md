@@ -203,6 +203,101 @@ both to `[]` would score a dead API as a perfect precision run.
 over a real inbox is measured. The 2026-07-27 version shipped 9 junk rows into
 the live feed; the number comes before the wiring this time.
 
+## ⛔ The section above measured the wrong column (corrected 2026-09-01)
+
+**Everything in "The events feed is ~95 upcoming rows" is counted with
+`starts_at > now()`. No user-facing reader consults `starts_at`.**
+
+The feed is `rpc_list_personalized_events_v1`, and its gate is:
+
+```sql
+WHERE e.status = 'published'
+  AND (p_include_past OR e.date >= CURRENT_DATE)
+  AND (e.quality_score IS NULL OR e.quality_score >= 40)
+  AND (e.source IS NULL OR e.source NOT IN ('newsletter'))
+ORDER BY ... e.date ASC
+```
+
+`date`, not `starts_at`. Same for `events_core.py:114` (search), `:491`
+(nearby) and `:256` (the Python-side past filter). `starts_at` is read in
+exactly two places — `intelligence_router.py:364` and `admin_dashboard.py:346`
+— and both only *emit* it as a nullable display field. Nothing filters on it.
+
+Measured with the gate the app actually uses:
+
+| source | in feed | share |
+|---|---|---|
+| **ticketmaster** | **189** | **81%** |
+| seatgeek | 39 | 17% |
+| musicbrainz | 5 | 2% |
+| **total** | **233** | |
+
+So the earlier conclusion — *"the feature is effectively SeatGeek plus a bit of
+Ticketmaster"* — is **exactly inverted**. It is Ticketmaster plus a bit of
+SeatGeek, and there are 233 events in the feed, not 108.
+
+### Why the wrong column inverted the answer
+
+`_compose_starts_at` built the timestamp by parsing date and time as ONE
+string:
+
+```python
+dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")   # ...
+except (ValueError, TypeError):
+    return None
+```
+
+Ticketmaster's `dates.start.localTime` is **`HH:MM:SS`**. `%H:%M` raises, the
+bare `except` returns None, and the row is written with `starts_at IS NULL`
+while `events.time` holds the very same value, because Postgres accepts
+`19:30:00` without complaint. **509 of 588 Ticketmaster rows (86.6%).**
+SeatGeek slices `datetime_local[11:16]` and limitless formats with
+`strftime("%H:%M")`, so both were unaffected — which is why a count over
+`starts_at` erased the largest source and left the two small ones standing.
+
+A measurement column that no consumer reads had drifted from the truth for
+months, and the diagnosis inherited the drift. See
+`[[learning_measured_a_column_no_reader_consults]]`.
+
+### What was changed
+
+1. **`_compose_starts_at` now parses date and time separately** and that
+   asymmetry is the point: an unrecognised time degrades to midnight **and
+   logs a warning**, and only an unparseable *date* returns None. The date
+   decides whether an event exists; the time only refines it.
+   Accepted formats: `%H:%M`, `%H:%M:%S`.
+2. **Backfilled 339 rows** from `date + COALESCE(time,'00:00')` — 334
+   Ticketmaster (all had an exact `time`) and 5 `source='user'` E2E test rows
+   (midnight). Affected ids saved to `/tmp/events_backfilled_ids.csv` on the
+   box. `date IS NOT NULL AND starts_at IS NULL` is now **0** across all 2,935
+   rows, with zero date/timestamp disagreement.
+3. **Two watchdog checks** (`server/scripts/watchdog.py`): "events starts_at
+   composition" pages HIGH on any dated row without a timestamp — proven to
+   fire by NULLing one row inside a transaction (0 → 1 → 0) — and "events feed
+   depth" counts through the RPC's exact gate, so the feed can never again be
+   reported from a column the feed does not read. Neither swallows probe
+   errors.
+4. `server/tests/test_event_starts_at_composition.py` — 5 tests; the two that
+   matter failed before the fix.
+
+Verified end to end, not by unit test alone: a live
+`python -m pipelines.ticketmaster_events` run against the real API and prod DB
+took NULL `starts_at` from **509 → 334** in one pass (184 upserts, zero
+"Unparseable event time" warnings), and the backfill cleared the rest.
+
+### Still true, and unchanged by this
+
+- limitless_tcg remains 2,015 rows and **0** in the feed. It last wrote
+  2026-08-23. The "delete it if it is still writing zero rows in a month" note
+  stands, and the month is not up.
+- musicbrainz last wrote 2026-08-22 and contributes 5.
+- Ticketmaster and SeatGeek both write daily, and **everything they have
+  written in the last 14 days is future-dated**.
+- The dedup quarantine is working correctly, including cross-vendor: SeatGeek's
+  bare `"BTS"` is rejected in favour of Ticketmaster's
+  `"BTS WORLD TOUR 'ARIRANG' IN LOS ANGELES"` at the same venue. 47 upcoming
+  rows sit at `status='rejected'` and every one I sampled had a published twin.
+
 ## What's intentionally NOT in scope
 
 - No ML model for spam classification — overkill for current scale. Rule-based beats a tiny model at <1k events/day.

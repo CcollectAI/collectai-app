@@ -32,10 +32,29 @@ POLL_INTERVAL = 2.0
 # Re-use the bake-side telegram helper so alerts land in the same channel
 # as the orchestrator's other pages.
 def _send_telegram(msg: str) -> None:
+    """Page the ops channel.
+
+    Until 2026-09-01 this imported `send_telegram_alert`, which has never
+    existed in app.lib.telegram_ops -- the function is `send_ops_alert`, and it
+    is ASYNC, so even the correct name called synchronously would have built a
+    coroutine and dropped it. Both mistakes landed in the bare `except` below
+    and became one stderr line, so every postflight page since this script was
+    written alerted nobody. Caught live on 2026-09-01, where bake.log carried
+    "PAGED - 1 real 5xx endpoints" immediately after
+    "telegram fallback failed: ImportError(...)".
+    """
     try:
         sys.path.insert(0, "/opt/collectors/server")
-        from app.lib.telegram_ops import send_telegram_alert  # type: ignore
-        send_telegram_alert(msg)
+        import asyncio
+        from app.lib.telegram_ops import configured, send_ops_alert  # type: ignore
+        if not configured():
+            print("[postflight_smoke_test] telegram not configured - page NOT sent",
+                  file=sys.stderr)
+            return
+        ok = asyncio.run(send_ops_alert(msg, title="Postflight smoke test"))
+        if not ok:
+            print("[postflight_smoke_test] telegram send returned False - page NOT sent",
+                  file=sys.stderr)
     except Exception as exc:
         print(f"[postflight_smoke_test] telegram fallback failed: {exc!r}", file=sys.stderr)
 

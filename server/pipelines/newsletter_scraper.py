@@ -35,18 +35,55 @@ from pathlib import Path
 from typing import Any, Optional
 
 
+# Time formats the live sources actually emit. Ticketmaster's
+# `dates.start.localTime` is HH:MM:SS; SeatGeek slices HH:MM out of
+# `datetime_local`; limitless_tcg formats with strftime("%H:%M").
+_TIME_FORMATS = ("%H:%M", "%H:%M:%S")
+
+
 def _compose_starts_at(date_str: Optional[str], time_str: Optional[str]) -> Optional[str]:
-    """Combine date (YYYY-MM-DD) and optional time (HH:MM) into ISO timestamp (UTC)."""
+    """Combine date (YYYY-MM-DD) and optional time into an ISO timestamp (UTC).
+
+    The date and the time are parsed SEPARATELY, and that asymmetry is the
+    point. This used to parse them as one string with "%Y-%m-%d %H:%M" and
+    swallow the ValueError into `return None`, so a time it did not recognise
+    took the date down with it.
+
+    That is not hypothetical: Ticketmaster sends HH:MM:SS, so 509 of its 588
+    rows (86.6%) were written with `starts_at IS NULL` while Postgres stored
+    the very same value in `events.time` without complaint. Found 2026-09-01.
+
+    The date decides whether an event exists; the time only refines it. So an
+    unparseable time now degrades to midnight and WARNS, and only an
+    unparseable date returns None.
+    """
     if not date_str:
         return None
     try:
-        if time_str:
-            dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
-        else:
-            dt = datetime.strptime(date_str, "%Y-%m-%d")
-        return dt.replace(tzinfo=timezone.utc).isoformat()
+        dt = datetime.strptime(str(date_str).strip(), "%Y-%m-%d")
     except (ValueError, TypeError):
         return None
+
+    if time_str:
+        raw = str(time_str).strip()
+        for fmt in _TIME_FORMATS:
+            try:
+                parsed = datetime.strptime(raw, fmt)
+            except ValueError:
+                continue
+            dt = dt.replace(
+                hour=parsed.hour, minute=parsed.minute, second=parsed.second
+            )
+            break
+        else:
+            # Loud, because silence here is what hid the Ticketmaster bug for
+            # months. Midnight is a lie of precision; None was a lie of
+            # existence, and the feed only ever notices the second one.
+            log.warning(
+                "Unparseable event time %r for date %s - falling back to midnight UTC",
+                time_str, date_str,
+            )
+    return dt.replace(tzinfo=timezone.utc).isoformat()
 
 # ---------------------------------------------------------------------------
 # Configuration
