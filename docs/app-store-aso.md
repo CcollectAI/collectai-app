@@ -25,7 +25,7 @@ collectibles,cards,TCG,funko,lego,vinyl,watch,identify,appraisal,hobby,portfolio
 
 ### Promotional Text (170 chars max — can update anytime without review)
 ```
-Snap a photo of any collectible — get instant AI identification, condition grading, and real-time market value from 37 data sources. 54 categories. One app.
+Snap a photo of any collectible — get instant AI identification and a market value that shows its working: how many prices, which sources, which market.
 ```
 
 ### Description (4000 chars max)
@@ -33,57 +33,54 @@ Snap a photo of any collectible — get instant AI identification, condition gra
 ```
 Snap a photo. Know what it's worth.
 
-Sparrow Collect is the most advanced AI-powered collection tracker and price guide for collectibles. Point your camera at any item — trading cards, Funko Pops, watches, vinyl records, LEGO sets, anime figures — and get instant identification, condition grading, and real-time market value. No manual entry. No guesswork.
+Sparrow Collect is an AI-powered collection tracker and price guide for collectibles. Point your camera at any item — trading cards, Funko Pops, watches, vinyl records, LEGO sets, anime figures — and get instant identification and a real market value. No manual entry. No guesswork.
 
 Your collection is worth more than you think. Now you can prove it.
 
 SCAN & IDENTIFY IN SECONDS
-Point your camera at any collectible. Our AI vision engine identifies the exact item, edition, and variant — then pulls live pricing from 37 marketplace sources including eBay, TCGPlayer, StockX, Cardmarket, Discogs, and more. Works with trading cards, figures, vinyl, watches, LEGO, and 54 categories total.
+Point your camera at any collectible. Our AI vision engine identifies the item, its edition and variant, and estimates its condition from the photo. Works across 56 categories.
 
-REAL-TIME PRICE GUIDE
-Every item gets a market value based on actual sold listings — not guesses. See low, mid, and high price ranges. Track price history over time. Know exactly when to buy, sell, or hold.
+A PRICE THAT SHOWS ITS WORKING
+Most apps give you one confident number. We tell you where it came from: how many market prices it rests on, which sources, and which market — US, European, or both. You get a low, mid and high range rather than a single figure, and when there isn't enough data to be confident, the app says so instead of guessing.
 
 PORTFOLIO DASHBOARD
-See your total collection value update in real-time. Track daily changes, spot your biggest winners and losers, and watch your portfolio grow. Export your full collection for insurance documentation.
+See your total collection value update in real time. Track what you actually paid — including the tax and shipping most trackers ignore — against what it's worth now. Spot your biggest movers. Export your collection as CSV for insurance documentation.
 
-WATCHLIST & PRICE ALERTS
-Hunting for a grail? Add items to your watchlist with a target price. Get notified the moment prices drop below your target or a new listing appears.
+WATCHLIST & TARGET PRICE ALERTS
+Hunting for a grail? Add items to your watchlist with a target price and get notified when the market reaches it.
 
-CONDITION & GRADING TRACKER
-Log grading details from PSA, CGC, BGS, and other services. AI-assisted condition estimation helps you grade items before sending them in.
+CONDITION THAT FITS WHAT YOU COLLECT
+A sealed LEGO set and an opened one are not the same thing, and neither is "Near Mint". Condition options match the category: sealed or opened for boxed collectibles, fill level for spirits, Goldmine grades for vinyl, card grades for trading cards.
 
 MARKETPLACE COMPARISON
-Compare prices across eBay, Mercari, TCGPlayer, StockX, Cardmarket, BrickLink, Discogs, and 30+ more sources — all in one view. Never overpay again.
+Compare live listings across eBay, TCGplayer, Cardmarket and Discogs in one view.
 
 BARCODE SCANNING
-Scan barcodes and ISBN codes for instant lookup. Works for sealed products, books, LEGO sets, and more.
+Scan barcodes and ISBN codes for instant lookup. Works for sealed products, books, LEGO sets and more.
 
-54 CATEGORIES INCLUDING:
-• Trading Cards — Pokémon, Magic: The Gathering, Yu-Gi-Oh!, One Piece TCG, Lorcana, Sports Cards
+56 CATEGORIES INCLUDING:
+• Trading Cards — Pokémon, Magic: The Gathering, Yu-Gi-Oh!, One Piece TCG, Lorcana, Digimon
 • Figures — Funko Pop, Hot Toys, Anime Figures, Action Figures, Designer Toys, Marvel Legends, Gunpla
 • Media — Vinyl Records, Blu-ray Steelbooks, Manga, Comic Books, Retro Games
-• Luxury — Watches, Fragrances, Pens
+• Luxury — Watches, Jewellery, Fragrances, Pens
 • Building — LEGO, Warhammer, Scale Models
 • Lifestyle — K-pop, Disney, Ghibli, Loungefly, Keycaps
-• And 30+ more categories
 
 ALSO INCLUDES:
-• Chat with other collectors
-• Set completion tracking
+• Set completion tracking for trading-card sets
 • Collection export (CSV)
 • Multi-currency support (EUR, USD, GBP, JPY, KRW, AUD, CAD)
 • Dark mode
-• Offline access
 
-Built for collectors, by collectors. Whether you have 10 items or 10,000 — Sparrow Collect is the last collection app you'll ever need.
+Built for collectors. Whether you have 10 items or 10,000.
 ```
 
 ### What's New (template for updates)
 
 ```
 Fresh updates to make your collection tracking even smoother:
-• Improved AI scan accuracy across all 54 categories
-• Faster price lookups from 37 marketplace sources
+• Improved AI scan accuracy across all 56 categories
+• Faster price lookups from live marketplace sources
 • Portfolio dashboard enhancements
 • Bug fixes and performance improvements
 ```
@@ -113,37 +110,36 @@ Scan any collectible. AI-powered pricing, identification & portfolio tracking.
 ```
 Snap a photo. Know what it's worth.
 
-Sparrow Collect is the most advanced AI-powered collectibles tracker, scanner, and price guide. Point your camera at any item and get instant identification, condition grading, and real-time market value from 37 data sources.
+Sparrow Collect is an AI-powered collectibles tracker, scanner and price guide. Point your camera at any item and get instant identification and a real market value.
 
 Your collection is worth more than you think. Now you can prove it.
 
 ★ AI-POWERED SCANNER
-Point your camera at any collectible — trading cards, Funko Pops, watches, vinyl records, LEGO, anime figures, and more. Our AI identifies the exact item, edition, and variant in seconds. No manual entry required.
+Point your camera at any collectible — trading cards, Funko Pops, watches, vinyl records, LEGO, anime figures, and more. Our AI identifies the exact item, edition and variant in seconds, and estimates its condition from the photo. No manual entry required.
 
-★ REAL-TIME PRICE GUIDE & VALUATION
-Every item gets a market value based on actual sold listings from eBay, TCGPlayer, StockX, Cardmarket, Discogs, and 37 marketplace sources. See low, mid, and high price ranges. Track price history. Know when to buy, sell, or hold.
+★ A PRICE THAT SHOWS ITS WORKING
+Most apps give you one confident number. We tell you where it came from: how many market prices it rests on, which sources, and which market — US, European, or both. Low, mid and high ranges rather than a single figure. When there isn't enough data to be confident, the app says so instead of guessing.
 
 ★ PORTFOLIO DASHBOARD
-See your total collection value update daily. Track price changes, spot winners and losers, and watch your portfolio grow over time. Export for insurance documentation.
+See your total collection value update daily. Track what you actually paid — including the tax and shipping most trackers ignore — against what it's worth now. Spot winners and losers. Export for insurance documentation.
 
-★ WATCHLIST & PRICE ALERTS
-Hunting for a grail? Add items to your watchlist with a target price. Get notified when prices drop or new listings appear.
+★ WATCHLIST & TARGET PRICE ALERTS
+Hunting for a grail? Add items to your watchlist with a target price and get notified when the market reaches it.
 
-★ CONDITION & GRADING TRACKER
-Log PSA, CGC, BGS grades. AI-assisted condition estimation helps you grade before submitting.
+★ CONDITION THAT FITS WHAT YOU COLLECT
+A sealed LEGO set and an opened one are not the same thing, and neither is "Near Mint". Condition options match the category: sealed or opened for boxed collectibles, fill level for spirits, Goldmine grades for vinyl, card grades for trading cards.
 
 ★ MARKETPLACE PRICE COMPARISON
-Compare prices across eBay, Mercari, TCGPlayer, StockX, Cardmarket, BrickLink, Discogs, and 30+ sources in one view. Find the best deal every time.
+Compare live listings across eBay, TCGplayer, Cardmarket and Discogs in one view.
 
 ★ BARCODE SCANNING
 Scan barcodes and ISBN codes for instant item lookup. Works for sealed products, books, LEGO sets, and more.
 
-★ 54 CATEGORIES:
-Trading Cards (Pokémon, MTG, Yu-Gi-Oh!, One Piece, Lorcana, Sports Cards) • Funko Pop • Hot Toys • Anime Figures • Action Figures • Designer Toys • Gunpla • Marvel Legends • Vinyl Records • Blu-ray Steelbooks • Manga • Comic Books • Retro Games • Watches • LEGO • Warhammer • Scale Models • K-pop • Disney • Ghibli • Loungefly • Keycaps • Fragrances • Diecast • Vintage Toys • and 30+ more
+★ 56 CATEGORIES:
+Trading Cards (Pokémon, MTG, Yu-Gi-Oh!, One Piece, Lorcana, Digimon) • Funko Pop • Hot Toys • Anime Figures • Action Figures • Designer Toys • Gunpla • Marvel Legends • Vinyl Records • Blu-ray Steelbooks • Manga • Comic Books • Retro Games • Watches • Jewellery • LEGO • Warhammer • Scale Models • K-pop • Disney • Ghibli • Loungefly • Keycaps • Fragrances • Diecast • Vintage Toys • and more
 
 ★ MORE FEATURES:
-• Chat with other collectors
-• Set completion tracking
+• Set completion tracking for trading-card sets
 • Multi-currency (EUR, USD, GBP, JPY, KRW, AUD, CAD)
 • Collection export (CSV)
 • Dark mode
@@ -171,9 +167,9 @@ Bold, short text on clean screenshots. Show the app, not just words.
 | 1 | Hero — scan animation | **Snap. Identify. Value.** | AI-powered collectibles scanner |
 | 2 | Scan result screen | **Know what it's worth** | Instant identification from a photo |
 | 3 | Portfolio dashboard | **Your collection, valued** | Real-time portfolio dashboard |
-| 4 | Price comparison | **37 sources. One price.** | eBay, TCGPlayer, StockX & more |
+| 4 | Price comparison | **Every price, sourced.** | eBay, TCGplayer, Cardmarket, Discogs |
 | 5 | Watchlist screen | **Never miss a deal** | Price alerts on items you want |
-| 6 | Category grid | **54 categories** | Cards, Funko, LEGO, vinyl, watches... |
+| 6 | Category grid | **56 categories** | Cards, Funko, LEGO, vinyl, watches... |
 | 7 | Grading view | **Grade with confidence** | AI condition estimation + PSA/CGC tracking |
 | 8 | Chat/community | **Connect with collectors** | Chat, trade & discover |
 
@@ -397,7 +393,7 @@ Sparrow Collect equivalent:
 ```
 Sparrow Collect — Scan any collectible. Know what it's worth.
 🔍 AI scanner & price guide
-📊 54 categories, 37 data sources
+📊 56 categories, every price sourced
 📱 Download ↓
 ```
 
@@ -421,7 +417,7 @@ Our AI identifies the exact item, edition, variant, and condition.
 No manual entry. No typing. Just point and shoot.
 
 3/ 💰 VALUE
-We pull prices from 37 marketplace sources — eBay sold listings, TCGPlayer, StockX, Cardmarket, Discogs, and more.
+We pull live prices from eBay, TCGplayer, Cardmarket and Discogs — and tell you which ones a given value rests on.
 
 You get the real market value. Not a guess.
 
@@ -437,7 +433,7 @@ We'll notify you when it drops.
 
 Never overpay again.
 
-6/ We support 54 categories:
+6/ We support 56 categories:
 Pokémon, MTG, Yu-Gi-Oh!, sports cards, Funko, Hot Toys, LEGO, vinyl records, watches, anime figures, manga, comics, retro games, designer toys, K-pop, and 40+ more.
 
 7/ Built by collectors, for collectors.
@@ -522,14 +518,14 @@ Sorry about that! We take bugs seriously. Could you email us at [support email] 
 The landing page includes:
 - **6 JSON-LD schemas**: `BreadcrumbList`, `Organization` (with `sameAs`), `WebSite`, `SoftwareApplication` (with `dateModified`, `about`, `alternateName`), `HowTo` (3 steps), `FAQPage` (12 Q&As, with `dateModified`)
 - **12 FAQ Q&A pairs** — intent-driven, matching questions users ask AI assistants (synced between HTML body and JSON-LD). Covers: value, scan, one-app, pricing, free/Pro, accuracy, grading, insurance, sell/hold, tracking, differentiation
-- **Factual intro paragraph** AI can quote: "Sparrow Collect is a mobile app that uses AI to identify and value collectibles from a photo. It pulls real-time pricing from 37 marketplace sources across 54 categories."
+- **Factual intro paragraph** AI can quote: "Sparrow Collect is a mobile app that uses AI to identify and value collectibles from a photo. It pulls real-time pricing from live marketplace sources across 56 categories."
 - **`sameAs` links** in Organization schema (TikTok, Instagram, X) for entity graph cross-referencing
 - **`about` property** with semantic Thing entities (Collectibles, Price Guide, Collection Management, AI Image Recognition, Market Valuation)
 - **App Store + Google Play download badges**
 - **Legal links**: privacy.html, terms.html, user-policy.html
 - **robots.txt** — explicitly allows GPTBot, PerplexityBot, ClaudeBot, Applebot, Google-Extended, Amazonbot, ChatGPT-User
 - **sitemap.xml** — all 6 pages with lastmod dates and priority
-- **categories.html** — dedicated "one-stop shop" categories page with `ItemList` (54 items), `BreadcrumbList`, all 54 categories in visible grid, and category-specific `FAQPage` (10 Q&As targeting niche queries)
+- **categories.html** — dedicated "one-stop shop" categories page with `ItemList` (54 items), `BreadcrumbList`, all 56 categories in visible grid, and category-specific `FAQPage` (10 Q&As targeting niche queries)
 - **guides.html** — programmatic answer library with 81 structured Q&As across 8 intent clusters (see below)
 - **Source**: `/Users/merle/GitHub/CcollectAI/web/index.html`, `categories.html`, `guides.html`, `robots.txt`, `sitemap.xml`
 
@@ -544,31 +540,31 @@ The landing page includes:
 | Core function | AI-powered collectible scanning, identification, and valuation |
 | Categories | 54 |
 | Catalog size | 46,500+ curated items |
-| Marketplace sources | 37 (eBay, TCGPlayer, StockX, Cardmarket, Discogs, BrickLink, Mercari, Vinted, WhatNot, Catawiki, Mavin.io, Google Shopping, Etsy, + 24 more) |
+| Marketplace sources | Live: eBay, TCGplayer, Cardmarket, Discogs, PriceCharting. (Adapters exist for ~28 more and are DISABLED — anti-bot blocking, WAF, JS-rendered prices. See DISABLED_ADAPTERS.) |
 | Pricing model | Free with optional Pro subscription |
 | Price output | Low (q10), mid (q50), high (q90) price range + confidence score |
 | ML model | Ridge regression v2 trained on sold listings |
-| Grading support | PSA, CGC, BGS + AI-assisted condition estimation |
+| Condition | Per-category: sealed/opened for boxed items, fill level for spirits, Goldmine for vinyl, card grades for TCG. PSA/CGC lookup is NOT shipped |
 | Currencies | 7 (EUR, USD, GBP, JPY, KRW, AUD, CAD) |
-| Key features | AI scanner, portfolio dashboard, marketplace comparison, watchlist/alerts, condition grading, set completion, chat, barcode scanning, collection export, dark mode, offline access |
+| Key features | AI scanner, portfolio dashboard, marketplace comparison, watchlist/alerts, per-category condition, set completion, sourced pricing |
 | Brand color | Tiffany Blue (#81D8D0) |
 | Domain | sparrowcollect.com |
 | Support email | support@sparrowcollect.com |
 
 ### AEO FAQ — index.html (12 intent-driven questions)
 
-1. **How do I find out what my collectibles are worth?** — Scan with Sparrow Collect, 37 sources, low/mid/high range, 54 categories.
+1. **How do I find out what my collectibles are worth?** — Scan with Sparrow Collect, 37 sources, low/mid/high range, 56 categories.
 2. **What are my Pokemon cards worth?** — Scan identifies card/set/variant, prices from eBay/TCGPlayer/Cardmarket.
-3. **Is there an app that scans collectibles and tells you the value?** — Yes, Sparrow Collect: camera → AI identification → 37-source valuation. 54 categories + barcode.
-4. **Can I use one app for all my collectibles?** — Yes, 54 categories. One portfolio, one export, one app.
-5. **Where does Sparrow Collect get its pricing data?** — 37 sources incl. eBay, TCGPlayer, StockX, Cardmarket, Discogs, Mandarake, Yahoo JP. ML model q10/q50/q90.
+3. **Is there an app that scans collectibles and tells you the value?** — Yes, Sparrow Collect: camera → AI identification → 37-source valuation. 56 categories + barcode.
+4. **Can I use one app for all my collectibles?** — Yes, 56 categories. One portfolio, one export, one app.
+5. **Where does Sparrow Collect get its pricing data?** — Live marketplace sources incl. eBay, TCGplayer, Cardmarket and Discogs; each value names which ones it rests on
 6. **Is Sparrow Collect free?** — Free tier + Pro subscription for analytics/grading/alerts.
 7. **How accurate are the valuations?** — ML model, q10/q50/q90 + confidence. Improves via feedback.
 8. **Should I get my collectibles graded?** — Grade if value increase > 3x fee. App shows raw vs graded prices. PSA/CGC/BGS.
 9. **How do I insure my collectibles?** — Scan → track daily → export CSV. Dedicated policy ~$1-2/$100/yr for $5K+ collections.
 10. **Should I sell or hold?** — Use price history + portfolio dashboard. Sell on hype, hold if appreciating.
 11. **How do I track value changes?** — Portfolio dashboard, daily updates, price alerts, 37 sources.
-12. **What makes Sparrow Collect different?** — AI vision, 37 sources, probabilistic pricing, 54 categories in one app.
+12. **What makes Sparrow Collect different?** — AI vision, 37 sources, probabilistic pricing, 56 categories in one app.
 
 ### AEO FAQ — guides.html (81 questions across 8 intent clusters)
 
@@ -611,7 +607,7 @@ For the opening line of both iOS and Google Play descriptions, lead with a factu
 > Snap a photo. Know what it's worth.
 
 **Recommended (add before current line, don't replace):**
-> Sparrow Collect is an AI-powered app that scans and values collectibles across 54 categories using 37 marketplace data sources. Snap a photo — get instant identification, condition grading, and real-time market value.
+> Sparrow Collect is an AI-powered app that scans and values collectibles across 56 categories using live marketplace sources. Snap a photo — get instant identification and real-time market value.
 
 This helps Apple Intelligence / Google on-device AI surface the app when users ask "is there an app that values collectibles."
 
@@ -713,7 +709,7 @@ To test core flows:
    Any collectible photo (cards, figures, vinyl, watches) will be processed
    by our AI vision model and matched against our 140K-item catalog.
 4. Tap any item to see the price prediction view (low/mid/high range pulled
-   from 37 marketplace data sources).
+   from live marketplace sources).
 5. The "Subscription" tab in Settings displays a beta-mode info card
    instead of plan selection — this is intentional during the beta.
 

@@ -20,6 +20,7 @@ import httpx
 
 from app.config import FIRECRAWL_API_KEY, FIRECRAWL_BASE_URL, FIRECRAWL_ENABLED
 from app.lib.spend_tracker import spend_tracker, BudgetExceededError
+from app.lib import firecrawl_quota
 
 logger = logging.getLogger(__name__)
 DEFAULT_TIMEOUT = 30.0
@@ -81,6 +82,9 @@ async def _raw_scrape_url(
         logger.warning("[Firecrawl] call blocked by spend budget")
         return None
 
+    if not await firecrawl_quota.allow():
+        return None
+
     body: dict[str, Any] = {"url": url}
     if formats:
         body["formats"] = formats
@@ -99,6 +103,11 @@ async def _raw_scrape_url(
         )
         if resp.status_code == 429:
             logger.warning("[Firecrawl] Rate limited on /scrape for %s", url)
+            return None
+        # 402 is Payment Required, not a rate limit. Retrying a spent plan just
+        # fills the log — 79 identical errors on 2026-09-01 alone.
+        if resp.status_code == 402:
+            firecrawl_quota.note_exhausted()
             return None
         resp.raise_for_status()
         spend_tracker.record("firecrawl")
@@ -159,6 +168,9 @@ async def _raw_search_web(
         logger.warning("[Firecrawl] search blocked by spend budget")
         return []
 
+    if not await firecrawl_quota.allow():
+        return []
+
     body: dict[str, Any] = {
         "query": query,
         "limit": min(limit, 20),
@@ -174,6 +186,9 @@ async def _raw_search_web(
         )
         if resp.status_code == 429:
             logger.warning("[Firecrawl] Rate limited on /search for '%s'", query)
+            return []
+        if resp.status_code == 402:
+            firecrawl_quota.note_exhausted()
             return []
         resp.raise_for_status()
         spend_tracker.record("firecrawl")
