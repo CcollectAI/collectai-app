@@ -361,13 +361,27 @@ class Crawl4AICaller:
         all_hits: List[Dict[str, Any]] = []
 
         for site in sites[:3]:
-            # eBay: use sold filter params. Others: append "sold" to query.
+            # eBay sold/completed cannot be scraped by ANY client. Verified
+            # 2026-09-01 with a plain browser-UA curl: eBay 302s
+            # `?LH_Complete=1&LH_Sold=1` to /splashui/challenge ("Pardon Our
+            # Interruption") and serves zero `s-item` nodes. Scrape.do says the
+            # same thing in its own words and returns HTTP 400.
+            #
+            # So this is eBay's wall, not a bug in either scraper, and the
+            # answer is not a better scraper -- defeating that challenge is
+            # bot-detection circumvention. Real completed-sale data comes from
+            # eBay Marketplace Insights; the code side is stubbed at
+            # ebay_caller.py:410. See docs/EBAY_MARKETPLACE_INSIGHTS.md.
             if "ebay" in site:
-                sold_query = query
-                url = self._build_search_url(sold_query, site, sold=True)
-            else:
-                sold_query = f"{query} sold"
-                url = self._build_search_url(sold_query, site)
+                logger.debug(
+                    "[Crawl4AI] skipping eBay sold_comps for %r — "
+                    "eBay serves a bot challenge for LH_Sold/LH_Complete", query,
+                )
+                continue
+
+            # Non-eBay sites: append "sold" to the query.
+            sold_query = f"{query} sold"
+            url = self._build_search_url(sold_query, site)
             if not url:
                 continue
 

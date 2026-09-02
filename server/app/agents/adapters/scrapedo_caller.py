@@ -262,13 +262,35 @@ class ScrapedoCaller:
         all_hits: List[Dict[str, Any]] = []
 
         for site in sites[:3]:
-            # eBay: use sold filter params. Others: append "sold" to query.
+            # eBay sold/completed is PERMANENTLY unavailable through Scrape.do.
+            #
+            # Every such request returns HTTP 400 with the provider's own
+            # explanation: "eBay redirects sold/completed listing searches
+            # (LH_Sold / LH_Complete) to a login page; this data now requires
+            # authentication and cannot be scraped."
+            #
+            # That is a provider refusal, not a transient error, so the circuit
+            # breaker was the wrong instrument: it tripped, cooled down,
+            # half-opened, and retried a request that cannot ever succeed.
+            # Verified 2026-09-01 that these 400s do NOT consume quota
+            # (RemainingMonthlyRequest held at 880 across a failing call), so
+            # this guard saves latency and log noise rather than credits --
+            # and, more importantly, stops a permanent dead end from looking
+            # like an outage.
+            #
+            # Real completed-sale data needs eBay Marketplace Insights; the
+            # code side is stubbed at ebay_caller.py:410. See
+            # docs/EBAY_MARKETPLACE_INSIGHTS.md.
             if "ebay" in site:
-                sold_query = query
-                url = self._build_search_url(sold_query, site, sold=True)
-            else:
-                sold_query = f"{query} sold"
-                url = self._build_search_url(sold_query, site)
+                logger.debug(
+                    "[ScrapedoCaller] skipping eBay sold_comps for %r — "
+                    "provider cannot serve LH_Sold/LH_Complete", query,
+                )
+                continue
+
+            # Non-eBay sites: append "sold" to the query.
+            sold_query = f"{query} sold"
+            url = self._build_search_url(sold_query, site)
 
             try:
                 html = await scrape_url(url)
