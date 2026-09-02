@@ -103,13 +103,49 @@ _NOISE_PATTERNS = (
     r"\bgameplay\b", r"\bpatch\s+notes\b", r"\bserver\b",
 )
 
+# Noise patterns matched against the TITLE ONLY (added 2026-09-02).
+#
+# These are TOPIC rules -- they say "this article is about food, or is a weekly
+# digest", and a topic claim is only safe to make about the headline. The
+# patterns above are structural and stay on title+description.
+#
+# The split is not stylistic. Run against title+description these dropped
+# "Tamagotchi evolves into a ring for its 30th anniversary, preorders now open"
+# -- a real collectible drop -- because the SoraNews description carried
+# related-article blurbs mentioning convenience stores and Cup Noodle. The
+# headline was clean; the page furniture around it was not.
+#
+# Every pattern is written against an item that actually shipped through
+# `_is_collector_relevant` in a real 30-day dry run, and is named with it.
+# Nothing speculative.
+_TITLE_ONLY_NOISE = (
+    # Recurring column/digest posts (a weekly roundup is not an event)
+    r"\bthis\s+week'?s?\s+(top|best)\b",        # "This week's top news articles"
+    r"\bwhat'?s\s+hot\s+this\s+week\b",        # "What's hot this week"
+    r"\broutinely\s+itemised\b",                # "Routinely Itemised: RPG #376"
+    # Listicles and retrospectives the existing rules miss
+    r"\branked\b",                               # "...Here's Every Return Ranked"
+    r"\bthe\s+history\s+of\b",                  # "The History of Sideshow: ..."
+    # Food & drink from the Japan/UK lifestyle feeds. "Family Mart releases new
+    # Human Made Cup Noodle" matches \brelease\b perfectly and is not a
+    # collectible.
+    r"\bcup\s+noodle\b", r"\brice\s+ball\b", r"\bconvenience\s+store\b",
+    r"\bmenu\b", r"\bvodka\b", r"\bflavou?r\b",
+)
+
 _collector_regex = re.compile("|".join(_COLLECTOR_SIGNALS), re.IGNORECASE)
 _noise_regex = re.compile("|".join(_NOISE_PATTERNS), re.IGNORECASE)
+_title_noise_regex = re.compile("|".join(_TITLE_ONLY_NOISE), re.IGNORECASE)
 
 
 def _is_collector_relevant(title: str, description: str = "") -> bool:
     """Return True if the RSS item looks like a collector-relevant event/drop/release."""
     text = f"{title} {description}".lower()
+
+    # Topic rules judge the HEADLINE only -- a description carries page
+    # furniture (related-article blurbs, footers) that is not about this item.
+    if _title_noise_regex.search(title or ""):
+        return False
 
     # Skip obvious noise
     if _noise_regex.search(text):
@@ -123,6 +159,29 @@ def _is_collector_relevant(title: str, description: str = "") -> bool:
 # Most blogs use /feed, /rss, /blog/feed, or wp-json endpoints
 # ---------------------------------------------------------------------------
 
+# ── QUARANTINED 2026-09-02 — zero collector signal, hand-audited ────
+# Kotaku, Anime News Network, MyAnimeList and Japan Times were removed after
+# auditing EVERY item they produced in one real 30-day dry run:
+#
+#   myanimelist.net          16 items -> 0 collectible events
+#   animenewsnetwork.com     10 items -> 0
+#   kotaku.com                5 items -> 0
+#   japantimes.co.jp          2 items -> 0
+#
+# 33 of 119 items, none of them a drop, release or convention. They are the
+# pollution named in event_scraper_scheduler.py ("Yen short bets jump...",
+# "7-Eleven green tea rice ball") that got RSS_EVENTS_ENABLED switched off on
+# 2026-06-15.
+#
+# They are removed at the FEED level rather than filtered at the title level
+# on purpose. `_is_collector_relevant` already ran on all 119 — these are its
+# survivors — and it cannot separate them: `\bannounc` matches "LEGO Ideas
+# 21371 Wallace & Gromit revealed" and "Main Staff for 'Ikyou no Tsume'
+# Announced" equally well, because anime industry news uses the exact
+# vocabulary of a product release. A regex tuned to reject one rejects the
+# other. The feed is the only signal that separates them.
+#
+# See [[learning_a_ported_gate_carries_the_wrong_vocabulary]].
 RSS_FEED_TARGETS: list[dict[str, Any]] = [
     # ═══════════════════════════════════════════════════════════════════
     # ALL feeds below are VERIFIED to return valid RSS/Atom XML as of
@@ -135,7 +194,6 @@ RSS_FEED_TARGETS: list[dict[str, Any]] = [
     {"feed_url": "https://disneyparks.disney.go.com/blog/feed/", "fallback_url": "https://disneyparks.disney.go.com/blog/", "category_id": "disney", "kind_default": "collection_drop", "description": "Disney Parks Blog"},
     {"feed_url": "https://www.comic-con.org/feed/", "fallback_url": "https://www.comic-con.org/cci/", "category_id": None, "kind_default": "convention", "description": "SDCC"},
     {"feed_url": "https://www.anime-expo.org/feed/", "fallback_url": "https://www.anime-expo.org/", "category_id": "anime_figures", "kind_default": "convention", "description": "Anime Expo"},
-    {"feed_url": "https://kotaku.com/rss", "fallback_url": "https://kotaku.com/", "category_id": "retro_games", "kind_default": "release", "description": "Kotaku gaming news"},
 
     # ── Warhammer (verified) ─────────────────────────────────────────
     {"feed_url": "https://www.belloflostsouls.net/feed", "fallback_url": "https://www.belloflostsouls.net/", "category_id": "warhammer", "kind_default": "release", "description": "Bell of Lost Souls"},
@@ -149,13 +207,10 @@ RSS_FEED_TARGETS: list[dict[str, Any]] = [
     {"feed_url": "https://www.ablogtowatch.com/feed/", "fallback_url": "https://www.ablogtowatch.com/", "category_id": "watches", "kind_default": "release", "description": "aBlogtoWatch"},
 
     # ── Anime / Japan (verified) ─────────────────────────────────────
-    {"feed_url": "https://www.animenewsnetwork.com/news/rss.xml", "fallback_url": "https://www.animenewsnetwork.com/news/", "category_id": "anime_figures", "kind_default": "release", "description": "Anime News Network"},
-    {"feed_url": "https://myanimelist.net/rss/news.xml", "fallback_url": "https://myanimelist.net/news", "category_id": "anime_figures", "kind_default": "release", "description": "MyAnimeList news"},
     {"feed_url": "https://hobby.dengeki.com/feed/", "fallback_url": "https://hobby.dengeki.com/", "category_id": "anime_figures", "kind_default": "release", "description": "Dengeki Hobby (JP figures/models)"},
     {"feed_url": "https://soranews24.com/feed/", "fallback_url": "https://soranews24.com/", "category_id": None, "kind_default": "release", "description": "SoraNews24 (Japan pop culture)"},
 
     # ── UK / Europe (verified) ───────────────────────────────────────
-    {"feed_url": "https://www.japantimes.co.jp/feed/", "fallback_url": "https://www.japantimes.co.jp/", "category_id": None, "kind_default": "release", "description": "Japan Times (JP events/culture)"},
     {"feed_url": "https://www.geeknative.com/feed/", "fallback_url": "https://www.geeknative.com/", "category_id": None, "kind_default": "release", "description": "Geek Native UK (tabletop/collectibles)"},
 
     # ── High-signal hobby blogs (verified + signal-filtered 2026-04-14) ──
