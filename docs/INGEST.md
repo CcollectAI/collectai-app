@@ -461,10 +461,43 @@ Proved against a `git worktree` baseline rather than asserted:
 12 new tests; `4051 passed` on the full suite (the 12 errors are pre-existing
 and identical on the baseline worktree).
 
-⛔ **Merle-side, and likely relevant:** `POKEMONTCG_API_KEY` is set on EC2 but
-there is **no such repo secret**, so the nightly calls the API **keyless** from
-shared GitHub runner IPs. That is a strong candidate for the 5xx — not proven,
-since 500 is not 429 — and it is one `gh secret set` away.
+### The API key hypothesis was wrong (tested 2026-09-05, same evening)
+
+I suggested the nightly's 5xx might be down to running **keyless** —
+`POKEMONTCG_API_KEY` is set on EC2 but was not a repo secret. The secret is
+now set, but **the measurement does not support the reason I gave for it.**
+
+Interleaved from EC2, five pairs, two seconds apart, same URL:
+
+```
+pair 1:  with-key=200   keyless=500
+pair 2:  with-key=500   keyless=200
+pair 3:  with-key=500   keyless=200
+pair 4:  with-key=500   keyless=500
+pair 5:  with-key=500   keyless=200
+         with-key 200s = 1/5 | keyless 200s = 3/5
+```
+
+Two conclusions, and neither is the one I predicted:
+
+1. **`api.pokemontcg.io` is broadly unhealthy right now** — 500s and 502s on
+   *both* paths, including `/sets`. The nightly's failures are genuine
+   upstream weather, not a missing credential.
+2. **Keyless did BETTER in this sample**, 3/5 against 1/5. That hints the key
+   may be stale or rate-limited, but **n=5 cannot establish it** and I am not
+   going to claim it does. It is a hint, not a finding.
+
+So the key is not the fix. The thing that actually makes this survivable is
+the backoff + circuit breaker above: the run now gives up on a dead host fast
+instead of grinding through 3 attempts per set. If the key turns out to be
+stale, `gh secret delete POKEMONTCG_API_KEY` costs nothing — the API works
+without one.
+
+**The lesson is the ordering.** I proposed a config change on a plausible
+mechanism ("keyless from shared runner IPs") and only measured afterwards. The
+measurement inverted it. A one-command test before the suggestion would have
+saved the round trip — this is [[feedback_no_fixes_on_assumptions]] in a place
+where the fix looked too cheap to bother verifying.
 
 ### The 14 that remain were transport, not logic
 
