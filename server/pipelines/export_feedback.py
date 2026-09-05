@@ -219,7 +219,7 @@ async def _process_feedback(
             try:
                 value_json = json.loads(value_json)
             except json.JSONDecodeError:
-                logger.warning("Skipping row %d: invalid value_json", row["id"])
+                logger.warning("Skipping row %s: invalid value_json", row["id"])
                 skipped += 1
                 continue
 
@@ -230,19 +230,19 @@ async def _process_feedback(
             or value_json.get("sale_price")
         )
         if price is None:
-            logger.warning("Skipping row %d: no price in value_json", row["id"])
+            logger.warning("Skipping row %s: no price in value_json", row["id"])
             skipped += 1
             continue
 
         try:
             price = float(price)
         except (ValueError, TypeError):
-            logger.warning("Skipping row %d: non-numeric price %r", row["id"], price)
+            logger.warning("Skipping row %s: non-numeric price %r", row["id"], price)
             skipped += 1
             continue
 
         if price <= 0:
-            logger.warning("Skipping row %d: non-positive price %.2f", row["id"], price)
+            logger.warning("Skipping row %s: non-positive price %.2f", row["id"], price)
             skipped += 1
             continue
 
@@ -302,13 +302,17 @@ async def _process_feedback(
             "price": price,
             "category": category,
             "source": "user_feedback",
-            "feedback_id": row["id"],
+            # str(): asyncpg hands back a UUID object, and this record is
+            # json.dumps'd below. The dry-run branch skips that dumps, which is
+            # why --dry-run passed against prod while the real run raised
+            # "Object of type UUID is not JSON serializable".
+            "feedback_id": str(row["id"]),
         }
         jsonl_records.append(record)
 
         if verbose:
             logger.debug(
-                "  row %d -> category=%s price=%.2f features=%s",
+                "  row %s -> category=%s price=%.2f features=%s",
                 row["id"],
                 category,
                 price,
@@ -327,14 +331,22 @@ async def _process_feedback(
     output_path = DATA_DIR / "feedback_export.jsonl"
 
     if jsonl_records:
+        # Serialise FIRST, in both modes. A --dry-run that skips json.dumps
+        # cannot verify what json.dumps does: on 2026-09-05 a dry-run against
+        # prod reported "Would write 1 rows" and the real run died on
+        # "Object of type UUID is not JSON serializable". Dry-run must exercise
+        # every step except the side effect.
+        serialised = [json.dumps(rec) for rec in jsonl_records]
+
         if dry_run:
-            logger.info("[DRY RUN] Would write %d rows to %s", len(jsonl_records), output_path)
+            logger.info("[DRY RUN] Would write %d rows to %s (serialised OK)",
+                        len(serialised), output_path)
         else:
             DATA_DIR.mkdir(parents=True, exist_ok=True)
             with open(output_path, "w") as f:
-                for rec in jsonl_records:
-                    f.write(json.dumps(rec) + "\n")
-            logger.info("Wrote %d rows to %s", len(jsonl_records), output_path)
+                for line in serialised:
+                    f.write(line + "\n")
+            logger.info("Wrote %d rows to %s", len(serialised), output_path)
 
         # Also append to per-category train.jsonl files
         by_category: dict[str, list[dict]] = {}
@@ -374,7 +386,7 @@ async def _process_feedback(
             try:
                 value_json = json.loads(value_json)
             except json.JSONDecodeError:
-                logger.warning("Skipping category correction row %d: invalid value_json", row["id"])
+                logger.warning("Skipping category correction row %s: invalid value_json", row["id"])
                 skipped += 1
                 continue
 
@@ -383,7 +395,7 @@ async def _process_feedback(
 
         if not original_category or not corrected_category:
             logger.warning(
-                "Skipping category correction row %d: missing original/corrected category",
+                "Skipping category correction row %s: missing original/corrected category",
                 row["id"],
             )
             skipped += 1
@@ -391,7 +403,7 @@ async def _process_feedback(
 
         if dry_run:
             logger.info(
-                "[DRY RUN] Would insert taxonomy correction: %s -> %s (feedback row %d)",
+                "[DRY RUN] Would insert taxonomy correction: %s -> %s (feedback row %s)",
                 original_category,
                 corrected_category,
                 row["id"],
@@ -414,12 +426,12 @@ async def _process_feedback(
                 taxonomy_count += 1
             except Exception as e:
                 logger.warning(
-                    "Failed to insert taxonomy correction for row %d: %s", row["id"], e
+                    "Failed to insert taxonomy correction for row %s: %s", row["id"], e
                 )
 
         if verbose:
             logger.debug(
-                "  row %d -> taxonomy: %s -> %s",
+                "  row %s -> taxonomy: %s -> %s",
                 row["id"],
                 original_category,
                 corrected_category,
