@@ -498,7 +498,70 @@ privileges, which argues the cascade should succeed regardless of
 facts do not currently reconcile, and **that gap is the reason this is not
 being patched by guessing a `GRANT`.**
 
-#### The one discriminating test — run it in the Supabase SQL Editor
+#### ⛔ CORRECTION (2026-09-05): the SQL Editor cannot run it either
+
+Everything below this heading was written on the assumption that *"the SQL
+Editor connects as `postgres` and may assume the role"*. **The second half of
+that sentence was never tested, and it is false.**
+
+Measured via the Management API's `/database/query` endpoint — which is the
+same execution path as the SQL Editor and reports `current_user = postgres`:
+
+```
+BEGIN; SET LOCAL ROLE supabase_auth_admin; ...
+  -> ERROR 42501: permission denied to set role "supabase_auth_admin"
+```
+
+`postgres` on a managed Supabase project is **not a superuser**
+(`rolsuper = false`; only `supabase_admin` is) and its role memberships are
+`anon, authenticated, authenticator, collector_bot, pg_create_subscription,
+pg_monitor, pg_read_all_data, pg_signal_backend, service_role,
+supabase_functions_admin, supabase_privileged_role` — **`supabase_auth_admin`
+is not among them.** No amount of clicking in the SQL Editor changes that.
+
+(The endpoint *does* honour `ROLLBACK` — proved with a `set_config` round-trip
+before anything else was run — so the safety design of the .sql file is sound.
+It is the role assumption that fails, not the transaction.)
+
+#### What the read-only test showed instead, and why "grant on that table" was wrong
+
+`SET ROLE` is not needed to ask the privilege question. `has_table_privilege`
+answers it for any role, from any session:
+
+```sql
+SELECT c.relname, con.confdeltype, pg_get_userbyid(c.relowner) AS owner,
+       c.relrowsecurity AS rls,
+       has_table_privilege('supabase_auth_admin', c.oid, 'DELETE')
+  FROM pg_constraint con
+  JOIN pg_class c  ON c.oid = con.conrelid
+  JOIN pg_class rc ON rc.oid = con.confrelid
+  JOIN pg_namespace rn ON rn.oid = rc.relnamespace
+ WHERE con.contype = 'f' AND rn.nspname = 'auth' AND rc.relname = 'users';
+```
+
+Result across all **44** FK references to `auth.users`:
+**`supabase_auth_admin` can DELETE on ZERO of them.** Owner is `postgres` and
+RLS is on for every single one.
+
+So `marketplace_listings` is **not special.** It is simply the table the
+cascade reached first. The plan recorded below — *"grant on that table,
+re-run, repeat"* — would mean granting on forty-four tables one at a time,
+which is not a fix, it is a schema-wide privilege change discovered by
+brute force.
+
+⚠️ **And that makes the "does not reconcile" gap sharper, not softer.** A stock
+Supabase project also does not grant `supabase_auth_admin` on user tables, and
+GoTrue deletion works there. So "no grants" is the NORMAL state and cannot by
+itself be the cause. Something else about this project is different, and it has
+not been identified yet. **Still do not guess a `GRANT`.**
+
+**The remaining discriminating test** needs the role to be assumable at all.
+The only way to get there is a temporary, reversible membership —
+`GRANT supabase_auth_admin TO postgres;` (postgres has `rolcreaterole`), run
+the diagnostic, then `REVOKE`. That is a privilege change to production auth
+and is **Merle's call, not a thing to do quietly.**
+
+#### (superseded) The one discriminating test — run it in the Supabase SQL Editor
 
 `scripts/diagnose_gotrue_delete.sql` does the thing no session on the EC2 box
 can: `SET LOCAL ROLE supabase_auth_admin`, issue GoTrue's own `DELETE`, and

@@ -1,3 +1,11 @@
+-- ⛔ 2026-09-05: THIS FILE CANNOT RUN AS WRITTEN, IN THE SQL EDITOR OR ANYWHERE.
+-- `postgres` is not a superuser on managed Supabase and is NOT a member of
+-- supabase_auth_admin, so `SET LOCAL ROLE` below fails with 42501 in the SQL
+-- Editor exactly as it does from the app DSN. Verified via the Management API
+-- /database/query endpoint (same path as the Editor, current_user = postgres).
+-- It needs `GRANT supabase_auth_admin TO postgres;` first — a production auth
+-- privilege change. See docs/INGEST.md § CORRECTION (2026-09-05).
+--
 -- Reproduce a GoTrue user-delete AS GOTRUE'S OWN PRINCIPAL.
 --
 -- Why this file exists: on 2026-08-30 the delete was "verified" from a psql
