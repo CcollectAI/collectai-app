@@ -444,26 +444,39 @@ async def _process_feedback(
     # ------------------------------------------------------------------
     feedback_ids = [r["id"] for r in rows]
 
+    # $3::uuid[] — user_feedback_events_v1.id is uuid, not bigint. As written
+    # this raised `operator does not exist: uuid = bigint` the first time it
+    # ever executed, on 2026-09-05, because nothing had reached line 190 before
+    # then. Same family as the `$1::text[]` on the items lookup above.
+    mark_sql = """
+        UPDATE public.user_feedback_events_v1
+        SET incorporated_at = $1,
+            incorporated_run_id = $2
+        WHERE id = ANY($3::uuid[])
+          AND incorporated_at IS NULL
+    """
+    now = datetime.now(timezone.utc)
+
     if dry_run:
-        logger.info(
-            "[DRY RUN] Would mark %d feedback rows as incorporated (run_id=%s)",
-            len(feedback_ids),
-            run_id,
-        )
+        # Execute it and ROLL BACK. A dry-run that merely prints what it WOULD
+        # do cannot catch a statement that will not even prepare — which is
+        # exactly how the `::bigint[]` cast survived a green dry-run against
+        # prod. Everything except the side effect.
+        class _DryRunRollback(Exception):
+            """Sentinel: unwinds conn.transaction() so nothing is committed."""
+
+        try:
+            async with conn.transaction():
+                would = await conn.execute(mark_sql, now, run_id, feedback_ids)
+                raise _DryRunRollback(would)
+        except _DryRunRollback as rb:
+            logger.info(
+                "[DRY RUN] Would mark feedback rows as incorporated: %s "
+                "(statement executed and rolled back; run_id=%s)",
+                rb.args[0], run_id,
+            )
     else:
-        now = datetime.now(timezone.utc)
-        updated = await conn.execute(
-            """
-            UPDATE public.user_feedback_events_v1
-            SET incorporated_at = $1,
-                incorporated_run_id = $2
-            WHERE id = ANY($3::bigint[])
-              AND incorporated_at IS NULL
-            """,
-            now,
-            run_id,
-            feedback_ids,
-        )
+        updated = await conn.execute(mark_sql, now, run_id, feedback_ids)
         logger.info("Marked feedback as incorporated: %s (run_id=%s)", updated, run_id)
 
     # ------------------------------------------------------------------
