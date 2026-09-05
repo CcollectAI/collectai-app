@@ -30,6 +30,8 @@ from pathlib import Path
 
 from pipelines.import_common import (
     close_http_client,
+    hold_http_client,
+    release_http_client,
     logger,
     setup_logging,
     IngestStats,
@@ -284,6 +286,15 @@ def main():
     else:
         tiers_to_run = [args.tier] if args.tier else [1, 2, 3, 4]
 
+        # OWN the shared HTTP client for the whole multi-pipeline run. At least
+        # six single-category pipelines call the module-global
+        # close_http_client() when they finish; run concurrently, an early
+        # finisher closes the client its siblings are still writing through.
+        # That cost 2,254 rows and a red run on three consecutive nights
+        # (09-03/04/05). While held, their close is a no-op; release below
+        # closes it for real. See hold_http_client() in import_common.py.
+        hold_http_client()
+
         for tier_num in tiers_to_run:
             tier = ALL_TIERS[tier_num]
             logger.info(f"\n{'#'*60}")
@@ -319,8 +330,9 @@ def main():
 
     elapsed = (datetime.now() - start_time).total_seconds()
 
-    # Close shared HTTP client
-    close_http_client()
+    # Release ownership, then close for real. release_http_client() is safe to
+    # call even when hold was never taken (the --category path).
+    release_http_client()
 
     # Auto-rebuild vocab + brand registry + schema if any imports succeeded
     if results.get("success"):

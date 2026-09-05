@@ -389,6 +389,83 @@ Rows LOST: 2412 across 14 failed batch(es) — these were fetched and then not w
 ⚠️ A `grep -c 21000` on that run returns 1. It is a FALSE POSITIVE — an mtg
 progress line reading `| page 120 | (21000)`. Read the match, do not count it.
 
+### The `client has been closed` fix regressed, and I misdiagnosed the cause (2026-09-05)
+
+`nightly-ingest` was red on 09-03, 09-04 and 09-05. I first reported the cause
+as *"upstream api.pokemontcg.io 5xx, not our code"* — because those errors
+dominate the log by count. **That was wrong**, and the exit line says so:
+
+```
+Upsert catalog batch 3/5 (200 rows LOST) failed:
+  Cannot send a request, as the client has been closed.
+Rows LOST: 2254 across 13 failed batch(es) — exiting with code 1
+```
+
+The most numerous error is not the one that failed the run. **Read the exit
+line, not the error histogram** — the same shape as the `grep -c 21000` false
+positive noted above.
+
+**The 08-29 fix had regressed** — or rather, it was never complete. Making
+`SupabaseIngest.client` a property that re-resolves per call narrows the race;
+it cannot close it, because a property cannot fix time-of-check/time-of-use:
+
+```
+thread A: self.client          -> returns a LIVE client
+thread B: close_http_client()  -> closes that very object
+thread A: client.post(...)     -> RuntimeError, 200 rows lost
+```
+
+And `_RETRYABLE_POST = (httpx.TransportError,)` does not catch it, because
+httpx raises a bare `RuntimeError` for a closed client. So one sibling's
+tidy-up cost 200 rows with no retry at all.
+
+Fixed by ownership rather than by fixing six call sites: `hold_http_client()`
+makes a sibling's close a no-op for the duration of an orchestrated run, and
+only `release_http_client()` closes for real. `get_http_client()` is now
+locked too (two threads could each build a client, leaking one). The retry
+also re-resolves a closed client and treats *only* that RuntimeError as
+retryable — any other one still raises.
+
+### The read side: the opposite retry rule, and an outbound budget
+
+The pokemontcg 5xx were real even though they were not the failure. Three
+defects in `fetch_json`, which every importer shares:
+
+| defect | consequence |
+|---|---|
+| every status retried, including 4xx | a 404 burned 3 attempts to reach the same answer |
+| flat `sleep(delay)` | 3 seconds total against a real incident, synchronised across parallel pipelines |
+| a run of 429s `continue`d off the end of the loop | returned **`None`**, and every caller does `data.get(...)` on it |
+
+⚠️ **Its rule is deliberately the inverse of `_post_with_retry`'s.** That
+function retries no HTTP response because PGRST102/21000 are Postgres's
+verdict on our exact payload. Here the response is a third party's and the
+request is an idempotent GET, so a 5xx is weather and a 4xx is a verdict.
+Both rules are written in both docstrings so neither gets "tidied" into the
+other.
+
+**And a budget, because we have been banned before.** tcgcsv.com blocked this
+application for overuse on 2026-07-31 and that catalogue is still frozen.
+Retrying harder into a struggling free API is how that happens twice, so
+after `INGEST_HOST_FAIL_LIMIT` (default 8) consecutive 5xx from one host every
+further call to it fails fast for the rest of the run — no socket, no retry.
+A single success clears the streak.
+
+Proved against a `git worktree` baseline rather than asserted:
+
+| behaviour | pre-fix | fixed |
+|---|---|---|
+| attempts on a 404 | **3** | **1** |
+| an all-429 run returns | **`None`** | raises `RuntimeError` |
+
+12 new tests; `4051 passed` on the full suite (the 12 errors are pre-existing
+and identical on the baseline worktree).
+
+⛔ **Merle-side, and likely relevant:** `POKEMONTCG_API_KEY` is set on EC2 but
+there is **no such repo secret**, so the nightly calls the API **keyless** from
+shared GitHub runner IPs. That is a strong candidate for the 5xx — not proven,
+since 500 is not 429 — and it is one `gh secret set` away.
+
 ### The 14 that remain were transport, not logic
 
 ```

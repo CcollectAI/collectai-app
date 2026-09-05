@@ -19,7 +19,9 @@ import logging
 import os
 import re
 import sys
+import random
 import threading
+from urllib.parse import urlparse
 import time
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
@@ -442,22 +444,79 @@ class IngestStats:
 # ---------------------------------------------------------------------------
 
 _shared_http_client: httpx.Client | None = None
+_http_client_lock = threading.Lock()
+
+# Set while an orchestrator (import_all) is running pipelines concurrently.
+# See hold_http_client() below.
+_http_client_held = False
 
 
 def get_http_client() -> httpx.Client:
     """Return a shared httpx.Client for connection reuse across the pipeline."""
     global _shared_http_client
-    if _shared_http_client is None or _shared_http_client.is_closed:
-        _shared_http_client = httpx.Client(timeout=30.0)
-    return _shared_http_client
+    # Locked: import_all runs pipelines in a ThreadPoolExecutor, so two threads
+    # could both observe a closed/None client and each build one. The loser's
+    # client is then never closed.
+    with _http_client_lock:
+        if _shared_http_client is None or _shared_http_client.is_closed:
+            _shared_http_client = httpx.Client(timeout=30.0)
+        return _shared_http_client
+
+
+def hold_http_client() -> None:
+    """Refuse sibling `close_http_client()` calls until release_http_client().
+
+    THE BUG THIS FIXES (2026-09-05, and it is a REGRESSION of the 08-29 fix).
+
+    At least six single-category pipelines call the MODULE-GLOBAL
+    `close_http_client()` when they individually finish. `import_all` runs them
+    concurrently, so a pipeline that finishes early closes the client every
+    other thread is still writing through.
+
+    2026-08-29 made `SupabaseIngest.client` a property that re-resolves per
+    call, and the 08-30 run duly showed `client has been closed: 0`. But a
+    property only narrows the window; it does not close it. The sequence
+
+        thread A: self.client            -> returns a LIVE client
+        thread B: close_http_client()    -> closes that very object
+        thread A: client.post(...)       -> RuntimeError, 200 rows lost
+
+    is still available, and it is what the 09-03/04/05 nightlies hit: 13
+    failed batches, **2,254 rows lost**, exit 1, three nights running.
+
+    A property cannot fix a time-of-check/time-of-use race. Ownership can:
+    while the orchestrator holds the client, a sibling's close is a no-op, and
+    only the holder's release actually closes it. One chokepoint instead of
+    six call sites — none of those pipelines is wrong to want to tidy up, they
+    are just not the owner.
+    """
+    global _http_client_held
+    with _http_client_lock:
+        _http_client_held = True
+
+
+def release_http_client() -> None:
+    """Release the hold taken by hold_http_client() and close for real."""
+    global _http_client_held
+    with _http_client_lock:
+        _http_client_held = False
+    close_http_client()
 
 
 def close_http_client() -> None:
-    """Close the shared HTTP client (call at pipeline shutdown)."""
+    """Close the shared HTTP client (call at pipeline shutdown).
+
+    A no-op while an orchestrator holds it — see hold_http_client().
+    """
     global _shared_http_client
-    if _shared_http_client is not None and not _shared_http_client.is_closed:
-        _shared_http_client.close()
-        _shared_http_client = None
+    with _http_client_lock:
+        if _http_client_held:
+            logger.debug("[ingest] close_http_client() ignored — client is held "
+                         "by the orchestrator while sibling pipelines still write")
+            return
+        if _shared_http_client is not None and not _shared_http_client.is_closed:
+            _shared_http_client.close()
+            _shared_http_client = None
 
 
 # ---------------------------------------------------------------------------
@@ -520,7 +579,25 @@ def write_loss_exit_code() -> int:
 # ConnectError, ReadTimeout, RemoteProtocolError, PoolTimeout, ConnectTimeout
 # and the SSL wrappers — i.e. every way the connection can fail WITHOUT the
 # server having judged the request.
+# Consecutive-5xx circuit breaker per upstream host — see fetch_json().
+_host_failures: dict[str, int] = {}
+_host_fail_lock = threading.Lock()
+_HOST_FAIL_LIMIT = int(os.getenv("INGEST_HOST_FAIL_LIMIT", "8"))
+
+
+def reset_host_circuit(host: str | None = None) -> None:
+    """Clear the 5xx circuit for one host, or all of them."""
+    with _host_fail_lock:
+        if host is None:
+            _host_failures.clear()
+        else:
+            _host_failures.pop(host, None)
+
+
 _RETRYABLE_POST = (httpx.TransportError,)
+# httpx's wording for a closed client; matched on the message because it
+# raises a bare RuntimeError with no dedicated type.
+_CLOSED_CLIENT_MSG = "client has been closed"
 _POST_ATTEMPTS = int(os.getenv("INGEST_POST_ATTEMPTS", "3"))
 _POST_BASE_DELAY_S = float(os.getenv("INGEST_POST_BASE_DELAY_S", "0.5"))
 
@@ -554,19 +631,36 @@ def _post_with_retry(client, url, *, headers, json, timeout=None):
     """
     last: Exception | None = None
     for attempt in range(_POST_ATTEMPTS):
+        # Re-resolve a client that was closed under us. `hold_http_client()`
+        # now prevents the usual cause, but this costs nothing and closes the
+        # residual window for any caller that is not under the orchestrator.
+        if getattr(client, "is_closed", False):
+            client = get_http_client()
         try:
             return client.post(url, headers=headers, json=json, timeout=timeout) \
                 if timeout is not None else client.post(url, headers=headers, json=json)
         except _RETRYABLE_POST as e:
             last = e
-            if attempt == _POST_ATTEMPTS - 1:
-                break
-            delay = _POST_BASE_DELAY_S * (2 ** attempt)
-            logger.warning(
-                "[ingest] transport failure on attempt %d/%d (%s) — retrying in %.1fs",
-                attempt + 1, _POST_ATTEMPTS, e, delay,
-            )
-            time.sleep(delay)
+        except RuntimeError as e:
+            # httpx raises a bare RuntimeError for a closed client. It is
+            # retryable — and ONLY this one is: get_http_client() rebuilds, so
+            # the next attempt has a live client. Any other RuntimeError is a
+            # real bug and must not be swallowed into a retry loop.
+            if _CLOSED_CLIENT_MSG not in str(e):
+                raise
+            last = e
+            client = get_http_client()
+        else:  # pragma: no cover - unreachable, the try returns
+            pass
+
+        if attempt == _POST_ATTEMPTS - 1:
+            break
+        delay = _POST_BASE_DELAY_S * (2 ** attempt)
+        logger.warning(
+            "[ingest] transport failure on attempt %d/%d (%s) — retrying in %.1fs",
+            attempt + 1, _POST_ATTEMPTS, last, delay,
+        )
+        time.sleep(delay)
     raise last  # type: ignore[misc]
 
 
@@ -869,8 +963,55 @@ def _esc(s: str) -> str:
 
 def fetch_json(url: str, params: dict | None = None, headers: dict | None = None,
                retries: int = 3, delay: float = 1.0) -> Any:
-    """GET JSON with retries, rate-limit backoff, and Retry-After support."""
+    """GET JSON with retries, exponential backoff, and Retry-After support.
+
+    ⚠️ This is the READ side, and its retry rule is deliberately the OPPOSITE
+    of `_post_with_retry`'s. That function refuses to retry any HTTP response
+    because PGRST102/21000 are Postgres's judgement of our exact payload and
+    fail identically on replay. Here the response comes from a THIRD PARTY and
+    the request is an idempotent GET, so a 5xx is weather, not a verdict —
+    `api.pokemontcg.io` returned 500/502 on 10+ sets on each of the
+    2026-09-03/04/05 nightlies. Retrying it is correct; retrying a 4xx is not,
+    for exactly the reason the write path gives.
+
+    Three defects fixed here on 2026-09-05:
+
+    1. **Every status was retried, including 4xx.** A 404 or a malformed query
+       burned three attempts and three seconds to arrive at the same answer.
+       Only 5xx (and 429) are transient; a 4xx now raises on the first one.
+    2. **The backoff was flat.** `time.sleep(delay)` with delay=1.0, three
+       times, is three seconds — nothing to a real upstream incident, and
+       synchronised across every worker. Now exponential with jitter.
+    3. **A run of 429s returned `None`.** The rate-limit branch `continue`s,
+       so if every attempt was rate-limited the loop fell out of the bottom
+       and the function returned `None` implicitly — and every caller does
+       `data.get("data", [])` on it, i.e. `AttributeError` far from the cause.
+       Falling out now raises.
+    """
     client = get_http_client()
+    last_exc: Exception | None = None
+    host = urlparse(url).netloc
+
+    # OUTBOUND BUDGET. tcgcsv.com banned this application for overuse on
+    # 2026-07-31 and that catalogue has been frozen ever since; the rule that
+    # came out of it is "budget and count outbound calls to every third party".
+    # Retrying harder into a struggling free API is how that happens twice.
+    # After _HOST_FAIL_LIMIT consecutive 5xx from one host, every further call
+    # to it fails fast for the rest of the process — no socket, no retry.
+    # A successful response resets the count, so a blip costs nothing.
+    with _host_fail_lock:
+        if _host_failures.get(host, 0) >= _HOST_FAIL_LIMIT:
+            raise RuntimeError(
+                "circuit open for %s after %d consecutive 5xx — not calling it "
+                "again this run (outbound budget; see docs/INGEST.md)"
+                % (host, _host_failures[host])
+            )
+
+    def _backoff(attempt: int) -> float:
+        # Exponential with jitter: synchronised retries from parallel
+        # pipelines are how a struggling upstream is kept struggling.
+        return delay * (2 ** attempt) * (0.5 + random.random())
+
     for attempt in range(retries):
         try:
             resp = client.get(url, params=params, headers=headers)
@@ -879,22 +1020,49 @@ def fetch_json(url: str, params: dict | None = None, headers: dict | None = None
                 if retry_after and retry_after.isdigit():
                     wait = int(retry_after)
                 else:
-                    wait = delay * (2 ** attempt)
-                logger.warning(f"Rate limited, waiting {wait:.1f}s...")
+                    wait = _backoff(attempt)
+                logger.warning("Rate limited, waiting %.1fs: %s", wait, url)
+                last_exc = RuntimeError("rate limited (429) on every attempt: %s" % url)
                 time.sleep(wait)
                 continue
             resp.raise_for_status()
+            with _host_fail_lock:
+                _host_failures.pop(host, None)   # a good response clears the streak
             return resp.json()
         except httpx.HTTPStatusError as e:
-            logger.warning(f"HTTP {e.response.status_code} on attempt {attempt+1}/{retries}: {url}")
+            status = e.response.status_code
+            if status >= 500:
+                with _host_fail_lock:
+                    _host_failures[host] = _host_failures.get(host, 0) + 1
+                    if _host_failures[host] == _HOST_FAIL_LIMIT:
+                        logger.error(
+                            "[ingest] %s has returned %d consecutive 5xx — "
+                            "opening the circuit for the rest of this run",
+                            host, _HOST_FAIL_LIMIT,
+                        )
+            if status < 500:
+                # Deterministic. It will fail the same way three times.
+                logger.warning("HTTP %d (not retryable): %s", status, url)
+                raise
+            last_exc = e
+            logger.warning("HTTP %d on attempt %d/%d: %s", status, attempt + 1, retries, url)
             if attempt == retries - 1:
                 raise
-            time.sleep(delay)
-        except httpx.ConnectError:
-            logger.warning(f"Connection error on attempt {attempt+1}/{retries}: {url}")
+            time.sleep(_backoff(attempt))
+        except httpx.TransportError as e:
+            # Broader than the old ConnectError: "The read operation timed out"
+            # and SSL errors are the same class of blip and were escaping
+            # unretried.
+            last_exc = e
+            logger.warning("Transport error on attempt %d/%d (%s): %s",
+                           attempt + 1, retries, e, url)
             if attempt == retries - 1:
                 raise
-            time.sleep(delay)
+            time.sleep(_backoff(attempt))
+
+    # Only reachable when every attempt hit 429. Returning None here silently
+    # handed callers a non-dict.
+    raise last_exc if last_exc else RuntimeError("fetch_json exhausted retries: %s" % url)
 
 
 # ---------------------------------------------------------------------------
