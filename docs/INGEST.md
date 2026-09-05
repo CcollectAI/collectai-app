@@ -461,6 +461,27 @@ Proved against a `git worktree` baseline rather than asserted:
 12 new tests; `4051 passed` on the full suite (the 12 errors are pre-existing
 and identical on the baseline worktree).
 
+### The nightly-ingest cron comment is ~4h out (noted 2026-09-05)
+
+`.github/workflows/nightly-ingest.yml` says `cron: "0 3 * * *"` with the
+comment *"Run at 03:00 UTC every day (after training pipeline)"*. The last
+three actual starts:
+
+```
+2026-09-05T07:15:27Z   2026-09-04T07:34:26Z   2026-09-03T07:33:46Z
+```
+
+Consistently **~4h15m late** — GitHub queues scheduled workflows on the free
+tier and delivers them when capacity allows. Not a bug to fix, but two things
+follow from it:
+
+- **The watchdog (09:00 Europe/Paris = 07:00 UTC) runs BEFORE the ingest
+  finishes**, so a watchdog report never reflects that morning's ingest.
+- Do not read "it hasn't run at 03:05" as a failure.
+
+Same family as [[learning_third_party_rate_bans_and_schedule_drift]]: the
+stated schedule is a comment, not a constraint.
+
 ### The API key hypothesis was wrong (tested 2026-09-05, same evening)
 
 I suggested the nightly's 5xx might be down to running **keyless** —
