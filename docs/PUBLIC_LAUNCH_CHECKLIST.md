@@ -18,7 +18,7 @@ What IS current:
 | Phases 5-8 (metadata, privacy labels, review info, submit) | **open — this is the remaining work** |
 | `node scripts/check-asc-listing.mjs` | **PASS** 2026-08-02, 9 fields within limits (Keywords 100/100 and Play Short Description 78/80 are at the cap — any edit must re-run it) |
 | Metadata copy | ready in `docs/app-store-aso.md`, nothing to write |
-| Last iOS binary | `builds/sparrow-ios-local.ipa`, **2026-07-31 19:46** — predates the 2026-08-01/02 fixes, so a rebuild is required |
+| Last iOS binary | **re-checked 2026-09-05:** `builds/sparrow-ios-local.ipa` is **2026-09-01 11:12**, and `sparrow-ios-local-b158-uploaded.ipa` (**2026-08-30**) is the newest one actually uploaded. The "2026-07-31 19:46" below was a month stale. Whether b158 is the TestFlight build has NOT been confirmed against ASC from here |
 | Android | blocked on Play enrolment ($25, browser). Not a code problem — `docs/ANDROID_LAUNCH.md` |
 
 **Seven fixes from the Android QA pass are shared or server-side and are not in

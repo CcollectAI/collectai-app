@@ -246,7 +246,9 @@ Every row re-verified in code or on prod for this pass, not carried forward.
 ### What is honestly NOT fixed
 
 **§2 — the thin-market data.** The single biggest quality gap, and the one item
-here that is not a code change. 45 categories and ~62k rows are unpriceable
+here that is not a code change. ~50 categories and ~70k rows are unpriceable
+(re-measured 2026-09-05: watchdog 49/69,251, direct query 51/69,760; it was
+45/~62k when this was written — the gap is growing)
 because `ebay_caller.py:410 sold_comps()` returns `[]`.
 
 **§5 — only the REALISED half.** The fee-aware cost basis reaches the analytics

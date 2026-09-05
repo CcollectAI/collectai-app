@@ -941,9 +941,18 @@ of the same workflow.
 `operator does not exist: uuid = text` the first time a price-feedback row
 gives it an item to look up. Now `$1::uuid[]`, verified against prod.
 
-**⛔ Merle-side, and the fix above does not do it:** set the `DB_DSN` secret on
-the repo, or the feedback loop stays dark no matter how correct these two
-files are.
+**✅ CLOSED the same day.** The `DB_DSN` secret was set — the **pooler** value,
+because `db.<ref>.supabase.co` has no A record (IPv6 only) and GitHub runners
+are IPv4, so the direct DSN would have failed from CI for an unrelated reason
+and read as "the fix was wrong".
+
+Setting it made the step run for the first time ever and it failed **twice
+more**, each a type in the write half of a file that had never executed past
+line 190: `Object of type UUID is not JSON serializable`, then
+`operator does not exist: uuid = bigint`. Run 3 green —
+`Wrote 1 rows`, `Marked feedback as incorporated: UPDATE 6`. Verified in prod:
+`still_pending=0`, `incorporated=6`. Six rows stuck since 2026-07-22 are
+through. Full writeup: `docs/INGEST.md`.
 
 ## Related audits
 

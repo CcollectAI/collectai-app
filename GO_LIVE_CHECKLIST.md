@@ -55,13 +55,20 @@ USER ACTIONS DONE (since launch push started 2026-05-04):
   [x] Onboarding rework — age→seller-gate + followed-cat surfaces (commit `d0c4713`, 2026-05-18)
 
 USER ACTIONS REMAINING (before App Store submission):
-  [ ] RevenueCat dashboard configuration — see PUBLIC_LAUNCH_CHECKLIST.md Phase 2
-        (revenuecat.com account, iOS app + .p8 + Key ID/Issuer ID, products,
-         `pro` entitlement, default offering with `$rc_monthly` + `$rc_annual`)
-  [ ] App Store Connect IAP products — sparrow_pro_monthly (€4.99/mo),
-        sparrow_pro_yearly (€39.99/yr) — Phase 1 of PUBLIC_LAUNCH_CHECKLIST.md
-  [ ] Sandbox tester for purchase QA — ASC → Users → Sandbox → Testers
-  [ ] Demo user for Apple reviewer — apple-review@sparrowcollect.com in Supabase
+  ### ⛔ STALE AS OF 2026-09-05 — the first four were already done on 2026-05-20,
+  ### by the very session whose EXECUTIVE STATUS block sits 40 lines above this
+  ### one. This list was never updated to match it, so it has been re-reporting
+  ### finished work as outstanding for three and a half months. Corrected:
+  [x] RevenueCat dashboard configuration — DONE 2026-05-20 (iOS app, .p8,
+        Key ID/Issuer ID, `pro` entitlement, `default` offering; the initial
+        $rc_monthly/$rc_annual mapping was swapped and was corrected)
+  [x] App Store Connect IAP products — DONE 2026-05-20, both at Ready to Submit
+  [x] Sandbox tester — DONE 2026-05-20, sandbox-merle@sparrowcollect.com
+  [x] Demo user for Apple reviewer — DONE 2026-05-20,
+        apple-review@sparrowcollect.com (still needs PASTING into ASC App
+        Review Information — that part is genuinely open, see Phase 7)
+  ### ⚠️ Everything above was true in May and nothing has re-confirmed it
+  ### against App Store Connect since. Treat as done-but-unverified.
   [ ] App privacy nutrition labels — ASC questionnaire (answers in
         docs/app-store-aso.md lines 620-672)
   [ ] App Review Information — demo creds + contact + reviewer notes

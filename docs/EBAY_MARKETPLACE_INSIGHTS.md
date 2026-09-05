@@ -4,7 +4,11 @@
 > **99.98%** of our comps are daily price-index snapshots with no sale timestamp,
 > and only ~814 PriceCharting rows are genuine sales. This is the single change
 > that fixes both §1 and §2 of `docs/COLLECTOR_DEMAND.md`, and the reason
-> 45 categories / ~62k rows are unpriceable.
+> ~50 categories / ~70k rows are unpriceable. **Re-measured 2026-09-05:**
+> watchdog reports 49 categories / 69,251 rows; a direct query the same day
+> gives 51 / 69,760 — the 30-day comp window rolls, so treat this as "about
+> fifty categories and seventy thousand rows", not a fixed number. It was
+> 45 / ~62k when this doc was written, so the gap is **growing**.
 >
 > **Who does this:** you. It is an application to eBay, in a browser. No code.
 > The code side is already written and stubbed at

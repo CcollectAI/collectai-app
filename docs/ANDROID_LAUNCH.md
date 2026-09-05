@@ -11,6 +11,14 @@ Run the gate rather than reading this list:
 npm run preflight:android      # exit 0 = ready to build and submit
 ```
 
+## Status check — 2026-09-05 (re-verified AGAIN, still nothing has moved)
+
+`npm run preflight:android` run bare on 2026-09-05: **exit 1, the same three
+blockers** — FCM unconfigured, `sparrow-play-service-account.json` absent,
+`EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` unset. Thirty-six days, no movement,
+because all three are downstream of the one thing no one has done: **Play
+enrolment ($25, browser).** Nothing in this repo can advance until then.
+
 ## Status check — 2026-08-30 (re-verified, nothing has moved)
 
 Ten days on from the 08-20 check, `npm run preflight:android` **still exits 1
