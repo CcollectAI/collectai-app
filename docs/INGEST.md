@@ -322,12 +322,44 @@ Two things were wrong and both are now fixed:
   line. Now `$1::uuid[]`; a `--dry-run` against prod finds the 6 rows and
   builds 1 lorcana training row.
 
-⛔ **This will now turn the nightly RED until the `DB_DSN` secret is set.**
-That is deliberate and it is one action, not a backlog — which is the line
-between this and the permanently-red gate warned about above. If the secret
-cannot be set today, the honest interim is to revert the `sys.exit(2)` in
-`pipelines/export_feedback.py`, **not** to restore the message that called
-it "not critical".
+### ✅ CLOSED the same day — and setting the secret found three more defects
+
+`DB_DSN` was set (the **pooler** value: `db.<ref>.supabase.co` has no A
+record, IPv6 only, and GitHub runners are IPv4 — the direct DSN would have
+failed from CI for an unrelated reason and looked like the fix was wrong).
+
+Then the step ran for the first time in its life, and **failed three more
+times, each one layer deeper.** Every one of them was a type in the write
+half of a file that had never executed past line 190:
+
+| run | error | cause |
+|---|---|---|
+| 1 | `TypeError: Object of type UUID is not JSON serializable` | `"feedback_id": row["id"]` — an asyncpg UUID inside a `json.dumps`'d record |
+| 2 | `operator does not exist: uuid = bigint` | `WHERE id = ANY($3::bigint[])` on a `uuid` column |
+| 3 | ✅ **success** — `Wrote 1 rows`, `Marked feedback as incorporated: UPDATE 6` | |
+
+Verified in prod after run 3: `still_pending = 0`, `incorporated = 6`,
+`incorporated_run_id = export_20260905_202442_ba9e1579`. Six rows that had
+been stuck since 2026-07-22 are through, and one lorcana training row exists.
+
+⚠️ **The real lesson is about `--dry-run`, not about types.** I ran
+`--dry-run` against prod between each of these and it went green every time,
+because the dry-run branch skipped `json.dumps` AND skipped the UPDATE. **A
+dry-run that skips the operation cannot verify the operation** — it verifies
+the half of the code that was already working. Both are fixed at the source:
+the export now serialises in both modes, and the dry-run **executes** the
+UPDATE inside `conn.transaction()` and unwinds with a sentinel exception, so
+the statement is genuinely prepared and run and nothing is committed. Proof:
+dry-run now prints `UPDATE 6 (statement executed and rolled back)` and all
+six rows remain `incorporated_at IS NULL` afterwards.
+
+Ten log calls in the same file also formatted that UUID id with `%d`, every
+one of them on a failure path — `"Skipping row %d"` would have raised
+`%d format: a number is required, not UUID` **instead of reporting the error
+it was written to report.** All now `%s`.
+
+**The rule: a dry-run must do everything except the side effect.** Printing
+"would do X" is not a test of X.
 
 **The rule this adds:** a step that can no-op itself needs its no-op to be
 distinguishable from its success in the log line a human actually reads.
