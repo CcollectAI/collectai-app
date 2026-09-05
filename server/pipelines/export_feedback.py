@@ -93,15 +93,21 @@ async def export_feedback(
 
     Returns summary dict with counts.
     """
-    dsn = os.getenv("DB_DSN", "")
+    dsn = os.getenv("DB_DSN_DIRECT", "") or os.getenv("DB_DSN", "")
     if not dsn:
-        # Fallback: construct DSN from SUPABASE_URL if available
-        # SUPABASE_URL looks like https://<ref>.supabase.co — derive the
-        # pooler connection string from it + service key.
-        supa_url = os.getenv("SUPABASE_URL", "")
-        supa_key = os.getenv("SUPABASE_SERVICE_KEY", "")
-        logger.warning("DB_DSN not set — skipping feedback export (no users yet, not critical)")
-        return {"skipped": True, "reason": "DB_DSN not configured", "exported": 0, "taxonomy": 0}
+        # "no users yet, not critical" was written before there were users. The
+        # nightly workflow passes an EMPTY `DB_DSN` secret, so every scheduled
+        # run since has logged this line, exited 0, and reported
+        # `exported=0` — while six feedback rows (the oldest from 2026-07-22)
+        # sat un-incorporated. A step that could not run must not read as a
+        # step that ran and found nothing.
+        logger.error(
+            "DB_DSN not set — feedback export DID NOT RUN. This is not the "
+            "same as 'no feedback to export'; un-incorporated rows stay "
+            "un-incorporated and no training row is produced."
+        )
+        return {"skipped": True, "could_not_run": True,
+                "reason": "DB_DSN not configured", "exported": 0, "taxonomy": 0}
 
     run_id = f"export_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}_{uuid4().hex[:8]}"
     logger.info("Starting feedback export run_id=%s (dry_run=%s)", run_id, dry_run)
@@ -188,7 +194,7 @@ async def _process_feedback(
                 """
                 SELECT id, category, condition, attrs AS attributes_json
                 FROM public.items
-                WHERE id = ANY($1::text[])
+                WHERE id = ANY($1::uuid[])
                 """,
                 batch,
             )
@@ -496,6 +502,16 @@ def main():
 
     if result.get("error"):
         sys.exit(1)
+
+    if result.get("could_not_run"):
+        # Exit 2, not 0. The nightly workflow ran this every night with an
+        # empty DB_DSN secret and went green on the "SUMMARY: exported=0" line
+        # below. Same precedent as the `Check secrets` step at the top of
+        # .github/workflows/nightly-train-eval-gate.yml: on a scheduled run a
+        # missing secret is a misconfiguration, not a quiet no-op.
+        logger.error("SUMMARY: feedback export COULD NOT RUN (%s)",
+                     result.get("reason", "unknown"))
+        sys.exit(2)
 
     logger.info(
         "SUMMARY: exported=%d, taxonomy=%d, skipped=%d, total=%d",

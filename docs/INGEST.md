@@ -262,7 +262,7 @@ A job whose "Check secrets" step **succeeded** and whose every other step is
 | workflow | verdict |
 |---|---|
 | `nightly-eval` | ⛔ **never ran** — schedule disabled 2026-08-29 |
-| `nightly-train-eval-gate` | ⚠️ runs, but its gate step has never gated |
+| `nightly-train-eval-gate` | ⚠️ runs, but its gate step has never gated, and its **feedback-export step has never run at all** — see below |
 | `nightly-training`, `nightly-prune`, `ingest-ebay` | genuinely run |
 | `sanity-e2e` | ⚠️ ran and failed on EVERY push — see below (fixed 2026-08-30) |
 
@@ -287,6 +287,52 @@ The generalisable rule, and the reason this sits in a doc rather than a commit
 message: **a green checkmark is a claim about the job's exit code, never about
 whether it did anything.** For any job that can skip itself, the check is
 "which steps actually executed", and that question has to be asked on purpose.
+
+### A step can execute, log, exit 0 — and still not have run (2026-09-05)
+
+The sweep above asked *which steps executed*. That question is necessary and
+not sufficient: `nightly-train-eval-gate`'s **"Export user feedback for
+retraining"** step executes every night, prints two log lines and exits 0.
+It has never done anything.
+
+```
+DB_DSN:                                              <- the step's own env dump
+[WARNING] DB_DSN not set — skipping feedback export (no users yet, not critical)
+[INFO] SUMMARY: exported=0, taxonomy=0, skipped=1, total=0
+```
+
+`gh secret list` settles it: **there is no `DB_DSN` secret on the repo.**
+`${{ secrets.DB_DSN }}` interpolates to empty, the script takes its own
+early-return, and `exported=0` reads exactly like "there was no feedback".
+There was: six rows, the oldest from **2026-07-22**, all still
+un-incorporated.
+
+Two things were wrong and both are now fixed:
+
+- **The message was written before there were users.** "no users yet, not
+  critical" is a claim about 2026-04; it survived into a repo with 30 users
+  and live feedback. It now logs at ERROR, says the export **DID NOT RUN**,
+  and the CLI exits **2** — the same precedent as this workflow's own
+  `Check secrets` step, which already exits 1 because *on a scheduled trigger
+  a missing secret is a misconfiguration, not a quiet no-op*.
+- **A real defect was hiding underneath the one that hid it.** The item
+  lookup was `WHERE id = ANY($1::text[])` against a `uuid` column, which
+  raises `operator does not exist: uuid = text` the first time a price
+  feedback row gives it an item to look up. Nobody had ever reached that
+  line. Now `$1::uuid[]`; a `--dry-run` against prod finds the 6 rows and
+  builds 1 lorcana training row.
+
+⛔ **This will now turn the nightly RED until the `DB_DSN` secret is set.**
+That is deliberate and it is one action, not a backlog — which is the line
+between this and the permanently-red gate warned about above. If the secret
+cannot be set today, the honest interim is to revert the `sys.exit(2)` in
+`pipelines/export_feedback.py`, **not** to restore the message that called
+it "not critical".
+
+**The rule this adds:** a step that can no-op itself needs its no-op to be
+distinguishable from its success in the log line a human actually reads.
+"Which steps ran" is the first question; "and did the one that ran do
+anything" is the second.
 
 ### First run on the corrected branch: 107 batches -> 14, and the gate fired
 

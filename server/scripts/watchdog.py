@@ -1041,6 +1041,53 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
     except Exception as e:
         bug("info", "column-drift audit could not run", str(e)[:200])
 
+    # --- PostgREST select drift ---
+    # The sibling audit above parses triple-quoted SQL handed to asyncpg. It is
+    # structurally blind to the other way this codebase reads the database: an
+    # httpx GET on {SUPABASE_URL}/rest/v1/<table> whose column list lives in a
+    # params={"select": "..."} dict. No SQL text, nothing to parse.
+    #
+    # That blind spot cost 199 days. pipelines/train_price.py asked items for
+    # `grade` and `attributes_json` (real names: condition_grade, attrs) from
+    # 2026-02-19; PostgREST answered 400, the caller tested only
+    # `status_code == 200`, and every nightly run logged "Loaded 0 feedback
+    # samples". It surfaced on 2026-08-30 only because the first sale_price
+    # feedback row arrived the day before and made the dead query actually
+    # fire — 36 Postgres ERRORs a night, one per trained category.
+    try:
+        import subprocess
+        r = subprocess.run(
+            ["/opt/collectors/.venv/bin/python",
+             str(SERVER_ROOT / "scripts" / "audit_postgrest_selects.py"),
+             "--root", str(SERVER_ROOT), "--strict"],
+            capture_output=True, timeout=300, cwd=str(SERVER_ROOT))
+        out = (r.stdout.decode() or "").strip()
+        if r.returncode == 2:
+            # Exit 2 is "could not ask" and must never render as clean.
+            bug("info", "PostgREST select audit could not run", out[-200:] or
+                (r.stderr.decode()[-200:] or "no output"),
+                src_link("server/scripts/audit_postgrest_selects.py"),
+                "python3 scripts/audit_postgrest_selects.py --root .", "")
+        elif r.returncode == 1:
+            named = "; ".join(l.strip() for l in out.splitlines()
+                              if "COLUMN_MISSING" in l or "TABLE_MISSING" in l)[:600]
+            bug("high", "PostgREST select= names columns that do not exist",
+                "A REST call asks for a column the table does not have. PostgREST "
+                "rejects the whole request with 400, and these call sites treat a "
+                "non-200 as an empty result — so the feature reports zero instead "
+                "of failing. %s" % named,
+                src_link("server/scripts/audit_postgrest_selects.py"),
+                "python3 scripts/audit_postgrest_selects.py --root .",
+                "Rename the column in the select= string to the one the table has")
+        elif r.returncode == 0:
+            healthy.append({"check": "PostgREST select drift",
+                            "detail": out.splitlines()[0] if out else "0 findings"})
+        else:
+            raise RuntimeError("audit exited %d: %s"
+                               % (r.returncode, r.stderr.decode()[-200:]))
+    except Exception as e:
+        bug("info", "PostgREST select audit could not run", str(e)[:200])
+
     # --- search canary ---
     # unified_search ILIKEs four sources (items, category_items,
     # user_public_profiles, events). items is user-scoped and the profile view is

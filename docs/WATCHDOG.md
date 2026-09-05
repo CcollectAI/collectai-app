@@ -858,11 +858,102 @@ print(exc)   # NameError: name 'exc' is not defined
 **A logger must never be able to throw.** Every attribute read in
 `_rc_exc_detail` is defensive for the same reason.
 
+## A `select=` string is not SQL, and no gate was reading it (2026-09-05)
+
+`column items.grade does not exist`, 36x a night, first seen 2026-08-30.
+
+The caller is `pipelines/train_price.py`, asking PostgREST for
+`id,category,condition,grade,attributes_json` on `items`. Two of those five
+names are wrong: the columns are `condition_grade` and `attrs`. They have been
+wrong since **2026-02-19** (`69fc4e9`) — 199 days.
+
+Three separate things kept it invisible, and each one is a class:
+
+1. **The gate cannot see the string.** `audit_router_sql_drift.py` parses
+   triple-quoted SQL passed to asyncpg. This query has no SQL text — the
+   column list is a value in a `params={"select": ...}` dict handed to httpx.
+   Same shape as [[learning_sql_in_a_python_string_is_invisible_to_js_checkers]]:
+   the checker and the code disagree about where the SQL lives.
+2. **The caller swallows the rejection.** `if items_resp.status_code == 200:`
+   with no `else`. A 400 leaves `items_by_id` empty, every feedback event is
+   skipped by `if not item: continue`, and the run logs
+   `Loaded 0 feedback samples for pokemon`. "Rejected" and "none exist" print
+   the same sentence.
+3. **The query only fires when there is data.** `item_ids` is empty until a
+   `sale_price` feedback row exists, and the first one was written
+   **2026-08-29 13:11**. The very next nightly produced 36 errors — one per
+   trained category. A dead code path that only errors once it is finally
+   reached had been dead for six months without a single log line.
+
+The end-to-end proof, both directions, against prod:
+
+```
+GET /rest/v1/items?select=id,category,condition,grade,attributes_json&id=in.(75aa0400-…)
+  -> HTTP 400 {"code":"42703","message":"column items.grade does not exist"}
+GET /rest/v1/items?select=id,attrs&id=in.(75aa0400-…)
+  -> HTTP 200 [{"id":"75aa0400-…","attrs":{"brand":"Disney Lorcana",…}}]
+```
+
+`server/scripts/audit_postgrest_selects.py` closes the blind spot: it walks the
+AST for calls whose URL contains `/rest/v1/<table>` and whose `params=` is a
+dict literal, then checks every `select=`, filter key and `order=` column
+against the live schema. The watchdog runs it daily as **"PostgREST select
+drift"**.
+
+#### Verified against prod, not assumed
+
+Every line below was measured on 2026-09-05, most of it on EC2 against the
+real schema, and in this order — the gate was proved to FAIL before anything
+was fixed.
+
+| assertion | result |
+|---|---|
+| auditor on the **unfixed deployed tree** | exit **1**, the 3 real defects, nothing else |
+| auditor with the DSN unset | exit **2**, `COULD NOT RUN` — never "clean" |
+| auditor with a **planted** `nonexistent_col` | exit 1, both call sites named |
+| auditor on the fixed tree (laptop **and** EC2) | exit **0**, `no drift` |
+| old `select=` against prod PostgREST | **HTTP 400** `column items.grade does not exist` |
+| new `select=` against prod PostgREST | **HTTP 200**, the real `attrs` object |
+| `export_feedback --dry-run` with a real DSN | **6 rows found, 1 lorcana training row built** — the `uuid[]` path works |
+| `export_feedback` with no DSN | exit **2**, `DID NOT RUN` |
+| full `watchdog.py` run after deploy | `healthy` 41 → **43**, new check present |
+| `audit_router_sql_drift.py` on prod | **0** findings for `export_feedback.py` — the 3 allowlist lines were suppressing nothing |
+
+⚠️ The `items.grade` HIGH **is still in today's report** and that is correct:
+the finding reads the last 24h of Postgres logs, and those 37 errors were
+written by the 06:50 nightly, hours before the fix. It clears on the
+2026-09-06 report, and if it does not, the fix did not reach the runner —
+which is the GitHub Actions checkout, not EC2 ([[learning_three_way_code_split]]).
+
+### The other half of the loop was not running at all
+
+While verifying the above: the nightly workflow's `export_feedback` step passes
+an **empty `DB_DSN` secret**, so every scheduled run since the secret was
+added has logged `DB_DSN not set — skipping feedback export (no users yet, not
+critical)`, printed `SUMMARY: exported=0`, and exited 0 — green. There are
+users, and six feedback rows have been sitting un-incorporated since
+**2026-07-22**. The message now says the export DID NOT RUN and the CLI exits
+2, following the precedent already set by the `Check secrets` step at the top
+of the same workflow.
+
+`export_feedback.py` also had its own defect underneath the one that hid it:
+`WHERE id = ANY($1::text[])` against a `uuid` column, which raises
+`operator does not exist: uuid = text` the first time a price-feedback row
+gives it an item to look up. Now `$1::uuid[]`, verified against prod.
+
+**⛔ Merle-side, and the fix above does not do it:** set the `DB_DSN` secret on
+the repo, or the feedback loop stays dark no matter how correct these two
+files are.
+
 ## Related audits
 
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes
 - `server/scripts/audit_column_drift.py` — reader and writer on different columns
+- `server/scripts/audit_postgrest_selects.py` — `select=`/filter columns that
+  do not exist on the table (the `/rest/v1/` half of the drift question)
 
-Both are advisory (always exit 0) and are **not** wired into the bake preflight
-chain: they report a backlog, and a blocking gate would wedge every deploy until
-that backlog is zero. Flip `--strict` on once the findings list is empty.
+All three are advisory (`audit_postgrest_selects.py` exits 1 only under
+`--strict`) and are **not** wired into the bake preflight chain: they report a
+backlog, and a blocking gate would wedge every deploy until that backlog is
+zero. Flip `--strict` on once the findings list is empty — for the PostgREST
+audit that list **is** empty as of 2026-09-05, so it is the first candidate.

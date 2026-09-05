@@ -17,13 +17,21 @@
 # Remove an entry only when the underlying file is fixed or the worker
 # is reactivated.
 
-# pipelines/export_feedback.py: one-off feedback-export script that
-# references pre-rename columns on user_feedback_events_v1
-# (was feedback_type/value_json/incorporated_at; now event_type/payload/status).
-# Script is not on a cron; runs on-demand. Fix when next exporting feedback.
-pipelines/export_feedback.py:COLUMN_MISSING:user_feedback_events_v1.feedback_type (used as f.feedback_type)
-pipelines/export_feedback.py:COLUMN_MISSING:user_feedback_events_v1.incorporated_at (used as f.incorporated_at)
-pipelines/export_feedback.py:COLUMN_MISSING:user_feedback_events_v1.value_json (used as f.value_json)
+# 2026-09-05 — pipelines/export_feedback.py user_feedback_events_v1.* (3 lines)
+# REMOVED. Both halves of the justification were false, and had been for
+# months:
+#   * The rename never happened. `user_feedback_events_v1` has
+#     feedback_type / value_json / incorporated_at in prod today, and
+#     app/features/feedback_router.py INSERTs into exactly those columns on
+#     every submit. Re-run of audit_router_sql_drift.py against prod on
+#     2026-09-05 reports ZERO findings for this file — the entries were
+#     suppressing nothing.
+#   * "Script is not on a cron" — it is. .github/workflows/
+#     nightly-train-eval-gate.yml runs `python -m pipelines.export_feedback`
+#     at 02:00 UTC every night.
+# An allowlist line that describes a defect which does not exist is worse than
+# no line: it is the reason nobody looked at this file while its real bug
+# (id = ANY($1::text[]) against a uuid column) sat there.
 
 # (commented out 2026-04-21, 3 stacked bugs). SQL drift here is dormant.
 

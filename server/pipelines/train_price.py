@@ -233,15 +233,32 @@ def load_user_feedback(category: str) -> tuple[list[dict], list[float]]:
                 items_resp = client.get(
                     f"{supabase_url}/rest/v1/items",
                     params={
-                        "select": "id,category,condition,grade,attributes_json",
+                        # `items` has NO `grade` and NO `attributes_json`. The
+                        # real columns are `condition_grade` and `attrs`; this
+                        # asked for the wrong two from 2026-02-19 (69fc4e9)
+                        # until 2026-09-05, so PostgREST answered 400 and the
+                        # loop below silently trained on zero feedback samples.
+                        # Only what the feature builder actually reads is
+                        # requested — an unused column here is a 400 waiting
+                        # for the next rename, with nothing that would notice.
+                        "select": "id,attrs",
                         "id": f"in.({id_filter})",
                         "category": f"eq.{category}",
                     },
                     headers=headers,
                 )
-                if items_resp.status_code == 200:
-                    for item in items_resp.json():
-                        items_by_id[item["id"]] = item
+                if items_resp.status_code != 200:
+                    # A rejected query and "this category has no feedback" both
+                    # end as `Loaded 0 feedback samples`. Say which one it was.
+                    logger.warning(
+                        "[%s] items lookup REJECTED (%d): %s — %d feedback "
+                        "event(s) will be dropped from training",
+                        category, items_resp.status_code,
+                        items_resp.text[:200], len(batch_ids),
+                    )
+                    continue
+                for item in items_resp.json():
+                    items_by_id[item["id"]] = item
 
         # Convert feedback events to training samples
         for event in events:
@@ -263,7 +280,7 @@ def load_user_feedback(category: str) -> tuple[list[dict], list[float]]:
                 continue
 
             # Build features from item attributes
-            attrs = item.get("attributes_json", {})
+            attrs = item.get("attrs") or {}
             if isinstance(attrs, str):
                 try:
                     attrs = json.loads(attrs)
@@ -331,6 +348,10 @@ def load_verified_sales(category: str) -> tuple[list[dict], list[float]]:
             )
 
             if resp.status_code != 200:
+                logger.warning(
+                    "[%s] verified_sales lookup REJECTED (%d): %s",
+                    category, resp.status_code, resp.text[:200],
+                )
                 return [], []
 
             sales = resp.json()
@@ -344,14 +365,23 @@ def load_verified_sales(category: str) -> tuple[list[dict], list[float]]:
                 items_resp = client.get(
                     f"{supabase_url}/rest/v1/items",
                     params={
-                        "select": "id,attributes_json",
+                        # `attrs`, not `attributes_json` — see the note in
+                        # load_feedback_samples above.
+                        "select": "id,attrs",
                         "id": f"in.({','.join(batch)})",
                     },
                     headers=headers,
                 )
-                if items_resp.status_code == 200:
-                    for item in items_resp.json():
-                        items_by_id[item["id"]] = item
+                if items_resp.status_code != 200:
+                    logger.warning(
+                        "[%s] items lookup REJECTED (%d): %s — %d verified "
+                        "sale(s) will train on default features",
+                        category, items_resp.status_code,
+                        items_resp.text[:200], len(batch),
+                    )
+                    continue
+                for item in items_resp.json():
+                    items_by_id[item["id"]] = item
 
         # V5: use the central fx_service fallback table instead of a private
         # hardcoded {USD:0.92, GBP:1.17, JPY:0.006} that drifted from the rest
@@ -367,7 +397,7 @@ def load_verified_sales(category: str) -> tuple[list[dict], list[float]]:
                 continue
 
             item = items_by_id.get(sale.get("item_id", ""), {})
-            attrs = item.get("attributes_json", {})
+            attrs = item.get("attrs") or {}
             if isinstance(attrs, str):
                 try:
                     attrs = json.loads(attrs)

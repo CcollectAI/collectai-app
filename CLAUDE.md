@@ -1731,6 +1731,21 @@ which is the only layer that sees DB rejections and PostgREST failures — the E
 journal cannot. On its first run it surfaced four production errors that every
 app-side audit had missed.
 
+**A `select=` string is not SQL (2026-09-05).** `audit_router_sql_drift.py`
+parses triple-quoted SQL handed to asyncpg; it is structurally blind to a
+column list living in `params={"select": "..."}` on an httpx call to
+`/rest/v1/<table>`. `pipelines/train_price.py` asked `items` for `grade` and
+`attributes_json` (real names: `condition_grade`, `attrs`) for **199 days**
+without one log line, because the caller tested only `status_code == 200` and a
+400 rendered as `Loaded 0 feedback samples`. `server/scripts/audit_postgrest_selects.py`
+closes it, and the watchdog runs it daily as *"PostgREST select drift"*. Full
+writeup + the measured verification table: `docs/WATCHDOG.md`.
+
+⛔ The other half of that loop is Merle-side: **there is no `DB_DSN` repo
+secret**, so `nightly-train-eval-gate`'s feedback-export step has never run.
+See `docs/INGEST.md` § *A step can execute, log, exit 0 — and still not have
+run*.
+
 ### Partition retention vs `schema.lock.json` (2026-08-02)
 
 `schema.lock.json` no longer locks partition CHILDREN — `regen_schema_lock.py`
