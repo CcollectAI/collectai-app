@@ -310,7 +310,82 @@ Pass `?redirect_to=<url-encoded>` on `/auth/v1/signup` and `/auth/v1/recover`, o
 Supabase silently falls back to the **Site URL** and you end up testing a link the
 app never sends. That cost a run on 2026-07-30.
 
-### Full chain, verified 2026-07-30 (all green)
+### Re-verified 2026-09-05 — and "full chain" was not full
+
+Re-ran the whole thing against prod. **10/12 green**, and the two failures were
+one real app bug plus one gap in the 07-30 table below.
+
+| Check | Result |
+|---|---|
+| DNS / TLS | apex, `www`, `/privacy`, `/support` all **200**; Let's Encrypt valid to 2026-10-07; `api.sparrowcollect.com/healthz` 200. The May HTTP 525 is long gone — the A record is Vercel's `76.76.21.21` on Cloudflare **DNS-only**, which is the documented remedy |
+| SPF / DKIM / DMARC | DMARC `p=quarantine; adkim=s; aspf=s`. Apex SPF is SimpleLogin's (inbound); **Resend's SPF is on `send.sparrowcollect.com`** (`include:amazonses.com`) where it belongs. DKIM `d=sparrowcollect.com` on the real message — so DMARC passes on DKIM alignment. Not a defect; I nearly filed it as one before checking the subdomain |
+| signup → confirm → login → wrong password → recover | all as the 07-30 table |
+| **`/auth/v1/resend`** | **never tested before.** Works — but only after a **60s** server cooldown from signup |
+
+**The cooldown, measured:**
+
+```
+resend at +0s   -> 429 "you can only request this after 58 seconds."
+resend at +20s  -> 429 "... after 38 seconds."
+resend at +45s  -> 429 "... after 13 seconds."
+resend at +70s  -> 200, and a second email really arrived.
+```
+
+#### The bug that hid behind it, and why nothing caught it
+
+`app/(auth)/verify-email.tsx` did:
+
+```js
+const { error } = await supabase.auth.resend({ type: 'signup', email });
+if (error) throw error;
+setResent(true);
+setCooldown(60);
+} catch { /* account-enumeration defence */ }
+```
+
+A 429 threw into the bare `catch`, so `setResent` and `setCooldown` never ran:
+the user taps **Resend email** and *nothing happens* — no confirmation, no
+error, no countdown — so they tap again. And since the ONLY route to this
+screen is a successful `signUp` in `register.tsx`, the 60s cooldown is
+**always** already running when it mounts: every tap in the first minute was
+guaranteed to do nothing.
+
+**Two reasons this survived, both structural:**
+
+1. **The 07-30 table below calls itself "Full chain" and has no `resend` row.**
+   It is a list of the endpoints someone thought of, never reconciled against
+   the 16 `supabase.auth.*` methods the app actually calls.
+2. **Every row in it is an HTTP call.** The API was behaving *correctly* — 429
+   is the right answer. The defect was the client throwing that answer away,
+   and no API-level test can see that.
+
+Fixed: the cooldown now starts at 60 on mount (the email was just sent), and a
+429 sets the countdown from the server's **own remaining seconds** rather than
+a hardcoded 60. Other errors stay silent — enumeration defence intact, and
+`register.tsx` already defends enumeration upstream via the empty-`identities`
+tell. Reuses the existing `resend_cooldown` i18n key, so no new key in 7
+locales. 6 unit tests use the real measured 429 strings.
+
+**Gate:** `npm run check:silent-catch` — flags a press-wired handler whose
+empty `catch` leaves state it set in the `try` stale. Proved on a worktree
+baseline: it names the original bug (`handleResend`, `setResent`,
+`setCooldown`) and is clean after. Zero other instances in `app/`, `src/`,
+`components/`.
+
+#### Sign-in options, enumerated (2026-09-05)
+
+| Option | State |
+|---|---|
+| Email + password | ✅ verified end-to-end today |
+| Signup → confirm → resend → reset | ✅ verified today |
+| **Magic link** (`signInWithOtp`) | ⛔ **dead code.** `handleMagicLink` is complete and **nothing calls it**; `magicLinkRow` is styled and never rendered. The file header still advertises it. Its success toast is also a hardcoded English string, not `t()` |
+| Apple / Google (`signInWithIdToken`) | hidden by `SOCIAL_LOGIN_ENABLED=false` — deliberate, App Store 4.8 |
+
+**Gate:** `npm run check:dead-handlers`. `check-unrendered-components` covers
+imported COMPONENTS and `check-unreachable-screens` covers SCREENS; a dead
+handler inside a live screen was neither. It found three, all real.
+
+### Full chain, verified 2026-07-30 (all green — but see above: it was not full)
 
 | Check | Result |
 |-------|--------|

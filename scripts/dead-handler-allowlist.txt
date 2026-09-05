@@ -1,0 +1,39 @@
+# Handlers that are declared and never called, reviewed and deliberately left.
+#
+# Format: <repo-relative-file>:<handlerName>
+#
+# Same convention as scripts/router_drift_allowlist.txt: adding a line is a
+# deliberate "we know this is unreachable; deferred", and REMOVING a line must
+# be paired with wiring or deleting the handler. A line whose reason has
+# stopped being true is worse than no line — that is how three stale entries
+# survived in the router allowlist until 2026-09-05.
+
+# ---------------------------------------------------------------------------
+# 2026-09-05 — url import, DELIBERATE
+# ---------------------------------------------------------------------------
+# URL import is not part of the app. The unreachable screen AND the SSRF block
+# in server/app/ssrf.py are both correct as they stand; this handler is the
+# client half of a feature that was consciously shelved, not a wiring mistake.
+# Delete it only when the decision to shelve is reversed or made permanent.
+app/barcode-scan.tsx:handleUrlSubmit
+
+# ---------------------------------------------------------------------------
+# 2026-09-05 — awaiting a product decision, NOT deliberate
+# ---------------------------------------------------------------------------
+# Both of these are real gaps parked here only so the gate is green while the
+# decision is pending. Neither is "fine". Revisit both.
+#
+# handleMagicLink: a COMPLETE magic-link sign-in (validates the address, calls
+# supabase.auth.signInWithOtp with shouldCreateUser:false, toasts both ways)
+# that nothing renders — `magicLinkRow` is styled and never used either. The
+# file's own header comment advertises it: "Login screen — email/password
+# sign-in with magic link, Apple, and Google options." So the login screen
+# claims a sign-in method the user cannot reach. Either wire it or delete it
+# AND fix that comment — a shelved feature must stop being advertised.
+app/(auth)/login.tsx:handleMagicLink
+#
+# handleOpenSettings: a settings shortcut on the HOME tab, built with the
+# haptic and the router.push already in place, wired to nothing. Settings is
+# still reachable from its own tab, so this is a missing shortcut rather than a
+# stranded destination — low impact, but it is dead weight either way.
+app/(tabs)/index.tsx:handleOpenSettings

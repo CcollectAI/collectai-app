@@ -26,6 +26,30 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { GradientBackground } from '@/components/auth/GradientBackground';
 import { fonts } from '@/theme/tokens';
 
+/** Supabase's own cooldown between confirmation sends, in seconds. */
+export const RESEND_COOLDOWN_S = 60;
+
+/**
+ * Seconds to wait, if `e` is Supabase's send-rate-limit error; otherwise null.
+ *
+ * Prefers the server's own number — it reports the REMAINING wait ("you can
+ * only request this after 13 seconds"), so a hardcoded 60 would over-state the
+ * wait every time. Falls back to the full cooldown when the wording changes,
+ * which is still far better than the silence this replaces.
+ */
+export function rateLimitSeconds(e: unknown): number | null {
+  const err = e as { status?: number; code?: string; message?: string } | null;
+  if (!err) return null;
+  const isRateLimit =
+    err.status === 429 ||
+    err.code === 'over_email_send_rate_limit' ||
+    /rate limit/i.test(err.message ?? '');
+  if (!isRateLimit) return null;
+  const m = /after (\d+) second/i.exec(err.message ?? '');
+  const parsed = m ? parseInt(m[1], 10) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : RESEND_COOLDOWN_S;
+}
+
 function VerifyEmailScreen() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -34,7 +58,14 @@ function VerifyEmailScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
+  // Starts at 60, not 0. The ONLY route to this screen is a successful
+  // signUp in register.tsx, which has just sent the confirmation email — and
+  // Supabase enforces a 60s cooldown from that send. Starting at 0 rendered an
+  // enabled "Resend email" button whose every tap was guaranteed to 429 for
+  // the first minute. Measured against prod 2026-09-05: resend at +0s said
+  // "after 58 seconds", at +45s "after 13 seconds", and only succeeded past
+  // 60s (then genuinely delivered a 2nd email).
+  const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_S);
 
   const { animatedStyle: contentReveal } = useEnterReveal({ fromY: 16 });
 
@@ -59,11 +90,26 @@ function VerifyEmailScreen() {
       const { error } = await supabase.auth.resend({ type: 'signup', email });
       if (error) throw error;
       setResent(true);
-      setCooldown(60);
-    } catch {
-      // best-effort: deliberate. Swallowed so the UI cannot reveal whether the
-      // address exists (account-enumeration defence). Not logged either, since
-      // the log would reconstruct exactly what the response withholds.
+      setCooldown(RESEND_COOLDOWN_S);
+    } catch (e) {
+      // A rate-limit is NOT an enumeration signal and must not be swallowed.
+      //
+      // Every error used to land in a bare `catch {}`, so a 429 left `resent`
+      // false and `cooldown` 0: the user tapped "Resend email" and absolutely
+      // nothing happened — no confirmation, no error, no countdown — so they
+      // tapped again, and again. On the one screen whose entire job is "your
+      // email is on its way", silence is the worst possible answer.
+      //
+      // The enumeration defence still holds. It protects against revealing
+      // whether an ADDRESS EXISTS; a 429 reveals only that *this device* asked
+      // too recently, which the user already knows because they just signed
+      // up. Supabase also defends this server-side (register.tsx relies on the
+      // empty-`identities` tell for the same reason).
+      const secs = rateLimitSeconds(e);
+      if (secs !== null) {
+        setCooldown(secs);
+      }
+      // Everything else stays silent, deliberately — see above.
     } finally {
       setResending(false);
     }
