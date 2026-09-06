@@ -214,13 +214,86 @@ builds. Redeploy `web/` after filling it in.
 - **Site URL**: `https://sparrowcollect.com`
 - **Redirect allowlist**: `sparrow://**, https://sparrowcollect.com/**, collectai://**`
 - **Email confirmation**: ON (`mailer_autoconfirm=false`)
-- **SMTP**: Resend — `smtp.resend.com:465`, user `resend`, sender
+- **SMTP (outbound)**: Resend — `smtp.resend.com:465`, user `resend`, sender
   `noreply@sparrowcollect.com` / "Sparrow Collect" (see `supabase/templates/SMTP_SETUP.md`)
+- **Inbound**: Cloudflare Email Routing, catch-all → `slendebroekmerle@gmail.com`
+  (2026-09-06 — see "Inbound email was dead for four months" below)
 - **Templates**: 6 branded, tiffany `#44A9A1` (see `supabase/templates/`)
 
 Editing config via the Management API: send a **browser `User-Agent`** or Cloudflare
 returns **HTTP 403 error 1010**. `GET/PATCH https://api.supabase.com/v1/projects/ykqrruipzmrrvjcvwfgp/config/auth`,
 fields `site_url`, `uri_allow_list`, `mailer_templates_*_content`, `mailer_subjects_*`.
+
+## Inbound email was dead for four months (2026-09-06)
+
+**Every `@sparrowcollect.com` address silently discarded mail from 2026-05
+until today.** `support@`, `apple@`, `legal@`, `privacy@`, `dpo@` — six aliases
+created four months ago, all showing *"No emails received/sent"*, not one
+message ever. And those addresses appear in **61 places** across the app, legal
+pages and store listing:
+
+| address | occurrences |
+|---|---|
+| `support@sparrowcollect.com` | 25 |
+| `review@sparrowcollect.com` | 9 |
+| `privacy@sparrowcollect.com` | 8 |
+| `legal@` / `dpo@` / `apple@` | 17 |
+
+So the published support contact, the GDPR/DPO contact and the Apple review
+contact all bounced into nothing. **This was never going to be found by
+testing the app** — outbound worked perfectly the whole time, which is exactly
+why it stayed invisible.
+
+### Two independent causes, and only the second one is obvious
+
+1. **MX priority was wrong.** SimpleLogin requires `mx1` at priority **10** and
+   `mx2` at **20**; both were at **10**. Its DNS check therefore showed
+   `MX record 🚫` and the domain was never activated. Fixed — and note the
+   symptom: DNS that looks correct to `dig` can still fail a provider's
+   verifier, because the provider checks the exact priorities.
+2. **Custom domains are a SimpleLogin PREMIUM feature and the account is
+   free.** Even with perfect DNS the domain stayed at *"Ownership verified.
+   Setup the DNS"*. The banner said so plainly the whole time.
+
+### Migrated to Cloudflare Email Routing instead — free
+
+The domain is already on Cloudflare, and Email Routing does custom-domain
+forwarding at no cost, so paying SimpleLogin ~€30/yr to fix this would have
+been the worse trade.
+
+```
+MX  69 route1.mx.cloudflare.net.
+MX  29 route2.mx.cloudflare.net.
+MX  95 route3.mx.cloudflare.net.
+TXT sparrowcollect.com          v=spf1 include:_spf.mx.cloudflare.net ~all
+TXT cf2024-1._domainkey…        (DKIM, added by Cloudflare)
+```
+
+**Catch-all → `slendebroekmerle@gmail.com`, Active.** Catch-all rather than
+per-address rules on purpose: it covers all 61 published addresses at once and
+every future one, so this class of bug cannot recur by someone inventing a new
+address in copy.
+
+Removed (recorded so it is reversible): `MX 10 mx1.simplelogin.co`,
+`MX 20 mx2.simplelogin.co`, `TXT v=spf1 include:simplelogin.co ~all`.
+
+⚠️ **Resend is unaffected, and the reason matters.** Resend sends with envelope
+domain `send.sparrowcollect.com`, which carries its own SPF
+(`include:amazonses.com`) and its own DKIM. Replacing the APEX MX and SPF
+touches inbound only. Outbound auth mail keeps working — verified: a real
+confirmation email was sent to `admin@sparrowcollect.com` after the cutover.
+
+⚠️ **Cloudflare's Activity Log lags ~2 minutes.** Do not read an empty log as a
+delivery failure in the first few minutes after sending.
+
+### The neighbouring trap: "I signed up and got no email"
+
+A signup for an address that **already has an account** returns HTTP 200,
+sends **no email**, and reports `identities: []`. That is deliberate
+account-enumeration defence, not a mail fault. `app/(auth)/register.tsx` keys
+off that empty-`identities` tell to say *"email already registered"* and route
+to login — if a user reports a missing confirmation email, check whether the
+account exists **before** chasing mail delivery.
 
 ## MFA (TOTP) — `app/mfa-setup.tsx`
 
