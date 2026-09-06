@@ -66,14 +66,32 @@ credentials are fine.
 
 ## Step 2 — Open the application form (2 min)
 
-1. Go to **https://developer.ebay.com/develop/apis/restful-apis/buy-apis**
-2. Find **"Marketplace Insights API"** in the list.
-3. Click **"Request Access"** (a link marked *"apply here"* or
-   *"Buy API Access Request"*).
+⚠️ **Corrected 2026-09-06.** The "Request Access" link this section used to
+describe does not exist. eBay's mechanism is the **Application Growth Check**:
 
-If that link is missing or dead, use the general form instead:
-**https://developer.ebay.com/my/support/tickets?tab=contact-us** and choose
-**"Business Development / API Access Request"**.
+> **https://developer.ebay.com/my/support/growth-check**
+> (equivalently `…/my/support/tickets?tab=app-check`)
+
+eBay's own docs are titled *"Use the application growth check to get access to
+restricted APIs"* — Marketplace Insights is a **Limited Release** API and the
+growth check is how you request it.
+
+**Two prerequisites that silently block submission**, and which match an empty
+"My Tickets / no support history" page:
+
+1. **Developer account support must be activated.**
+2. **At least one contact must be activated.**
+
+If the form will not submit, check those before assuming the request failed.
+
+**Timeline: 3-5 business days** for a first response, 5-7 to conclude — not the
+"1-6 weeks" this document used to claim.
+
+⚠️ **Temper expectations.** Community reports from mid-2026 say applicants were
+told access is now limited to "major partners". That is **forum hearsay, not an
+eBay policy statement** — eBay's docs 403 automated fetches so it could not be
+confirmed either way. Apply (it costs ten minutes) but do not plan around
+approval.
 
 ---
 
@@ -85,7 +103,9 @@ a specific, non-competing use.
 | Field | What to put |
 |---|---|
 | API requested | **Buy Marketplace Insights API** |
-| App ID | your Production Client ID from step 1 |
+| App ID | `MerleSle-CollectA-PRD-36c1eb9bb-8723d8ad` (the Production Client ID; also in `EBAY_CLIENT_ID` on EC2) |
+| Estimated daily peak calls | **60,000** — one lookup per catalogued item, refreshed daily |
+| Estimated hourly peak calls | **3,000** — batched overnight, client-side rate limited |
 | Company | Sparrow Collect (KvK 99596326), Netherlands |
 | Website | https://sparrowcollect.com |
 | Business model | Consumer subscription app, €4.99/month. **We do not resell data.** |
