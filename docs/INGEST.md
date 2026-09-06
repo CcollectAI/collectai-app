@@ -682,7 +682,41 @@ privileges, which argues the cascade should succeed regardless of
 facts do not currently reconcile, and **that gap is the reason this is not
 being patched by guessing a `GRANT`.**
 
-#### ✅ SOLVED 2026-09-06 — `marketplace_listings` rows, proven by a controlled test
+#### ⚠️ NOT SOLVED — this section claimed "SOLVED" and was wrong (corrected 2026-09-06)
+
+**Read this before the section below, which I wrote and pushed prematurely.**
+
+What is genuinely established stands: the delete fails **only when the user has
+`marketplace_listings` rows**, proven 20-vs-4 and by a controlled before/after
+on one user. That part is solid.
+
+**What was wrong was the fix.** I inferred "therefore
+`supabase_auth_admin` is missing DELETE on that table", applied
+
+```sql
+GRANT DELETE ON public.marketplace_listings TO supabase_auth_admin;   -- did NOT work
+```
+
+verified the privilege flipped `false → true`, and then tested it properly: a
+fresh user with exactly one listing, deleted without clearing anything first.
+**Still HTTP 500, still `permission denied for table marketplace_listings`.**
+The grant has been **REVOKED**; prod is back to baseline.
+
+⚠️ My first attempt at that test was itself invalid — the item id captured
+psql's `INSERT 0 1` status line, so the listing insert failed and the user had
+**zero** listings when deleted. It returned 200 and I nearly recorded that as
+proof the grant worked. The rerun asserts the precondition (`listings >= 1`)
+and aborts if it is not met. **A test whose precondition silently failed is
+worse than no test.**
+
+So `DELETE` is necessary-but-insufficient at best, and the mechanism is still
+not understood. **Do not add more grants by trial and error** — that is exactly
+the "never grant to make an error go away" the rule below forbids. The open
+questions: whether the cascade also needs `SELECT`, whether RLS on the table is
+involved (`supabase_auth_admin` has no `BYPASSRLS`), and whether a trigger or a
+second cascade hop is the actual failing statement.
+
+#### ~~SOLVED 2026-09-06~~ — the evidence that IS good: `marketplace_listings` rows
 
 **The blocker is not a mystery any more, and the diagnostic script was never
 needed.** It fell out of the test-account cleanup as a natural experiment:
@@ -704,8 +738,8 @@ Same user, same call, one variable changed. The other three failures then
 deleted cleanly by the same route (7, 6 and 3 listings cleared).
 
 **So `<X>` is `marketplace_listings`**, exactly as the Postgres log said all
-along, and the fix the doc prescribes is now evidence-based rather than a
-guess:
+along. ⚠️ But the obvious fix below was TRIED AND FAILED — see the correction
+above:
 
 ```sql
 GRANT DELETE ON public.marketplace_listings TO supabase_auth_admin;
