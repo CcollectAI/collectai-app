@@ -482,6 +482,42 @@ Proved against a `git worktree` baseline rather than asserted:
 12 new tests; `4051 passed` on the full suite (the 12 errors are pre-existing
 and identical on the baseline worktree).
 
+### Prod auth refills itself with fixtures, because CI runs against prod (2026-09-06)
+
+Purging 24 synthetic accounts took prod from **30 users / 87 items to 6 / 17**.
+Re-running the same purge **minutes later already found four more**, including
+a recreated `ci-test@collectai.app` and two fresh `e2e_*@example.com`.
+
+That is not drift — it is `sanity-e2e`, which runs on `push: branches: ["**"]`
+and creates real accounts in **production** GoTrue on every push. The same fact
+is noted above as the cause of self-inflicted `/auth/v1/admin/users` 5xx; this
+is its other consequence.
+
+**Why it matters more than it looks.** Before the purge, ~90% of `items` were
+fixtures with names like `QA Test Card`, `E2E Upload Test`,
+`DEMO Charizard Base Set Holo`. Every product metric computed over that table
+was measuring our own test rows, and three successive strategic conclusions
+were drawn from them before the population was checked. **A row count cannot
+tell you whether the rows are real** — the tell was in the names.
+
+After the purge the honest picture is: **one external user, holding one item.**
+
+`server/scripts/purge_test_accounts.py` makes the mop repeatable (dry-run by
+default, PROTECTED list asserted twice so `apple-review@sparrowcollect.com`
+can never be caught by a pattern). **But the tap is CI**, and the real fix is
+one of:
+
+- point `sanity-e2e` at a non-production Supabase project, or
+- narrow its trigger from `["**"]` to the default branch, or
+- have it clean up on failure as well as success.
+
+Not done here — it is a CI-topology decision, not a patch. Recorded so the
+next person purging accounts knows they are treating a symptom.
+
+⚠️ Two traps when purging: a user owning `marketplace_listings` rows fails with
+HTTP 500 until the SECURITY DEFINER migration lands, and accounts with a NULL
+`created_at` are invisible to GoTrue's admin listing entirely.
+
 ### The nightly-ingest cron comment is ~4h out (noted 2026-09-05)
 
 `.github/workflows/nightly-ingest.yml` says `cron: "0 3 * * *"` with the
