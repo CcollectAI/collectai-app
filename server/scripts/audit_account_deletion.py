@@ -43,6 +43,14 @@ except ImportError:  # pragma: no cover
 
 ROUTER = Path(__file__).resolve().parents[1] / "app" / "routes" / "account_router.py"
 
+ALL_COLUMNS_SQL = """
+    SELECT c.table_name, c.column_name
+    FROM information_schema.columns c
+    JOIN information_schema.tables t
+      ON t.table_name = c.table_name AND t.table_schema = c.table_schema
+    WHERE c.table_schema = 'public' AND t.table_type = 'BASE TABLE'
+"""
+
 BASE_TABLES_SQL = """
     SELECT c.table_name
     FROM information_schema.columns c
@@ -101,11 +109,17 @@ CASCADE_SQL = """
 PARTITION_PREFIXES = ("market_hits_y", "market_hits_default", "market_hits_archive")
 
 
-def _parse_router() -> tuple[set[str], dict[str, str]]:
-    """Read the two lists out of account_router.py without importing it."""
+def _parse_router() -> tuple[set[str], dict[str, str], dict[str, str]]:
+    """Read the lists out of account_router.py without importing it.
+
+    Returns (allowed, retained, owner_columns). owner_columns matters: three
+    entries in _ALLOWED_TABLES are owned by a column that is NOT user_id, and
+    an audit that assumes user_id reports all three as stale forever.
+    """
     tree = ast.parse(ROUTER.read_text(encoding="utf-8"))
     allowed: set[str] = set()
     retained: dict[str, str] = {}
+    owners: dict[str, str] = {}
     for node in ast.walk(tree):
         # `_RETAINED_TABLES: dict[str, str] = {...}` is an AnnAssign, not an
         # Assign — handling only Assign silently parsed it as empty, which made
@@ -121,11 +135,15 @@ def _parse_router() -> tuple[set[str], dict[str, str]]:
                 continue
             if target.id == "_ALLOWED_TABLES" and isinstance(node.value, (ast.Tuple, ast.List)):
                 allowed = {e.value for e in node.value.elts if isinstance(e, ast.Constant)}
+            elif target.id == "_OWNER_COLUMN" and isinstance(node.value, ast.Dict):
+                for k, v in zip(node.value.keys, node.value.values):
+                    if isinstance(k, ast.Constant) and isinstance(v, ast.Constant):
+                        owners[k.value] = v.value
             elif target.id == "_RETAINED_TABLES" and isinstance(node.value, ast.Dict):
                 for k, v in zip(node.value.keys, node.value.values):
                     if isinstance(k, ast.Constant):
                         retained[k.value] = v.value if isinstance(v, ast.Constant) else "(no reason)"
-    return allowed, retained
+    return allowed, retained, owners
 
 
 async def main() -> int:
@@ -138,11 +156,16 @@ async def main() -> int:
     try:
         base = {r["table_name"] for r in await conn.fetch(BASE_TABLES_SQL)}
         cascade = {r["table_name"] for r in await conn.fetch(CASCADE_SQL) if r["delete_rule"] == "CASCADE"}
+        # Every public base table and its columns — needed to judge staleness
+        # for tables whose owner column is not user_id.
+        all_columns: dict[str, set[str]] = {}
+        for r in await conn.fetch(ALL_COLUMNS_SQL):
+            all_columns.setdefault(r["table_name"], set()).add(r["column_name"])
         unindexed = {r["tbl"]: (r["rows"] or 0) for r in await conn.fetch(UNINDEXED_SQL)}
     finally:
         await conn.close()
 
-    allowed, retained = _parse_router()
+    allowed, retained, owners = _parse_router()
     base = {t for t in base if not t.startswith(PARTITION_PREFIXES)}
 
     gaps = sorted(base - cascade - allowed - set(retained))
@@ -153,7 +176,18 @@ async def main() -> int:
         key=lambda x: -x[1],
     )
     unindexed_small = sum(1 for t in unindexed if t in allowed)
-    stale_allowed = sorted(allowed - base)
+    # STALE means the DELETE would error, which is either of two things:
+    #   * the table is gone, or
+    #   * it exists but has no column matching its entry in _OWNER_COLUMN.
+    # The old test was `allowed - base`, where `base` is only tables carrying a
+    # user_id column — so chat_reports (reporter), event_announcements
+    # (author_user_id) and task_queue (created_by) were reported stale on every
+    # run despite existing. Three false positives out of six findings is how a
+    # gate stops being read, and this one was never run.
+    stale_allowed = sorted(
+        t for t in allowed
+        if t not in all_columns or owners.get(t, "user_id") not in all_columns[t]
+    )
     stale_retained = sorted(set(retained) - base)
     unreasoned = sorted(t for t, why in retained.items() if not why or why == "(no reason)")
 

@@ -295,6 +295,94 @@ off that empty-`identities` tell to say *"email already registered"* and route
 to login — if a user reports a missing confirmation email, check whether the
 account exists **before** chasing mail delivery.
 
+## Account deletion was returning 500 and erasing nothing (2026-09-06)
+
+Building the web deletion page Google and Apple both require surfaced a much
+worse bug: **`DELETE /account` had been failing outright.**
+
+```
+DELETE /account?confirm=DELETE_MY_ACCOUNT
+  -> 500 {"message":"Failed to delete account data","code":"DB_ERROR"}
+bake.log: current transaction is aborted, commands ignored until end of
+          transaction block
+```
+
+### Why "except UndefinedTableError: pass" was a comment, not a guard
+
+The loop over `_ALLOWED_TABLES` already caught a missing table and continued.
+It could not work: **catching the Python exception does not un-abort the
+Postgres transaction.** Once one statement errors, every later statement in the
+same transaction fails with "current transaction is aborted", so a single dead
+name meant the whole erasure failed and nothing was deleted. The tolerant
+handler read as safe while guaranteeing total failure.
+
+Three names in the list no longer existed — `user_notifications`, `listings`,
+`guidance_runs` — so the first of them poisoned the transaction every time.
+
+Fixed on both sides: each DELETE now runs inside a nested `conn.transaction()`
+(a SAVEPOINT), so a failed statement rolls back alone and the handler's own
+`except` finally means something; and the three dead names are gone.
+
+### The gate existed, was correct, and nobody ran it
+
+`server/scripts/audit_account_deletion.py` already reported exactly this as
+`STALE ... is listed for deletion but no longer exists`, and already exited 1.
+It had simply never been run.
+
+⚠️ **It also had 3 false positives out of 6 findings**, which is the more useful
+lesson. Staleness was `allowed - base`, where `base` is tables carrying a
+**`user_id`** column — so the three entries in `_OWNER_COLUMN` whose owner is
+`created_by` / `reporter` / `author_user_id` were reported stale on every run
+despite existing. **A gate that is half noise is a gate nobody reads**, and this
+one proves it. Staleness now means "the table is gone, or lacks *its own*
+owner column".
+
+### And it found five real gaps while it was at it
+
+Tables with a `user_id`, no CASCADE, listed nowhere — user data that survived
+deletion:
+
+| table | disposition |
+|---|---|
+| `favorites` | **deleted** — the heart/saved-items table; a deleted user's saved listings were surviving |
+| `notification_impressions` / `_interactions` / `_outcomes` | **deleted** — per-user delivery analytics, 0 rows today, which is exactly when to wire them up |
+| `dac7_seller_year` | **retained, with a written reason** — EU Directive 2021/514 statutory retention, GDPR Art. 17(3)(b) |
+
+Audit now reports 0 gaps, 0 stale, exit 0. Verified end to end after a gated
+bake restart (all nine ExecStartPre gates run by hand first, all PASS):
+**10/10**, including `DELETE /account -> 200`, the account really gone (404),
+and the `?confirm` guard still refusing without the token.
+
+## The web deletion page (`web/delete-account.html`)
+
+Play and App Store both require deletion to be initiable **without the app** —
+a user who has uninstalled must still be able to ask. Every page previously
+said only *"Open the app → Settings → Delete Account"*, which is precisely the
+answer that fails review.
+
+The page authenticates before it deletes: enter your address → Supabase
+`signInWithOtp({ shouldCreateUser: false })` → the one-time link returns you
+signed in → type `DELETE` → `DELETE /account?confirm=DELETE_MY_ACCOUNT`.
+Deleting on a typed email alone would let anyone delete anyone.
+
+⚠️ `shouldCreateUser: false` matters: asking to delete an account that does not
+exist must not CREATE one. Verified — OTP for an unknown address returns 422
+and creates nothing. The "we sent a link" copy is deliberately identical either
+way, so the page is not an account-enumeration oracle.
+
+⚠️ **`emailRedirectTo` has no `.html`.** `web/vercel.json` sets `cleanUrls`, so
+`/delete-account.html` 308s to `/delete-account`; sending an auth callback
+through a redirect makes the `#access_token` fragment depend on browser
+carry-over behaviour. Measured: `/support.html -> 308`.
+
+Linked from `sitemap.xml`, `support.html`, `privacy.html` and `terms.html` — a
+deletion URL nothing links to fails review just as surely as a missing one.
+
+⛔ **NOT LIVE until `web/` is deployed**, and `web/` has not been deployed since
+before 2026-08-20 — the live AASA still lacks `/l/*` and
+`https://sparrowcollect.com/l/<uuid>` still 404s, 17 days on. See the deploy
+section above; it needs the Vercel account that owns `collectais-projects`.
+
 ## MFA (TOTP) — `app/mfa-setup.tsx`
 
 Entirely client-side via the Supabase SDK: `mfa.listFactors()` → `mfa.enroll()`

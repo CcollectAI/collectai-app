@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delete your account - Sparrow Collect</title>
+<meta name="description" content="Request permanent deletion of your Sparrow Collect account and all associated data. No app install required.">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Roboto', sans-serif; color: #0F172A; background: #FFFFFF; line-height: 1.7; }
+  .container { max-width: 720px; margin: 0 auto; padding: 40px 24px 80px; }
+  .back-link { display: inline-flex; align-items: center; gap: 6px; color: #81D8D0; text-decoration: none; font-weight: 500; font-size: 14px; margin-bottom: 32px; }
+  .back-link:hover { text-decoration: underline; }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .updated { font-size: 13px; color: #64748B; margin-bottom: 32px; }
+  h2 { font-size: 18px; font-weight: 700; margin-top: 32px; margin-bottom: 8px; }
+  p { font-size: 15px; margin-bottom: 16px; }
+  ul { margin: 0 0 16px 20px; }
+  li { font-size: 15px; margin-bottom: 4px; }
+  strong { font-weight: 700; }
+  a { color: #81D8D0; }
+  .box { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; margin: 24px 0; }
+  .danger { background: #FEF2F2; border-color: #FECACA; }
+  label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+  input[type=email], input[type=text] {
+    width: 100%; padding: 12px 14px; font-size: 15px; font-family: inherit;
+    border: 1px solid #CBD5E1; border-radius: 8px; margin-bottom: 12px; background: #fff;
+  }
+  input:focus { outline: 2px solid #81D8D0; outline-offset: 1px; border-color: #81D8D0; }
+  button {
+    font-family: inherit; font-size: 15px; font-weight: 500; padding: 12px 20px;
+    border-radius: 8px; border: none; cursor: pointer; min-height: 44px;
+  }
+  .btn-primary { background: #81D8D0; color: #0F172A; }
+  .btn-danger { background: #DC2626; color: #fff; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .status { font-size: 14px; margin-top: 12px; min-height: 20px; }
+  .status.err { color: #B91C1C; }
+  .status.ok { color: #047857; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <a href="/index.html" class="back-link">← Back to Sparrow Collect</a>
+
+  <h1>Delete your account</h1>
+  <p class="updated">You can do this here without installing the app.</p>
+
+  <p>Deleting your Sparrow Collect account is <strong>permanent</strong>. We cannot
+     restore it afterwards, and neither can you.</p>
+
+  <h2>What gets deleted</h2>
+  <ul>
+    <li>Your account and sign-in credentials</li>
+    <li>Your collection: items, photos, purchase prices and notes</li>
+    <li>Marketplace listings, offers and saved searches</li>
+    <li>Messages, event RSVPs, alerts and notification settings</li>
+    <li>Gamification progress, activity history and preferences</li>
+  </ul>
+
+  <h2>What is kept, and why</h2>
+  <ul>
+    <li><strong>Records we are legally required to retain</strong> — for example
+        transaction records kept for tax and DAC7 reporting obligations. These are
+        retained for the statutory period and are not used for anything else.</li>
+    <li><strong>Anonymous, non-identifying data</strong> — aggregated market prices
+        and catalogue information, which contain no link to you.</li>
+  </ul>
+
+  <p><strong>Export first if you want a copy.</strong> In the app:
+     <em>Settings → Export</em> gives you a CSV of your collection. After deletion
+     the data is gone and we cannot recover it.</p>
+
+  <h2>Request deletion</h2>
+
+  <!-- STEP 1 — prove the address is yours.
+       Deleting on a typed email alone would let anyone delete anyone's account,
+       so we send a one-time sign-in link and act only on a real session. -->
+  <div class="box" id="step-email">
+    <p>Enter the email address on your account. We will send you a one-time
+       sign-in link to confirm it is really you — no password needed.</p>
+    <label for="email">Email address</label>
+    <input type="email" id="email" autocomplete="email" placeholder="you@example.com">
+    <button class="btn-primary" id="send">Email me a confirmation link</button>
+    <p class="status" id="send-status" role="status" aria-live="polite"></p>
+  </div>
+
+  <!-- STEP 2 — signed in via the link; require a typed confirmation. -->
+  <div class="box danger" id="step-confirm" hidden>
+    <p>Signed in as <strong id="who"></strong>.</p>
+    <p>To delete this account permanently, type <strong>DELETE</strong> below.</p>
+    <label for="confirm">Type DELETE to confirm</label>
+    <input type="text" id="confirm" autocomplete="off" autocapitalize="characters" placeholder="DELETE">
+    <button class="btn-danger" id="delete" disabled>Permanently delete my account</button>
+    <p class="status" id="delete-status" role="status" aria-live="polite"></p>
+  </div>
+
+  <div class="box" id="step-done" hidden>
+    <p class="status ok"><strong>Your account has been deleted.</strong></p>
+    <p>Your data has been removed. You can close this page.</p>
+  </div>
+
+  <h2>Prefer to email us?</h2>
+  <p>Write to <a href="mailto:privacy@sparrowcollect.com">privacy@sparrowcollect.com</a>
+     from the address on your account and we will delete it for you. We respond
+     within 2 business days and complete deletion within 30 days.</p>
+
+  <h2>In the app</h2>
+  <p>You can also delete your account from inside Sparrow Collect:
+     <em>Settings → Delete Account</em>.</p>
+
+  <p style="margin-top:32px;font-size:13px;color:#64748B;">
+    See our <a href="/privacy.html">Privacy Policy</a> for how we handle your data,
+    or <a href="/support.html">Support</a> for anything else.
+  </p>
+</div>
+
+<script>
+  // Same project constants as web/pro.html. The anon key is a public,
+  // RLS-scoped client key — it is designed to ship in a browser.
+  const SUPABASE_URL = 'https://ykqrruipzmrrvjcvwfgp.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrcXJydWlwem1ycnZqY3Z3ZmdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODM4MTMsImV4cCI6MjA2ODY1OTgxM30.UIhV1z7bSAcL1Yr7USB1uQUHF3KDgq0Remt3qa3UYiA';
+  const API_BASE = 'https://api.sparrowcollect.com';
+
+  // Must match server/app/routes/account_router.py::_DELETE_CONFIRM_PHRASE.
+  // The endpoint 400s without it — a deliberate wire-level guard so no
+  // accidental client request can ever delete an account.
+  const CONFIRM_PHRASE = 'DELETE_MY_ACCOUNT';
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const els = {
+    stepEmail: document.getElementById('step-email'),
+    stepConfirm: document.getElementById('step-confirm'),
+    stepDone: document.getElementById('step-done'),
+    email: document.getElementById('email'),
+    send: document.getElementById('send'),
+    sendStatus: document.getElementById('send-status'),
+    who: document.getElementById('who'),
+    confirm: document.getElementById('confirm'),
+    del: document.getElementById('delete'),
+    delStatus: document.getElementById('delete-status'),
+  };
+
+  function showSignedIn(session) {
+    if (!session) {
+      els.stepEmail.hidden = false;
+      els.stepConfirm.hidden = true;
+      return;
+    }
+    els.stepEmail.hidden = true;
+    els.stepConfirm.hidden = false;
+    els.who.textContent = session.user.email || '(your account)';
+  }
+
+  supabase.auth.getSession().then(({ data }) => showSignedIn(data.session));
+  supabase.auth.onAuthStateChange((_e, session) => showSignedIn(session));
+
+  els.send.addEventListener('click', async () => {
+    const email = els.email.value.trim();
+    if (!email) {
+      els.sendStatus.textContent = 'Enter your email address first.';
+      els.sendStatus.className = 'status err';
+      return;
+    }
+    els.send.disabled = true;
+    els.sendStatus.className = 'status';
+    els.sendStatus.textContent = 'Sending…';
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        // shouldCreateUser:false — asking to delete an account that does not
+        // exist must not CREATE one.
+        options: {
+          shouldCreateUser: false,
+          // No .html: web/vercel.json sets cleanUrls, so /delete-account.html
+          // 308s to /delete-account. A redirect mid-callback would make the
+          // #access_token fragment depend on browser carry-over behaviour.
+          emailRedirectTo: 'https://sparrowcollect.com/delete-account',
+        },
+      });
+      if (error) throw error;
+      // Deliberately the same message whether or not the address has an
+      // account: telling a stranger "no such user" turns this page into an
+      // account-enumeration oracle.
+      els.sendStatus.textContent =
+        'If that address has a Sparrow Collect account, a confirmation link is on its way. Check your inbox and spam folder.';
+    } catch (err) {
+      // A rate limit is worth showing — silence here would look like the same
+      // dead button we fixed on the app's resend screen.
+      const msg = (err && err.message) || '';
+      els.sendStatus.textContent = /rate|too many|seconds/i.test(msg)
+        ? msg
+        : 'If that address has a Sparrow Collect account, a confirmation link is on its way.';
+      els.sendStatus.className = /rate|too many|seconds/i.test(msg) ? 'status err' : 'status';
+    } finally {
+      els.send.disabled = false;
+    }
+  });
+
+  // The typed-DELETE gate mirrors the in-app modal
+  // (src/components/settings/ProfileEditSection.tsx). Two guards, same as the
+  // app: this one for the human, the query token below for the wire.
+  els.confirm.addEventListener('input', () => {
+    els.del.disabled = els.confirm.value.trim().toUpperCase() !== 'DELETE';
+  });
+
+  els.del.addEventListener('click', async () => {
+    els.del.disabled = true;
+    els.delStatus.className = 'status';
+    els.delStatus.textContent = 'Deleting…';
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Your sign-in link expired. Request a new one.');
+
+      const res = await fetch(
+        API_BASE + '/account?confirm=' + encodeURIComponent(CONFIRM_PHRASE),
+        { method: 'DELETE', headers: { Authorization: 'Bearer ' + session.access_token } },
+      );
+      if (!res.ok) {
+        let detail = 'HTTP ' + res.status;
+        try {
+          const body = await res.json();
+          detail = body.detail || body.message || detail;
+        } catch (_) { /* non-JSON error body; the status is all we have */ }
+        throw new Error(detail);
+      }
+      await supabase.auth.signOut();
+      els.stepConfirm.hidden = true;
+      els.stepDone.hidden = false;
+    } catch (err) {
+      // Never silent. A delete that appears to do nothing is worse than one
+      // that fails loudly — the user cannot tell whether their data is gone.
+      els.delStatus.textContent =
+        (err && err.message) || 'Could not delete the account. Please email privacy@sparrowcollect.com.';
+      els.delStatus.className = 'status err';
+      els.del.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>

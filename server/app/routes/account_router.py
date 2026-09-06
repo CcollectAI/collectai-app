@@ -81,7 +81,6 @@ _ALLOWED_TABLES = (
     "alert_subscriptions",
     "notification_history",
     "user_alert_preferences",
-    "user_notifications",
     "user_push_tokens",
     "user_webhooks",
     "drop_follows",
@@ -97,6 +96,16 @@ _ALLOWED_TABLES = (
     "chat_thread_mutes_v1",
     "chat_thread_bans_v1",
     # collection, items & media
+    # Added 2026-09-06 after audit_account_deletion.py reported them as gaps:
+    # user data with a user_id, no CASCADE, and not listed anywhere. `favorites`
+    # is the heart/saved-items table, so leaving it meant a deleted user's saved
+    # listings survived. The notification_* tables are per-user delivery
+    # analytics; empty today (0 rows), which is exactly when to wire them up
+    # rather than after they fill.
+    "favorites",
+    "notification_impressions",
+    "notification_interactions",
+    "notification_outcomes",
     "collections",
     # item_images is NOT here: it has no user_id column (it is keyed on
     # item_id), so `DELETE FROM item_images WHERE user_id = $1` raised
@@ -109,7 +118,6 @@ _ALLOWED_TABLES = (
     "item_notes_v1",
     "item_valuation_history",
     "item_valuation_keys",
-    "listings",
     "watchlist_items",
     "watchlist_valuation",
     "portfolio_valuations_v1",
@@ -128,7 +136,6 @@ _ALLOWED_TABLES = (
     "price_prediction_runs",
     "pricing_traces",
     "forecasts",
-    "guidance_runs",
     "suggestion_logs",
     "image_labels",
     "label_events",
@@ -201,6 +208,15 @@ _RETAINED_TABLES: dict[str, str] = {
     # deliberately NOT listed: they are covered by the parent, and the audit
     # filters them out, so naming them here only produces stale entries.
     "comps": "Derived market comparables keyed to catalog refs, not user content.",
+    "dac7_seller_year": (
+        "DAC7 reporting record. EU Council Directive 2021/514 requires platform "
+        "operators to retain reportable seller data for the statutory period, so "
+        "this row must survive an erasure request -- GDPR Art. 17(3)(b), "
+        "processing necessary for compliance with a legal obligation. It is used "
+        "for nothing else. web/delete-account.html states this to the user in "
+        "the 'What is kept, and why' section; if that ever stops being true, "
+        "that page is a promise that has to change with it."
+    ),
 }
 
 # market_hits needs NO deletion, anonymisation, or index. Measured 2026-07-25:
@@ -228,13 +244,34 @@ async def _do_account_delete(conn: asyncpg.Connection, user_id: str) -> None:
             owner_col = _OWNER_COLUMN.get(table, "user_id")
             assert owner_col.isidentifier(), f"Invalid column name: {owner_col}"
             try:
-                await conn.execute(
-                    f'DELETE FROM "{table}" WHERE "{owner_col}" = $1',
-                    user_id,
-                )
+                # SAVEPOINT per statement, and it is not optional.
+                #
+                # Catching UndefinedTableError below does NOT undo anything in
+                # Postgres: the moment a statement errors, the whole
+                # transaction is aborted and every later statement fails with
+                # "current transaction is aborted, commands ignored until end
+                # of transaction block". So the tolerant handler read as safe
+                # while actually guaranteeing total failure — measured
+                # 2026-09-06, DELETE /account returned 500 and erased NOTHING
+                # because three names in the list below no longer exist.
+                #
+                # A nested conn.transaction() is a SAVEPOINT, which rolls back
+                # just the failed statement and leaves the outer transaction
+                # usable. Without it, "except: pass" is a comment, not a guard.
+                async with conn.transaction():
+                    await conn.execute(
+                        f'DELETE FROM "{table}" WHERE "{owner_col}" = $1',
+                        user_id,
+                    )
             except asyncpg.UndefinedTableError:
                 # A dropped table is fine — there is nothing left to delete.
-                pass
+                # Logged, because a name that no longer exists means the list
+                # has drifted from the schema and should be pruned.
+                logger.error(
+                    "[account] %s is in _ALLOWED_TABLES but does not exist — "
+                    "skipped. Prune the list; see check:account-deletion-tables.",
+                    table,
+                )
             except asyncpg.UndefinedColumnError:
                 # A table in this list with no user_id column. Deliberately NOT
                 # silent: it means the list is wrong, and the row's data may not
