@@ -280,8 +280,6 @@
       "no_identity_token": "No se recibió token de identidad.",
       "email_password_required": "Por favor ingresa tu correo y contraseña.",
       "sign_in_failed": "Error al iniciar sesión",
-      "magic_link_email_required": "Ingresa tu correo para recibir un enlace mágico.",
-      "magic_link_failed": "Error del enlace mágico",
       "accept_terms": "Por favor acepta los Términos del servicio y la Política de privacidad.",
       "fill_all_fields": "Por favor completa todos los campos.",
       "password_min_length": "La contraseña debe tener al menos 8 caracteres.",

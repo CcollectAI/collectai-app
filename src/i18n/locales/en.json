@@ -280,8 +280,6 @@
       "no_identity_token": "No identity token received.",
       "email_password_required": "Please enter your email and password.",
       "sign_in_failed": "Sign in failed",
-      "magic_link_email_required": "Enter your email to receive a magic link.",
-      "magic_link_failed": "Magic link failed",
       "accept_terms": "Please accept the Terms of Service and Privacy Policy.",
       "fill_all_fields": "Please fill in all fields.",
       "password_min_length": "Password must be at least 8 characters.",

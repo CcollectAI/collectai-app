@@ -280,8 +280,6 @@
       "no_identity_token": "Geen identiteitstoken ontvangen.",
       "email_password_required": "Vul je e-mail en wachtwoord in.",
       "sign_in_failed": "Inloggen mislukt",
-      "magic_link_email_required": "Vul je e-mail in om een magic link te ontvangen.",
-      "magic_link_failed": "Magic link mislukt",
       "accept_terms": "Accepteer de Servicevoorwaarden en het Privacybeleid.",
       "fill_all_fields": "Vul alle velden in.",
       "password_min_length": "Wachtwoord moet minstens 8 tekens lang zijn.",

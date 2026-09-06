@@ -1,5 +1,13 @@
 /**
- * Login screen — email/password sign-in with magic link, Apple, and Google options.
+ * Login screen — email/password sign-in.
+ *
+ * Apple and Google are implemented but hidden behind
+ * SOCIAL_LOGIN_ENABLED=false (App Store guideline 4.8 — offering Google
+ * requires also offering Apple). Magic-link sign-in was DELETED on
+ * 2026-09-06: `handleMagicLink` was complete and nothing ever rendered a
+ * control for it, so this header advertised a sign-in method the user
+ * could not reach. The web paywall (web/pro.html) has its own, separate
+ * magic-link flow — that one is live and was not touched.
  * Pro-grade: gradient bg, floating-label inputs, stagger reveal, gradient button.
  */
 
@@ -175,29 +183,6 @@ function LoginScreen() {
       router.replace('/(tabs)');
     } catch (e: unknown) {
       showToast({ message: e instanceof Error ? e.message : t('auth.errors.sign_in_failed'), type: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleMagicLink() {
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      showToast({ message: t('auth.errors.magic_link_email_required'), type: 'warning' });
-      return;
-    }
-
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: trimmedEmail,
-        options: { shouldCreateUser: false },
-      });
-      if (error) throw error;
-      showToast({ message: 'We sent you a magic sign-in link. Check your email.', type: 'success' });
-    } catch (e: unknown) {
-      showToast({ message: e instanceof Error ? e.message : t('auth.errors.magic_link_failed'), type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -474,11 +459,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 14,
     paddingHorizontal: 4,
-  },
-  magicLinkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
   },
   linkText: {
     fontSize: 13,

@@ -280,8 +280,6 @@
       "no_identity_token": "ID 토큰을 받지 못했습니다.",
       "email_password_required": "이메일과 비밀번호를 입력하세요.",
       "sign_in_failed": "로그인 실패",
-      "magic_link_email_required": "매직 링크를 받으려면 이메일을 입력하세요.",
-      "magic_link_failed": "매직 링크 실패",
       "accept_terms": "서비스 약관 및 개인정보 처리방침에 동의해 주세요.",
       "fill_all_fields": "모든 필드를 입력해 주세요.",
       "password_min_length": "비밀번호는 최소 8자 이상이어야 합니다.",

@@ -23,14 +23,10 @@ app/barcode-scan.tsx:handleUrlSubmit
 # Both of these are real gaps parked here only so the gate is green while the
 # decision is pending. Neither is "fine". Revisit both.
 #
-# handleMagicLink: a COMPLETE magic-link sign-in (validates the address, calls
-# supabase.auth.signInWithOtp with shouldCreateUser:false, toasts both ways)
-# that nothing renders — `magicLinkRow` is styled and never used either. The
-# file's own header comment advertises it: "Login screen — email/password
-# sign-in with magic link, Apple, and Google options." So the login screen
-# claims a sign-in method the user cannot reach. Either wire it or delete it
-# AND fix that comment — a shelved feature must stop being advertised.
-app/(auth)/login.tsx:handleMagicLink
+# handleMagicLink: RESOLVED 2026-09-06 — deleted, not wired. The handler, the
+# unused `magicLinkRow` style, the header comment advertising it, and the two
+# `auth.errors.magic_link_*` keys in all seven locales all went together.
+# web/pro.html keeps its own separate web magic-link flow; that one is live.
 #
 # handleOpenSettings: a settings shortcut on the HOME tab, built with the
 # haptic and the router.push already in place, wired to nothing. Settings is

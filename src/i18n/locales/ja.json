@@ -280,8 +280,6 @@
       "no_identity_token": "IDトークンを受信できませんでした。",
       "email_password_required": "メールアドレスとパスワードを入力してください。",
       "sign_in_failed": "サインインに失敗しました",
-      "magic_link_email_required": "マジックリンクを受け取るにはメールアドレスを入力してください。",
-      "magic_link_failed": "マジックリンクに失敗しました",
       "accept_terms": "利用規約とプライバシーポリシーに同意してください。",
       "fill_all_fields": "すべての項目を入力してください。",
       "password_min_length": "パスワードは8文字以上必要です。",

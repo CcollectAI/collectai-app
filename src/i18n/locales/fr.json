@@ -280,8 +280,6 @@
       "no_identity_token": "Aucun jeton d'identité reçu.",
       "email_password_required": "Veuillez saisir votre e-mail et votre mot de passe.",
       "sign_in_failed": "Échec de la connexion",
-      "magic_link_email_required": "Saisissez votre e-mail pour recevoir un lien magique.",
-      "magic_link_failed": "Échec du lien magique",
       "accept_terms": "Veuillez accepter les Conditions d'utilisation et la Politique de confidentialité.",
       "fill_all_fields": "Veuillez remplir tous les champs.",
       "password_min_length": "Le mot de passe doit contenir au moins 8 caractères.",

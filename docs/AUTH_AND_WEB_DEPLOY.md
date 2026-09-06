@@ -401,12 +401,44 @@ at the HTTP layer, from one that works.
 |---|---|
 | Email + password | ✅ verified end-to-end today |
 | Signup → confirm → resend → reset | ✅ verified today |
-| **Magic link** (`signInWithOtp`) | ⛔ **dead code.** `handleMagicLink` is complete and **nothing calls it**; `magicLinkRow` is styled and never rendered. The file header still advertises it. Its success toast is also a hardcoded English string, not `t()` |
+| **Magic link** (`signInWithOtp`) | ❌ **deleted 2026-09-06** — see below |
 | Apple / Google (`signInWithIdToken`) | hidden by `SOCIAL_LOGIN_ENABLED=false` — deliberate, App Store 4.8 |
 
 **Gate:** `npm run check:dead-handlers`. `check-unrendered-components` covers
 imported COMPONENTS and `check-unreachable-screens` covers SCREENS; a dead
 handler inside a live screen was neither. It found three, all real.
+
+#### Magic link deleted (2026-09-06), and what "deleting a feature" cost
+
+Merle's call: delete rather than wire. **Shelving is never a one-file change** —
+the code, the strings and every CLAIM have to go together, or the app keeps
+advertising something that no longer exists
+([[learning_shelving_a_feature_leaves_the_paywall_selling_it]]). Enumerated
+before cutting, not after:
+
+| Removed | |
+|---|---|
+| `handleMagicLink` in `app/(auth)/login.tsx` | the only `signInWithOtp` caller in the app |
+| `magicLinkRow` style | styled, never rendered |
+| the header comment | it claimed "magic link, Apple, and Google options" |
+| `auth.errors.magic_link_email_required` + `magic_link_failed` | **× 7 locales** |
+| the `dead-handler-allowlist.txt` entry | resolved, not left stale |
+
+**Deliberately NOT removed**, because they are different things that share a
+name:
+
+- **`web/pro.html` has its own magic-link send.** That is the WEB paywall's
+  account-linking flow, it is live, and it has nothing to do with the RN login
+  screen. The web has magic link; the app does not.
+- `docs/app-store-aso.md` "click Send Magic Link" — an instruction for the
+  **Supabase dashboard** when creating the reviewer account.
+- `HYBRID_WEB_SUBSCRIPTION_PLAN.md` — an unchecked planning box, a plan rather
+  than a claim.
+- `signInWithOtp` in `src/lib/supabase.ts` — the offline stub mirrors the SDK
+  surface, not the app's usage.
+
+Verified after: all **7 locales still agree** (673 keys each, no orphan), tsc
+clean, 43 tests pass, both new gates green.
 
 ### Full chain, verified 2026-07-30 (all green — but see above: it was not full)
 
