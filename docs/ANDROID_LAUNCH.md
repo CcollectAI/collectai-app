@@ -5,6 +5,11 @@
 > is entirely account-and-console setup, none of which fails the build, and all
 > of which silently degrades the app.
 
+**The Data safety form is a separate blocker from the three below** and is not
+covered by the gate: see [PLAY_DATA_SAFETY.md](./PLAY_DATA_SAFETY.md) for
+every answer, with the evidence for each. It is required to publish, and Play
+treats a mismatch with real app behaviour as a policy violation.
+
 Run the gate rather than reading this list:
 
 ```bash
