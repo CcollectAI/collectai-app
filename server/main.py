@@ -15,6 +15,7 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
 
+from app.logging_filters import install_access_log_redaction
 from app.auth import require_ops_key
 from app.config import (
     SERVICE_VERSION,
@@ -128,6 +129,13 @@ async def lifespan(app: FastAPI):
 # App
 # ---------------------------------------------------------------------------
 app = FastAPI(title="Collectors Merge Service", version=SERVICE_VERSION, lifespan=lifespan)
+
+# Uvicorn's access log writes the FULL path, query string included, so
+# `GET /events/nearby?lat=..&lon=..` would put precise GPS on disk in
+# bake.log and break the promise the privacy policy makes to users.
+# Installed at import time: uvicorn configures its loggers before it imports
+# this module, so the logger already exists and the filter sticks.
+install_access_log_redaction()
 
 _logger = logging.getLogger("collectai.main")
 

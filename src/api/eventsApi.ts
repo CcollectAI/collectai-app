@@ -78,12 +78,22 @@ export const listMyDropAlerts = () =>
     created_at: string | null;
   }[]>("/events/my-alerts");
 
+// ~1.1 km. The server ALREADY rounds to 2dp to build its cache key
+// (events_core.py::list_nearby_events), and the search radius is 1-500 km, so
+// this costs the feature nothing measurable. What it buys: the user's precise
+// position never leaves the device for a mere query, which is what
+// app/legal/privacy-policy.tsx promises. Event VENUE coordinates
+// (useEventForm.ts) are deliberately NOT rounded — those are published
+// address data the user chose to share, not their own whereabouts.
+const NEARBY_COORD_DP = 2;
+const coarse = (n: number) => Number(n.toFixed(NEARBY_COORD_DP));
+
 export const getNearbyEvents = (lat?: number, lng?: number, radiusKm = 50) => {
   // Server query param is `lon` (events_core.py), not `lng`. Caller
   // signature keeps lng for FE clarity; we map at the boundary.
   const sp = new URLSearchParams();
-  if (lat != null) sp.set("lat", String(lat));
-  if (lng != null) sp.set("lon", String(lng));
+  if (lat != null) sp.set("lat", String(coarse(lat)));
+  if (lng != null) sp.set("lon", String(coarse(lng)));
   sp.set("radius_km", String(radiusKm));
   return get(`/events/nearby?${sp.toString()}`);
 };

@@ -14,7 +14,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { safeGoBack } from '@/lib/goBack';
 
-const LAST_UPDATED = 'April 11, 2026';
+const LAST_UPDATED = 'September 6, 2026';
 
 function PrivacyPolicyScreenInner() {
   const router = useRouter();
@@ -111,7 +111,7 @@ function PrivacyPolicyScreenInner() {
         <Text style={[styles.body, { color: colors.text }]}>
           <Text style={styles.bold}>IP-Based Region Detection:</Text> We use your IP address to determine your approximate geographic region (country-level) for currency preferences and regional marketplace features via ip-api.com. IP-based region data is cached for 24 hours.
           {'\n\n'}
-          <Text style={styles.bold}>Precise GPS Location (Nearby Events):</Text> The "Nearby Events" feature uses precise GPS location via expo-location to find collector events near you. This requires a separate, explicit location permission on your device. Precise location data is used only to calculate distances to events and is not stored on our servers or shared with other users. You can use the app fully without granting location permission — the Nearby Events feature will simply be unavailable. You can revoke location permission at any time through your device settings.
+          <Text style={styles.bold}>Location (Nearby Events):</Text> The "Nearby Events" feature needs to know roughly where you are. Your device provides a precise GPS reading, but the app deliberately rounds it to about one kilometre before sending it to us, so we never receive your exact position. The rounded coordinates are used only to measure how far events are from you: they are held in memory for a few minutes to avoid repeat lookups, and are never written to our database, shown to other users, or recorded in our server logs. This requires a separate, explicit location permission on your device. You can use the app fully without granting it — Nearby Events will simply be unavailable — and you can revoke it at any time through your device settings. Note that when you create an event, the venue coordinates you choose are published as part of that event; that is address information you are deliberately sharing, and it is not rounded.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>5. How We Use Your Data</Text>
