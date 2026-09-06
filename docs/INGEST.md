@@ -718,7 +718,35 @@ privileges, which argues the cascade should succeed regardless of
 facts do not currently reconcile, and **that gap is the reason this is not
 being patched by guessing a `GRANT`.**
 
-#### ⚠️ NOT SOLVED — this section claimed "SOLVED" and was wrong (corrected 2026-09-06)
+#### ✅ SOLVED AND VERIFIED 2026-09-06 (evening)
+
+`supabase/migrations/20260906_sync_item_for_sale_security_definer.sql` applied
+via the SQL Editor. `sync_item_for_sale()` is now SECURITY DEFINER with
+`search_path=public, pg_temp` pinned.
+
+**Four checks, not one** — and the earlier premature "SOLVED" in this file is
+exactly why:
+
+| check | result |
+|---|---|
+| `prosecdef` / `proconfig` | `t` / `{"search_path=public, pg_temp"}` |
+| **delete a user who OWNS a listing** (500 since 08-30) | **HTTP 200**, user and listing both cascaded |
+| trigger still maintains the derived column | inserting a live listing set `items.for_sale = t` |
+| **cross-user guard** — attacker lists the victim's item | victim's `for_sale` stayed **`f`** |
+| `sanity-e2e` | **completed success** — first green since 2026-08-30 |
+
+That third row is the reason variant B was chosen over a bare
+`ALTER ... SECURITY DEFINER`: without the `user_id = owner_id` scoping, that
+last test would have flipped another member's item to for-sale, because the
+`marketplace_listings` INSERT policy constrains who owns the LISTING and says
+nothing about `item_id`.
+
+⚠️ The underlying weakness is still there: **a user can still create a listing
+pointing at someone else's item.** The trigger no longer acts on it, but the
+row is accepted. Constraining `item_id` to items you own belongs at the table
+level and deserves its own pass — see the note at the end of the migration.
+
+#### (history) NOT SOLVED — this section claimed "SOLVED" and was wrong
 
 **Read this before the section below, which I wrote and pushed prematurely.**
 
