@@ -30,7 +30,12 @@ import json, os, random, re, string, subprocess, sys, time
 SU=os.environ["SUPABASE_URL"].rstrip("/")
 ANON=os.environ.get("SUPABASE_ANON_KEY") or os.environ["EXPO_PUBLIC_SUPABASE_ANON_KEY"]
 SVC=os.environ["SUPABASE_SERVICE_KEY"]
-REDIR="https://sparrowcollect.com/auth/callback"
+# The redirect the APP actually sends (app/(auth)/register.tsx:158 and
+# forgot-password.tsx:83). NOT /auth/callback — that path does not exist and
+# 404s. This script used to invent it, so the chain "verified" while handing a
+# real user a dead landing page: the assertion below only checked that Supabase
+# 303'd with a token, never that the destination existed.
+REDIR="https://sparrowcollect.com/auth/confirm"
 PW1="SparrowOld2026x"; PW2="SparrowNew2026y"
 
 def http(url,method="GET",body=None,headers=None,t=45,raw=False):
@@ -87,6 +92,11 @@ ms=wait_msgs(1); rec("confirmation email",len(ms)>=1)
 lk=link_from(ms[0]["id"]) if ms else None
 code,red=follow(lk) if lk else ("-","")
 rec("confirm link works",code in("301","302","303") and "access_token" in red,f"HTTP {code}")
+
+# The destination must EXIST. Supabase will happily 303 to a 404.
+_lp = subprocess.run(["curl","-sS","-o","/dev/null","-w","%{http_code}","-L","--max-time","20",
+                      REDIR], capture_output=True, text=True).stdout.strip()
+rec("the redirect target actually serves a page", _lp == "200", f"{REDIR} -> HTTP {_lp}")
 
 c,r=http(f"{SU}/auth/v1/token?grant_type=password","POST",{"email":addr,"password":PW1},AH)
 rec("login with the password just set",c==200,f"HTTP {c}")
