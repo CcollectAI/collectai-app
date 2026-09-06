@@ -682,6 +682,49 @@ privileges, which argues the cascade should succeed regardless of
 facts do not currently reconcile, and **that gap is the reason this is not
 being patched by guessing a `GRANT`.**
 
+#### ✅ SOLVED 2026-09-06 — `marketplace_listings` rows, proven by a controlled test
+
+**The blocker is not a mystery any more, and the diagnostic script was never
+needed.** It fell out of the test-account cleanup as a natural experiment:
+deleting 24 synthetic accounts, **20 succeeded and 4 failed** — and the 4
+failures were exactly the 4 accounts that had `marketplace_listings` rows
+(3, 6, 6 and 7 of them). Every account with zero listings deleted fine.
+
+Then the controlled before/after, on one user
+(`20503ad2-c62d-4700-810b-36da247bbf28` — the very id
+`scripts/diagnose_gotrue_delete.sql` targets):
+
+```
+DELETE /auth/v1/admin/users/20503ad2-…   -> HTTP 500   (6 listings present)
+DELETE FROM marketplace_listings WHERE user_id = …     (6 rows)
+DELETE /auth/v1/admin/users/20503ad2-…   -> HTTP 200, user gone
+```
+
+Same user, same call, one variable changed. The other three failures then
+deleted cleanly by the same route (7, 6 and 3 listings cleared).
+
+**So `<X>` is `marketplace_listings`**, exactly as the Postgres log said all
+along, and the fix the doc prescribes is now evidence-based rather than a
+guess:
+
+```sql
+GRANT DELETE ON public.marketplace_listings TO supabase_auth_admin;
+```
+
+⚠️ Still a production privilege change and still Merle's call — but the
+discriminating output the section below demanded now exists, obtained without
+`SET ROLE` at all.
+
+**Why the earlier "it can't be privileges" reasoning was wrong.** 2026-09-05
+established that `supabase_auth_admin` can DELETE on **zero** of the 44 tables
+with an FK to `auth.users`, and concluded that since a stock Supabase project
+is the same and deletes users fine, grants could not be the cause. The missing
+step: **a cascade only needs the privilege on a table that actually has rows to
+delete.** For 20 of these accounts every one of those 44 tables was empty, so
+the missing grants never mattered. `marketplace_listings` was simply the only
+one carrying rows. "No grants anywhere" and "deletes work" are perfectly
+consistent right up until a user owns something.
+
 #### ⛔ CORRECTION (2026-09-05): the SQL Editor cannot run it either
 
 Everything below this heading was written on the assumption that *"the SQL
