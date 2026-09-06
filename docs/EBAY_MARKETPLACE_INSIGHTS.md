@@ -33,19 +33,34 @@
 
 ---
 
-## Step 1 — Confirm you do NOT already have access (2 min)
+## Step 1 — Confirm you do NOT already have access (10 seconds, no browser)
 
-Do this first; it is occasionally granted with other API bundles.
+The browser version of this step ("open the keyset, click User Tokens, read
+the scope list") is fiddly and easy to misread. **Ask eBay instead** — the
+token service is authoritative: request the scope, and it either issues a
+token or refuses.
 
-1. Go to **https://developer.ebay.com/my/keys**
-2. Sign in.
-3. Under your **Production** keyset, click **"User Tokens"** then look at the
-   **OAuth scopes** list.
-4. Search that page for `buy.marketplace.insights`.
+```bash
+ssh collectai
+set -a; . /opt/collectors/.env; set +a
+B=$(printf '%s:%s' "$EBAY_CLIENT_ID" "$EBAY_CLIENT_SECRET" | base64 | tr -d '\n')
+curl -sS -X POST https://api.ebay.com/identity/v1/oauth2/token \
+  -H "Authorization: Basic $B" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'grant_type=client_credentials&scope=https%3A%2F%2Fapi.ebay.com%2Foauth%2Fapi_scope%2Fbuy.marketplace.insights'
+```
 
-- **If it is there** → you already have access. Stop, and tell me. The work is
-  then code-side and I will do it.
-- **If it is not** → continue to step 2. This is the expected outcome.
+- `{"access_token": "v^1.1#..."}` → **granted.** Stop; the rest is code-side.
+- `{"error":"invalid_scope", ... "exceeds the scope granted to the client"}`
+  → **not granted.** Continue to step 2.
+
+Sanity-check the credentials in the same breath by requesting the base scope
+(`.../oauth/api_scope`) — that one must succeed. If BOTH fail, the problem is
+the keys, not the entitlement, and applying would be the wrong fix.
+
+**Measured 2026-09-06:** base scope issued a token; `buy.marketplace.insights`
+returned `invalid_scope`. So: not granted, application required, and the
+credentials are fine.
 
 ---
 
