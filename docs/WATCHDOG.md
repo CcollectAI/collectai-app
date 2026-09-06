@@ -919,7 +919,29 @@ was fixed.
 | full `watchdog.py` run after deploy | `healthy` 41 → **43**, new check present |
 | `audit_router_sql_drift.py` on prod | **0** findings for `export_feedback.py` — the 3 allowlist lines were suppressing nothing |
 
-⚠️ The `items.grade` HIGH **is still in today's report** and that is correct:
+#### ✅ CONFIRMED FIXED on the 2026-09-06 run
+
+The 09-06 nightly (`34018002904`, sha `c848c7b`) is the first carrying the fix.
+Its own log settles it:
+
+```
+GET /rest/v1/items?select=id%2Cattrs&id=in.(75aa0400-…)&category=eq.pokemon "HTTP/1.1 200 OK"
+...
+Loaded 1 feedback samples for lorcana
+```
+
+`select=id,attrs`, **200 on every call**, zero `items lookup REJECTED`, and —
+the part that matters — a feedback sample actually reaching training for the
+first time.
+
+⚠️ **The 09-06 watchdog still reports `35x items.grade`, and that is not a
+regression.** Its window is 24h back from 07:01 UTC, and the PRE-fix run
+started 06:50 and ran 18 minutes, so its tail sits inside the window. The
+discriminating evidence is the run log above, not the count. **If the 09-07
+report still shows it, the caller is something other than `train_price` and
+this section is wrong** — that is the falsifying test.
+
+⚠️ The `items.grade` HIGH **was still in the 09-05 report** and that is correct:
 the finding reads the last 24h of Postgres logs, and those 37 errors were
 written by the 06:50 nightly, hours before the fix. It clears on the
 2026-09-06 report, and if it does not, the fix did not reach the runner —

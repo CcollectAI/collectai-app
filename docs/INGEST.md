@@ -426,6 +426,27 @@ locked too (two threads could each build a client, leaking one). The retry
 also re-resolves a closed client and treats *only* that RuntimeError as
 retryable — any other one still raises.
 
+### ✅ CONFIRMED on the 2026-09-06 nightly
+
+First run carrying the fix (`34019203455`, sha `c848c7b`):
+
+```
+Rows LOST: 0                        (was 2,254 on each of 09-03/04/05)
+'client has been closed': 0         (was 13 failed batches)
+circuit-breaker trips: 79
+-> success                          (was failure, four nights running)
+```
+
+**79 circuit trips is the design working, not a new fault.**
+`api.pokemontcg.io` is still returning 5xx, and the run now abandons it in
+bounded time instead of grinding three attempts through every set. The Pokémon
+catalogue still is not refreshing — that is their outage — but it no longer
+costs a red run or 2,254 dropped rows elsewhere.
+
+Verify it yourself with `./scripts/check_nightly_ingest.sh`, which names the
+run and sha it is judging and refuses to give a verdict on one that predates
+the fix.
+
 ### The read side: the opposite retry rule, and an outbound budget
 
 The pokemontcg 5xx were real even though they were not the failure. Three
