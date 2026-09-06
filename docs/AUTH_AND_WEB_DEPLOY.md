@@ -372,6 +372,29 @@ baseline: it names the original bug (`handleResend`, `setResent`,
 `setCooldown`) and is clean after. Zero other instances in `app/`, `src/`,
 `components/`.
 
+#### The journeys, run to their END (2026-09-06) — 14/14
+
+Yesterday's pass checked endpoints. It did not follow either journey to its
+conclusion, so `server/scripts/verify_auth_journeys.py` now does, and asserts
+outcomes rather than status codes:
+
+| New account | |
+|---|---|
+| signup → confirmation email → confirm link (303) → login | ✅ |
+| **a `profiles` row really exists**, with the username from signup metadata | ✅ |
+| **duplicate signup returns empty `identities`** — the tell `register.tsx` uses to say "already registered" instead of stranding the user on verify-email forever | ✅ |
+
+| Password reset | |
+|---|---|
+| `/auth/v1/recover` → email → link carries `type=recovery` | ✅ |
+| set a new password with the recovery token | ✅ |
+| **login with the NEW password** | ✅ |
+| **OLD password refused (400)** | ✅ |
+
+Those last two are the ones that matter and the ones the old table never made:
+a reset that returns 200 and leaves you unable to log in is indistinguishable,
+at the HTTP layer, from one that works.
+
 #### Sign-in options, enumerated (2026-09-05)
 
 | Option | State |
