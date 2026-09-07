@@ -11,11 +11,11 @@
   "rewrites": [
     {
       "source": "/r/:code",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/l/:id",
-      "destination": "/index.html"
+      "destination": "/"
     }
   ],
   "headers": [
