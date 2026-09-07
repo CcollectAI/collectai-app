@@ -16,6 +16,41 @@ Run the gate rather than reading this list:
 npm run preflight:android      # exit 0 = ready to build and submit
 ```
 
+## Status check — 2026-09-07
+
+`npm run preflight:android`: **exit 1, the same three blockers** (FCM, Play
+service-account JSON, RevenueCat Android key). Thirty-eight days. All three are
+still downstream of **Play enrolment**, which is still not done, so nothing in
+this repo can advance them.
+
+What DID move, none of it visible to the gate:
+
+- **[PLAY_DATA_SAFETY.md](./PLAY_DATA_SAFETY.md) written.** The Data safety
+  form is a publish blocker the preflight gate does not check, and Play treats
+  a mismatch with real behaviour as a policy violation rather than a typo.
+  Every answer is derived from `_ALLOWED_TABLES` and live config, with the
+  evidence, plus an explicit do-NOT-tick list.
+- **A live privacy defect found and fixed.** The privacy policy promised
+  precise location is never stored on our servers; uvicorn's access log was
+  about to write GPS into `bake.log`. Fixed, deployed and verified in prod —
+  see the doc above. The Play answer is now *Approximate* location, not
+  *Precise*, because the client rounds to ~1.1 km before sending.
+- **Account deletion works.** It was returning 500 and erasing nothing. Both
+  the in-app path and the web URL Play requires are now proven, 10/10.
+
+⛔ **The one thing gating both stores is unchanged: `web/` is not deployed.**
+`https://sparrowcollect.com/delete-account` 404s, `/l/<uuid>` 404s, and the
+live AASA still lacks `/l/*`. Play will not accept the Data safety form with a
+dead deletion URL. The Vercel CLI is logged in as an account that cannot see
+the `collectais-projects` team, so this needs a `vercel login` first.
+
+Two checks that came back FINE, recorded so they are not "fixed" later:
+`RECEIVE_BOOT_COMPLETED` is justified (`src/lib/calendar.ts:295` schedules
+reminders), and the privacy policy's "ad infrastructure installed but dark" is
+true — `AdBanner` is mounted on the Items tab, but `FEATURE_ADS` is false AND
+the provider is `NoOpAdProvider`, two independent gates, with no ad SDK in the
+tree. **Contains ads = No.**
+
 ## Status check — 2026-09-05 (re-verified AGAIN, still nothing has moved)
 
 `npm run preflight:android` run bare on 2026-09-05: **exit 1, the same three

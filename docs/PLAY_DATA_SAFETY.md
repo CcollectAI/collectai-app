@@ -73,6 +73,22 @@ closed**, so a future parameter cannot leak by being forgotten.
 (neutering the filter fails the two tests that matter). **If that filter is
 ever removed, this declaration becomes false.**
 
+**DEPLOYED and verified in production 2026-09-07 21:06** (all nine
+ExecStartPre gates passed on the way up, healthz 200). Proven against the live
+API rather than the test suite — a real request with distinctive coordinates,
+then a grep of the log for them:
+
+```
+GET /events/nearby?lat=51.929123&lon=4.878456&radius_km=50   -> 200
+occurrences of 51.929123 / 4.878456 in bake.log              -> 0
+the access line actually written:
+  "GET /events/nearby?lat=%3Credacted%3E&lon=%3Credacted%3E&radius_km=50" 200 OK
+```
+
+Keys stay readable, the allowlisted `radius_km` survives, the coordinates are
+gone, and the endpoint still returns 200 — the feature is unaffected. The
+structured JSON logger was already clean (it logs `"path"` without the query).
+
 ## Ads — the answer is "No", and it is provable
 
 Play asks whether the app contains ads, and the answer decides whether an "Ads"
