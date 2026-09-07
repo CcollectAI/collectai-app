@@ -429,6 +429,54 @@ Apple/Google sign-in is hidden behind **`SOCIAL_LOGIN_ENABLED=false`**
 also offering Apple) and the broken-button rejection. To enable later: configure
 the Apple Services-ID/key + Google OAuth client in Supabase, then flip the flag.
 
+## `web/` DEPLOYED 2026-09-07 — 18 days of drift cleared
+
+Deployed from account `ccollectai-9199`, team `collectais-projects`.
+
+**What finally worked on the login.** `vercel login` uses a *device* OAuth flow,
+which authenticates against whatever session the **browser** already has. Being
+signed in as the wrong account silently re-authenticated the wrong account —
+twice, both reporting "Congratulations! You are now signed in". Signing *out*
+of the browser made it worse: every device code then had to complete a full
+sign-in before expiring, and three codes timed out. The fix is to sign the
+browser **in as the right account first**, then approve — one click, well
+inside the window. Verify with `vercel teams ls` (is `collectais-projects`
+listed?), never with the success message or `whoami`.
+
+| URL | Before | After |
+|---|---|---|
+| `/delete-account` | 404 | **200**, form renders |
+| `/l/<id>` | 404 | **200** |
+| `/r/<code>` | 404 | **200** |
+| AASA `/l/*` | absent | **present** |
+| Privacy policy | April 11 | **September 6** |
+
+### The deploy succeeded and `/l/` still 404'd
+
+Worth keeping, because the deploy was genuinely fine and the feature was still
+broken — the "ready" message proves nothing:
+
+```
+/l/abc123     404
+/r/TESTCODE   404
+/index.html   308 -> /
+```
+
+`vercel.json` rewrote `/l/:id` and `/r/:code` to `/index.html`, while *also*
+declaring a permanent redirect `/index.html -> /` with `cleanUrls`. **The
+rewrite destination was the one path the redirect removes**, so every rewritten
+request landed on nothing. Destination is now `/`.
+
+The tell was the sibling rule: `/r/` has the identical shape and failed
+identically, which ruled out anything listing-specific. Note the blast radius —
+**referral links were dead too**, not just sharing, so this was a growth path
+silently returning 404 for as long as the rules have existed.
+
+⚠️ Always verify a `web/` deploy by fetching the live URLs, including one that
+exercises each rewrite. A deploy that reports success while the site is
+unchanged is the documented failure mode of this repo (2026-05-02, and again
+here in a different guise).
+
 ## Deploying `web/` — the Vercel account gotcha
 
 `web/` (marketing site + AASA + `/auth/confirm`) lives under the Vercel team
