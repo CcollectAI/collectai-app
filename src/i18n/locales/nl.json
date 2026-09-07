@@ -340,7 +340,8 @@
     "insights_upgrade_a11y": "Upgrade voor uitgebreide portfolio-inzichten",
     "deal_agent_open_a11y": "Deal Agent openen",
     "deal_agent_upgrade_a11y": "Upgrade om Deal Agent te ontgrendelen",
-    "analytics": "Analyse"
+    "analytics": "Analyse",
+    "add_first_item": "Voeg je eerste item toe"
   },
   "items": {
     "title": "Items",
@@ -556,7 +557,9 @@
     "search_a11y": "Categorieën zoeken",
     "none": "Geen (selectie wissen)",
     "other": "Anders (eigen categorie)",
-    "suggest_new": "Een nieuwe categorie voorstellen"
+    "suggest_new": "Een nieuwe categorie voorstellen",
+    "your_collections": "Jouw collecties",
+    "all_categories": "Alle categorieën"
   },
   "social_proof": {
     "market_context": "Marktcontext",

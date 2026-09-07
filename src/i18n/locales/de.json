@@ -340,7 +340,8 @@
     "insights_upgrade_a11y": "Upgrade für erweiterte Portfolio-Insights",
     "deal_agent_open_a11y": "Deal Agent öffnen",
     "deal_agent_upgrade_a11y": "Upgrade, um Deal Agent freizuschalten",
-    "analytics": "Analysen"
+    "analytics": "Analysen",
+    "add_first_item": "Füge dein erstes Objekt hinzu"
   },
   "items": {
     "title": "Objekte",
@@ -556,7 +557,9 @@
     "search_a11y": "Kategorien suchen",
     "none": "Keine (Auswahl aufheben)",
     "other": "Andere (eigene Kategorie)",
-    "suggest_new": "Eine neue Kategorie vorschlagen"
+    "suggest_new": "Eine neue Kategorie vorschlagen",
+    "your_collections": "Deine Sammlungen",
+    "all_categories": "Alle Kategorien"
   },
   "social_proof": {
     "market_context": "Marktkontext",

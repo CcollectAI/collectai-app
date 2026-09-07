@@ -340,7 +340,8 @@
     "insights_upgrade_a11y": "拡張ポートフォリオインサイトにアップグレード",
     "deal_agent_open_a11y": "Deal Agentを開く",
     "deal_agent_upgrade_a11y": "アップグレードしてDeal Agentをアンロック",
-    "analytics": "分析"
+    "analytics": "分析",
+    "add_first_item": "最初のアイテムを追加"
   },
   "items": {
     "title": "アイテム",
@@ -556,7 +557,9 @@
     "search_a11y": "カテゴリーを検索",
     "none": "なし（選択を解除）",
     "other": "その他（カスタムカテゴリー）",
-    "suggest_new": "新しいカテゴリーを提案"
+    "suggest_new": "新しいカテゴリーを提案",
+    "your_collections": "あなたのコレクション",
+    "all_categories": "すべてのカテゴリー"
   },
   "social_proof": {
     "market_context": "市場の状況",

@@ -340,7 +340,8 @@
     "insights_upgrade_a11y": "Mettre à niveau pour les analyses avancées",
     "deal_agent_open_a11y": "Ouvrir Deal Agent",
     "deal_agent_upgrade_a11y": "Mettre à niveau pour débloquer Deal Agent",
-    "analytics": "Analyses"
+    "analytics": "Analyses",
+    "add_first_item": "Ajoutez votre premier article"
   },
   "items": {
     "title": "Objets",
@@ -556,7 +557,9 @@
     "search_a11y": "Rechercher des catégories",
     "none": "Aucune (effacer la sélection)",
     "other": "Autre (catégorie personnalisée)",
-    "suggest_new": "Proposer une nouvelle catégorie"
+    "suggest_new": "Proposer une nouvelle catégorie",
+    "your_collections": "Vos collections",
+    "all_categories": "Toutes les catégories"
   },
   "social_proof": {
     "market_context": "Contexte du marché",

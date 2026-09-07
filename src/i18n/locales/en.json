@@ -340,7 +340,8 @@
     "insights_upgrade_a11y": "Upgrade for extended portfolio insights",
     "deal_agent_open_a11y": "Open Deal Agent",
     "deal_agent_upgrade_a11y": "Upgrade to unlock Deal Agent",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "add_first_item": "Add your first item"
   },
   "items": {
     "title": "Items",
@@ -556,7 +557,9 @@
     "search_a11y": "Search categories",
     "none": "None (clear selection)",
     "other": "Other (custom category)",
-    "suggest_new": "Suggest a new category"
+    "suggest_new": "Suggest a new category",
+    "your_collections": "Your collections",
+    "all_categories": "All categories"
   },
   "social_proof": {
     "market_context": "Market Context",
