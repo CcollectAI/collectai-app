@@ -811,5 +811,25 @@
     "tracking_code": "운송장 번호",
     "a11y_save_tracking": "배송 정보 저장",
     "counter_offer": "역제안"
+  },
+  "item_attrs": {
+    "case_size": "케이스 크기",
+    "verify_authenticity": "정품 인증",
+    "comic_details": "코믹 상세",
+    "key_issue": "키 이슈",
+    "vinyl_details": "바이닐 상세",
+    "color_vinyl": "컬러 바이닐",
+    "warhammer_details": "워해머 상세",
+    "not_working": "작동하지 않음",
+    "limited_edition": "한정판",
+    "foil_holo": "포일 / 홀로",
+    "limited_quantity": "수량 한정",
+    "has_tags": "택 있음",
+    "a11y_verify_checkcheck": "CheckCheck로 인증",
+    "a11y_verify_legitcheck": "Legit Check로 인증",
+    "a11y_lookup_cgc": "CGC 인증서 조회",
+    "a11y_browse_discogs": "Discogs에서 보기",
+    "a11y_visit_warhammer": "Warhammer Community 방문",
+    "chase_treasure_hunt": "체이스 / 트레저 헌트"
   }
 }

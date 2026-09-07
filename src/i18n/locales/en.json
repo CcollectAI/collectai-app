@@ -811,5 +811,25 @@
     "tracking_code": "Tracking code",
     "a11y_save_tracking": "Save tracking details",
     "counter_offer": "Counter offer"
+  },
+  "item_attrs": {
+    "case_size": "Case Size",
+    "verify_authenticity": "Verify Authenticity",
+    "comic_details": "Comic Details",
+    "key_issue": "Key Issue",
+    "vinyl_details": "Vinyl Details",
+    "color_vinyl": "Color Vinyl",
+    "warhammer_details": "Warhammer Details",
+    "not_working": "Not Working",
+    "limited_edition": "Limited Edition",
+    "foil_holo": "Foil / Holo",
+    "limited_quantity": "Limited Quantity",
+    "has_tags": "Has Tags",
+    "a11y_verify_checkcheck": "Verify with CheckCheck",
+    "a11y_verify_legitcheck": "Verify with Legit Check",
+    "a11y_lookup_cgc": "Look up CGC certificate",
+    "a11y_browse_discogs": "Browse on Discogs",
+    "a11y_visit_warhammer": "Visit Warhammer Community",
+    "chase_treasure_hunt": "Chase / Treasure Hunt"
   }
 }

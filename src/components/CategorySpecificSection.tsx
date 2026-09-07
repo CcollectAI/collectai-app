@@ -22,6 +22,7 @@ import { CATEGORY_VISUAL } from "@/data/categories";
 import { useAppTheme } from "@/theme/useAppTheme";
 import { useSettings } from "@/lib/settings";
 import logger from "@/utils/logger";
+import { useTranslation } from 'react-i18next';
 
 // Sneaker size options (US sizing)
 const SNEAKER_SIZES = [
@@ -61,6 +62,7 @@ function CategorySpecificSectionInner({
   onSizeSystemChange,
   onSizeValueChange,
 }: CategorySpecificSectionProps) {
+  const { t } = useTranslation();
   const id = itemId;
   const { colors, isDark } = useAppTheme();
   const { settings } = useSettings();
@@ -146,7 +148,7 @@ function CategorySpecificSectionInner({
           <View style={s.sectionHeaderRow}>
             <View style={s.sectionHeaderLeft}>
               <Ionicons name="watch-outline" size={20} color={theme.accent} />
-              <Text style={[s.sectionTitle, { color: theme.text }]}>Case Size</Text>
+              <Text style={[s.sectionTitle, { color: theme.text }]}>{t('item_attrs.case_size', { defaultValue: 'Case Size' })}</Text>
             </View>
             {sizeSaving && <ActivityIndicator size="small" color={theme.accent} />}
           </View>
@@ -264,7 +266,7 @@ function CategorySpecificSectionInner({
           <View style={s.sectionHeaderRow}>
             <View style={s.sectionHeaderLeft}>
               <Ionicons name="shield-checkmark-outline" size={20} color={colors.success} />
-              <Text style={[s.sectionTitle, { color: theme.text }]}>Verify Authenticity</Text>
+              <Text style={[s.sectionTitle, { color: theme.text }]}>{t('item_attrs.verify_authenticity', { defaultValue: 'Verify Authenticity' })}</Text>
             </View>
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingTop: 8 }}>
@@ -277,7 +279,7 @@ function CategorySpecificSectionInner({
               }}
               style={[s.authLinkBtn, { borderColor: colors.success }]}
               accessibilityRole="link"
-              accessibilityLabel="Verify with CheckCheck"
+              accessibilityLabel={t('item_attrs.a11y_verify_checkcheck', { defaultValue: 'Verify with CheckCheck' })}
             >
               <Ionicons name="checkmark-circle-outline" size={16} color={colors.success} />
               <Text style={[s.authLinkBtnText, { color: colors.success }]}>CheckCheck</Text>
@@ -292,7 +294,7 @@ function CategorySpecificSectionInner({
               }}
               style={[s.authLinkBtn, { borderColor: colors.info }]}
               accessibilityRole="link"
-              accessibilityLabel="Verify with Legit Check"
+              accessibilityLabel={t('item_attrs.a11y_verify_legitcheck', { defaultValue: 'Verify with Legit Check' })}
             >
               <Ionicons name="shield-checkmark-outline" size={16} color={colors.info} />
               <Text style={[s.authLinkBtnText, { color: colors.info }]}>Legit Check</Text>
@@ -308,13 +310,13 @@ function CategorySpecificSectionInner({
           <View style={s.sectionHeaderRow}>
             <View style={s.sectionHeaderLeft}>
               <Ionicons name="book-outline" size={20} color={CATEGORY_VISUAL["comic_books"]?.accentColor ?? theme.accent} />
-              <Text style={[s.sectionTitle, { color: theme.text }]}>Comic Details</Text>
+              <Text style={[s.sectionTitle, { color: theme.text }]}>{t('item_attrs.comic_details', { defaultValue: 'Comic Details' })}</Text>
             </View>
           </View>
           {itemAttributes?.key_issue === true && (
             <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
               <Ionicons name="star" size={16} color={colors.warning} />
-              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>Key Issue</Text>
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>{t('item_attrs.key_issue', { defaultValue: 'Key Issue' })}</Text>
             </View>
           )}
           {itemAttributes?.signed === true && (
@@ -333,7 +335,7 @@ function CategorySpecificSectionInner({
               }}
               style={[s.legoInstructionsBtn, { borderColor: CATEGORY_VISUAL["comic_books"]?.accentColor ?? theme.accent }]}
               accessibilityRole="link"
-              accessibilityLabel="Look up CGC certificate"
+              accessibilityLabel={t('item_attrs.a11y_lookup_cgc', { defaultValue: 'Look up CGC certificate' })}
             >
               <Ionicons name="search-outline" size={16} color={CATEGORY_VISUAL["comic_books"]?.accentColor ?? theme.accent} />
               <Text style={[s.legoInstructionsBtnText, { color: CATEGORY_VISUAL["comic_books"]?.accentColor ?? theme.accent }]}>
@@ -351,13 +353,13 @@ function CategorySpecificSectionInner({
           <View style={s.sectionHeaderRow}>
             <View style={s.sectionHeaderLeft}>
               <Ionicons name="disc-outline" size={20} color={CATEGORY_VISUAL["vinyl_records"]?.accentColor ?? theme.accent} />
-              <Text style={[s.sectionTitle, { color: theme.text }]}>Vinyl Details</Text>
+              <Text style={[s.sectionTitle, { color: theme.text }]}>{t('item_attrs.vinyl_details', { defaultValue: 'Vinyl Details' })}</Text>
             </View>
           </View>
           {itemAttributes?.color_vinyl === true && (
             <View style={[s.vaultedBadge, { backgroundColor: isDark ? '#3B1F6E' : '#F3E8FF' }]}>
               <Ionicons name="color-palette" size={16} color={isDark ? '#C4B5FD' : '#7C3AED'} />
-              <Text style={[s.vaultedBadgeText, { color: isDark ? '#C4B5FD' : '#5B21B6' }]}>Color Vinyl</Text>
+              <Text style={[s.vaultedBadgeText, { color: isDark ? '#C4B5FD' : '#5B21B6' }]}>{t('item_attrs.color_vinyl', { defaultValue: 'Color Vinyl' })}</Text>
             </View>
           )}
           <Pressable
@@ -369,7 +371,7 @@ function CategorySpecificSectionInner({
             }}
             style={[s.legoInstructionsBtn, { borderColor: CATEGORY_VISUAL["vinyl_records"]?.accentColor ?? theme.accent }]}
             accessibilityRole="link"
-            accessibilityLabel="Browse on Discogs"
+            accessibilityLabel={t('item_attrs.a11y_browse_discogs', { defaultValue: 'Browse on Discogs' })}
           >
             <Ionicons name="disc-outline" size={16} color={CATEGORY_VISUAL["vinyl_records"]?.accentColor ?? theme.accent} />
             <Text style={[s.legoInstructionsBtnText, { color: CATEGORY_VISUAL["vinyl_records"]?.accentColor ?? theme.accent }]}>
@@ -386,7 +388,7 @@ function CategorySpecificSectionInner({
           <View style={s.sectionHeaderRow}>
             <View style={s.sectionHeaderLeft}>
               <Ionicons name="skull-outline" size={20} color={CATEGORY_VISUAL["warhammer"]?.accentColor ?? theme.accent} />
-              <Text style={[s.sectionTitle, { color: theme.text }]}>Warhammer Details</Text>
+              <Text style={[s.sectionTitle, { color: theme.text }]}>{t('item_attrs.warhammer_details', { defaultValue: 'Warhammer Details' })}</Text>
             </View>
           </View>
           <Pressable
@@ -398,7 +400,7 @@ function CategorySpecificSectionInner({
             }}
             style={[s.legoInstructionsBtn, { borderColor: CATEGORY_VISUAL["warhammer"]?.accentColor ?? theme.accent }]}
             accessibilityRole="link"
-            accessibilityLabel="Visit Warhammer Community"
+            accessibilityLabel={t('item_attrs.a11y_visit_warhammer', { defaultValue: 'Visit Warhammer Community' })}
           >
             <Ionicons name="globe-outline" size={16} color={CATEGORY_VISUAL["warhammer"]?.accentColor ?? theme.accent} />
             <Text style={[s.legoInstructionsBtnText, { color: CATEGORY_VISUAL["warhammer"]?.accentColor ?? theme.accent }]}>
@@ -441,7 +443,7 @@ function CategorySpecificSectionInner({
           {itemAttributes?.working === false && (
             <View style={[s.vaultedBadge, { backgroundColor: colors.dangerBg }]}>
               <Ionicons name="close-circle" size={16} color={colors.danger} />
-              <Text style={[s.vaultedBadgeText, { color: colors.danger }]}>Not Working</Text>
+              <Text style={[s.vaultedBadgeText, { color: colors.danger }]}>{t('item_attrs.not_working', { defaultValue: 'Not Working' })}</Text>
             </View>
           )}
         </View>
@@ -473,7 +475,7 @@ function CategorySpecificSectionInner({
           {itemAttributes?.limited_edition === true && (
             <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
               <Ionicons name="star" size={16} color={colors.warning} />
-              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>Limited Edition</Text>
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>{t('item_attrs.limited_edition', { defaultValue: 'Limited Edition' })}</Text>
             </View>
           )}
         </View>
@@ -485,7 +487,7 @@ function CategorySpecificSectionInner({
           {(itemAttributes?.foil === true || itemAttributes?.variant === "Foil" || itemAttributes?.variant === "foil") && (
             <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
               <Ionicons name="sparkles" size={16} color={colors.warning} />
-              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>Foil / Holo</Text>
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>{t('item_attrs.foil_holo', { defaultValue: 'Foil / Holo' })}</Text>
             </View>
           )}
           {(itemAttributes?.edition === "1st Edition" || itemAttributes?.printing === "1st Edition") && (
@@ -585,7 +587,7 @@ function CategorySpecificSectionInner({
           {(itemAttributes?.limited === true || itemAttributes?.edition === "limited") && (
             <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
               <Ionicons name="star" size={16} color={colors.warning} />
-              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>Limited Edition</Text>
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>{t('item_attrs.limited_edition', { defaultValue: 'Limited Edition' })}</Text>
             </View>
           )}
         </View>
@@ -611,7 +613,7 @@ function CategorySpecificSectionInner({
           {itemAttributes?.limited_quantity === true && (
             <View style={[s.vaultedBadge, { backgroundColor: colors.dangerBg }]}>
               <Ionicons name="alert-circle" size={16} color={colors.danger} />
-              <Text style={[s.vaultedBadgeText, { color: colors.danger }]}>Limited Quantity</Text>
+              <Text style={[s.vaultedBadgeText, { color: colors.danger }]}>{t('item_attrs.limited_quantity', { defaultValue: 'Limited Quantity' })}</Text>
             </View>
           )}
         </View>
@@ -647,7 +649,7 @@ function CategorySpecificSectionInner({
           {(itemAttributes?.has_tags === true) && (
             <View style={[s.vaultedBadge, { backgroundColor: colors.successBg }]}>
               <Ionicons name="pricetag" size={16} color={colors.success} />
-              <Text style={[s.vaultedBadgeText, { color: colors.success }]}>Has Tags</Text>
+              <Text style={[s.vaultedBadgeText, { color: colors.success }]}>{t('item_attrs.has_tags', { defaultValue: 'Has Tags' })}</Text>
             </View>
           )}
           {!!(itemAttributes?.exclusive_retailer || itemAttributes?.retailer) && (
@@ -707,7 +709,7 @@ function CategorySpecificSectionInner({
           {itemAttributes?.chase === true && (
             <View style={[s.vaultedBadge, { backgroundColor: colors.warningBg }]}>
               <Ionicons name="star" size={16} color={colors.warning} />
-              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>Chase / Treasure Hunt</Text>
+              <Text style={[s.vaultedBadgeText, { color: colors.warning }]}>{t('item_attrs.chase_treasure_hunt', { defaultValue: 'Chase / Treasure Hunt' })}</Text>
             </View>
           )}
         </View>

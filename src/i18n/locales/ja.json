@@ -811,5 +811,25 @@
     "tracking_code": "追跡番号",
     "a11y_save_tracking": "配送情報を保存",
     "counter_offer": "カウンターオファー"
+  },
+  "item_attrs": {
+    "case_size": "ケースサイズ",
+    "verify_authenticity": "真贋を確認",
+    "comic_details": "コミックの詳細",
+    "key_issue": "キーイシュー",
+    "vinyl_details": "レコードの詳細",
+    "color_vinyl": "カラーヴァイナル",
+    "warhammer_details": "ウォーハンマーの詳細",
+    "not_working": "動作しません",
+    "limited_edition": "限定版",
+    "foil_holo": "フォイル / ホロ",
+    "limited_quantity": "数量限定",
+    "has_tags": "タグ付き",
+    "a11y_verify_checkcheck": "CheckCheckで確認",
+    "a11y_verify_legitcheck": "Legit Checkで確認",
+    "a11y_lookup_cgc": "CGC証明書を検索",
+    "a11y_browse_discogs": "Discogsで見る",
+    "a11y_visit_warhammer": "Warhammer Communityを開く",
+    "chase_treasure_hunt": "チェイス / トレジャーハント"
   }
 }

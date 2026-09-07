@@ -811,5 +811,25 @@
     "tracking_code": "Trackingcode",
     "a11y_save_tracking": "Trackinggegevens opslaan",
     "counter_offer": "Tegenbod"
+  },
+  "item_attrs": {
+    "case_size": "Kastmaat",
+    "verify_authenticity": "Echtheid verifiëren",
+    "comic_details": "Stripboekdetails",
+    "key_issue": "Sleutelnummer",
+    "vinyl_details": "Vinyldetails",
+    "color_vinyl": "Gekleurd vinyl",
+    "warhammer_details": "Warhammer-details",
+    "not_working": "Niet werkend",
+    "limited_edition": "Limited edition",
+    "foil_holo": "Foil / holo",
+    "limited_quantity": "Beperkte oplage",
+    "has_tags": "Met labels",
+    "a11y_verify_checkcheck": "Verifiëren met CheckCheck",
+    "a11y_verify_legitcheck": "Verifiëren met Legit Check",
+    "a11y_lookup_cgc": "CGC-certificaat opzoeken",
+    "a11y_browse_discogs": "Bekijken op Discogs",
+    "a11y_visit_warhammer": "Warhammer Community bezoeken",
+    "chase_treasure_hunt": "Chase / Treasure Hunt"
   }
 }

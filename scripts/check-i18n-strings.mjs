@@ -65,6 +65,11 @@ const ALLOWLIST_STRINGS = new Set([
   'done', 'go', 'next', 'send', 'username-new', 'new-password',
   'image/png', 'public.png',
   'Arial', 'System',
+  // Proper nouns — third-party brands rendered as the brand, never translated.
+  // They are genuinely user-visible, so they are not "not UI"; they simply have
+  // no translation. Wrapping them in t() would invite a translator to localise
+  // a company name.
+  'CheckCheck', 'Legit Check', 'Discogs', 'Warhammer Community',
 ]);
 
 function walk(dir, out = []) {

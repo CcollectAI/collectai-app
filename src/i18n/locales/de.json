@@ -811,5 +811,25 @@
     "tracking_code": "Sendungsnummer",
     "a11y_save_tracking": "Versanddetails speichern",
     "counter_offer": "Gegenangebot"
+  },
+  "item_attrs": {
+    "case_size": "Gehäusegröße",
+    "verify_authenticity": "Echtheit prüfen",
+    "comic_details": "Comic-Details",
+    "key_issue": "Schlüsselausgabe",
+    "vinyl_details": "Vinyl-Details",
+    "color_vinyl": "Farbiges Vinyl",
+    "warhammer_details": "Warhammer-Details",
+    "not_working": "Nicht funktionsfähig",
+    "limited_edition": "Limitierte Auflage",
+    "foil_holo": "Foil / Holo",
+    "limited_quantity": "Begrenzte Stückzahl",
+    "has_tags": "Mit Etiketten",
+    "a11y_verify_checkcheck": "Mit CheckCheck prüfen",
+    "a11y_verify_legitcheck": "Mit Legit Check prüfen",
+    "a11y_lookup_cgc": "CGC-Zertifikat nachschlagen",
+    "a11y_browse_discogs": "Auf Discogs ansehen",
+    "a11y_visit_warhammer": "Warhammer Community besuchen",
+    "chase_treasure_hunt": "Chase / Treasure Hunt"
   }
 }
