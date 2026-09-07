@@ -164,6 +164,35 @@ function checkRevenueCatKey() {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
+// 3b. Adaptive icon safe zone
+//
+// The launcher composites foregroundImage over backgroundColor on a 108dp
+// layer, shows only the centre 72dp of it, and masks that to a circle. Artwork
+// outside the centre 66dp is CLIPPED — which is how a decapitated bird shipped
+// while every other check passed. Checking the icon EXISTS is not checking it
+// SURVIVES the mask.
+// ───────────────────────────────────────────────────────────────────────────
+function checkAdaptiveIconSafeZone() {
+  const script = join(REPO, "scripts/check_adaptive_icon.py");
+  if (!existsSync(script)) return;
+  for (const python of ["python3", "python"]) {
+    try {
+      execFileSync(python, [script], { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+      pass("adaptive icon artwork fits inside the launcher mask safe zone");
+      return;
+    } catch (e) {
+      if (e.code === "ENOENT") continue; // try the next interpreter
+      const output = `${e.stdout ?? ""}${e.stderr ?? ""}`;
+      fail(
+        "adaptive icon artwork is clipped by the launcher mask:\n" +
+          output.split("\n").filter(Boolean).map((l) => `        ${l.trim()}`).join("\n"),
+      );
+      return;
+    }
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
 // 4. Play listing images
 // ───────────────────────────────────────────────────────────────────────────
 function checkPlayAssets() {
@@ -411,6 +440,7 @@ checkAccessibilityRoles();
 checkAssetLinks();
 checkSubmitCredentials();
 checkRevenueCatKey();
+checkAdaptiveIconSafeZone();
 checkPlayAssets();
 checkModalBackButton();
 

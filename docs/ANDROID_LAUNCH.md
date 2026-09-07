@@ -428,6 +428,42 @@ the one signed in on the device.** If the device wedges, sign out and back in.
 
 Also swept: 21 screens for **error states** (not just crashes) — 0 found.
 
+### The launcher icon shipped with the bird decapitated (2026-09-07)
+
+Reported from a device: "the icon is cutting off on Android, it doesn't fit."
+Confirmed by screenshotting the launcher — the beak and the top of the head are
+gone, and the base of the treasure chest is cut.
+
+Android composites `foregroundImage` over `backgroundColor` on a **108dp**
+layer, then shows only the **centre 72dp** of it and masks that to the
+launcher's shape. Content is only guaranteed visible inside the centre
+**66/108 = 61.1%**. The asset's artwork spanned y 61→450 of 512 — over the safe
+zone by 39px at the top and 38px at the bottom. Scaled to 58% of the canvas and
+re-centred.
+
+**Nothing caught this, and "adaptive icon present" is why.** The asset is a
+valid 512×512 PNG and `preflight:android` asserted the icon *exists*. Existing
+is not surviving the mask.
+
+⚠️ **Measure the artwork by COLOUR, not alpha.** The foreground is fully opaque
+with an off-white field, so an alpha bounding box is the whole canvas and says
+"100% of canvas" no matter where the bird actually is. I measured alpha first
+and got exactly that useless answer.
+
+⚠️ **A preview must reproduce the bug before you trust it.** My first
+before/after render showed the *old* icon uncropped — because it masked a circle
+over the full layer instead of first cropping to the centre 72/108. It would
+have "verified" a fix against a model that could not show the defect. Crop to
+66.7%, then mask.
+
+Gate: `scripts/check_adaptive_icon.py`, wired into `npm run preflight:android`.
+Stdlib only (`zlib` + `struct`) because PIL is not installed on the interpreter
+CI uses, and it fails closed on any PNG variant its decoder does not fully
+understand. Mutation-proven: the pre-fix asset exits 1 naming the exact overflow.
+
+⛔ Fixed in the asset and gated, but **not yet re-verified on a device** — that
+needs another local build.
+
 ### Emulator gotchas that cost hours — read before driving the UI
 
 1. **A second app (`com.sammysam.app`) steals foreground.** `am start` returns
