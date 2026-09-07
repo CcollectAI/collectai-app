@@ -15,3 +15,23 @@
 # Allowlist is now empty by design. If the audit reports a new entry,
 # decide between "wire the server route" and "delete the FE caller"
 # before adding a line back.
+
+# 2026-09-07 — PUT /items/*/for-sale: the FE caller is live, the route is GONE.
+#
+# Found by this gate once the lock was regenerated correctly (the old lock was
+# built by a regex that could not see main.py's /v1 include_router block, so it
+# was simultaneously missing 233 real routes and still listing the removed Deal
+# Desk ones — noisy in both directions, which is why nobody read it).
+#
+# This is NOT cosmetic. src/hooks/useItemDetail.ts:466/482 drive the Item Detail
+# "List for sale" / "Unlist" buttons, so both fail with "Failed to list item for
+# sale" on every tap. It fails loudly rather than silently, which is the only
+# reason it has not corrupted anything.
+#
+# NOT auto-fixable, which is why it is deferred rather than patched: items.for_sale
+# is now maintained by the sync_item_for_sale() trigger off marketplace_listings,
+# so restoring a direct write would fight the trigger — the next listing change
+# would overwrite it. The real question is a product one: since P2P is the only
+# trading system, should Item Detail create a marketplace listing, or should the
+# buttons go? Needs Merle.
+src/api/itemsApi.ts:PUT /items/*/for-sale
