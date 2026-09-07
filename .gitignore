@@ -113,3 +113,4 @@ supabase/.temp/
 # path; two lock files that can be regenerated independently is exactly the
 # silent-drift shape this repo keeps paying for.
 server/scripts/schema.lock.json
+deploy_files.txt
