@@ -131,6 +131,28 @@ _TITLE_ONLY_NOISE = (
     # collectible.
     r"\bcup\s+noodle\b", r"\brice\s+ball\b", r"\bconvenience\s+store\b",
     r"\bmenu\b", r"\bvodka\b", r"\bflavou?r\b",
+    # Travel/transport. Added after "Japan Railways announces unlimited-ride
+    # train pass for fall travel" reached the LIVE feed on 2026-09-02 -- it
+    # matched \bannounc\b and none of the food rules.
+    #
+    # ⚠️ This is whack-a-mole and should be read as such. Each of these
+    # patterns was added after a *different* flavour of lifestyle news slipped
+    # through, and soranews24.com has now produced three of them (rice balls,
+    # Cup Noodle, a train pass). It survives quarantine only because it also
+    # produced a genuine drop ("Tamagotchi evolves into a ring ... preorders
+    # now open"). If it leaks a fourth time, drop the feed instead of adding a
+    # fifth pattern -- that is the structural fix, and it is what was done to
+    # the other four zero-signal feeds.
+    #
+    # NOT \brail(way|ways)?\b, deliberately. These rules run BEFORE the
+    # collector-signal check and return False outright, so a title matching one
+    # is dropped no matter how collectible it is -- and "railway" is a Scale
+    # Models term. It would bin "Hornby announces new OO gauge railway set,
+    # preorders open" and the equivalent Marklin item, both real drops in a
+    # category we sell. Measured: the two patterns below already catch the
+    # Japan Railways headline on their own, so the broader one bought nothing
+    # and cost a category.
+    r"\btrain\s+pass\b", r"\bunlimited-ride\b",
 )
 
 _collector_regex = re.compile("|".join(_COLLECTOR_SIGNALS), re.IGNORECASE)
