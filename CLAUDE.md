@@ -2000,6 +2000,26 @@ are catalog-reachable; TCG categories key predictions by TCGplayer product id
 (`lorcana:tcgplayer:702699:normal`) while the catalog uses set-slugs, so
 lorcana/digimon/one_piece_tcg sit at 0% until an id crosswalk exists.
 
+## The i18n backlog is ranked by reachability, not size (2026-09-07)
+
+`i18n:check` reports **629 hardcoded English strings across 178 files** (653
+before the first slice). Two things about working it, both measured:
+
+- **The core screens are already done** — all five `(tabs)` screens, Settings
+  and `add-manual` are at **0**. "Start with the highest-traffic screens" was my
+  plan and it was already finished; the debt is entirely in secondary screens.
+- **Sorting by count points at dead UI.** `app/sell/dashboard.tsx` and
+  `app/franchise/[id].tsx` are near the top and `check:reachable` lists both as
+  having no inbound navigation edge.
+
+⚠️ `SELLING_ENABLED` gates the **external eBay** integration only
+(`src/screens/Settings.tsx:83`), **not** P2P trading, which is live. So
+`offers.tsx`, `listings.tsx` and `sell/new.tsx` are real screens.
+
+Full method and running order: [docs/I18N_BACKLOG.md](./docs/I18N_BACKLOG.md).
+The audit that matters is checking **every `defaultValue` against `en.json`** —
+an off-by-one in a parallel translation array is invisible to every other gate.
+
 ## Key Files
 - `app/(tabs)/_layout.tsx` - Main tab navigation (5 visible tabs: Home, Items, Add, Events, Marketplace; wishlist + search are hidden routes)
 - `app/(tabs)/index.tsx` - Portfolio dashboard with line chart
