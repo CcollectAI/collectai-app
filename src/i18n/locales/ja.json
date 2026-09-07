@@ -34,7 +34,8 @@
     "sort": "並び替え",
     "yes": "はい",
     "slow_load_working": "結果を取得しています。できるだけ早くお届けします。",
-    "slow_load_still_working": "まだ処理中です。いつもより時間がかかっていますが、もう少しお待ちください。"
+    "slow_load_still_working": "まだ処理中です。いつもより時間がかかっていますが、もう少しお待ちください。",
+    "try_again": "もう一度試す"
   },
   "add_tab": {
     "subtitle": "高速、カメラ優先のフロー。",
@@ -788,5 +789,27 @@
     "project": "プロジェクト",
     "scan_barcode": "バーコードをスキャン",
     "seller_dashboard": "出品者ダッシュボード"
+  },
+  "offers": {
+    "still_waiting": "まだ待機中",
+    "seller_sent": "出品者が発送",
+    "buyer_received": "購入者が受領",
+    "a11y_accept_bid": "この入札を承認",
+    "accept_bid": "入札を承認",
+    "turn_it_down": "辞退する",
+    "a11y_accept_offer": "このオファーを承認",
+    "a11y_counter_offer": "このオファーに交渉する",
+    "a11y_decline_offer": "このオファーを辞退",
+    "a11y_delete_offer": "このオファーを削除",
+    "open_bids": "公開入札",
+    "loading_offers": "オファーを読み込み中…",
+    "a11y_browse_marketplace": "マーケットプレイスを見る",
+    "browse_marketplace": "マーケットプレイス",
+    "a11y_choose_carrier": "配送業者を選択",
+    "loading_carriers": "配送業者を読み込み中…",
+    "a11y_retry_carriers": "配送業者を再読み込み",
+    "tracking_code": "追跡番号",
+    "a11y_save_tracking": "配送情報を保存",
+    "counter_offer": "カウンターオファー"
   }
 }

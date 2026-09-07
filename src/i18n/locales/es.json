@@ -34,7 +34,8 @@
     "sort": "Ordenar",
     "yes": "Sí",
     "slow_load_working": "Estamos haciendo todo lo posible por obtener tus resultados, lo más rápido que podamos.",
-    "slow_load_still_working": "Seguimos en ello. Está tardando más de lo normal, gracias por tu paciencia."
+    "slow_load_still_working": "Seguimos en ello. Está tardando más de lo normal, gracias por tu paciencia.",
+    "try_again": "Inténtalo de nuevo"
   },
   "add_tab": {
     "subtitle": "Flujo rápido, cámara primero.",
@@ -788,5 +789,27 @@
     "project": "Proyecto",
     "scan_barcode": "Escanear código",
     "seller_dashboard": "Panel de vendedor"
+  },
+  "offers": {
+    "still_waiting": "Aún esperando",
+    "seller_sent": "Vendedor envió",
+    "buyer_received": "Comprador recibió",
+    "a11y_accept_bid": "Aceptar esta puja",
+    "accept_bid": "Aceptar puja",
+    "turn_it_down": "Rechazar",
+    "a11y_accept_offer": "Aceptar esta oferta",
+    "a11y_counter_offer": "Contraofertar esta oferta",
+    "a11y_decline_offer": "Rechazar esta oferta",
+    "a11y_delete_offer": "Eliminar esta oferta",
+    "open_bids": "Pujas abiertas",
+    "loading_offers": "Cargando ofertas…",
+    "a11y_browse_marketplace": "Explorar el mercado",
+    "browse_marketplace": "Ver el mercado",
+    "a11y_choose_carrier": "Elegir el transportista",
+    "loading_carriers": "Cargando transportistas…",
+    "a11y_retry_carriers": "Recargar transportistas",
+    "tracking_code": "Código de seguimiento",
+    "a11y_save_tracking": "Guardar datos de envío",
+    "counter_offer": "Contraoferta"
   }
 }

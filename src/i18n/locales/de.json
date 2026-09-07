@@ -34,7 +34,8 @@
     "sort": "Sortieren",
     "yes": "Ja",
     "slow_load_working": "Wir geben unser Bestes, um deine Ergebnisse zu laden — so schnell es geht.",
-    "slow_load_still_working": "Wir sind noch dran. Das dauert länger als sonst, danke für deine Geduld."
+    "slow_load_still_working": "Wir sind noch dran. Das dauert länger als sonst, danke für deine Geduld.",
+    "try_again": "Erneut versuchen"
   },
   "add_tab": {
     "subtitle": "Schneller, kamerazuerst Flow.",
@@ -788,5 +789,27 @@
     "project": "Projekt",
     "scan_barcode": "Barcode scannen",
     "seller_dashboard": "Verkäufer-Dashboard"
+  },
+  "offers": {
+    "still_waiting": "Warte noch",
+    "seller_sent": "Verkäufer versendet",
+    "buyer_received": "Käufer erhalten",
+    "a11y_accept_bid": "Dieses Gebot annehmen",
+    "accept_bid": "Gebot annehmen",
+    "turn_it_down": "Ablehnen",
+    "a11y_accept_offer": "Dieses Angebot annehmen",
+    "a11y_counter_offer": "Gegenangebot zu diesem Angebot",
+    "a11y_decline_offer": "Dieses Angebot ablehnen",
+    "a11y_delete_offer": "Dieses Angebot löschen",
+    "open_bids": "Offene Gebote",
+    "loading_offers": "Angebote werden geladen…",
+    "a11y_browse_marketplace": "Marktplatz durchsuchen",
+    "browse_marketplace": "Marktplatz ansehen",
+    "a11y_choose_carrier": "Versanddienstleister wählen",
+    "loading_carriers": "Versanddienstleister werden geladen…",
+    "a11y_retry_carriers": "Versanddienstleister erneut laden",
+    "tracking_code": "Sendungsnummer",
+    "a11y_save_tracking": "Versanddetails speichern",
+    "counter_offer": "Gegenangebot"
   }
 }

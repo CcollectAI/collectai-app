@@ -34,7 +34,8 @@
     "sort": "Sorteren",
     "yes": "Ja",
     "slow_load_working": "We doen ons best om je resultaten op te halen — we gaan zo snel als we kunnen.",
-    "slow_load_still_working": "Nog steeds bezig. Dit duurt langer dan normaal, bedankt voor je geduld."
+    "slow_load_still_working": "Nog steeds bezig. Dit duurt langer dan normaal, bedankt voor je geduld.",
+    "try_again": "Probeer opnieuw"
   },
   "add_tab": {
     "subtitle": "Snelle, camera-gerichte flow.",
@@ -788,5 +789,27 @@
     "project": "Project",
     "scan_barcode": "Streepjescode scannen",
     "seller_dashboard": "Verkopersdashboard"
+  },
+  "offers": {
+    "still_waiting": "Nog in afwachting",
+    "seller_sent": "Verkoper verzonden",
+    "buyer_received": "Koper ontvangen",
+    "a11y_accept_bid": "Dit bod accepteren",
+    "accept_bid": "Bod accepteren",
+    "turn_it_down": "Afwijzen",
+    "a11y_accept_offer": "Dit aanbod accepteren",
+    "a11y_counter_offer": "Tegenbod doen op dit aanbod",
+    "a11y_decline_offer": "Dit aanbod afwijzen",
+    "a11y_delete_offer": "Dit aanbod verwijderen",
+    "open_bids": "Open biedingen",
+    "loading_offers": "Aanbiedingen laden…",
+    "a11y_browse_marketplace": "Door de marktplaats bladeren",
+    "browse_marketplace": "Marktplaats bekijken",
+    "a11y_choose_carrier": "Kies de vervoerder",
+    "loading_carriers": "Vervoerders laden…",
+    "a11y_retry_carriers": "Vervoerders opnieuw laden",
+    "tracking_code": "Trackingcode",
+    "a11y_save_tracking": "Trackinggegevens opslaan",
+    "counter_offer": "Tegenbod"
   }
 }

@@ -34,7 +34,8 @@
     "sort": "정렬",
     "yes": "예",
     "slow_load_working": "결과를 가져오는 중입니다. 최대한 빠르게 처리하고 있습니다.",
-    "slow_load_still_working": "아직 처리 중입니다. 평소보다 오래 걸리고 있어요. 조금만 기다려 주세요."
+    "slow_load_still_working": "아직 처리 중입니다. 평소보다 오래 걸리고 있어요. 조금만 기다려 주세요.",
+    "try_again": "다시 시도"
   },
   "add_tab": {
     "subtitle": "빠른 카메라 우선 흐름.",
@@ -788,5 +789,27 @@
     "project": "프로젝트",
     "scan_barcode": "바코드 스캔",
     "seller_dashboard": "판매자 대시보드"
+  },
+  "offers": {
+    "still_waiting": "대기 중",
+    "seller_sent": "판매자 발송함",
+    "buyer_received": "구매자 수령함",
+    "a11y_accept_bid": "이 입찰 수락",
+    "accept_bid": "입찰 수락",
+    "turn_it_down": "거절하기",
+    "a11y_accept_offer": "이 제안 수락",
+    "a11y_counter_offer": "이 제안에 역제안",
+    "a11y_decline_offer": "이 제안 거절",
+    "a11y_delete_offer": "이 제안 삭제",
+    "open_bids": "공개 입찰",
+    "loading_offers": "제안 불러오는 중…",
+    "a11y_browse_marketplace": "마켓플레이스 둘러보기",
+    "browse_marketplace": "마켓플레이스 보기",
+    "a11y_choose_carrier": "배송사 선택",
+    "loading_carriers": "배송사 불러오는 중…",
+    "a11y_retry_carriers": "배송사 다시 불러오기",
+    "tracking_code": "운송장 번호",
+    "a11y_save_tracking": "배송 정보 저장",
+    "counter_offer": "역제안"
   }
 }

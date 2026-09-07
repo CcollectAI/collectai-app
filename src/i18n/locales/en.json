@@ -34,7 +34,8 @@
     "sort": "Sort",
     "yes": "Yes",
     "slow_load_working": "We're doing our best to get your results — we'll be as quick as we can.",
-    "slow_load_still_working": "Still working on it. This one's taking longer than usual, thanks for bearing with us."
+    "slow_load_still_working": "Still working on it. This one's taking longer than usual, thanks for bearing with us.",
+    "try_again": "Try again"
   },
   "add_tab": {
     "subtitle": "Fast, camera-first flow.",
@@ -788,5 +789,27 @@
     "project": "Project",
     "scan_barcode": "Scan Barcode",
     "seller_dashboard": "Seller Dashboard"
+  },
+  "offers": {
+    "still_waiting": "Still waiting",
+    "seller_sent": "Seller sent",
+    "buyer_received": "Buyer received",
+    "a11y_accept_bid": "Accept this bid",
+    "accept_bid": "Accept bid",
+    "turn_it_down": "Turn it down",
+    "a11y_accept_offer": "Accept this offer",
+    "a11y_counter_offer": "Counter this offer",
+    "a11y_decline_offer": "Decline this offer",
+    "a11y_delete_offer": "Delete this offer",
+    "open_bids": "Open bids",
+    "loading_offers": "Loading offers…",
+    "a11y_browse_marketplace": "Browse the marketplace",
+    "browse_marketplace": "Browse marketplace",
+    "a11y_choose_carrier": "Choose the carrier",
+    "loading_carriers": "Loading carriers…",
+    "a11y_retry_carriers": "Retry loading carriers",
+    "tracking_code": "Tracking code",
+    "a11y_save_tracking": "Save tracking details",
+    "counter_offer": "Counter offer"
   }
 }

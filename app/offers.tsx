@@ -46,6 +46,7 @@ import { timeAgo } from '@/lib/timeAgo';
 import { groupCompetingOffers } from '@/lib/offerGrouping';
 import { radius, text as textToken, fontWeight, shadow } from '@/theme/tokens';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 type Role = 'all' | 'buying' | 'selling';
 
@@ -121,6 +122,7 @@ function statusLabel(status: string, iAmBuyer: boolean, iWithdrew?: boolean | nu
 }
 
 function OffersScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
@@ -1151,7 +1153,7 @@ function OffersScreen() {
           {stale ? (
             <View style={styles.staleTag}>
               <Ionicons name="hourglass-outline" size={11} color={colors.warning} />
-              <Text style={[styles.staleText, { color: colors.warning }]}>Still waiting</Text>
+              <Text style={[styles.staleText, { color: colors.warning }]}>{t('offers.still_waiting', { defaultValue: 'Still waiting' })}</Text>
             </View>
           ) : null}
         </View>
@@ -1169,13 +1171,13 @@ function OffersScreen() {
               size={14}
               color={o.seller_confirmed_at ? colors.accent : colors.muted}
             />
-            <Text style={[styles.confirmText, { color: colors.muted }]}>Seller sent</Text>
+            <Text style={[styles.confirmText, { color: colors.muted }]}>{t('offers.seller_sent', { defaultValue: 'Seller sent' })}</Text>
             <Ionicons
               name={o.buyer_confirmed_at ? 'checkmark-circle' : 'ellipse-outline'}
               size={14}
               color={o.buyer_confirmed_at ? colors.accent : colors.muted}
             />
-            <Text style={[styles.confirmText, { color: colors.muted }]}>Buyer received</Text>
+            <Text style={[styles.confirmText, { color: colors.muted }]}>{t('offers.buyer_received', { defaultValue: 'Buyer received' })}</Text>
           </View>
         ) : null}
 
@@ -1259,9 +1261,9 @@ function OffersScreen() {
                 disabled={busy}
                 style={[styles.btn, { backgroundColor: colors.accent }]}
                 accessibilityRole="button"
-                accessibilityLabel="Accept this bid"
+                accessibilityLabel={t('offers.a11y_accept_bid', { defaultValue: 'Accept this bid' })}
               >
-                <Text style={[styles.btnText, { color: colors.accentText }]}>Accept bid</Text>
+                <Text style={[styles.btnText, { color: colors.accentText }]}>{t('offers.accept_bid', { defaultValue: 'Accept bid' })}</Text>
               </AnimatedPressable>
               {/* Confirmed, like the seller's Decline: this ends the
                   negotiation and the buyer has to start a new offer. */}
@@ -1290,7 +1292,7 @@ function OffersScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Turn down the seller's counter"
               >
-                <Text style={[styles.btnText, { color: colors.danger }]}>Turn it down</Text>
+                <Text style={[styles.btnText, { color: colors.danger }]}>{t('offers.turn_it_down', { defaultValue: 'Turn it down' })}</Text>
               </AnimatedPressable>
             </>
           ) : null}
@@ -1303,7 +1305,7 @@ function OffersScreen() {
                 disabled={busy}
                 style={[styles.btn, { backgroundColor: colors.accent }]}
                 accessibilityRole="button"
-                accessibilityLabel="Accept this offer"
+                accessibilityLabel={t('offers.a11y_accept_offer', { defaultValue: 'Accept this offer' })}
               >
                 <Text style={[styles.btnText, { color: colors.accentText }]}>Accept</Text>
               </AnimatedPressable>
@@ -1318,7 +1320,7 @@ function OffersScreen() {
                   disabled={busy}
                   style={[styles.btn, styles.btnGhost, { borderColor: colors.accent }]}
                   accessibilityRole="button"
-                  accessibilityLabel="Counter this offer"
+                  accessibilityLabel={t('offers.a11y_counter_offer', { defaultValue: 'Counter this offer' })}
                 >
                   <Text style={[styles.btnText, { color: colors.accent }]}>Counter</Text>
                 </AnimatedPressable>
@@ -1332,7 +1334,7 @@ function OffersScreen() {
                 disabled={busy}
                 style={[styles.btn, styles.btnQuiet]}
                 accessibilityRole="button"
-                accessibilityLabel="Decline this offer"
+                accessibilityLabel={t('offers.a11y_decline_offer', { defaultValue: 'Decline this offer' })}
               >
                 <Text style={[styles.btnText, { color: colors.danger }]}>Decline</Text>
               </AnimatedPressable>
@@ -1389,7 +1391,7 @@ function OffersScreen() {
               disabled={busy}
               style={[styles.btn, styles.btnGhost, { borderColor: colors.border }]}
               accessibilityRole="button"
-              accessibilityLabel="Delete this offer"
+              accessibilityLabel={t('offers.a11y_delete_offer', { defaultValue: 'Delete this offer' })}
             >
               <Text style={[styles.btnText, { color: colors.muted }]}>Delete</Text>
             </AnimatedPressable>
@@ -1452,7 +1454,7 @@ function OffersScreen() {
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title="Open bids" />
+      <ScreenHeader title={t('offers.open_bids', { defaultValue: 'Open bids' })} />
 
       <Animated.View style={[styles.segmentWrap, animatedStyle]}>
         <View style={[styles.segment, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -1527,7 +1529,7 @@ function OffersScreen() {
 
       {loading && !refreshing ? (
         <View style={styles.pad}>
-          <Text style={[styles.loadingText, { color: colors.muted }]}>Loading offers…</Text>
+          <Text style={[styles.loadingText, { color: colors.muted }]}>{t('offers.loading_offers', { defaultValue: 'Loading offers…' })}</Text>
         </View>
       ) : error ? (
         <EmptyState
@@ -1537,8 +1539,8 @@ function OffersScreen() {
           colors={colors}
           action={
             <AnimatedPressable onPress={retry} style={[styles.btn, { backgroundColor: colors.accent }]}
-              accessibilityRole="button" accessibilityLabel="Try again">
-              <Text style={[styles.btnText, { color: colors.accentText }]}>Try again</Text>
+              accessibilityRole="button" accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}>
+              <Text style={[styles.btnText, { color: colors.accentText }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
             </AnimatedPressable>
           }
         />
@@ -1595,9 +1597,9 @@ function OffersScreen() {
                   onPress={() => router.push('/listings' as Href)}
                   style={[styles.btn, { backgroundColor: colors.accent }]}
                   accessibilityRole="button"
-                  accessibilityLabel="Browse the marketplace"
+                  accessibilityLabel={t('offers.a11y_browse_marketplace', { defaultValue: 'Browse the marketplace' })}
                 >
-                  <Text style={[styles.btnText, { color: colors.accentText }]}>Browse marketplace</Text>
+                  <Text style={[styles.btnText, { color: colors.accentText }]}>{t('offers.browse_marketplace', { defaultValue: 'Browse marketplace' })}</Text>
                 </AnimatedPressable>
               }
             />
@@ -1635,7 +1637,7 @@ function OffersScreen() {
             style={[styles.field, { borderColor: colors.border, backgroundColor: colors.card }]}
             accessibilityRole="button"
             accessibilityState={{ disabled: carriers.length === 0 }}
-            accessibilityLabel="Choose the carrier"
+            accessibilityLabel={t('offers.a11y_choose_carrier', { defaultValue: 'Choose the carrier' })}
           >
             <Text style={[styles.fieldText, { color: carrierLabel ? colors.text : colors.muted }]}>
               {carrierLabel ?? (carriers.length === 0 ? 'No carriers available' : 'Choose a carrier')}
@@ -1648,7 +1650,7 @@ function OffersScreen() {
               refresh", which refetches the offers list and would never have
               fetched carriers again. */}
           {carriersState === 'loading' ? (
-            <Text style={[styles.sheetHint, { color: colors.muted }]}>Loading carriers…</Text>
+            <Text style={[styles.sheetHint, { color: colors.muted }]}>{t('offers.loading_carriers', { defaultValue: 'Loading carriers…' })}</Text>
           ) : carriersState === 'error' || (carriersState === 'ok' && carriers.length === 0) ? (
             // A successful response with an empty list is treated as a failure
             // on purpose. The server always returns _CARRIER_TRACKING, so empty
@@ -1665,14 +1667,14 @@ function OffersScreen() {
                   setCarrierRetry((n) => n + 1);
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Retry loading carriers"
+                accessibilityLabel={t('offers.a11y_retry_carriers', { defaultValue: 'Retry loading carriers' })}
               >
-                <Text style={[styles.trackLink, { color: colors.accent }]}>Try again</Text>
+                <Text style={[styles.trackLink, { color: colors.accent }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
               </AnimatedPressable>
             </View>
           ) : null}
 
-          <Text style={[styles.sheetLabel, { color: colors.text }]}>Tracking code</Text>
+          <Text style={[styles.sheetLabel, { color: colors.text }]}>{t('offers.tracking_code', { defaultValue: 'Tracking code' })}</Text>
           <TextInput
             value={trackingCode}
             // Masked to the charset TrackingIn.tracking_code accepts on the
@@ -1688,7 +1690,7 @@ function OffersScreen() {
             autoCorrect={false}
             maxLength={64}
             style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
-            accessibilityLabel="Tracking code"
+            accessibilityLabel={t('offers.tracking_code', { defaultValue: 'Tracking code' })}
           />
           {/* Selected carrier can't produce a code-only link — set expectations
               in the sheet rather than letting the seller discover it after. */}
@@ -1718,7 +1720,7 @@ function OffersScreen() {
             ]}
             accessibilityRole="button"
             accessibilityState={{ disabled: !canSaveTracking }}
-            accessibilityLabel="Save tracking details"
+            accessibilityLabel={t('offers.a11y_save_tracking', { defaultValue: 'Save tracking details' })}
           >
             <Text style={[styles.btnText, { color: canSaveTracking ? colors.accentText : colors.muted }]}>
               Save tracking
@@ -1733,7 +1735,7 @@ function OffersScreen() {
         <OfferAmountSheet
           visible={counterFor !== null}
           onClose={() => setCounterFor(null)}
-          title="Counter offer"
+          title={t('offers.counter_offer', { defaultValue: 'Counter offer' })}
           reference={counterFor.listing_price ?? counterFor.amount}
           referenceLabel={counterFor.listing_price != null ? 'Asking' : 'Their offer'}
           currency={settings.currency}
