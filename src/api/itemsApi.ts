@@ -236,10 +236,6 @@ export const reorderItemImages = (itemId: string, imageIds: string[]) =>
     { image_ids: imageIds }
   );
 
-// Toggle item for sale
-export const toggleItemForSale = (itemId: string, payload: { for_sale: boolean; asking_price?: number }) =>
-  put(`/items/${encodeURIComponent(itemId)}/for-sale`, payload as Record<string, unknown>);
-
 // Catalog match — returns best item_key for (title, category) so manual-add
 // can populate items.canonical_key. Without this, manually-added items ship
 // with canonical_key=null and every Premium JOIN returns empty for them.

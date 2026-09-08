@@ -669,13 +669,10 @@ export class CachedDataProvider implements DataProvider {
   // Event search — pass through
   searchEvents(params: { q?: string; category?: string; eventType?: string; location?: string; upcomingOnly?: boolean; limit?: number; offset?: number }) { return this.inner.searchEvents(params); }
 
-  // Deal Desk offer methods removed 2026-08-09. toggleForSale stays — it is
-  // not a Deal Desk method, it flips `items.for_sale` and must still bust the
-  // items cache or the collection shows a stale for-sale badge.
-  async toggleForSale(itemId: string, forSale: boolean, askingPrice?: number): Promise<void> {
-    await this.inner.toggleForSale(itemId, forSale, askingPrice);
-    await cacheClear(CK.ITEMS_LIST);
-  }
+  // toggleForSale removed 2026-09-08 along with its deleted server route; the
+  // `trg_sync_item_for_sale` trigger owns `items.for_sale`. The cache bust it
+  // used to do now belongs to whatever changes a LISTING — see
+  // p2pApi.createListing / delistListing.
 
   // Multi-Marketplace Selling (pass-through)
   listMarketplaceListings(status?: import('./types').MarketplaceListing['status']): Promise<import('./types').MarketplaceListing[]> { return this.inner.listMarketplaceListings(status); }

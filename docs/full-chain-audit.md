@@ -32,31 +32,29 @@ actually in the `_v1` list: `/v1/favorites` and `/v1/healthz` both 404 (neither
 is included) and read as "`/v1` is dead", while `/v1/account` → 405 and
 `/v1/billing/status` → 401 show it is very much alive.
 
-**The one real bug it then found**, deferred in
-`scripts/api_drift_allowlist.txt` rather than buried: `PUT /items/*/for-sale`
-is called by FE code and 404s.
+**The one real bug it then found**, now RESOLVED: `PUT /items/*/for-sale` was
+called by FE code and 404s.
 
-⚠️ **Corrected the same day.** I first wrote that Item Detail's "List for sale"
-/ "Unlist" buttons therefore fail on every tap. **They do not.** Both are gated
-by `SELLING_ENABLED`, which is `false` (`src/config/featureFlags.ts:107`):
-`ItemQuickActionsRow` renders "List for Sale" only under it, and
-`ItemForSaleBar` renders "Unlist" under `!BETA_MODE && SELLING_ENABLED`. No
-shipped UI reaches `dealsProvider.toggleForSale`. The defect is **latent, not
-live** — checking the flag before describing user impact would have caught it.
+⚠️ I first reported this as Item Detail's "List for sale" / "Unlist" buttons
+failing on every tap. **They were dark** — both sat behind `SELLING_ENABLED`,
+which is false — so the defect was latent, not live. Checking the flag before
+describing user impact would have caught that.
 
-It stays deferred rather than deleted because two halves have drifted apart:
-`docs/P2P_MARKETPLACE_SPEC.md` says `for_sale` is "deliberately not written
-here" (`trg_sync_item_for_sale` owns it, so a restored direct write would be
-overwritten), while the same spec records `toggleForSale` as deliberately
-*kept* during the Deal Desk removal. The route was deleted anyway. Either the
-whole chain goes, or listing routes through the P2P flow that already works
-(`app/sell/new` → `createListing`) — a product call.
+**Deleted 2026-09-08**, the whole chain across 11 files: `itemsApi`,
+`collectorsApi`, `dealsProvider`, the mock, the `DataProvider` interface, both
+concrete providers, `CachedDataProvider`, `OfflineDataProvider`'s replay case,
+the `mutationQueue` type, `MutationQueuePanel`'s icon/label, the
+`useItemDetail` handlers, and the Unlist button (`ItemForSaleBar` is now a
+read-only status badge).
 
-Guarded meanwhile by `npm run check:selling-flag` (in `verify:prebuild`), which
-fails if `SELLING_ENABLED` is flipped true while the route is still missing.
-Without it, that one-word change would ship two dead buttons and **no existing
-gate would object**: the drift audit stays green because the entry is
-allowlisted, and the allowlist cannot see the flag move. Mutation-proven.
+Kept deliberately: **reading** `items.for_sale` for the "Listed" badge, which
+the `trg_sync_item_for_sale` trigger maintains — verified live in prod as
+`AFTER INSERT OR DELETE OR UPDATE ON marketplace_listings`. And the separate
+external-marketplace "List for Sale" sheet, whose `POST /marketplace/listings`
+route IS in the lock; it is flag-gated, not broken.
+
+`audit_fe_api_drift.py` now reports **0 findings, 0 allowlisted** — the
+allowlist is empty by design again, as its own header says it should be.
 
 ## Summary
 

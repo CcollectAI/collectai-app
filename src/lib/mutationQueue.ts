@@ -41,7 +41,6 @@ export type MutationType =
   | 'addBuildPaintNote'
   | 'submitFeedback'
   | 'submitCorrection'
-  | 'toggleForSale'
   | 'archiveItem'
   | 'unarchiveItem'
   | 'markCategoryItemOwned'

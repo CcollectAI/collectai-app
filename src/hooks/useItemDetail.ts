@@ -156,7 +156,6 @@ export function useItemDetail(params: UseItemDetailParams) {
   // ── For-sale state ─────────────────────────────────────────────────────
   const [isForSale, setIsForSale] = useState(false);
   const [askingPriceValue, setAskingPriceValue] = useState('');
-  const [forSaleLoading, setForSaleLoading] = useState(false);
 
   // ── Evidence data ──────────────────────────────────────────────────────
   const [evidenceData, setEvidenceData] = useState<EvidenceData | null>(null);
@@ -453,44 +452,11 @@ export function useItemDetail(params: UseItemDetailParams) {
     }
   }, [id, isDraft, settings.hapticsEnabled]);
 
-  // ── For-sale handlers ──────────────────────────────────────────────────
-  const handleListForSale = useCallback(async () => {
-    if (!id || isDraft || forSaleLoading) return;
-    const price = parseMoney(askingPriceValue) ?? NaN;
-    if (isNaN(price) || price <= 0) {
-      showToast({ message: 'Enter a valid asking price', type: 'error' });
-      return;
-    }
-    setForSaleLoading(true);
-    try {
-      await dataProvider.toggleForSale(id, true, price);
-      fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Item listed for sale!', type: 'success' });
-      setIsForSale(true);
-    } catch (err: unknown) {
-      logger.error('[ItemDetail] list for sale error:', err);
-      showToast({ message: 'Failed to list item for sale', type: 'error' });
-    } finally {
-      setForSaleLoading(false);
-    }
-  }, [id, isDraft, forSaleLoading, askingPriceValue, settings.hapticsEnabled, showToast]);
-
-  const handleUnlist = useCallback(async () => {
-    if (!id || isDraft || forSaleLoading) return;
-    setForSaleLoading(true);
-    try {
-      await dataProvider.toggleForSale(id, false);
-      fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Item unlisted', type: 'info' });
-      setIsForSale(false);
-      setAskingPriceValue('');
-    } catch (err: unknown) {
-      logger.error('[ItemDetail] unlist error:', err);
-      showToast({ message: 'Failed to unlist item', type: 'error' });
-    } finally {
-      setForSaleLoading(false);
-    }
-  }, [id, isDraft, forSaleLoading, settings.hapticsEnabled, showToast]);
+  // For-sale handlers removed 2026-09-08. `items.for_sale` is owned by the
+  // `trg_sync_item_for_sale` trigger on `marketplace_listings`, so the app
+  // never writes it: listing goes through app/sell/new -> p2pApi.createListing
+  // and unlisting through p2pApi.delistListing on the listing detail screen.
+  // `isForSale` below is READ from the item and drives the "Listed" badge.
 
   return {
     // Edit state
@@ -537,9 +503,6 @@ export function useItemDetail(params: UseItemDetailParams) {
     // For-sale
     isForSale, setIsForSale,
     askingPriceValue, setAskingPriceValue,
-    forSaleLoading,
-    handleListForSale,
-    handleUnlist,
 
     // Evidence data
     evidenceData, setEvidenceData,

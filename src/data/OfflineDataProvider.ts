@@ -134,13 +134,6 @@ async function executeMutation(type: MutationType, args: unknown[]): Promise<voi
     case 'unarchiveItem':
       await dataProvider.unarchiveItem(args[0] as string);
       break;
-    case 'toggleForSale':
-      await dataProvider.toggleForSale(
-        args[0] as string,
-        args[1] as boolean,
-        args[2] as number | undefined,
-      );
-      break;
 
     // ── Events ─────────────────────────────────────────────────────────────
     case 'rsvpEvent':

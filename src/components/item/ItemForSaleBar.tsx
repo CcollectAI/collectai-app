@@ -1,8 +1,15 @@
 /**
- * ItemForSaleBar — Shows listed status badge with Offers / Unlist actions.
+ * ItemForSaleBar — "Listed for sale" status badge, plus an Offers shortcut.
+ *
+ * READ ONLY as of 2026-09-08. The Unlist button was removed with the
+ * toggleForSale chain: its route was deleted server-side, and `items.for_sale`
+ * is owned by the `trg_sync_item_for_sale` trigger, so the app must not write
+ * it. Unlisting is p2pApi.delistListing on the listing detail screen
+ * (app/listing/[id].tsx::handleDelist), which is the path that actually
+ * changes the listing the trigger reads.
  */
 import React, { useEffect, useRef } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, Animated as RNAnimated } from 'react-native';
+import { View, Text, StyleSheet, Animated as RNAnimated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -14,11 +21,9 @@ import { BETA_MODE, SELLING_ENABLED } from '@/config/featureFlags';
 
 interface ItemForSaleBarProps {
   askingPriceValue: string;
-  forSaleLoading: boolean;
-  onUnlist: () => void;
 }
 
-export const ItemForSaleBar = React.memo(function ItemForSaleBar({ askingPriceValue, forSaleLoading, onUnlist }: ItemForSaleBarProps) {
+export const ItemForSaleBar = React.memo(function ItemForSaleBar({ askingPriceValue }: ItemForSaleBarProps) {
   const { colors: theme } = useAppTheme();
   const { settings } = useSettings();
   const router = useRouter();
@@ -69,19 +74,6 @@ export const ItemForSaleBar = React.memo(function ItemForSaleBar({ askingPriceVa
           <Text style={[styles.editBarBtnText, { color: theme.accent }]}>Offers</Text>
         </AnimatedPressable>
       )}
-      <AnimatedPressable
-        onPress={onUnlist}
-        disabled={forSaleLoading}
-        style={[styles.editBarBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
-        accessibilityRole="button"
-        accessibilityLabel="Unlist from sale"
-      >
-        {forSaleLoading ? (
-          <ActivityIndicator size="small" color={theme.muted} />
-        ) : (
-          <Text style={[styles.editBarBtnText, { color: theme.muted }]}>Unlist</Text>
-        )}
-      </AnimatedPressable>
     </View>
   );
 });

@@ -16,36 +16,12 @@
 # decide between "wire the server route" and "delete the FE caller"
 # before adding a line back.
 
-# 2026-09-07 — PUT /items/*/for-sale: the route is GONE, the callers are DARK.
+# 2026-09-07 — PUT /items/*/for-sale — RESOLVED 2026-09-08, entry removed.
 #
-# Found by this gate once the lock was regenerated correctly (the old lock was
-# built by a regex that could not see main.py's /v1 include_router block, so it
-# was missing 233 real routes AND still listing removed Deal Desk ones — noisy
-# in both directions, which is why nobody read it).
-#
-# CORRECTION (same day): I first wrote here that Item Detail's "List for sale" /
-# "Unlist" buttons fail on every tap. They do not. BOTH are gated by
-# SELLING_ENABLED, which is false (src/config/featureFlags.ts:107) —
-# ItemQuickActionsRow renders "List for Sale" only under it, and ItemForSaleBar
-# renders "Unlist" under `!BETA_MODE && SELLING_ENABLED`. No shipped UI can
-# reach dealsProvider.toggleForSale. The defect is latent, not live. Checking
-# the flag BEFORE describing user impact would have caught that.
-#
-# WHY IT IS STILL DEFERRED AND NOT DELETED. Two things must be decided together.
-# docs/P2P_MARKETPLACE_SPEC.md is explicit that "for_sale is deliberately not
-# written here" — trg_sync_item_for_sale recomputes it from the live listing
-# set — so toggleForSale contradicts the spec and a restored direct write would
-# be overwritten by the trigger. But the same spec section records that
-# toggleForSale was deliberately "Kept" during the Deal Desk removal. The route
-# was deleted anyway, which is how the two halves drifted apart.
-#
-# So: if selling stays shelved, the whole chain (itemsApi.toggleItemForSale ->
-# dealsProvider.toggleForSale -> DataProvider.toggleForSale -> the two buttons)
-# should go. If selling is switched back on, listing must go through the P2P
-# path that already works (app/sell/new, createListing) rather than a direct
-# for_sale write. Either way it is a product call, not a patch.
-#
-# GUARDED MEANWHILE: npm run check:selling-flag fails if SELLING_ENABLED is
-# flipped true while this route is still missing from the lock, so the dark
-# feature cannot be switched on into a 404.
-src/api/itemsApi.ts:PUT /items/*/for-sale
+# The route was deleted server-side and the FE caller has now been deleted too,
+# so there is nothing left to allowlist. The whole toggleForSale chain (11
+# files) went: docs/P2P_MARKETPLACE_SPEC.md is explicit that `items.for_sale`
+# is owned by the trg_sync_item_for_sale trigger on marketplace_listings, so a
+# direct write would be overwritten on the next listing change. Selling now has
+# exactly one path — Item Detail "Sell" -> app/sell/new -> p2pApi.createListing
+# -> trigger sets for_sale — and unlisting is p2pApi.delistListing.

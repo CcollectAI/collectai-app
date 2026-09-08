@@ -291,7 +291,6 @@ export class SupabaseDataProvider implements DataProvider {
   getUnreadAnnouncementCount = eventsProvider.getUnreadAnnouncementCount;
 
   // ─── Deal Desk (P2P Offers) ─────────────────────────────────────────────────
-  toggleForSale = dealsProvider.toggleForSale;
 
   // ─── Multi-Marketplace Selling ──────────────────────────────────────────────
   listMarketplaceListings = dealsProvider.listMarketplaceListings;

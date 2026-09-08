@@ -1298,7 +1298,14 @@ Two more things looked like Deal Desk and were not:
   purchase-**mandate** calls. Deleting the file — the obvious move — would have
   broken the live mandate feature. It was split, not deleted.
 * **`dealsProvider.toggleForSale`** drives `items.for_sale`, which a DB trigger
-  keeps in sync with live listings. Kept.
+  keeps in sync with live listings. Kept — **and that was the wrong call.**
+  DELETED 2026-09-08. Its route `PUT /items/*/for-sale` had already been removed
+  server-side, so the FE kept here was calling a 404; and §"`for_sale` is
+  deliberately not written here" above says the trigger owns the column, so a
+  restored direct write would be overwritten on the next listing change. Two
+  halves of this same document disagreed for a month. Selling now has exactly
+  one path: Item Detail "Sell" → `app/sell/new` → `p2pApi.createListing` → the
+  trigger sets `for_sale`; unlisting is `p2pApi.delistListing`.
 
 An FK is not a feature boundary, and neither is a filename.
 

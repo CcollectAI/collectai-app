@@ -814,23 +814,20 @@ export interface DataProvider {
   }): Promise<import('./events').CollectorsEvent[]>;
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Selling — for-sale flag + external marketplace connections
+  // Selling — external marketplace connections
   //
   // The Deal Desk offer methods were removed 2026-08-09 (never shipped, 0 rows,
-  // superseded by P2P — see src/api/p2pApi.ts). `toggleForSale` stays: it drives
-  // `items.for_sale`, which a DB trigger keeps in sync with live listings.
+  // superseded by P2P — see src/api/p2pApi.ts). `toggleForSale` went with them
+  // on 2026-09-08: its route (PUT /items/*/for-sale) had already been deleted
+  // server-side, and docs/P2P_MARKETPLACE_SPEC.md is explicit that
+  // `items.for_sale` is owned by the `trg_sync_item_for_sale` trigger on
+  // `marketplace_listings`. A direct write would be overwritten by the trigger
+  // on the next listing change, so there is nothing correct for it to do.
+  //
+  // Selling now goes one way: Item Detail "Sell" → app/sell/new →
+  // p2pApi.createListing → the trigger sets `for_sale`. Unlisting is
+  // p2pApi.delistListing from the listing detail screen.
   // ─────────────────────────────────────────────────────────────────────────────
-
-
-
-
-
-
-
-
-
-  /** Toggle an item's for-sale status and set asking price. */
-  toggleForSale(itemId: string, forSale: boolean, askingPrice?: number): Promise<void>;
 
 
 

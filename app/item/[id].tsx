@@ -438,7 +438,6 @@ function ItemDetailScreen() {
     pullRefreshing, setPullRefreshing,
     isForSale, setIsForSale,
     askingPriceValue, setAskingPriceValue,
-    forSaleLoading, handleListForSale, handleUnlist,
     evidenceData, setEvidenceData,
     itemAttributes, taxonomyVersion, subtypeId, itemCollections,
     scarcityData, marketComps,
@@ -1112,11 +1111,7 @@ function ItemDetailScreen() {
 
           {/* For-Sale status badge — shown when listed */}
           {!isDraft && id && !isEditing && isForSale && (
-            <ItemForSaleBar
-              askingPriceValue={askingPriceValue}
-              forSaleLoading={forSaleLoading}
-              onUnlist={handleUnlist}
-            />
+            <ItemForSaleBar askingPriceValue={askingPriceValue} />
           )}
 
           {/* Draft mode - Quick actions row */}

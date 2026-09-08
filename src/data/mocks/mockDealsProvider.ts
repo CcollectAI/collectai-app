@@ -26,9 +26,6 @@ import {
 
 
 
-export async function toggleForSale(_itemId: string, _forSale: boolean, _askingPrice?: number): Promise<void> {
-  /* no-op */
-}
 
 
 

@@ -198,7 +198,6 @@ export const collectorsApi = {
   // Deal Desk offer re-exports removed 2026-08-09 with that subsystem. The
   // member-to-member equivalents are the `p2p*`-namespaced entries above —
   // they were namespaced precisely BECAUSE these unnamespaced ones existed.
-  toggleItemForSale: itemsApi.toggleItemForSale,
 
   // Item Images (multi-photo per item)
   listItemImages: itemsApi.listItemImages,

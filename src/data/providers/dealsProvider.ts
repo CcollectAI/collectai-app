@@ -1,12 +1,16 @@
 /**
- * Deals domain provider — marketplace listings, accounts, sales, for-sale flag.
+ * Deals domain provider — external marketplace listings, accounts and sales.
  *
  * The Deal Desk offer functions (propose/counter/respond/cancel/ship/complete/
  * active/history/detail/reputation) were removed 2026-08-09 with the rest of
- * that subsystem. What remains is unrelated to them: `toggleForSale` drives
- * `items.for_sale`, and the marketplace* functions drive the external
- * marketplace-connections feature. Member-to-member offers now live in
- * `src/api/p2pApi.ts`.
+ * that subsystem, and `toggleForSale` followed on 2026-09-08: its route
+ * (`PUT /items/*​/for-sale`) had already been deleted server-side, and
+ * `items.for_sale` is owned by the `trg_sync_item_for_sale` trigger on
+ * `marketplace_listings` — a direct write would be overwritten by the trigger
+ * on the next listing change.
+ *
+ * What remains drives the external marketplace-connections feature.
+ * Member-to-member selling lives in `src/api/p2pApi.ts`.
  */
 
 import type {
@@ -25,9 +29,6 @@ import { collectorsApi } from '../../api/collectorsApi';
 
 
 
-export async function toggleForSale(itemId: string, forSale: boolean, askingPrice?: number): Promise<void> {
-  await collectorsApi.toggleItemForSale(itemId, { for_sale: forSale, asking_price: askingPrice });
-}
 
 
 
