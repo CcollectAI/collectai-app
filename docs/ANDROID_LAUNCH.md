@@ -428,6 +428,40 @@ the one signed in on the device.** If the device wedges, sign out and back in.
 
 Also swept: 21 screens for **error states** (not just crashes) — 0 found.
 
+### Delete Account was visible, enabled and untappable (2026-09-08)
+
+Found by walking the app on the emulator, which is the only way it could have
+been found. The **account-deletion modal** — the flow Google Play and the App
+Store both require — drew its header **under the status bar**: the close ✕ sat
+on the clock, and the red "Delete" confirm sat on the wifi/battery icons.
+
+Tapping the confirm did nothing. The button reported `enabled="true"`,
+`clickable="true"`, the typed DELETE was accepted, and **no error was logged**.
+The status bar swallowed the touch, so the request never fired. Proof it was
+not a UI-only glitch: after the tap the account still existed server-side
+(`GET admin/users/<id>` → 200).
+
+**Cause:** `presentationStyle="pageSheet"` is an **iOS-only** Modal API. On iOS
+the sheet insets itself from the top; on Android the prop is ignored, the Modal
+is full-screen, and a header with only `paddingVertical` lands beneath the
+status bar. `ProfileEditSection.tsx` had no safe-area handling of any kind.
+`AppearanceSection.tsx` had the same defect. Fixed in all **7** modal headers
+across the two files with an explicit Android-only
+`StatusBar.currentHeight` inset — Android-only on purpose, because adding
+`insets.top` on iOS would double-pad a sheet that is already inset.
+
+Gate: `npm run check:modal-top-inset` (in `verify:prebuild`) — any file with a
+`pageSheet` Modal must show some awareness of the top inset. Mutation-proven.
+It is the top-edge sibling of `check-tab-bar-inset.mjs`, and another instance
+of the iOS-only-API-silently-no-ops-on-Android family.
+
+⚠️ **Two emulator gotchas this cost time on, now in the list below:** the
+soft keyboard covers the lower half of the screen, so a tap at y≈1540 hits the
+keyboard and not the button underneath — dismiss it with `input keyevent 4`
+first and confirm `mInputShown=false`. And the emulator silently lost network,
+which surfaced only as `contentDescription: ", You're offline"` buried in a
+`uiautomator` dump while sign-in appeared to do nothing.
+
 ### The launcher icon shipped with the bird decapitated (2026-09-07)
 
 Reported from a device: "the icon is cutting off on Android, it doesn't fit."

@@ -15,7 +15,17 @@ import {
   Alert,
   Linking,
   Platform,
+  StatusBar,
 } from 'react-native';
+// Android: `presentationStyle="pageSheet"` is an iOS-only Modal API. On Android
+// the Modal is full-screen, so a header with only `paddingVertical` renders
+// UNDER the status bar — the close ✕ lands on the clock and the confirm action
+// lands on the wifi/battery icons. Found on a device: the Delete Account
+// confirm button was visible, enabled, and untappable, because the status bar
+// swallowed the touch. Nothing errored; the request simply never fired.
+const ANDROID_STATUS_BAR_INSET =
+  Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
+
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
@@ -473,7 +483,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
         onRequestClose={() => setEditProfileVisible(false)}
       >
         <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
-          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border, paddingTop: 14 + ANDROID_STATUS_BAR_INSET }]}>
             <TouchableOpacity onPress={() => setEditProfileVisible(false)} accessibilityLabel="Close">
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -525,7 +535,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
         onRequestClose={() => setChangePasswordVisible(false)}
       >
         <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
-          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border, paddingTop: 14 + ANDROID_STATUS_BAR_INSET }]}>
             <TouchableOpacity onPress={() => setChangePasswordVisible(false)} accessibilityLabel="Close">
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -582,7 +592,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
         }}
       >
         <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
-          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border, paddingTop: 14 + ANDROID_STATUS_BAR_INSET }]}>
             <TouchableOpacity
               onPress={() => {
                 if (deletingAccount) return;

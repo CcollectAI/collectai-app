@@ -11,7 +11,18 @@ import {
   Switch,
   Modal,
   TouchableOpacity,
+  Platform,
+  StatusBar,
 } from 'react-native';
+
+// Android: `presentationStyle="pageSheet"` is an iOS-only Modal API. On Android
+// the Modal is full-screen, so a header with only `paddingVertical` renders
+// UNDER the status bar — the close ✕ lands on the clock and the confirm action
+// lands on the wifi/battery icons. Found on a device: the Delete Account
+// confirm button was visible, enabled, and untappable, because the status bar
+// swallowed the touch. Nothing errored; the request simply never fired.
+const ANDROID_STATUS_BAR_INSET =
+  Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings, REGION_DEFAULTS } from '@/lib/settings';
@@ -286,7 +297,7 @@ function AppearanceSectionInner() {
         onRequestClose={() => setSkillPickerVisible(false)}
       >
         <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
-          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border, paddingTop: 14 + ANDROID_STATUS_BAR_INSET }]}>
             <TouchableOpacity onPress={() => setSkillPickerVisible(false)} accessibilityLabel="Close">
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -323,7 +334,7 @@ function AppearanceSectionInner() {
         onRequestClose={() => setRegionPickerVisible(false)}
       >
         <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
-          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border, paddingTop: 14 + ANDROID_STATUS_BAR_INSET }]}>
             <TouchableOpacity onPress={() => setRegionPickerVisible(false)} accessibilityLabel="Close">
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -360,7 +371,7 @@ function AppearanceSectionInner() {
         onRequestClose={() => setCurrencyPickerVisible(false)}
       >
         <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
-          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border, paddingTop: 14 + ANDROID_STATUS_BAR_INSET }]}>
             <TouchableOpacity onPress={() => setCurrencyPickerVisible(false)} accessibilityLabel="Close">
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
@@ -397,7 +408,7 @@ function AppearanceSectionInner() {
         onRequestClose={() => setLanguagePickerVisible(false)}
       >
         <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
-          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border, paddingTop: 14 + ANDROID_STATUS_BAR_INSET }]}>
             <TouchableOpacity onPress={() => setLanguagePickerVisible(false)} accessibilityLabel={t('common.close')}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
