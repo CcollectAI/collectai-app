@@ -2,7 +2,7 @@
  * Miscellaneous API methods: barcode, geo, FX, feedback, build-paint, task queue,
  * watchlist, insights, export, account, billing, activity, search, quickscan feedback.
  */
-import { get, post, del, patch, postMultipart } from "./httpClient";
+import { get, post, del, patch, postMultipart, LONG_REQUEST_TIMEOUT_MS } from "./httpClient";
 import { API_BASE } from "./httpClient";
 import type { CurrencyCode } from "@/data/types";
 import type { BillingStatus, IntakeResultResponse, NotificationHistoryResponse } from "./types";
@@ -136,7 +136,17 @@ export const getItemTrends = (itemId: string) =>
 // destructive calls. The FE confirms via a typed-confirmation modal in
 // ProfileEditSection before invoking this.
 export async function deleteAccount(): Promise<{ success: boolean; message: string }> {
-  return del("/account?confirm=DELETE_MY_ACCOUNT");
+  // NOT the 5 s fast-read default. Deletion walks ~84 tables, each DELETE in
+  // its own savepoint (server/app/routes/account_router.py), so it is a slow
+  // write, not a read — exactly the case httpClient's comment says must pass
+  // an explicit long budget.
+  //
+  // Measured on a device 2026-09-08: the server COMPLETED the deletion and the
+  // client gave up at 5 s, so the user was shown "Error" for an account that
+  // was already gone. On an irreversible action that is the worst possible
+  // mismatch — they believe their data is still there, and a store reviewer
+  // tapping Delete sees a failure.
+  return del("/account?confirm=DELETE_MY_ACCOUNT", { timeoutMs: LONG_REQUEST_TIMEOUT_MS });
 }
 
 // Billing / Subscriptions

@@ -992,5 +992,21 @@
     "image_url_optional": "画像URL（任意）",
     "a11y_send": "お知らせを送信",
     "send_announcement": "お知らせを送信"
+  },
+  "sponsor": {
+    "tiers": "スポンサーシップの階層",
+    "company_information": "会社情報",
+    "company_name_placeholder": "Games Workshop, TOPPS, Bandai",
+    "a11y_company_name": "会社名",
+    "a11y_contact_email": "連絡先メールアドレス",
+    "company_logo_optional": "会社ロゴ（任意）",
+    "a11y_pick_logo": "会社ロゴを選択",
+    "tap_to_change": "タップして変更",
+    "tap_to_upload_logo": "タップしてロゴをアップロード",
+    "website_optional": "ウェブサイト（任意）",
+    "a11y_website_url": "ウェブサイトURL",
+    "a11y_company_description": "会社概要",
+    "a11y_get_started": "スポンサーとして始める",
+    "get_started": "スポンサーとして始める"
   }
 }

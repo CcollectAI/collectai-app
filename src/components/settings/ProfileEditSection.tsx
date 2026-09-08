@@ -38,6 +38,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { updateProfile } from '@/api/settingsApi';
 import { supabase } from '@/lib/supabase';
+import { TimeoutError } from '@/lib/withTimeout';
 import { deleteAccount, collectorsApi } from '@/api/collectorsApi';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
@@ -142,10 +143,27 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
       Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
     } catch (e) {
       logger.error('[silent-catch] ProfileEditSection.tsx:115:', e);
-      Alert.alert(
-        'Error',
-        e instanceof Error ? e.message : 'Failed to delete account. Please try again.',
-      );
+      // A TIMEOUT IS NOT A FAILURE. Deletion is a slow server-side write, and
+      // on 2026-09-08 a device run proved the two can disagree: the server
+      // finished, the client gave up, and the user was told "Error" for an
+      // account that was already gone. Telling someone their irreversible
+      // action failed when it succeeded is worse than saying nothing — they
+      // assume their data is still there. Say what is actually known.
+      // The app has ONE TimeoutError (src/lib/withTimeout) and the codebase
+      // tests it with instanceof — see usePaginatedList. Sniffing e.name or
+      // the message string would drift the moment either is reworded.
+      const timedOut = e instanceof TimeoutError;
+      if (timedOut) {
+        Alert.alert(
+          'Still processing',
+          'This is taking longer than expected. Your deletion request may already have gone through — sign out and back in to check before trying again.',
+        );
+      } else {
+        Alert.alert(
+          'Error',
+          e instanceof Error ? e.message : 'Failed to delete account. Please try again.',
+        );
+      }
     } finally {
       setDeletingAccount(false);
     }

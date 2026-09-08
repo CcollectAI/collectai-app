@@ -34,6 +34,7 @@ import { useToast } from '@/components/Toast';
 import { usePhotoUpload } from '@/hooks/usePhotoUpload';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { track } from '@/analytics/track';
+import { useTranslation } from 'react-i18next';
 
 /* -------------------------------------------------------------------------- */
 /*  Static data                                                                */
@@ -69,6 +70,7 @@ const TIERS = [
 type SaveState = 'idle' | 'saving';
 
 const SponsorRegisterScreen: React.FC = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
@@ -197,7 +199,7 @@ const SponsorRegisterScreen: React.FC = () => {
             <View style={styles.tierSection}>
               <View style={styles.sectionHeader}>
                 <Ionicons name="ribbon-outline" size={16} color={colors.accent} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Sponsorship Tiers</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('sponsor.tiers', { defaultValue: 'Sponsorship Tiers' })}</Text>
               </View>
               <ScrollView
                 horizontal
@@ -236,7 +238,7 @@ const SponsorRegisterScreen: React.FC = () => {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Ionicons name="business-outline" size={16} color={colors.accent} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Company Information</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('sponsor.company_information', { defaultValue: 'Company Information' })}</Text>
               </View>
 
               <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -251,10 +253,10 @@ const SponsorRegisterScreen: React.FC = () => {
                       value={nameField.value}
                       onChangeText={nameField.onChange}
                       onBlur={nameField.onBlur}
-                      placeholder="Games Workshop, TOPPS, Bandai"
+                      placeholder={t('sponsor.company_name_placeholder', { defaultValue: 'Games Workshop, TOPPS, Bandai' })}
                       placeholderTextColor={colors.muted}
                       style={[styles.input, { color: colors.text }]}
-                      accessibilityLabel="Company name"
+                      accessibilityLabel={t('sponsor.a11y_company_name', { defaultValue: 'Company name' })}
                       returnKeyType="next"
                       onSubmitEditing={() => emailRef.current?.focus()}
                     />
@@ -279,7 +281,7 @@ const SponsorRegisterScreen: React.FC = () => {
                       style={[styles.input, { color: colors.text }]}
                       autoCapitalize="none"
                       keyboardType="email-address"
-                      accessibilityLabel="Contact email"
+                      accessibilityLabel={t('sponsor.a11y_contact_email', { defaultValue: 'Contact email' })}
                       returnKeyType="next"
                       onSubmitEditing={() => websiteRef.current?.focus()}
                     />
@@ -289,25 +291,25 @@ const SponsorRegisterScreen: React.FC = () => {
 
                 {/* Logo Picker */}
                 <View style={styles.fieldBlock}>
-                  <Text style={[styles.fieldLabel, { color: colors.text }]}>Company Logo (optional)</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('sponsor.company_logo_optional', { defaultValue: 'Company Logo (optional)' })}</Text>
                   <AnimatedPressable
                     onPress={handlePickLogo}
                     disabled={logoUploading}
                     style={[styles.logoPicker, { borderColor: colors.border, backgroundColor: colors.background }]}
                     accessibilityRole="button"
-                    accessibilityLabel="Pick company logo"
+                    accessibilityLabel={t('sponsor.a11y_pick_logo', { defaultValue: 'Pick company logo' })}
                   >
                     {logoUploading ? (
                       <ActivityIndicator size="small" color={colors.accent} />
                     ) : logoPreview ? (
                       <View style={styles.logoPreviewWrap}>
                         <Image source={{ uri: logoPreview }} style={styles.logoPreviewImg} />
-                        <Text style={[styles.logoChangeText, { color: colors.accent }]}>Tap to change</Text>
+                        <Text style={[styles.logoChangeText, { color: colors.accent }]}>{t('sponsor.tap_to_change', { defaultValue: 'Tap to change' })}</Text>
                       </View>
                     ) : (
                       <View style={styles.logoPickerContent}>
                         <Ionicons name="camera-outline" size={28} color={colors.muted} />
-                        <Text style={[styles.logoPickerText, { color: colors.muted }]}>Tap to upload logo</Text>
+                        <Text style={[styles.logoPickerText, { color: colors.muted }]}>{t('sponsor.tap_to_upload_logo', { defaultValue: 'Tap to upload logo' })}</Text>
                       </View>
                     )}
                   </AnimatedPressable>
@@ -316,7 +318,7 @@ const SponsorRegisterScreen: React.FC = () => {
 
                 {/* Website URL */}
                 <View style={styles.fieldBlock}>
-                  <Text style={[styles.fieldLabel, { color: colors.text }]}>Website (optional)</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('sponsor.website_optional', { defaultValue: 'Website (optional)' })}</Text>
                   <View style={[styles.inputWrap, { borderColor: websiteUrlField.touched && websiteUrlField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                     <Ionicons name="globe-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                     <TextInput
@@ -329,7 +331,7 @@ const SponsorRegisterScreen: React.FC = () => {
                       style={[styles.input, { color: colors.text }]}
                       autoCapitalize="none"
                       keyboardType="url"
-                      accessibilityLabel="Website URL"
+                      accessibilityLabel={t('sponsor.a11y_website_url', { defaultValue: 'Website URL' })}
                       returnKeyType="next"
                       onSubmitEditing={() => descriptionRef.current?.focus()}
                     />
@@ -339,7 +341,7 @@ const SponsorRegisterScreen: React.FC = () => {
 
                 {/* Description */}
                 <View>
-                  <Text style={[styles.fieldLabel, { color: colors.text }]}>Description (optional)</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('sell.description_optional', { defaultValue: 'Description (optional)' })}</Text>
                   <View style={[styles.inputWrapMultiline, { borderColor: descriptionField.touched && descriptionField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                     <TextInput
                       ref={descriptionRef}
@@ -352,7 +354,7 @@ const SponsorRegisterScreen: React.FC = () => {
                       placeholderTextColor={colors.muted}
                       style={[styles.inputMultiline, { color: colors.text }]}
                       textAlignVertical="top"
-                      accessibilityLabel="Company description"
+                      accessibilityLabel={t('sponsor.a11y_company_description', { defaultValue: 'Company description' })}
                     />
                   </View>
                   {descriptionField.touched && descriptionField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{descriptionField.error}</Text>}
@@ -373,14 +375,14 @@ const SponsorRegisterScreen: React.FC = () => {
                 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Get started as a sponsor"
+              accessibilityLabel={t('sponsor.a11y_get_started', { defaultValue: 'Get started as a sponsor' })}
             >
               {saveState === 'saving' ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <>
                   <Ionicons name="rocket-outline" size={20} color="#FFFFFF" />
-                  <Text style={styles.submitButtonText}>Get Started as a Sponsor</Text>
+                  <Text style={styles.submitButtonText}>{t('sponsor.get_started', { defaultValue: 'Get Started as a Sponsor' })}</Text>
                 </>
               )}
             </AnimatedPressable>

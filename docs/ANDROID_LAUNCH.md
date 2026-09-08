@@ -428,6 +428,40 @@ the one signed in on the device.** If the device wedges, sign out and back in.
 
 Also swept: 21 screens for **error states** (not just crashes) — 0 found.
 
+### Deletion succeeded and the app said "Error" (2026-09-08)
+
+Verified on the rebuilt APK: the modal header fix works (the confirm button
+moved from y41-98, under the status bar, to y177-234) and the tap now
+registers. Completing the flow surfaced the NEXT bug, which the untappable
+button had been hiding.
+
+The app showed **"Error — Timed out after 5000ms (http)"**. The account was
+**already deleted**: `admin/users/<id>` → **404**.
+
+`httpClient.REQUEST_TIMEOUT_MS` is 5 s deliberately, so a user never watches a
+slow spinner, and its own comment says endpoints needing longer must pass
+`timeoutMs: LONG_REQUEST_TIMEOUT_MS` explicitly. `deleteAccount()` passed
+nothing — but deletion walks ~84 tables, each DELETE in its own savepoint. It
+is a slow WRITE wearing a fast-read budget.
+
+**Telling someone an irreversible action failed when it succeeded is worse than
+saying nothing.** They believe their data survived; a store reviewer tapping
+Delete sees a failure on the exact flow both stores require.
+
+Fixed on both halves: `deleteAccount()` now passes the long budget, AND the
+confirm handler distinguishes `TimeoutError` (the app's single canonical class
+from `src/lib/withTimeout`, tested with `instanceof` as `usePaginatedList`
+does) from a real failure — a timeout now says "Still processing … your request
+may already have gone through", because even 90 s can expire on a bad network
+and "failed" would be a lie again.
+
+Gate: `npm run check:delete-timeout` (in `verify:prebuild`), mutation-proven,
+asserting BOTH halves.
+
+⚠️ The emulator was also timing out on unrelated endpoints
+(`v_chat_inbox_v1` at 15 s, `listWatchlist`), which is gotcha #6 below — but
+the 5 s budget on an 84-table write is a real defect regardless of the network.
+
 ### Delete Account was visible, enabled and untappable (2026-09-08)
 
 Found by walking the app on the emulator, which is the only way it could have

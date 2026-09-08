@@ -992,5 +992,21 @@
     "image_url_optional": "Afbeeldings-URL (optioneel)",
     "a11y_send": "Aankondiging versturen",
     "send_announcement": "Aankondiging versturen"
+  },
+  "sponsor": {
+    "tiers": "Sponsorniveaus",
+    "company_information": "Bedrijfsgegevens",
+    "company_name_placeholder": "Games Workshop, TOPPS, Bandai",
+    "a11y_company_name": "Bedrijfsnaam",
+    "a11y_contact_email": "Contact-e-mail",
+    "company_logo_optional": "Bedrijfslogo (optioneel)",
+    "a11y_pick_logo": "Kies bedrijfslogo",
+    "tap_to_change": "Tik om te wijzigen",
+    "tap_to_upload_logo": "Tik om logo te uploaden",
+    "website_optional": "Website (optioneel)",
+    "a11y_website_url": "Website-URL",
+    "a11y_company_description": "Bedrijfsomschrijving",
+    "a11y_get_started": "Aan de slag als sponsor",
+    "get_started": "Aan de slag als sponsor"
   }
 }
