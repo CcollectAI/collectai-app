@@ -849,5 +849,42 @@
     "a11y_create_event": "이벤트 만들기",
     "create_event": "이벤트 만들기",
     "invite_friends": "친구 초대"
+  },
+  "listings": {
+    "catalog_photo": "카탈로그 사진",
+    "buy_and_sell_intro": "다른 회원과 사고팔기",
+    "a11y_dismiss_intro": "소개 닫기",
+    "search_placeholder": "회원 리스팅 검색",
+    "a11y_search": "회원 리스팅 검색",
+    "a11y_clear_search": "검색 지우기",
+    "a11y_clear_filters": "모든 필터 지우기",
+    "a11y_sell_item": "내 컬렉션에서 아이템 판매",
+    "a11y_clear_filters_search": "모든 필터와 검색 지우기",
+    "a11y_choose_item_to_sell": "판매할 아이템을 컬렉션에서 선택",
+    "a11y_marketplace_terms": "마켓플레이스 약관 읽기",
+    "marketplace_terms": "마켓플레이스 약관"
+  },
+  "chat": {
+    "collector_not_found": "수집가를 찾을 수 없습니다",
+    "request_already_sent": "이미 요청을 보냈습니다",
+    "a11y_go_to_inbox": "받은편지함으로",
+    "go_to_inbox": "받은편지함으로",
+    "request_to_connect": "연결 요청",
+    "your_message": "내 메시지",
+    "a11y_connection_message": "연결 메시지"
+  },
+  "sell": {
+    "sell_an_item": "아이템 판매",
+    "a11y_add_own_photos": "이 리스팅에 내 사진 추가",
+    "add_own_photos": "내 사진 추가",
+    "a11y_add_photos": "아이템 사진 추가",
+    "a11y_catalogue_consent": "대표 사진을 카탈로그 참고 이미지로 사용 허용",
+    "what_is_it": "무엇인가요?",
+    "a11y_what_selling": "무엇을 판매하나요",
+    "choose_category": "카테고리 선택",
+    "a11y_asking_price": "희망 가격",
+    "choose_condition": "상태 선택",
+    "description_optional": "설명(선택)",
+    "a11y_list_on_marketplace": "마켓플레이스에 등록"
   }
 }

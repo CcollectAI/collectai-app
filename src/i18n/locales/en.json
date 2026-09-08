@@ -849,5 +849,42 @@
     "a11y_create_event": "Create event",
     "create_event": "Create Event",
     "invite_friends": "Invite Friends"
+  },
+  "listings": {
+    "catalog_photo": "Catalog photo",
+    "buy_and_sell_intro": "Buy and sell with other members",
+    "a11y_dismiss_intro": "Dismiss introduction",
+    "search_placeholder": "Search member listings",
+    "a11y_search": "Search member listings",
+    "a11y_clear_search": "Clear search",
+    "a11y_clear_filters": "Clear all filters",
+    "a11y_sell_item": "Sell an item from your collection",
+    "a11y_clear_filters_search": "Clear all filters and search",
+    "a11y_choose_item_to_sell": "Choose an item from your collection to sell",
+    "a11y_marketplace_terms": "Read the marketplace terms",
+    "marketplace_terms": "Marketplace terms"
+  },
+  "chat": {
+    "collector_not_found": "Collector not found",
+    "request_already_sent": "Request already sent",
+    "a11y_go_to_inbox": "Go to inbox",
+    "go_to_inbox": "Go to Inbox",
+    "request_to_connect": "Request to Connect",
+    "your_message": "Your message",
+    "a11y_connection_message": "Connection message"
+  },
+  "sell": {
+    "sell_an_item": "Sell an item",
+    "a11y_add_own_photos": "Add your own photos for this listing",
+    "add_own_photos": "Add your own photos",
+    "a11y_add_photos": "Add photos of the item",
+    "a11y_catalogue_consent": "Allow your cover photo to be used as a catalogue reference picture",
+    "what_is_it": "What is it?",
+    "a11y_what_selling": "What are you selling",
+    "choose_category": "Choose a category",
+    "a11y_asking_price": "Asking price",
+    "choose_condition": "Choose a condition",
+    "description_optional": "Description (optional)",
+    "a11y_list_on_marketplace": "List it on the marketplace"
   }
 }

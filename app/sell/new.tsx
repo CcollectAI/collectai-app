@@ -68,12 +68,14 @@ import { safeGoBack } from '@/lib/goBack';
 import { CATEGORIES, CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 /** Same vocabulary as ConditionValueSection. Two condition lists would drift,
  *  and a listing's condition is what a second-hand buyer reads first. */
 const CONDITIONS = ['Mint', 'Near Mint', 'Excellent', 'Good', 'PSA 10', 'PSA 9', 'Raw'];
 
 function SellNewScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
@@ -370,11 +372,11 @@ function SellNewScreen() {
         <AnimatedPressable
           onPress={() => safeGoBack(router)}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}
         >
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </AnimatedPressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Sell an item</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('sell.sell_an_item', { defaultValue: 'Sell an item' })}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -431,9 +433,9 @@ function SellNewScreen() {
                 <AnimatedPressable
                   onPress={pickPhoto}
                   accessibilityRole="button"
-                  accessibilityLabel="Add your own photos for this listing"
+                  accessibilityLabel={t('sell.a11y_add_own_photos', { defaultValue: 'Add your own photos for this listing' })}
                 >
-                  <Text style={[styles.link, { color: colors.accent }]}>Add your own photos</Text>
+                  <Text style={[styles.link, { color: colors.accent }]}>{t('sell.add_own_photos', { defaultValue: 'Add your own photos' })}</Text>
                 </AnimatedPressable>
               </View>
               <Text style={[styles.fine, { color: colors.muted }]}>
@@ -503,7 +505,7 @@ function SellNewScreen() {
               onPress={pickPhoto}
               style={[styles.photoEmpty, { borderColor: colors.border, backgroundColor: colors.card }]}
               accessibilityRole="button"
-              accessibilityLabel="Add photos of the item"
+              accessibilityLabel={t('sell.a11y_add_photos', { defaultValue: 'Add photos of the item' })}
             >
               <Ionicons name="camera-outline" size={22} color={colors.muted} />
               <Text style={[styles.photoEmptyText, { color: colors.muted }]}>
@@ -523,7 +525,7 @@ function SellNewScreen() {
               style={[styles.consent, { borderColor: colors.border }]}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: consent }}
-              accessibilityLabel="Allow your cover photo to be used as a catalogue reference picture"
+              accessibilityLabel={t('sell.a11y_catalogue_consent', { defaultValue: 'Allow your cover photo to be used as a catalogue reference picture' })}
             >
               <Ionicons
                 name={consent ? 'checkbox' : 'square-outline'}
@@ -545,7 +547,7 @@ function SellNewScreen() {
               than no field. */}
           {!fromCollection && (
           <>
-          <Text style={[styles.label, { color: colors.text }]}>What is it?</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{t('sell.what_is_it', { defaultValue: 'What is it?' })}</Text>
           <TextInput
             value={title}
             onChangeText={setTitle}
@@ -553,7 +555,7 @@ function SellNewScreen() {
             placeholderTextColor={colors.muted}
             maxLength={200}
             style={[styles.field, styles.fieldText, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
-            accessibilityLabel="What are you selling"
+            accessibilityLabel={t('sell.a11y_what_selling', { defaultValue: 'What are you selling' })}
             // On blur, not per keystroke: /catalog/match is a real search, and
             // a request per character is wasteful and racy.
             onBlur={runMatch}
@@ -562,7 +564,7 @@ function SellNewScreen() {
           <PickerField
             label="Category"
             value={categoryName}
-            placeholder="Choose a category"
+            placeholder={t('sell.choose_category', { defaultValue: 'Choose a category' })}
             onPress={pickCategory}
             a11y="Choose a category"
           />
@@ -581,19 +583,19 @@ function SellNewScreen() {
               placeholderTextColor={colors.muted}
               keyboardType="decimal-pad"
               style={[styles.priceInput, { color: colors.text }]}
-              accessibilityLabel="Asking price"
+              accessibilityLabel={t('sell.a11y_asking_price', { defaultValue: 'Asking price' })}
             />
           </View>
 
           <PickerField
             label="Condition"
             value={condition}
-            placeholder="Choose a condition"
+            placeholder={t('sell.choose_condition', { defaultValue: 'Choose a condition' })}
             onPress={pickCondition}
             a11y="Choose a condition"
           />
 
-          <Text style={[styles.label, { color: colors.text }]}>Description (optional)</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{t('sell.description_optional', { defaultValue: 'Description (optional)' })}</Text>
           <TextInput
             value={description}
             onChangeText={setDescription}
@@ -664,7 +666,7 @@ function SellNewScreen() {
             ]}
             accessibilityRole="button"
             accessibilityState={{ disabled: !canList }}
-            accessibilityLabel="List it on the marketplace"
+            accessibilityLabel={t('sell.a11y_list_on_marketplace', { defaultValue: 'List it on the marketplace' })}
           >
             {saving ? (
               <ActivityIndicator color={canList ? colors.accentText : colors.muted} />

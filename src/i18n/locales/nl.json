@@ -849,5 +849,42 @@
     "a11y_create_event": "Evenement aanmaken",
     "create_event": "Evenement aanmaken",
     "invite_friends": "Vrienden uitnodigen"
+  },
+  "listings": {
+    "catalog_photo": "Catalogusfoto",
+    "buy_and_sell_intro": "Koop en verkoop met andere leden",
+    "a11y_dismiss_intro": "Introductie sluiten",
+    "search_placeholder": "Zoek in advertenties van leden",
+    "a11y_search": "Zoek in advertenties van leden",
+    "a11y_clear_search": "Zoekopdracht wissen",
+    "a11y_clear_filters": "Alle filters wissen",
+    "a11y_sell_item": "Verkoop een item uit je collectie",
+    "a11y_clear_filters_search": "Alle filters en zoekopdracht wissen",
+    "a11y_choose_item_to_sell": "Kies een item uit je collectie om te verkopen",
+    "a11y_marketplace_terms": "Lees de marktplaatsvoorwaarden",
+    "marketplace_terms": "Marktplaatsvoorwaarden"
+  },
+  "chat": {
+    "collector_not_found": "Verzamelaar niet gevonden",
+    "request_already_sent": "Verzoek al verstuurd",
+    "a11y_go_to_inbox": "Naar postvak",
+    "go_to_inbox": "Naar postvak",
+    "request_to_connect": "Verzoek om te verbinden",
+    "your_message": "Jouw bericht",
+    "a11y_connection_message": "Verbindingsbericht"
+  },
+  "sell": {
+    "sell_an_item": "Een item verkopen",
+    "a11y_add_own_photos": "Voeg je eigen foto’s toe aan deze advertentie",
+    "add_own_photos": "Voeg je eigen foto’s toe",
+    "a11y_add_photos": "Voeg foto’s van het item toe",
+    "a11y_catalogue_consent": "Sta toe dat je omslagfoto als catalogusreferentie wordt gebruikt",
+    "what_is_it": "Wat is het?",
+    "a11y_what_selling": "Wat verkoop je",
+    "choose_category": "Kies een categorie",
+    "a11y_asking_price": "Vraagprijs",
+    "choose_condition": "Kies een conditie",
+    "description_optional": "Beschrijving (optioneel)",
+    "a11y_list_on_marketplace": "Plaats op de marktplaats"
   }
 }

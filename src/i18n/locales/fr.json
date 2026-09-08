@@ -849,5 +849,42 @@
     "a11y_create_event": "Créer l’événement",
     "create_event": "Créer l’événement",
     "invite_friends": "Inviter des amis"
+  },
+  "listings": {
+    "catalog_photo": "Photo du catalogue",
+    "buy_and_sell_intro": "Achetez et vendez avec d’autres membres",
+    "a11y_dismiss_intro": "Fermer l’introduction",
+    "search_placeholder": "Rechercher dans les annonces des membres",
+    "a11y_search": "Rechercher dans les annonces des membres",
+    "a11y_clear_search": "Effacer la recherche",
+    "a11y_clear_filters": "Effacer tous les filtres",
+    "a11y_sell_item": "Vendre un article de votre collection",
+    "a11y_clear_filters_search": "Effacer tous les filtres et la recherche",
+    "a11y_choose_item_to_sell": "Choisir un article de votre collection à vendre",
+    "a11y_marketplace_terms": "Lire les conditions de la place de marché",
+    "marketplace_terms": "Conditions de la place de marché"
+  },
+  "chat": {
+    "collector_not_found": "Collectionneur introuvable",
+    "request_already_sent": "Demande déjà envoyée",
+    "a11y_go_to_inbox": "Aller à la boîte de réception",
+    "go_to_inbox": "Aller à la boîte de réception",
+    "request_to_connect": "Demande de connexion",
+    "your_message": "Votre message",
+    "a11y_connection_message": "Message de connexion"
+  },
+  "sell": {
+    "sell_an_item": "Vendre un article",
+    "a11y_add_own_photos": "Ajouter vos propres photos à cette annonce",
+    "add_own_photos": "Ajouter vos propres photos",
+    "a11y_add_photos": "Ajouter des photos de l’article",
+    "a11y_catalogue_consent": "Autoriser l’utilisation de votre photo principale comme image de référence du catalogue",
+    "what_is_it": "De quoi s’agit-il ?",
+    "a11y_what_selling": "Que vendez-vous",
+    "choose_category": "Choisir une catégorie",
+    "a11y_asking_price": "Prix demandé",
+    "choose_condition": "Choisir un état",
+    "description_optional": "Description (facultatif)",
+    "a11y_list_on_marketplace": "Publier sur la place de marché"
   }
 }

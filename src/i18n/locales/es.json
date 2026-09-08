@@ -849,5 +849,42 @@
     "a11y_create_event": "Crear evento",
     "create_event": "Crear evento",
     "invite_friends": "Invitar amigos"
+  },
+  "listings": {
+    "catalog_photo": "Foto del catálogo",
+    "buy_and_sell_intro": "Compra y vende con otros miembros",
+    "a11y_dismiss_intro": "Cerrar la introducción",
+    "search_placeholder": "Buscar en anuncios de miembros",
+    "a11y_search": "Buscar en anuncios de miembros",
+    "a11y_clear_search": "Borrar búsqueda",
+    "a11y_clear_filters": "Borrar todos los filtros",
+    "a11y_sell_item": "Vender un artículo de tu colección",
+    "a11y_clear_filters_search": "Borrar todos los filtros y la búsqueda",
+    "a11y_choose_item_to_sell": "Elegir un artículo de tu colección para vender",
+    "a11y_marketplace_terms": "Leer los términos del mercado",
+    "marketplace_terms": "Términos del mercado"
+  },
+  "chat": {
+    "collector_not_found": "Coleccionista no encontrado",
+    "request_already_sent": "Solicitud ya enviada",
+    "a11y_go_to_inbox": "Ir a la bandeja de entrada",
+    "go_to_inbox": "Ir a la bandeja de entrada",
+    "request_to_connect": "Solicitud para conectar",
+    "your_message": "Tu mensaje",
+    "a11y_connection_message": "Mensaje de conexión"
+  },
+  "sell": {
+    "sell_an_item": "Vender un artículo",
+    "a11y_add_own_photos": "Añade tus propias fotos a este anuncio",
+    "add_own_photos": "Añade tus propias fotos",
+    "a11y_add_photos": "Añadir fotos del artículo",
+    "a11y_catalogue_consent": "Permitir que tu foto principal se use como imagen de referencia del catálogo",
+    "what_is_it": "¿Qué es?",
+    "a11y_what_selling": "Qué vendes",
+    "choose_category": "Elige una categoría",
+    "a11y_asking_price": "Precio solicitado",
+    "choose_condition": "Elige un estado",
+    "description_optional": "Descripción (opcional)",
+    "a11y_list_on_marketplace": "Publicar en el mercado"
   }
 }

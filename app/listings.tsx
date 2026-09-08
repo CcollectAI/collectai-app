@@ -77,6 +77,7 @@ import { CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
 import { radius, text as textToken, fontWeight, shadow } from '@/theme/tokens';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 const NUM_COLUMNS = 2;
 
@@ -157,6 +158,7 @@ function ListingCard({
   fxRates: Settings['fxRates'];
   numberLocale?: NumberLocale;
 }) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   // The seller sets the price in THEIR currency, so a listing can arrive in any
   // of the 7 we support. Formatting `listing.price` with the viewer's currency
@@ -198,7 +200,7 @@ function ListingCard({
           ) : null}
           {listing.image_is_catalog ? (
             <View style={[styles.stockTag, { backgroundColor: colors.background + 'E6' }]}>
-              <Text style={[styles.stockTagText, { color: colors.muted }]}>Catalog photo</Text>
+              <Text style={[styles.stockTagText, { color: colors.muted }]}>{t('listings.catalog_photo', { defaultValue: 'Catalog photo' })}</Text>
             </View>
           ) : null}
         </View>
@@ -334,6 +336,7 @@ function ListingCard({
  *     would find an empty stack and jump to Portfolio)
  */
 function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
@@ -767,12 +770,12 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
           <View style={[styles.intro, { backgroundColor: colors.accent + '10', borderColor: colors.accent + '33' }]}>
             <View style={styles.introHead}>
               <Ionicons name="people-outline" size={16} color={colors.accent} />
-              <Text style={[styles.introTitle, { color: colors.text }]}>Buy and sell with other members</Text>
+              <Text style={[styles.introTitle, { color: colors.text }]}>{t('listings.buy_and_sell_intro', { defaultValue: 'Buy and sell with other members' })}</Text>
               <AnimatedPressable
                 onPress={dismissIntro}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityRole="button"
-                accessibilityLabel="Dismiss introduction"
+                accessibilityLabel={t('listings.a11y_dismiss_intro', { defaultValue: 'Dismiss introduction' })}
               >
                 <Ionicons name="close" size={16} color={colors.muted} />
               </AnimatedPressable>
@@ -792,17 +795,17 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
               style={[styles.searchInput, { color: colors.text }]}
               value={query}
               onChangeText={setQuery}
-              placeholder="Search member listings"
+              placeholder={t('listings.search_placeholder', { defaultValue: 'Search member listings' })}
               placeholderTextColor={colors.muted}
               returnKeyType="search"
-              accessibilityLabel="Search member listings"
+              accessibilityLabel={t('listings.a11y_search', { defaultValue: 'Search member listings' })}
             />
             {query.length > 0 ? (
               <AnimatedPressable
                 onPress={() => setQuery('')}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"
-                accessibilityLabel="Clear search"
+                accessibilityLabel={t('listings.a11y_clear_search', { defaultValue: 'Clear search' })}
               >
                 <Ionicons name="close-circle" size={16} color={colors.muted} />
               </AnimatedPressable>
@@ -857,7 +860,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
               onPress={clearFilters}
               style={styles.clearBtn}
               accessibilityRole="button"
-              accessibilityLabel="Clear all filters"
+              accessibilityLabel={t('listings.a11y_clear_filters', { defaultValue: 'Clear all filters' })}
             >
               <Text style={[styles.clearBtnText, { color: colors.accent }]}>Clear</Text>
             </AnimatedPressable>
@@ -915,7 +918,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
             onPress={goSell}
             style={[styles.sellBtn, { backgroundColor: colors.accent }]}
             accessibilityRole="button"
-            accessibilityLabel="Sell an item from your collection"
+            accessibilityLabel={t('listings.a11y_sell_item', { defaultValue: 'Sell an item from your collection' })}
           >
             <Ionicons name="add" size={15} color={colors.accentText} />
             <Text style={[styles.sellBtnText, { color: colors.accentText }]}>Sell</Text>
@@ -1008,9 +1011,9 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
               onPress={() => refresh()}
               style={[styles.cta, { backgroundColor: colors.accent }]}
               accessibilityRole="button"
-              accessibilityLabel="Try again"
+              accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
             >
-              <Text style={[styles.ctaText, { color: colors.accentText }]}>Try again</Text>
+              <Text style={[styles.ctaText, { color: colors.accentText }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
             </AnimatedPressable>
           }
         />
@@ -1076,7 +1079,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
                   }}
                   style={[styles.cta, { backgroundColor: colors.accent }]}
                   accessibilityRole="button"
-                  accessibilityLabel="Clear all filters and search"
+                  accessibilityLabel={t('listings.a11y_clear_filters_search', { defaultValue: 'Clear all filters and search' })}
                 >
                   <Text style={[styles.ctaText, { color: colors.accentText }]}>
                     Clear filters
@@ -1087,7 +1090,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
                   onPress={goSell}
                   style={[styles.cta, { backgroundColor: colors.accent }]}
                   accessibilityRole="button"
-                  accessibilityLabel="Choose an item from your collection to sell"
+                  accessibilityLabel={t('listings.a11y_choose_item_to_sell', { defaultValue: 'Choose an item from your collection to sell' })}
                 >
                   <Text style={[styles.ctaText, { color: colors.accentText }]}>
                     Choose an item to sell
@@ -1140,9 +1143,9 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
                 <AnimatedPressable
                   onPress={() => router.push('/legal/marketplace-terms' as Href)}
                   accessibilityRole="link"
-                  accessibilityLabel="Read the marketplace terms"
+                  accessibilityLabel={t('listings.a11y_marketplace_terms', { defaultValue: 'Read the marketplace terms' })}
                 >
-                  <Text style={[styles.footerLink, { color: colors.accent }]}>Marketplace terms</Text>
+                  <Text style={[styles.footerLink, { color: colors.accent }]}>{t('listings.marketplace_terms', { defaultValue: 'Marketplace terms' })}</Text>
                 </AnimatedPressable>
               </View>
             ) : null

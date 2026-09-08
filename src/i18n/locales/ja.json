@@ -849,5 +849,42 @@
     "a11y_create_event": "イベントを作成",
     "create_event": "イベントを作成",
     "invite_friends": "友達を招待"
+  },
+  "listings": {
+    "catalog_photo": "カタログ写真",
+    "buy_and_sell_intro": "他のメンバーと売買",
+    "a11y_dismiss_intro": "紹介を閉じる",
+    "search_placeholder": "メンバーの出品を検索",
+    "a11y_search": "メンバーの出品を検索",
+    "a11y_clear_search": "検索をクリア",
+    "a11y_clear_filters": "すべてのフィルターをクリア",
+    "a11y_sell_item": "コレクションからアイテムを出品",
+    "a11y_clear_filters_search": "フィルターと検索をすべてクリア",
+    "a11y_choose_item_to_sell": "出品するアイテムをコレクションから選択",
+    "a11y_marketplace_terms": "マーケットプレイス規約を読む",
+    "marketplace_terms": "マーケットプレイス規約"
+  },
+  "chat": {
+    "collector_not_found": "コレクターが見つかりません",
+    "request_already_sent": "リクエストは送信済みです",
+    "a11y_go_to_inbox": "受信箱へ",
+    "go_to_inbox": "受信箱へ",
+    "request_to_connect": "つながりをリクエスト",
+    "your_message": "あなたのメッセージ",
+    "a11y_connection_message": "つながりのメッセージ"
+  },
+  "sell": {
+    "sell_an_item": "アイテムを売る",
+    "a11y_add_own_photos": "この出品に自分の写真を追加",
+    "add_own_photos": "自分の写真を追加",
+    "a11y_add_photos": "アイテムの写真を追加",
+    "a11y_catalogue_consent": "カバー写真をカタログの参考画像として使用することを許可",
+    "what_is_it": "これは何ですか？",
+    "a11y_what_selling": "何を売りますか",
+    "choose_category": "カテゴリーを選択",
+    "a11y_asking_price": "希望価格",
+    "choose_condition": "コンディションを選択",
+    "description_optional": "説明（任意）",
+    "a11y_list_on_marketplace": "マーケットプレイスに出品"
   }
 }

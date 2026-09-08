@@ -16,10 +16,12 @@ import { useToast } from '@/components/Toast';
 import { EmptyState } from '@/components/EmptyState';
 import logger from '@/utils/logger';
 import { safeGoBack } from '@/lib/goBack';
+import { useTranslation } from 'react-i18next';
 
 type DmStatusState = 'loading' | 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined' | 'blocked';
 
 const NewChatScreen: React.FC = () => {
+  const { t } = useTranslation();
   const { toUserId, contextEventId, contextListingTitle } = useLocalSearchParams<{
     toUserId?: string;
     contextEventId?: string;
@@ -178,7 +180,7 @@ const NewChatScreen: React.FC = () => {
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
         <EmptyState
           icon="person-outline"
-          title="Collector not found"
+          title={t('chat.collector_not_found', { defaultValue: 'Collector not found' })}
           subtitle="This chat can't be started because the collector profile is missing."
           colors={colors}
           action={
@@ -186,9 +188,9 @@ const NewChatScreen: React.FC = () => {
               onPress={() => safeGoBack(router)}
               style={[styles.emptyBtn, { borderColor: colors.border }]}
               accessibilityRole="button"
-              accessibilityLabel="Go back"
+              accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}
             >
-              <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
+              <Text style={[styles.emptyBtnText, { color: colors.text }]}>{t('common.go_back', { defaultValue: 'Go back' })}</Text>
             </AnimatedPressable>
           }
         />
@@ -220,9 +222,9 @@ const NewChatScreen: React.FC = () => {
               onPress={() => safeGoBack(router)}
               style={[styles.emptyBtn, { borderColor: colors.border }]}
               accessibilityRole="button"
-              accessibilityLabel="Go back"
+              accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}
             >
-              <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
+              <Text style={[styles.emptyBtnText, { color: colors.text }]}>{t('common.go_back', { defaultValue: 'Go back' })}</Text>
             </AnimatedPressable>
           }
         />
@@ -235,7 +237,7 @@ const NewChatScreen: React.FC = () => {
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
         <EmptyState
           icon="hourglass-outline"
-          title="Request already sent"
+          title={t('chat.request_already_sent', { defaultValue: 'Request already sent' })}
           subtitle={`You've already sent a connection request to ${toUser.displayName}. They haven't responded yet.`}
           iconColor={colors.accent}
           colors={colors}
@@ -244,9 +246,9 @@ const NewChatScreen: React.FC = () => {
               onPress={() => safeGoBack(router)}
               style={[styles.emptyBtn, { borderColor: colors.border }]}
               accessibilityRole="button"
-              accessibilityLabel="Go back"
+              accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}
             >
-              <Text style={[styles.emptyBtnText, { color: colors.text }]}>Go back</Text>
+              <Text style={[styles.emptyBtnText, { color: colors.text }]}>{t('common.go_back', { defaultValue: 'Go back' })}</Text>
             </AnimatedPressable>
           }
         />
@@ -268,13 +270,13 @@ const NewChatScreen: React.FC = () => {
               onPress={() => router.push('/inbox')}
               style={[styles.emptyBtn, { borderColor: colors.accent, backgroundColor: colors.accent }]}
               accessibilityRole="button"
-              accessibilityLabel="Go to inbox"
+              accessibilityLabel={t('chat.a11y_go_to_inbox', { defaultValue: 'Go to inbox' })}
             >
               {/* `accentText`, never '#ffffff'. In high-contrast dark the accent
                   is a LIGHT blue (#4DA6FF) and accentText is #000000, so
                   hardcoded white here is the invisible-CTA bug the playbook
                   documents against subscription.tsx. */}
-              <Text style={[styles.emptyBtnText, { color: colors.accentText }]}>Go to Inbox</Text>
+              <Text style={[styles.emptyBtnText, { color: colors.accentText }]}>{t('chat.go_to_inbox', { defaultValue: 'Go to Inbox' })}</Text>
             </AnimatedPressable>
           }
         />
@@ -301,10 +303,10 @@ const NewChatScreen: React.FC = () => {
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
-            <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+            <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}>
               <Ionicons name="chevron-back" size={24} color={colors.text} />
             </AnimatedPressable>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Request to Connect</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{t('chat.request_to_connect', { defaultValue: 'Request to Connect' })}</Text>
             <View style={{ width: 32 }} />
           </View>
 
@@ -335,7 +337,7 @@ const NewChatScreen: React.FC = () => {
           <View style={[styles.messageCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.messageLabelRow}>
               <Ionicons name="chatbubble-outline" size={14} color={colors.muted} />
-              <Text style={[styles.messageLabel, { color: colors.muted }]}>Your message</Text>
+              <Text style={[styles.messageLabel, { color: colors.muted }]}>{t('chat.your_message', { defaultValue: 'Your message' })}</Text>
             </View>
             <TextInput
               multiline
@@ -347,7 +349,7 @@ const NewChatScreen: React.FC = () => {
                   : 'Write a friendly message\u2026'
               }
               placeholderTextColor={colors.muted}
-              accessibilityLabel="Connection message"
+              accessibilityLabel={t('chat.a11y_connection_message', { defaultValue: 'Connection message' })}
               maxLength={1000}
               editable={!sending && !sent}
               style={[styles.messageInput, { color: colors.text }]}

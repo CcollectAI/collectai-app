@@ -849,5 +849,42 @@
     "a11y_create_event": "Event erstellen",
     "create_event": "Event erstellen",
     "invite_friends": "Freunde einladen"
+  },
+  "listings": {
+    "catalog_photo": "Katalogfoto",
+    "buy_and_sell_intro": "Kaufe und verkaufe mit anderen Mitgliedern",
+    "a11y_dismiss_intro": "Einführung schließen",
+    "search_placeholder": "Mitgliedsangebote durchsuchen",
+    "a11y_search": "Mitgliedsangebote durchsuchen",
+    "a11y_clear_search": "Suche löschen",
+    "a11y_clear_filters": "Alle Filter zurücksetzen",
+    "a11y_sell_item": "Ein Objekt aus deiner Sammlung verkaufen",
+    "a11y_clear_filters_search": "Alle Filter und die Suche zurücksetzen",
+    "a11y_choose_item_to_sell": "Objekt aus deiner Sammlung zum Verkauf wählen",
+    "a11y_marketplace_terms": "Marktplatz-Bedingungen lesen",
+    "marketplace_terms": "Marktplatz-Bedingungen"
+  },
+  "chat": {
+    "collector_not_found": "Sammler nicht gefunden",
+    "request_already_sent": "Anfrage bereits gesendet",
+    "a11y_go_to_inbox": "Zum Posteingang",
+    "go_to_inbox": "Zum Posteingang",
+    "request_to_connect": "Kontaktanfrage senden",
+    "your_message": "Deine Nachricht",
+    "a11y_connection_message": "Kontaktnachricht"
+  },
+  "sell": {
+    "sell_an_item": "Objekt verkaufen",
+    "a11y_add_own_photos": "Eigene Fotos zu diesem Angebot hinzufügen",
+    "add_own_photos": "Eigene Fotos hinzufügen",
+    "a11y_add_photos": "Fotos des Objekts hinzufügen",
+    "a11y_catalogue_consent": "Erlaube, dein Titelbild als Katalog-Referenzbild zu verwenden",
+    "what_is_it": "Worum handelt es sich?",
+    "a11y_what_selling": "Was verkaufst du",
+    "choose_category": "Kategorie wählen",
+    "a11y_asking_price": "Preisvorstellung",
+    "choose_condition": "Zustand wählen",
+    "description_optional": "Beschreibung (optional)",
+    "a11y_list_on_marketplace": "Auf dem Marktplatz einstellen"
   }
 }
