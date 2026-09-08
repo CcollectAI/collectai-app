@@ -12,6 +12,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { CATEGORIES } from '@/constants/categories';
 import CompactSelect from '@/components/CompactSelect';
 import type { EventKind } from '@/data/events';
+import { useTranslation } from 'react-i18next';
 
 const EVENT_KINDS: { label: string; value: EventKind }[] = [
   { label: 'Meetup', value: 'meetup' },
@@ -45,12 +46,13 @@ export const EventFormHeader = React.memo(function EventFormHeader({
   onCategoryChange,
 }: EventFormHeaderProps) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Ionicons name="information-circle-outline" size={16} color={colors.accent} />
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Basic Information</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('events.basic_information', { defaultValue: 'Basic Information' })}</Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -68,7 +70,7 @@ export const EventFormHeader = React.memo(function EventFormHeader({
               placeholder="e.g. Rotterdam TCG Meetup"
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
-              accessibilityLabel="Event title"
+              accessibilityLabel={t('events.a11y_event_title', { defaultValue: 'Event title' })}
               returnKeyType="next"
             />
           </View>
@@ -91,7 +93,7 @@ export const EventFormHeader = React.memo(function EventFormHeader({
 
         {/* Category dropdown */}
         <View style={styles.fieldBlock}>
-          <Text style={[styles.fieldLabel, { color: colors.text }]}>Category (optional)</Text>
+          <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('events.category_optional', { defaultValue: 'Category (optional)' })}</Text>
           <CompactSelect
             title="Category"
             searchable

@@ -20,6 +20,7 @@ import { colors as tokens } from '@/theme/tokens';
 import { COMMUNITY_GATED, CATEGORY_FOLLOW_ENABLED } from '@/config/featureFlags';
 import type { AppTheme } from '@/hooks/useAppTheme';
 import CategoryCollectorSearch from './CategoryCollectorSearch';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   /** Slug. Needed for the per-category leaderboard route, not just display. */
@@ -40,6 +41,7 @@ const CategoryHeaderCard: React.FC<Props> = ({
   colors,
 }) => {
   const [searchOpen, setSearchOpen] = useState(false);
+  const { t } = useTranslation();
   const router = useRouter();
 
   const onInvite = useCallback(() => {
@@ -88,10 +90,10 @@ const CategoryHeaderCard: React.FC<Props> = ({
           style={styles.pill}
           onPress={onInvite}
           accessibilityRole="button"
-          accessibilityLabel="Invite your friends"
+          accessibilityLabel={t('category.a11y_invite_friends', { defaultValue: 'Invite your friends' })}
         >
           <Ionicons name="share-outline" size={15} color="#fff" />
-          <Text style={styles.pillText}>Invite friends</Text>
+          <Text style={styles.pillText}>{t('category.invite_friends', { defaultValue: 'Invite friends' })}</Text>
         </AnimatedPressable>
         {/* Per-category leaderboard. Ranks the collectors of THIS category by
             items owned or value held — not the XP board, which has no category
@@ -112,7 +114,7 @@ const CategoryHeaderCard: React.FC<Props> = ({
             onPress={onFindFriends}
             accessibilityRole="button"
             accessibilityState={{ expanded: searchOpen }}
-            accessibilityLabel="Find friends to follow"
+            accessibilityLabel={t('category.a11y_find_friends', { defaultValue: 'Find friends to follow' })}
           >
             <Ionicons
               name="search"

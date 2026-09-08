@@ -22,6 +22,7 @@ import { useSettings } from '@/lib/settings';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import type { CollectorsEvent } from '@/data/events';
 import { parseEventDate } from '@/lib/calendar';
+import { useTranslation } from 'react-i18next';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 // Short hour rows so most of the day fits without scrolling — this is the
@@ -73,6 +74,7 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const scrollRef = useRef<ScrollView>(null);
+  const { t } = useTranslation();
   const lastScrolledWeek = useRef<number>(0);
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
 
@@ -213,13 +215,13 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
         <AnimatedPressable
           onPress={() => navigateWeek(-1)}
           style={[styles.navBtn, { backgroundColor: colors.border + '40' }]}
-          accessibilityLabel="Previous week"
+          accessibilityLabel={t('events.a11y_prev_week', { defaultValue: 'Previous week' })}
           accessibilityRole="button"
         >
           <Ionicons name="chevron-back" size={18} color={colors.text} />
         </AnimatedPressable>
 
-        <AnimatedPressable onPress={goToThisWeek} accessibilityLabel="Go to current week" accessibilityRole="button">
+        <AnimatedPressable onPress={goToThisWeek} accessibilityLabel={t('events.a11y_current_week', { defaultValue: 'Go to current week' })} accessibilityRole="button">
           <Text style={[styles.weekLabel, { color: colors.text }]}>
             {formatWeekRange(weekStart)}
           </Text>
@@ -232,7 +234,7 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
         <AnimatedPressable
           onPress={() => navigateWeek(1)}
           style={[styles.navBtn, { backgroundColor: colors.border + '40' }]}
-          accessibilityLabel="Next week"
+          accessibilityLabel={t('events.a11y_next_week', { defaultValue: 'Next week' })}
           accessibilityRole="button"
         >
           <Ionicons name="chevron-forward" size={18} color={colors.text} />

@@ -113,7 +113,16 @@
     "a11y_location": "이벤트 장소",
     "a11y_use_current_location": "현재 위치 사용",
     "online_url": "온라인 URL",
-    "a11y_online_url": "온라인 이벤트 URL"
+    "a11y_online_url": "온라인 이벤트 URL",
+    "basic_information": "기본 정보",
+    "a11y_event_title": "이벤트 제목",
+    "category_optional": "카테고리(선택)",
+    "ticket_price_optional": "티켓 가격(선택)",
+    "ticket_price_hint": "가격(EUR, 무료면 비워 두세요)",
+    "a11y_ticket_price": "티켓 가격(유로)",
+    "a11y_prev_week": "이전 주",
+    "a11y_current_week": "이번 주로 이동",
+    "a11y_next_week": "다음 주"
   },
   "marketplace": {
     "find_collectors": "컬렉터 찾기",
@@ -1142,7 +1151,13 @@
     "no_catalog_items": "이 카테고리에는 아직 카탈로그 아이템이 없습니다.",
     "not_found": "카테고리를 찾을 수 없습니다",
     "finish_a_set": "세트 완성하기",
-    "a11y_retry_categories": "카테고리 다시 불러오기"
+    "a11y_retry_categories": "카테고리 다시 불러오기",
+    "collector_search_placeholder": "이름 또는 @핸들로 수집가 검색",
+    "a11y_search_collectors": "수집가 검색",
+    "a11y_close_collector_search": "수집가 검색 닫기",
+    "a11y_invite_friends": "친구 초대하기",
+    "invite_friends": "친구 초대",
+    "a11y_find_friends": "팔로우할 친구 찾기"
   },
   "analytics": {
     "a11y_retry": "분석 데이터 다시 불러오기",

@@ -21,6 +21,7 @@ import { dataProvider } from '@/data';
 import type { PublicUserProfile } from '@/data/types';
 import type { AppTheme } from '@/hooks/useAppTheme';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   colors: AppTheme['colors'];
@@ -29,6 +30,7 @@ type Props = {
 
 const CategoryCollectorSearch: React.FC<Props> = ({ colors, onClose }) => {
   const router = useRouter();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<PublicUserProfile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -68,20 +70,20 @@ const CategoryCollectorSearch: React.FC<Props> = ({ colors, onClose }) => {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Search collectors by name or @handle"
+          placeholder={t('category.collector_search_placeholder', { defaultValue: 'Search collectors by name or @handle' })}
           placeholderTextColor="rgba(255,255,255,0.7)"
           style={styles.input}
           autoFocus
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
-          accessibilityLabel="Search for collectors"
+          accessibilityLabel={t('category.a11y_search_collectors', { defaultValue: 'Search for collectors' })}
         />
         <AnimatedPressable
           onPress={onClose}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Close collector search"
+          accessibilityLabel={t('category.a11y_close_collector_search', { defaultValue: 'Close collector search' })}
         >
           <Ionicons name="close" size={18} color="#fff" />
         </AnimatedPressable>

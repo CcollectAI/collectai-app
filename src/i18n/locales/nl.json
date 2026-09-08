@@ -113,7 +113,16 @@
     "a11y_location": "Locatie van evenement",
     "a11y_use_current_location": "Mijn huidige locatie gebruiken",
     "online_url": "Online-URL",
-    "a11y_online_url": "URL van online evenement"
+    "a11y_online_url": "URL van online evenement",
+    "basic_information": "Basisinformatie",
+    "a11y_event_title": "Titel van evenement",
+    "category_optional": "Categorie (optioneel)",
+    "ticket_price_optional": "Ticketprijs (optioneel)",
+    "ticket_price_hint": "Prijs in EUR (leeg laten voor gratis)",
+    "a11y_ticket_price": "Ticketprijs in euro's",
+    "a11y_prev_week": "Vorige week",
+    "a11y_current_week": "Naar huidige week",
+    "a11y_next_week": "Volgende week"
   },
   "marketplace": {
     "find_collectors": "Verzamelaars vinden",
@@ -1142,7 +1151,13 @@
     "no_catalog_items": "Nog geen catalogusitems in deze categorie.",
     "not_found": "Categorie niet gevonden",
     "finish_a_set": "Maak een set compleet",
-    "a11y_retry_categories": "Categorieën opnieuw laden"
+    "a11y_retry_categories": "Categorieën opnieuw laden",
+    "collector_search_placeholder": "Zoek verzamelaars op naam of @handle",
+    "a11y_search_collectors": "Zoeken naar verzamelaars",
+    "a11y_close_collector_search": "Verzamelaarszoekopdracht sluiten",
+    "a11y_invite_friends": "Nodig je vrienden uit",
+    "invite_friends": "Vrienden uitnodigen",
+    "a11y_find_friends": "Vrienden zoeken om te volgen"
   },
   "analytics": {
     "a11y_retry": "Analysegegevens opnieuw laden",

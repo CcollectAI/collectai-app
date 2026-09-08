@@ -9,6 +9,7 @@ import React from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 
 interface EventTicketingSectionProps {
   ticketPriceCents: string;
@@ -20,16 +21,17 @@ export const EventTicketingSection = React.memo(function EventTicketingSection({
   onTicketPriceChange,
 }: EventTicketingSectionProps) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Ionicons name="ticket-outline" size={16} color={colors.accent} />
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Ticket Price (optional)</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('events.ticket_price_optional', { defaultValue: 'Ticket Price (optional)' })}</Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.fieldLabel, { color: colors.text }]}>Price in EUR (leave empty for free)</Text>
+        <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('events.ticket_price_hint', { defaultValue: 'Price in EUR (leave empty for free)' })}</Text>
         <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
           <Text style={{ color: colors.muted, marginRight: 4, fontSize: 16 }}>{'\u20AC'}</Text>
           <TextInput
@@ -39,7 +41,7 @@ export const EventTicketingSection = React.memo(function EventTicketingSection({
             placeholderTextColor={colors.muted}
             style={[styles.input, { color: colors.text }]}
             keyboardType="decimal-pad"
-            accessibilityLabel="Ticket price in euros"
+            accessibilityLabel={t('events.a11y_ticket_price', { defaultValue: 'Ticket price in euros' })}
             returnKeyType="done"
           />
         </View>

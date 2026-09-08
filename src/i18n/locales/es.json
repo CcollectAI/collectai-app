@@ -113,7 +113,16 @@
     "a11y_location": "Ubicación del evento",
     "a11y_use_current_location": "Usar mi ubicación actual",
     "online_url": "URL en línea",
-    "a11y_online_url": "URL del evento en línea"
+    "a11y_online_url": "URL del evento en línea",
+    "basic_information": "Información básica",
+    "a11y_event_title": "Título del evento",
+    "category_optional": "Categoría (opcional)",
+    "ticket_price_optional": "Precio de la entrada (opcional)",
+    "ticket_price_hint": "Precio en EUR (déjalo vacío si es gratis)",
+    "a11y_ticket_price": "Precio de la entrada en euros",
+    "a11y_prev_week": "Semana anterior",
+    "a11y_current_week": "Ir a la semana actual",
+    "a11y_next_week": "Semana siguiente"
   },
   "marketplace": {
     "find_collectors": "Encontrar coleccionistas",
@@ -1142,7 +1151,13 @@
     "no_catalog_items": "Aún no hay artículos de catálogo en esta categoría.",
     "not_found": "Categoría no encontrada",
     "finish_a_set": "Completa un set",
-    "a11y_retry_categories": "Volver a cargar las categorías"
+    "a11y_retry_categories": "Volver a cargar las categorías",
+    "collector_search_placeholder": "Busca coleccionistas por nombre o @usuario",
+    "a11y_search_collectors": "Buscar coleccionistas",
+    "a11y_close_collector_search": "Cerrar la búsqueda de coleccionistas",
+    "a11y_invite_friends": "Invita a tus amigos",
+    "invite_friends": "Invitar amigos",
+    "a11y_find_friends": "Encontrar amigos a los que seguir"
   },
   "analytics": {
     "a11y_retry": "Volver a cargar los datos de análisis",

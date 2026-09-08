@@ -113,7 +113,16 @@
     "a11y_location": "Event location",
     "a11y_use_current_location": "Use my current location",
     "online_url": "Online URL",
-    "a11y_online_url": "Online event URL"
+    "a11y_online_url": "Online event URL",
+    "basic_information": "Basic Information",
+    "a11y_event_title": "Event title",
+    "category_optional": "Category (optional)",
+    "ticket_price_optional": "Ticket Price (optional)",
+    "ticket_price_hint": "Price in EUR (leave empty for free)",
+    "a11y_ticket_price": "Ticket price in euros",
+    "a11y_prev_week": "Previous week",
+    "a11y_current_week": "Go to current week",
+    "a11y_next_week": "Next week"
   },
   "marketplace": {
     "find_collectors": "Find Collectors",
@@ -1142,7 +1151,13 @@
     "no_catalog_items": "No catalog items for this category yet.",
     "not_found": "Category not found",
     "finish_a_set": "Finish a set",
-    "a11y_retry_categories": "Retry loading categories"
+    "a11y_retry_categories": "Retry loading categories",
+    "collector_search_placeholder": "Search collectors by name or @handle",
+    "a11y_search_collectors": "Search for collectors",
+    "a11y_close_collector_search": "Close collector search",
+    "a11y_invite_friends": "Invite your friends",
+    "invite_friends": "Invite friends",
+    "a11y_find_friends": "Find friends to follow"
   },
   "analytics": {
     "a11y_retry": "Retry loading analytics data",

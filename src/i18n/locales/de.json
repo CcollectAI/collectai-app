@@ -113,7 +113,16 @@
     "a11y_location": "Veranstaltungsort",
     "a11y_use_current_location": "Meinen aktuellen Standort verwenden",
     "online_url": "Online-Adresse",
-    "a11y_online_url": "URL der Online-Veranstaltung"
+    "a11y_online_url": "URL der Online-Veranstaltung",
+    "basic_information": "Grundinformationen",
+    "a11y_event_title": "Titel der Veranstaltung",
+    "category_optional": "Kategorie (optional)",
+    "ticket_price_optional": "Ticketpreis (optional)",
+    "ticket_price_hint": "Preis in EUR (leer lassen für kostenlos)",
+    "a11y_ticket_price": "Ticketpreis in Euro",
+    "a11y_prev_week": "Vorherige Woche",
+    "a11y_current_week": "Zur aktuellen Woche",
+    "a11y_next_week": "Nächste Woche"
   },
   "marketplace": {
     "find_collectors": "Sammler finden",
@@ -1142,7 +1151,13 @@
     "no_catalog_items": "Noch keine Katalogobjekte in dieser Kategorie.",
     "not_found": "Kategorie nicht gefunden",
     "finish_a_set": "Ein Set vervollständigen",
-    "a11y_retry_categories": "Kategorien erneut laden"
+    "a11y_retry_categories": "Kategorien erneut laden",
+    "collector_search_placeholder": "Sammler nach Name oder @Handle suchen",
+    "a11y_search_collectors": "Nach Sammlern suchen",
+    "a11y_close_collector_search": "Sammlersuche schließen",
+    "a11y_invite_friends": "Lade deine Freunde ein",
+    "invite_friends": "Freunde einladen",
+    "a11y_find_friends": "Freunde zum Folgen finden"
   },
   "analytics": {
     "a11y_retry": "Analysedaten erneut laden",

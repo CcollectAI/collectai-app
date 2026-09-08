@@ -113,7 +113,16 @@
     "a11y_location": "イベントの場所",
     "a11y_use_current_location": "現在地を使用",
     "online_url": "オンラインURL",
-    "a11y_online_url": "オンラインイベントのURL"
+    "a11y_online_url": "オンラインイベントのURL",
+    "basic_information": "基本情報",
+    "a11y_event_title": "イベントのタイトル",
+    "category_optional": "カテゴリー（任意）",
+    "ticket_price_optional": "チケット価格（任意）",
+    "ticket_price_hint": "価格（EUR、無料の場合は空欄）",
+    "a11y_ticket_price": "チケット価格（ユーロ）",
+    "a11y_prev_week": "前の週",
+    "a11y_current_week": "今週に移動",
+    "a11y_next_week": "次の週"
   },
   "marketplace": {
     "find_collectors": "コレクターを探す",
@@ -1142,7 +1151,13 @@
     "no_catalog_items": "このカテゴリーのカタログアイテムはまだありません。",
     "not_found": "カテゴリーが見つかりません",
     "finish_a_set": "セットを完成させる",
-    "a11y_retry_categories": "カテゴリーを再読み込み"
+    "a11y_retry_categories": "カテゴリーを再読み込み",
+    "collector_search_placeholder": "名前または @ハンドルでコレクターを検索",
+    "a11y_search_collectors": "コレクターを検索",
+    "a11y_close_collector_search": "コレクター検索を閉じる",
+    "a11y_invite_friends": "友だちを招待する",
+    "invite_friends": "友だちを招待",
+    "a11y_find_friends": "フォローする友だちを探す"
   },
   "analytics": {
     "a11y_retry": "分析データを再読み込み",
