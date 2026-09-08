@@ -532,6 +532,37 @@ understand. Mutation-proven: the pre-fix asset exits 1 naming the exact overflow
 ⛔ Fixed in the asset and gated, but **not yet re-verified on a device** — that
 needs another local build.
 
+### Stop rebuilding for JS changes — use the dev client (2026-09-08)
+
+Two local builds were spent verifying fixes on 2026-09-08, and only ONE of them
+needed a build: the adaptive icon is a native asset. The modal inset fix, the
+deletion timeout and every i18n string are JS.
+
+`eas.json` had `developmentClient` profiles all along, but **`expo-dev-client`
+was never installed**, so they could not have worked. Now pinned at `~6.0.21`
+(the SDK 54 version from Expo's native-modules manifest, not a guess).
+
+```bash
+eas build -p android --profile development-device --local \
+  --output ./builds/sparrow-dev-client.apk     # once
+adb install -r builds/sparrow-dev-client.apk
+adb shell am force-stop io.sparrowcollect.app  # install -r does not swap code
+npx expo start --dev-client                     # JS reloads in seconds
+```
+
+⚠️ **`development-device`, NOT `development`.** The latter sets
+`EXPO_PUBLIC_SUPABASE_MODE=mock`, so a dev client built from it runs against
+mock data and cannot verify anything touching the real backend — the deletion
+flow least of all.
+
+⚠️ `development-device` does **not** pin `EXPO_PUBLIC_BETA_UNLOCK_ALL=false`
+the way `android-apk` does, so the paywall may be unlocked in the dev client.
+Paywall behaviour still has to be verified on an `android-apk` build — that is
+the whole reason that profile exists.
+
+Native changes (icons, permissions, native deps, app.json config) still need a
+real rebuild. Batch them.
+
 ### Emulator gotchas that cost hours — read before driving the UI
 
 1. **A second app (`com.sammysam.app`) steals foreground.** `am start` returns
@@ -551,7 +582,17 @@ needs another local build.
 5. **Tap coordinates shift between screens.** Read the target's position from a
    `uiautomator` dump each time; a hardcoded y-value silently misses and you
    will think a field is empty when your tap simply landed elsewhere.
-6. **The emulator died twice and lost network once** (ANR storms). If
+6a. **The soft keyboard covers the bottom half of the screen.** A tap at
+   y≈1540 on a 2400-tall screen lands on the keyboard, not the button beneath
+   it. The button reports `enabled="true" clickable="true"` and nothing errors —
+   the touch simply goes elsewhere. Dismiss with `input keyevent 4` and confirm
+   `dumpsys input_method | grep mInputShown` says **false** before tapping.
+   This cost three "sign-in does nothing" cycles.
+6b. **`uiautomator` bounds can be degenerate mid-scroll.** A dump caught during
+   momentum returned `[156,2207][443,2185]` — y2 < y1, negative height — and
+   the computed centre tapped nothing. Validate `x2>x1 && y2>y1` before using a
+   bounding box.
+7. **The emulator died twice and lost network once** (ANR storms). If
    `TypeError: Network request failed` appears, reset the radios:
    `adb shell svc wifi disable && adb shell svc data disable` then re-enable.
    Do not file those as app bugs.
