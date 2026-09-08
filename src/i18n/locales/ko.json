@@ -810,7 +810,12 @@
     "a11y_retry_carriers": "배송사 다시 불러오기",
     "tracking_code": "운송장 번호",
     "a11y_save_tracking": "배송 정보 저장",
-    "counter_offer": "역제안"
+    "counter_offer": "역제안",
+    "loading_trade": "이 거래를 불러오는 중…",
+    "a11y_add_tracking": "이 배송물의 추적 정보 추가",
+    "add_tracking": "추적 정보 추가",
+    "a11y_view_listing": "이 거래의 리스팅 보기",
+    "view_listing": "리스팅 보기"
   },
   "item_attrs": {
     "case_size": "케이스 크기",
@@ -886,5 +891,31 @@
     "choose_condition": "상태 선택",
     "description_optional": "설명(선택)",
     "a11y_list_on_marketplace": "마켓플레이스에 등록"
+  },
+  "purchase": {
+    "invalid_deal_link": "유효하지 않은 거래 링크",
+    "deal_not_found": "거래를 찾을 수 없습니다",
+    "listing_price": "리스팅 가격",
+    "price_analysis": "가격 분석",
+    "band_low": "낮음 (q10)",
+    "band_median": "중앙값 (q50)",
+    "band_high": "높음 (q90)",
+    "deal_score": "딜 점수",
+    "policy_checks": "정책 확인",
+    "a11y_buy_it": "구매하기",
+    "buy_it": "구매하기",
+    "a11y_not_interested": "관심 없음",
+    "not_interested": "관심 없음"
+  },
+  "edit_event": {
+    "loading_event": "이벤트 불러오는 중...",
+    "go_back": "뒤로",
+    "description_placeholder": "참가자가 이 이벤트에 대해 알아야 할 내용은 무엇인가요?",
+    "a11y_description": "이벤트 설명",
+    "a11y_save_changes": "변경사항 저장",
+    "save_changes": "변경사항 저장",
+    "danger_zone": "위험 구역",
+    "a11y_cancel_event": "이벤트 취소",
+    "cancel_event": "이벤트 취소"
   }
 }

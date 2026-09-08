@@ -810,7 +810,12 @@
     "a11y_retry_carriers": "Vervoerders opnieuw laden",
     "tracking_code": "Trackingcode",
     "a11y_save_tracking": "Trackinggegevens opslaan",
-    "counter_offer": "Tegenbod"
+    "counter_offer": "Tegenbod",
+    "loading_trade": "Deze transactie laden…",
+    "a11y_add_tracking": "Track & trace voor dit pakket toevoegen",
+    "add_tracking": "Track & trace toevoegen",
+    "a11y_view_listing": "Bekijk de advertentie waar deze transactie over gaat",
+    "view_listing": "Advertentie bekijken"
   },
   "item_attrs": {
     "case_size": "Kastmaat",
@@ -886,5 +891,31 @@
     "choose_condition": "Kies een conditie",
     "description_optional": "Beschrijving (optioneel)",
     "a11y_list_on_marketplace": "Plaats op de marktplaats"
+  },
+  "purchase": {
+    "invalid_deal_link": "Ongeldige deal-link",
+    "deal_not_found": "Deal niet gevonden",
+    "listing_price": "Vraagprijs",
+    "price_analysis": "Prijsanalyse",
+    "band_low": "Laag (q10)",
+    "band_median": "Mediaan (q50)",
+    "band_high": "Hoog (q90)",
+    "deal_score": "Dealscore",
+    "policy_checks": "Beleidscontroles",
+    "a11y_buy_it": "Kopen",
+    "buy_it": "Kopen",
+    "a11y_not_interested": "Niet geïnteresseerd",
+    "not_interested": "Niet geïnteresseerd"
+  },
+  "edit_event": {
+    "loading_event": "Evenement laden...",
+    "go_back": "Terug",
+    "description_placeholder": "Wat moeten bezoekers weten over dit evenement?",
+    "a11y_description": "Evenementbeschrijving",
+    "a11y_save_changes": "Wijzigingen opslaan",
+    "save_changes": "Wijzigingen opslaan",
+    "danger_zone": "Gevarenzone",
+    "a11y_cancel_event": "Evenement annuleren",
+    "cancel_event": "Evenement annuleren"
   }
 }

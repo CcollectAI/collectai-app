@@ -58,6 +58,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import type { P2POffer } from '@/api/p2pApi';
 import { radius, text as textToken, fontWeight, shadow } from '@/theme/tokens';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 /** Must match `MAX_COUNTERS` in the server router — see app/offers.tsx. */
 const MAX_COUNTERS = 5;
@@ -65,6 +66,7 @@ const MAX_COUNTERS = 5;
 type StepState = 'done' | 'now' | 'later';
 
 function TradeScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
@@ -223,7 +225,7 @@ function TradeScreen() {
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
         <View style={styles.centered}>
           <ActivityIndicator color={colors.accent} />
-          <Text style={[styles.muted, { color: colors.muted }]}>Loading this trade…</Text>
+          <Text style={[styles.muted, { color: colors.muted }]}>{t('offers.loading_trade', { defaultValue: 'Loading this trade…' })}</Text>
         </View>
         <QuickNavBar />
       </SafeAreaView>
@@ -250,9 +252,9 @@ function TradeScreen() {
               onPress={retry}
               style={[styles.btn, { backgroundColor: colors.accent }]}
               accessibilityRole="button"
-              accessibilityLabel="Try again"
+              accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
             >
-              <Text style={[styles.btnText, { color: colors.accentText }]}>Try again</Text>
+              <Text style={[styles.btnText, { color: colors.accentText }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
             </AnimatedPressable>
           ) : null}
         </View>
@@ -380,7 +382,7 @@ function TradeScreen() {
                     disabled={busy}
                     style={[styles.btn, { backgroundColor: colors.accent }]}
                     accessibilityRole="button"
-                    accessibilityLabel="Accept this offer"
+                    accessibilityLabel={t('offers.a11y_accept_offer', { defaultValue: 'Accept this offer' })}
                   >
                     <Text style={[styles.btnText, { color: colors.accentText }]}>Accept</Text>
                   </AnimatedPressable>
@@ -394,7 +396,7 @@ function TradeScreen() {
                       disabled={busy}
                       style={[styles.btn, styles.btnGhost, { borderColor: colors.accent }]}
                       accessibilityRole="button"
-                      accessibilityLabel="Counter this offer"
+                      accessibilityLabel={t('offers.a11y_counter_offer', { defaultValue: 'Counter this offer' })}
                     >
                       <Text style={[styles.btnText, { color: colors.accent }]}>Counter</Text>
                     </AnimatedPressable>
@@ -405,7 +407,7 @@ function TradeScreen() {
                     disabled={busy}
                     style={[styles.btn, styles.btnQuiet]}
                     accessibilityRole="button"
-                    accessibilityLabel="Decline this offer"
+                    accessibilityLabel={t('offers.a11y_decline_offer', { defaultValue: 'Decline this offer' })}
                   >
                     <Text style={[styles.btnText, { color: colors.danger }]}>Decline</Text>
                   </AnimatedPressable>
@@ -449,9 +451,9 @@ function TradeScreen() {
                       `/offers?offerId=${encodeURIComponent(offer.id)}&action=track` as Href)}
                     style={[styles.btn, styles.btnGhost, { borderColor: colors.accent }]}
                     accessibilityRole="button"
-                    accessibilityLabel="Add tracking for this parcel"
+                    accessibilityLabel={t('offers.a11y_add_tracking', { defaultValue: 'Add tracking for this parcel' })}
                   >
-                    <Text style={[styles.btnText, { color: colors.accent }]}>Add tracking</Text>
+                    <Text style={[styles.btnText, { color: colors.accent }]}>{t('offers.add_tracking', { defaultValue: 'Add tracking' })}</Text>
                   </AnimatedPressable>
                 </View>
               ) : null}
@@ -483,13 +485,13 @@ function TradeScreen() {
                     size={14}
                     color={offer.seller_confirmed_at ? colors.accent : colors.muted}
                   />
-                  <Text style={[styles.confirmText, { color: colors.muted }]}>Seller sent</Text>
+                  <Text style={[styles.confirmText, { color: colors.muted }]}>{t('offers.seller_sent', { defaultValue: 'Seller sent' })}</Text>
                   <Ionicons
                     name={offer.buyer_confirmed_at ? 'checkmark-circle' : 'ellipse-outline'}
                     size={14}
                     color={offer.buyer_confirmed_at ? colors.accent : colors.muted}
                   />
-                  <Text style={[styles.confirmText, { color: colors.muted }]}>Buyer received</Text>
+                  <Text style={[styles.confirmText, { color: colors.muted }]}>{t('offers.buyer_received', { defaultValue: 'Buyer received' })}</Text>
                 </View>
               ) : null}
 
@@ -523,10 +525,10 @@ function TradeScreen() {
             onPress={openListing}
             style={[styles.listingLink, { borderColor: colors.border }]}
             accessibilityRole="button"
-            accessibilityLabel="View the listing this trade is for"
+            accessibilityLabel={t('offers.a11y_view_listing', { defaultValue: 'View the listing this trade is for' })}
           >
             <Ionicons name="open-outline" size={16} color={colors.accent} />
-            <Text style={[styles.listingLinkText, { color: colors.accent }]}>View listing</Text>
+            <Text style={[styles.listingLinkText, { color: colors.accent }]}>{t('offers.view_listing', { defaultValue: 'View listing' })}</Text>
           </AnimatedPressable>
         </Animated.View>
       </ScrollView>
@@ -538,7 +540,7 @@ function TradeScreen() {
       <OfferAmountSheet
         visible={counterOpen}
         onClose={() => setCounterOpen(false)}
-        title="Counter offer"
+        title={t('offers.counter_offer', { defaultValue: 'Counter offer' })}
         reference={offer.listing_price ?? offer.amount}
         referenceLabel={offer.listing_price != null ? 'Asking' : 'Their offer'}
         currency={settings.currency}

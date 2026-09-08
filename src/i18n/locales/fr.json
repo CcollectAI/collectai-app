@@ -810,7 +810,12 @@
     "a11y_retry_carriers": "Recharger les transporteurs",
     "tracking_code": "Numéro de suivi",
     "a11y_save_tracking": "Enregistrer le suivi",
-    "counter_offer": "Contre-offre"
+    "counter_offer": "Contre-offre",
+    "loading_trade": "Chargement de cet échange…",
+    "a11y_add_tracking": "Ajouter le suivi de ce colis",
+    "add_tracking": "Ajouter le suivi",
+    "a11y_view_listing": "Voir l’annonce concernée par cet échange",
+    "view_listing": "Voir l’annonce"
   },
   "item_attrs": {
     "case_size": "Taille du boîtier",
@@ -886,5 +891,31 @@
     "choose_condition": "Choisir un état",
     "description_optional": "Description (facultatif)",
     "a11y_list_on_marketplace": "Publier sur la place de marché"
+  },
+  "purchase": {
+    "invalid_deal_link": "Lien d’offre invalide",
+    "deal_not_found": "Offre introuvable",
+    "listing_price": "Prix affiché",
+    "price_analysis": "Analyse des prix",
+    "band_low": "Bas (q10)",
+    "band_median": "Médiane (q50)",
+    "band_high": "Haut (q90)",
+    "deal_score": "Score de l’offre",
+    "policy_checks": "Vérifications des règles",
+    "a11y_buy_it": "Acheter",
+    "buy_it": "Acheter",
+    "a11y_not_interested": "Pas intéressé",
+    "not_interested": "Pas intéressé"
+  },
+  "edit_event": {
+    "loading_event": "Chargement de l’événement...",
+    "go_back": "Retour",
+    "description_placeholder": "Que doivent savoir les participants sur cet événement ?",
+    "a11y_description": "Description de l’événement",
+    "a11y_save_changes": "Enregistrer les modifications",
+    "save_changes": "Enregistrer les modifications",
+    "danger_zone": "Zone sensible",
+    "a11y_cancel_event": "Annuler l’événement",
+    "cancel_event": "Annuler l’événement"
   }
 }

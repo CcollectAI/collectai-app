@@ -810,7 +810,12 @@
     "a11y_retry_carriers": "Recargar transportistas",
     "tracking_code": "Código de seguimiento",
     "a11y_save_tracking": "Guardar datos de envío",
-    "counter_offer": "Contraoferta"
+    "counter_offer": "Contraoferta",
+    "loading_trade": "Cargando este intercambio…",
+    "a11y_add_tracking": "Añadir seguimiento de este paquete",
+    "add_tracking": "Añadir seguimiento",
+    "a11y_view_listing": "Ver el anuncio de este intercambio",
+    "view_listing": "Ver anuncio"
   },
   "item_attrs": {
     "case_size": "Tamaño de la caja",
@@ -886,5 +891,31 @@
     "choose_condition": "Elige un estado",
     "description_optional": "Descripción (opcional)",
     "a11y_list_on_marketplace": "Publicar en el mercado"
+  },
+  "purchase": {
+    "invalid_deal_link": "Enlace de oferta no válido",
+    "deal_not_found": "Oferta no encontrada",
+    "listing_price": "Precio del anuncio",
+    "price_analysis": "Análisis de precios",
+    "band_low": "Bajo (q10)",
+    "band_median": "Mediana (q50)",
+    "band_high": "Alto (q90)",
+    "deal_score": "Puntuación de la oferta",
+    "policy_checks": "Comprobaciones de políticas",
+    "a11y_buy_it": "Comprar",
+    "buy_it": "Comprar",
+    "a11y_not_interested": "No me interesa",
+    "not_interested": "No me interesa"
+  },
+  "edit_event": {
+    "loading_event": "Cargando evento...",
+    "go_back": "Volver",
+    "description_placeholder": "¿Qué deberían saber los asistentes sobre este evento?",
+    "a11y_description": "Descripción del evento",
+    "a11y_save_changes": "Guardar cambios",
+    "save_changes": "Guardar cambios",
+    "danger_zone": "Zona de peligro",
+    "a11y_cancel_event": "Cancelar evento",
+    "cancel_event": "Cancelar evento"
   }
 }

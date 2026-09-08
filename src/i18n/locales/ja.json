@@ -810,7 +810,12 @@
     "a11y_retry_carriers": "配送業者を再読み込み",
     "tracking_code": "追跡番号",
     "a11y_save_tracking": "配送情報を保存",
-    "counter_offer": "カウンターオファー"
+    "counter_offer": "カウンターオファー",
+    "loading_trade": "この取引を読み込み中…",
+    "a11y_add_tracking": "この荷物の追跡情報を追加",
+    "add_tracking": "追跡情報を追加",
+    "a11y_view_listing": "この取引の出品を見る",
+    "view_listing": "出品を見る"
   },
   "item_attrs": {
     "case_size": "ケースサイズ",
@@ -886,5 +891,31 @@
     "choose_condition": "コンディションを選択",
     "description_optional": "説明（任意）",
     "a11y_list_on_marketplace": "マーケットプレイスに出品"
+  },
+  "purchase": {
+    "invalid_deal_link": "無効な取引リンク",
+    "deal_not_found": "取引が見つかりません",
+    "listing_price": "出品価格",
+    "price_analysis": "価格分析",
+    "band_low": "低 (q10)",
+    "band_median": "中央値 (q50)",
+    "band_high": "高 (q90)",
+    "deal_score": "ディールスコア",
+    "policy_checks": "ポリシーチェック",
+    "a11y_buy_it": "購入する",
+    "buy_it": "購入する",
+    "a11y_not_interested": "興味なし",
+    "not_interested": "興味なし"
+  },
+  "edit_event": {
+    "loading_event": "イベントを読み込み中...",
+    "go_back": "戻る",
+    "description_placeholder": "参加者はこのイベントについて何を知っておくべきですか？",
+    "a11y_description": "イベントの説明",
+    "a11y_save_changes": "変更を保存",
+    "save_changes": "変更を保存",
+    "danger_zone": "危険な操作",
+    "a11y_cancel_event": "イベントを中止",
+    "cancel_event": "イベントを中止"
   }
 }

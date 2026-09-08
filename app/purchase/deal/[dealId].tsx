@@ -29,6 +29,7 @@ import { formatPrice } from "@/lib/format";
 import { collectorsApi } from "@/api/collectorsApi";
 import { useToast } from "@/components/Toast";
 import type { MandateDeal } from "@/data/types";
+import { useTranslation } from 'react-i18next';
 
 export default function DealDetailScreenWithBoundary() {
   return (
@@ -39,6 +40,7 @@ export default function DealDetailScreenWithBoundary() {
 }
 
 function DealDetailScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { dealId } = useLocalSearchParams<{ dealId: string }>();
   const { colors } = useAppTheme();
@@ -116,7 +118,7 @@ function DealDetailScreen() {
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["left", "right"]}>
         <View style={styles.loadingWrap}>
           <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
-          <Text style={[styles.errorText, { color: colors.text }]}>Invalid deal link</Text>
+          <Text style={[styles.errorText, { color: colors.text }]}>{t('purchase.invalid_deal_link', { defaultValue: 'Invalid deal link' })}</Text>
         </View>
       </SafeAreaView>
     );
@@ -137,7 +139,7 @@ function DealDetailScreen() {
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["left", "right"]}>
         <View style={styles.loadingWrap}>
           <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
-          <Text style={[styles.errorText, { color: colors.text }]}>Deal not found</Text>
+          <Text style={[styles.errorText, { color: colors.text }]}>{t('purchase.deal_not_found', { defaultValue: 'Deal not found' })}</Text>
         </View>
       </SafeAreaView>
     );
@@ -187,7 +189,7 @@ function DealDetailScreen() {
         {/* Price */}
         <View style={[styles.priceCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.priceRow}>
-            <Text style={[styles.priceLabel, { color: colors.muted }]}>Listing Price</Text>
+            <Text style={[styles.priceLabel, { color: colors.muted }]}>{t('purchase.listing_price', { defaultValue: 'Listing Price' })}</Text>
             <Text style={[styles.priceValue, { color: colors.text }]}>
               {formatPrice(deal.listingPrice)}
             </Text>
@@ -205,11 +207,11 @@ function DealDetailScreen() {
         {/* Price Analysis (if predictions available) */}
         {deal.predictedQ50 != null && (
           <View style={[styles.analysisCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Price Analysis</Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>{t('purchase.price_analysis', { defaultValue: 'Price Analysis' })}</Text>
             <View style={styles.predRow}>
-              <PredBand label="Low (q10)" value={deal.predictedQ10} colors={colors} />
-              <PredBand label="Median (q50)" value={deal.predictedQ50} colors={colors} highlight />
-              <PredBand label="High (q90)" value={deal.predictedQ90} colors={colors} />
+              <PredBand label={t('purchase.band_low', { defaultValue: 'Low (q10)' })} value={deal.predictedQ10} colors={colors} />
+              <PredBand label={t('purchase.band_median', { defaultValue: 'Median (q50)' })} value={deal.predictedQ50} colors={colors} highlight />
+              <PredBand label={t('purchase.band_high', { defaultValue: 'High (q90)' })} value={deal.predictedQ90} colors={colors} />
             </View>
             {/* Visual bar */}
             <View style={[styles.barTrack, { backgroundColor: colors.border }]}>
@@ -237,14 +239,14 @@ function DealDetailScreen() {
           <Text style={[styles.cardTitle, { color: colors.text }]}>Scoring</Text>
           <View style={styles.scoreRow}>
             <ScoreItem label="Provenance" value={deal.provenanceScore} colors={colors} />
-            <ScoreItem label="Deal Score" value={deal.dealScore} colors={colors} />
+            <ScoreItem label={t('purchase.deal_score', { defaultValue: 'Deal Score' })} value={deal.dealScore} colors={colors} />
           </View>
         </View>
 
         {/* Policy Checks */}
         {deal.policyReasons.length > 0 && (
           <View style={[styles.policyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>Policy Checks</Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>{t('purchase.policy_checks', { defaultValue: 'Policy Checks' })}</Text>
             {deal.policyReasons.map((reason, idx) => {
               const isFail = reason.startsWith("FAIL:");
               return (
@@ -282,10 +284,10 @@ function DealDetailScreen() {
               style={[styles.buyBtn, { backgroundColor: colors.accent }]}
               onPress={handleBuyIt}
               accessibilityRole="button"
-              accessibilityLabel="Buy it"
+              accessibilityLabel={t('purchase.a11y_buy_it', { defaultValue: 'Buy it' })}
             >
               <Ionicons name="open-outline" size={18} color="#fff" />
-              <Text style={styles.buyBtnText}>Buy It</Text>
+              <Text style={styles.buyBtnText}>{t('purchase.buy_it', { defaultValue: 'Buy It' })}</Text>
             </AnimatedPressable>
 
             {(deal.status === "clicked" || deal.affiliateClick) && (
@@ -311,10 +313,10 @@ function DealDetailScreen() {
               style={[styles.declineBtn, { borderColor: colors.border }]}
               onPress={handleDecline}
               accessibilityRole="button"
-              accessibilityLabel="Not interested"
+              accessibilityLabel={t('purchase.a11y_not_interested', { defaultValue: 'Not interested' })}
             >
               <Ionicons name="close" size={16} color={colors.muted} />
-              <Text style={[styles.declineBtnText, { color: colors.muted }]}>Not Interested</Text>
+              <Text style={[styles.declineBtnText, { color: colors.muted }]}>{t('purchase.not_interested', { defaultValue: 'Not Interested' })}</Text>
             </AnimatedPressable>
           </View>
         )}

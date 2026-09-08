@@ -810,7 +810,12 @@
     "a11y_retry_carriers": "Retry loading carriers",
     "tracking_code": "Tracking code",
     "a11y_save_tracking": "Save tracking details",
-    "counter_offer": "Counter offer"
+    "counter_offer": "Counter offer",
+    "loading_trade": "Loading this trade…",
+    "a11y_add_tracking": "Add tracking for this parcel",
+    "add_tracking": "Add tracking",
+    "a11y_view_listing": "View the listing this trade is for",
+    "view_listing": "View listing"
   },
   "item_attrs": {
     "case_size": "Case Size",
@@ -886,5 +891,31 @@
     "choose_condition": "Choose a condition",
     "description_optional": "Description (optional)",
     "a11y_list_on_marketplace": "List it on the marketplace"
+  },
+  "purchase": {
+    "invalid_deal_link": "Invalid deal link",
+    "deal_not_found": "Deal not found",
+    "listing_price": "Listing Price",
+    "price_analysis": "Price Analysis",
+    "band_low": "Low (q10)",
+    "band_median": "Median (q50)",
+    "band_high": "High (q90)",
+    "deal_score": "Deal Score",
+    "policy_checks": "Policy Checks",
+    "a11y_buy_it": "Buy it",
+    "buy_it": "Buy It",
+    "a11y_not_interested": "Not interested",
+    "not_interested": "Not Interested"
+  },
+  "edit_event": {
+    "loading_event": "Loading event...",
+    "go_back": "Go Back",
+    "description_placeholder": "What should attendees know about this event?",
+    "a11y_description": "Event description",
+    "a11y_save_changes": "Save changes",
+    "save_changes": "Save Changes",
+    "danger_zone": "Danger Zone",
+    "a11y_cancel_event": "Cancel event",
+    "cancel_event": "Cancel Event"
   }
 }

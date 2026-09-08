@@ -44,6 +44,7 @@ import { EventDateTimePicker } from '@/components/events/EventDateTimePicker';
 import { EventLocationSection } from '@/components/events/EventLocationSection';
 import { FormField as FormFieldComponent } from '@/components/form';
 import { safeGoBack } from '@/lib/goBack';
+import { useTranslation } from 'react-i18next';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -60,6 +61,7 @@ const EVENT_FORMATS: { label: string; value: EventFormat; icon: keyof typeof Ion
 /* -------------------------------------------------------------------------- */
 
 const EditEventScreen: React.FC = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
   const { colors } = useAppTheme();
@@ -179,7 +181,7 @@ const EditEventScreen: React.FC = () => {
       <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={[styles.loadingText, { color: colors.muted }]}>Loading event...</Text>
+          <Text style={[styles.loadingText, { color: colors.muted }]}>{t('edit_event.loading_event', { defaultValue: 'Loading event...' })}</Text>
         </View>
         <QuickNavBar />
       </View>
@@ -196,9 +198,9 @@ const EditEventScreen: React.FC = () => {
             onPress={() => safeGoBack(router)}
             style={[styles.errorBtn, { borderColor: colors.border }]}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+            accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}
           >
-            <Text style={[styles.errorBtnText, { color: colors.text }]}>Go Back</Text>
+            <Text style={[styles.errorBtnText, { color: colors.text }]}>{t('edit_event.go_back', { defaultValue: 'Go Back' })}</Text>
           </AnimatedPressable>
         </View>
         <QuickNavBar />
@@ -329,11 +331,11 @@ const EditEventScreen: React.FC = () => {
                     onBlur={form.descriptionField.onBlur}
                     multiline
                     numberOfLines={4}
-                    placeholder="What should attendees know about this event?"
+                    placeholder={t('edit_event.description_placeholder', { defaultValue: 'What should attendees know about this event?' })}
                     placeholderTextColor={colors.muted}
                     style={[styles.inputMultiline, { color: colors.text }]}
                     textAlignVertical="top"
-                    accessibilityLabel="Event description"
+                    accessibilityLabel={t('edit_event.a11y_description', { defaultValue: 'Event description' })}
                   />
                 </View>
                 {form.descriptionField.touched && form.descriptionField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{form.descriptionField.error}</Text>}
@@ -347,12 +349,12 @@ const EditEventScreen: React.FC = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="image-outline" size={16} color={colors.accent} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Event Image (optional)</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('create_event.event_image_optional', { defaultValue: 'Event Image (optional)' })}</Text>
             </View>
 
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <FormFieldComponent
-                label="Image URL"
+                label={t('create_event.image_url', { defaultValue: 'Image URL' })}
                 value={form.imageUrlField.value}
                 onChangeText={form.imageUrlField.onChange}
                 onBlur={form.imageUrlField.onBlur}
@@ -418,14 +420,14 @@ const EditEventScreen: React.FC = () => {
               },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Save changes"
+            accessibilityLabel={t('edit_event.a11y_save_changes', { defaultValue: 'Save changes' })}
           >
             {saving ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <>
                 <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.submitButtonText}>Save Changes</Text>
+                <Text style={styles.submitButtonText}>{t('edit_event.save_changes', { defaultValue: 'Save Changes' })}</Text>
               </>
             )}
           </AnimatedPressable>
@@ -436,7 +438,7 @@ const EditEventScreen: React.FC = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="warning-outline" size={16} color={colors.danger} />
-              <Text style={[styles.sectionTitle, { color: colors.danger }]}>Danger Zone</Text>
+              <Text style={[styles.sectionTitle, { color: colors.danger }]}>{t('edit_event.danger_zone', { defaultValue: 'Danger Zone' })}</Text>
             </View>
 
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.danger + '30' }]}>
@@ -447,10 +449,10 @@ const EditEventScreen: React.FC = () => {
                 onPress={handleCancelEvent}
                 style={[styles.cancelEventButton, { backgroundColor: colors.danger }]}
                 accessibilityRole="button"
-                accessibilityLabel="Cancel event"
+                accessibilityLabel={t('edit_event.a11y_cancel_event', { defaultValue: 'Cancel event' })}
               >
                 <Ionicons name="close-circle-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.cancelEventButtonText}>Cancel Event</Text>
+                <Text style={styles.cancelEventButtonText}>{t('edit_event.cancel_event', { defaultValue: 'Cancel Event' })}</Text>
               </AnimatedPressable>
             </View>
           </View>
