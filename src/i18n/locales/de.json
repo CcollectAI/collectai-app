@@ -831,5 +831,23 @@
     "a11y_browse_discogs": "Auf Discogs ansehen",
     "a11y_visit_warhammer": "Warhammer Community besuchen",
     "chase_treasure_hunt": "Chase / Treasure Hunt"
+  },
+  "create_event": {
+    "from_template": "Aus Vorlage",
+    "no_templates": "Noch keine Vorlagen. Erstelle Events und speichere sie als Vorlage.",
+    "a11y_create_from_template": "Aus Vorlage erstellen",
+    "add_detail_placeholder": "Detail hinzufügen...",
+    "a11y_add_detail": "Event-Detail hinzufügen",
+    "a11y_add_detail_desc": "Detail zur Beschreibung hinzufügen",
+    "event_image_optional": "Event-Bild (optional)",
+    "image_url": "Bild-URL",
+    "save_as_template": "Als Vorlage speichern",
+    "save_as_template_hint": "Diese Einrichtung für künftige Events wiederverwenden",
+    "a11y_save_as_template": "Als Vorlage speichern",
+    "template_name": "Vorlagenname",
+    "template_name_placeholder": "Vorlagenname",
+    "a11y_create_event": "Event erstellen",
+    "create_event": "Event erstellen",
+    "invite_friends": "Freunde einladen"
   }
 }

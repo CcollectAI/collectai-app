@@ -831,5 +831,23 @@
     "a11y_browse_discogs": "Discogs에서 보기",
     "a11y_visit_warhammer": "Warhammer Community 방문",
     "chase_treasure_hunt": "체이스 / 트레저 헌트"
+  },
+  "create_event": {
+    "from_template": "템플릿에서",
+    "no_templates": "아직 템플릿이 없습니다. 이벤트를 만들고 템플릿으로 저장하세요.",
+    "a11y_create_from_template": "템플릿으로 만들기",
+    "add_detail_placeholder": "세부 정보 추가...",
+    "a11y_add_detail": "이벤트 세부 정보 추가",
+    "a11y_add_detail_desc": "설명에 세부 정보 추가",
+    "event_image_optional": "이벤트 이미지(선택)",
+    "image_url": "이미지 URL",
+    "save_as_template": "템플릿으로 저장",
+    "save_as_template_hint": "이 구성을 향후 이벤트에 재사용",
+    "a11y_save_as_template": "템플릿으로 저장",
+    "template_name": "템플릿 이름",
+    "template_name_placeholder": "템플릿 이름",
+    "a11y_create_event": "이벤트 만들기",
+    "create_event": "이벤트 만들기",
+    "invite_friends": "친구 초대"
   }
 }

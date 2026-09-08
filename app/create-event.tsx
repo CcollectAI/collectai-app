@@ -47,6 +47,7 @@ import { EventDateTimePicker } from '@/components/events/EventDateTimePicker';
 import { EventLocationSection } from '@/components/events/EventLocationSection';
 import { EventTicketingSection } from '@/components/events/EventTicketingSection';
 import { safeGoBack } from '@/lib/goBack';
+import { useTranslation } from 'react-i18next';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -63,6 +64,7 @@ const EVENT_FORMATS: { label: string; value: EventFormat; icon: keyof typeof Ion
 /* -------------------------------------------------------------------------- */
 
 const CreateEventScreen: React.FC = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ sponsorCompanyId?: string }>();
   const { colors } = useAppTheme();
@@ -170,13 +172,13 @@ const CreateEventScreen: React.FC = () => {
         <BottomSheetModal
           visible={templateSheetOpen}
           onClose={() => closeTemplateSheet()}
-          title="From Template"
+          title={t('create_event.from_template', { defaultValue: 'From Template' })}
           colors={{ ...colors, background: colors.card }}
           maxHeight="60%"
         >
           <View style={{ paddingBottom: 40 }}>
               {templates.length === 0 ? (
-                <Text style={[styles.inviteNote, { color: colors.muted, padding: 20 }]}>No templates yet. Create events and save them as templates.</Text>
+                <Text style={[styles.inviteNote, { color: colors.muted, padding: 20 }]}>{t('create_event.no_templates', { defaultValue: 'No templates yet. Create events and save them as templates.' })}</Text>
               ) : (
                 <FlatList
                   data={templates}
@@ -209,10 +211,10 @@ const CreateEventScreen: React.FC = () => {
               onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); openTemplateSheet(); }}
               style={[styles.fromTemplateBtn, { borderColor: colors.accent, backgroundColor: colors.accent + '10' }]}
               accessibilityRole="button"
-              accessibilityLabel="Create from template"
+              accessibilityLabel={t('create_event.a11y_create_from_template', { defaultValue: 'Create from template' })}
             >
               <Ionicons name="copy-outline" size={16} color={colors.accent} />
-              <Text style={[styles.fromTemplateBtnText, { color: colors.accent }]}>From Template</Text>
+              <Text style={[styles.fromTemplateBtnText, { color: colors.accent }]}>{t('create_event.from_template', { defaultValue: 'From Template' })}</Text>
             </AnimatedPressable>
           )}
 
@@ -341,7 +343,7 @@ const CreateEventScreen: React.FC = () => {
                   <TextInput
                     value={detailDraft}
                     onChangeText={setDetailDraft}
-                    placeholder="Add a detail..."
+                    placeholder={t('create_event.add_detail_placeholder', { defaultValue: 'Add a detail...' })}
                     placeholderTextColor={colors.muted}
                     style={[styles.detailInput, { color: colors.text }]}
                     returnKeyType="send"
@@ -352,7 +354,7 @@ const CreateEventScreen: React.FC = () => {
                       form.descriptionField.onChange(current ? `${current}\n${draft}` : draft);
                       setDetailDraft('');
                     }}
-                    accessibilityLabel="Add event detail"
+                    accessibilityLabel={t('create_event.a11y_add_detail', { defaultValue: 'Add event detail' })}
                   />
                   <AnimatedPressable
                     onPress={() => {
@@ -365,7 +367,7 @@ const CreateEventScreen: React.FC = () => {
                     }}
                     style={[styles.detailSendBtn, { backgroundColor: colors.accent }]}
                     accessibilityRole="button"
-                    accessibilityLabel="Add detail to description"
+                    accessibilityLabel={t('create_event.a11y_add_detail_desc', { defaultValue: 'Add detail to description' })}
                   >
                     <Ionicons name="arrow-up" size={18} color="#fff" />
                   </AnimatedPressable>
@@ -389,12 +391,12 @@ const CreateEventScreen: React.FC = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="image-outline" size={16} color={colors.accent} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Event Image (optional)</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('create_event.event_image_optional', { defaultValue: 'Event Image (optional)' })}</Text>
             </View>
 
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <FormField
-                label="Image URL"
+                label={t('create_event.image_url', { defaultValue: 'Image URL' })}
                 value={form.imageUrlField.value}
                 onChangeText={form.imageUrlField.onChange}
                 onBlur={form.imageUrlField.onBlur}
@@ -456,8 +458,8 @@ const CreateEventScreen: React.FC = () => {
                 <View style={styles.toggleLeft}>
                   <Ionicons name="bookmark-outline" size={20} color={colors.accent} />
                   <View style={styles.toggleTextBlock}>
-                    <Text style={[styles.toggleLabel, { color: colors.text }]}>Save as Template</Text>
-                    <Text style={[styles.toggleHint, { color: colors.muted }]}>Reuse this event setup for future events</Text>
+                    <Text style={[styles.toggleLabel, { color: colors.text }]}>{t('create_event.save_as_template', { defaultValue: 'Save as Template' })}</Text>
+                    <Text style={[styles.toggleHint, { color: colors.muted }]}>{t('create_event.save_as_template_hint', { defaultValue: 'Reuse this event setup for future events' })}</Text>
                   </View>
                 </View>
                 <Switch
@@ -466,16 +468,16 @@ const CreateEventScreen: React.FC = () => {
                   trackColor={{ false: colors.border, true: colors.accent + '60' }}
                   thumbColor={saveAsTemplate ? colors.accent : colors.muted}
                   ios_backgroundColor={colors.border}
-                  accessibilityLabel="Save as template"
+                  accessibilityLabel={t('create_event.a11y_save_as_template', { defaultValue: 'Save as template' })}
                 />
               </View>
               {saveAsTemplate && (
                 <View style={{ marginTop: 12 }}>
                   <FormField
-                    label="Template Name"
+                    label={t('create_event.template_name', { defaultValue: 'Template Name' })}
                     value={templateName}
                     onChangeText={setTemplateName}
-                    placeholder="Template name"
+                    placeholder={t('create_event.template_name_placeholder', { defaultValue: 'Template name' })}
                     returnKeyType="done"
                   />
                 </View>
@@ -496,14 +498,14 @@ const CreateEventScreen: React.FC = () => {
               },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Create event"
+            accessibilityLabel={t('create_event.a11y_create_event', { defaultValue: 'Create event' })}
           >
             {saving ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <>
                 <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.submitButtonText}>Create Event</Text>
+                <Text style={styles.submitButtonText}>{t('create_event.create_event', { defaultValue: 'Create Event' })}</Text>
               </>
             )}
           </AnimatedPressable>
@@ -514,7 +516,7 @@ const CreateEventScreen: React.FC = () => {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.accent} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Invite Friends</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('create_event.invite_friends', { defaultValue: 'Invite Friends' })}</Text>
             </View>
 
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>

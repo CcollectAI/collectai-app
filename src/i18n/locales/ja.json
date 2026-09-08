@@ -831,5 +831,23 @@
     "a11y_browse_discogs": "Discogsで見る",
     "a11y_visit_warhammer": "Warhammer Communityを開く",
     "chase_treasure_hunt": "チェイス / トレジャーハント"
+  },
+  "create_event": {
+    "from_template": "テンプレートから",
+    "no_templates": "テンプレートはまだありません。イベントを作成してテンプレートとして保存できます。",
+    "a11y_create_from_template": "テンプレートから作成",
+    "add_detail_placeholder": "詳細を追加...",
+    "a11y_add_detail": "イベントの詳細を追加",
+    "a11y_add_detail_desc": "説明に詳細を追加",
+    "event_image_optional": "イベント画像（任意）",
+    "image_url": "画像URL",
+    "save_as_template": "テンプレートとして保存",
+    "save_as_template_hint": "この設定を今後のイベントで再利用",
+    "a11y_save_as_template": "テンプレートとして保存",
+    "template_name": "テンプレート名",
+    "template_name_placeholder": "テンプレート名",
+    "a11y_create_event": "イベントを作成",
+    "create_event": "イベントを作成",
+    "invite_friends": "友達を招待"
   }
 }
