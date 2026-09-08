@@ -1008,5 +1008,30 @@
     "a11y_company_description": "Bedrijfsomschrijving",
     "a11y_get_started": "Aan de slag als sponsor",
     "get_started": "Aan de slag als sponsor"
+  },
+  "share": {
+    "send_to": "Sturen naar",
+    "loading_chats": "Je chats laden…",
+    "chats_load_failed": "Je chats konden niet worden geladen.",
+    "a11y_retry_chats": "Chats opnieuw laden",
+    "outside_sparrow": "Buiten Sparrow",
+    "a11y_share_elsewhere": "Ergens anders delen"
+  },
+  "settle": {
+    "agreed_amount": "Afgesproken bedrag",
+    "deliver_to": "Bezorgen aan",
+    "delivery_address": "Bezorgadres",
+    "a11y_save_address": "Bezorgadres opslaan",
+    "list_load_failed": "Die lijst kon niet worden geladen."
+  },
+  "category": {
+    "a11y_see_all_yours": "Bekijk al je items in deze categorie",
+    "see_all_arrow": "Alles bekijken →",
+    "a11y_retry_your_items": "Je items opnieuw laden",
+    "load_failed_tap_retry": "Laden mislukt — tik om opnieuw te proberen",
+    "no_photo_yet": "Nog geen foto",
+    "a11y_see_all_items": "Alle items bekijken",
+    "a11y_retry_catalog": "Catalogus opnieuw laden",
+    "no_catalog_items": "Nog geen catalogusitems in deze categorie."
   }
 }

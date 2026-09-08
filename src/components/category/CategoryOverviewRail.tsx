@@ -25,6 +25,7 @@ import logger from '@/utils/logger';
 import type { CatalogItemData } from '@/components/CatalogBrowseSection';
 import type { CatalogSortKey } from '@/components/category/CategorySortChips';
 import type { AppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   categoryId: string;
@@ -43,6 +44,7 @@ type Props = {
 };
 
 function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentColor, colors, onItemPress, onSeeAll, onTotal }: Props) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<CatalogItemData[]>([]);
   // Full catalog size for the category ("what exists"), from the BE's real
   // total — drives the see-all tile and is reported up for the "All" chip.
@@ -116,8 +118,8 @@ function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentCol
         <Text style={[styles.label, { color: colors.muted }]} numberOfLines={1}>
           {label ?? `📚 THE ${categoryName ? `${categoryName.toUpperCase()} ` : ''}CATALOG`}
         </Text>
-        <AnimatedPressable onPress={onSeeAll} accessibilityRole="button" accessibilityLabel="See all items">
-          <Text style={styles.seeAll}>See all →</Text>
+        <AnimatedPressable onPress={onSeeAll} accessibilityRole="button" accessibilityLabel={t('category.a11y_see_all_items', { defaultValue: 'See all items' })}>
+          <Text style={styles.seeAll}>{t('category.see_all_arrow', { defaultValue: 'See all →' })}</Text>
         </AnimatedPressable>
       </View>
 
@@ -127,14 +129,14 @@ function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentCol
         <AnimatedPressable
           onPress={() => setReloadKey((k) => k + 1)}
           accessibilityRole="button"
-          accessibilityLabel="Retry loading catalog"
+          accessibilityLabel={t('category.a11y_retry_catalog', { defaultValue: 'Retry loading catalog' })}
           style={styles.retry}
         >
           <Ionicons name="refresh-outline" size={16} color={accentColor} />
-          <Text style={[styles.retryText, { color: accentColor }]}>Couldn&apos;t load — tap to retry</Text>
+          <Text style={[styles.retryText, { color: accentColor }]}>{t('category.load_failed_tap_retry', { defaultValue: "Couldn't load — tap to retry" })}</Text>
         </AnimatedPressable>
       ) : items.length === 0 ? (
-        <Text style={[styles.empty, { color: colors.muted }]}>No catalog items for this category yet.</Text>
+        <Text style={[styles.empty, { color: colors.muted }]}>{t('category.no_catalog_items', { defaultValue: 'No catalog items for this category yet.' })}</Text>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
           {items.map((it) => (
@@ -152,7 +154,7 @@ function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentCol
                   <Ionicons name="cube-outline" size={26} color={accentColor} />
                   {/* No catalog art yet — user photos will fill these as the
                       database grows; say so instead of looking broken. */}
-                  <Text style={styles.comingSoon}>Image coming soon</Text>
+                  <Text style={styles.comingSoon}>{t('catalog.image_coming_soon', { defaultValue: 'Image coming soon' })}</Text>
                 </View>
               )}
               <View style={styles.meta}>
@@ -170,7 +172,7 @@ function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentCol
             style={[styles.card, styles.seeAllTile]}
             onPress={onSeeAll}
             accessibilityRole="button"
-            accessibilityLabel="See all items"
+            accessibilityLabel={t('category.a11y_see_all_items', { defaultValue: 'See all items' })}
           >
             <Text style={styles.seeAllTileText}>
               See all{total ? `\n${total.toLocaleString()}` : ''} →

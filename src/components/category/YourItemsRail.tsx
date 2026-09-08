@@ -41,6 +41,7 @@ import { colors as tokens } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import type { Item } from '@/data/types';
 import type { AppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 
 /** Matches CategoryOverviewRail's page size, so the two rails feel the same. */
 const RAIL_LIMIT = 20;
@@ -55,6 +56,7 @@ type Props = {
 };
 
 function YourItemsRail({ categoryId, accentColor, colors, onItemPress, onSeeAll }: Props) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   // A failed read must NOT render as "you own none of these". Same distinction
@@ -112,9 +114,9 @@ function YourItemsRail({ categoryId, accentColor, colors, onItemPress, onSeeAll 
           <AnimatedPressable
             onPress={onSeeAll}
             accessibilityRole="button"
-            accessibilityLabel="See all of your items in this category"
+            accessibilityLabel={t('category.a11y_see_all_yours', { defaultValue: 'See all of your items in this category' })}
           >
-            <Text style={styles.seeAll}>See all →</Text>
+            <Text style={styles.seeAll}>{t('category.see_all_arrow', { defaultValue: 'See all →' })}</Text>
           </AnimatedPressable>
         ) : null}
       </View>
@@ -125,11 +127,11 @@ function YourItemsRail({ categoryId, accentColor, colors, onItemPress, onSeeAll 
         <AnimatedPressable
           onPress={() => setReloadKey((k) => k + 1)}
           accessibilityRole="button"
-          accessibilityLabel="Retry loading your items"
+          accessibilityLabel={t('category.a11y_retry_your_items', { defaultValue: 'Retry loading your items' })}
           style={styles.retry}
         >
           <Ionicons name="refresh-outline" size={16} color={accentColor} />
-          <Text style={[styles.retryText, { color: accentColor }]}>Couldn&apos;t load — tap to retry</Text>
+          <Text style={[styles.retryText, { color: accentColor }]}>{t('category.load_failed_tap_retry', { defaultValue: "Couldn't load — tap to retry" })}</Text>
         </AnimatedPressable>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.rail}>
@@ -153,7 +155,7 @@ function YourItemsRail({ categoryId, accentColor, colors, onItemPress, onSeeAll 
               ) : (
                 <View style={[styles.art, styles.artEmpty, { backgroundColor: accentColor + '12' }]}>
                   <Ionicons name="image-outline" size={26} color={accentColor} />
-                  <Text style={styles.noPhoto}>No photo yet</Text>
+                  <Text style={styles.noPhoto}>{t('category.no_photo_yet', { defaultValue: 'No photo yet' })}</Text>
                 </View>
               )}
               <View style={styles.meta}>
@@ -176,9 +178,9 @@ function YourItemsRail({ categoryId, accentColor, colors, onItemPress, onSeeAll 
             style={[styles.card, styles.seeAllTile]}
             onPress={onSeeAll}
             accessibilityRole="button"
-            accessibilityLabel="See all of your items in this category"
+            accessibilityLabel={t('category.a11y_see_all_yours', { defaultValue: 'See all of your items in this category' })}
           >
-            <Text style={styles.seeAllTileText}>See all →</Text>
+            <Text style={styles.seeAllTileText}>{t('category.see_all_arrow', { defaultValue: 'See all →' })}</Text>
           </AnimatedPressable>
         </ScrollView>
       )}

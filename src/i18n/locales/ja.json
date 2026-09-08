@@ -1008,5 +1008,30 @@
     "a11y_company_description": "会社概要",
     "a11y_get_started": "スポンサーとして始める",
     "get_started": "スポンサーとして始める"
+  },
+  "share": {
+    "send_to": "送信先",
+    "loading_chats": "チャットを読み込み中…",
+    "chats_load_failed": "チャットを読み込めませんでした。",
+    "a11y_retry_chats": "チャットを再読み込み",
+    "outside_sparrow": "Sparrow の外部",
+    "a11y_share_elsewhere": "別の場所で共有"
+  },
+  "settle": {
+    "agreed_amount": "合意金額",
+    "deliver_to": "配送先",
+    "delivery_address": "配送先住所",
+    "a11y_save_address": "配送先住所を保存",
+    "list_load_failed": "そのリストを読み込めませんでした。"
+  },
+  "category": {
+    "a11y_see_all_yours": "このカテゴリーのあなたのアイテムをすべて見る",
+    "see_all_arrow": "すべて見る →",
+    "a11y_retry_your_items": "アイテムを再読み込み",
+    "load_failed_tap_retry": "読み込めませんでした — タップして再試行",
+    "no_photo_yet": "写真はまだありません",
+    "a11y_see_all_items": "すべてのアイテムを見る",
+    "a11y_retry_catalog": "カタログを再読み込み",
+    "no_catalog_items": "このカテゴリーのカタログアイテムはまだありません。"
   }
 }

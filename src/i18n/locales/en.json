@@ -1008,5 +1008,30 @@
     "a11y_company_description": "Company description",
     "a11y_get_started": "Get started as a sponsor",
     "get_started": "Get Started as a Sponsor"
+  },
+  "share": {
+    "send_to": "Send to",
+    "loading_chats": "Loading your chats…",
+    "chats_load_failed": "Couldn't load your chats.",
+    "a11y_retry_chats": "Retry loading chats",
+    "outside_sparrow": "Outside Sparrow",
+    "a11y_share_elsewhere": "Share somewhere else"
+  },
+  "settle": {
+    "agreed_amount": "Agreed amount",
+    "deliver_to": "Deliver to",
+    "delivery_address": "Delivery address",
+    "a11y_save_address": "Save the delivery address",
+    "list_load_failed": "Couldn't load that list."
+  },
+  "category": {
+    "a11y_see_all_yours": "See all of your items in this category",
+    "see_all_arrow": "See all →",
+    "a11y_retry_your_items": "Retry loading your items",
+    "load_failed_tap_retry": "Couldn't load — tap to retry",
+    "no_photo_yet": "No photo yet",
+    "a11y_see_all_items": "See all items",
+    "a11y_retry_catalog": "Retry loading catalog",
+    "no_catalog_items": "No catalog items for this category yet."
   }
 }

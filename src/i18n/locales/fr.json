@@ -1008,5 +1008,30 @@
     "a11y_company_description": "Description de l’entreprise",
     "a11y_get_started": "Devenir sponsor",
     "get_started": "Devenir sponsor"
+  },
+  "share": {
+    "send_to": "Envoyer à",
+    "loading_chats": "Chargement de vos discussions…",
+    "chats_load_failed": "Impossible de charger vos discussions.",
+    "a11y_retry_chats": "Recharger les discussions",
+    "outside_sparrow": "En dehors de Sparrow",
+    "a11y_share_elsewhere": "Partager ailleurs"
+  },
+  "settle": {
+    "agreed_amount": "Montant convenu",
+    "deliver_to": "Livrer à",
+    "delivery_address": "Adresse de livraison",
+    "a11y_save_address": "Enregistrer l’adresse de livraison",
+    "list_load_failed": "Impossible de charger cette liste."
+  },
+  "category": {
+    "a11y_see_all_yours": "Voir tous vos articles de cette catégorie",
+    "see_all_arrow": "Tout voir →",
+    "a11y_retry_your_items": "Recharger vos articles",
+    "load_failed_tap_retry": "Échec du chargement — appuyez pour réessayer",
+    "no_photo_yet": "Pas encore de photo",
+    "a11y_see_all_items": "Voir tous les articles",
+    "a11y_retry_catalog": "Recharger le catalogue",
+    "no_catalog_items": "Aucun article de catalogue dans cette catégorie."
   }
 }

@@ -30,6 +30,7 @@ import { sendChatMessage } from '@/api/chatApi';
 import type { DmThread } from '@/data/types';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import { logger } from '@/lib/logger';
+import { useTranslation } from 'react-i18next';
 
 export type SharePayload = {
   /** What the recipient will recognise it by. */
@@ -104,6 +105,7 @@ type Props = {
 };
 
 export function ShareToChatSheet({ visible, onClose, payload }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
@@ -194,7 +196,7 @@ export function ShareToChatSheet({ visible, onClose, payload }: Props) {
     <BottomSheetModal
       visible={visible}
       onClose={onClose}
-      title="Send to"
+      title={t('share.send_to', { defaultValue: 'Send to' })}
       colors={colors}
       maxHeight="70%"
     >
@@ -220,16 +222,16 @@ export function ShareToChatSheet({ visible, onClose, payload }: Props) {
         ) : null}
 
         {state === 'loading' ? (
-          <Text style={[styles.hint, { color: colors.muted }]}>Loading your chats…</Text>
+          <Text style={[styles.hint, { color: colors.muted }]}>{t('share.loading_chats', { defaultValue: 'Loading your chats…' })}</Text>
         ) : state === 'error' ? (
           <View style={styles.errorRow}>
-            <Text style={[styles.hint, { color: colors.muted }]}>Couldn&apos;t load your chats.</Text>
+            <Text style={[styles.hint, { color: colors.muted }]}>{t('share.chats_load_failed', { defaultValue: "Couldn't load your chats." })}</Text>
             <AnimatedPressable
               onPress={() => setRetryNonce((n) => n + 1)}
               accessibilityRole="button"
-              accessibilityLabel="Retry loading chats"
+              accessibilityLabel={t('share.a11y_retry_chats', { defaultValue: 'Retry loading chats' })}
             >
-              <Text style={[styles.link, { color: colors.accent }]}>Try again</Text>
+              <Text style={[styles.link, { color: colors.accent }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
             </AnimatedPressable>
           </View>
         ) : empty ? (
@@ -277,7 +279,7 @@ export function ShareToChatSheet({ visible, onClose, payload }: Props) {
 
             `nowrap` with `flex: 1` on each pill, per docs/ui-playbook.md: a
             wrapping action row strands the last button on its own line. */}
-        <Text style={[styles.groupLabel, { color: colors.muted }]}>Outside Sparrow</Text>
+        <Text style={[styles.groupLabel, { color: colors.muted }]}>{t('share.outside_sparrow', { defaultValue: 'Outside Sparrow' })}</Text>
         <View style={styles.outsideRow}>
           {messengersFor(settings.region).map((target) => (
             <AnimatedPressable
@@ -303,7 +305,7 @@ export function ShareToChatSheet({ visible, onClose, payload }: Props) {
             onPress={shareOutside}
             style={[styles.outside, { borderColor: colors.border }]}
             accessibilityRole="button"
-            accessibilityLabel="Share somewhere else"
+            accessibilityLabel={t('share.a11y_share_elsewhere', { defaultValue: 'Share somewhere else' })}
           >
             <Ionicons name="ellipsis-horizontal" size={16} color={colors.muted} />
             <Text style={[styles.outsideText, { color: colors.text }]} numberOfLines={1}>

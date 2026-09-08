@@ -5,7 +5,6 @@ export { default as MangaSeriesProgress } from './MangaSeriesProgress';
 export { default as MissingItemsChecklist } from './MissingItemsChecklist';
 export { default as BuildProjectsSection } from './BuildProjectsSection';
 export { default as CategoryEventsSection } from './CategoryEventsSection';
-export { default as FriendsFollowSection } from './FriendsFollowSection';
 export { default as ExternalMarketplacesSection } from './ExternalMarketplacesSection';
 export { default as RelatedCategoriesSection } from './RelatedCategoriesSection';
 export { default as SetProgressSection } from './SetProgressSection';

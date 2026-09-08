@@ -1008,5 +1008,30 @@
     "a11y_company_description": "Firmenbeschreibung",
     "a11y_get_started": "Als Sponsor loslegen",
     "get_started": "Als Sponsor loslegen"
+  },
+  "share": {
+    "send_to": "Senden an",
+    "loading_chats": "Deine Chats werden geladen…",
+    "chats_load_failed": "Deine Chats konnten nicht geladen werden.",
+    "a11y_retry_chats": "Chats erneut laden",
+    "outside_sparrow": "Außerhalb von Sparrow",
+    "a11y_share_elsewhere": "Woanders teilen"
+  },
+  "settle": {
+    "agreed_amount": "Vereinbarter Betrag",
+    "deliver_to": "Liefern an",
+    "delivery_address": "Lieferadresse",
+    "a11y_save_address": "Lieferadresse speichern",
+    "list_load_failed": "Diese Liste konnte nicht geladen werden."
+  },
+  "category": {
+    "a11y_see_all_yours": "Alle deine Objekte in dieser Kategorie ansehen",
+    "see_all_arrow": "Alle ansehen →",
+    "a11y_retry_your_items": "Deine Objekte erneut laden",
+    "load_failed_tap_retry": "Laden fehlgeschlagen — zum Wiederholen tippen",
+    "no_photo_yet": "Noch kein Foto",
+    "a11y_see_all_items": "Alle Objekte ansehen",
+    "a11y_retry_catalog": "Katalog erneut laden",
+    "no_catalog_items": "Noch keine Katalogobjekte in dieser Kategorie."
   }
 }

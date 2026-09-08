@@ -40,6 +40,7 @@ import { useToast } from '@/components/Toast';
 import type { P2PCarrier, P2PPaymentRail, P2PDeliveryAddress } from '@/api/p2pApi';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import { logger } from '@/lib/logger';
+import { useTranslation } from 'react-i18next';
 
 /** Same shape `OfferAmountSheet` takes — an index signature of `unknown`, not
  *  `string`, because the theme's `brand` value is a nested object and a
@@ -98,6 +99,7 @@ function openUrl(url: string) {
 }
 
 export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, isBuyer, colors }: Props) {
+  const { t } = useTranslation();
   // The payment side resolves region SERVER-side from user_settings; the
   // carrier list is one flat table, so the filtering happens here. Same region
   // value either way.
@@ -225,7 +227,7 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
       <ScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
         {mode === 'pay' ? (
           <View style={[styles.amountBox, { borderColor: colors.border }]}>
-            <Text style={[styles.amountCaption, { color: colors.muted }]}>Agreed amount</Text>
+            <Text style={[styles.amountCaption, { color: colors.muted }]}>{t('settle.agreed_amount', { defaultValue: 'Agreed amount' })}</Text>
             {/* Selectable, not a copy button: expo-clipboard is not installed,
                 and a guarded require of a missing package no-ops silently on
                 BOTH platforms. */}
@@ -237,7 +239,7 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
 
         {mode === 'ship' ? (
           <View style={[styles.addrBox, { borderColor: colors.border }]}>
-            <Text style={[styles.addrCaption, { color: colors.muted }]}>Deliver to</Text>
+            <Text style={[styles.addrCaption, { color: colors.muted }]}>{t('settle.deliver_to', { defaultValue: 'Deliver to' })}</Text>
             {address ? (
               // Selectable so it can be pasted into the carrier's own booking
               // form — expo-clipboard is not installed, and a guarded require
@@ -265,7 +267,7 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
 
         {mode === 'pay' && isBuyer && offerId ? (
           <View style={[styles.addrBox, { borderColor: colors.border }]}>
-            <Text style={[styles.addrCaption, { color: colors.muted }]}>Delivery address</Text>
+            <Text style={[styles.addrCaption, { color: colors.muted }]}>{t('settle.delivery_address', { defaultValue: 'Delivery address' })}</Text>
             <Text style={[styles.hint, { color: colors.muted }]}>
               Shared with this seller only, for this trade. Sparrow doesn&apos;t book
               or insure the shipment.
@@ -285,7 +287,7 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
               disabled={savingAddress}
               style={[styles.addrSave, { backgroundColor: colors.accent }]}
               accessibilityRole="button"
-              accessibilityLabel="Save the delivery address"
+              accessibilityLabel={t('settle.a11y_save_address', { defaultValue: 'Save the delivery address' })}
             >
               <Text style={[styles.addrSaveText, { color: colors.accentText }]}>
                 {savingAddress ? 'Saving…' : address ? 'Update address' : 'Save address'}
@@ -298,13 +300,13 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
           <Text style={[styles.hint, { color: colors.muted }]}>Loading…</Text>
         ) : state === 'error' ? (
           <View style={styles.errorRow}>
-            <Text style={[styles.hint, { color: colors.muted }]}>Couldn&apos;t load that list.</Text>
+            <Text style={[styles.hint, { color: colors.muted }]}>{t('settle.list_load_failed', { defaultValue: "Couldn't load that list." })}</Text>
             <AnimatedPressable
               onPress={() => setRetryNonce((n) => n + 1)}
               accessibilityRole="button"
-              accessibilityLabel="Try again"
+              accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
             >
-              <Text style={[styles.link, { color: colors.accent }]}>Try again</Text>
+              <Text style={[styles.link, { color: colors.accent }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
             </AnimatedPressable>
           </View>
         ) : empty ? (

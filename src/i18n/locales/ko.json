@@ -1008,5 +1008,30 @@
     "a11y_company_description": "회사 소개",
     "a11y_get_started": "스폰서로 시작하기",
     "get_started": "스폰서로 시작하기"
+  },
+  "share": {
+    "send_to": "보낼 대상",
+    "loading_chats": "채팅을 불러오는 중…",
+    "chats_load_failed": "채팅을 불러오지 못했습니다.",
+    "a11y_retry_chats": "채팅 다시 불러오기",
+    "outside_sparrow": "Sparrow 외부",
+    "a11y_share_elsewhere": "다른 곳에 공유"
+  },
+  "settle": {
+    "agreed_amount": "합의 금액",
+    "deliver_to": "배송지",
+    "delivery_address": "배송 주소",
+    "a11y_save_address": "배송 주소 저장",
+    "list_load_failed": "목록을 불러오지 못했습니다."
+  },
+  "category": {
+    "a11y_see_all_yours": "이 카테고리의 내 아이템 모두 보기",
+    "see_all_arrow": "전체 보기 →",
+    "a11y_retry_your_items": "내 아이템 다시 불러오기",
+    "load_failed_tap_retry": "불러오지 못했습니다 — 탭하여 재시도",
+    "no_photo_yet": "아직 사진이 없습니다",
+    "a11y_see_all_items": "전체 아이템 보기",
+    "a11y_retry_catalog": "카탈로그 다시 불러오기",
+    "no_catalog_items": "이 카테고리에는 아직 카탈로그 아이템이 없습니다."
   }
 }
