@@ -47,6 +47,7 @@ import { collectorsApi } from "@/api/collectorsApi";
 import { CATEGORY_SLUG_TO_NAME } from "@/constants/categories";
 import { radius, text as textToken, fontWeight } from "@/theme/tokens";
 import logger from "@/utils/logger";
+import { useTranslation } from 'react-i18next';
 
 /**
  * The seller row: a plain View, or an AnimatedPressable when the seller's
@@ -85,6 +86,7 @@ function SellerBlockContainer({
 }
 
 function ListingDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -317,7 +319,7 @@ function ListingDetailScreen() {
         <ScreenHeader title="Listing" />
         <EmptyState
           icon="pricetag-outline"
-          title="Listing unavailable"
+          title={t('listings.listing_unavailable', { defaultValue: 'Listing unavailable' })}
           subtitle="It may have been removed by the seller."
           colors={colors}
           action={
@@ -325,7 +327,7 @@ function ListingDetailScreen() {
               onPress={retry}
               style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
               accessibilityRole="button"
-              accessibilityLabel="Try again"
+              accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
             >
               <Text
                 style={[styles.primaryBtnText, { color: colors.accentText }]}
@@ -745,7 +747,7 @@ function ListingDetailScreen() {
                     { backgroundColor: colors.accent },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Change your asking price"
+                  accessibilityLabel={t('listings.a11y_change_price', { defaultValue: 'Change your asking price' })}
                 >
                   <Ionicons
                     name="pricetag-outline"
@@ -772,7 +774,7 @@ function ListingDetailScreen() {
                     },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Mark as sold"
+                  accessibilityLabel={t('listings.a11y_mark_sold', { defaultValue: 'Mark as sold' })}
                 >
                   <Text style={[styles.primaryBtnText, { color: colors.text }]}>
                     Mark as sold
@@ -804,7 +806,7 @@ function ListingDetailScreen() {
                 onPress={handleMessage}
                 style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
                 accessibilityRole="button"
-                accessibilityLabel="Message the seller"
+                accessibilityLabel={t('listings.a11y_message_seller', { defaultValue: 'Message the seller' })}
               >
                 <Ionicons
                   name="chatbubble-outline"
@@ -865,7 +867,7 @@ function ListingDetailScreen() {
               <AnimatedPressable
                 onPress={() => router.push("/legal/marketplace-terms" as Href)}
                 accessibilityRole="link"
-                accessibilityLabel="Read the marketplace terms"
+                accessibilityLabel={t('listings.a11y_marketplace_terms', { defaultValue: 'Read the marketplace terms' })}
               >
                 <Text style={[styles.noticeLink, { color: colors.accent }]}>
                   Marketplace terms
@@ -879,7 +881,7 @@ function ListingDetailScreen() {
       <BottomSheetModal
         visible={priceOpen}
         onClose={() => setPriceOpen(false)}
-        title="Change price"
+        title={t('listings.change_price', { defaultValue: 'Change price' })}
         // Plain View body + autoFocus keyboard: this is the sheet that was
         // clipped, so it opts in to the wrapper's scroller.
         scrollable
@@ -917,7 +919,7 @@ function ListingDetailScreen() {
               placeholder="0"
               placeholderTextColor={colors.muted}
               style={[styles.priceInput, { color: colors.text }]}
-              accessibilityLabel="New asking price"
+              accessibilityLabel={t('listings.a11y_new_asking_price', { defaultValue: 'New asking price' })}
               returnKeyType="done"
               onSubmitEditing={() => {
                 if (priceChanged) handleSavePrice();
@@ -966,7 +968,7 @@ function ListingDetailScreen() {
             ]}
             accessibilityRole="button"
             accessibilityState={{ disabled: !priceChanged || savingPrice }}
-            accessibilityLabel="Save the new price"
+            accessibilityLabel={t('listings.a11y_save_new_price', { defaultValue: 'Save the new price' })}
           >
             {savingPrice ? (
               // accentText, never a hardcoded white: on a colors.border fill in
@@ -992,7 +994,7 @@ function ListingDetailScreen() {
         <OfferAmountSheet
           visible={offerOpen}
           onClose={() => setOfferOpen(false)}
-          title="Make an offer"
+          title={t('listings.make_an_offer', { defaultValue: 'Make an offer' })}
           reference={listing.price}
           referenceLabel="Asking"
           currency={settings.currency}

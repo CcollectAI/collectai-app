@@ -867,7 +867,15 @@
     "a11y_clear_filters_search": "フィルターと検索をすべてクリア",
     "a11y_choose_item_to_sell": "出品するアイテムをコレクションから選択",
     "a11y_marketplace_terms": "マーケットプレイス規約を読む",
-    "marketplace_terms": "マーケットプレイス規約"
+    "marketplace_terms": "マーケットプレイス規約",
+    "listing_unavailable": "この出品は利用できません",
+    "a11y_change_price": "希望価格を変更",
+    "a11y_mark_sold": "売却済みにする",
+    "a11y_message_seller": "出品者にメッセージ",
+    "change_price": "価格を変更",
+    "a11y_new_asking_price": "新しい希望価格",
+    "a11y_save_new_price": "新しい価格を保存",
+    "make_an_offer": "オファーを出す"
   },
   "chat": {
     "collector_not_found": "コレクターが見つかりません",
@@ -876,7 +884,14 @@
     "go_to_inbox": "受信箱へ",
     "request_to_connect": "つながりをリクエスト",
     "your_message": "あなたのメッセージ",
-    "a11y_connection_message": "つながりのメッセージ"
+    "a11y_connection_message": "つながりのメッセージ",
+    "a11y_retry_send": "タップして再送信",
+    "failed_to_send": "送信に失敗しました",
+    "tap_to_retry": "タップして再試行",
+    "no_messages_yet": "まだメッセージはありません",
+    "start_conversation": "メッセージを送って会話を始めましょう",
+    "message_placeholder": "メッセージを入力...",
+    "a11y_message_input": "メッセージ入力"
   },
   "sell": {
     "sell_an_item": "アイテムを売る",
@@ -917,5 +932,16 @@
     "danger_zone": "危険な操作",
     "a11y_cancel_event": "イベントを中止",
     "cancel_event": "イベントを中止"
+  },
+  "catalog": {
+    "image_coming_soon": "画像は近日公開",
+    "no_recent_sales": "最近の販売データはありません",
+    "a11y_unlock_pro": "Proで完全な市場分析を解除",
+    "pro_teaser": "全価格帯と90日トレンド — Sparrow Pro",
+    "marketplaces_load_failed": "マーケットプレイスを読み込めませんでした。",
+    "a11y_retry_marketplaces": "マーケットプレイスを再読み込み",
+    "no_marketplaces": "このアイテムに利用できるマーケットプレイスはありません。",
+    "a11y_add_watchlist": "ウォッチリストに追加",
+    "add_to_watchlist": "ウォッチリストに追加"
   }
 }

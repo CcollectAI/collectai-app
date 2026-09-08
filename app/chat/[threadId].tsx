@@ -36,6 +36,7 @@ import { radius, text, fontWeight } from '@/theme/tokens';
 import { safeGoBack } from '@/lib/goBack';
 import { splitTextLinks } from '@/lib/linkify';
 import { inAppListingHref } from '@/lib/ids';
+import { useTranslation } from 'react-i18next';
 
 // Message with local status for optimistic UI
 type LocalMessage = DmMessage & {
@@ -122,6 +123,7 @@ function shouldShowDateSeparator(current: string, previous: string | null): bool
 }
 
 function ThreadDetailScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
   const { colors } = useAppTheme();
@@ -488,11 +490,11 @@ function ThreadDetailScreen() {
             onPress={() => handleRetryMessage(item.id, item.text)}
             style={styles.retryRow}
             accessibilityRole="button"
-            accessibilityLabel="Tap to retry sending message"
+            accessibilityLabel={t('chat.a11y_retry_send', { defaultValue: 'Tap to retry sending message' })}
           >
-            <Text style={[styles.retryLabel, { color: colors.danger }]}>Failed to send</Text>
+            <Text style={[styles.retryLabel, { color: colors.danger }]}>{t('chat.failed_to_send', { defaultValue: 'Failed to send' })}</Text>
             <Ionicons name="refresh" size={12} color={colors.danger} style={{ marginLeft: 2 }} />
-            <Text style={[styles.retryAction, { color: colors.danger }]}>Tap to retry</Text>
+            <Text style={[styles.retryAction, { color: colors.danger }]}>{t('chat.tap_to_retry', { defaultValue: 'Tap to retry' })}</Text>
           </AnimatedPressable>
         )}
       </View>
@@ -503,7 +505,7 @@ function ThreadDetailScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right', 'bottom']}>
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+          <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Chat</Text>
@@ -520,7 +522,7 @@ function ThreadDetailScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right', 'bottom']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+        <AnimatedPressable onPress={() => safeGoBack(router)} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
         <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
@@ -551,8 +553,8 @@ function ThreadDetailScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons name="chatbubble-outline" size={48} color={colors.muted} />
-              <Text style={[styles.emptyText, { color: colors.muted }]}>No messages yet</Text>
-              <Text style={[styles.emptySubtext, { color: colors.muted }]}>Send a message to start the conversation</Text>
+              <Text style={[styles.emptyText, { color: colors.muted }]}>{t('chat.no_messages_yet', { defaultValue: 'No messages yet' })}</Text>
+              <Text style={[styles.emptySubtext, { color: colors.muted }]}>{t('chat.start_conversation', { defaultValue: 'Send a message to start the conversation' })}</Text>
             </View>
           }
         />
@@ -571,9 +573,9 @@ function ThreadDetailScreen() {
           <TextInput
             value={inputText}
             onChangeText={handleTextChange}
-            placeholder="Type a message..."
+            placeholder={t('chat.message_placeholder', { defaultValue: 'Type a message...' })}
             placeholderTextColor={colors.muted}
-            accessibilityLabel="Message input"
+            accessibilityLabel={t('chat.a11y_message_input', { defaultValue: 'Message input' })}
             accessibilityHint="Type a message and press send"
             style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
             multiline

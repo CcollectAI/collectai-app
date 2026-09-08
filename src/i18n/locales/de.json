@@ -867,7 +867,15 @@
     "a11y_clear_filters_search": "Alle Filter und die Suche zurücksetzen",
     "a11y_choose_item_to_sell": "Objekt aus deiner Sammlung zum Verkauf wählen",
     "a11y_marketplace_terms": "Marktplatz-Bedingungen lesen",
-    "marketplace_terms": "Marktplatz-Bedingungen"
+    "marketplace_terms": "Marktplatz-Bedingungen",
+    "listing_unavailable": "Angebot nicht verfügbar",
+    "a11y_change_price": "Deine Preisvorstellung ändern",
+    "a11y_mark_sold": "Als verkauft markieren",
+    "a11y_message_seller": "Verkäufer:in anschreiben",
+    "change_price": "Preis ändern",
+    "a11y_new_asking_price": "Neue Preisvorstellung",
+    "a11y_save_new_price": "Neuen Preis speichern",
+    "make_an_offer": "Angebot machen"
   },
   "chat": {
     "collector_not_found": "Sammler nicht gefunden",
@@ -876,7 +884,14 @@
     "go_to_inbox": "Zum Posteingang",
     "request_to_connect": "Kontaktanfrage senden",
     "your_message": "Deine Nachricht",
-    "a11y_connection_message": "Kontaktnachricht"
+    "a11y_connection_message": "Kontaktnachricht",
+    "a11y_retry_send": "Tippen, um das Senden zu wiederholen",
+    "failed_to_send": "Senden fehlgeschlagen",
+    "tap_to_retry": "Zum Wiederholen tippen",
+    "no_messages_yet": "Noch keine Nachrichten",
+    "start_conversation": "Sende eine Nachricht, um das Gespräch zu beginnen",
+    "message_placeholder": "Nachricht schreiben...",
+    "a11y_message_input": "Nachrichteneingabe"
   },
   "sell": {
     "sell_an_item": "Objekt verkaufen",
@@ -917,5 +932,16 @@
     "danger_zone": "Gefahrenbereich",
     "a11y_cancel_event": "Event absagen",
     "cancel_event": "Event absagen"
+  },
+  "catalog": {
+    "image_coming_soon": "Bild folgt in Kürze",
+    "no_recent_sales": "Keine aktuellen Verkaufsdaten",
+    "a11y_unlock_pro": "Vollständige Marktanalyse mit Pro freischalten",
+    "pro_teaser": "Volle Preisspanne & 90-Tage-Trend — Sparrow Pro",
+    "marketplaces_load_failed": "Marktplätze konnten nicht geladen werden.",
+    "a11y_retry_marketplaces": "Marktplätze erneut laden",
+    "no_marketplaces": "Keine Marktplätze für dieses Objekt verfügbar.",
+    "a11y_add_watchlist": "Zur Beobachtungsliste",
+    "add_to_watchlist": "Zur Beobachtungsliste"
   }
 }

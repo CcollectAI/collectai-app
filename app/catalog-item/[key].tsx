@@ -42,10 +42,12 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import logger from '@/utils/logger';
 import type { CatalogItemData } from '@/components/CatalogBrowseSection';
 import ScreenHeader from '@/components/ScreenHeader';
+import { useTranslation } from 'react-i18next';
 
 type AffiliateLink = { source: string; url: string; affiliate_url: string; label: string };
 
 function CatalogItemMuseumScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
@@ -250,7 +252,7 @@ function CatalogItemMuseumScreen() {
         <View style={[styles.hero, styles.heroEmpty, { backgroundColor: colors.card }]}>
           <Ionicons name="image-outline" size={48} color={colors.muted} />
           {/* No catalog art yet — user photos will fill these as the database grows. */}
-          <Text style={[styles.comingSoon, { color: colors.muted }]}>Image coming soon</Text>
+          <Text style={[styles.comingSoon, { color: colors.muted }]}>{t('catalog.image_coming_soon', { defaultValue: 'Image coming soon' })}</Text>
         </View>
       )}
 
@@ -273,7 +275,7 @@ function CatalogItemMuseumScreen() {
           {estPrice != null ? (
             <Text style={[styles.price, { color: colors.text }]}>~{formatPrice(estPrice)}</Text>
           ) : (
-            <Text style={[styles.priceMuted, { color: colors.muted }]}>No recent sales data</Text>
+            <Text style={[styles.priceMuted, { color: colors.muted }]}>{t('catalog.no_recent_sales', { defaultValue: 'No recent sales data' })}</Text>
           )}
           <Text style={[styles.priceSub, { color: colors.muted }]}>
             {/* "comps" read as completed sales and is not: 99.98% of the
@@ -295,10 +297,10 @@ function CatalogItemMuseumScreen() {
             <AnimatedPressable
               style={[styles.proRow, { borderColor: colors.border }]}
               onPress={() => router.push('/subscription' as Href)}
-              accessibilityRole="button" accessibilityLabel="Unlock full market analysis with Pro"
+              accessibilityRole="button" accessibilityLabel={t('catalog.a11y_unlock_pro', { defaultValue: 'Unlock full market analysis with Pro' })}
             >
               <Ionicons name="lock-closed" size={14} color={colors.muted} />
-              <Text style={[styles.proText, { color: colors.muted }]}>Full price range & 90-day trend — Sparrow Pro</Text>
+              <Text style={[styles.proText, { color: colors.muted }]}>{t('catalog.pro_teaser', { defaultValue: 'Full price range & 90-day trend — Sparrow Pro' })}</Text>
               <Ionicons name="chevron-forward" size={14} color={colors.muted} />
             </AnimatedPressable>
           )}
@@ -344,18 +346,18 @@ function CatalogItemMuseumScreen() {
             <ActivityIndicator color={colors.accent} style={{ marginTop: 12 }} />
           ) : links === null ? (
             <View style={{ marginTop: 8 }}>
-              <Text style={[styles.priceSub, { color: colors.muted }]}>Couldn&apos;t load marketplaces.</Text>
+              <Text style={[styles.priceSub, { color: colors.muted }]}>{t('catalog.marketplaces_load_failed', { defaultValue: "Couldn't load marketplaces." })}</Text>
               <AnimatedPressable
                 onPress={() => { setLinksLoading(true); setLinksNonce((n) => n + 1); }}
                 style={[styles.retryBtn, { borderColor: colors.accent }]}
-                accessibilityRole="button" accessibilityLabel="Try loading marketplaces again"
+                accessibilityRole="button" accessibilityLabel={t('catalog.a11y_retry_marketplaces', { defaultValue: 'Try loading marketplaces again' })}
               >
-                <Text style={[styles.buyLabel, { color: colors.accent }]}>Try again</Text>
+                <Text style={[styles.buyLabel, { color: colors.accent }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
                 <Ionicons name="refresh" size={16} color={colors.accent} />
               </AnimatedPressable>
             </View>
           ) : links.length === 0 ? (
-            <Text style={[styles.priceSub, { color: colors.muted, marginTop: 8 }]}>No marketplaces available for this item.</Text>
+            <Text style={[styles.priceSub, { color: colors.muted, marginTop: 8 }]}>{t('catalog.no_marketplaces', { defaultValue: 'No marketplaces available for this item.' })}</Text>
           ) : (
             links.map((link) => (
               <AnimatedPressable
@@ -383,10 +385,10 @@ function CatalogItemMuseumScreen() {
           <AnimatedPressable
             style={[styles.cta, { backgroundColor: colors.accent, opacity: adding ? 0.6 : 1 }]}
             onPress={onAddToWatchlist} disabled={adding}
-            accessibilityRole="button" accessibilityLabel="Add to watchlist"
+            accessibilityRole="button" accessibilityLabel={t('catalog.a11y_add_watchlist', { defaultValue: 'Add to watchlist' })}
           >
             <Ionicons name="eye-outline" size={18} color="#fff" />
-            <Text style={styles.ctaText}>Add to watchlist</Text>
+            <Text style={styles.ctaText}>{t('catalog.add_to_watchlist', { defaultValue: 'Add to watchlist' })}</Text>
           </AnimatedPressable>
 
           {/* Favourite this CATALOGUE entry — keyed by canonical_key, not by a

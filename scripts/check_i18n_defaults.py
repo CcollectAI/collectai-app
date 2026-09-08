@@ -29,9 +29,14 @@ ROOT = Path(__file__).resolve().parent.parent
 EN = ROOT / "src/i18n/locales/en.json"
 SCAN = ("app", "src")
 
-# t('a.b', { defaultValue: '...' }) — single-quoted, the repo's own style.
+# t('a.b', { defaultValue: '...' }) or defaultValue: "..." — BOTH quote styles.
+# Single-quoted is the repo's usual style, but a string containing an apostrophe
+# ("Couldn't load marketplaces.") is naturally written double-quoted. Matching
+# only one style would make this gate silently skip exactly those strings, which
+# is the failure mode it exists to prevent.
 CALL = re.compile(
-    r"""t\(\s*'([A-Za-z0-9_.]+)'\s*,\s*\{[^{}]*?defaultValue:\s*'((?:[^'\\]|\\.)*)'""",
+    r"""t\(\s*'([A-Za-z0-9_.]+)'\s*,\s*\{[^{}]*?defaultValue:\s*"""
+    r"""(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")""",
     re.S,
 )
 
@@ -59,7 +64,9 @@ def main() -> int:
             if "defaultValue" not in text:
                 continue
             for m in CALL.finditer(text):
-                key, dv = m.group(1), m.group(2).replace("\\'", "'").replace('\\"', '"')
+                raw = m.group(2) if m.group(2) is not None else m.group(3)
+                key = m.group(1)
+                dv = raw.replace("\\'", "'").replace('\\"', '"')
                 checked += 1
                 actual = lookup(en, key)
                 line = text[: m.start()].count("\n") + 1

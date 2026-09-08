@@ -867,7 +867,15 @@
     "a11y_clear_filters_search": "Clear all filters and search",
     "a11y_choose_item_to_sell": "Choose an item from your collection to sell",
     "a11y_marketplace_terms": "Read the marketplace terms",
-    "marketplace_terms": "Marketplace terms"
+    "marketplace_terms": "Marketplace terms",
+    "listing_unavailable": "Listing unavailable",
+    "a11y_change_price": "Change your asking price",
+    "a11y_mark_sold": "Mark as sold",
+    "a11y_message_seller": "Message the seller",
+    "change_price": "Change price",
+    "a11y_new_asking_price": "New asking price",
+    "a11y_save_new_price": "Save the new price",
+    "make_an_offer": "Make an offer"
   },
   "chat": {
     "collector_not_found": "Collector not found",
@@ -876,7 +884,14 @@
     "go_to_inbox": "Go to Inbox",
     "request_to_connect": "Request to Connect",
     "your_message": "Your message",
-    "a11y_connection_message": "Connection message"
+    "a11y_connection_message": "Connection message",
+    "a11y_retry_send": "Tap to retry sending message",
+    "failed_to_send": "Failed to send",
+    "tap_to_retry": "Tap to retry",
+    "no_messages_yet": "No messages yet",
+    "start_conversation": "Send a message to start the conversation",
+    "message_placeholder": "Type a message...",
+    "a11y_message_input": "Message input"
   },
   "sell": {
     "sell_an_item": "Sell an item",
@@ -917,5 +932,16 @@
     "danger_zone": "Danger Zone",
     "a11y_cancel_event": "Cancel event",
     "cancel_event": "Cancel Event"
+  },
+  "catalog": {
+    "image_coming_soon": "Image coming soon",
+    "no_recent_sales": "No recent sales data",
+    "a11y_unlock_pro": "Unlock full market analysis with Pro",
+    "pro_teaser": "Full price range & 90-day trend — Sparrow Pro",
+    "marketplaces_load_failed": "Couldn't load marketplaces.",
+    "a11y_retry_marketplaces": "Try loading marketplaces again",
+    "no_marketplaces": "No marketplaces available for this item.",
+    "a11y_add_watchlist": "Add to watchlist",
+    "add_to_watchlist": "Add to watchlist"
   }
 }

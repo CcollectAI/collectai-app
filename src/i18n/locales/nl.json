@@ -867,7 +867,15 @@
     "a11y_clear_filters_search": "Alle filters en zoekopdracht wissen",
     "a11y_choose_item_to_sell": "Kies een item uit je collectie om te verkopen",
     "a11y_marketplace_terms": "Lees de marktplaatsvoorwaarden",
-    "marketplace_terms": "Marktplaatsvoorwaarden"
+    "marketplace_terms": "Marktplaatsvoorwaarden",
+    "listing_unavailable": "Advertentie niet beschikbaar",
+    "a11y_change_price": "Wijzig je vraagprijs",
+    "a11y_mark_sold": "Markeren als verkocht",
+    "a11y_message_seller": "Stuur de verkoper een bericht",
+    "change_price": "Prijs wijzigen",
+    "a11y_new_asking_price": "Nieuwe vraagprijs",
+    "a11y_save_new_price": "Nieuwe prijs opslaan",
+    "make_an_offer": "Doe een bod"
   },
   "chat": {
     "collector_not_found": "Verzamelaar niet gevonden",
@@ -876,7 +884,14 @@
     "go_to_inbox": "Naar postvak",
     "request_to_connect": "Verzoek om te verbinden",
     "your_message": "Jouw bericht",
-    "a11y_connection_message": "Verbindingsbericht"
+    "a11y_connection_message": "Verbindingsbericht",
+    "a11y_retry_send": "Tik om het bericht opnieuw te versturen",
+    "failed_to_send": "Versturen mislukt",
+    "tap_to_retry": "Tik om opnieuw te proberen",
+    "no_messages_yet": "Nog geen berichten",
+    "start_conversation": "Stuur een bericht om het gesprek te starten",
+    "message_placeholder": "Typ een bericht...",
+    "a11y_message_input": "Berichtveld"
   },
   "sell": {
     "sell_an_item": "Een item verkopen",
@@ -917,5 +932,16 @@
     "danger_zone": "Gevarenzone",
     "a11y_cancel_event": "Evenement annuleren",
     "cancel_event": "Evenement annuleren"
+  },
+  "catalog": {
+    "image_coming_soon": "Afbeelding volgt binnenkort",
+    "no_recent_sales": "Geen recente verkoopgegevens",
+    "a11y_unlock_pro": "Ontgrendel de volledige marktanalyse met Pro",
+    "pro_teaser": "Volledige prijsrange & 90-daagse trend — Sparrow Pro",
+    "marketplaces_load_failed": "Marktplaatsen konden niet worden geladen.",
+    "a11y_retry_marketplaces": "Marktplaatsen opnieuw laden",
+    "no_marketplaces": "Geen marktplaatsen beschikbaar voor dit item.",
+    "a11y_add_watchlist": "Aan volglijst toevoegen",
+    "add_to_watchlist": "Aan volglijst toevoegen"
   }
 }

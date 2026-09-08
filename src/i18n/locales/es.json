@@ -867,7 +867,15 @@
     "a11y_clear_filters_search": "Borrar todos los filtros y la búsqueda",
     "a11y_choose_item_to_sell": "Elegir un artículo de tu colección para vender",
     "a11y_marketplace_terms": "Leer los términos del mercado",
-    "marketplace_terms": "Términos del mercado"
+    "marketplace_terms": "Términos del mercado",
+    "listing_unavailable": "Anuncio no disponible",
+    "a11y_change_price": "Cambia tu precio solicitado",
+    "a11y_mark_sold": "Marcar como vendido",
+    "a11y_message_seller": "Enviar mensaje al vendedor",
+    "change_price": "Cambiar precio",
+    "a11y_new_asking_price": "Nuevo precio solicitado",
+    "a11y_save_new_price": "Guardar el nuevo precio",
+    "make_an_offer": "Hacer una oferta"
   },
   "chat": {
     "collector_not_found": "Coleccionista no encontrado",
@@ -876,7 +884,14 @@
     "go_to_inbox": "Ir a la bandeja de entrada",
     "request_to_connect": "Solicitud para conectar",
     "your_message": "Tu mensaje",
-    "a11y_connection_message": "Mensaje de conexión"
+    "a11y_connection_message": "Mensaje de conexión",
+    "a11y_retry_send": "Toca para reintentar el envío",
+    "failed_to_send": "Error al enviar",
+    "tap_to_retry": "Toca para reintentar",
+    "no_messages_yet": "Aún no hay mensajes",
+    "start_conversation": "Envía un mensaje para iniciar la conversación",
+    "message_placeholder": "Escribe un mensaje...",
+    "a11y_message_input": "Campo de mensaje"
   },
   "sell": {
     "sell_an_item": "Vender un artículo",
@@ -917,5 +932,16 @@
     "danger_zone": "Zona de peligro",
     "a11y_cancel_event": "Cancelar evento",
     "cancel_event": "Cancelar evento"
+  },
+  "catalog": {
+    "image_coming_soon": "Imagen próximamente",
+    "no_recent_sales": "Sin datos de ventas recientes",
+    "a11y_unlock_pro": "Desbloquea el análisis de mercado completo con Pro",
+    "pro_teaser": "Rango de precios completo y tendencia de 90 días — Sparrow Pro",
+    "marketplaces_load_failed": "No se pudieron cargar los mercados.",
+    "a11y_retry_marketplaces": "Reintentar cargar los mercados",
+    "no_marketplaces": "No hay mercados disponibles para este artículo.",
+    "a11y_add_watchlist": "Añadir a la lista de seguimiento",
+    "add_to_watchlist": "Añadir a la lista de seguimiento"
   }
 }

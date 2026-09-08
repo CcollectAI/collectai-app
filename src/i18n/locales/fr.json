@@ -867,7 +867,15 @@
     "a11y_clear_filters_search": "Effacer tous les filtres et la recherche",
     "a11y_choose_item_to_sell": "Choisir un article de votre collection à vendre",
     "a11y_marketplace_terms": "Lire les conditions de la place de marché",
-    "marketplace_terms": "Conditions de la place de marché"
+    "marketplace_terms": "Conditions de la place de marché",
+    "listing_unavailable": "Annonce indisponible",
+    "a11y_change_price": "Modifier votre prix demandé",
+    "a11y_mark_sold": "Marquer comme vendu",
+    "a11y_message_seller": "Contacter le vendeur",
+    "change_price": "Modifier le prix",
+    "a11y_new_asking_price": "Nouveau prix demandé",
+    "a11y_save_new_price": "Enregistrer le nouveau prix",
+    "make_an_offer": "Faire une offre"
   },
   "chat": {
     "collector_not_found": "Collectionneur introuvable",
@@ -876,7 +884,14 @@
     "go_to_inbox": "Aller à la boîte de réception",
     "request_to_connect": "Demande de connexion",
     "your_message": "Votre message",
-    "a11y_connection_message": "Message de connexion"
+    "a11y_connection_message": "Message de connexion",
+    "a11y_retry_send": "Appuyez pour réessayer d’envoyer le message",
+    "failed_to_send": "Échec de l’envoi",
+    "tap_to_retry": "Appuyez pour réessayer",
+    "no_messages_yet": "Aucun message pour le moment",
+    "start_conversation": "Envoyez un message pour démarrer la conversation",
+    "message_placeholder": "Écrivez un message...",
+    "a11y_message_input": "Champ de message"
   },
   "sell": {
     "sell_an_item": "Vendre un article",
@@ -917,5 +932,16 @@
     "danger_zone": "Zone sensible",
     "a11y_cancel_event": "Annuler l’événement",
     "cancel_event": "Annuler l’événement"
+  },
+  "catalog": {
+    "image_coming_soon": "Image bientôt disponible",
+    "no_recent_sales": "Aucune vente récente",
+    "a11y_unlock_pro": "Débloquez l’analyse de marché complète avec Pro",
+    "pro_teaser": "Fourchette de prix complète & tendance sur 90 jours — Sparrow Pro",
+    "marketplaces_load_failed": "Impossible de charger les places de marché.",
+    "a11y_retry_marketplaces": "Réessayer de charger les places de marché",
+    "no_marketplaces": "Aucune place de marché disponible pour cet article.",
+    "a11y_add_watchlist": "Ajouter à la liste de suivi",
+    "add_to_watchlist": "Ajouter à la liste de suivi"
   }
 }
