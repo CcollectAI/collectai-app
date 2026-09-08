@@ -25,6 +25,7 @@ import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import { collectorsApi } from '@/api/collectorsApi';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { featureFlags } from '@/config/featureFlags';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 
@@ -52,6 +53,10 @@ const DEFAULT_PREFS: NotificationPrefs = {
   event_announcements: true,
 };
 
+// The weekly_digest row is NOT here. Its worker is commented out of
+// bake_orchestrator's _WEEKLY_WORKERS, so the toggle promised a summary that
+// nothing could ever send. It is re-added below, gated, rather than deleted:
+// the stored key still exists server-side and must not be orphaned.
 const TOGGLE_ITEMS: { key: keyof NotificationPrefs; label: string; hint: string }[] = [
   { key: 'price_alerts', label: 'Price alerts', hint: 'When an item hits your target price or moves sharply' },
   // Label only. `deal_alerts` is the STORED preference key and the `category`
@@ -64,10 +69,14 @@ const TOGGLE_ITEMS: { key: keyof NotificationPrefs; label: string; hint: string 
   { key: 'deal_alerts', label: 'Target Hit', hint: 'When a watched item is listed for sale below your target price' },
   { key: 'value_changes', label: 'Portfolio value', hint: 'Summaries when your collection value moves' },
   { key: 'item_value_changes', label: 'Item value changes', hint: 'When a single item you own changes in value' },
-  { key: 'weekly_digest', label: 'Weekly digest', hint: 'One summary of your collection each week' },
   { key: 'chat_messages', label: 'Messages', hint: 'New direct messages from other collectors' },
   { key: 'connection_requests', label: 'Connection requests', hint: 'When someone asks to connect with you' },
   { key: 'event_announcements', label: 'Event announcements', hint: 'Updates from events you have RSVP\'d to' },
+  // Restored in place (between item_value_changes and chat_messages is where it
+  // read) the moment the worker is scheduled again.
+  ...(featureFlags.FEATURE_WEEKLY_DIGEST
+    ? [{ key: 'weekly_digest' as const, label: 'Weekly digest', hint: 'One summary of your collection each week' }]
+    : []),
 ];
 
 function NotificationPreferencesSectionInner() {

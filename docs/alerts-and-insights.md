@@ -841,7 +841,7 @@ workers are commented out of `bake_orchestrator.py` (verified 2026-08-06):
 | Auction Ending | Watched auction ending in <15min | auction_alert_worker | ❌ `:117` |
 | Low Value | Item valued below 10 EUR | alerts_worker | ❌ `:109` |
 | Value Change | Portfolio >5% or item >15% | value_change_worker | ✅ `:95` |
-| Weekly Digest | Weekly summary | insights_digest_worker | ❌ `:186` |
+| Weekly Digest | Weekly summary | insights_digest_worker | ❌ `:186` — **toggle now hidden**, see above |
 
 What that means for the Alerts screen, counted in prod 2026-08-06:
 
@@ -886,6 +886,32 @@ Two deliberate details:
 Do not invent keys here. The set is fixed by `NotificationPreferencesUpdate`
 (`notification_router.py:236`); an unknown key is silently dropped by Pydantic,
 which is exactly how a toggle becomes a no-op.
+
+#### The weekly digest toggle is hidden, because nothing could send it (2026-09-09)
+
+Found by walking Settings on the Android dev client. `weekly_digest` was the
+only row here whose worker is **not scheduled**: `insights_digest_worker.py`
+exists and works, but its registration is commented out of `_WEEKLY_WORKERS` in
+`bake_orchestrator.py:218` ("Weekly workers — disabled for pre-launch. No
+users."). So the switch stored a preference and produced a summary **never** —
+the toggle was selling a feature the build cannot deliver, which is the same
+shape as a paywall bullet outliving its screen.
+
+The row is now gated on `featureFlags.FEATURE_WEEKLY_DIGEST` (false) rather
+than deleted: the stored key still exists server-side, and deleting the row
+would orphan preferences the same way renaming `deal_alerts` would.
+
+**Gate: `npm run check:digest-parity`** (in `verify:prebuild`), mutation-proven
+in all four states. It fails in BOTH directions, because both are lies:
+a visible toggle over an unscheduled worker promises a digest that never
+arrives; a scheduled worker under a hidden toggle sends notifications the user
+has no way to stop. Re-enable the flag in the same change that uncomments the
+worker.
+
+⚠️ The other surface was NOT changed: `AlertSettings.tsx:25` offers a "Weekly
+Digest" frequency, and it writes to `user_alert_preferences` — the store the
+next section proves nothing reads at delivery time. Hiding one row there would
+imply the rest of that screen works.
 
 ### Two preference stores — one is read, one is not (found 2026-08-06)
 

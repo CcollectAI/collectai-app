@@ -163,4 +163,16 @@ export const featureFlags = {
   // Ads — dark by default. Enable via PostHog remote flag or manually
   // when user threshold is reached. Free users only; paid = ad-free.
   FEATURE_ADS: false,
+  // Weekly digest — the SETTINGS TOGGLE, not the worker. The worker exists and
+  // works (server/workers/insights_digest_worker.py), but its registration is
+  // commented out of `_WEEKLY_WORKERS` in server/workers/bake_orchestrator.py
+  // ("Weekly workers — disabled for pre-launch"). Nothing schedules it, so the
+  // toggle offered a summary that can never arrive: switching it on wrote a
+  // preference and produced nothing, forever.
+  //
+  // Flip this back to true IN THE SAME CHANGE that uncomments the worker —
+  // `npm run check:digest-parity` fails the build if the two disagree, in
+  // either direction, because a hidden toggle over a running worker is the
+  // same lie facing the other way.
+  FEATURE_WEEKLY_DIGEST: false,
 };
