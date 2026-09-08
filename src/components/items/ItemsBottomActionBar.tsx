@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { BETA_MODE } from '@/config/featureFlags';
+import { useTranslation } from 'react-i18next';
 
 interface ItemsBottomActionBarProps {
   exporting: boolean;
@@ -28,6 +29,7 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
   onOpenArchived,
 }: ItemsBottomActionBarProps) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <>
@@ -55,7 +57,7 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
             onPress={onExportCSV}
             disabled={exporting}
             accessibilityRole="button"
-            accessibilityLabel="Download collection overview as CSV"
+            accessibilityLabel={t('items.a11y_download_csv', { defaultValue: 'Download collection overview as CSV' })}
           >
             {exporting ? (
               <ActivityIndicator size="small" color={colors.accent} />
@@ -78,7 +80,7 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
             ]}
             onPress={onOpenArchived}
             accessibilityRole="button"
-            accessibilityLabel="View archived items and restore them"
+            accessibilityLabel={t('items.a11y_view_archived', { defaultValue: 'View archived items and restore them' })}
           >
             <Ionicons name="archive-outline" size={18} color={colors.accent} />
             <Text numberOfLines={1} style={[styles.actionButtonSecondaryText, { color: colors.text }]}>
@@ -94,7 +96,7 @@ export const ItemsBottomActionBar = React.memo(function ItemsBottomActionBar({
               ]}
               onPress={onOpenProjects}
               accessibilityRole="button"
-              accessibilityLabel="Open build and paint projects"
+              accessibilityLabel={t('items.a11y_open_projects', { defaultValue: 'Open build and paint projects' })}
             >
               <Ionicons name="color-palette-outline" size={18} color={colors.accent} />
               <Text numberOfLines={1} style={[styles.actionButtonSecondaryText, { color: colors.text }]}>

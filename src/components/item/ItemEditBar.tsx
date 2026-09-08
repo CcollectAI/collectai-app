@@ -6,6 +6,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 interface ItemEditBarProps {
   onSave: () => void;
@@ -14,6 +15,7 @@ interface ItemEditBarProps {
 
 export const ItemEditBar = React.memo(function ItemEditBar({ onSave, onCancel }: ItemEditBarProps) {
   const { colors: theme } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.editBar}>
@@ -21,16 +23,16 @@ export const ItemEditBar = React.memo(function ItemEditBar({ onSave, onCancel }:
         onPress={onSave}
         style={[styles.editBarBtnPrimary, { backgroundColor: theme.accent }]}
         accessibilityRole="button"
-        accessibilityLabel="Save changes"
+        accessibilityLabel={t('common.a11y_save_changes', { defaultValue: 'Save changes' })}
       >
         <Ionicons name="checkmark-circle" size={18} color="#fff" />
-        <Text style={styles.editBarBtnPrimaryText}>Save Changes</Text>
+        <Text style={styles.editBarBtnPrimaryText}>{t('common.save_changes', { defaultValue: 'Save Changes' })}</Text>
       </AnimatedPressable>
       <AnimatedPressable
         onPress={onCancel}
         style={[styles.editBarBtn, { backgroundColor: theme.card, borderColor: theme.border }]}
         accessibilityRole="button"
-        accessibilityLabel="Cancel editing"
+        accessibilityLabel={t('common.a11y_cancel_editing', { defaultValue: 'Cancel editing' })}
       >
         <Text style={[styles.editBarBtnText, { color: theme.muted }]}>Cancel</Text>
       </AnimatedPressable>

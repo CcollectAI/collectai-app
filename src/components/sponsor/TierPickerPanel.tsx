@@ -5,6 +5,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import type { SponsorTier } from '@/data/events';
+import { useTranslation } from 'react-i18next';
 
 const TIERS: { id: SponsorTier; name: string; badge?: string; features: string[] }[] = [
   { id: 'featured', name: 'Featured', features: ['Event listing', 'Category placement', 'Basic analytics'] },
@@ -32,6 +33,7 @@ export const TierPickerPanel = React.memo(function TierPickerPanel({
   selectedTier, onSelectTier, billingMode, onBillingModeChange, onConfirm, onCancel, hapticsEnabled,
 }: Props) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }, SHADOW_MD]}>
@@ -40,8 +42,8 @@ export const TierPickerPanel = React.memo(function TierPickerPanel({
           <Ionicons name="ribbon-outline" size={16} color={colors.accent} />
         </View>
         <View>
-          <Text style={[styles.title, { color: colors.text }]}>Select Sponsorship Tier</Text>
-          <Text style={[styles.subtitle, { color: colors.muted }]}>Choose the visibility level for your event</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('sponsor.select_tier', { defaultValue: 'Select Sponsorship Tier' })}</Text>
+          <Text style={[styles.subtitle, { color: colors.muted }]}>{t('sponsor.select_tier_sub', { defaultValue: 'Choose the visibility level for your event' })}</Text>
         </View>
       </View>
 
@@ -92,7 +94,7 @@ export const TierPickerPanel = React.memo(function TierPickerPanel({
           accessibilityRole="radio"
           accessibilityState={{ selected: billingMode === 'per_event' }}
         >
-          <Text style={{ fontSize: 13, fontWeight: '600', color: billingMode === 'per_event' ? '#FFF' : colors.text }}>Per Event</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: billingMode === 'per_event' ? '#FFF' : colors.text }}>{t('sponsor.per_event', { defaultValue: 'Per Event' })}</Text>
         </AnimatedPressable>
         <AnimatedPressable
           onPress={() => onBillingModeChange('monthly')}

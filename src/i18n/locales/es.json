@@ -37,7 +37,13 @@
     "slow_load_still_working": "Seguimos en ello. Está tardando más de lo normal, gracias por tu paciencia.",
     "try_again": "Inténtalo de nuevo",
     "try_again_title": "Intentar de nuevo",
-    "see_all": "Ver todo"
+    "see_all": "Ver todo",
+    "select_date": "Selecciona una fecha...",
+    "a11y_prev_day": "Día anterior",
+    "a11y_next_day": "Día siguiente",
+    "save_changes": "Guardar cambios",
+    "a11y_save_changes": "Guardar cambios",
+    "a11y_cancel_editing": "Cancelar la edición"
   },
   "add_tab": {
     "subtitle": "Flujo rápido, cámara primero.",
@@ -367,7 +373,10 @@
     "a11y_start_watchlist": "Empieza tu lista de seguimiento",
     "start_watchlist": "Empieza tu lista de seguimiento",
     "hot_right_now": "Lo más popular ahora",
-    "a11y_retry_trending": "Volver a cargar los artículos en tendencia"
+    "a11y_retry_trending": "Volver a cargar los artículos en tendencia",
+    "category_breakdown": "Desglose por categoría",
+    "a11y_all_items_az": "Ver todos los artículos de tu colección, de la A a la Z",
+    "all_items_arrow": "Todos los artículos →"
   },
   "items": {
     "title": "Artículos",
@@ -390,7 +399,10 @@
     "move_a11y": "Mover artículos seleccionados a categoría",
     "export_a11y": "Exportar artículos seleccionados",
     "archive_a11y": "Archivar artículos seleccionados",
-    "delete_a11y": "Eliminar artículos seleccionados"
+    "delete_a11y": "Eliminar artículos seleccionados",
+    "a11y_download_csv": "Descargar el resumen de la colección en CSV",
+    "a11y_view_archived": "Ver los artículos archivados y restaurarlos",
+    "a11y_open_projects": "Abrir los proyectos de montaje y pintura"
   },
   "scan": {
     "title": "QuickScan",
@@ -500,7 +512,10 @@
     "a11y_accessibility_section": "Sección de ajustes de accesibilidad",
     "high_contrast_mode": "Modo de alto contraste",
     "reduce_motion": "Reducir el movimiento",
-    "large_text": "Texto grande"
+    "large_text": "Texto grande",
+    "a11y_change_collecting_experience": "Cambiar cuánto tiempo llevas coleccionando",
+    "collecting_experience": "Experiencia coleccionando",
+    "collecting_experience_question": "¿Cuánto tiempo llevas coleccionando?"
   },
   "sponsor_profile": {
     "company_name": "Nombre de la empresa",
@@ -865,7 +880,10 @@
     "a11y_add_tracking": "Añadir seguimiento de este paquete",
     "add_tracking": "Añadir seguimiento",
     "a11y_view_listing": "Ver el anuncio de este intercambio",
-    "view_listing": "Ver anuncio"
+    "view_listing": "Ver anuncio",
+    "custom_offer": "Oferta personalizada",
+    "any_amount": "Cualquier importe",
+    "a11y_custom_amount": "Importe de la oferta personalizada"
   },
   "item_attrs": {
     "case_size": "Tamaño de la caja",
@@ -1091,7 +1109,12 @@
     "a11y_announcement_image": "Imagen del anuncio",
     "no_announcements": "Aún no hay anuncios",
     "a11y_send_first": "Envía tu primer anuncio",
-    "send_first_announcement": "Enviar el primer anuncio"
+    "send_first_announcement": "Enviar el primer anuncio",
+    "no_campaigns": "Aún no hay campañas",
+    "a11y_create_first_event": "Crea tu primer evento",
+    "select_tier": "Selecciona el nivel de patrocinio",
+    "select_tier_sub": "Elige el nivel de visibilidad de tu evento",
+    "per_event": "Por evento"
   },
   "share": {
     "send_to": "Enviar a",

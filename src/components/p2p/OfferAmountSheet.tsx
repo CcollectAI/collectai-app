@@ -48,6 +48,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { formatPrice, getCurrencySymbol } from '@/lib/format';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import type { Currency, NumberLocale } from '@/lib/settings';
+import { useTranslation } from 'react-i18next';
 
 /** The colour slots this sheet uses. Structural, matching BottomSheetModal's own
  *  prop rather than importing a theme type that does not exist — `useAppTheme()`
@@ -97,6 +98,7 @@ export function OfferAmountSheet({
   submitLabel, busy = false, colors, hapticsEnabled = true, onSubmit,
 }: OfferAmountSheetProps) {
   const [selected, setSelected] = useState<number | null>(null);
+  const { t } = useTranslation();
   const [custom, setCustom] = useState('');
 
   const steps = useMemo(
@@ -216,7 +218,7 @@ export function OfferAmountSheet({
           })}
         </View>
 
-        <Text style={[styles.label, { color: colors.text }]}>Custom offer</Text>
+        <Text style={[styles.label, { color: colors.text }]}>{t('offers.custom_offer', { defaultValue: 'Custom offer' })}</Text>
         <View style={[styles.field, { borderColor: colors.border, backgroundColor: colors.card }]}>
           <Text style={[styles.currency, { color: colors.muted }]}>
             {getCurrencySymbol(currency)}
@@ -224,12 +226,12 @@ export function OfferAmountSheet({
           <TextInput
             value={custom}
             onChangeText={setCustom}
-            placeholder="Any amount"
+            placeholder={t('offers.any_amount', { defaultValue: 'Any amount' })}
             placeholderTextColor={colors.muted}
             keyboardType="decimal-pad"
             maxLength={12}
             style={[styles.input, { color: colors.text }]}
-            accessibilityLabel="Custom offer amount"
+            accessibilityLabel={t('offers.a11y_custom_amount', { defaultValue: 'Custom offer amount' })}
           />
           {customPct != null ? (
             <Text style={[styles.customPct, { color: colors.muted }]}>

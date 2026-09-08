@@ -37,7 +37,13 @@
     "slow_load_still_working": "Wir sind noch dran. Das dauert länger als sonst, danke für deine Geduld.",
     "try_again": "Erneut versuchen",
     "try_again_title": "Erneut versuchen",
-    "see_all": "Alle ansehen"
+    "see_all": "Alle ansehen",
+    "select_date": "Datum wählen...",
+    "a11y_prev_day": "Vorheriger Tag",
+    "a11y_next_day": "Nächster Tag",
+    "save_changes": "Änderungen speichern",
+    "a11y_save_changes": "Änderungen speichern",
+    "a11y_cancel_editing": "Bearbeiten abbrechen"
   },
   "add_tab": {
     "subtitle": "Schneller, kamerazuerst Flow.",
@@ -367,7 +373,10 @@
     "a11y_start_watchlist": "Beobachtungsliste starten",
     "start_watchlist": "Beobachtungsliste starten",
     "hot_right_now": "Gerade angesagt",
-    "a11y_retry_trending": "Trend-Artikel erneut laden"
+    "a11y_retry_trending": "Trend-Artikel erneut laden",
+    "category_breakdown": "Aufschlüsselung nach Kategorie",
+    "a11y_all_items_az": "Alle Artikel deiner Sammlung ansehen, A bis Z",
+    "all_items_arrow": "Alle Artikel →"
   },
   "items": {
     "title": "Objekte",
@@ -390,7 +399,10 @@
     "move_a11y": "Ausgewählte Objekte in Kategorie verschieben",
     "export_a11y": "Ausgewählte Objekte exportieren",
     "archive_a11y": "Ausgewählte Objekte archivieren",
-    "delete_a11y": "Ausgewählte Objekte löschen"
+    "delete_a11y": "Ausgewählte Objekte löschen",
+    "a11y_download_csv": "Sammlungsübersicht als CSV herunterladen",
+    "a11y_view_archived": "Archivierte Artikel ansehen und wiederherstellen",
+    "a11y_open_projects": "Bau- und Malprojekte öffnen"
   },
   "scan": {
     "title": "QuickScan",
@@ -500,7 +512,10 @@
     "a11y_accessibility_section": "Bereich Barrierefreiheitseinstellungen",
     "high_contrast_mode": "Modus mit hohem Kontrast",
     "reduce_motion": "Bewegung reduzieren",
-    "large_text": "Großer Text"
+    "large_text": "Großer Text",
+    "a11y_change_collecting_experience": "Ändern, wie lange du schon sammelst",
+    "collecting_experience": "Sammelerfahrung",
+    "collecting_experience_question": "Wie lange sammelst du schon?"
   },
   "sponsor_profile": {
     "company_name": "Firmenname",
@@ -865,7 +880,10 @@
     "a11y_add_tracking": "Sendungsverfolgung für dieses Paket hinzufügen",
     "add_tracking": "Sendungsverfolgung hinzufügen",
     "a11y_view_listing": "Das Angebot zu diesem Handel ansehen",
-    "view_listing": "Angebot ansehen"
+    "view_listing": "Angebot ansehen",
+    "custom_offer": "Eigenes Angebot",
+    "any_amount": "Beliebiger Betrag",
+    "a11y_custom_amount": "Betrag des eigenen Angebots"
   },
   "item_attrs": {
     "case_size": "Gehäusegröße",
@@ -1091,7 +1109,12 @@
     "a11y_announcement_image": "Bild der Ankündigung",
     "no_announcements": "Noch keine Ankündigungen",
     "a11y_send_first": "Sende deine erste Ankündigung",
-    "send_first_announcement": "Erste Ankündigung senden"
+    "send_first_announcement": "Erste Ankündigung senden",
+    "no_campaigns": "Noch keine Kampagnen",
+    "a11y_create_first_event": "Erstelle dein erstes Event",
+    "select_tier": "Sponsoring-Stufe wählen",
+    "select_tier_sub": "Wähle die Sichtbarkeit für dein Event",
+    "per_event": "Pro Event"
   },
   "share": {
     "send_to": "Senden an",

@@ -6,6 +6,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { EmptyState } from '@/components/EmptyState';
 import type { CollectorsEvent } from '@/data/events';
+import { useTranslation } from 'react-i18next';
 
 const SHADOW_SM = Platform.select({
   ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3 },
@@ -33,6 +34,7 @@ export const CampaignsTable = React.memo(function CampaignsTable({
   events, onEventPress, onAnnouncePress, onCreateEvent, hapticsEnabled,
 }: Props) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.sectionWrap}>
@@ -108,14 +110,14 @@ export const CampaignsTable = React.memo(function CampaignsTable({
           <View style={{ padding: 20 }}>
             <EmptyState
               icon="layers-outline"
-              title="No Campaigns Yet"
+              title={t('sponsor.no_campaigns', { defaultValue: 'No Campaigns Yet' })}
               subtitle="Create your first sponsored event to start reaching collectors."
               colors={colors}
               style={{ paddingVertical: 16 }}
               action={
-                <AnimatedPressable onPress={onCreateEvent} style={[styles.primaryBtn, { backgroundColor: colors.accent }]} accessibilityRole="button" accessibilityLabel="Create your first event">
+                <AnimatedPressable onPress={onCreateEvent} style={[styles.primaryBtn, { backgroundColor: colors.accent }]} accessibilityRole="button" accessibilityLabel={t('sponsor.a11y_create_first_event', { defaultValue: 'Create your first event' })}>
                   <Ionicons name="add" size={16} color="#FFFFFF" />
-                  <Text style={styles.primaryBtnText}>New Campaign</Text>
+                  <Text style={styles.primaryBtnText}>{t('sponsor.new_campaign', { defaultValue: 'New Campaign' })}</Text>
                 </AnimatedPressable>
               }
             />

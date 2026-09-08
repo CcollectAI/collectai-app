@@ -153,10 +153,10 @@ function AppearanceSectionInner() {
           style={styles.settingRow}
           onPress={() => setSkillPickerVisible(true)}
           accessibilityRole="button"
-          accessibilityLabel="Change how long you have been collecting"
+          accessibilityLabel={t('settings.a11y_change_collecting_experience', { defaultValue: 'Change how long you have been collecting' })}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Collecting experience</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('settings.collecting_experience', { defaultValue: 'Collecting experience' })}</Text>
             <Text style={[styles.settingHint, { color: colors.muted }]}>
               {/* "Not set" is honest for the null case — it means never asked,
                   and calling that "Just starting" would put words in the mouth
@@ -301,7 +301,7 @@ function AppearanceSectionInner() {
             <TouchableOpacity onPress={() => setSkillPickerVisible(false)} accessibilityLabel="Close">
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={[styles.pickerTitle, { color: colors.text }]}>How long have you been collecting?</Text>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('settings.collecting_experience_question', { defaultValue: 'How long have you been collecting?' })}</Text>
             <View style={{ width: 24 }} />
           </View>
           {SKILL_OPTIONS.map((opt) => (

@@ -37,7 +37,13 @@
     "slow_load_still_working": "Toujours en cours. Cela prend plus de temps que d'habitude, merci de votre patience.",
     "try_again": "Réessayer",
     "try_again_title": "Réessayer",
-    "see_all": "Tout voir"
+    "see_all": "Tout voir",
+    "select_date": "Choisir une date...",
+    "a11y_prev_day": "Jour précédent",
+    "a11y_next_day": "Jour suivant",
+    "save_changes": "Enregistrer les modifications",
+    "a11y_save_changes": "Enregistrer les modifications",
+    "a11y_cancel_editing": "Annuler la modification"
   },
   "add_tab": {
     "subtitle": "Flux rapide, photo d'abord.",
@@ -367,7 +373,10 @@
     "a11y_start_watchlist": "Commencez votre liste de suivi",
     "start_watchlist": "Commencez votre liste de suivi",
     "hot_right_now": "Tendance en ce moment",
-    "a11y_retry_trending": "Recharger les articles tendance"
+    "a11y_retry_trending": "Recharger les articles tendance",
+    "category_breakdown": "Répartition par catégorie",
+    "a11y_all_items_az": "Voir tous les articles de votre collection, de A à Z",
+    "all_items_arrow": "Tous les articles →"
   },
   "items": {
     "title": "Objets",
@@ -390,7 +399,10 @@
     "move_a11y": "Déplacer les objets sélectionnés vers une catégorie",
     "export_a11y": "Exporter les objets sélectionnés",
     "archive_a11y": "Archiver les objets sélectionnés",
-    "delete_a11y": "Supprimer les objets sélectionnés"
+    "delete_a11y": "Supprimer les objets sélectionnés",
+    "a11y_download_csv": "Télécharger l'aperçu de la collection en CSV",
+    "a11y_view_archived": "Voir les articles archivés et les restaurer",
+    "a11y_open_projects": "Ouvrir les projets de montage et peinture"
   },
   "scan": {
     "title": "QuickScan",
@@ -500,7 +512,10 @@
     "a11y_accessibility_section": "Section des paramètres d'accessibilité",
     "high_contrast_mode": "Mode contraste élevé",
     "reduce_motion": "Réduire les animations",
-    "large_text": "Grand texte"
+    "large_text": "Grand texte",
+    "a11y_change_collecting_experience": "Modifier depuis combien de temps vous collectionnez",
+    "collecting_experience": "Expérience de collection",
+    "collecting_experience_question": "Depuis combien de temps collectionnez-vous ?"
   },
   "sponsor_profile": {
     "company_name": "Nom de l'entreprise",
@@ -865,7 +880,10 @@
     "a11y_add_tracking": "Ajouter le suivi de ce colis",
     "add_tracking": "Ajouter le suivi",
     "a11y_view_listing": "Voir l’annonce concernée par cet échange",
-    "view_listing": "Voir l’annonce"
+    "view_listing": "Voir l’annonce",
+    "custom_offer": "Offre personnalisée",
+    "any_amount": "N'importe quel montant",
+    "a11y_custom_amount": "Montant de l'offre personnalisée"
   },
   "item_attrs": {
     "case_size": "Taille du boîtier",
@@ -1091,7 +1109,12 @@
     "a11y_announcement_image": "Image de l'annonce",
     "no_announcements": "Pas encore d'annonces",
     "a11y_send_first": "Envoyez votre première annonce",
-    "send_first_announcement": "Envoyer la première annonce"
+    "send_first_announcement": "Envoyer la première annonce",
+    "no_campaigns": "Pas encore de campagnes",
+    "a11y_create_first_event": "Créez votre premier événement",
+    "select_tier": "Choisir un niveau de sponsoring",
+    "select_tier_sub": "Choisissez le niveau de visibilité de votre événement",
+    "per_event": "Par événement"
   },
   "share": {
     "send_to": "Envoyer à",

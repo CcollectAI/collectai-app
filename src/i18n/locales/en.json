@@ -37,7 +37,13 @@
     "slow_load_still_working": "Still working on it. This one's taking longer than usual, thanks for bearing with us.",
     "try_again": "Try again",
     "try_again_title": "Try Again",
-    "see_all": "See all"
+    "see_all": "See all",
+    "select_date": "Select date...",
+    "a11y_prev_day": "Previous day",
+    "a11y_next_day": "Next day",
+    "save_changes": "Save Changes",
+    "a11y_save_changes": "Save changes",
+    "a11y_cancel_editing": "Cancel editing"
   },
   "add_tab": {
     "subtitle": "Fast, camera-first flow.",
@@ -367,7 +373,10 @@
     "a11y_start_watchlist": "Start your watchlist",
     "start_watchlist": "Start Your Watchlist",
     "hot_right_now": "Hot Right Now",
-    "a11y_retry_trending": "Retry loading trending items"
+    "a11y_retry_trending": "Retry loading trending items",
+    "category_breakdown": "Category Breakdown",
+    "a11y_all_items_az": "See all items in your collection, A to Z",
+    "all_items_arrow": "All items →"
   },
   "items": {
     "title": "Items",
@@ -390,7 +399,10 @@
     "move_a11y": "Move selected items to category",
     "export_a11y": "Export selected items",
     "archive_a11y": "Archive selected items",
-    "delete_a11y": "Delete selected items"
+    "delete_a11y": "Delete selected items",
+    "a11y_download_csv": "Download collection overview as CSV",
+    "a11y_view_archived": "View archived items and restore them",
+    "a11y_open_projects": "Open build and paint projects"
   },
   "scan": {
     "title": "QuickScan",
@@ -500,7 +512,10 @@
     "a11y_accessibility_section": "Accessibility settings section",
     "high_contrast_mode": "High Contrast Mode",
     "reduce_motion": "Reduce Motion",
-    "large_text": "Large Text"
+    "large_text": "Large Text",
+    "a11y_change_collecting_experience": "Change how long you have been collecting",
+    "collecting_experience": "Collecting experience",
+    "collecting_experience_question": "How long have you been collecting?"
   },
   "sponsor_profile": {
     "company_name": "Company name",
@@ -865,7 +880,10 @@
     "a11y_add_tracking": "Add tracking for this parcel",
     "add_tracking": "Add tracking",
     "a11y_view_listing": "View the listing this trade is for",
-    "view_listing": "View listing"
+    "view_listing": "View listing",
+    "custom_offer": "Custom offer",
+    "any_amount": "Any amount",
+    "a11y_custom_amount": "Custom offer amount"
   },
   "item_attrs": {
     "case_size": "Case Size",
@@ -1091,7 +1109,12 @@
     "a11y_announcement_image": "Announcement image",
     "no_announcements": "No Announcements Yet",
     "a11y_send_first": "Send your first announcement",
-    "send_first_announcement": "Send First Announcement"
+    "send_first_announcement": "Send First Announcement",
+    "no_campaigns": "No Campaigns Yet",
+    "a11y_create_first_event": "Create your first event",
+    "select_tier": "Select Sponsorship Tier",
+    "select_tier_sub": "Choose the visibility level for your event",
+    "per_event": "Per Event"
   },
   "share": {
     "send_to": "Send to",

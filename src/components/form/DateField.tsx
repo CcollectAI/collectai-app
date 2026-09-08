@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { radius, spacing, text as textTokens, fontWeight, shadow } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 export interface DateFieldProps {
   label: string;
@@ -43,14 +44,19 @@ export const DateField = React.memo(function DateField({
   maximumDate,
   error,
   disabled,
-  placeholder = 'Select date...',
+  placeholder,
   required,
 }: DateFieldProps) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const [pickerVisible, setPickerVisible] = useState(false);
   const [tempDate, setTempDate] = useState<Date>(value ?? new Date());
 
-  const displayText = value ? formatDate(value) : placeholder;
+  // The default lives HERE, not in the parameter list: a default parameter is
+  // evaluated before the hook runs, so t() is not in scope there.
+  const displayText = value
+    ? formatDate(value)
+    : (placeholder ?? t('common.select_date', { defaultValue: 'Select date...' }));
 
   const handleOpen = useCallback(() => {
     if (disabled) return;
@@ -148,7 +154,7 @@ export const DateField = React.memo(function DateField({
               <Pressable
                 onPress={() => adjustDay(-1)}
                 style={[styles.arrowBtn, { backgroundColor: colors.background }]}
-                accessibilityLabel="Previous day"
+                accessibilityLabel={t('common.a11y_prev_day', { defaultValue: 'Previous day' })}
               >
                 <Ionicons name="chevron-back" size={20} color={colors.text} />
               </Pressable>
@@ -158,7 +164,7 @@ export const DateField = React.memo(function DateField({
               <Pressable
                 onPress={() => adjustDay(1)}
                 style={[styles.arrowBtn, { backgroundColor: colors.background }]}
-                accessibilityLabel="Next day"
+                accessibilityLabel={t('common.a11y_next_day', { defaultValue: 'Next day' })}
               >
                 <Ionicons name="chevron-forward" size={20} color={colors.text} />
               </Pressable>

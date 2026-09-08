@@ -10,6 +10,7 @@ import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { AnimatedPressable } from "@/motion";
 import { SkeletonList } from "@/components/Skeleton";
 import { radius, text as textToken, fontWeight as fw } from "@/theme/tokens";
+import { useTranslation } from "react-i18next";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -52,11 +53,12 @@ function CategoryBreakdownSectionInner({
   resolveCategoryName,
 }: CategoryBreakdownSectionProps) {
   const displayName = (raw: string) => resolveCategoryName?.(raw) ?? raw;
+  const { t } = useTranslation();
   const isEmpty = !loading && breakdown.length === 0;
   return (
     <>
       <View style={s.sectionHeader}>
-        <Text style={[s.sectionTitle, { color: theme.text }]}>Category Breakdown</Text>
+        <Text style={[s.sectionTitle, { color: theme.text }]}>{t('home.category_breakdown', { defaultValue: 'Category Breakdown' })}</Text>
         {/* "All items" — the ONLY unfiltered route into the collection list.
             Every other push to /(tabs)/items carries a filter param
             (`category` from here and the Portfolio breakdown, `collectionName`
@@ -69,9 +71,9 @@ function CategoryBreakdownSectionInner({
             onPress={onAllItemsPress}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="See all items in your collection, A to Z"
+            accessibilityLabel={t('home.a11y_all_items_az', { defaultValue: 'See all items in your collection, A to Z' })}
           >
-            <Text style={[s.sectionAction, { color: theme.accent }]}>All items →</Text>
+            <Text style={[s.sectionAction, { color: theme.accent }]}>{t('home.all_items_arrow', { defaultValue: 'All items →' })}</Text>
           </AnimatedPressable>
         )}
       </View>

@@ -37,7 +37,13 @@
     "slow_load_still_working": "まだ処理中です。いつもより時間がかかっていますが、もう少しお待ちください。",
     "try_again": "もう一度試す",
     "try_again_title": "もう一度試す",
-    "see_all": "すべて表示"
+    "see_all": "すべて表示",
+    "select_date": "日付を選択...",
+    "a11y_prev_day": "前の日",
+    "a11y_next_day": "次の日",
+    "save_changes": "変更を保存",
+    "a11y_save_changes": "変更を保存",
+    "a11y_cancel_editing": "編集をキャンセル"
   },
   "add_tab": {
     "subtitle": "高速、カメラ優先のフロー。",
@@ -367,7 +373,10 @@
     "a11y_start_watchlist": "ウォッチリストを始める",
     "start_watchlist": "ウォッチリストを始める",
     "hot_right_now": "いま話題",
-    "a11y_retry_trending": "トレンドのアイテムを再読み込み"
+    "a11y_retry_trending": "トレンドのアイテムを再読み込み",
+    "category_breakdown": "カテゴリー別の内訳",
+    "a11y_all_items_az": "コレクションの全アイテムをAからZで表示",
+    "all_items_arrow": "すべてのアイテム →"
   },
   "items": {
     "title": "アイテム",
@@ -390,7 +399,10 @@
     "move_a11y": "選択したアイテムをカテゴリーに移動",
     "export_a11y": "選択したアイテムをエクスポート",
     "archive_a11y": "選択したアイテムをアーカイブ",
-    "delete_a11y": "選択したアイテムを削除"
+    "delete_a11y": "選択したアイテムを削除",
+    "a11y_download_csv": "コレクション概要をCSVでダウンロード",
+    "a11y_view_archived": "アーカイブしたアイテムを表示して復元",
+    "a11y_open_projects": "組み立て・塗装プロジェクトを開く"
   },
   "scan": {
     "title": "クイックスキャン",
@@ -500,7 +512,10 @@
     "a11y_accessibility_section": "アクセシビリティ設定のセクション",
     "high_contrast_mode": "ハイコントラストモード",
     "reduce_motion": "視差効果を減らす",
-    "large_text": "大きな文字"
+    "large_text": "大きな文字",
+    "a11y_change_collecting_experience": "収集歴を変更",
+    "collecting_experience": "収集歴",
+    "collecting_experience_question": "収集歴はどのくらいですか？"
   },
   "sponsor_profile": {
     "company_name": "会社名",
@@ -865,7 +880,10 @@
     "a11y_add_tracking": "この荷物の追跡情報を追加",
     "add_tracking": "追跡情報を追加",
     "a11y_view_listing": "この取引の出品を見る",
-    "view_listing": "出品を見る"
+    "view_listing": "出品を見る",
+    "custom_offer": "カスタムオファー",
+    "any_amount": "任意の金額",
+    "a11y_custom_amount": "カスタムオファーの金額"
   },
   "item_attrs": {
     "case_size": "ケースサイズ",
@@ -1091,7 +1109,12 @@
     "a11y_announcement_image": "お知らせの画像",
     "no_announcements": "お知らせはまだありません",
     "a11y_send_first": "最初のお知らせを送る",
-    "send_first_announcement": "最初のお知らせを送信"
+    "send_first_announcement": "最初のお知らせを送信",
+    "no_campaigns": "キャンペーンはまだありません",
+    "a11y_create_first_event": "最初のイベントを作成",
+    "select_tier": "スポンサーティアを選択",
+    "select_tier_sub": "イベントの表示レベルを選択してください",
+    "per_event": "1イベントあたり"
   },
   "share": {
     "send_to": "送信先",

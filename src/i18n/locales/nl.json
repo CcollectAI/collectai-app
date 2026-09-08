@@ -37,7 +37,13 @@
     "slow_load_still_working": "Nog steeds bezig. Dit duurt langer dan normaal, bedankt voor je geduld.",
     "try_again": "Probeer opnieuw",
     "try_again_title": "Opnieuw proberen",
-    "see_all": "Alles bekijken"
+    "see_all": "Alles bekijken",
+    "select_date": "Kies een datum...",
+    "a11y_prev_day": "Vorige dag",
+    "a11y_next_day": "Volgende dag",
+    "save_changes": "Wijzigingen opslaan",
+    "a11y_save_changes": "Wijzigingen opslaan",
+    "a11y_cancel_editing": "Bewerken annuleren"
   },
   "add_tab": {
     "subtitle": "Snelle, camera-gerichte flow.",
@@ -367,7 +373,10 @@
     "a11y_start_watchlist": "Begin je volglijst",
     "start_watchlist": "Begin je volglijst",
     "hot_right_now": "Nu populair",
-    "a11y_retry_trending": "Trending items opnieuw laden"
+    "a11y_retry_trending": "Trending items opnieuw laden",
+    "category_breakdown": "Verdeling per categorie",
+    "a11y_all_items_az": "Bekijk alle items in je collectie, A tot Z",
+    "all_items_arrow": "Alle items →"
   },
   "items": {
     "title": "Items",
@@ -390,7 +399,10 @@
     "move_a11y": "Geselecteerde items naar categorie verplaatsen",
     "export_a11y": "Geselecteerde items exporteren",
     "archive_a11y": "Geselecteerde items archiveren",
-    "delete_a11y": "Geselecteerde items verwijderen"
+    "delete_a11y": "Geselecteerde items verwijderen",
+    "a11y_download_csv": "Collectieoverzicht downloaden als CSV",
+    "a11y_view_archived": "Gearchiveerde items bekijken en herstellen",
+    "a11y_open_projects": "Bouw- en schilderprojecten openen"
   },
   "scan": {
     "title": "QuickScan",
@@ -500,7 +512,10 @@
     "a11y_accessibility_section": "Sectie toegankelijkheidsinstellingen",
     "high_contrast_mode": "Hoog contrast",
     "reduce_motion": "Beweging verminderen",
-    "large_text": "Grote tekst"
+    "large_text": "Grote tekst",
+    "a11y_change_collecting_experience": "Wijzig hoe lang je al verzamelt",
+    "collecting_experience": "Verzamelervaring",
+    "collecting_experience_question": "Hoe lang verzamel je al?"
   },
   "sponsor_profile": {
     "company_name": "Bedrijfsnaam",
@@ -865,7 +880,10 @@
     "a11y_add_tracking": "Track & trace voor dit pakket toevoegen",
     "add_tracking": "Track & trace toevoegen",
     "a11y_view_listing": "Bekijk de advertentie waar deze transactie over gaat",
-    "view_listing": "Advertentie bekijken"
+    "view_listing": "Advertentie bekijken",
+    "custom_offer": "Aangepast bod",
+    "any_amount": "Elk bedrag",
+    "a11y_custom_amount": "Bedrag van aangepast bod"
   },
   "item_attrs": {
     "case_size": "Kastmaat",
@@ -1091,7 +1109,12 @@
     "a11y_announcement_image": "Afbeelding bij aankondiging",
     "no_announcements": "Nog geen aankondigingen",
     "a11y_send_first": "Verstuur je eerste aankondiging",
-    "send_first_announcement": "Eerste aankondiging versturen"
+    "send_first_announcement": "Eerste aankondiging versturen",
+    "no_campaigns": "Nog geen campagnes",
+    "a11y_create_first_event": "Maak je eerste evenement",
+    "select_tier": "Kies een sponsorniveau",
+    "select_tier_sub": "Kies het zichtbaarheidsniveau voor je evenement",
+    "per_event": "Per evenement"
   },
   "share": {
     "send_to": "Sturen naar",
