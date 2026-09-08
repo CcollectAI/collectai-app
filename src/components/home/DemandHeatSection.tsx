@@ -13,6 +13,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import { formatCategoryName } from '@/constants/categories';
+import { useTranslation } from 'react-i18next';
 
 type HeatItem = {
   item_key: string;
@@ -24,6 +25,7 @@ type HeatItem = {
 
 export const DemandHeatSection = React.memo(function DemandHeatSection() {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const [items, setItems] = useState<HeatItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export const DemandHeatSection = React.memo(function DemandHeatSection() {
       <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.header}>
           <Ionicons name="flame-outline" size={18} color={colors.warning} />
-          <Text style={[styles.title, { color: colors.text }]}>Hot Right Now</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('home.hot_right_now', { defaultValue: 'Hot Right Now' })}</Text>
         </View>
         <ActivityIndicator size="small" color={colors.accent} style={{ paddingVertical: 20 }} />
       </View>
@@ -67,10 +69,10 @@ export const DemandHeatSection = React.memo(function DemandHeatSection() {
       <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.header}>
           <Ionicons name="flame-outline" size={18} color={colors.warning} />
-          <Text style={[styles.title, { color: colors.text }]}>Hot Right Now</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('home.hot_right_now', { defaultValue: 'Hot Right Now' })}</Text>
         </View>
         <Text style={[styles.meta, { color: colors.muted, textAlign: 'center', paddingVertical: 8 }]}>{error}</Text>
-        <AnimatedPressable onPress={fetchDemandHeat} style={{ alignSelf: 'center', paddingVertical: 6 }} accessibilityRole="button" accessibilityLabel="Retry loading trending items">
+        <AnimatedPressable onPress={fetchDemandHeat} style={{ alignSelf: 'center', paddingVertical: 6 }} accessibilityRole="button" accessibilityLabel={t('home.a11y_retry_trending', { defaultValue: 'Retry loading trending items' })}>
           <Text style={{ color: colors.accent, fontSize: textToken.sm, fontWeight: fw.semibold }}>Retry</Text>
         </AnimatedPressable>
       </View>
@@ -83,7 +85,7 @@ export const DemandHeatSection = React.memo(function DemandHeatSection() {
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <Ionicons name="flame-outline" size={18} color={colors.warning} />
-        <Text style={[styles.title, { color: colors.text }]}>Hot Right Now</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('home.hot_right_now', { defaultValue: 'Hot Right Now' })}</Text>
       </View>
       {items.map((item, i) => (
         <AnimatedPressable

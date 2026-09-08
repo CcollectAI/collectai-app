@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { CollectorsEvent, EventKind } from '@/data/events';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 /** Color mapping for event kinds — uses theme info/success/warning/danger colors. */
 function getKindDotColor(themeColors: { info: string; success: string; warning: string; danger: string }): Record<EventKind, string> {
@@ -86,6 +87,7 @@ function buildMonthGrid(year: number, month: number) {
 function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridProps) {
   const { colors } = useAppTheme();
   const KIND_DOT_COLOR = getKindDotColor(colors);
+  const { t } = useTranslation();
   const today = todayISO();
 
   const now = new Date();
@@ -148,7 +150,7 @@ function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridP
     <View
       style={[styles.container, { backgroundColor: colors.card }]}
       accessibilityRole="none"
-      accessibilityLabel="Calendar grid"
+      accessibilityLabel={t('calendar.a11y_grid', { defaultValue: 'Calendar grid' })}
     >
       {/* Month header */}
       <View style={styles.header}>
@@ -156,12 +158,12 @@ function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridP
           onPress={goToPrev}
           style={[styles.navBtn, { backgroundColor: colors.border + '40' }]}
           accessibilityRole="button"
-          accessibilityLabel="Previous month"
+          accessibilityLabel={t('calendar.a11y_prev_month', { defaultValue: 'Previous month' })}
         >
           <Ionicons name="chevron-back" size={18} color={colors.text} />
         </AnimatedPressable>
 
-        <Pressable onPress={goToToday} accessibilityRole="button" accessibilityLabel="Go to today">
+        <Pressable onPress={goToToday} accessibilityRole="button" accessibilityLabel={t('calendar.a11y_today', { defaultValue: 'Go to today' })}>
           <Text style={[styles.monthTitle, { color: colors.text }]}>
             {MONTH_NAMES[viewMonth]} {viewYear}
           </Text>
@@ -176,7 +178,7 @@ function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridP
           onPress={goToNext}
           style={[styles.navBtn, { backgroundColor: colors.border + '40' }]}
           accessibilityRole="button"
-          accessibilityLabel="Next month"
+          accessibilityLabel={t('calendar.a11y_next_month', { defaultValue: 'Next month' })}
         >
           <Ionicons name="chevron-forward" size={18} color={colors.text} />
         </AnimatedPressable>

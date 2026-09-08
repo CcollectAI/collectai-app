@@ -35,7 +35,9 @@
     "yes": "はい",
     "slow_load_working": "結果を取得しています。できるだけ早くお届けします。",
     "slow_load_still_working": "まだ処理中です。いつもより時間がかかっていますが、もう少しお待ちください。",
-    "try_again": "もう一度試す"
+    "try_again": "もう一度試す",
+    "try_again_title": "もう一度試す",
+    "see_all": "すべて表示"
   },
   "add_tab": {
     "subtitle": "高速、カメラ優先のフロー。",
@@ -108,7 +110,8 @@
     "find_collectors_a11y": "コレクターを探す",
     "close_user_search_a11y": "ユーザー検索を閉じる",
     "search_users_placeholder": "名前またはハンドル名で検索...",
-    "search_users_a11y": "名前またはハンドル名でユーザー検索"
+    "search_users_a11y": "名前またはハンドル名でユーザー検索",
+    "a11y_upgrade_market_movers": "Market Movers を見るには Pro にアップグレード"
   },
   "search": {
     "placeholder": "アイテム、コレクター、イベントを検索...",
@@ -123,7 +126,9 @@
   "item_detail": {
     "valuation_a11y": "アイテムの評価と詳細",
     "save_a11y": "コレクションに保存",
-    "save": "コレクションに保存"
+    "save": "コレクションに保存",
+    "a11y_scan_another": "別のアイテムをスキャン",
+    "scan_another": "別のものをスキャン"
   },
   "onboarding": {
     "skip_a11y": "カテゴリー選択をスキップ",
@@ -184,7 +189,10 @@
     "not_recognised_hint": "このバーコードを識別できませんでした。手動で追加することもできます。",
     "add_manually": "手動で追加",
     "add_manually_a11y": "このアイテムを手動で追加",
-    "save": "保存"
+    "save": "保存",
+    "not_found": "見つかりません",
+    "a11y_try_scanning_again": "もう一度スキャンする",
+    "a11y_add_manually": "アイテムを手動で追加"
   },
   "filters": {
     "close_a11y": "フィルターを閉じる",
@@ -350,7 +358,12 @@
     "deal_agent_open_a11y": "Deal Agentを開く",
     "deal_agent_upgrade_a11y": "アップグレードしてDeal Agentをアンロック",
     "analytics": "分析",
-    "add_first_item": "最初のアイテムを追加"
+    "add_first_item": "最初のアイテムを追加",
+    "a11y_watchlist_section": "ウォッチリストのセクション",
+    "a11y_start_watchlist": "ウォッチリストを始める",
+    "start_watchlist": "ウォッチリストを始める",
+    "hot_right_now": "いま話題",
+    "a11y_retry_trending": "トレンドのアイテムを再読み込み"
   },
   "items": {
     "title": "アイテム",
@@ -431,7 +444,10 @@
       "keep_both": "両方を保持",
       "keep_a_a11y": "アイテムAを保持",
       "keep_b_a11y": "アイテムBを保持"
-    }
+    },
+    "a11y_cancel": "キャンセルして戻る",
+    "a11y_finish": "スキャンを終了",
+    "a11y_take_photo": "写真を撮る"
   },
   "settings": {
     "title": "設定",
@@ -474,7 +490,9 @@
     "condition_guide": "コンディションガイド",
     "condition_guide_desc": "全カテゴリーのグレーディング基準",
     "diagnostics": "診断",
-    "diagnostics_desc": "この端末で記録された最近のエラー"
+    "diagnostics_desc": "この端末で記録された最近のエラー",
+    "getting_paid": "支払いの受け取り",
+    "payment_handles_load_failed": "これを読み込めませんでした。"
   },
   "sponsor_profile": {
     "company_name": "会社名",
@@ -514,7 +532,15 @@
     "save_recipe_a11y": "レシピを保存",
     "save_recipe": "レシピを保存",
     "add_recipe_a11y": "新しい塗装レシピを追加",
-    "add_paint_recipe": "塗装レシピを追加"
+    "add_paint_recipe": "塗装レシピを追加",
+    "progress_notes": "進捗メモ",
+    "no_notes_yet": "メモはまだ追加されていません",
+    "add_note_placeholder": "メモを追加...",
+    "a11y_new_note": "新しいメモ",
+    "add_note": "メモを追加",
+    "a11y_create_new": "新しいプロジェクトを作成",
+    "a11y_create_first": "最初のプロジェクトを作成",
+    "create_first": "最初のプロジェクトを作成"
   },
   "watchlist": {
     "add_title": "ウォッチリストに追加",
@@ -913,7 +939,10 @@
     "a11y_asking_price": "希望価格",
     "choose_condition": "コンディションを選択",
     "description_optional": "説明（任意）",
-    "a11y_list_on_marketplace": "マーケットプレイスに出品"
+    "a11y_list_on_marketplace": "マーケットプレイスに出品",
+    "pick_choose_item": "アイテムを選択",
+    "pick_empty_title": "コレクションにはまだ何もありません",
+    "pick_a11y_sell_external": "コレクションにないものを販売"
   },
   "purchase": {
     "invalid_deal_link": "無効な取引リンク",
@@ -937,7 +966,14 @@
     "a11y_tell_sparrow": "Sparrowに監視対象を伝える",
     "add_something_to_watch": "監視するものを追加",
     "what_sparrow_spotted": "Sparrowが見つけたもの",
-    "a11y_load_more": "さらにディールを読み込む"
+    "a11y_load_more": "さらにディールを読み込む",
+    "mandate_a11y_search_name": "検索名",
+    "mandate_a11y_remove_match": "カタログの一致を削除",
+    "mandate_a11y_find_in_catalogue": "このアイテムをカタログで検索",
+    "mandate_a11y_max_price": "1点あたりの上限価格",
+    "mandate_any_region": "すべての地域",
+    "mandate_a11y_pause": "検索を一時停止",
+    "mandate_pause_search": "検索を一時停止"
   },
   "edit_event": {
     "loading_event": "イベントを読み込み中...",
@@ -959,7 +995,18 @@
     "a11y_retry_marketplaces": "マーケットプレイスを再読み込み",
     "no_marketplaces": "このアイテムに利用できるマーケットプレイスはありません。",
     "a11y_add_watchlist": "ウォッチリストに追加",
-    "add_to_watchlist": "ウォッチリストに追加"
+    "add_to_watchlist": "ウォッチリストに追加",
+    "browse_title": "カタログを見る",
+    "browse_search_placeholder": "カタログのアイテムを検索...",
+    "a11y_search_items": "カタログのアイテムを検索",
+    "a11y_load_more": "カタログのアイテムをさらに読み込む",
+    "suggest_item_name": "アイテム名",
+    "suggest_placeholder": "このアイテムは何ですか？",
+    "a11y_submit_suggestion": "提案を送信",
+    "set_view_full_details": "詳細をすべて表示",
+    "set_empty_title": "このセットは空です",
+    "set_empty_sub": "アイテムは現在準備中です",
+    "a11y_back_to_set": "セットに戻る"
   },
   "inbox": {
     "sent_requests": "送信したリクエスト",
@@ -973,7 +1020,17 @@
     "estimated_value": "推定価値",
     "what_you_paid": "支払った金額",
     "not_set": "未設定",
-    "a11y_fees_tax_shipping": "支払った手数料・税・送料"
+    "a11y_fees_tax_shipping": "支払った手数料・税・送料",
+    "a11y_edit_details": "アイテムの詳細を編集",
+    "a11y_sell_on_sparrow": "Sparrow マーケットプレイスで販売する",
+    "a11y_list_for_sale": "このアイテムをマーケットプレイスに出品する",
+    "list_for_sale": "販売に出す",
+    "a11y_currently_listed": "このアイテムは現在出品中です",
+    "a11y_add_photo": "新しい写真を追加",
+    "add_photo": "写真を追加",
+    "image_unavailable": "画像を表示できません",
+    "a11y_delete_photo": "この写真を削除",
+    "a11y_item_photo": "アイテムの写真"
   },
   "tax": {
     "title": "売上と税務レポート",
@@ -1007,7 +1064,9 @@
     "a11y_website_url": "ウェブサイトURL",
     "a11y_company_description": "会社概要",
     "a11y_get_started": "スポンサーとして始める",
-    "get_started": "スポンサーとして始める"
+    "get_started": "スポンサーとして始める",
+    "a11y_new_campaign": "新しいキャンペーン",
+    "new_campaign": "新しいキャンペーン"
   },
   "share": {
     "send_to": "送信先",
@@ -1032,6 +1091,40 @@
     "no_photo_yet": "写真はまだありません",
     "a11y_see_all_items": "すべてのアイテムを見る",
     "a11y_retry_catalog": "カタログを再読み込み",
-    "no_catalog_items": "このカテゴリーのカタログアイテムはまだありません。"
+    "no_catalog_items": "このカテゴリーのカタログアイテムはまだありません。",
+    "not_found": "カテゴリーが見つかりません",
+    "finish_a_set": "セットを完成させる",
+    "a11y_retry_categories": "カテゴリーを再読み込み"
+  },
+  "analytics": {
+    "a11y_retry": "分析データを再読み込み",
+    "current_value": "現在の価値",
+    "you_paid": "支払額",
+    "collection_completeness": "コレクションの完成度",
+    "a11y_view_all_categories": "すべてのカテゴリーを表示",
+    "portfolio_tier": "ポートフォリオのランク",
+    "tap_view_leaderboard": "タップしてランキングを表示",
+    "a11y_how_scores": "スコアはどのように計算されますか？",
+    "how_scores_calculated": "これらのスコアはどのように計算されますか？"
+  },
+  "guide": {
+    "no_guide_yet": "このカテゴリーのガイドはまだありません",
+    "looking_after_it": "お手入れ",
+    "what_drives_value": "価値を左右する要素",
+    "one_everyone_wants": "誰もが欲しがる一品",
+    "where_to_start": "始め方"
+  },
+  "price_explanation": {
+    "title": "価格の説明",
+    "price_range": "価格帯",
+    "confidence_level": "信頼度",
+    "key_factors": "主な要因",
+    "data_sources": "データソース"
+  },
+  "calendar": {
+    "a11y_grid": "カレンダーグリッド",
+    "a11y_prev_month": "前の月",
+    "a11y_today": "今日に移動",
+    "a11y_next_month": "次の月"
   }
 }

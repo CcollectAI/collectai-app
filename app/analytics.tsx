@@ -64,6 +64,7 @@ import { CategoryPerformanceSection } from '@/components/CategoryPerformanceSect
 import { PortfolioTierBadge } from '@/components/analytics/PortfolioTierBadge';
 import { PredictionAccuracySection } from '@/components/analytics/PredictionAccuracySection';
 import { DemandHeatSection } from '@/components/home/DemandHeatSection';
+import { useTranslation } from 'react-i18next';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tier-specific tokens (not theme-dependent)
@@ -85,6 +86,7 @@ function formatPct(p: number, includeSign = true): string {
 function AnalyticsScreen() {
   const router = useRouter();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const { colors } = useAppTheme();
   const themeColors = useMemo(() => ({
@@ -471,7 +473,7 @@ function AnalyticsScreen() {
               onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); retry(); }}
               style={[styles.errorRetryBtn, { backgroundColor: colors.danger }]}
               accessibilityRole="button"
-              accessibilityLabel="Retry loading analytics data"
+              accessibilityLabel={t('analytics.a11y_retry', { defaultValue: 'Retry loading analytics data' })}
             >
               <Ionicons name="refresh-outline" size={14} color="#fff" />
               <Text style={styles.errorRetryText}>Retry</Text>
@@ -513,7 +515,7 @@ function AnalyticsScreen() {
               ) : null}
             </View>
 
-            <Text style={[styles.heroLabel, { color: colors.muted }]}>Current value</Text>
+            <Text style={[styles.heroLabel, { color: colors.muted }]}>{t('analytics.current_value', { defaultValue: 'Current value' })}</Text>
             <Text style={[styles.heroValue, { color: colors.text }]}>
               {formatPrice(pl.currentValue, settings.currency ?? 'EUR')}
             </Text>
@@ -544,7 +546,7 @@ function AnalyticsScreen() {
             {items.length > 0 ? (
               <View style={[styles.splitRow, { borderTopColor: colors.border }]}>
                 <View style={styles.splitCol}>
-                  <Text style={[styles.splitLabel, { color: colors.muted }]}>You paid</Text>
+                  <Text style={[styles.splitLabel, { color: colors.muted }]}>{t('analytics.you_paid', { defaultValue: 'You paid' })}</Text>
                   <Text style={[styles.splitValue, { color: colors.text }]}>
                     {valueSplit.purchaseCount > 0
                       ? formatPrice(valueSplit.purchaseTotal, settings.currency ?? 'EUR')
@@ -886,7 +888,7 @@ function AnalyticsScreen() {
         {limits.advanced_analytics && activeCategories.length > 0 && (
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
-              <Text style={[styles.cardTitle, { color: colors.text }]}>Collection Completeness</Text>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>{t('analytics.collection_completeness', { defaultValue: 'Collection Completeness' })}</Text>
               <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{activeCategories.length} categories</Text>
             </View>
 
@@ -938,7 +940,7 @@ function AnalyticsScreen() {
                 style={[styles.viewAllBtn, { borderTopColor: colors.border }]}
                 onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push("/categories"); }}
                 accessibilityRole="link"
-                accessibilityLabel="View all categories"
+                accessibilityLabel={t('analytics.a11y_view_all_categories', { defaultValue: 'View all categories' })}
               >
                 <Text style={[styles.viewAllText, { color: colors.accent }]}>
                   View all

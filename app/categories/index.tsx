@@ -28,6 +28,7 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { CATEGORY_VISUAL, CATEGORY_GROUPS, getCategoryById, type CategoryId } from '@/data/categories';
 import { formatCategoryName } from '@/constants/categories';
 import { FRANCHISES } from '@/data/franchises';
+import { useTranslation } from 'react-i18next';
 
 type GroupHeader = { type: 'header'; label: string };
 type CategoryRow = { type: 'row'; summary: CategorySummary };
@@ -59,6 +60,7 @@ export default function CategoriesListScreenWithBoundary() {
 function CategoriesListScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   const [categories, setCategories] = useState<CategorySummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -242,7 +244,7 @@ function CategoriesListScreen() {
             style={[styles.retryBtn, { backgroundColor: colors.accent }]}
             onPress={loadCategories}
             accessibilityRole="button"
-            accessibilityLabel="Retry loading categories"
+            accessibilityLabel={t('category.a11y_retry_categories', { defaultValue: 'Retry loading categories' })}
           >
             <Text style={[styles.retryBtnText, { color: colors.accentText }]}>Retry</Text>
           </AnimatedPressable>
@@ -254,17 +256,17 @@ function CategoriesListScreen() {
             <Ionicons name="search-outline" size={18} color={colors.muted} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
-              placeholder="Search categories..."
+              placeholder={t('category_picker.search_placeholder', { defaultValue: 'Search categories...' })}
               placeholderTextColor={colors.muted}
               value={search}
               onChangeText={setSearch}
               autoCorrect={false}
               autoCapitalize="none"
               returnKeyType="search"
-              accessibilityLabel="Search categories"
+              accessibilityLabel={t('category_picker.search_a11y', { defaultValue: 'Search categories' })}
             />
             {search.length > 0 && (
-              <AnimatedPressable onPress={() => setSearch('')} accessibilityLabel="Clear search">
+              <AnimatedPressable onPress={() => setSearch('')} accessibilityLabel={t('common.clear_search', { defaultValue: 'Clear search' })}>
                 <Ionicons name="close-circle" size={18} color={colors.muted} />
               </AnimatedPressable>
             )}

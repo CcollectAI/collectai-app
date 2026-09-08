@@ -52,10 +52,12 @@ import { dataProvider, type Item } from '@/data';
 import { formatPrice } from '@/lib/format';
 import { CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 function SellPickScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
@@ -132,7 +134,7 @@ function SellPickScreen() {
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title="Choose an item" />
+      <ScreenHeader title={t('sell.pick_choose_item', { defaultValue: 'Choose an item' })} />
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.accent} />
@@ -150,9 +152,9 @@ function SellPickScreen() {
               onPress={retry}
               style={[styles.cta, { backgroundColor: colors.accent }]}
               accessibilityRole="button"
-              accessibilityLabel="Try again"
+              accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
             >
-              <Text style={[styles.ctaText, { color: colors.accentText }]}>Try again</Text>
+              <Text style={[styles.ctaText, { color: colors.accentText }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
             </AnimatedPressable>
           }
         />
@@ -173,7 +175,7 @@ function SellPickScreen() {
             // (spec §5c).
             <EmptyState
               icon="cube-outline"
-              title="Nothing in your collection yet"
+              title={t('sell.pick_empty_title', { defaultValue: 'Nothing in your collection yet' })}
               subtitle="You can still sell — just describe what you have."
               colors={colors}
               action={
@@ -181,7 +183,7 @@ function SellPickScreen() {
                   onPress={() => router.replace('/sell/new' as Href)}
                   style={[styles.cta, { backgroundColor: colors.accent }]}
                   accessibilityRole="button"
-                  accessibilityLabel="Sell something not in my collection"
+                  accessibilityLabel={t('sell.pick_a11y_sell_external', { defaultValue: 'Sell something not in my collection' })}
                 >
                   <Text style={[styles.ctaText, { color: colors.accentText }]}>
                     Sell something else

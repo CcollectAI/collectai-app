@@ -22,6 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { Skeleton } from "@/components/Skeleton";
 import { radius, gap, text as textToken, fontWeight as fw, shadow } from "@/theme/tokens";
+import { useTranslation } from "react-i18next";
 
 // ── Exported types ──────────────────────────────────────────────────────
 
@@ -105,6 +106,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
   onMomentumScrollEnd,
 }: ItemGallerySectionProps) {
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
+  const { t } = useTranslation();
 
   const handleImageError = useCallback((imageId: string) => {
     setFailedImageIds((prev) => {
@@ -164,7 +166,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                     { width: GALLERY_WIDTH, height: GALLERY_HEIGHT, borderColor: theme.border },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Add a new photo"
+                  accessibilityLabel={t('item_details.a11y_add_photo', { defaultValue: 'Add a new photo' })}
                   accessibilityHint="Double tap to open photo picker"
                 >
                   <View style={[s.galleryAddCard, { backgroundColor: theme.card, borderColor: theme.accent }]}>
@@ -173,7 +175,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                     ) : (
                       <>
                         <Ionicons name="camera-outline" size={36} color={theme.accent} />
-                        <Text style={[s.galleryAddText, { color: theme.accent }]}>Add Photo</Text>
+                        <Text style={[s.galleryAddText, { color: theme.accent }]}>{t('item_details.add_photo', { defaultValue: 'Add Photo' })}</Text>
                       </>
                     )}
                   </View>
@@ -193,7 +195,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                   {failedImageIds.has(item.id) ? (
                     <View style={[s.galleryFallback, { width: GALLERY_WIDTH, height: GALLERY_HEIGHT, backgroundColor: theme.background }]}>
                       <Ionicons name="image-outline" size={48} color={theme.muted} />
-                      <Text style={[s.galleryFallbackText, { color: theme.muted }]}>Image unavailable</Text>
+                      <Text style={[s.galleryFallbackText, { color: theme.muted }]}>{t('item_details.image_unavailable', { defaultValue: 'Image unavailable' })}</Text>
                     </View>
                   ) : (
                     <Image
@@ -243,7 +245,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                     }}
                     style={[s.galleryDeleteBtn, { backgroundColor: theme.card + "D9" }]}
                     accessibilityRole="button"
-                    accessibilityLabel="Delete this photo"
+                    accessibilityLabel={t('item_details.a11y_delete_photo', { defaultValue: 'Delete this photo' })}
                     accessibilityHint="Double tap to remove this photo from the gallery"
                   >
                     <Ionicons name="close-circle" size={26} color={theme.danger ?? "#EF4444"} />
@@ -291,7 +293,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
           }
         }}
         accessibilityRole="button"
-        accessibilityLabel="Item photo"
+        accessibilityLabel={t('item_details.a11y_item_photo', { defaultValue: 'Item photo' })}
         accessibilityHint="Double tap to zoom in on this photo"
       >
         {displayImageUri && !failedImageIds.has("__single__") ? (

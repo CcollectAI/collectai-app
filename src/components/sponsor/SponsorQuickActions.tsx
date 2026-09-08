@@ -3,6 +3,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -26,18 +27,19 @@ export const SponsorQuickActions = React.memo(function SponsorQuickActions({
   onAnnounce,
 }: SponsorQuickActionsProps) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.actionsBar, { backgroundColor: colors.card, borderColor: colors.border }, SHADOW_SM]}>
-      <AnimatedPressable onPress={onCreateEvent} style={[styles.actionBtn, { backgroundColor: colors.accent }]} accessibilityRole="button" accessibilityLabel="New campaign">
+      <AnimatedPressable onPress={onCreateEvent} style={[styles.actionBtn, { backgroundColor: colors.accent }]} accessibilityRole="button" accessibilityLabel={t('sponsor.a11y_new_campaign', { defaultValue: 'New campaign' })}>
         <Ionicons name="add" size={15} color="#FFFFFF" />
-        <Text style={styles.actionBtnPrimaryText}>New Campaign</Text>
+        <Text style={styles.actionBtnPrimaryText}>{t('sponsor.new_campaign', { defaultValue: 'New Campaign' })}</Text>
       </AnimatedPressable>
-      <AnimatedPressable onPress={onEditProfile} style={[styles.actionBtn, styles.actionBtnOutline, { borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel="Edit profile">
+      <AnimatedPressable onPress={onEditProfile} style={[styles.actionBtn, styles.actionBtnOutline, { borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('account.edit_profile_a11y', { defaultValue: 'Edit profile' })}>
         <Ionicons name="create-outline" size={14} color={colors.text} />
-        <Text style={[styles.actionBtnSecondaryText, { color: colors.text }]}>Edit Profile</Text>
+        <Text style={[styles.actionBtnSecondaryText, { color: colors.text }]}>{t('account.edit_profile', { defaultValue: 'Edit Profile' })}</Text>
       </AnimatedPressable>
-      <AnimatedPressable onPress={onAnnounce} style={[styles.actionBtn, styles.actionBtnOutline, { borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel="Send announcement">
+      <AnimatedPressable onPress={onAnnounce} style={[styles.actionBtn, styles.actionBtnOutline, { borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('announce.a11y_send', { defaultValue: 'Send announcement' })}>
         <Ionicons name="megaphone-outline" size={14} color={colors.text} />
         <Text style={[styles.actionBtnSecondaryText, { color: colors.text }]}>Announce</Text>
       </AnimatedPressable>

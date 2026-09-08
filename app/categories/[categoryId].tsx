@@ -65,9 +65,11 @@ import {
 } from '@/components/category';
 import type { CatalogSortKey } from '@/components/category/CategorySortChips';
 import { safeGoBack } from '@/lib/goBack';
+import { useTranslation } from 'react-i18next';
 
 function CategoryStoreScreen() {
   const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
+  const { t } = useTranslation();
   const router = useRouter();
   const { settings } = useSettings();
   const { colors } = useAppTheme();
@@ -177,12 +179,12 @@ function CategoryStoreScreen() {
       <View style={[styles.safe, { backgroundColor: colors.background }]}>
         <View style={styles.centered}>
           <Ionicons name="alert-circle-outline" size={48} color={colors.muted} />
-          <Text style={[styles.errorTitle, { color: colors.text }]}>Category not found</Text>
+          <Text style={[styles.errorTitle, { color: colors.text }]}>{t('category.not_found', { defaultValue: 'Category not found' })}</Text>
           <Text style={[styles.errorSubtitle, { color: colors.muted }]}>
             This category doesn&apos;t exist or couldn&apos;t be loaded.
           </Text>
-          <AnimatedPressable style={[styles.backButton, { borderColor: colors.border }]} onPress={() => safeGoBack(router)} accessibilityRole="button" accessibilityLabel="Go back">
-            <Text style={[styles.backButtonText, { color: colors.text }]}>Go back</Text>
+          <AnimatedPressable style={[styles.backButton, { borderColor: colors.border }]} onPress={() => safeGoBack(router)} accessibilityRole="button" accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}>
+            <Text style={[styles.backButtonText, { color: colors.text }]}>{t('common.go_back', { defaultValue: 'Go back' })}</Text>
           </AnimatedPressable>
         </View>
       </View>
@@ -270,7 +272,7 @@ function CategoryStoreScreen() {
             <Ionicons name="albums-outline" size={20} color={colors.success} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.guideTitle, { color: colors.text }]}>Finish a set</Text>
+            <Text style={[styles.guideTitle, { color: colors.text }]}>{t('category.finish_a_set', { defaultValue: 'Finish a set' })}</Text>
             <Text style={[styles.guideSub, { color: colors.muted }]} numberOfLines={2}>
               What you are still missing from sets you have already started.
             </Text>

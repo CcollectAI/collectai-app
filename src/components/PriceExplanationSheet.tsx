@@ -25,6 +25,7 @@ import {
 import type { CurrencyCode } from '@/data/types';
 import { formatPrice } from '@/lib/format';
 import { RangeBar } from './RangeBar';
+import { useTranslation } from 'react-i18next';
 
 type AffiliateLink = {
   source: string;
@@ -51,6 +52,7 @@ export function PriceExplanationSheet({
   affiliateLinks = [],
 }: PriceExplanationSheetProps) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   const handleClose = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
@@ -66,7 +68,7 @@ export function PriceExplanationSheet({
     <BottomSheetModal
       visible={visible}
       onClose={handleClose}
-      title="Price Explanation"
+      title={t('price_explanation.title', { defaultValue: 'Price Explanation' })}
       colors={colors}
       mode="pageSheet"
     >
@@ -91,7 +93,7 @@ export function PriceExplanationSheet({
             <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.sectionHeader}>
                 <Ionicons name="analytics-outline" size={20} color={colors.accent} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Price Range</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('price_explanation.price_range', { defaultValue: 'Price Range' })}</Text>
               </View>
               <RangeBar
                 priceBand={priceBand}
@@ -107,7 +109,7 @@ export function PriceExplanationSheet({
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.sectionHeader}>
               <Ionicons name="shield-checkmark-outline" size={20} color={colors.accent} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Confidence Level</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('price_explanation.confidence_level', { defaultValue: 'Confidence Level' })}</Text>
             </View>
             <View style={styles.confidenceRow}>
               <View style={[styles.confidenceBadge, { backgroundColor: confidenceColor + '20' }]}>
@@ -127,7 +129,7 @@ export function PriceExplanationSheet({
             <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.sectionHeader}>
                 <Ionicons name="list-outline" size={20} color={colors.accent} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Key Factors</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('price_explanation.key_factors', { defaultValue: 'Key Factors' })}</Text>
               </View>
               {explanation.keyFactors.map((factor, index) => (
                 <View key={index} style={styles.factorRow}>
@@ -143,7 +145,7 @@ export function PriceExplanationSheet({
             <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <View style={styles.sectionHeader}>
                 <Ionicons name="layers-outline" size={20} color={colors.accent} />
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Data Sources</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('price_explanation.data_sources', { defaultValue: 'Data Sources' })}</Text>
               </View>
               {explanation.compSources.map((source, index) => {
                 const matchedLink = affiliateLinks.find(

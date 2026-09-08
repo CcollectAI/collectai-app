@@ -6,6 +6,7 @@ import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 
 interface ItemDraftActionsProps {
   savingDraft: boolean;
@@ -15,6 +16,7 @@ interface ItemDraftActionsProps {
 
 export const ItemDraftActions = React.memo(function ItemDraftActions({ savingDraft, saveError, onSaveDraft }: ItemDraftActionsProps) {
   const { colors: theme } = useAppTheme();
+  const { t } = useTranslation();
   const router = useRouter();
 
   return (
@@ -33,10 +35,10 @@ export const ItemDraftActions = React.memo(function ItemDraftActions({ savingDra
             { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 },
           ]}
           accessibilityRole="button"
-          accessibilityLabel="Scan another item"
+          accessibilityLabel={t('item_detail.a11y_scan_another', { defaultValue: 'Scan another item' })}
         >
           <Ionicons name="camera" size={18} color={theme.text} />
-          <Text style={[styles.scanAnotherButtonText, { color: theme.text }]}>Scan Another</Text>
+          <Text style={[styles.scanAnotherButtonText, { color: theme.text }]}>{t('item_detail.scan_another', { defaultValue: 'Scan Another' })}</Text>
         </Pressable>
 
         <Pressable
@@ -47,14 +49,14 @@ export const ItemDraftActions = React.memo(function ItemDraftActions({ savingDra
             { backgroundColor: theme.accent, opacity: savingDraft ? 0.7 : 1 },
           ]}
           accessibilityRole="button"
-          accessibilityLabel="Save to collection"
+          accessibilityLabel={t('item_detail.save_a11y', { defaultValue: 'Save to collection' })}
         >
           {savingDraft ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
             <>
               <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
-              <Text style={styles.saveDraftButtonText}>Save to Collection</Text>
+              <Text style={styles.saveDraftButtonText}>{t('item_detail.save', { defaultValue: 'Save to Collection' })}</Text>
             </>
           )}
         </Pressable>

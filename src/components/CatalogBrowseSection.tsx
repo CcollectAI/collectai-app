@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -96,6 +97,7 @@ function CatalogBrowseSectionInner({
   colors,
 }: CatalogBrowseSectionProps) {
   const { colors: themeColors } = useAppTheme();
+  const { t } = useTranslation();
   return (
     <View style={s.section}>
       <AnimatedPressable
@@ -106,7 +108,7 @@ function CatalogBrowseSectionInner({
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Ionicons name="library-outline" size={18} color={accentColor} />
-          <Text style={[s.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Browse Catalog</Text>
+          <Text style={[s.sectionTitle, { color: colors.text, marginBottom: 0 }]}>{t('catalog.browse_title', { defaultValue: 'Browse Catalog' })}</Text>
           {catalogTotal > 0 && (
             <View style={[s.catalogCountBadge, { backgroundColor: accentColor + '20' }]}>
               <Text style={[s.catalogCountText, { color: accentColor }]}>{catalogTotal}</Text>
@@ -127,19 +129,19 @@ function CatalogBrowseSectionInner({
             <Ionicons name="search" size={16} color={colors.muted} />
             <TextInput
               style={[s.catalogSearchInput, { color: colors.text }]}
-              placeholder="Search catalog items..."
+              placeholder={t('catalog.browse_search_placeholder', { defaultValue: 'Search catalog items...' })}
               placeholderTextColor={colors.muted}
               value={catalogSearch}
               onChangeText={onSearchChange}
               returnKeyType="search"
-              accessibilityLabel="Search catalog items"
+              accessibilityLabel={t('catalog.a11y_search_items', { defaultValue: 'Search catalog items' })}
             />
             {catalogSearch.length > 0 && (
               <AnimatedPressable
                 onPress={onClearSearch}
                 hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel="Clear search"
+                accessibilityLabel={t('common.clear_search', { defaultValue: 'Clear search' })}
               >
                 <Ionicons name="close-circle" size={16} color={colors.muted} />
               </AnimatedPressable>
@@ -239,7 +241,7 @@ function CatalogBrowseSectionInner({
                   onPress={onLoadMore}
                   disabled={catalogLoadingMore}
                   accessibilityRole="button"
-                  accessibilityLabel="Load more catalog items"
+                  accessibilityLabel={t('catalog.a11y_load_more', { defaultValue: 'Load more catalog items' })}
                 >
                   {catalogLoadingMore ? (
                     <ActivityIndicator size="small" color={accentColor} />

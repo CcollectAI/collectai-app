@@ -19,6 +19,7 @@ import type { CurrencyCode } from '@/data/types';
 import { BatchResultOverlay } from './BatchResultOverlay';
 import type { BatchScannedItem } from './BatchSummaryScreen';
 import { BRAND_COLORS } from '@/constants/colors';
+import { useTranslation } from 'react-i18next';
 
 const TIFFANY = BRAND_COLORS.tiffany;
 const FRAME_SIZE = 260;
@@ -91,6 +92,7 @@ function CameraViewfinderInner({
   enableTorch,
   colors,
 }: CameraViewfinderProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.cameraRoot}>
       <StatusBar barStyle="light-content" />
@@ -118,7 +120,7 @@ function CameraViewfinderInner({
                 onPress={onCancel}
                 style={styles.cancelBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Cancel and go back"
+                accessibilityLabel={t('scan.a11y_cancel', { defaultValue: 'Cancel and go back' })}
               >
                 <Ionicons name="close" size={28} color="#FFFFFF" />
               </AnimatedPressable>
@@ -265,7 +267,7 @@ function CameraViewfinderInner({
                 onPress={onBatchDone}
                 style={[styles.batchDoneBtn, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
                 accessibilityRole="button"
-                accessibilityLabel="Finish scanning"
+                accessibilityLabel={t('scan.a11y_finish', { defaultValue: 'Finish scanning' })}
               >
                 <Text style={styles.batchDoneBtnText}>
                   Done ({savedBatchCount})
@@ -279,7 +281,7 @@ function CameraViewfinderInner({
                 phase !== 'camera' && phase !== 'comparison_second' && { opacity: 0.5 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Take photo"
+              accessibilityLabel={t('scan.a11y_take_photo', { defaultValue: 'Take photo' })}
               disabled={phase !== 'camera' && phase !== 'comparison_second'}
               testID="capture-button"
             >

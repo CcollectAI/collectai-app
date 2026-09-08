@@ -14,6 +14,7 @@ import logger from '@/utils/logger';
 
 /* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
 import type { SentryModule } from '@/../types/api';
+import { useTranslation } from 'react-i18next';
 let Sentry: SentryModule | null = null;
 try {
   Sentry = require('@sentry/react-native');
@@ -33,13 +34,14 @@ function ErrorFallback({
   onRetry: () => void;
 }) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         <View style={[styles.iconContainer, { backgroundColor: colors.dangerBg }]}>
           <Ionicons name="warning-outline" size={48} color={colors.danger} />
         </View>
-        <Text style={[styles.title, { color: colors.text }]}>Something went wrong</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('common.error', { defaultValue: 'Something went wrong' })}</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
           We encountered an unexpected error. Please try again.
         </Text>
@@ -58,9 +60,9 @@ function ErrorFallback({
           </ScrollView>
         )}
 
-        <Pressable style={[styles.retryButton, { backgroundColor: colors.accent }]} onPress={onRetry} accessibilityRole="button" accessibilityLabel="Try again">
+        <Pressable style={[styles.retryButton, { backgroundColor: colors.accent }]} onPress={onRetry} accessibilityRole="button" accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}>
           <Ionicons name="refresh-outline" size={20} color={colors.accentText} />
-          <Text style={[styles.retryButtonText, { color: colors.accentText }]}>Try Again</Text>
+          <Text style={[styles.retryButtonText, { color: colors.accentText }]}>{t('common.try_again_title', { defaultValue: 'Try Again' })}</Text>
         </Pressable>
       </View>
     </View>

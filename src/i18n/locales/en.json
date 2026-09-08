@@ -35,7 +35,9 @@
     "yes": "Yes",
     "slow_load_working": "We're doing our best to get your results — we'll be as quick as we can.",
     "slow_load_still_working": "Still working on it. This one's taking longer than usual, thanks for bearing with us.",
-    "try_again": "Try again"
+    "try_again": "Try again",
+    "try_again_title": "Try Again",
+    "see_all": "See all"
   },
   "add_tab": {
     "subtitle": "Fast, camera-first flow.",
@@ -108,7 +110,8 @@
     "find_collectors_a11y": "Find collectors",
     "close_user_search_a11y": "Close user search",
     "search_users_placeholder": "Search by name or handle...",
-    "search_users_a11y": "Search users by name or handle"
+    "search_users_a11y": "Search users by name or handle",
+    "a11y_upgrade_market_movers": "Upgrade to Pro to see Market Movers"
   },
   "search": {
     "placeholder": "Search items, collectors, events...",
@@ -123,7 +126,9 @@
   "item_detail": {
     "valuation_a11y": "Item valuation and details",
     "save_a11y": "Save to collection",
-    "save": "Save to Collection"
+    "save": "Save to Collection",
+    "a11y_scan_another": "Scan another item",
+    "scan_another": "Scan Another"
   },
   "onboarding": {
     "skip_a11y": "Skip to category selection",
@@ -184,7 +189,10 @@
     "not_recognised_hint": "We couldn't identify this barcode. You can still add it manually.",
     "add_manually": "Add Manually",
     "add_manually_a11y": "Add this item manually",
-    "save": "Save"
+    "save": "Save",
+    "not_found": "Not Found",
+    "a11y_try_scanning_again": "Try scanning again",
+    "a11y_add_manually": "Add item manually"
   },
   "filters": {
     "close_a11y": "Close filters",
@@ -350,7 +358,12 @@
     "deal_agent_open_a11y": "Open Deal Agent",
     "deal_agent_upgrade_a11y": "Upgrade to unlock Deal Agent",
     "analytics": "Analytics",
-    "add_first_item": "Add your first item"
+    "add_first_item": "Add your first item",
+    "a11y_watchlist_section": "Watchlist section",
+    "a11y_start_watchlist": "Start your watchlist",
+    "start_watchlist": "Start Your Watchlist",
+    "hot_right_now": "Hot Right Now",
+    "a11y_retry_trending": "Retry loading trending items"
   },
   "items": {
     "title": "Items",
@@ -431,7 +444,10 @@
       "keep_both": "Keep Both",
       "keep_a_a11y": "Keep item A",
       "keep_b_a11y": "Keep item B"
-    }
+    },
+    "a11y_cancel": "Cancel and go back",
+    "a11y_finish": "Finish scanning",
+    "a11y_take_photo": "Take photo"
   },
   "settings": {
     "title": "Settings",
@@ -474,7 +490,9 @@
     "condition_guide": "Condition Guide",
     "condition_guide_desc": "Grading reference for all categories",
     "diagnostics": "Diagnostics",
-    "diagnostics_desc": "Recent errors recorded on this device"
+    "diagnostics_desc": "Recent errors recorded on this device",
+    "getting_paid": "Getting paid",
+    "payment_handles_load_failed": "Couldn't load this."
   },
   "sponsor_profile": {
     "company_name": "Company name",
@@ -514,7 +532,15 @@
     "save_recipe_a11y": "Save recipe",
     "save_recipe": "Save Recipe",
     "add_recipe_a11y": "Add a new paint recipe",
-    "add_paint_recipe": "Add Paint Recipe"
+    "add_paint_recipe": "Add Paint Recipe",
+    "progress_notes": "Progress Notes",
+    "no_notes_yet": "No notes added yet",
+    "add_note_placeholder": "Add a note...",
+    "a11y_new_note": "New note",
+    "add_note": "Add Note",
+    "a11y_create_new": "Create new project",
+    "a11y_create_first": "Create your first project",
+    "create_first": "Create Your First Project"
   },
   "watchlist": {
     "add_title": "Add to Watchlist",
@@ -913,7 +939,10 @@
     "a11y_asking_price": "Asking price",
     "choose_condition": "Choose a condition",
     "description_optional": "Description (optional)",
-    "a11y_list_on_marketplace": "List it on the marketplace"
+    "a11y_list_on_marketplace": "List it on the marketplace",
+    "pick_choose_item": "Choose an item",
+    "pick_empty_title": "Nothing in your collection yet",
+    "pick_a11y_sell_external": "Sell something not in my collection"
   },
   "purchase": {
     "invalid_deal_link": "Invalid deal link",
@@ -937,7 +966,14 @@
     "a11y_tell_sparrow": "Tell Sparrow what to watch",
     "add_something_to_watch": "Add something to watch",
     "what_sparrow_spotted": "What Sparrow spotted",
-    "a11y_load_more": "Load more deals"
+    "a11y_load_more": "Load more deals",
+    "mandate_a11y_search_name": "Search name",
+    "mandate_a11y_remove_match": "Remove catalogue match",
+    "mandate_a11y_find_in_catalogue": "Find this item in the catalogue",
+    "mandate_a11y_max_price": "Maximum price per item",
+    "mandate_any_region": "Any Region",
+    "mandate_a11y_pause": "Pause search",
+    "mandate_pause_search": "Pause Search"
   },
   "edit_event": {
     "loading_event": "Loading event...",
@@ -959,7 +995,18 @@
     "a11y_retry_marketplaces": "Try loading marketplaces again",
     "no_marketplaces": "No marketplaces available for this item.",
     "a11y_add_watchlist": "Add to watchlist",
-    "add_to_watchlist": "Add to watchlist"
+    "add_to_watchlist": "Add to watchlist",
+    "browse_title": "Browse Catalog",
+    "browse_search_placeholder": "Search catalog items...",
+    "a11y_search_items": "Search catalog items",
+    "a11y_load_more": "Load more catalog items",
+    "suggest_item_name": "Item name",
+    "suggest_placeholder": "What is this item?",
+    "a11y_submit_suggestion": "Submit suggestion",
+    "set_view_full_details": "View full details",
+    "set_empty_title": "This set is empty",
+    "set_empty_sub": "Items are still being curated",
+    "a11y_back_to_set": "Back to set"
   },
   "inbox": {
     "sent_requests": "Sent Requests",
@@ -973,7 +1020,17 @@
     "estimated_value": "Estimated value",
     "what_you_paid": "What you paid",
     "not_set": "Not set",
-    "a11y_fees_tax_shipping": "Fees, tax and shipping paid"
+    "a11y_fees_tax_shipping": "Fees, tax and shipping paid",
+    "a11y_edit_details": "Edit item details",
+    "a11y_sell_on_sparrow": "Sell this on the Sparrow marketplace",
+    "a11y_list_for_sale": "List this item for sale on marketplaces",
+    "list_for_sale": "List for Sale",
+    "a11y_currently_listed": "Item is currently listed for sale",
+    "a11y_add_photo": "Add a new photo",
+    "add_photo": "Add Photo",
+    "image_unavailable": "Image unavailable",
+    "a11y_delete_photo": "Delete this photo",
+    "a11y_item_photo": "Item photo"
   },
   "tax": {
     "title": "Sales & tax reporting",
@@ -1007,7 +1064,9 @@
     "a11y_website_url": "Website URL",
     "a11y_company_description": "Company description",
     "a11y_get_started": "Get started as a sponsor",
-    "get_started": "Get Started as a Sponsor"
+    "get_started": "Get Started as a Sponsor",
+    "a11y_new_campaign": "New campaign",
+    "new_campaign": "New Campaign"
   },
   "share": {
     "send_to": "Send to",
@@ -1032,6 +1091,40 @@
     "no_photo_yet": "No photo yet",
     "a11y_see_all_items": "See all items",
     "a11y_retry_catalog": "Retry loading catalog",
-    "no_catalog_items": "No catalog items for this category yet."
+    "no_catalog_items": "No catalog items for this category yet.",
+    "not_found": "Category not found",
+    "finish_a_set": "Finish a set",
+    "a11y_retry_categories": "Retry loading categories"
+  },
+  "analytics": {
+    "a11y_retry": "Retry loading analytics data",
+    "current_value": "Current value",
+    "you_paid": "You paid",
+    "collection_completeness": "Collection Completeness",
+    "a11y_view_all_categories": "View all categories",
+    "portfolio_tier": "Portfolio Tier",
+    "tap_view_leaderboard": "Tap to view leaderboard",
+    "a11y_how_scores": "How are scores calculated?",
+    "how_scores_calculated": "How are these scores calculated?"
+  },
+  "guide": {
+    "no_guide_yet": "No guide for this category yet",
+    "looking_after_it": "Looking after it",
+    "what_drives_value": "What drives value",
+    "one_everyone_wants": "The one everyone wants",
+    "where_to_start": "Where to start"
+  },
+  "price_explanation": {
+    "title": "Price Explanation",
+    "price_range": "Price Range",
+    "confidence_level": "Confidence Level",
+    "key_factors": "Key Factors",
+    "data_sources": "Data Sources"
+  },
+  "calendar": {
+    "a11y_grid": "Calendar grid",
+    "a11y_prev_month": "Previous month",
+    "a11y_today": "Go to today",
+    "a11y_next_month": "Next month"
   }
 }

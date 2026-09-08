@@ -15,6 +15,7 @@ import { ScoreExplanationSheet } from '@/components/ScoreExplanationSheet';
 import type { PortfolioTierSummary } from '@/analytics/portfolioMetrics';
 import { BETA_MODE, COMMUNITY_GATED } from '@/config/featureFlags';
 import { radius, text, fontWeight, shadow } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 // Colors now sourced from useAppTheme() — see component body
 
@@ -44,13 +45,14 @@ function PortfolioTierBadgeInner({ tierSummary }: Props) {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const router = useRouter();
+  const { t } = useTranslation();
   const [scoreSheetVisible, setScoreSheetVisible] = useState(false);
 
   return (
     <>
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.cardHeader}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Portfolio Tier</Text>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>{t('analytics.portfolio_tier', { defaultValue: 'Portfolio Tier' })}</Text>
         </View>
 
         {/* When BETA_MODE or COMMUNITY_GATED, the leaderboard is hidden
@@ -93,7 +95,7 @@ function PortfolioTierBadgeInner({ tierSummary }: Props) {
                 style={{ marginLeft: 4 }}
               />
             </View>
-            <Text style={[styles.tierTapHint, { color: colors.muted }]}>Tap to view leaderboard</Text>
+            <Text style={[styles.tierTapHint, { color: colors.muted }]}>{t('analytics.tap_view_leaderboard', { defaultValue: 'Tap to view leaderboard' })}</Text>
           </AnimatedPressable>
         )}
 
@@ -118,10 +120,10 @@ function PortfolioTierBadgeInner({ tierSummary }: Props) {
           style={[styles.whyScoresBtn, { borderTopColor: colors.border }]}
           onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); setScoreSheetVisible(true); }}
           accessibilityRole="button"
-          accessibilityLabel="How are scores calculated?"
+          accessibilityLabel={t('analytics.a11y_how_scores', { defaultValue: 'How are scores calculated?' })}
         >
           <Ionicons name="help-circle-outline" size={16} color={colors.accent} />
-          <Text style={[styles.whyScoresText, { color: colors.brand.dark }]}>How are these scores calculated?</Text>
+          <Text style={[styles.whyScoresText, { color: colors.brand.dark }]}>{t('analytics.how_scores_calculated', { defaultValue: 'How are these scores calculated?' })}</Text>
         </AnimatedPressable>
       </View>
 

@@ -30,6 +30,7 @@ import { View, Text, TextInput, StyleSheet, ActivityIndicator } from 'react-nati
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import { collectorsApi } from '@/api/collectorsApi';
@@ -41,6 +42,7 @@ export function PaymentHandlesSection() {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   const [rails, setRails] = useState<P2PPaymentRail[] | null>(null);
   const [handles, setHandles] = useState<Record<string, string>>({});
@@ -104,7 +106,7 @@ export function PaymentHandlesSection() {
   if (state === 'loading') {
     return (
       <View style={styles.section}>
-        <Text style={[styles.heading, { color: colors.text }]}>Getting paid</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>{t('settings.getting_paid', { defaultValue: 'Getting paid' })}</Text>
         <ActivityIndicator color={colors.muted} style={{ marginTop: 12 }} />
       </View>
     );
@@ -113,15 +115,15 @@ export function PaymentHandlesSection() {
   if (state === 'error') {
     return (
       <View style={styles.section}>
-        <Text style={[styles.heading, { color: colors.text }]}>Getting paid</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>{t('settings.getting_paid', { defaultValue: 'Getting paid' })}</Text>
         <View style={styles.errorRow}>
-          <Text style={[styles.blurb, { color: colors.muted }]}>Couldn&apos;t load this.</Text>
+          <Text style={[styles.blurb, { color: colors.muted }]}>{t('settings.payment_handles_load_failed', { defaultValue: "Couldn't load this." })}</Text>
           <AnimatedPressable
             onPress={() => setRetryNonce((n) => n + 1)}
             accessibilityRole="button"
-            accessibilityLabel="Try again"
+            accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
           >
-            <Text style={[styles.link, { color: colors.accent }]}>Try again</Text>
+            <Text style={[styles.link, { color: colors.accent }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
           </AnimatedPressable>
         </View>
       </View>
@@ -132,7 +134,7 @@ export function PaymentHandlesSection() {
 
   return (
     <View style={styles.section}>
-      <Text style={[styles.heading, { color: colors.text }]}>Getting paid</Text>
+      <Text style={[styles.heading, { color: colors.text }]}>{t('settings.getting_paid', { defaultValue: 'Getting paid' })}</Text>
       <Text style={[styles.blurb, { color: colors.muted }]}>
         Add the handle buyers can pay you on and Sparrow will open their app with
         the agreed amount already filled in. Only the buyer of a trade you have

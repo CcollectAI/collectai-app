@@ -27,6 +27,7 @@ import { collectorsApi } from "@/api/collectorsApi";
 import { CATEGORIES } from "@/constants/categories";
 import { useToast } from "@/components/Toast";
 import logger from "@/utils/logger";
+import { useTranslation } from "react-i18next";
 
 // In-memory dedup: don't re-show modal for same input within session
 const _shownInputs = new Set<string>();
@@ -55,6 +56,7 @@ function CatalogSuggestionModalInner({
 }: Props) {
   const { colors } = useAppTheme();
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   const [itemName, setItemName] = useState(prefillName);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -162,7 +164,7 @@ function CatalogSuggestionModalInner({
 
           {/* Item name */}
           <View style={styles.fieldBlock}>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>Item name</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('catalog.suggest_item_name', { defaultValue: 'Item name' })}</Text>
             <TextInput
               style={[styles.input, {
                 backgroundColor: colors.background,
@@ -171,7 +173,7 @@ function CatalogSuggestionModalInner({
               }]}
               value={itemName}
               onChangeText={setItemName}
-              placeholder="What is this item?"
+              placeholder={t('catalog.suggest_placeholder', { defaultValue: 'What is this item?' })}
               placeholderTextColor={colors.muted}
               maxLength={500}
               autoFocus={!prefillName}
@@ -242,7 +244,7 @@ function CatalogSuggestionModalInner({
               onPress={handleSubmit}
               disabled={!itemName.trim() || isSubmitting}
               accessibilityRole="button"
-              accessibilityLabel="Submit suggestion"
+              accessibilityLabel={t('catalog.a11y_submit_suggestion', { defaultValue: 'Submit suggestion' })}
             >
               {isSubmitting ? (
                 <ActivityIndicator size="small" color={colors.card} />
@@ -272,7 +274,7 @@ function CatalogSuggestionModalInner({
           <View style={styles.pickerOverlay}>
             <View style={[styles.pickerSheet, { backgroundColor: colors.card }]}>
               <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
-                <Text style={[styles.pickerTitle, { color: colors.text }]}>Select Category</Text>
+                <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('category_picker.title', { defaultValue: 'Select Category' })}</Text>
                 <TouchableOpacity onPress={() => setCategoryPickerOpen(false)} hitSlop={12}>
                   <Ionicons name="close" size={22} color={colors.muted} />
                 </TouchableOpacity>
@@ -282,7 +284,7 @@ function CatalogSuggestionModalInner({
                 <TextInput
                   value={categorySearch}
                   onChangeText={setCategorySearch}
-                  placeholder="Search categories..."
+                  placeholder={t('category_picker.search_placeholder', { defaultValue: 'Search categories...' })}
                   placeholderTextColor={colors.muted}
                   style={[styles.searchInput, { color: colors.text }]}
                   autoFocus

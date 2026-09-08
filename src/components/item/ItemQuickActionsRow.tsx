@@ -18,6 +18,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { radius, text, fontWeight as fw, gap } from '@/theme/tokens';
@@ -34,6 +35,7 @@ interface ItemQuickActionsRowProps {
 
 export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props: ItemQuickActionsRowProps) {
   const { colors: theme } = useAppTheme();
+  const { t } = useTranslation();
   const { isForSale, onEdit, onListForSale, onSell } = props;
   const [busy, setBusy] = useState(false);
 
@@ -46,7 +48,7 @@ export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props
         disabled={busy}
         style={[styles.quickActionBtn, { backgroundColor: theme.card, borderColor: theme.border }, busy && { opacity: 0.5 }]}
         accessibilityRole="button"
-        accessibilityLabel="Edit item details"
+        accessibilityLabel={t('item_details.a11y_edit_details', { defaultValue: 'Edit item details' })}
       >
         <Ionicons name="create-outline" size={18} color={theme.accent} />
         <Text style={[styles.quickActionLabel, { color: theme.text }]}>Edit</Text>
@@ -70,7 +72,7 @@ export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props
           disabled={busy}
           style={[styles.quickActionBtn, { backgroundColor: theme.accent, borderColor: theme.accent }, busy && { opacity: 0.5 }]}
           accessibilityRole="button"
-          accessibilityLabel="Sell this on the Sparrow marketplace"
+          accessibilityLabel={t('item_details.a11y_sell_on_sparrow', { defaultValue: 'Sell this on the Sparrow marketplace' })}
         >
           {/* accentText, never '#fff': in high-contrast dark the accent fill IS
               white and a hardcoded white label disappears. */}
@@ -87,16 +89,16 @@ export const ItemQuickActionsRow = React.memo(function ItemQuickActionsRow(props
           disabled={busy}
           style={[styles.quickActionBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }, busy && { opacity: 0.5 }]}
           accessibilityRole="button"
-          accessibilityLabel="List this item for sale on marketplaces"
+          accessibilityLabel={t('item_details.a11y_list_for_sale', { defaultValue: 'List this item for sale on marketplaces' })}
         >
           <Ionicons name="storefront-outline" size={18} color={theme.accent} />
-          <Text style={[styles.quickActionLabel, { color: theme.accent }]}>List for Sale</Text>
+          <Text style={[styles.quickActionLabel, { color: theme.accent }]}>{t('item_details.list_for_sale', { defaultValue: 'List for Sale' })}</Text>
         </AnimatedPressable>
       ) : (
         <View
           style={[styles.quickActionBtn, { backgroundColor: theme.successBg, borderColor: theme.success }]}
           accessibilityRole="text"
-          accessibilityLabel="Item is currently listed for sale"
+          accessibilityLabel={t('item_details.a11y_currently_listed', { defaultValue: 'Item is currently listed for sale' })}
         >
           <Ionicons name="pricetag" size={18} color={theme.success} />
           <Text style={[styles.quickActionLabel, { color: theme.success }]}>Listed</Text>

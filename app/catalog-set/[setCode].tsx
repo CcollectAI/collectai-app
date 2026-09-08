@@ -33,12 +33,14 @@ import { formatPrice } from "@/lib/format";
 import type { CatalogItemData } from "@/components/CatalogBrowseSection";
 import logger from "@/utils/logger";
 import { logAuthState, logLoad, startTimer } from "@/utils/diagnostics";
+import { useTranslation } from "react-i18next";
 
 const PAGE_SIZE = SET_GRID_PAGE_SIZE;
 const NUM_COLS = 3;
 const GAP = 2;
 
 function CatalogSetScreen() {
+  const { t } = useTranslation();
   const { setCode, category, name, dimension } = useLocalSearchParams<{
     setCode: string;
     category: string;
@@ -187,7 +189,7 @@ function CatalogSetScreen() {
             accessibilityRole="button"
             accessibilityLabel={`View full details for ${item.title}`}
           >
-            <Text style={[styles.viewerCtaText, { color: colors.accent }]}>View full details</Text>
+            <Text style={[styles.viewerCtaText, { color: colors.accent }]}>{t('catalog.set_view_full_details', { defaultValue: 'View full details' })}</Text>
             <Ionicons name="chevron-forward" size={16} color={colors.accent} />
           </AnimatedPressable>
         </ScrollView>
@@ -266,8 +268,8 @@ function CatalogSetScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="albums-outline" size={48} color={colors.muted} />
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>This set is empty</Text>
-              <Text style={[styles.emptySub, { color: colors.muted }]}>Items are still being curated</Text>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('catalog.set_empty_title', { defaultValue: 'This set is empty' })}</Text>
+              <Text style={[styles.emptySub, { color: colors.muted }]}>{t('catalog.set_empty_sub', { defaultValue: 'Items are still being curated' })}</Text>
             </View>
           }
         />
@@ -303,7 +305,7 @@ function CatalogSetScreen() {
               }]}
               onPress={closeViewer}
               accessibilityRole="button"
-              accessibilityLabel="Back to set"
+              accessibilityLabel={t('catalog.a11y_back_to_set', { defaultValue: 'Back to set' })}
             >
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </AnimatedPressable>

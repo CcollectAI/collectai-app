@@ -35,9 +35,11 @@ type Direction = 'gainers' | 'losers';
 export { moverKey, moverTitle, humaniseMoverKey } from './moverFormat';
 import { moverKey, moverTitle, PCT_MIN_PRICE_EUR } from './moverFormat';
 import { formatCategoryName } from '@/constants/categories';
+import { useTranslation } from 'react-i18next';
 
 function MarketMoversSectionInner() {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   // Same key app/analytics.tsx gates every Pro section on, so movers cannot
   // drift out of step with the rest of the paywall.
   const { limits } = useBillingLimits();
@@ -112,7 +114,7 @@ function MarketMoversSectionInner() {
     return (
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>Market Movers</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('screen_titles.market_movers', { defaultValue: 'Market Movers' })}</Text>
           <View style={[styles.proPill, { backgroundColor: colors.accent + '1E' }]}>
             <Ionicons name="lock-closed" size={11} color={colors.accent} />
             <Text style={[styles.proPillText, { color: colors.accent }]}>PRO</Text>
@@ -150,7 +152,7 @@ function MarketMoversSectionInner() {
           }}
           style={[styles.upgradeBtn, { backgroundColor: colors.accent }]}
           accessibilityRole="button"
-          accessibilityLabel="Upgrade to Pro to see Market Movers"
+          accessibilityLabel={t('marketplace.a11y_upgrade_market_movers', { defaultValue: 'Upgrade to Pro to see Market Movers' })}
         >
           <Text style={[styles.upgradeBtnText, { color: colors.accentText }]}>
             Upgrade to see
@@ -164,7 +166,7 @@ function MarketMoversSectionInner() {
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <View style={styles.titleWrap}>
-          <Text style={[styles.title, { color: colors.text }]}>Market Movers</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('screen_titles.market_movers', { defaultValue: 'Market Movers' })}</Text>
           {/* The window belongs to the heading, not to a label floating at the
               end of the filter row. Same information, one less thing to scan. */}
           <Text style={[styles.window, { color: colors.muted }]}>7d</Text>
@@ -176,7 +178,7 @@ function MarketMoversSectionInner() {
           }}
           hitSlop={8}
         >
-          <Text style={[styles.seeAll, { color: colors.success }]}>See all</Text>
+          <Text style={[styles.seeAll, { color: colors.success }]}>{t('common.see_all', { defaultValue: 'See all' })}</Text>
         </AnimatedPressable>
       </View>
 

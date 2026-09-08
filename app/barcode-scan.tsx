@@ -36,6 +36,7 @@ import { BarcodeModeSelector } from '@/components/barcode/BarcodeModeSelector';
 // QuickScan component set into this screen.
 import { PermissionScreen } from '@/components/quickscan/PermissionScreen';
 import { safeGoBack } from '@/lib/goBack';
+import { useTranslation } from 'react-i18next';
 
 /** Barcode types accepted by the scanner */
 const SUPPORTED_BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'isbn'] as const;
@@ -45,6 +46,7 @@ type InputMode = 'camera' | 'url';
 
 function BarcodeScanScreen() {
   const { colors } = useScannerTheme();
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const { showToast } = useToast();
 
@@ -541,7 +543,7 @@ function BarcodeScanScreen() {
       {scanState === 'error' && (
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={64} color={colors.muted} />
-          <Text style={[styles.errorTitle, { color: colors.text }]}>Not Found</Text>
+          <Text style={[styles.errorTitle, { color: colors.text }]}>{t('barcode.not_found', { defaultValue: 'Not Found' })}</Text>
           <Text style={[styles.errorText, { color: colors.muted }]}>
             {errorMessage}
           </Text>
@@ -555,18 +557,18 @@ function BarcodeScanScreen() {
               style={[styles.primaryButton, { backgroundColor: colors.accent }]}
               onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); handleRescan(); }}
               accessibilityRole="button"
-              accessibilityLabel="Try scanning again"
+              accessibilityLabel={t('barcode.a11y_try_scanning_again', { defaultValue: 'Try scanning again' })}
             >
               <Ionicons name="scan-outline" size={20} color={colors.card} />
-              <Text style={[styles.primaryButtonText, { color: colors.card }]}>Try Again</Text>
+              <Text style={[styles.primaryButtonText, { color: colors.card }]}>{t('common.try_again_title', { defaultValue: 'Try Again' })}</Text>
             </AnimatedPressable>
             <AnimatedPressable
               style={[styles.secondaryButton, { borderColor: colors.border }]}
               onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push('/add-manual'); }}
               accessibilityRole="button"
-              accessibilityLabel="Add item manually"
+              accessibilityLabel={t('barcode.a11y_add_manually', { defaultValue: 'Add item manually' })}
             >
-              <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Add Manually</Text>
+              <Text style={[styles.secondaryButtonText, { color: colors.text }]}>{t('barcode.add_manually', { defaultValue: 'Add Manually' })}</Text>
             </AnimatedPressable>
           </View>
         </View>

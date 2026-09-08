@@ -3,6 +3,7 @@
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   View,
   Text,
@@ -43,16 +44,17 @@ export const ProjectNotesCard = React.memo(function ProjectNotesCard({
   onAddNote,
 }: ProjectNotesCardProps) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.cardHeader}>
-        <Text style={[styles.cardTitle, { color: colors.text }]}>Progress Notes</Text>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>{t('projects.progress_notes', { defaultValue: 'Progress Notes' })}</Text>
         <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{notes.length} entries</Text>
       </View>
 
       {notes.length === 0 ? (
-        <Text style={[styles.emptyText, { color: colors.muted }]}>No notes added yet</Text>
+        <Text style={[styles.emptyText, { color: colors.muted }]}>{t('projects.no_notes_yet', { defaultValue: 'No notes added yet' })}</Text>
       ) : (
         <View style={styles.notesList}>
           {notes.map((note, idx) => (
@@ -77,10 +79,10 @@ export const ProjectNotesCard = React.memo(function ProjectNotesCard({
         <TextInput
           value={newNoteBody}
           onChangeText={onChangeNoteBody}
-          placeholder="Add a note..."
+          placeholder={t('projects.add_note_placeholder', { defaultValue: 'Add a note...' })}
           placeholderTextColor={colors.muted}
           multiline
-          accessibilityLabel="New note"
+          accessibilityLabel={t('projects.a11y_new_note', { defaultValue: 'New note' })}
           style={[
             styles.addNoteInput,
             { color: colors.text, borderColor: colors.border, backgroundColor: colors.background },
@@ -102,7 +104,7 @@ export const ProjectNotesCard = React.memo(function ProjectNotesCard({
           {addingNote ? (
             <ActivityIndicator size="small" color={colors.accentText} />
           ) : (
-            <Text style={[styles.addNoteBtnText, { color: colors.accentText }]}>Add Note</Text>
+            <Text style={[styles.addNoteBtnText, { color: colors.accentText }]}>{t('projects.add_note', { defaultValue: 'Add Note' })}</Text>
           )}
         </AnimatedPressable>
       </View>

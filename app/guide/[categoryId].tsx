@@ -25,6 +25,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { guideFor } from '@/data/collectingGuides';
 import { getCategoryById, CATEGORY_VISUAL, type CategoryId } from '@/data/categories';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 /** One titled block. Kept local: every section on this page is prose in a box,
  *  and six near-identical inline Views is how a screen drifts out of alignment
@@ -85,6 +86,7 @@ function Section({
 function GuideScreen() {
   const { colors } = useAppTheme();
   const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
+  const { t } = useTranslation();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const guide = guideFor(categoryId);
@@ -105,7 +107,7 @@ function GuideScreen() {
         <Stack.Screen options={{ headerTitle: '' }} />
         <EmptyState
           icon="book-outline"
-          title="No guide for this category yet"
+          title={t('guide.no_guide_yet', { defaultValue: 'No guide for this category yet' })}
           subtitle="We have starter guides for a handful of categories so far. More are coming."
           colors={colors}
         />
@@ -186,7 +188,7 @@ function GuideScreen() {
             ))}
           </Section>
 
-          <Section title="Looking after it" tone={colors.success} colors={colors}>
+          <Section title={t('guide.looking_after_it', { defaultValue: 'Looking after it' })} tone={colors.success} colors={colors}>
             <Text style={[styles.body, { color: colors.muted }]}>{guide.care}</Text>
           </Section>
 
@@ -196,18 +198,18 @@ function GuideScreen() {
             <Text style={[styles.body, { color: colors.muted }]}>{guide.watchOut.body}</Text>
           </Section>
 
-          <Section title="What drives value" tone={colors.accent} colors={colors}>
+          <Section title={t('guide.what_drives_value', { defaultValue: 'What drives value' })} tone={colors.accent} colors={colors}>
             <Text style={[styles.body, { color: colors.muted }]}>{guide.valueDrivers}</Text>
           </Section>
 
-          <Section title="The one everyone wants" tone={colors.warning} emphasis="pick" colors={colors}>
+          <Section title={t('guide.one_everyone_wants', { defaultValue: 'The one everyone wants' })} tone={colors.warning} emphasis="pick" colors={colors}>
             <Text style={[styles.pickTitle, { color: colors.text }]}>{guide.holyGrail.title}</Text>
             <Text style={[styles.body, { color: colors.muted }]}>{guide.holyGrail.why}</Text>
           </Section>
 
           {/* Last, and deliberately so — the page ends on something affordable
               rather than on a five-figure grail. */}
-          <Section title="Where to start" tone={colors.success} emphasis="pick" colors={colors}>
+          <Section title={t('guide.where_to_start', { defaultValue: 'Where to start' })} tone={colors.success} emphasis="pick" colors={colors}>
             <Text style={[styles.pickTitle, { color: colors.text }]}>{guide.entryLevel.title}</Text>
             <Text style={[styles.body, { color: colors.muted }]}>{guide.entryLevel.why}</Text>
           </Section>

@@ -70,6 +70,14 @@ const ALLOWLIST_STRINGS = new Set([
   // no translation. Wrapping them in t() would invite a translator to localise
   // a company name.
   'CheckCheck', 'Legit Check', 'Discogs', 'Warhammer Community',
+  // Our own feature name, treated like the brand names above: it is the
+  // product's word for the flow, the way 'Sparrow Pro' is preserved inside
+  // otherwise-translated strings.
+  'QuickScan',
+  // Rendered only inside an `__DEV__ &&` branch in ErrorBoundary, so no
+  // release build can show it. Same reasoning as the __DEV__-only screens
+  // that are excluded from the backlog rather than translated.
+  'Error Details (Dev Only):',
 ]);
 
 function walk(dir, out = []) {

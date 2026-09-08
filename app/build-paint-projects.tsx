@@ -28,6 +28,7 @@ import { QuickNavBar } from "@/components/QuickNavBar";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { CreateProjectModal } from "@/components/projects/CreateProjectModal";
 import { ProjectFilters, type ProjectFilterStatus } from "@/components/projects/ProjectFilters";
+import { useTranslation } from "react-i18next";
 
 
 export default function BuildPaintProjectsScreenWithBoundary() {
@@ -41,6 +42,7 @@ export default function BuildPaintProjectsScreenWithBoundary() {
 function BuildPaintProjectsScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
@@ -151,10 +153,10 @@ function BuildPaintProjectsScreen() {
               onPress={() => setShowCreateModal(true)}
               style={[styles.addBtn, { backgroundColor: colors.accent }]}
               accessibilityRole="button"
-              accessibilityLabel="Create new project"
+              accessibilityLabel={t('projects.a11y_create_new', { defaultValue: 'Create new project' })}
             >
               <Ionicons name="add" size={20} color={colors.accentText} />
-              <Text style={[styles.addBtnText, { color: colors.accentText }]}>New Project</Text>
+              <Text style={[styles.addBtnText, { color: colors.accentText }]}>{t('projects.new_project', { defaultValue: 'New Project' })}</Text>
             </AnimatedPressable>
           </View>
 
@@ -170,7 +172,7 @@ function BuildPaintProjectsScreen() {
           {projects.length === 0 && !error && (
             <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Ionicons name="color-palette-outline" size={48} color={colors.muted} />
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>No projects yet</Text>
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('empty_state.no_projects', { defaultValue: 'No projects yet' })}</Text>
               <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
                 Tap the + button to create your first build or paint project
               </Text>
@@ -179,9 +181,9 @@ function BuildPaintProjectsScreen() {
                   onPress={() => setShowCreateModal(true)}
                   style={[styles.emptyCtaBtn, { backgroundColor: colors.accent }]}
                   accessibilityRole="button"
-                  accessibilityLabel="Create your first project"
+                  accessibilityLabel={t('projects.a11y_create_first', { defaultValue: 'Create your first project' })}
                 >
-                  <Text style={[styles.emptyCtaBtnText, { color: colors.accentText }]}>Create Your First Project</Text>
+                  <Text style={[styles.emptyCtaBtnText, { color: colors.accentText }]}>{t('projects.create_first', { defaultValue: 'Create Your First Project' })}</Text>
                 </AnimatedPressable>
               </View>
             </View>

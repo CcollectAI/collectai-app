@@ -35,7 +35,9 @@
     "yes": "Oui",
     "slow_load_working": "Nous faisons de notre mieux pour récupérer vos résultats — aussi vite que possible.",
     "slow_load_still_working": "Toujours en cours. Cela prend plus de temps que d'habitude, merci de votre patience.",
-    "try_again": "Réessayer"
+    "try_again": "Réessayer",
+    "try_again_title": "Réessayer",
+    "see_all": "Tout voir"
   },
   "add_tab": {
     "subtitle": "Flux rapide, photo d'abord.",
@@ -108,7 +110,8 @@
     "find_collectors_a11y": "Trouver des collectionneurs",
     "close_user_search_a11y": "Fermer la recherche d'utilisateurs",
     "search_users_placeholder": "Rechercher par nom ou pseudo...",
-    "search_users_a11y": "Rechercher des utilisateurs par nom ou pseudo"
+    "search_users_a11y": "Rechercher des utilisateurs par nom ou pseudo",
+    "a11y_upgrade_market_movers": "Passez à Pro pour voir les Market Movers"
   },
   "search": {
     "placeholder": "Rechercher objets, collectionneurs, événements...",
@@ -123,7 +126,9 @@
   "item_detail": {
     "valuation_a11y": "Évaluation et détails de l'objet",
     "save_a11y": "Enregistrer dans la collection",
-    "save": "Enregistrer dans la collection"
+    "save": "Enregistrer dans la collection",
+    "a11y_scan_another": "Scanner un autre article",
+    "scan_another": "Scanner un autre"
   },
   "onboarding": {
     "skip_a11y": "Passer la sélection de catégorie",
@@ -184,7 +189,10 @@
     "not_recognised_hint": "Nous n'avons pas pu identifier ce code-barres. Vous pouvez tout de même l'ajouter manuellement.",
     "add_manually": "Ajouter manuellement",
     "add_manually_a11y": "Ajouter cet objet manuellement",
-    "save": "Enregistrer"
+    "save": "Enregistrer",
+    "not_found": "Introuvable",
+    "a11y_try_scanning_again": "Réessayer de scanner",
+    "a11y_add_manually": "Ajouter l'article manuellement"
   },
   "filters": {
     "close_a11y": "Fermer les filtres",
@@ -350,7 +358,12 @@
     "deal_agent_open_a11y": "Ouvrir Deal Agent",
     "deal_agent_upgrade_a11y": "Mettre à niveau pour débloquer Deal Agent",
     "analytics": "Analyses",
-    "add_first_item": "Ajoutez votre premier article"
+    "add_first_item": "Ajoutez votre premier article",
+    "a11y_watchlist_section": "Section liste de suivi",
+    "a11y_start_watchlist": "Commencez votre liste de suivi",
+    "start_watchlist": "Commencez votre liste de suivi",
+    "hot_right_now": "Tendance en ce moment",
+    "a11y_retry_trending": "Recharger les articles tendance"
   },
   "items": {
     "title": "Objets",
@@ -431,7 +444,10 @@
       "keep_both": "Garder les deux",
       "keep_a_a11y": "Garder l'objet A",
       "keep_b_a11y": "Garder l'objet B"
-    }
+    },
+    "a11y_cancel": "Annuler et revenir",
+    "a11y_finish": "Terminer le scan",
+    "a11y_take_photo": "Prendre une photo"
   },
   "settings": {
     "title": "Paramètres",
@@ -474,7 +490,9 @@
     "condition_guide": "Guide des états",
     "condition_guide_desc": "Référence de notation pour toutes les catégories",
     "diagnostics": "Diagnostics",
-    "diagnostics_desc": "Erreurs récentes enregistrées sur cet appareil"
+    "diagnostics_desc": "Erreurs récentes enregistrées sur cet appareil",
+    "getting_paid": "Être payé",
+    "payment_handles_load_failed": "Impossible de charger ceci."
   },
   "sponsor_profile": {
     "company_name": "Nom de l'entreprise",
@@ -514,7 +532,15 @@
     "save_recipe_a11y": "Enregistrer la recette",
     "save_recipe": "Enregistrer la recette",
     "add_recipe_a11y": "Ajouter une nouvelle recette de peinture",
-    "add_paint_recipe": "Ajouter une recette de peinture"
+    "add_paint_recipe": "Ajouter une recette de peinture",
+    "progress_notes": "Notes de progression",
+    "no_notes_yet": "Aucune note ajoutée pour l'instant",
+    "add_note_placeholder": "Ajouter une note...",
+    "a11y_new_note": "Nouvelle note",
+    "add_note": "Ajouter une note",
+    "a11y_create_new": "Créer un nouveau projet",
+    "a11y_create_first": "Créez votre premier projet",
+    "create_first": "Créez votre premier projet"
   },
   "watchlist": {
     "add_title": "Ajouter à la liste de suivi",
@@ -913,7 +939,10 @@
     "a11y_asking_price": "Prix demandé",
     "choose_condition": "Choisir un état",
     "description_optional": "Description (facultatif)",
-    "a11y_list_on_marketplace": "Publier sur la place de marché"
+    "a11y_list_on_marketplace": "Publier sur la place de marché",
+    "pick_choose_item": "Choisir un article",
+    "pick_empty_title": "Rien dans votre collection pour l'instant",
+    "pick_a11y_sell_external": "Vendre un article qui n'est pas dans ma collection"
   },
   "purchase": {
     "invalid_deal_link": "Lien d’offre invalide",
@@ -937,7 +966,14 @@
     "a11y_tell_sparrow": "Dites à Sparrow quoi surveiller",
     "add_something_to_watch": "Ajouter un élément à surveiller",
     "what_sparrow_spotted": "Ce que Sparrow a repéré",
-    "a11y_load_more": "Charger plus d’offres"
+    "a11y_load_more": "Charger plus d’offres",
+    "mandate_a11y_search_name": "Nom de la recherche",
+    "mandate_a11y_remove_match": "Supprimer la correspondance du catalogue",
+    "mandate_a11y_find_in_catalogue": "Trouver cet article dans le catalogue",
+    "mandate_a11y_max_price": "Prix maximum par article",
+    "mandate_any_region": "Toutes les régions",
+    "mandate_a11y_pause": "Mettre la recherche en pause",
+    "mandate_pause_search": "Mettre la recherche en pause"
   },
   "edit_event": {
     "loading_event": "Chargement de l’événement...",
@@ -959,7 +995,18 @@
     "a11y_retry_marketplaces": "Réessayer de charger les places de marché",
     "no_marketplaces": "Aucune place de marché disponible pour cet article.",
     "a11y_add_watchlist": "Ajouter à la liste de suivi",
-    "add_to_watchlist": "Ajouter à la liste de suivi"
+    "add_to_watchlist": "Ajouter à la liste de suivi",
+    "browse_title": "Parcourir le catalogue",
+    "browse_search_placeholder": "Rechercher des articles du catalogue...",
+    "a11y_search_items": "Rechercher des articles du catalogue",
+    "a11y_load_more": "Charger plus d'articles du catalogue",
+    "suggest_item_name": "Nom de l'article",
+    "suggest_placeholder": "Quel est cet article ?",
+    "a11y_submit_suggestion": "Envoyer la suggestion",
+    "set_view_full_details": "Voir tous les détails",
+    "set_empty_title": "Cet ensemble est vide",
+    "set_empty_sub": "Les articles sont encore en cours de sélection",
+    "a11y_back_to_set": "Retour à l'ensemble"
   },
   "inbox": {
     "sent_requests": "Demandes envoyées",
@@ -973,7 +1020,17 @@
     "estimated_value": "Valeur estimée",
     "what_you_paid": "Ce que vous avez payé",
     "not_set": "Non défini",
-    "a11y_fees_tax_shipping": "Frais, taxes et livraison payés"
+    "a11y_fees_tax_shipping": "Frais, taxes et livraison payés",
+    "a11y_edit_details": "Modifier les détails de l'article",
+    "a11y_sell_on_sparrow": "Vendre ceci sur la place de marché Sparrow",
+    "a11y_list_for_sale": "Mettre cet article en vente sur les places de marché",
+    "list_for_sale": "Mettre en vente",
+    "a11y_currently_listed": "Cet article est actuellement en vente",
+    "a11y_add_photo": "Ajouter une nouvelle photo",
+    "add_photo": "Ajouter une photo",
+    "image_unavailable": "Image indisponible",
+    "a11y_delete_photo": "Supprimer cette photo",
+    "a11y_item_photo": "Photo de l'article"
   },
   "tax": {
     "title": "Déclaration des ventes et des taxes",
@@ -1007,7 +1064,9 @@
     "a11y_website_url": "URL du site web",
     "a11y_company_description": "Description de l’entreprise",
     "a11y_get_started": "Devenir sponsor",
-    "get_started": "Devenir sponsor"
+    "get_started": "Devenir sponsor",
+    "a11y_new_campaign": "Nouvelle campagne",
+    "new_campaign": "Nouvelle campagne"
   },
   "share": {
     "send_to": "Envoyer à",
@@ -1032,6 +1091,40 @@
     "no_photo_yet": "Pas encore de photo",
     "a11y_see_all_items": "Voir tous les articles",
     "a11y_retry_catalog": "Recharger le catalogue",
-    "no_catalog_items": "Aucun article de catalogue dans cette catégorie."
+    "no_catalog_items": "Aucun article de catalogue dans cette catégorie.",
+    "not_found": "Catégorie introuvable",
+    "finish_a_set": "Compléter un ensemble",
+    "a11y_retry_categories": "Recharger les catégories"
+  },
+  "analytics": {
+    "a11y_retry": "Recharger les données d'analyse",
+    "current_value": "Valeur actuelle",
+    "you_paid": "Vous avez payé",
+    "collection_completeness": "Complétude de la collection",
+    "a11y_view_all_categories": "Voir toutes les catégories",
+    "portfolio_tier": "Niveau de portefeuille",
+    "tap_view_leaderboard": "Touchez pour voir le classement",
+    "a11y_how_scores": "Comment les scores sont-ils calculés ?",
+    "how_scores_calculated": "Comment ces scores sont-ils calculés ?"
+  },
+  "guide": {
+    "no_guide_yet": "Pas encore de guide pour cette catégorie",
+    "looking_after_it": "L'entretien",
+    "what_drives_value": "Ce qui fait la valeur",
+    "one_everyone_wants": "Celui que tout le monde veut",
+    "where_to_start": "Par où commencer"
+  },
+  "price_explanation": {
+    "title": "Explication du prix",
+    "price_range": "Fourchette de prix",
+    "confidence_level": "Niveau de confiance",
+    "key_factors": "Facteurs clés",
+    "data_sources": "Sources de données"
+  },
+  "calendar": {
+    "a11y_grid": "Grille du calendrier",
+    "a11y_prev_month": "Mois précédent",
+    "a11y_today": "Aller à aujourd'hui",
+    "a11y_next_month": "Mois suivant"
   }
 }

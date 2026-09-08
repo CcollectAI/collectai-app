@@ -28,6 +28,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { collectorsApi } from "@/api/collectorsApi";
 import { useToast } from "@/components/Toast";
 import { useFormField, validateAll } from "@/hooks/useFormField";
+import { useTranslation } from "react-i18next";
 import { compose, required, maxLength, positiveNumber } from "@/lib/validate";
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { SelectField, type SelectOption } from '@/components/form/SelectField';
@@ -74,6 +75,7 @@ export default function CreateMandateScreenWithBoundary() {
 function CreateMandateScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
@@ -278,7 +280,7 @@ function CreateMandateScreen() {
             }
           }}
           onBlur={nameField.onBlur}
-          accessibilityLabel="Search name"
+          accessibilityLabel={t('purchase.mandate_a11y_search_name', { defaultValue: 'Search name' })}
         />
         {nameField.touched && nameField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{nameField.error}</Text>}
 
@@ -308,7 +310,7 @@ function CreateMandateScreen() {
               onPress={() => { setCanonicalKey(null); setMatchTitle(null); setMatches(null); }}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel="Remove catalogue match"
+              accessibilityLabel={t('purchase.mandate_a11y_remove_match', { defaultValue: 'Remove catalogue match' })}
             >
               <Ionicons name="close-circle" size={18} color={colors.muted} />
             </AnimatedPressable>
@@ -320,7 +322,7 @@ function CreateMandateScreen() {
               disabled={matching}
               style={[styles.matchBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
               accessibilityRole="button"
-              accessibilityLabel="Find this item in the catalogue"
+              accessibilityLabel={t('purchase.mandate_a11y_find_in_catalogue', { defaultValue: 'Find this item in the catalogue' })}
             >
               {matching
                 ? <ActivityIndicator size="small" color={colors.accent} />
@@ -373,7 +375,7 @@ function CreateMandateScreen() {
           value={maxPriceField.value}
           onChangeText={maxPriceField.onChange}
           onBlur={maxPriceField.onBlur}
-          accessibilityLabel="Maximum price per item"
+          accessibilityLabel={t('purchase.mandate_a11y_max_price', { defaultValue: 'Maximum price per item' })}
         />
         {maxPriceField.touched && maxPriceField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{maxPriceField.error}</Text>}
 
@@ -417,7 +419,7 @@ function CreateMandateScreen() {
             value={region}
             options={REGION_OPTIONS}
             onChange={handleRegionChange}
-            placeholder="Any Region"
+            placeholder={t('purchase.mandate_any_region', { defaultValue: 'Any Region' })}
           />
         </View>
 
@@ -466,10 +468,10 @@ function CreateMandateScreen() {
               }
             }}
             accessibilityRole="button"
-            accessibilityLabel="Pause search"
+            accessibilityLabel={t('purchase.mandate_a11y_pause', { defaultValue: 'Pause search' })}
           >
             <Ionicons name="pause" size={16} color={colors.danger} />
-            <Text style={[styles.deleteBtnText, { color: colors.danger }]}>Pause Search</Text>
+            <Text style={[styles.deleteBtnText, { color: colors.danger }]}>{t('purchase.mandate_pause_search', { defaultValue: 'Pause Search' })}</Text>
           </AnimatedPressable>
         )}
 

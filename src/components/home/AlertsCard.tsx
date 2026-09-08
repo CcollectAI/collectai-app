@@ -7,6 +7,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 import { Alert, AlertType } from '@/types/insights';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
@@ -106,6 +107,7 @@ function AlertItem({ alert, colors, onPress }: AlertItemProps) {
 function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, showEmptyState = true }: AlertsCardProps) {
   const { colors } = useAppTheme();
   const unreadCount = useMemo(() => alerts.filter((a) => !a.isRead).length, [alerts]);
+  const { t } = useTranslation();
 
   // Show card with empty state prompt if no alerts
   if (alerts.length === 0) {
@@ -115,7 +117,7 @@ function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, sh
       <View
         style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
         accessibilityRole="summary"
-        accessibilityLabel="Watchlist section"
+        accessibilityLabel={t('home.a11y_watchlist_section', { defaultValue: 'Watchlist section' })}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -130,7 +132,7 @@ function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, sh
               onStartWatchlist?.();
             }}
             accessibilityRole="button"
-            accessibilityLabel="Add to watchlist"
+            accessibilityLabel={t('wishlist.add_button_a11y', { defaultValue: 'Add to watchlist' })}
           >
             <Ionicons name="add" size={16} color="#FFFFFF" />
             <Text style={styles.addBtnText}>Add</Text>
@@ -145,10 +147,10 @@ function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, sh
             onStartWatchlist?.();
           }}
           accessibilityRole="button"
-          accessibilityLabel="Start your watchlist"
+          accessibilityLabel={t('home.a11y_start_watchlist', { defaultValue: 'Start your watchlist' })}
         >
           <View style={styles.emptyContent}>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>Start Your Watchlist</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('home.start_watchlist', { defaultValue: 'Start Your Watchlist' })}</Text>
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
               Track items you want and set price alerts
             </Text>
@@ -183,7 +185,7 @@ function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, sh
             onStartWatchlist?.();
           }}
           accessibilityRole="button"
-          accessibilityLabel="Add to watchlist"
+          accessibilityLabel={t('wishlist.add_button_a11y', { defaultValue: 'Add to watchlist' })}
         >
           <Ionicons name="add" size={16} color="#FFFFFF" />
           <Text style={styles.addBtnText}>Add</Text>
