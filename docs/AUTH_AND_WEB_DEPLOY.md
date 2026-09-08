@@ -53,7 +53,8 @@ three consumers of `market_hits.url` — `app/alerts.tsx`, `app/notifications.ts
 `usePushNotifications.ts` — treated "starts with https" as "external" and handed
 them to the browser. Route first, `Linking.openURL` only as the fallthrough.
 
-**And it has not been deployed — measured 2026-08-20.** The repo's
+**It had not been deployed as of 2026-08-20** (deployed 2026-09-07 — see
+"`web/` DEPLOYED" below; this paragraph is kept for the incident record). The repo's
 `web/.well-known/apple-app-site-association` carries `/l/*` and `web/vercel.json`
 carries the `/l/:id` rewrite, as the table above says. Production carries
 neither: the live AASA lists seven paths with no `/l/*`, and
@@ -378,10 +379,11 @@ carry-over behaviour. Measured: `/support.html -> 308`.
 Linked from `sitemap.xml`, `support.html`, `privacy.html` and `terms.html` — a
 deletion URL nothing links to fails review just as surely as a missing one.
 
-⛔ **NOT LIVE until `web/` is deployed**, and `web/` has not been deployed since
-before 2026-08-20 — the live AASA still lacks `/l/*` and
-`https://sparrowcollect.com/l/<uuid>` still 404s, 17 days on. See the deploy
-section above; it needs the Vercel account that owns `collectais-projects`.
+✅ **LIVE since 2026-09-07.** `web/` was deployed and
+`https://sparrowcollect.com/delete-account` returns 200 with the form
+rendering (re-verified 2026-09-08). `/l/<uuid>` resolves and the live AASA
+carries `/l/*`. See "`web/` DEPLOYED 2026-09-07" below for the account trap and
+the rewrite bug that deploy exposed.
 
 ## MFA (TOTP) — `app/mfa-setup.tsx`
 

@@ -38,11 +38,12 @@ What DID move, none of it visible to the gate:
 - **Account deletion works.** It was returning 500 and erasing nothing. Both
   the in-app path and the web URL Play requires are now proven, 10/10.
 
-⛔ **The one thing gating both stores is unchanged: `web/` is not deployed.**
-`https://sparrowcollect.com/delete-account` 404s, `/l/<uuid>` 404s, and the
-live AASA still lacks `/l/*`. Play will not accept the Data safety form with a
-dead deletion URL. The Vercel CLI is logged in as an account that cannot see
-the `collectais-projects` team, so this needs a `vercel login` first.
+✅ **`web/` was deployed 2026-09-07** — that blocker is closed. Re-verified
+2026-09-08: `/delete-account` **200** (form renders), `/l/<id>` **200**,
+`/r/<code>` **200**, live AASA carries `/l/*`. Deploying it also exposed a
+latent `vercel.json` bug: both rewrites pointed at `/index.html`, which another
+rule permanently redirects to `/`, so share AND referral links had been 404ing
+for as long as those rules existed.
 
 Two checks that came back FINE, recorded so they are not "fixed" later:
 `RECEIVE_BOOT_COMPLETED` is justified (`src/lib/calendar.ts:295` schedules
@@ -529,8 +530,9 @@ Stdlib only (`zlib` + `struct`) because PIL is not installed on the interpreter
 CI uses, and it fails closed on any PNG variant its decoder does not fully
 understand. Mutation-proven: the pre-fix asset exits 1 naming the exact overflow.
 
-⛔ Fixed in the asset and gated, but **not yet re-verified on a device** — that
-needs another local build.
+✅ **Verified on device after the rebuild** (2026-09-08): the full bird —
+beak, head and eye — and the complete treasure chest now sit inside the mask,
+with the teal `backgroundColor` as a ring around them.
 
 ### Stop rebuilding for JS changes — use the dev client (2026-09-08)
 

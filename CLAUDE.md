@@ -2000,6 +2000,84 @@ are catalog-reachable; TCG categories key predictions by TCGplayer product id
 (`lorcana:tcgplayer:702699:normal`) while the catalog uses set-slugs, so
 lorcana/digimon/one_piece_tcg sit at 0% until an id crosswalk exists.
 
+## Four bugs a device found that no gate could (2026-09-08)
+
+Walking the app on an emulator with a real session found four defects in one
+sitting. Every one was invisible to `tsc`, to every existing checker, and to CI.
+Three were in the account-deletion flow — the one Google Play and the App Store
+both require — and the fourth was reported by a human looking at a home screen.
+
+### 1. The launcher icon shipped with the bird decapitated
+
+Android composites the foreground on a 108dp layer, shows only the **centre
+72dp**, and masks that. Content is guaranteed visible only inside the centre
+**66/108 = 61.1%**. The artwork spanned y 61→450 of 512 — over by ~39px at each
+end. `preflight:android` asserted the icon *exists*; **existing is not
+surviving the mask.**
+
+Two measurement traps, both walked into first: an **alpha bounding box measures
+the canvas, not the artwork** (the foreground is opaque over an off-white
+field, so alpha says "100% of canvas" wherever the bird is — measure by colour
+distance); and my first before/after preview **could not reproduce the bug**,
+because it masked a circle over the full layer instead of cropping to 72/108
+first. A preview that cannot show the defect cannot verify the fix.
+
+### 2. Delete Account was visible, enabled, and untappable
+
+`presentationStyle="pageSheet"` is an **iOS-only** Modal API. On Android the
+Modal is full-screen, so a header with only `paddingVertical` draws *under the
+status bar*: the ✕ sat on the clock, the red Delete on the wifi icons. The node
+reported `enabled="true" clickable="true"`, the typed DELETE was accepted, and
+**nothing was logged** — the status bar swallowed the touch. Proof it was not
+cosmetic: after the tap the account still existed server-side.
+
+### 3. …and once tappable, deletion succeeded while the app said "Error"
+
+`REQUEST_TIMEOUT_MS` is 5 s deliberately — a fast-**read** ceiling whose own
+comment says slow endpoints must pass `LONG_REQUEST_TIMEOUT_MS`.
+`deleteAccount()` passed nothing, while walking ~84 tables with per-statement
+savepoints. The server finished; the client gave up; the user was told their
+irreversible action failed. **Telling someone a destructive action failed when
+it succeeded is worse than saying nothing** — they believe their data survived,
+and a reviewer sees a failure on the flow both stores mandate.
+
+Fixed on both halves: the long budget, **and** a timeout branch distinct from a
+failure branch, because even 90 s can expire on a bad network.
+
+### 4. The privacy policy promised something the access log broke
+
+Uvicorn logs the full request path, so `GET /events/nearby?lat=..&lon=..` was
+about to write precise GPS into `bake.log` — while the policy said location is
+never stored. **No line of our code was wrong.** The near-miss:
+`grep events/nearby bake.log` returned 0, which reads as "we don't log it" and
+actually meant "nobody has used the feature yet". The real question was whether
+query strings are logged **at all**.
+
+### What generalises
+
+- **A gate that asserts a thing EXISTS has not asserted the thing WORKS.**
+  Icon present ≠ icon visible. Route present ≠ route reachable.
+- **Ask the server, not the UI.** Twice the UI and the database disagreed, and
+  the database was right both times.
+- **An empty grep is not evidence** until you prove the instrument works.
+- **Check the feature flag before describing user impact.** I reported the
+  for-sale buttons as "failing on every tap"; both were dark behind
+  `SELLING_ENABLED`. Latent ≠ live, and the correction matters more than the
+  finding.
+- **JS fixes should not cost a 50-minute build.** `expo-dev-client` is now
+  installed — use the `development-device` profile (`development` forces
+  `SUPABASE_MODE=mock`). See `docs/ANDROID_LAUNCH.md`.
+
+New gates, all mutation-proven and in `verify:prebuild`:
+`check:adaptive-icon` · `check:modal-top-inset` · `check:delete-timeout` ·
+`check:i18n-defaults`.
+
+⚠️ **And one of those gates was born half-blind.** `check:i18n-defaults`
+matched only single-quoted `defaultValue`, so it silently skipped every string
+containing an apostrophe — the ones most likely to be mis-transcribed. Fixing
+it took the checked count from 77 to **162**. Writing a checker does not exempt
+it from the failure class it was written to catch.
+
 ## The i18n backlog is ranked by reachability, not size (2026-09-07)
 
 `i18n:check` reports **629 hardcoded English strings across 178 files** (653

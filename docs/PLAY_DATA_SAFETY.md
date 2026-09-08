@@ -120,10 +120,11 @@ ads as a three-document change.
 
 ## Before you submit the form
 
-1. ⛔ **Deploy `web/`.** `https://sparrowcollect.com/delete-account` must return
-   200 when Play checks it. `web/` has not been deployed since before
-   2026-08-20 — the live AASA still lacks `/l/*`. See
-   `docs/AUTH_AND_WEB_DEPLOY.md`.
+1. ✅ **`web/` deployed 2026-09-07 and the URL is live.** Re-verified
+   2026-09-08: `https://sparrowcollect.com/delete-account` → **200** and the
+   form renders. `/l/<id>` and `/r/<code>` also 200 after fixing a rewrite that
+   pointed at a path another rule redirects away, and the live AASA now carries
+   `/l/*`. See `docs/AUTH_AND_WEB_DEPLOY.md`.
 2. Privacy policy URL: `https://sparrowcollect.com/privacy` (already live).
 3. Re-run the deletion audit (needs `DB_DSN_DIRECT`; easiest on the box:
    `ssh collectai` then `cd /opt/collectors/server && set -a && . /opt/collectors/.env && set +a && /opt/collectors/.venv/bin/python scripts/audit_account_deletion.py`). If it

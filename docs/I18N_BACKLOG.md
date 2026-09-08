@@ -6,8 +6,9 @@ different failures — CLAUDE.md §gates spells that out. A string that never
 reaches a locale file cannot be missing from one, so parity is green while six
 locales render English.
 
-**Backlog: 419 strings across 160 files** (653 at the start; 234 done across
-19 files).
+**Backlog: 410 strings across 159 files** (653 at the start). 234 translated
+across 19 files, and 9 more removed by deleting a dead component rather than
+localising it.
 `i18n:check` is deliberately **not** a blocking gate; making it one would wedge
 every deploy until the backlog is zero — same reasoning as `check:reachable`
 and `audit_orphan_tables.py`.
@@ -85,12 +86,17 @@ otherwise-translated strings: "Sparrow's Watch", "What Sparrow spotted",
 The long tail is now mostly 1-7 strings per file across ~160 files.
 
 ⛔ **Do not translate these.** `app/sell/dashboard.tsx` (10) and
-`app/franchise/[id].tsx` have no inbound navigation edge (`check:reachable`).
-`app/twitch.tsx` is a stub. And `src/components/item/SellOnSparrowSection.tsx`
-(8) is imported by **nothing** — the only mention anywhere is a comment in
-`app/sell/pick.tsx` describing what the screen used to be, and there is no
-barrel file in its directory (checked, because a barrel re-export IS a
-reference). It should be deleted, not localised.
+`app/franchise/[id].tsx` have no inbound navigation edge (`check:reachable`),
+and `app/twitch.tsx` is a stub.
+
+✅ `src/components/item/SellOnSparrowSection.tsx` **was deleted** (2026-09-08)
+rather than translated. It had 8 strings and was imported by nothing — the only
+mention anywhere was a comment in `app/sell/pick.tsx` describing what the
+screen used to be, and there was no barrel file in its directory (checked,
+because a barrel re-export IS a reference and CLAUDE.md records assuming
+otherwise as a past mistake). **Checking reachability before translating is
+worth doing every time**: it turned 8 units of translation work into a
+deletion.
 
 ## How to do a slice
 
