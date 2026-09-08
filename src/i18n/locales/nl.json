@@ -103,7 +103,11 @@
     "load_error_body": "Controleer je verbinding en probeer opnieuw.",
     "retry_a11y": "Laden van evenementen opnieuw proberen",
     "empty_title": "Geen evenementen in de buurt",
-    "empty_body": "Geen evenementen gevonden binnen 50 km van je locatie"
+    "empty_body": "Geen evenementen gevonden binnen 50 km van je locatie",
+    "a11y_location": "Locatie van evenement",
+    "a11y_use_current_location": "Mijn huidige locatie gebruiken",
+    "online_url": "Online-URL",
+    "a11y_online_url": "URL van online evenement"
   },
   "marketplace": {
     "find_collectors": "Verzamelaars vinden",
@@ -492,7 +496,11 @@
     "diagnostics": "Diagnostiek",
     "diagnostics_desc": "Recente fouten op dit apparaat",
     "getting_paid": "Betaald worden",
-    "payment_handles_load_failed": "Kon dit niet laden."
+    "payment_handles_load_failed": "Kon dit niet laden.",
+    "a11y_accessibility_section": "Sectie toegankelijkheidsinstellingen",
+    "high_contrast_mode": "Hoog contrast",
+    "reduce_motion": "Beweging verminderen",
+    "large_text": "Grote tekst"
   },
   "sponsor_profile": {
     "company_name": "Bedrijfsnaam",
@@ -540,7 +548,11 @@
     "add_note": "Notitie toevoegen",
     "a11y_create_new": "Nieuw project maken",
     "a11y_create_first": "Maak je eerste project",
-    "create_first": "Maak je eerste project"
+    "create_first": "Maak je eerste project",
+    "no_steps_yet": "Nog geen stappen toegevoegd",
+    "add_step_placeholder": "Voeg een stap toe...",
+    "a11y_new_step": "Titel van nieuwe stap",
+    "a11y_add_step": "Stap toevoegen"
   },
   "watchlist": {
     "add_title": "Toevoegen aan volglijst",
@@ -745,7 +757,11 @@
     "new_password": "Nieuw wachtwoord",
     "new_password_placeholder": "Minimaal 8 tekens",
     "confirm_new_password": "Bevestig nieuw wachtwoord",
-    "confirm_new_password_placeholder": "Bevestig nieuw wachtwoord"
+    "confirm_new_password_placeholder": "Bevestig nieuw wachtwoord",
+    "a11y_download_inventory": "Volledige inventaris downloaden als CSV",
+    "download_inventory": "Volledige inventaris downloaden (CSV)",
+    "a11y_confirm_delete": "Verwijderen van account bevestigen",
+    "a11y_type_delete": "Typ DELETE om te bevestigen"
   },
   "billing": {
     "free": "Gratis",
@@ -1066,7 +1082,16 @@
     "a11y_get_started": "Aan de slag als sponsor",
     "get_started": "Aan de slag als sponsor",
     "a11y_new_campaign": "Nieuwe campagne",
-    "new_campaign": "Nieuwe campagne"
+    "new_campaign": "Nieuwe campagne",
+    "dashboard_loading": "Dashboard laden...",
+    "dashboard_empty_title": "Begin met evenementen sponsoren",
+    "dashboard_a11y_get_started": "Aan de slag",
+    "dashboard_get_started": "Aan de slag",
+    "campaign_manager": "Campagnebeheer",
+    "a11y_announcement_image": "Afbeelding bij aankondiging",
+    "no_announcements": "Nog geen aankondigingen",
+    "a11y_send_first": "Verstuur je eerste aankondiging",
+    "send_first_announcement": "Eerste aankondiging versturen"
   },
   "share": {
     "send_to": "Sturen naar",

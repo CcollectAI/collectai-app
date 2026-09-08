@@ -6,6 +6,7 @@ import { AnimatedPressable } from '@/motion';
 import type { EventAnnouncement } from '@/data/events';
 import { timeAgo } from '@/lib/timeAgo';
 import { MS_PER_WEEK } from '@/constants/time';
+import { useTranslation } from 'react-i18next';
 
 const SHADOW_SM = Platform.select({
   ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3 },
@@ -32,6 +33,7 @@ export const AnnouncementsListSection = React.memo(function AnnouncementsListSec
   announcements, eventNameMap, hasEvents, onAnnounce,
 }: Props) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.sectionWrap}>
@@ -63,7 +65,7 @@ export const AnnouncementsListSection = React.memo(function AnnouncementsListSec
                   </View>
                   {ann.title && <Text style={[styles.annEventName, { color: colors.muted }]}>{eventTitle}</Text>}
                   <Text style={[styles.annBody, { color: colors.text }]} numberOfLines={2}>{ann.body}</Text>
-                  {ann.imageUrl && <Image source={{ uri: ann.imageUrl }} style={styles.annImage} accessibilityLabel="Announcement image" />}
+                  {ann.imageUrl && <Image source={{ uri: ann.imageUrl }} style={styles.annImage} accessibilityLabel={t('sponsor.a11y_announcement_image', { defaultValue: 'Announcement image' })} />}
                 </View>
               </View>
             );
@@ -75,14 +77,14 @@ export const AnnouncementsListSection = React.memo(function AnnouncementsListSec
             <View style={[styles.emptyIconCircle, { backgroundColor: '#F59E0B10' }]}>
               <Ionicons name="megaphone-outline" size={24} color="#F59E0B" />
             </View>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No Announcements Yet</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('sponsor.no_announcements', { defaultValue: 'No Announcements Yet' })}</Text>
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
               Notify event attendees about updates, schedule changes, or exclusive offers.
             </Text>
             {hasEvents && (
-              <AnimatedPressable onPress={onAnnounce} style={styles.emptyAction} accessibilityRole="button" accessibilityLabel="Send your first announcement">
+              <AnimatedPressable onPress={onAnnounce} style={styles.emptyAction} accessibilityRole="button" accessibilityLabel={t('sponsor.a11y_send_first', { defaultValue: 'Send your first announcement' })}>
                 <Ionicons name="megaphone-outline" size={13} color={colors.accent} />
-                <Text style={[styles.emptyActionText, { color: colors.accent }]}>Send First Announcement</Text>
+                <Text style={[styles.emptyActionText, { color: colors.accent }]}>{t('sponsor.send_first_announcement', { defaultValue: 'Send First Announcement' })}</Text>
               </AnimatedPressable>
             )}
           </View>

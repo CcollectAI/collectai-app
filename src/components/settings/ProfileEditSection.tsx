@@ -459,12 +459,12 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
           style={styles.settingRow}
           onPress={handleDownloadFullInventory}
           accessibilityRole="button"
-          accessibilityLabel="Download full inventory as CSV"
+          accessibilityLabel={t('account.a11y_download_inventory', { defaultValue: 'Download full inventory as CSV' })}
           accessibilityState={{ busy: exportingFullInventory }}
           disabled={exportingFullInventory}
         >
           <View style={styles.settingInfo}>
-            <Text style={[styles.settingLabel, { color: colors.text }]}>Download full inventory (CSV)</Text>
+            <Text style={[styles.settingLabel, { color: colors.text }]}>{t('account.download_inventory', { defaultValue: 'Download full inventory (CSV)' })}</Text>
             <Text style={[styles.settingHint, { color: colors.muted }]}>
               Comprehensive 30-column snapshot — every detail of every item, in your currency. For insurance, accountants, or full collection records.
             </Text>
@@ -626,7 +626,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
             <TouchableOpacity
               onPress={handleConfirmDelete}
               disabled={!canConfirmDelete || deletingAccount}
-              accessibilityLabel="Confirm delete account"
+              accessibilityLabel={t('account.a11y_confirm_delete', { defaultValue: 'Confirm delete account' })}
               accessibilityState={{ disabled: !canConfirmDelete || deletingAccount }}
             >
               {deletingAccount ? (
@@ -663,7 +663,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
               editable={!deletingAccount}
               returnKeyType="done"
               onSubmitEditing={handleConfirmDelete}
-              accessibilityLabel="Type DELETE to confirm"
+              accessibilityLabel={t('account.a11y_type_delete', { defaultValue: 'Type DELETE to confirm' })}
             />
           </View>
         </View>

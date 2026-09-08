@@ -103,7 +103,11 @@
     "load_error_body": "Vérifiez votre connexion et réessayez.",
     "retry_a11y": "Réessayer le chargement des événements",
     "empty_title": "Aucun événement à proximité",
-    "empty_body": "Aucun événement trouvé dans un rayon de 50 km"
+    "empty_body": "Aucun événement trouvé dans un rayon de 50 km",
+    "a11y_location": "Lieu de l'événement",
+    "a11y_use_current_location": "Utiliser ma position actuelle",
+    "online_url": "URL en ligne",
+    "a11y_online_url": "URL de l'événement en ligne"
   },
   "marketplace": {
     "find_collectors": "Trouver des collectionneurs",
@@ -492,7 +496,11 @@
     "diagnostics": "Diagnostics",
     "diagnostics_desc": "Erreurs récentes enregistrées sur cet appareil",
     "getting_paid": "Être payé",
-    "payment_handles_load_failed": "Impossible de charger ceci."
+    "payment_handles_load_failed": "Impossible de charger ceci.",
+    "a11y_accessibility_section": "Section des paramètres d'accessibilité",
+    "high_contrast_mode": "Mode contraste élevé",
+    "reduce_motion": "Réduire les animations",
+    "large_text": "Grand texte"
   },
   "sponsor_profile": {
     "company_name": "Nom de l'entreprise",
@@ -540,7 +548,11 @@
     "add_note": "Ajouter une note",
     "a11y_create_new": "Créer un nouveau projet",
     "a11y_create_first": "Créez votre premier projet",
-    "create_first": "Créez votre premier projet"
+    "create_first": "Créez votre premier projet",
+    "no_steps_yet": "Aucune étape ajoutée pour l'instant",
+    "add_step_placeholder": "Ajouter une étape...",
+    "a11y_new_step": "Titre de la nouvelle étape",
+    "a11y_add_step": "Ajouter l'étape"
   },
   "watchlist": {
     "add_title": "Ajouter à la liste de suivi",
@@ -745,7 +757,11 @@
     "new_password": "Nouveau mot de passe",
     "new_password_placeholder": "Au moins 8 caractères",
     "confirm_new_password": "Confirmer le nouveau mot de passe",
-    "confirm_new_password_placeholder": "Confirmer le nouveau mot de passe"
+    "confirm_new_password_placeholder": "Confirmer le nouveau mot de passe",
+    "a11y_download_inventory": "Télécharger l'inventaire complet en CSV",
+    "download_inventory": "Télécharger l'inventaire complet (CSV)",
+    "a11y_confirm_delete": "Confirmer la suppression du compte",
+    "a11y_type_delete": "Tapez DELETE pour confirmer"
   },
   "billing": {
     "free": "Gratuit",
@@ -1066,7 +1082,16 @@
     "a11y_get_started": "Devenir sponsor",
     "get_started": "Devenir sponsor",
     "a11y_new_campaign": "Nouvelle campagne",
-    "new_campaign": "Nouvelle campagne"
+    "new_campaign": "Nouvelle campagne",
+    "dashboard_loading": "Chargement du tableau de bord...",
+    "dashboard_empty_title": "Commencez à sponsoriser des événements",
+    "dashboard_a11y_get_started": "Commencer",
+    "dashboard_get_started": "Commencer",
+    "campaign_manager": "Gestionnaire de campagnes",
+    "a11y_announcement_image": "Image de l'annonce",
+    "no_announcements": "Pas encore d'annonces",
+    "a11y_send_first": "Envoyez votre première annonce",
+    "send_first_announcement": "Envoyer la première annonce"
   },
   "share": {
     "send_to": "Envoyer à",

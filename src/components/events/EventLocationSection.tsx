@@ -11,6 +11,7 @@ import { View, Text, TextInput, ActivityIndicator, StyleSheet } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 interface FormFieldState {
   value: string;
@@ -44,6 +45,7 @@ export const EventLocationSection = React.memo(function EventLocationSection({
   onlineUrlField,
 }: EventLocationSectionProps) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   if (!showLocation && !showOnlineUrl) return null;
 
@@ -76,7 +78,7 @@ export const EventLocationSection = React.memo(function EventLocationSection({
                   placeholder="e.g. Amsterdam, Netherlands"
                   placeholderTextColor={colors.muted}
                   style={[styles.input, { color: colors.text }]}
-                  accessibilityLabel="Event location"
+                  accessibilityLabel={t('events.a11y_location', { defaultValue: 'Event location' })}
                   returnKeyType="next"
                 />
               </View>
@@ -91,7 +93,7 @@ export const EventLocationSection = React.memo(function EventLocationSection({
                   },
                 ]}
                 accessibilityRole="button"
-                accessibilityLabel="Use my current location"
+                accessibilityLabel={t('events.a11y_use_current_location', { defaultValue: 'Use my current location' })}
               >
                 {geoLoading ? (
                   <ActivityIndicator size="small" color={colors.accent} />
@@ -111,7 +113,7 @@ export const EventLocationSection = React.memo(function EventLocationSection({
         {/* Online URL */}
         {showOnlineUrl && (
           <View style={showLocation ? styles.fieldBlock : undefined}>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>Online URL</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('events.online_url', { defaultValue: 'Online URL' })}</Text>
             <View style={[styles.inputWrap, { borderColor: onlineUrlField.touched && onlineUrlField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
               <Ionicons name="link-outline" size={16} color={colors.muted} style={styles.inputIcon} />
               <TextInput
@@ -123,7 +125,7 @@ export const EventLocationSection = React.memo(function EventLocationSection({
                 style={[styles.input, { color: colors.text }]}
                 autoCapitalize="none"
                 keyboardType="url"
-                accessibilityLabel="Online event URL"
+                accessibilityLabel={t('events.a11y_online_url', { defaultValue: 'Online event URL' })}
                 returnKeyType="next"
               />
             </View>

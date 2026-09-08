@@ -9,6 +9,7 @@ import { useAccessibility } from '@/lib/accessibilityContext';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { featureFlags } from '@/config/featureFlags';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { useTranslation } from 'react-i18next';
 
 type ThemeColors = ReturnType<typeof useAppTheme>['colors'];
 
@@ -51,6 +52,7 @@ function SettingRow({ label, description, value, onValueChange, colors }: Settin
 export function AccessibilitySettings() {
   const { colors } = useAppTheme();
   const { settings, updateSettings, systemReduceMotion } = useAccessibility();
+  const { t } = useTranslation();
 
   if (!featureFlags.FEATURE_ACCESSIBILITY_ENHANCEMENTS) {
     return null;
@@ -60,7 +62,7 @@ export function AccessibilitySettings() {
     <View
       style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}
       accessibilityRole="none"
-      accessibilityLabel="Accessibility settings section"
+      accessibilityLabel={t('settings.a11y_accessibility_section', { defaultValue: 'Accessibility settings section' })}
     >
       <Text
         style={[styles.sectionTitle, { color: colors.text }]}
@@ -70,7 +72,7 @@ export function AccessibilitySettings() {
       </Text>
 
       <SettingRow
-        label="High Contrast Mode"
+        label={t('settings.high_contrast_mode', { defaultValue: 'High Contrast Mode' })}
         description="Increases color contrast for better visibility"
         value={settings.highContrastEnabled}
         onValueChange={(v) => updateSettings({ highContrastEnabled: v })}
@@ -80,7 +82,7 @@ export function AccessibilitySettings() {
       <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
       <SettingRow
-        label="Reduce Motion"
+        label={t('settings.reduce_motion', { defaultValue: 'Reduce Motion' })}
         description={
           systemReduceMotion
             ? "Following system setting (enabled)"
@@ -94,7 +96,7 @@ export function AccessibilitySettings() {
       <View style={[styles.separator, { backgroundColor: colors.border }]} />
 
       <SettingRow
-        label="Large Text"
+        label={t('settings.large_text', { defaultValue: 'Large Text' })}
         description="Increase text size throughout the app"
         value={settings.largeTextEnabled}
         onValueChange={(v) => updateSettings({ largeTextEnabled: v })}

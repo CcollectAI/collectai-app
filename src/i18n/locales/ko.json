@@ -103,7 +103,11 @@
     "load_error_body": "연결을 확인하고 다시 시도하세요.",
     "retry_a11y": "근처 이벤트 다시 불러오기",
     "empty_title": "근처 이벤트 없음",
-    "empty_body": "현재 위치에서 50km 이내에 이벤트가 없습니다"
+    "empty_body": "현재 위치에서 50km 이내에 이벤트가 없습니다",
+    "a11y_location": "이벤트 장소",
+    "a11y_use_current_location": "현재 위치 사용",
+    "online_url": "온라인 URL",
+    "a11y_online_url": "온라인 이벤트 URL"
   },
   "marketplace": {
     "find_collectors": "컬렉터 찾기",
@@ -492,7 +496,11 @@
     "diagnostics": "진단",
     "diagnostics_desc": "이 기기에 기록된 최근 오류",
     "getting_paid": "대금 수령",
-    "payment_handles_load_failed": "불러오지 못했습니다."
+    "payment_handles_load_failed": "불러오지 못했습니다.",
+    "a11y_accessibility_section": "접근성 설정 섹션",
+    "high_contrast_mode": "고대비 모드",
+    "reduce_motion": "동작 줄이기",
+    "large_text": "큰 텍스트"
   },
   "sponsor_profile": {
     "company_name": "회사명",
@@ -540,7 +548,11 @@
     "add_note": "메모 추가",
     "a11y_create_new": "새 프로젝트 만들기",
     "a11y_create_first": "첫 프로젝트 만들기",
-    "create_first": "첫 프로젝트 만들기"
+    "create_first": "첫 프로젝트 만들기",
+    "no_steps_yet": "아직 추가된 단계가 없습니다",
+    "add_step_placeholder": "단계 추가...",
+    "a11y_new_step": "새 단계 제목",
+    "a11y_add_step": "단계 추가"
   },
   "watchlist": {
     "add_title": "관심 목록에 추가",
@@ -745,7 +757,11 @@
     "new_password": "새 비밀번호",
     "new_password_placeholder": "최소 8자",
     "confirm_new_password": "새 비밀번호 확인",
-    "confirm_new_password_placeholder": "새 비밀번호 확인"
+    "confirm_new_password_placeholder": "새 비밀번호 확인",
+    "a11y_download_inventory": "전체 인벤토리를 CSV로 다운로드",
+    "download_inventory": "전체 인벤토리 다운로드(CSV)",
+    "a11y_confirm_delete": "계정 삭제 확인",
+    "a11y_type_delete": "확인하려면 DELETE를 입력하세요"
   },
   "billing": {
     "free": "무료",
@@ -1066,7 +1082,16 @@
     "a11y_get_started": "스폰서로 시작하기",
     "get_started": "스폰서로 시작하기",
     "a11y_new_campaign": "새 캠페인",
-    "new_campaign": "새 캠페인"
+    "new_campaign": "새 캠페인",
+    "dashboard_loading": "대시보드 불러오는 중...",
+    "dashboard_empty_title": "이벤트 후원 시작하기",
+    "dashboard_a11y_get_started": "시작하기",
+    "dashboard_get_started": "시작하기",
+    "campaign_manager": "캠페인 관리자",
+    "a11y_announcement_image": "공지 이미지",
+    "no_announcements": "아직 공지가 없습니다",
+    "a11y_send_first": "첫 공지 보내기",
+    "send_first_announcement": "첫 공지 보내기"
   },
   "share": {
     "send_to": "보낼 대상",

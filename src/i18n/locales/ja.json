@@ -103,7 +103,11 @@
     "load_error_body": "接続を確認してもう一度お試しください。",
     "retry_a11y": "近くのイベントの読み込みを再試行",
     "empty_title": "近くにイベントがありません",
-    "empty_body": "現在地から50km以内にイベントは見つかりませんでした"
+    "empty_body": "現在地から50km以内にイベントは見つかりませんでした",
+    "a11y_location": "イベントの場所",
+    "a11y_use_current_location": "現在地を使用",
+    "online_url": "オンラインURL",
+    "a11y_online_url": "オンラインイベントのURL"
   },
   "marketplace": {
     "find_collectors": "コレクターを探す",
@@ -492,7 +496,11 @@
     "diagnostics": "診断",
     "diagnostics_desc": "この端末で記録された最近のエラー",
     "getting_paid": "支払いの受け取り",
-    "payment_handles_load_failed": "これを読み込めませんでした。"
+    "payment_handles_load_failed": "これを読み込めませんでした。",
+    "a11y_accessibility_section": "アクセシビリティ設定のセクション",
+    "high_contrast_mode": "ハイコントラストモード",
+    "reduce_motion": "視差効果を減らす",
+    "large_text": "大きな文字"
   },
   "sponsor_profile": {
     "company_name": "会社名",
@@ -540,7 +548,11 @@
     "add_note": "メモを追加",
     "a11y_create_new": "新しいプロジェクトを作成",
     "a11y_create_first": "最初のプロジェクトを作成",
-    "create_first": "最初のプロジェクトを作成"
+    "create_first": "最初のプロジェクトを作成",
+    "no_steps_yet": "手順はまだ追加されていません",
+    "add_step_placeholder": "手順を追加...",
+    "a11y_new_step": "新しい手順のタイトル",
+    "a11y_add_step": "手順を追加"
   },
   "watchlist": {
     "add_title": "ウォッチリストに追加",
@@ -745,7 +757,11 @@
     "new_password": "新しいパスワード",
     "new_password_placeholder": "8文字以上",
     "confirm_new_password": "新しいパスワードを確認",
-    "confirm_new_password_placeholder": "新しいパスワードを確認"
+    "confirm_new_password_placeholder": "新しいパスワードを確認",
+    "a11y_download_inventory": "全在庫をCSVでダウンロード",
+    "download_inventory": "全在庫をダウンロード（CSV）",
+    "a11y_confirm_delete": "アカウント削除を確認",
+    "a11y_type_delete": "確認のため DELETE と入力"
   },
   "billing": {
     "free": "無料",
@@ -1066,7 +1082,16 @@
     "a11y_get_started": "スポンサーとして始める",
     "get_started": "スポンサーとして始める",
     "a11y_new_campaign": "新しいキャンペーン",
-    "new_campaign": "新しいキャンペーン"
+    "new_campaign": "新しいキャンペーン",
+    "dashboard_loading": "ダッシュボードを読み込み中...",
+    "dashboard_empty_title": "イベントのスポンサーを始める",
+    "dashboard_a11y_get_started": "始める",
+    "dashboard_get_started": "始める",
+    "campaign_manager": "キャンペーンマネージャー",
+    "a11y_announcement_image": "お知らせの画像",
+    "no_announcements": "お知らせはまだありません",
+    "a11y_send_first": "最初のお知らせを送る",
+    "send_first_announcement": "最初のお知らせを送信"
   },
   "share": {
     "send_to": "送信先",

@@ -32,11 +32,13 @@ import { useToast } from '@/components/Toast';
 import { EmptyState } from '@/components/EmptyState';
 import { usePhotoUpload } from '@/hooks/usePhotoUpload';
 import { track } from '@/analytics/track';
+import { useTranslation } from 'react-i18next';
 
 const SponsorDashboardScreen: React.FC = () => {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
+  const { t } = useTranslation();
   const { settings } = useSettings();
   const { showToast } = useToast();
 
@@ -236,7 +238,7 @@ const SponsorDashboardScreen: React.FC = () => {
       <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={[styles.loadingText, { color: colors.muted }]}>Loading dashboard...</Text>
+          <Text style={[styles.loadingText, { color: colors.muted }]}>{t('sponsor.dashboard_loading', { defaultValue: 'Loading dashboard...' })}</Text>
         </View>
       </View>
     );
@@ -247,7 +249,7 @@ const SponsorDashboardScreen: React.FC = () => {
       <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <EmptyState
           icon="megaphone-outline"
-          title="Start Sponsoring Events"
+          title={t('sponsor.dashboard_empty_title', { defaultValue: 'Start Sponsoring Events' })}
           subtitle="Register your company to create sponsored events and reach thousands of passionate collectors."
           colors={colors}
           action={
@@ -255,10 +257,10 @@ const SponsorDashboardScreen: React.FC = () => {
               onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push('/sponsor/register'); }}
               style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
               accessibilityRole="button"
-              accessibilityLabel="Get started"
+              accessibilityLabel={t('sponsor.dashboard_a11y_get_started', { defaultValue: 'Get started' })}
             >
               <Ionicons name="rocket-outline" size={16} color="#FFFFFF" />
-              <Text style={[styles.primaryBtnText, { color: colors.accentText }]}>Get Started</Text>
+              <Text style={[styles.primaryBtnText, { color: colors.accentText }]}>{t('sponsor.dashboard_get_started', { defaultValue: 'Get Started' })}</Text>
             </AnimatedPressable>
           }
         />
@@ -278,7 +280,7 @@ const SponsorDashboardScreen: React.FC = () => {
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={[styles.titleRow, { backgroundColor: colors.background }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Campaign Manager</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('sponsor.campaign_manager', { defaultValue: 'Campaign Manager' })}</Text>
         <Text style={[styles.headerSubtitle, { color: colors.muted }]} numberOfLines={1}>{company.name}</Text>
       </View>
 

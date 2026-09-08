@@ -103,7 +103,11 @@
     "load_error_body": "Comprueba tu conexión e inténtalo de nuevo.",
     "retry_a11y": "Reintentar carga de eventos",
     "empty_title": "No hay eventos cercanos",
-    "empty_body": "No se han encontrado eventos en 50 km de tu ubicación"
+    "empty_body": "No se han encontrado eventos en 50 km de tu ubicación",
+    "a11y_location": "Ubicación del evento",
+    "a11y_use_current_location": "Usar mi ubicación actual",
+    "online_url": "URL en línea",
+    "a11y_online_url": "URL del evento en línea"
   },
   "marketplace": {
     "find_collectors": "Encontrar coleccionistas",
@@ -492,7 +496,11 @@
     "diagnostics": "Diagnóstico",
     "diagnostics_desc": "Errores recientes registrados en este dispositivo",
     "getting_paid": "Cobrar",
-    "payment_handles_load_failed": "No se pudo cargar esto."
+    "payment_handles_load_failed": "No se pudo cargar esto.",
+    "a11y_accessibility_section": "Sección de ajustes de accesibilidad",
+    "high_contrast_mode": "Modo de alto contraste",
+    "reduce_motion": "Reducir el movimiento",
+    "large_text": "Texto grande"
   },
   "sponsor_profile": {
     "company_name": "Nombre de la empresa",
@@ -540,7 +548,11 @@
     "add_note": "Añadir nota",
     "a11y_create_new": "Crear un proyecto nuevo",
     "a11y_create_first": "Crea tu primer proyecto",
-    "create_first": "Crea tu primer proyecto"
+    "create_first": "Crea tu primer proyecto",
+    "no_steps_yet": "Aún no se han añadido pasos",
+    "add_step_placeholder": "Añade un paso...",
+    "a11y_new_step": "Título del nuevo paso",
+    "a11y_add_step": "Añadir paso"
   },
   "watchlist": {
     "add_title": "Añadir a la lista de seguimiento",
@@ -745,7 +757,11 @@
     "new_password": "Nueva contraseña",
     "new_password_placeholder": "Al menos 8 caracteres",
     "confirm_new_password": "Confirmar nueva contraseña",
-    "confirm_new_password_placeholder": "Confirmar nueva contraseña"
+    "confirm_new_password_placeholder": "Confirmar nueva contraseña",
+    "a11y_download_inventory": "Descargar el inventario completo en CSV",
+    "download_inventory": "Descargar el inventario completo (CSV)",
+    "a11y_confirm_delete": "Confirmar la eliminación de la cuenta",
+    "a11y_type_delete": "Escribe DELETE para confirmar"
   },
   "billing": {
     "free": "Gratis",
@@ -1066,7 +1082,16 @@
     "a11y_get_started": "Empezar como patrocinador",
     "get_started": "Empezar como patrocinador",
     "a11y_new_campaign": "Nueva campaña",
-    "new_campaign": "Nueva campaña"
+    "new_campaign": "Nueva campaña",
+    "dashboard_loading": "Cargando el panel...",
+    "dashboard_empty_title": "Empieza a patrocinar eventos",
+    "dashboard_a11y_get_started": "Empezar",
+    "dashboard_get_started": "Empezar",
+    "campaign_manager": "Gestor de campañas",
+    "a11y_announcement_image": "Imagen del anuncio",
+    "no_announcements": "Aún no hay anuncios",
+    "a11y_send_first": "Envía tu primer anuncio",
+    "send_first_announcement": "Enviar el primer anuncio"
   },
   "share": {
     "send_to": "Enviar a",

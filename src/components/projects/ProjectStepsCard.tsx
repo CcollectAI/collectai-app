@@ -15,6 +15,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable } from "@/motion";
 import type { BuildPaintStep } from "@/data";
 import type { BuildStepTemplate } from "@/constants/buildStepTemplates";
+import { useTranslation } from "react-i18next";
 
 export interface ProjectStepsCardProps {
   steps: BuildPaintStep[];
@@ -44,6 +45,7 @@ export const ProjectStepsCard = React.memo(function ProjectStepsCard({
   onApplyTemplate,
 }: ProjectStepsCardProps) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   const doneSteps = steps.filter((s) => s.isDone).length;
   const totalSteps = steps.length;
@@ -89,7 +91,7 @@ export const ProjectStepsCard = React.memo(function ProjectStepsCard({
       )}
 
       {steps.length === 0 && !canApplyTemplate ? (
-        <Text style={[styles.emptyText, { color: colors.muted }]}>No steps added yet</Text>
+        <Text style={[styles.emptyText, { color: colors.muted }]}>{t('projects.no_steps_yet', { defaultValue: 'No steps added yet' })}</Text>
       ) : steps.length > 0 ? (
         <View style={styles.stepsList}>
           {steps.map((step) => (
@@ -130,9 +132,9 @@ export const ProjectStepsCard = React.memo(function ProjectStepsCard({
         <TextInput
           value={newStepTitle}
           onChangeText={onChangeStepTitle}
-          placeholder="Add a step..."
+          placeholder={t('projects.add_step_placeholder', { defaultValue: 'Add a step...' })}
           placeholderTextColor={colors.muted}
-          accessibilityLabel="New step title"
+          accessibilityLabel={t('projects.a11y_new_step', { defaultValue: 'New step title' })}
           style={[
             styles.addInput,
             { color: colors.text, borderColor: colors.border, backgroundColor: colors.background },
@@ -149,7 +151,7 @@ export const ProjectStepsCard = React.memo(function ProjectStepsCard({
           onPress={onAddStep}
           disabled={!newStepTitle.trim() || addingStep}
           accessibilityRole="button"
-          accessibilityLabel="Add step"
+          accessibilityLabel={t('projects.a11y_add_step', { defaultValue: 'Add step' })}
         >
           {addingStep ? (
             <ActivityIndicator size="small" color={colors.accentText} />

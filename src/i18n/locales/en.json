@@ -103,7 +103,11 @@
     "load_error_body": "Check your connection and try again.",
     "retry_a11y": "Retry loading nearby events",
     "empty_title": "No nearby events",
-    "empty_body": "No events found within 50km of your location"
+    "empty_body": "No events found within 50km of your location",
+    "a11y_location": "Event location",
+    "a11y_use_current_location": "Use my current location",
+    "online_url": "Online URL",
+    "a11y_online_url": "Online event URL"
   },
   "marketplace": {
     "find_collectors": "Find Collectors",
@@ -492,7 +496,11 @@
     "diagnostics": "Diagnostics",
     "diagnostics_desc": "Recent errors recorded on this device",
     "getting_paid": "Getting paid",
-    "payment_handles_load_failed": "Couldn't load this."
+    "payment_handles_load_failed": "Couldn't load this.",
+    "a11y_accessibility_section": "Accessibility settings section",
+    "high_contrast_mode": "High Contrast Mode",
+    "reduce_motion": "Reduce Motion",
+    "large_text": "Large Text"
   },
   "sponsor_profile": {
     "company_name": "Company name",
@@ -540,7 +548,11 @@
     "add_note": "Add Note",
     "a11y_create_new": "Create new project",
     "a11y_create_first": "Create your first project",
-    "create_first": "Create Your First Project"
+    "create_first": "Create Your First Project",
+    "no_steps_yet": "No steps added yet",
+    "add_step_placeholder": "Add a step...",
+    "a11y_new_step": "New step title",
+    "a11y_add_step": "Add step"
   },
   "watchlist": {
     "add_title": "Add to Watchlist",
@@ -745,7 +757,11 @@
     "new_password": "New Password",
     "new_password_placeholder": "At least 8 characters",
     "confirm_new_password": "Confirm New Password",
-    "confirm_new_password_placeholder": "Confirm new password"
+    "confirm_new_password_placeholder": "Confirm new password",
+    "a11y_download_inventory": "Download full inventory as CSV",
+    "download_inventory": "Download full inventory (CSV)",
+    "a11y_confirm_delete": "Confirm delete account",
+    "a11y_type_delete": "Type DELETE to confirm"
   },
   "billing": {
     "free": "Free",
@@ -1066,7 +1082,16 @@
     "a11y_get_started": "Get started as a sponsor",
     "get_started": "Get Started as a Sponsor",
     "a11y_new_campaign": "New campaign",
-    "new_campaign": "New Campaign"
+    "new_campaign": "New Campaign",
+    "dashboard_loading": "Loading dashboard...",
+    "dashboard_empty_title": "Start Sponsoring Events",
+    "dashboard_a11y_get_started": "Get started",
+    "dashboard_get_started": "Get Started",
+    "campaign_manager": "Campaign Manager",
+    "a11y_announcement_image": "Announcement image",
+    "no_announcements": "No Announcements Yet",
+    "a11y_send_first": "Send your first announcement",
+    "send_first_announcement": "Send First Announcement"
   },
   "share": {
     "send_to": "Send to",
