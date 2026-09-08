@@ -290,7 +290,15 @@
       "email_already_registered": "Dit e-mailadres is al geregistreerd. Probeer in te loggen.",
       "reset_email_required": "Vul je e-mailadres in om je wachtwoord te resetten.",
       "reset_failed": "Reset mislukt. Onbekende fout."
-    }
+    },
+    "a11y_request_new_link": "Vraag een nieuwe herstellink aan",
+    "request_new_link": "Nieuwe link aanvragen",
+    "new_password": "Nieuw wachtwoord",
+    "confirm_new_password": "Bevestig nieuw wachtwoord",
+    "a11y_update_password": "Wachtwoord bijwerken",
+    "update_password": "Wachtwoord bijwerken",
+    "a11y_back_to_sign_in": "Terug naar inloggen",
+    "back_to_sign_in": "Terug naar inloggen"
   },
   "nav": {
     "portfolio": "Portfolio",
@@ -920,7 +928,16 @@
     "a11y_buy_it": "Kopen",
     "buy_it": "Kopen",
     "a11y_not_interested": "Niet geïnteresseerd",
-    "not_interested": "Niet geïnteresseerd"
+    "not_interested": "Niet geïnteresseerd",
+    "a11y_pro_gate": "Deals ontdekken is een Sparrow Pro-functie. Tik om te upgraden.",
+    "sparrows_watch": "Sparrows wachtlijst",
+    "a11y_add_watch": "Voeg iets toe om te volgen",
+    "what_sparrow_watching": "Wat Sparrow in de gaten houdt",
+    "not_watching_yet": "Je volgt nog niets",
+    "a11y_tell_sparrow": "Vertel Sparrow wat het moet volgen",
+    "add_something_to_watch": "Voeg iets toe om te volgen",
+    "what_sparrow_spotted": "Wat Sparrow heeft gevonden",
+    "a11y_load_more": "Meer deals laden"
   },
   "edit_event": {
     "loading_event": "Evenement laden...",
@@ -943,5 +960,37 @@
     "no_marketplaces": "Geen marktplaatsen beschikbaar voor dit item.",
     "a11y_add_watchlist": "Aan volglijst toevoegen",
     "add_to_watchlist": "Aan volglijst toevoegen"
+  },
+  "inbox": {
+    "sent_requests": "Verzonden verzoeken",
+    "a11y_find_collectors": "Vind verzamelaars om te berichten",
+    "find_collectors": "Verzamelaars vinden",
+    "a11y_test_chat": "Open een testchat om berichten te bekijken",
+    "open_test_chat": "Testchat openen"
+  },
+  "item_details": {
+    "item_name": "Itemnaam",
+    "estimated_value": "Geschatte waarde",
+    "what_you_paid": "Wat je betaald hebt",
+    "not_set": "Niet ingesteld",
+    "a11y_fees_tax_shipping": "Betaalde kosten, belasting en verzending"
+  },
+  "tax": {
+    "title": "Verkoop- en belastingrapportage",
+    "load_failed": "Je cijfers konden niet worden geladen",
+    "a11y_retry": "Je cijfers opnieuw laden",
+    "where_the_line_is": "Waar de grens ligt",
+    "what_that_means": "Wat dat voor jou betekent",
+    "a11y_read_section_6": "Lees artikel 6 van de marktplaatsvoorwaarden",
+    "earlier_years": "Eerdere jaren"
+  },
+  "announce": {
+    "title_optional": "Titel (optioneel)",
+    "a11y_title": "Titel van aankondiging",
+    "body_placeholder": "Schrijf je aankondiging aan de bezoekers...",
+    "a11y_body": "Tekst van aankondiging",
+    "image_url_optional": "Afbeeldings-URL (optioneel)",
+    "a11y_send": "Aankondiging versturen",
+    "send_announcement": "Aankondiging versturen"
   }
 }

@@ -38,6 +38,7 @@ import { radius, text, fontWeight } from '@/theme/tokens';
 import { supabase } from '@/lib/supabase';
 import { trackScreen } from '@/analytics/track';
 import { safeGoBack } from '@/lib/goBack';
+import { useTranslation } from 'react-i18next';
 
 // SWR cache for instant inbox first-paint on revisit (realtime + on-mount
 // revalidate keep it fresh; TTL just bounds offline staleness).
@@ -105,6 +106,7 @@ const UserAvatar = React.memo(function UserAvatar({
 });
 
 function InboxScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
@@ -280,7 +282,7 @@ function InboxScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); safeGoBack(router); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+          <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); safeGoBack(router); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}>
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Inbox</Text>
@@ -302,7 +304,7 @@ function InboxScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); safeGoBack(router); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back">
+        <AnimatedPressable onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); safeGoBack(router); }} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </AnimatedPressable>
         <View style={styles.headerTitleRow}>
@@ -470,7 +472,7 @@ function InboxScreen() {
         {/* Sent Requests Section */}
         {sentRequests.length > 0 && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.muted }]}>Sent Requests</Text>
+            <Text style={[styles.sectionTitle, { color: colors.muted }]}>{t('inbox.sent_requests', { defaultValue: 'Sent Requests' })}</Text>
             {sentRequests.map((thread, idx) => (
               <View
                 key={thread.id}
@@ -510,7 +512,7 @@ function InboxScreen() {
         {!hasContent && (
           <EmptyState
             icon="chatbubbles-outline"
-            title="No messages yet"
+            title={t('chat.no_messages_yet', { defaultValue: 'No messages yet' })}
             subtitle="Find other collectors to start a conversation — or open a test chat to preview messaging."
             colors={colors}
             style={{ paddingTop: 80 }}
@@ -520,10 +522,10 @@ function InboxScreen() {
                   onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push('/search'); }}
                   style={[styles.emptyActionPrimary, { backgroundColor: colors.accent }]}
                   accessibilityRole="button"
-                  accessibilityLabel="Find collectors to message"
+                  accessibilityLabel={t('inbox.a11y_find_collectors', { defaultValue: 'Find collectors to message' })}
                 >
                   <Ionicons name="search" size={16} color="#fff" style={{ marginRight: 6 }} />
-                  <Text style={styles.emptyActionPrimaryText}>Find collectors</Text>
+                  <Text style={styles.emptyActionPrimaryText}>{t('inbox.find_collectors', { defaultValue: 'Find collectors' })}</Text>
                 </AnimatedPressable>
                 {/* Dev-only. app/chat-demo.tsx is a local-only placeholder whose
                     own header says "remove once real DM threads exist" — it must
@@ -535,10 +537,10 @@ function InboxScreen() {
                   onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); router.push('/chat-demo' as Href); }}
                   style={[styles.emptyActionSecondary, { borderColor: colors.border }]}
                   accessibilityRole="button"
-                  accessibilityLabel="Open a test chat to preview messaging"
+                  accessibilityLabel={t('inbox.a11y_test_chat', { defaultValue: 'Open a test chat to preview messaging' })}
                 >
                   <Ionicons name="flask-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
-                  <Text style={[styles.emptyActionSecondaryText, { color: colors.accent }]}>Open test chat</Text>
+                  <Text style={[styles.emptyActionSecondaryText, { color: colors.accent }]}>{t('inbox.open_test_chat', { defaultValue: 'Open test chat' })}</Text>
                 </AnimatedPressable>
                 )}
               </View>

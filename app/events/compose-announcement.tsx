@@ -32,6 +32,7 @@ import logger from '@/utils/logger';
 import { useToast } from '@/components/Toast';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { safeGoBack } from '@/lib/goBack';
+import { useTranslation } from 'react-i18next';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -46,6 +47,7 @@ type SaveState = 'idle' | 'sending';
 /* -------------------------------------------------------------------------- */
 
 const ComposeAnnouncementScreen: React.FC = () => {
+  const { t } = useTranslation();
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -135,7 +137,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
               <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 {/* Title (optional) */}
                 <View style={styles.fieldBlock}>
-                  <Text style={[styles.fieldLabel, { color: colors.text }]}>Title (optional)</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('announce.title_optional', { defaultValue: 'Title (optional)' })}</Text>
                   <View style={[styles.inputWrap, { borderColor: titleField.touched && titleField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                     <Ionicons name="text-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                     <TextInput
@@ -145,7 +147,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
                       placeholder="e.g. Schedule Update"
                       placeholderTextColor={colors.muted}
                       style={[styles.input, { color: colors.text }]}
-                      accessibilityLabel="Announcement title"
+                      accessibilityLabel={t('announce.a11y_title', { defaultValue: 'Announcement title' })}
                     />
                   </View>
                   {titleField.touched && titleField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{titleField.error}</Text>}
@@ -164,11 +166,11 @@ const ComposeAnnouncementScreen: React.FC = () => {
                       multiline
                       numberOfLines={6}
                       maxLength={BODY_MAX_LENGTH}
-                      placeholder="Write your announcement to attendees..."
+                      placeholder={t('announce.body_placeholder', { defaultValue: 'Write your announcement to attendees...' })}
                       placeholderTextColor={colors.muted}
                       style={[styles.inputMultiline, { color: colors.text }]}
                       textAlignVertical="top"
-                      accessibilityLabel="Announcement body"
+                      accessibilityLabel={t('announce.a11y_body', { defaultValue: 'Announcement body' })}
                     />
                   </View>
                   <View style={styles.charCountRow}>
@@ -185,7 +187,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
 
                 {/* Image URL (optional) */}
                 <View>
-                  <Text style={[styles.fieldLabel, { color: colors.text }]}>Image URL (optional)</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('announce.image_url_optional', { defaultValue: 'Image URL (optional)' })}</Text>
                   <View style={[styles.inputWrap, { borderColor: imageUrlField.touched && imageUrlField.error ? colors.danger : colors.border, backgroundColor: colors.background }]}>
                     <Ionicons name="image-outline" size={16} color={colors.muted} style={styles.inputIcon} />
                     <TextInput
@@ -197,7 +199,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
                       style={[styles.input, { color: colors.text }]}
                       autoCapitalize="none"
                       keyboardType="url"
-                      accessibilityLabel="Image URL"
+                      accessibilityLabel={t('create_event.image_url', { defaultValue: 'Image URL' })}
                     />
                   </View>
                   {imageUrlField.touched && imageUrlField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{imageUrlField.error}</Text>}
@@ -218,14 +220,14 @@ const ComposeAnnouncementScreen: React.FC = () => {
                 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Send announcement"
+              accessibilityLabel={t('announce.a11y_send', { defaultValue: 'Send announcement' })}
             >
               {saveState === 'sending' ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <>
                   <Ionicons name="send-outline" size={18} color="#FFFFFF" />
-                  <Text style={styles.submitButtonText}>Send Announcement</Text>
+                  <Text style={styles.submitButtonText}>{t('announce.send_announcement', { defaultValue: 'Send Announcement' })}</Text>
                 </>
               )}
             </AnimatedPressable>

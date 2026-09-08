@@ -290,7 +290,15 @@
       "email_already_registered": "That email is already registered. Try signing in instead.",
       "reset_email_required": "Enter your email address to reset your password.",
       "reset_failed": "Reset failed. Unknown error."
-    }
+    },
+    "a11y_request_new_link": "Request a new reset link",
+    "request_new_link": "Request a new link",
+    "new_password": "New password",
+    "confirm_new_password": "Confirm new password",
+    "a11y_update_password": "Update password",
+    "update_password": "Update password",
+    "a11y_back_to_sign_in": "Back to sign in",
+    "back_to_sign_in": "Back to sign in"
   },
   "nav": {
     "portfolio": "Portfolio",
@@ -920,7 +928,16 @@
     "a11y_buy_it": "Buy it",
     "buy_it": "Buy It",
     "a11y_not_interested": "Not interested",
-    "not_interested": "Not Interested"
+    "not_interested": "Not Interested",
+    "a11y_pro_gate": "Deal discovery is a Sparrow Pro feature. Tap to upgrade.",
+    "sparrows_watch": "Sparrow's Watch",
+    "a11y_add_watch": "Add something to watch",
+    "what_sparrow_watching": "What Sparrow's watching",
+    "not_watching_yet": "Not watching anything yet",
+    "a11y_tell_sparrow": "Tell Sparrow what to watch",
+    "add_something_to_watch": "Add something to watch",
+    "what_sparrow_spotted": "What Sparrow spotted",
+    "a11y_load_more": "Load more deals"
   },
   "edit_event": {
     "loading_event": "Loading event...",
@@ -943,5 +960,37 @@
     "no_marketplaces": "No marketplaces available for this item.",
     "a11y_add_watchlist": "Add to watchlist",
     "add_to_watchlist": "Add to watchlist"
+  },
+  "inbox": {
+    "sent_requests": "Sent Requests",
+    "a11y_find_collectors": "Find collectors to message",
+    "find_collectors": "Find collectors",
+    "a11y_test_chat": "Open a test chat to preview messaging",
+    "open_test_chat": "Open test chat"
+  },
+  "item_details": {
+    "item_name": "Item name",
+    "estimated_value": "Estimated value",
+    "what_you_paid": "What you paid",
+    "not_set": "Not set",
+    "a11y_fees_tax_shipping": "Fees, tax and shipping paid"
+  },
+  "tax": {
+    "title": "Sales & tax reporting",
+    "load_failed": "Couldn't load your figures",
+    "a11y_retry": "Try loading your figures again",
+    "where_the_line_is": "Where the line is",
+    "what_that_means": "What that means for you",
+    "a11y_read_section_6": "Read section 6 of the marketplace terms",
+    "earlier_years": "Earlier years"
+  },
+  "announce": {
+    "title_optional": "Title (optional)",
+    "a11y_title": "Announcement title",
+    "body_placeholder": "Write your announcement to attendees...",
+    "a11y_body": "Announcement body",
+    "image_url_optional": "Image URL (optional)",
+    "a11y_send": "Send announcement",
+    "send_announcement": "Send Announcement"
   }
 }

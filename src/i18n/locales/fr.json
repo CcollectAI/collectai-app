@@ -290,7 +290,15 @@
       "email_already_registered": "Cet e-mail est déjà enregistré. Essayez de vous connecter.",
       "reset_email_required": "Saisissez votre adresse e-mail pour réinitialiser votre mot de passe.",
       "reset_failed": "Échec de la réinitialisation. Erreur inconnue."
-    }
+    },
+    "a11y_request_new_link": "Demander un nouveau lien de réinitialisation",
+    "request_new_link": "Demander un nouveau lien",
+    "new_password": "Nouveau mot de passe",
+    "confirm_new_password": "Confirmer le nouveau mot de passe",
+    "a11y_update_password": "Mettre à jour le mot de passe",
+    "update_password": "Mettre à jour le mot de passe",
+    "a11y_back_to_sign_in": "Retour à la connexion",
+    "back_to_sign_in": "Retour à la connexion"
   },
   "nav": {
     "portfolio": "Portefeuille",
@@ -920,7 +928,16 @@
     "a11y_buy_it": "Acheter",
     "buy_it": "Acheter",
     "a11y_not_interested": "Pas intéressé",
-    "not_interested": "Pas intéressé"
+    "not_interested": "Pas intéressé",
+    "a11y_pro_gate": "La découverte d’offres est une fonctionnalité Sparrow Pro. Appuyez pour passer à la version supérieure.",
+    "sparrows_watch": "La veille de Sparrow",
+    "a11y_add_watch": "Ajouter un élément à surveiller",
+    "what_sparrow_watching": "Ce que Sparrow surveille",
+    "not_watching_yet": "Vous ne surveillez encore rien",
+    "a11y_tell_sparrow": "Dites à Sparrow quoi surveiller",
+    "add_something_to_watch": "Ajouter un élément à surveiller",
+    "what_sparrow_spotted": "Ce que Sparrow a repéré",
+    "a11y_load_more": "Charger plus d’offres"
   },
   "edit_event": {
     "loading_event": "Chargement de l’événement...",
@@ -943,5 +960,37 @@
     "no_marketplaces": "Aucune place de marché disponible pour cet article.",
     "a11y_add_watchlist": "Ajouter à la liste de suivi",
     "add_to_watchlist": "Ajouter à la liste de suivi"
+  },
+  "inbox": {
+    "sent_requests": "Demandes envoyées",
+    "a11y_find_collectors": "Trouver des collectionneurs à contacter",
+    "find_collectors": "Trouver des collectionneurs",
+    "a11y_test_chat": "Ouvrir une discussion test pour prévisualiser la messagerie",
+    "open_test_chat": "Ouvrir la discussion test"
+  },
+  "item_details": {
+    "item_name": "Nom de l’article",
+    "estimated_value": "Valeur estimée",
+    "what_you_paid": "Ce que vous avez payé",
+    "not_set": "Non défini",
+    "a11y_fees_tax_shipping": "Frais, taxes et livraison payés"
+  },
+  "tax": {
+    "title": "Déclaration des ventes et des taxes",
+    "load_failed": "Impossible de charger vos chiffres",
+    "a11y_retry": "Réessayer de charger vos chiffres",
+    "where_the_line_is": "Où se situe le seuil",
+    "what_that_means": "Ce que cela signifie pour vous",
+    "a11y_read_section_6": "Lire la section 6 des conditions de la place de marché",
+    "earlier_years": "Années précédentes"
+  },
+  "announce": {
+    "title_optional": "Titre (facultatif)",
+    "a11y_title": "Titre de l’annonce",
+    "body_placeholder": "Rédigez votre annonce aux participants...",
+    "a11y_body": "Corps de l’annonce",
+    "image_url_optional": "URL de l’image (facultatif)",
+    "a11y_send": "Envoyer l’annonce",
+    "send_announcement": "Envoyer l’annonce"
   }
 }

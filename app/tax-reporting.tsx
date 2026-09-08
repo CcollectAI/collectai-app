@@ -45,8 +45,10 @@ import { useSettings } from '@/lib/settings';
 import { collectorsApi } from '@/api/collectorsApi';
 import { formatPrice } from '@/lib/format';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 function TaxReportingScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
@@ -70,7 +72,7 @@ function TaxReportingScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
-      <ScreenHeader title="Sales & tax reporting" />
+      <ScreenHeader title={t('tax.title', { defaultValue: 'Sales & tax reporting' })} />
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomInset }]}>
         <Animated.View style={animatedStyle}>
 
@@ -86,7 +88,7 @@ function TaxReportingScreen() {
             // truthfully tell the member, and it also narrows `data` for the
             // success branch below.
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.cardTitle, { color: colors.text }]}>Couldn&apos;t load your figures</Text>
+              <Text style={[styles.cardTitle, { color: colors.text }]}>{t('tax.load_failed', { defaultValue: "Couldn't load your figures" })}</Text>
               <Text style={[styles.body, { color: colors.muted }]}>
                 This says nothing about where you stand — we just could not reach the
                 server. The thresholds below still apply.
@@ -95,9 +97,9 @@ function TaxReportingScreen() {
                 onPress={retry}
                 style={[styles.retry, { borderColor: colors.accent }]}
                 accessibilityRole="button"
-                accessibilityLabel="Try loading your figures again"
+                accessibilityLabel={t('tax.a11y_retry', { defaultValue: 'Try loading your figures again' })}
               >
-                <Text style={[styles.retryText, { color: colors.accent }]}>Try again</Text>
+                <Text style={[styles.retryText, { color: colors.accent }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
               </AnimatedPressable>
             </View>
           ) : (
@@ -170,7 +172,7 @@ function TaxReportingScreen() {
 
               {/* The rule, stated the same way §6 states it */}
               <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>Where the line is</Text>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>{t('tax.where_the_line_is', { defaultValue: 'Where the line is' })}</Text>
                 <Text style={[styles.body, { color: colors.muted }]}>
                   Most members are never reported. A seller stays excluded while they
                   are under <Text style={{ color: colors.text }}>both</Text> limits in a
@@ -184,7 +186,7 @@ function TaxReportingScreen() {
 
               {/* The point of the screen: it is required OF US, and yours to handle */}
               <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>What that means for you</Text>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>{t('tax.what_that_means', { defaultValue: 'What that means for you' })}</Text>
                 <Text style={[styles.body, { color: colors.muted }]}>
                   Reporting above the threshold is a legal requirement on marketplaces,
                   not a Sparrow policy — the EU rules (DAC7) and the equivalent OECD
@@ -201,7 +203,7 @@ function TaxReportingScreen() {
                   onPress={openTerms}
                   style={styles.link}
                   accessibilityRole="link"
-                  accessibilityLabel="Read section 6 of the marketplace terms"
+                  accessibilityLabel={t('tax.a11y_read_section_6', { defaultValue: 'Read section 6 of the marketplace terms' })}
                 >
                   <Text style={[styles.linkText, { color: colors.accent }]}>
                     Marketplace terms, section 6
@@ -213,7 +215,7 @@ function TaxReportingScreen() {
               {/* Earlier years, once there are any */}
               {data.years.filter((y) => y.year !== year?.year).length > 0 ? (
                 <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <Text style={[styles.cardTitle, { color: colors.text }]}>Earlier years</Text>
+                  <Text style={[styles.cardTitle, { color: colors.text }]}>{t('tax.earlier_years', { defaultValue: 'Earlier years' })}</Text>
                   {data.years
                     .filter((y) => y.year !== year?.year)
                     .map((y) => (

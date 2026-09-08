@@ -16,6 +16,7 @@ import { CategorySpecificSection } from '@/components/CategorySpecificSection';
 import { categoryDisplayName } from '@/constants/categories';
 import { Skeleton, SkeletonList } from '@/components/Skeleton';
 import { radius, text, fontWeight } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 interface ItemDetailsCardProps {
   loading?: boolean;
@@ -74,6 +75,7 @@ interface ItemDetailsCardProps {
 const toNum = toPriceNum;
 
 export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDetailsCardProps) {
+  const { t } = useTranslation();
   const { colors: theme } = useAppTheme();
   const { settings } = useSettings();
   const router = useRouter();
@@ -133,10 +135,10 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
           style={[styles.editableNameInputSimple, { color: theme.text, borderBottomColor: theme.border }]}
           value={editableName}
           onChangeText={onEditableName}
-          placeholder="Item name"
+          placeholder={t('item_details.item_name', { defaultValue: 'Item name' })}
           placeholderTextColor={theme.muted ?? '#64748B'}
           returnKeyType="done"
-          accessibilityLabel="Item name"
+          accessibilityLabel={t('item_details.item_name', { defaultValue: 'Item name' })}
         />
       ) : null}
 
@@ -282,7 +284,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
             : `Estimated value: ${formatPrice(toNum(editableValue), settings.currency)}`
         }
       >
-        <Text style={[styles.label, { color: theme.muted }]}>Estimated value</Text>
+        <Text style={[styles.label, { color: theme.muted }]}>{t('item_details.estimated_value', { defaultValue: 'Estimated value' })}</Text>
         {/* Always the input: this whole row is already gated on
             isDraft || isEditing above, so the read-mode display that
             used to be the `else` of a second, identical ternary was
@@ -323,8 +325,8 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
           current setting, and the save path sends that currency explicitly so
           the server converts rather than the trigger assuming EUR. */}
       {isDraft || isEditing ? (
-      <View style={styles.row} accessibilityLabel="What you paid">
-        <Text style={[styles.label, { color: theme.muted }]}>What you paid</Text>
+      <View style={styles.row} accessibilityLabel={t('item_details.what_you_paid', { defaultValue: 'What you paid' })}>
+        <Text style={[styles.label, { color: theme.muted }]}>{t('item_details.what_you_paid', { defaultValue: 'What you paid' })}</Text>
           <View style={styles.editableValueRow}>
             <Text style={[styles.currencySymbol, { color: theme.muted }]}>
               {getCurrencySymbol(purchaseCurrency || settings.currency)}
@@ -333,7 +335,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
               style={[styles.editableValueInput, { color: theme.text, borderBottomColor: theme.border, fontWeight: fontWeight.bold }]}
               value={editablePurchasePrice}
               onChangeText={onEditablePurchasePrice}
-              placeholder="Not set"
+              placeholder={t('item_details.not_set', { defaultValue: 'Not set' })}
               placeholderTextColor={theme.muted ?? '#64748B'}
               keyboardType="decimal-pad"
               returnKeyType="done"
@@ -357,7 +359,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
           currency against a price in another is not a thing a single purchase
           has, and the save path sends one currency for both. */}
       {showAcquisitionFees && (isDraft || isEditing) ? (
-      <View style={styles.row} accessibilityLabel="Fees, tax and shipping paid">
+      <View style={styles.row} accessibilityLabel={t('item_details.a11y_fees_tax_shipping', { defaultValue: 'Fees, tax and shipping paid' })}>
         <Text style={[styles.label, { color: theme.muted }]}>+ Fees &amp; tax</Text>
           <View style={styles.editableValueRow}>
             <Text style={[styles.currencySymbol, { color: theme.muted }]}>
@@ -367,7 +369,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
               style={[styles.editableValueInput, { color: theme.text, borderBottomColor: theme.border, fontWeight: fontWeight.bold }]}
               value={editableAcquisitionFees}
               onChangeText={onEditableAcquisitionFees}
-              placeholder="Not set"
+              placeholder={t('item_details.not_set', { defaultValue: 'Not set' })}
               placeholderTextColor={theme.muted ?? '#64748B'}
               keyboardType="decimal-pad"
               returnKeyType="done"

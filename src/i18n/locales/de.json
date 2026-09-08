@@ -290,7 +290,15 @@
       "email_already_registered": "Diese E-Mail-Adresse ist schon registriert. Versuche, dich anzumelden.",
       "reset_email_required": "Gib deine E-Mail-Adresse ein, um dein Passwort zurückzusetzen.",
       "reset_failed": "Zurücksetzen fehlgeschlagen. Unbekannter Fehler."
-    }
+    },
+    "a11y_request_new_link": "Neuen Zurücksetz-Link anfordern",
+    "request_new_link": "Neuen Link anfordern",
+    "new_password": "Neues Passwort",
+    "confirm_new_password": "Neues Passwort bestätigen",
+    "a11y_update_password": "Passwort aktualisieren",
+    "update_password": "Passwort aktualisieren",
+    "a11y_back_to_sign_in": "Zurück zur Anmeldung",
+    "back_to_sign_in": "Zurück zur Anmeldung"
   },
   "nav": {
     "portfolio": "Portfolio",
@@ -920,7 +928,16 @@
     "a11y_buy_it": "Kaufen",
     "buy_it": "Kaufen",
     "a11y_not_interested": "Kein Interesse",
-    "not_interested": "Kein Interesse"
+    "not_interested": "Kein Interesse",
+    "a11y_pro_gate": "Deal-Entdeckung ist eine Sparrow-Pro-Funktion. Zum Upgraden tippen.",
+    "sparrows_watch": "Sparrows Beobachtung",
+    "a11y_add_watch": "Etwas zum Beobachten hinzufügen",
+    "what_sparrow_watching": "Was Sparrow beobachtet",
+    "not_watching_yet": "Du beobachtest noch nichts",
+    "a11y_tell_sparrow": "Sag Sparrow, was beobachtet werden soll",
+    "add_something_to_watch": "Etwas zum Beobachten hinzufügen",
+    "what_sparrow_spotted": "Was Sparrow gefunden hat",
+    "a11y_load_more": "Weitere Deals laden"
   },
   "edit_event": {
     "loading_event": "Event wird geladen...",
@@ -943,5 +960,37 @@
     "no_marketplaces": "Keine Marktplätze für dieses Objekt verfügbar.",
     "a11y_add_watchlist": "Zur Beobachtungsliste",
     "add_to_watchlist": "Zur Beobachtungsliste"
+  },
+  "inbox": {
+    "sent_requests": "Gesendete Anfragen",
+    "a11y_find_collectors": "Sammler zum Anschreiben finden",
+    "find_collectors": "Sammler finden",
+    "a11y_test_chat": "Test-Chat öffnen, um Nachrichten zu testen",
+    "open_test_chat": "Test-Chat öffnen"
+  },
+  "item_details": {
+    "item_name": "Objektname",
+    "estimated_value": "Geschätzter Wert",
+    "what_you_paid": "Was du bezahlt hast",
+    "not_set": "Nicht festgelegt",
+    "a11y_fees_tax_shipping": "Gebühren, Steuern und Versand bezahlt"
+  },
+  "tax": {
+    "title": "Verkaufs- und Steuermeldung",
+    "load_failed": "Deine Zahlen konnten nicht geladen werden",
+    "a11y_retry": "Zahlen erneut laden",
+    "where_the_line_is": "Wo die Grenze liegt",
+    "what_that_means": "Was das für dich bedeutet",
+    "a11y_read_section_6": "Abschnitt 6 der Marktplatz-Bedingungen lesen",
+    "earlier_years": "Frühere Jahre"
+  },
+  "announce": {
+    "title_optional": "Titel (optional)",
+    "a11y_title": "Titel der Ankündigung",
+    "body_placeholder": "Schreibe deine Ankündigung an die Teilnehmenden...",
+    "a11y_body": "Text der Ankündigung",
+    "image_url_optional": "Bild-URL (optional)",
+    "a11y_send": "Ankündigung senden",
+    "send_announcement": "Ankündigung senden"
   }
 }

@@ -31,6 +31,7 @@ import { QuickNavBar } from "@/components/QuickNavBar";
 import { useFollowedCategories } from "@/hooks/useFollowedCategories";
 import type { PurchaseMandate, MandateDeal } from "@/data/types";
 import logger from "@/utils/logger";
+import { useTranslation } from 'react-i18next';
 
 const DEALS_PAGE_SIZE = 10;
 
@@ -82,6 +83,7 @@ export default function AgentHubScreenWithBoundary() {
 }
 
 function AgentHubScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
@@ -333,7 +335,7 @@ function AgentHubScreen() {
           onPress={() => router.push('/subscription')}
           style={{ backgroundColor: colors.accent + '14', borderColor: colors.accent + '40', borderWidth: 1, padding: 12, borderRadius: 8, marginHorizontal: 16, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 8 }}
           accessibilityRole="button"
-          accessibilityLabel="Deal discovery is a Sparrow Pro feature. Tap to upgrade."
+          accessibilityLabel={t('purchase.a11y_pro_gate', { defaultValue: 'Deal discovery is a Sparrow Pro feature. Tap to upgrade.' })}
         >
           <Ionicons name="lock-closed" size={14} color={colors.accent} />
           <Text style={{ color: colors.text, fontSize: 13, flex: 1 }}>
@@ -367,7 +369,7 @@ function AgentHubScreen() {
         {/* Header — index 0 */}
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Sparrow's Watch</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{t('purchase.sparrows_watch', { defaultValue: "Sparrow's Watch" })}</Text>
             <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
               We watch marketplaces and alert you when your price is hit.
             </Text>
@@ -383,7 +385,7 @@ function AgentHubScreen() {
               router.push("/purchase/create-mandate");
             }}
             accessibilityRole="button"
-            accessibilityLabel="Add something to watch"
+            accessibilityLabel={t('purchase.a11y_add_watch', { defaultValue: 'Add something to watch' })}
           >
             <Ionicons name="add" size={20} color={colors.accentText} />
             <Text style={[styles.createBtnText, { color: colors.accentText }]}>Watch</Text>
@@ -438,12 +440,12 @@ function AgentHubScreen() {
         )}
 
         {/* Active Mandates */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>What Sparrow's watching</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('purchase.what_sparrow_watching', { defaultValue: "What Sparrow's watching" })}</Text>
 
         {mandates.length === 0 ? (
           <View style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Ionicons name="search-outline" size={32} color={colors.muted} />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>Not watching anything yet</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('purchase.not_watching_yet', { defaultValue: 'Not watching anything yet' })}</Text>
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
               Add an item and your max price.
             </Text>
@@ -455,9 +457,9 @@ function AgentHubScreen() {
                 }}
                 style={[styles.emptyCtaBtn, { backgroundColor: colors.accent }]}
                 accessibilityRole="button"
-                accessibilityLabel="Tell Sparrow what to watch"
+                accessibilityLabel={t('purchase.a11y_tell_sparrow', { defaultValue: 'Tell Sparrow what to watch' })}
               >
-                <Text style={[styles.emptyCtaBtnText, { color: colors.accentText }]}>Add something to watch</Text>
+                <Text style={[styles.emptyCtaBtnText, { color: colors.accentText }]}>{t('purchase.add_something_to_watch', { defaultValue: 'Add something to watch' })}</Text>
               </AnimatedPressable>
             </View>
           </View>
@@ -550,7 +552,7 @@ function AgentHubScreen() {
 
         {/* Recent Deals */}
         <View style={styles.dealsHeaderRow}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>What Sparrow spotted</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('purchase.what_sparrow_spotted', { defaultValue: 'What Sparrow spotted' })}</Text>
           {followed.size > 0 && deals.length > 0 && (
             <AnimatedPressable
               onPress={() => {
@@ -679,7 +681,7 @@ function AgentHubScreen() {
             }}
             disabled={loadingMore}
             accessibilityRole="button"
-            accessibilityLabel="Load more deals"
+            accessibilityLabel={t('purchase.a11y_load_more', { defaultValue: 'Load more deals' })}
             accessibilityState={{ busy: loadingMore }}
           >
             <Text style={[styles.loadMoreText, { color: colors.accent }]}>

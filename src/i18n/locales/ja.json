@@ -290,7 +290,15 @@
       "email_already_registered": "このメールアドレスは既に登録されています。ログインをお試しください。",
       "reset_email_required": "パスワードをリセットするにはメールアドレスを入力してください。",
       "reset_failed": "リセットに失敗しました。不明なエラー。"
-    }
+    },
+    "a11y_request_new_link": "新しいリセットリンクをリクエスト",
+    "request_new_link": "新しいリンクをリクエスト",
+    "new_password": "新しいパスワード",
+    "confirm_new_password": "新しいパスワードを確認",
+    "a11y_update_password": "パスワードを更新",
+    "update_password": "パスワードを更新",
+    "a11y_back_to_sign_in": "ログインに戻る",
+    "back_to_sign_in": "ログインに戻る"
   },
   "nav": {
     "portfolio": "ポートフォリオ",
@@ -920,7 +928,16 @@
     "a11y_buy_it": "購入する",
     "buy_it": "購入する",
     "a11y_not_interested": "興味なし",
-    "not_interested": "興味なし"
+    "not_interested": "興味なし",
+    "a11y_pro_gate": "ディール発見はSparrow Proの機能です。タップしてアップグレード。",
+    "sparrows_watch": "Sparrowの見張り",
+    "a11y_add_watch": "監視するものを追加",
+    "what_sparrow_watching": "Sparrowが監視中のもの",
+    "not_watching_yet": "まだ何も監視していません",
+    "a11y_tell_sparrow": "Sparrowに監視対象を伝える",
+    "add_something_to_watch": "監視するものを追加",
+    "what_sparrow_spotted": "Sparrowが見つけたもの",
+    "a11y_load_more": "さらにディールを読み込む"
   },
   "edit_event": {
     "loading_event": "イベントを読み込み中...",
@@ -943,5 +960,37 @@
     "no_marketplaces": "このアイテムに利用できるマーケットプレイスはありません。",
     "a11y_add_watchlist": "ウォッチリストに追加",
     "add_to_watchlist": "ウォッチリストに追加"
+  },
+  "inbox": {
+    "sent_requests": "送信したリクエスト",
+    "a11y_find_collectors": "メッセージを送るコレクターを探す",
+    "find_collectors": "コレクターを探す",
+    "a11y_test_chat": "テストチャットを開いてメッセージ機能を確認",
+    "open_test_chat": "テストチャットを開く"
+  },
+  "item_details": {
+    "item_name": "アイテム名",
+    "estimated_value": "推定価値",
+    "what_you_paid": "支払った金額",
+    "not_set": "未設定",
+    "a11y_fees_tax_shipping": "支払った手数料・税・送料"
+  },
+  "tax": {
+    "title": "売上と税務レポート",
+    "load_failed": "数値を読み込めませんでした",
+    "a11y_retry": "数値を再読み込み",
+    "where_the_line_is": "基準はどこか",
+    "what_that_means": "あなたにとっての意味",
+    "a11y_read_section_6": "マーケットプレイス規約の第6条を読む",
+    "earlier_years": "過去の年"
+  },
+  "announce": {
+    "title_optional": "タイトル（任意）",
+    "a11y_title": "お知らせのタイトル",
+    "body_placeholder": "参加者へのお知らせを書いてください...",
+    "a11y_body": "お知らせ本文",
+    "image_url_optional": "画像URL（任意）",
+    "a11y_send": "お知らせを送信",
+    "send_announcement": "お知らせを送信"
   }
 }

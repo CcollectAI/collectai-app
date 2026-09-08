@@ -290,7 +290,15 @@
       "email_already_registered": "Ese correo ya está registrado. Prueba a iniciar sesión.",
       "reset_email_required": "Ingresa tu correo para restablecer tu contraseña.",
       "reset_failed": "Error al restablecer. Error desconocido."
-    }
+    },
+    "a11y_request_new_link": "Solicitar un nuevo enlace de restablecimiento",
+    "request_new_link": "Solicitar un nuevo enlace",
+    "new_password": "Nueva contraseña",
+    "confirm_new_password": "Confirmar nueva contraseña",
+    "a11y_update_password": "Actualizar contraseña",
+    "update_password": "Actualizar contraseña",
+    "a11y_back_to_sign_in": "Volver a iniciar sesión",
+    "back_to_sign_in": "Volver a iniciar sesión"
   },
   "nav": {
     "portfolio": "Portafolio",
@@ -920,7 +928,16 @@
     "a11y_buy_it": "Comprar",
     "buy_it": "Comprar",
     "a11y_not_interested": "No me interesa",
-    "not_interested": "No me interesa"
+    "not_interested": "No me interesa",
+    "a11y_pro_gate": "El descubrimiento de ofertas es una función de Sparrow Pro. Toca para mejorar.",
+    "sparrows_watch": "La vigilancia de Sparrow",
+    "a11y_add_watch": "Añade algo para vigilar",
+    "what_sparrow_watching": "Lo que Sparrow está vigilando",
+    "not_watching_yet": "Aún no vigilas nada",
+    "a11y_tell_sparrow": "Dile a Sparrow qué vigilar",
+    "add_something_to_watch": "Añade algo para vigilar",
+    "what_sparrow_spotted": "Lo que Sparrow ha encontrado",
+    "a11y_load_more": "Cargar más ofertas"
   },
   "edit_event": {
     "loading_event": "Cargando evento...",
@@ -943,5 +960,37 @@
     "no_marketplaces": "No hay mercados disponibles para este artículo.",
     "a11y_add_watchlist": "Añadir a la lista de seguimiento",
     "add_to_watchlist": "Añadir a la lista de seguimiento"
+  },
+  "inbox": {
+    "sent_requests": "Solicitudes enviadas",
+    "a11y_find_collectors": "Encuentra coleccionistas a quienes escribir",
+    "find_collectors": "Buscar coleccionistas",
+    "a11y_test_chat": "Abrir un chat de prueba para ver la mensajería",
+    "open_test_chat": "Abrir chat de prueba"
+  },
+  "item_details": {
+    "item_name": "Nombre del artículo",
+    "estimated_value": "Valor estimado",
+    "what_you_paid": "Lo que pagaste",
+    "not_set": "Sin definir",
+    "a11y_fees_tax_shipping": "Comisiones, impuestos y envío pagados"
+  },
+  "tax": {
+    "title": "Informe de ventas e impuestos",
+    "load_failed": "No se pudieron cargar tus cifras",
+    "a11y_retry": "Reintentar cargar tus cifras",
+    "where_the_line_is": "Dónde está el límite",
+    "what_that_means": "Qué significa para ti",
+    "a11y_read_section_6": "Leer la sección 6 de los términos del mercado",
+    "earlier_years": "Años anteriores"
+  },
+  "announce": {
+    "title_optional": "Título (opcional)",
+    "a11y_title": "Título del anuncio",
+    "body_placeholder": "Escribe tu anuncio para los asistentes...",
+    "a11y_body": "Cuerpo del anuncio",
+    "image_url_optional": "URL de la imagen (opcional)",
+    "a11y_send": "Enviar anuncio",
+    "send_announcement": "Enviar anuncio"
   }
 }

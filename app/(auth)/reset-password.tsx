@@ -36,8 +36,10 @@ import { AuthTextInput } from '@/components/auth/AuthTextInput';
 import { useAuthContext } from '@/providers/useAuthContext';
 import { setRecoveryPending } from '@/auth/recoveryState';
 import { fonts } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 function ResetPasswordScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { settings } = useSettings();
   const { colors } = useAppTheme();
@@ -111,7 +113,7 @@ function ResetPasswordScreen() {
                 style={styles.gradientBtnWrap}
                 onPress={() => router.replace('/(auth)/forgot-password')}
                 accessibilityRole="button"
-                accessibilityLabel="Request a new reset link"
+                accessibilityLabel={t('auth.a11y_request_new_link', { defaultValue: 'Request a new reset link' })}
               >
                 <LinearGradient
                   colors={[colors.brand.dark, colors.brand.base]}
@@ -119,13 +121,13 @@ function ResetPasswordScreen() {
                   end={{ x: 1, y: 0 }}
                   style={styles.gradientBtn}
                 >
-                  <Text style={styles.gradientBtnText}>Request a new link</Text>
+                  <Text style={styles.gradientBtnText}>{t('auth.request_new_link', { defaultValue: 'Request a new link' })}</Text>
                 </LinearGradient>
               </AnimatedPressable>
             ) : (
               <View style={styles.form}>
                 <AuthTextInput
-                  label="New password"
+                  label={t('auth.new_password', { defaultValue: 'New password' })}
                   icon="lock-closed-outline"
                   value={password}
                   onChangeText={setPassword}
@@ -136,7 +138,7 @@ function ResetPasswordScreen() {
                 />
                 <View style={{ height: 12 }} />
                 <AuthTextInput
-                  label="Confirm new password"
+                  label={t('auth.confirm_new_password', { defaultValue: 'Confirm new password' })}
                   icon="lock-closed-outline"
                   value={confirm}
                   onChangeText={setConfirm}
@@ -151,7 +153,7 @@ function ResetPasswordScreen() {
                   onPress={handleUpdate}
                   disabled={loading}
                   accessibilityRole="button"
-                  accessibilityLabel="Update password"
+                  accessibilityLabel={t('auth.a11y_update_password', { defaultValue: 'Update password' })}
                 >
                   <LinearGradient
                     colors={[colors.brand.dark, colors.brand.base]}
@@ -162,7 +164,7 @@ function ResetPasswordScreen() {
                     {loading ? (
                       <ActivityIndicator color="#FFFFFF" />
                     ) : (
-                      <Text style={styles.gradientBtnText}>Update password</Text>
+                      <Text style={styles.gradientBtnText}>{t('auth.update_password', { defaultValue: 'Update password' })}</Text>
                     )}
                   </LinearGradient>
                 </AnimatedPressable>
@@ -173,9 +175,9 @@ function ResetPasswordScreen() {
               style={styles.footer}
               onPress={() => router.replace('/(auth)/login')}
               accessibilityRole="link"
-              accessibilityLabel="Back to sign in"
+              accessibilityLabel={t('auth.a11y_back_to_sign_in', { defaultValue: 'Back to sign in' })}
             >
-              <Text style={[styles.footerText, { color: colors.brand.dark }]}>Back to sign in</Text>
+              <Text style={[styles.footerText, { color: colors.brand.dark }]}>{t('auth.back_to_sign_in', { defaultValue: 'Back to sign in' })}</Text>
             </AnimatedPressable>
           </ScrollView>
         </KeyboardAvoidingView>
