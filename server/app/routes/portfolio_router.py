@@ -151,6 +151,24 @@ async def portfolio_timeseries(
                         i.id,
                         i.canonical_ref,
                         i.created_at::date AS since,
+                        -- The user's EXPLICIT choice outranks every prediction,
+                        -- exactly as public.item_value_v1 has it (added here
+                        -- 2026-09-12). This query hand-rolled its own COALESCE
+                        -- chain and omitted this rung, so an item whose owner
+                        -- had chosen "use my value" was drawn at the MODEL's
+                        -- number on the chart and in the headline.
+                        --
+                        -- Measured on prod: "Rocket's Scyther", value_choice
+                        -- 'mine', user value 34.50, model 79.25 — the account's
+                        -- curve ran 44.75 above its own collection total at
+                        -- EVERY range. The screen overrode a decision the user
+                        -- had deliberately made.
+                        --
+                        -- docs/ARCHITECTURE.md, "One valuation expression, or
+                        -- the screen contradicts itself": item_value_v1 is the
+                        -- one definition and this is now the same precedence.
+                        CASE WHEN i.attrs->>'value_choice' = 'mine'
+                             THEN i.estimated_value END AS user_override,
                         -- Stored-value fallback. TWO prediction sources cover
                         -- different items: price_predictions is catalog-model
                         -- output joined by canonical_ref, quick_predictions is
@@ -170,22 +188,56 @@ async def portfolio_timeseries(
                 -- One prediction per item per day (the last of that day), so a
                 -- chatty valuation run cannot multiply an item's contribution.
                 per_day AS (
-                    SELECT DISTINCT ON (o.id, DATE(pp.generated_at))
+                    (SELECT DISTINCT ON (o.id, DATE(pp.generated_at))
                         o.id,
                         DATE(pp.generated_at) AS day,
-                        pp.q50
+                        pp.q50,
+                        0 AS src_rank
                     FROM owned o
                     JOIN price_predictions pp ON pp.item_ref = o.canonical_ref
                     WHERE pp.generated_at >= $2
-                    ORDER BY o.id, DATE(pp.generated_at), pp.generated_at DESC
+                    ORDER BY o.id, DATE(pp.generated_at), pp.generated_at DESC)
+                    UNION ALL
+                    -- CARRY-IN, added 2026-09-12. Without it this CTE held only
+                    -- predictions generated INSIDE the window, so an item last
+                    -- priced before the window start had no row on any day and
+                    -- fell through to `stored_value` — for the LAST point too.
+                    --
+                    -- That broke the invariant the comment above promises. On
+                    -- prod, same account, same moment:
+                    --
+                    --   range=30d  last=1347.68  overview=1347.68   agree
+                    --   range=7d   last=1288.00  overview=1347.68   off 59.68
+                    --   range=1d   last=1323.29  overview=1347.68   off 24.39
+                    --
+                    -- Two items last predicted 8 days ago account for exactly
+                    -- 59.68, and all three for exactly 24.39 — the headline was
+                    -- wrong by the amount of prediction the window excluded, and
+                    -- **7D is the default range**, so that is what Home opened
+                    -- with. The narrower the range, the wronger the number.
+                    --
+                    -- Stamped at the window start so `p.day <= d.day` holds for
+                    -- every day drawn. `src_rank` breaks the tie when a real
+                    -- prediction also lands on that first day: 0 (in-window)
+                    -- wins over 1 (carried in).
+                    (SELECT DISTINCT ON (o.id)
+                        o.id,
+                        $2::date AS day,
+                        pp.q50,
+                        1 AS src_rank
+                    FROM owned o
+                    JOIN price_predictions pp ON pp.item_ref = o.canonical_ref
+                    WHERE pp.generated_at < $2
+                    ORDER BY o.id, pp.generated_at DESC)
                 )
                 SELECT
                     d.day AS day,
                     COALESCE(SUM(
                         COALESCE(
+                            o.user_override,
                             (SELECT p.q50 FROM per_day p
                               WHERE p.id = o.id AND p.day <= d.day
-                              ORDER BY p.day DESC LIMIT 1),
+                              ORDER BY p.day DESC, p.src_rank ASC LIMIT 1),
                             o.stored_value
                         )
                     ), 0) AS total_value
