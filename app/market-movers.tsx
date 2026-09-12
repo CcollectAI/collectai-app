@@ -27,6 +27,7 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { moverKey, moverTitle, PCT_MIN_PRICE_EUR } from '@/components/marketplace/moverFormat';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
+import { categoryDisplayName } from '@/constants/categories';
 
 type Direction = 'gainers' | 'losers';
 type MetricWindow = '7d' | '30d';
@@ -207,7 +208,7 @@ function MarketMoversScreen() {
               {moverTitle(m)}
             </Text>
             <Text style={[styles.sub, { color: colors.muted }]} numberOfLines={1}>
-              {m.category} · {formatPrice(m.last_price)} · {m.comps_30d} comps
+              {categoryDisplayName(m.category)} · {formatPrice(m.last_price)} · {m.comps_30d} comps
             </Text>
           </View>
           {/* Both figures, because neither is the whole answer: "+96.7%" hides

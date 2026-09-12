@@ -44,7 +44,7 @@ import { useAsync } from "@/hooks/useAsync";
 import { useSettings } from "@/lib/settings";
 import { formatPrice } from "@/lib/format";
 import { collectorsApi } from "@/api/collectorsApi";
-import { CATEGORY_SLUG_TO_NAME } from "@/constants/categories";
+import { categoryDisplayName } from "@/constants/categories";
 import { radius, text as textToken, fontWeight } from "@/theme/tokens";
 import logger from "@/utils/logger";
 import { useTranslation } from 'react-i18next';
@@ -554,7 +554,7 @@ function ListingDetailScreen() {
                 ]}
               >
                 <Text style={[styles.pillText, { color: colors.text }]}>
-                  {CATEGORY_SLUG_TO_NAME[listing.category] ?? listing.category}
+                  {categoryDisplayName(listing.category)}
                 </Text>
               </View>
             ) : null}

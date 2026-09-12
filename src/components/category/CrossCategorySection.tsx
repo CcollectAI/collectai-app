@@ -11,6 +11,7 @@ import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
 import { CATEGORY_VISUAL } from '@/data/categories';
 import logger from '@/utils/logger';
+import { categoryDisplayName } from '@/constants/categories';
 
 type Correlation = {
   category: string;
@@ -59,12 +60,12 @@ export default React.memo(function CrossCategorySection({ categoryId, onCategory
             style={[styles.row, { borderBottomColor: colors.border }]}
             onPress={() => onCategoryPress(c.category)}
             accessibilityRole="button"
-            accessibilityLabel={`${c.category.replace(/_/g, ' ')}: ${c.overlap_pct}% overlap`}
+            accessibilityLabel={`${categoryDisplayName(c.category)}: ${c.overlap_pct}% overlap`}
           >
             <View style={[styles.dot, { backgroundColor: accent }]} />
             <View style={styles.info}>
               <Text style={[styles.catName, { color: colors.text }]} numberOfLines={1}>
-                {c.category.replace(/_/g, ' ')}
+                {categoryDisplayName(c.category)}
               </Text>
               <Text style={[styles.catMeta, { color: colors.muted }]}>
                 {c.overlap_pct}% of collectors also have this

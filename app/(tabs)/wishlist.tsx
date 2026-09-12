@@ -46,7 +46,7 @@ import type { CurrencyCode } from '@/data/types';
 import { WishlistSortControls } from '@/components/wishlist/WishlistSortControls';
 
 // Pull from single source of truth — all 36 categories + "Other"
-import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
+import { categoryDisplayName, CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 
 const CONGRATS_DISPLAY_DURATION = 2000;
 const CONGRATS_SPRING = { tension: 50, friction: 7, useNativeDriver: true as const };
@@ -255,8 +255,8 @@ function WatchlistTabScreen() {
     // without one is skipped forever. It is not a degraded row — it is an
     // invisible one.
     //
-    // It used to be optional, and `WatchlistItemCard` rendered a
-    // "No target — won't alert" chip afterwards (added 2026-08-05). Measured
+    // It used to be optional, and a now-deleted `WatchlistItemCard` rendered
+    // a "No target — won't alert" chip afterwards (added 2026-08-05). Measured
     // 2026-08-08: still zero rows with a target. Telling someone AFTER they
     // saved, on a row they have stopped looking at, does not work.
     //
@@ -286,9 +286,18 @@ function WatchlistTabScreen() {
       // CATEGORIES = ALL_CATS.map(c => c.name), so this used to store
       // "Magic: The Gathering" while `market_hits.category` holds "mtg" — and
       // the snipe's fallback arm joins on `mh.category = w.category`, so a row
-      // added here could never match a listing. WatchlistItemCard already
-      // assumed a slug (`categoryDisplayName(item.category)`), so the display
-      // was the thing that was wrong-by-luck, not the storage contract.
+      // added here could never match a listing. The storage contract is the
+      // slug and that part was right.
+      //
+      // This comment used to end "WatchlistItemCard already assumed a slug
+      // (`categoryDisplayName(item.category)`), so the display was the thing
+      // that was wrong-by-luck". It reasoned about the display using a
+      // component NOTHING IMPORTED — the row on screen is the inline one
+      // below, and it rendered `{item.category}` raw, so the watchlist showed
+      // `mtg` / `onepiece` while every other surface showed the curated name.
+      // A correct duplicate is worse than no duplicate: it answers the
+      // question you were about to ask about the shipped code. Deleted
+      // 2026-09-12; `npm run check:category-display` now guards the render.
       const categorySlug = CATEGORY_NAME_TO_SLUG[formCategory] ?? 'unknown';
 
       await dataProvider.addWatchlistItem({
@@ -590,7 +599,7 @@ function WatchlistTabScreen() {
               should recede; the badge said it was a control. */}
           {item.category ? (
             <Text style={[styles.categoryText, { color: colors.muted }]} numberOfLines={1}>
-              {item.category}
+              {categoryDisplayName(item.category)}
             </Text>
           ) : null}
           <AnimatedPressable
@@ -1100,7 +1109,7 @@ function WatchlistTabScreen() {
                   </Text>
                   {acquireItem.category && (
                     <View style={[styles.categoryBadge, { backgroundColor: colors.accent + '20' }]}>
-                      <Text style={[styles.categoryText, { color: colors.accent }]}>{acquireItem.category}</Text>
+                      <Text style={[styles.categoryText, { color: colors.accent }]}>{categoryDisplayName(acquireItem.category)}</Text>
                     </View>
                   )}
                 </View>
@@ -1175,7 +1184,7 @@ function WatchlistTabScreen() {
                   </Text>
                   {editTargetItem.category && (
                     <View style={[styles.categoryBadge, { backgroundColor: colors.accent + '20' }]}>
-                      <Text style={[styles.categoryText, { color: colors.accent }]}>{editTargetItem.category}</Text>
+                      <Text style={[styles.categoryText, { color: colors.accent }]}>{categoryDisplayName(editTargetItem.category)}</Text>
                     </View>
                   )}
                 </View>

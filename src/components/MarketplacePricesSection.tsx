@@ -19,6 +19,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
 import logger from "@/utils/logger";
+import { conditionDisplayName } from '@/lib/conditionVocabulary';
 
 // ── Exported types ──────────────────────────────────────────────────────
 
@@ -125,7 +126,7 @@ export const MarketplacePricesSection = React.memo(function MarketplacePricesSec
                   {hit.title}
                 </Text>
                 <Text style={[s.marketHitMeta, { color: theme.muted }]}>
-                  {hit.source || hit.provider} {hit.condition ? `· ${hit.condition}` : ""}
+                  {hit.source || hit.provider} {hit.condition ? `· ${conditionDisplayName(hit.condition)}` : ""}
                 </Text>
               </View>
               <Text style={[s.marketHitPrice, { color: theme.text }]}>

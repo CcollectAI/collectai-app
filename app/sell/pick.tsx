@@ -50,7 +50,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { useSettings } from '@/lib/settings';
 import { dataProvider, type Item } from '@/data';
 import { formatPrice } from '@/lib/format';
-import { CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
+import { categoryDisplayName } from '@/constants/categories';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import { useTranslation } from 'react-i18next';
 
@@ -122,7 +122,7 @@ function SellPickScreen() {
           <Text style={[styles.rowTitle, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
           <Text style={[styles.rowMeta, { color: colors.muted }]} numberOfLines={1}>
             {[
-              item.category ? (CATEGORY_SLUG_TO_NAME[item.category] ?? item.category) : null,
+              item.category ? categoryDisplayName(item.category) : null,
               item.price ? formatPrice(item.price, settings.currency, settings.numberLocale) : null,
             ].filter(Boolean).join(' · ')}
           </Text>

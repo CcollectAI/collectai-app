@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { categoryDisplayName } from '@/constants/categories';
 
 /**
  * ⚠️ This section is currently NEVER RENDERED, and that is deliberate for now.
@@ -78,7 +79,7 @@ export const RegionalInsightsSection = React.memo(function RegionalInsightsSecti
                   the bare .replace() here was a TypeError waiting for whoever
                   wires this section up. */}
               <Text style={[styles.demandMeta, { color: colors.muted }]}>
-                {item.category ? `${item.category.replace(/_/g, ' ')} · ` : ''}{item.region}
+                {item.category ? `${categoryDisplayName(item.category)} · ` : ''}{item.region}
               </Text>
             </View>
             <View style={[styles.demandScore, { backgroundColor: colors.warning + '15' }]}>

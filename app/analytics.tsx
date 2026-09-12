@@ -65,6 +65,7 @@ import { PortfolioTierBadge } from '@/components/analytics/PortfolioTierBadge';
 import { PredictionAccuracySection } from '@/components/analytics/PredictionAccuracySection';
 import { DemandHeatSection } from '@/components/home/DemandHeatSection';
 import { useTranslation } from 'react-i18next';
+import { categoryDisplayName } from '@/constants/categories';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tier-specific tokens (not theme-dependent)
@@ -663,7 +664,7 @@ function AnalyticsScreen() {
                 <View key={a.category} style={styles.allocationRow}>
                   <View style={styles.allocationLeft}>
                     <View style={[styles.allocationDot, { backgroundColor: categoryColors[a.category] }]} />
-                    <Text style={[styles.allocationName, { color: colors.text }]}>{a.category}</Text>
+                    <Text style={[styles.allocationName, { color: colors.text }]}>{categoryDisplayName(a.category)}</Text>
                   </View>
                   <View style={styles.allocationRight}>
                     <Text style={[styles.allocationValue, { color: colors.text }]}>{formatPrice(a.totalValue, settings.currency ?? 'EUR')}</Text>
@@ -701,9 +702,9 @@ function AnalyticsScreen() {
                 />
                 <Text style={[styles.concentrationText, { color: colors.muted }]}>
                   {concentration.level === 'high'
-                    ? `High concentration — ${concentration.category} carries most of your value`
+                    ? `High concentration — ${categoryDisplayName(concentration.category)} carries most of your value`
                     : concentration.level === 'medium'
-                      ? `Moderately concentrated in ${concentration.category}`
+                      ? `Moderately concentrated in ${categoryDisplayName(concentration.category)}`
                       : `Reasonably spread across ${allocations.length} categories`}
                 </Text>
               </View>
@@ -784,7 +785,7 @@ function AnalyticsScreen() {
                 >
                   <View style={styles.posLeft}>
                     <Text style={[styles.posName, { color: colors.text }]} numberOfLines={1}>{it.name}</Text>
-                    <Text style={[styles.posBasis, { color: colors.muted }]} numberOfLines={1}>{it.category}</Text>
+                    <Text style={[styles.posBasis, { color: colors.muted }]} numberOfLines={1}>{categoryDisplayName(it.category)}</Text>
                   </View>
                   <View style={styles.posRight}>
                     <Text style={[styles.posPl, { color: colors.text }]}>

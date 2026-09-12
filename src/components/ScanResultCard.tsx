@@ -34,6 +34,7 @@ import type { QuickScanResult, CatalogAlternative, CurrencyCode } from '@/data/t
 import logger from '@/utils/logger';
 
 import { BRAND_COLORS } from '@/constants/colors';
+import { categoryDisplayName } from '@/constants/categories';
 const TIFFANY = BRAND_COLORS.tiffany; // StyleSheet can't use hooks
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -276,7 +277,7 @@ function ScanResultCardInner({
                 }}
               >
                 <Text style={{ fontSize: 12, fontWeight: '600', color: colors.brand.dark }}>
-                  {formatKey(scanResult.attributes.category)}
+                  {categoryDisplayName(scanResult.attributes.category)}
                 </Text>
               </View>
               <Text style={{ fontSize: 13, fontWeight: '600', color: colors.muted }}>

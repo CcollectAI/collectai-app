@@ -11,6 +11,7 @@ import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { radius, text, fontWeight as fw, shadow } from "@/theme/tokens";
+import { categoryDisplayName } from '@/constants/categories';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -100,7 +101,7 @@ function TopItemsListInner({
             onItemPress(it);
           }}
           accessibilityRole="button"
-          accessibilityLabel={`${it.name}, ${it.category ?? 'unknown category'}, ${formatPrice(it.value)}, ${formatPct(it.changePct)}`}
+          accessibilityLabel={`${it.name}, ${categoryDisplayName(it.category) || 'unknown category'}, ${formatPrice(it.value)}, ${formatPct(it.changePct)}`}
         >
           <View style={s.itemLeft}>
             <View style={s.moverLabel}>
@@ -110,7 +111,7 @@ function TopItemsListInner({
               </Text>
             </View>
             <Text style={[s.itemCategory, { color: theme.muted }]} numberOfLines={1}>
-              {it.category ?? "—"}
+              {categoryDisplayName(it.category) || "—"}
             </Text>
           </View>
           <View style={s.itemRight}>
@@ -136,7 +137,7 @@ function TopItemsListInner({
               onItemPress(it);
             }}
             accessibilityRole="button"
-            accessibilityLabel={`${it.name}, ${it.category ?? 'unknown category'}, ${formatPrice(it.value)}, ${formatPct(it.changePct)}`}
+            accessibilityLabel={`${it.name}, ${categoryDisplayName(it.category) || 'unknown category'}, ${formatPrice(it.value)}, ${formatPct(it.changePct)}`}
           >
             <View style={s.itemLeft}>
               <View style={s.moverLabel}>
@@ -146,7 +147,7 @@ function TopItemsListInner({
                 </Text>
               </View>
               <Text style={[s.itemCategory, { color: theme.muted }]} numberOfLines={1}>
-                {it.category ?? "—"}
+                {categoryDisplayName(it.category) || "—"}
               </Text>
             </View>
             <View style={s.itemRight}>
@@ -174,14 +175,14 @@ function TopItemsListInner({
             onItemPress(it);
           }}
           accessibilityRole="button"
-          accessibilityLabel={`${it.name}, ${it.category ?? 'unknown category'}, ${formatPrice(it.value)}`}
+          accessibilityLabel={`${it.name}, ${categoryDisplayName(it.category) || 'unknown category'}, ${formatPrice(it.value)}`}
         >
           <View style={s.itemLeft}>
             <Text style={[s.itemName, { color: theme.text }]} numberOfLines={1}>
               {it.name}
             </Text>
             <Text style={[s.itemCategory, { color: theme.muted }]} numberOfLines={1}>
-              {it.category ?? "—"}
+              {categoryDisplayName(it.category) || "—"}
             </Text>
           </View>
           <View style={s.itemRight}>

@@ -11,6 +11,7 @@ import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import type { WatchlistItem } from "@/data/types";
 import { radius, text as textToken, fontWeight as fw, shadow } from "@/theme/tokens";
+import { categoryDisplayName } from '@/constants/categories';
 
 // ── Props ──────────────────────────────────────────────────────────────
 
@@ -92,7 +93,7 @@ function WatchlistWidgetInner({
                 onItemPress(it);
               }}
               accessibilityRole="button"
-              accessibilityLabel={`Watchlist item: ${it.title ?? 'Watchlist Item'}, ${it.category ?? 'unknown category'}${it.targetPrice != null ? `, target ${formatPrice(it.targetPrice)}` : ', no target price'}`}
+              accessibilityLabel={`Watchlist item: ${it.title ?? 'Watchlist Item'}, ${categoryDisplayName(it.category) || 'unknown category'}${it.targetPrice != null ? `, target ${formatPrice(it.targetPrice)}` : ', no target price'}`}
             >
               <View style={s.watchlistLeft}>
                 <View style={s.watchlistNameRow}>
@@ -107,7 +108,7 @@ function WatchlistWidgetInner({
                   </Text>
                 </View>
                 <Text style={[s.itemCategory, { color: theme.muted }]} numberOfLines={1}>
-                  {it.category ?? "—"}
+                  {categoryDisplayName(it.category) || "—"}
                 </Text>
               </View>
               <View style={s.watchlistRight}>

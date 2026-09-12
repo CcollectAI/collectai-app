@@ -34,6 +34,7 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
+import { categoryDisplayName } from '@/constants/categories';
 
 const MIN_COMPLETENESS = 0.4;
 const MAX_COMPLETENESS = 0.95;
@@ -431,7 +432,7 @@ const SetsToCompleteScreen: React.FC = () => {
                         <Text
                           style={[styles.cardMeta, { color: colors.muted }]}
                         >
-                          {s.category ? `${s.category} · ` : ""}
+                          {s.category ? `${categoryDisplayName(s.category)} · ` : ""}
                           {s.ownedCount}/{s.expectedCount} owned
                         </Text>
                         <View style={styles.pillRow}>

@@ -5,7 +5,7 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "../theme";
 import { ItemRow } from "../hooks/useItems";
-import { GRADING_ELIGIBLE_CATEGORIES } from "@/constants/categories";
+import { categoryDisplayName, GRADING_ELIGIBLE_CATEGORIES } from "@/constants/categories";
 import { useSettings } from "@/lib/settings";
 import { fmtCurrency } from "@/lib/format";
 
@@ -45,7 +45,7 @@ function ItemCard({ item }: ItemCardProps) {
           {item.title}
         </Text>
         <Text style={{ color: theme.colors.muted, marginTop: 2 }}>
-          {item.category ?? "Uncategorized"}
+          {categoryDisplayName(item.category) || "Uncategorized"}
         </Text>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
           {typeof item.value === "number" ? (

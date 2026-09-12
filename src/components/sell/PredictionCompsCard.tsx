@@ -9,6 +9,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { formatPrice } from '@/lib/format';
 import { radius, text, fontWeight, gap } from '@/theme/tokens';
 import type { CurrencyCode } from '@/data/types';
+import { categoryDisplayName } from '@/constants/categories';
 
 interface PredictionComp {
   item_key: string;
@@ -47,7 +48,7 @@ export const PredictionCompsCard = React.memo(function PredictionCompsCard({
                 {comp.item_key.replace(/-/g, ' ')}
               </Text>
               <Text style={{ fontSize: text.sm, color: colors.muted, textTransform: 'capitalize' }}>
-                {comp.category.replace(/_/g, ' ')}
+                {categoryDisplayName(comp.category)}
               </Text>
             </View>
             <View style={{ flex: 1, alignItems: 'flex-end' }}>

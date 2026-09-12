@@ -16,6 +16,7 @@ import { ValueSourceChip } from '@/components/ValueSourceChip';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { GRADING_ELIGIBLE_CATEGORIES } from '@/constants/categories';
 import { SwipeableRow, SwipeActions, type SwipeAction } from '@/components/SwipeableRow';
+import { conditionDisplayName } from '@/lib/conditionVocabulary';
 
 interface Item {
   id: string;
@@ -155,12 +156,12 @@ export const ItemsListItem = React.memo(function ItemsListItem({
               <View style={[styles.gradeBadge, { backgroundColor: colors.accent + '15' }]}>
                 <Ionicons name="shield-checkmark-outline" size={11} color={colors.accent} />
                 <Text style={[styles.gradeBadgeText, { color: colors.accent }]}>
-                  {item.condition}
+                  {conditionDisplayName(item.condition)}
                 </Text>
               </View>
             ) : (
               <Text style={[styles.itemCondition, { color: colors.muted }]}>
-                {item.condition}
+                {conditionDisplayName(item.condition)}
               </Text>
             )
           ) : null}

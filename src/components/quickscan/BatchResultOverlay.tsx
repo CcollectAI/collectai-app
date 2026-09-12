@@ -18,6 +18,7 @@ import type { CurrencyCode } from '@/data/types';
 import type { BatchScannedItem } from './BatchSummaryScreen';
 import { BRAND_COLORS } from '@/constants/colors';
 import { formatCategoryName } from '@/constants/categories';
+import { conditionDisplayName } from '@/lib/conditionVocabulary';
 
 const TIFFANY = BRAND_COLORS.tiffany;
 const TIFFANY_DARK = BRAND_COLORS.tiffanyDark;
@@ -82,7 +83,7 @@ function BatchResultOverlayInner({
               style={[styles.batchOverlayCategory, { color: colors.muted }]}
               numberOfLines={1}
             >
-              {formatCategoryName(currentBatchResult.category)} -- {currentBatchResult.condition}
+              {formatCategoryName(currentBatchResult.category)} -- {conditionDisplayName(currentBatchResult.condition)}
             </Text>
             <Text style={[styles.batchOverlayPrice, { color: TIFFANY_DARK }]}>
               {formatPrice(currentBatchResult.estimatedMid, currency)}

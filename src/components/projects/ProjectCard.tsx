@@ -14,6 +14,7 @@ import { timeAgo } from '@/lib/timeAgo';
 import { MS_PER_DAY } from '@/constants/time';
 import { getStatusDef } from '@/constants/buildStepTemplates';
 import type { BuildPaintProject } from '@/data';
+import { categoryDisplayName } from '@/constants/categories';
 
 const MS_PER_MONTH = 30 * MS_PER_DAY;
 
@@ -89,13 +90,13 @@ export const ProjectCard = React.memo(function ProjectCard({
                 <View style={styles.catPillRow}>
                   <View style={[styles.catDotSm, { backgroundColor: accentColor || colors.accent }]} />
                   <Text style={[styles.projectCategory, { color: colors.muted }]} numberOfLines={1}>
-                    {CATEGORIES.find((c) => c.id === project.categoryId)?.name ?? project.category}
+                    {CATEGORIES.find((c) => c.id === project.categoryId)?.name ?? categoryDisplayName(project.category)}
                   </Text>
                 </View>
               )}
               {!project.categoryId && project.category && (
                 <Text style={[styles.projectCategory, { color: colors.muted }]} numberOfLines={1}>
-                  {project.category}
+                  {categoryDisplayName(project.category)}
                 </Text>
               )}
               {project.itemName && (

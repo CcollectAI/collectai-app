@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabase";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatPrice, formatNumber } from "@/lib/format";
 import { BRAND_COLORS } from "@/constants/colors";
+import { categoryDisplayName } from '@/constants/categories';
 type LoadState = "idle" | "loading" | "loaded" | "error";
 
 type TwitchCreator = {
@@ -293,7 +294,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
                     style={[styles.creatorMeta, { color: colors.muted }]}
                     numberOfLines={1}
                   >
-                    {c.category || "Collectors / Mixed"} ·{" "}
+                    {categoryDisplayName(c.category) || "Collectors / Mixed"} ·{" "}
                     {c.current_title || "Live now"}
                   </Text>
                 </View>
@@ -364,7 +365,7 @@ const TwitchLeaderboardScreen: React.FC = () => {
                       style={[styles.creatorMeta, { color: colors.muted }]}
                       numberOfLines={1}
                     >
-                      {c.category || "Collectors / Mixed"} ·{" "}
+                      {categoryDisplayName(c.category) || "Collectors / Mixed"} ·{" "}
                       {c.twitch_login}
                     </Text>
 

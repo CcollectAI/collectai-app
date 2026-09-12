@@ -39,6 +39,7 @@ import type { Item } from "@/data/types";
 import { logger } from "@/lib/logger";
 import { useToast } from "@/components/Toast";
 import { useTranslation } from 'react-i18next';
+import { categoryDisplayName } from '@/constants/categories';
 
 function ArchivedContent() {
   const { t } = useTranslation();
@@ -142,7 +143,7 @@ function ArchivedContent() {
             </Text>
             <Text style={[styles.meta, { color: colors.muted }]} numberOfLines={1}>
               {soldOnSparrow ? "Sold on Sparrow" : "You archived this"}
-              {item.category ? ` · ${item.category}` : ""}
+              {item.category ? ` · ${categoryDisplayName(item.category)}` : ""}
             </Text>
           </View>
 

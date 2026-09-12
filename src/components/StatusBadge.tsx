@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import type { Tier, CollectionStatusScore } from '@/utils/statusScoring';
+import { categoryDisplayName } from '@/constants/categories';
 
 const TIER_COLORS: Record<string, string> = {
   Diamond: '#00bcd4',
@@ -100,7 +101,7 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
           {/* "12/? items" when we hold no catalogue row for the set. Rendering
               "12/null" or quietly printing "12/12" would both state a set size
               we do not have. */}
-          {score.category} · {score.ownedCount}/{score.expectedCount ?? '?'} items
+          {categoryDisplayName(score.category)} · {score.ownedCount}/{score.expectedCount ?? '?'} items
         </Text>
       </View>
       <View style={{ marginHorizontal: 8 }}>

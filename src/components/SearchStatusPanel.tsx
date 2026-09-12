@@ -8,6 +8,7 @@ import {
 import { useCollectionStatus } from '@/hooks/useCollectionStatus';
 import { LeaderboardRow } from '@/components/StatusBadge';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { categoryDisplayName } from '@/constants/categories';
 
 interface Props {
   items: CollectionStatusInput[];
@@ -147,7 +148,7 @@ export const SearchStatusPanel: React.FC<Props> = ({ items }) => {
                     color: colors.muted,
                   }}
                 >
-                  {s.category} · {s.ownedCount}/{s.expectedCount} · Missing{' '}
+                  {categoryDisplayName(s.category)} · {s.ownedCount}/{s.expectedCount} · Missing{' '}
                   {missing}
                 </Text>
               </View>

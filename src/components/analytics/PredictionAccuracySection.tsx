@@ -8,6 +8,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { text, fontWeight, radius, shadow } from '@/theme/tokens';
+import { categoryDisplayName } from '@/constants/categories';
 
 const COLORS = {
   card: '#FFFFFF',
@@ -48,7 +49,7 @@ function PredictionAccuracySectionInner({ data }: Props) {
         return (
           <View key={cat.category} style={[styles.predRow, { borderBottomColor: colors.border }]}>
             <Text style={[styles.predCategory, { color: colors.text }]} numberOfLines={1}>
-              {cat.category.replace(/_/g, ' ')}
+              {categoryDisplayName(cat.category)}
             </Text>
             <Text style={[styles.predValue, { color: colors.muted }]}>
               {(cat.mape * 100).toFixed(1)}%
