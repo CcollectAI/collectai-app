@@ -255,16 +255,24 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
             );
           }}
         />
-        {/* Page dots */}
-        {totalSlides > 1 && (
+        {/* Page dots.
+            ONE DENOMINATOR. These used to map over `galleryData`, which carries
+            the trailing "Add Photo" card, while the counter badge 40px above
+            them counts `effectiveGalleryImages`. An item with 3 photos
+            therefore showed "1/3" over FOUR dots (seen on Android 2026-09-12).
+            Two counts of the same strip, disagreeing in one viewport.
+            The dots now track the PHOTOS, and the add-card — which is a
+            control, not a page of content — simply keeps the last photo's dot
+            lit rather than claiming a page of its own. */}
+        {imageCount > 1 && (
           <View style={s.galleryDots}>
-            {galleryData.map((img, idx) => (
+            {effectiveGalleryImages.map((img, idx) => (
               <View
                 key={img.id}
                 style={[
                   s.galleryDot,
                   {
-                    backgroundColor: idx === galleryActiveIndex
+                    backgroundColor: idx === Math.min(galleryActiveIndex, imageCount - 1)
                       ? theme.accent
                       : theme.border,
                   },
