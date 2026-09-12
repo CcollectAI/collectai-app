@@ -513,7 +513,17 @@ function InboxScreen() {
           <EmptyState
             icon="chatbubbles-outline"
             title={t('chat.no_messages_yet', { defaultValue: 'No messages yet' })}
-            subtitle="Find other collectors to start a conversation — or open a test chat to preview messaging."
+            // The "test chat" half is TRUE ONLY IN DEV. The button it describes
+            // is __DEV__-gated 20 lines below (correctly — chat-demo must not
+            // ship), but this sentence was not, so a release user read about an
+            // affordance that is not on their screen. Seen on Android
+            // 2026-09-12. Shelving a control is a multi-file change: the copy
+            // that sells it has to move with it.
+            subtitle={
+              __DEV__
+                ? 'Find other collectors to start a conversation — or open a test chat to preview messaging.'
+                : 'Find other collectors to start a conversation.'
+            }
             colors={colors}
             style={{ paddingTop: 80 }}
             action={

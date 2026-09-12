@@ -514,6 +514,43 @@ export function parseEventDate(dateStr: string, timeStr?: string): Date {
 }
 
 /**
+ * Has this event already happened?
+ *
+ * WHY THIS IS A FUNCTION (2026-09-12): `app/events/[eventId].tsx` computed it
+ * inline as `new Date(event.endDate || event.date) < new Date()`. `event.date`
+ * is a BARE date — every one of the 3,285 rows in prod is `YYYY-MM-DD` with the
+ * clock in a separate `time` column — and JS parses a bare date as **UTC
+ * midnight**. So from about 01:00 CEST onwards, every event happening TODAY
+ * counted as past:
+ *
+ *     new Date('2026-09-12')  ->  2026-09-12T00:00:00Z   (already gone by noon)
+ *
+ * The detail screen then rendered its past-event branch: Share only, no Going
+ * and no Interested. You could not RSVP to anything happening today — the day
+ * you are most likely to want to — while the LIST, which uses
+ * `parseEventDate(date, time)`, still had it under "Upcoming". Two screens
+ * disagreeing about the same event.
+ *
+ * Same expression as the list now, so they cannot drift apart again, and the
+ * time is honoured: an 8pm event is not past at 9am.
+ */
+export function isEventPast(
+  date: string,
+  time?: string | null,
+  endDate?: string | null,
+  now: Date = new Date(),
+): boolean {
+  if (!date) return false;
+  // A multi-day event runs until its END date; a single-day one until its start
+  // time, which is what the list uses to split upcoming from past.
+  const reference = endDate
+    ? parseEventDate(endDate, time ?? undefined)
+    : parseEventDate(date, time ?? undefined);
+  if (isNaN(reference.getTime())) return false; // unparseable: never claim it is over
+  return reference < now;
+}
+
+/**
  * The human "when" line for an event — "Sep 11, 2026 · 20:00".
  *
  * WHY (2026-09-09, found walking the app on Android): the events list, the

@@ -52,6 +52,7 @@ import {
   EventHostSection,
 } from '@/components/events';
 import { safeGoBack } from '@/lib/goBack';
+import { isEventPast } from '@/lib/calendar';
 
 function EventDetailScreen() {
   const { t } = useTranslation();
@@ -163,13 +164,17 @@ function EventDetailScreen() {
   const isPastEvent = useMemo(() => {
     if (!event) return false;
     try {
-      const eventDate = new Date(event.endDate || event.date);
-      return eventDate < new Date();
+      // `isEventPast`, not `new Date(event.date)`: a bare YYYY-MM-DD parses as
+      // UTC MIDNIGHT, so every event happening TODAY read as past and this
+      // screen rendered its past branch — Share only, no Going, no Interested —
+      // while the list still had it under "Upcoming". Found on Android
+      // 2026-09-12 on an event starting at 20:00 that same evening.
+      return isEventPast(event.date, event.time, event.endDate);
     } catch (e) {
       logger.error('[silent-catch] [eventId].tsx:167:', e);
       return false;
     }
-  }, [event?.date, event?.endDate]);
+  }, [event?.date, event?.time, event?.endDate]);
 
   /* ---- RSVP handlers ---- */
   const handleRsvpGoing = useCallback(async () => {
