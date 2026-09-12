@@ -2107,6 +2107,75 @@ checked separately.** Here it says what is true and what fixes it: *"Your
 public profile isn't set up yet — add a display name so other collectors can
 find you"*, with a route to Settings.
 
+## A bare date parses as UTC midnight, so "today" is already over (2026-09-12)
+
+The event detail screen showed **Share and nothing else** for a concert
+starting at 20:00 that same evening — no Going, no Interested — while its own
+badge read *"Today at 8:00 PM"* and the list had it under **Upcoming (86)**.
+
+```js
+new Date(event.endDate || event.date) < new Date()
+```
+
+`event.date` is a bare `YYYY-MM-DD` — all 3,285 rows in prod keep the clock in
+a separate `time` column — and JS parses that as **UTC midnight**:
+
+```
+new Date('2026-09-12')  ->  2026-09-12T00:00:00Z
+```
+
+So from about 01:00 CEST every event happening that day counted as past and the
+screen rendered its past-event branch. **The day you are most likely to RSVP is
+the one day you could not.**
+
+`isEventPast(date, time, endDate)` now sits beside `parseEventDate` and
+`formatEventWhen` and uses the same expression the LIST splits on, so the two
+screens cannot drift apart again — asserted directly by a throwaway test that
+compared the helper against the list filter across eight date/time shapes,
+`19:30 CET` and `2:00 PM` included.
+
+⚠️ **One of my own assertions was wrong and the code was right.** The test I
+wrote said a timeless event today is "not past"; the list already treats it as
+past once local midnight passes, so making the detail differ would have
+reopened the split the fix closes. The test records the real rule and flags the
+product question — *should an all-day event run to END of day?* — rather than a
+helper deciding it quietly. That change would have to move the list too.
+
+**And verify with the parser that actually builds the app.** `tsc` accepted
+`//` comments inside a JSX attribute list; Metro parses with Babel, so every
+touched file went through `@babel/parser` before the commit.
+
+## Two counts of one thing, forty pixels apart (2026-09-12)
+
+The item gallery's counter badge read **"1/3"** over **four** page dots. The
+badge counts `effectiveGalleryImages`; the dots mapped over `galleryData`,
+which carries the trailing "Add Photo" card. Both were internally correct and
+the screen still contradicted itself.
+
+The dots now track the photos, and the add-card — a control, not a page of
+content — keeps the last photo's dot lit instead of claiming one of its own.
+The marketplace listing gallery, which has no add-card, already agreed with
+itself at 8 dots for "1/8".
+
+**Whenever two elements count the same collection, they need one denominator.**
+Same shape as the Home headline disagreeing with the stats strip below it.
+
+## Copy is part of the control (2026-09-12)
+
+The inbox empty state told **release** users: *"Find other collectors to start a
+conversation — or open a test chat to preview messaging."* The test-chat button
+is `__DEV__`-gated, correctly: `chat-demo` is a local placeholder that must not
+ship. The sentence describing it was not gated, so production users read about
+an affordance that is not on their screen.
+
+Same family as the paywall error naming the **App Store** on an Android device
+while the legal copy 130 lines below it already said "Google Play" via the
+exact `Platform` check the error text lacked, and as
+[[learning_shelving_a_feature_leaves_the_paywall_selling_it]].
+
+**Gating a control is a multi-file change**: the copy that sells it moves with
+it, in the same commit.
+
 ## A backend field is a value, not a label (2026-09-09)
 
 Every row on the Events tab read **`Convention • 2026-09-11 — 20:00:00`** — an

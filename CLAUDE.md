@@ -2000,6 +2000,42 @@ are catalog-reachable; TCG categories key predictions by TCGplayer product id
 (`lorcana:tcgplayer:702699:normal`) while the catalog uses set-slugs, so
 lorcana/digimon/one_piece_tcg sit at 0% until an id crosswalk exists.
 
+## The rest of the 2026-09-12 walk, on an emulator of its own
+
+The shared AVD kept losing the foreground to another project's app — a VascoApp
+dev session on the same emulator re-enabled and relaunched `com.vascobuild.app`
+within two minutes of it being disabled — so the walk moved to a dedicated
+`SparrowWalk` AVD (port 5560). Two findings nearly went in the notebook from
+the wrong app's screen; **a `dumpsys` focus line said ours while a screenshot
+showed theirs.** Only pixels can tell you which app you are in.
+
+Six more defects, each fixed with a test:
+
+- **You could not RSVP to anything happening today.** A bare date parses as UTC
+  midnight, so the detail screen called every event "past" and hid Going and
+  Interested while the list still showed it as Upcoming. `docs/ui-playbook.md`.
+- **A timed-out collection read told a collector they owned nothing.**
+  `listItems` returned `[]` on timeout, six lines above an `if (error)` branch
+  that throws *"THROW, not `return []`. An empty array is indistinguishable
+  from 'you have none'"*. One failure mode reasoned about correctly, its twin
+  not. The Items tab opened on "Portfolio total: €0 / Start your collection"
+  for an account holding €1.348.
+- **The paywall named the App Store on an Android device**, while its own legal
+  copy used the right `Platform` check.
+- **Five dates took the device locale** (`8/20/2026` — M/D/YYYY for a European
+  audience) instead of `dateFormats.ts`.
+- **The item gallery showed "1/3" over four dots.**
+- **The inbox offered release users a `__DEV__`-only test chat** — in copy.
+
+**What the walk also confirmed working**, recorded so nobody "fixes" it: the
+Pro gate routes to the paywall and not to Settings; the profile self-branch
+empty state and its CTA; the event-date formatter and the `—`-instead-of-€0
+headline, both live on the release build.
+
+⚠️ **The installed APK now predates eight JS fixes.** Nothing in this section
+is device-confirmed beyond what that older bundle already carried; one build
+would settle all of them together.
+
 ## The Home headline was wrong, twice, and the watchdog was paging about itself (2026-09-12)
 
 **Home's hero read €1.288 while the stats strip 3 cm below it read €1.348.**
