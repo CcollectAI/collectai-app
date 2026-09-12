@@ -140,11 +140,31 @@ WORKER_OUTPUTS: dict[str, WorkerOutput] = {
         table="mandate_deals",
         timestamp_column="discovered_at",
         max_staleness_hours=24.0,
-        # Only flag if there are active purchase_mandates to scan against.
-        # Empty mandates = 0 output is correct, not a silent failure.
+        # Only flag if there are mandates the worker would ACTUALLY scan.
+        #
+        # This predicate must mirror DealDiscoveryAgent.scan_all_active's own
+        # WHERE clause, subscription join included. It did not, and the two
+        # disagreed in prod (measured 2026-09-12): the probe counted **3**
+        # active mandates while the agent could scan **0**, because the
+        # 2026-09-06 test-data purge deleted their owners — all four surviving
+        # mandates point at user_ids absent from auth.users, with no
+        # subscriptions row. The agent logged "No active mandates to scan",
+        # wrote nothing correctly, and the probe paged Telegram every ~30
+        # minutes for six days saying it had failed silently.
+        #
+        # A probe whose input predicate is looser than the worker's own reports
+        # "had work, did nothing" for work the worker was never offered — the
+        # same shape as learning_queue_filter_disagrees_with_its_own_projection
+        # (filtered on `price`, valued on COALESCE(price_eur, price)). If the
+        # agent's query changes, change this one in the same commit.
         input_exists_sql=(
-            "SELECT COUNT(*) AS cnt FROM public.purchase_mandates "
-            "WHERE status = 'active' AND (expires_at IS NULL OR expires_at > now())"
+            "SELECT COUNT(*) AS cnt "
+            "FROM public.purchase_mandates pm "
+            "JOIN public.subscriptions s ON s.user_id = pm.user_id "
+            "WHERE pm.status = 'active' "
+            "  AND (pm.expires_at IS NULL OR pm.expires_at > now()) "
+            "  AND s.plan IN ('pro', 'premium') "
+            "  AND s.status IN ('active', 'trialing')"
         ),
     ),
     # auction_alert_worker writes to alert_trigger_history with

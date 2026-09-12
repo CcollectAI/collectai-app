@@ -122,7 +122,17 @@ historical_vals AS (
       AND pp.item_ref IS NOT NULL
       -- Partition prune: bound the upper edge ($2) AND the lower edge
       -- 30 days back so the planner can pick a single partition.
-      AND pp.generated_at > $2 - interval '30 days'
+      --
+      -- $2 IS CAST EXPLICITLY. asyncpg sends Parse with unspecified parameter
+      -- types, and `$2 - interval '30 days'` is satisfiable as interval MINUS
+      -- interval, so Postgres inferred $2::interval and then had no
+      -- `timestamptz > interval` operator. It failed every run from at least
+      -- 2026-09-05 to 2026-09-12 with:
+      --   UndefinedFunctionError: operator does not exist:
+      --   timestamp with time zone > interval
+      -- and the only symptom was an hourly orchestrator page. Reproduced and
+      -- fixed against prod with PREPARE (no declared types) before editing.
+      AND pp.generated_at > $2::timestamptz - interval '30 days'
       AND pp.generated_at <= $2
     ORDER BY pp.item_ref, pp.generated_at DESC
 )

@@ -976,6 +976,136 @@ line 190: `Object of type UUID is not JSON serializable`, then
 `still_pending=0`, `incorporated=6`. Six rows stuck since 2026-07-22 are
 through. Full writeup: `docs/INGEST.md`.
 
+## Three alerts on repeat, and only one was a bug (2026-09-12)
+
+Reported as *"multiple errors being sent on telegram"*. The daily digest was
+**not** the noise — it had 1 medium and 0 highs. Three other senders were
+firing between every 30 minutes and every hour:
+
+| alert | verdict |
+|---|---|
+| `value_change_worker: 2 consecutive errors` | **REAL** — a broken query, failing daily |
+| `SILENT WRITER deal_discovery … stale >24h` | **FALSE** — the probe counted work the worker cannot see |
+| `SANITY VIOLATION coverage_zero_categories … Likely adapter outage` | **FALSE** — those categories have never had a single hit |
+
+### 1. The one real bug: an uncast parameter typed as `interval`
+
+```
+UndefinedFunctionError: operator does not exist:
+timestamp with time zone > interval   @ value_change_worker.py:364
+```
+
+asyncpg sends Parse with **unspecified** parameter types, so Postgres infers
+them. In `pp.generated_at > $2 - interval '30 days'` the expression is
+satisfiable as *interval minus interval*, so `$2` was typed `interval` and the
+comparison had no operator. The Python side binds a `datetime`; nothing reads
+as wrong, and no column checker can see it because every column name is real.
+
+**Order is what decides it**, proven against prod with `PREPARE` (no declared
+types, exactly how asyncpg parses):
+
+| shape | result |
+|---|---|
+| `d = $1 - INTERVAL '1 day'` alone | ERROR: `date = interval` |
+| `d = $1` … then `d = $1 - INTERVAL '1 day'` | **PREPARE OK** — the bare use pins `$1` first |
+| `d = $1 - INTERVAL '1 day'` … then `d = $1` | ERROR — the ambiguous use came first |
+
+That distinction is the whole gate. The first draft of the checker flagged four
+`gamification_router.py` lines that are **fine** for the middle reason above,
+and a gate whose findings are mostly false is a gate nobody runs — this repo
+has that scar already. `server/scripts/check_param_interval_cast.py` therefore
+flags a parameter only when its FIRST occurrence is uncast interval arithmetic,
+walks the Python AST so it reads real SQL strings, and ignores `--` comments
+(its own docstring quotes the broken form). Wired into `verify:prebuild`.
+
+The sweep found a **second copy** in `insights_digest_worker.py`, latent only
+because the weekly digest is dark. Both fixed with `$2::timestamptz`, and both
+queries were then re-parsed *through asyncpg against prod* — plus the
+value-change query executed with a real `user_id`, which is the step that
+proves the fix rather than the reasoning about it.
+
+### 2. The probe counted work the worker could not see
+
+`deal_discovery` logged `No active mandates to scan` while
+`purchase_mandates` held three rows with `status = 'active'`. Both were right:
+
+```
+probe's input_exists_sql  -> 3
+the agent's own WHERE     -> 0
+```
+
+The agent additionally joins `subscriptions` and requires a `pro`/`premium`
+plan. **All four surviving mandates belong to users deleted by the 2026-09-06
+test-data purge** — `user_exists = f` on every one, no subscription row — so
+there is genuinely nothing to scan, `mandate_deals` is correctly frozen at
+2026-09-06, and the probe paged every ~30 minutes for six days.
+
+An input gate that is looser than the worker's own selection reports "had work,
+did nothing" for work the worker was never offered — the same shape as
+[[learning_queue_filter_disagrees_with_its_own_projection]]. The registry entry
+now mirrors the agent's clause verbatim, verified by diffing the two predicate
+sets, and returns `cnt = 0` against prod, so the check skips.
+
+⚠️ **Left for a decision: four orphaned mandates.** `purchase_mandates.user_id`
+survived the deletion of its users, so these rows can never be actioned and
+never expire (`expires_at IS NULL`). Deleting prod rows is a write, so it is not
+done here:
+`DELETE FROM purchase_mandates pm WHERE NOT EXISTS (SELECT 1 FROM auth.users u WHERE u.id = pm.user_id);`
+
+### 3. "Likely adapter outage" about categories that never had an adapter
+
+`coverage_zero_categories` paged for `comic_books`, `dnd` and `jewellery`.
+Measured: **`hits_ever = 0`, `last_hit = NULL`** for all three. Nothing broke;
+they have never had a source, and the check asserted a cause it had not
+established — the same mistake this doc records for the lorcana crosswalk HIGH
+("every number correct, the sentence explaining them was not").
+
+Split along the line this doc's own coverage canary already uses:
+
+| condition | verdict |
+|---|---|
+| last hit inside retention, none in the window | **pages** — a source that died, named with its date |
+| no hit in retained history | logged, never paged — the daily digest already reports that backlog |
+
+⚠️ `market_hits` retention is **one month**, so "no hit in retained history"
+cannot distinguish "never had a source" from "died over a month ago". The log
+line says exactly that instead of claiming the stronger thing. The classifier
+is module-level (`classify_coverage_silence`) precisely so it can be tested
+rather than read: `server/tests/test_sanity_coverage_split.py` asserts **both**
+verdicts, and it was run against the real prod rows — 0 pages today, where the
+old check paged every cycle.
+
+### And the bot token was in the log the whole time
+
+The lines that revealed which sender was firing also contained the credential:
+
+```
+HTTP Request: POST https://api.telegram.org/bot<TOKEN>/sendMessage "200 OK"
+```
+
+Telegram carries the token in the URL PATH and httpx logs full URLs at INFO.
+**81 lines in the live `bake.log`**, mode 0664, plus four rotated copies. No
+line of our code was wrong — a dependency's default logging leaked the secret,
+the same shape as the uvicorn access log writing GPS while the privacy policy
+promised it never stored any.
+
+`telegram_ops.install_token_redaction()` attaches a filter to the `httpx`
+logger **and** to the root handlers (belt and braces: the second survives httpx
+renaming its logger). Redaction, not silence — the request line is still useful
+for every other host. Proven end to end with a real httpx call to
+`api.telegram.org` using a dummy token: `bot<redacted>/getMe "401"`, token
+absent from the captured log. The test also asserts the *unredacted* record
+really does leak, so a fixture that stops reproducing the bug fails the suite.
+
+⚠️ **The token in the existing logs is still there.** Rotating it is a
+BotFather action and is Merle's call; the four rotated `bake.log.*` files hold
+it too.
+
+⚠️ **`send_ops_alert`'s docstring says "We send ~3 alerts per month"** and uses
+that to justify a fresh `httpx.AsyncClient` per call. The measured rate during
+this investigation was dozens per day. The per-call client is still cheap
+enough, but the stated premise is no longer true.
+
 ## Related audits
 
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes

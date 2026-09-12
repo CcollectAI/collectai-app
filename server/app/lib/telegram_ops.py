@@ -23,6 +23,59 @@ from app.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 logger = logging.getLogger(__name__)
 
+
+class _RedactBotToken(logging.Filter):
+    """Keep the bot token out of the logs.
+
+    WHY (2026-09-12): Telegram puts the credential IN THE URL PATH, and httpx
+    logs the full request line at INFO — so every alert wrote
+
+        HTTP Request: POST https://api.telegram.org/bot<TOKEN>/sendMessage
+
+    into `/opt/collectors/bake.log`. Measured on prod: **81 lines in the live
+    log alone**, mode 0664, plus four rotated copies. No line of our code was
+    wrong; a dependency's default logging leaked the secret — the same shape as
+    the uvicorn access log writing GPS coordinates while the privacy policy
+    promised it never stored them (`docs/PLAY_DATA_SAFETY.md`).
+
+    Redaction, not silence: the `HTTP Request:` lines are useful for every
+    other host, so only the token is removed.
+    """
+
+    _TOKEN_IN_URL = re.compile(r"(api\.telegram\.org/bot)[^/\s]+")
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            msg = record.getMessage()
+            if "api.telegram.org/bot" in msg:
+                record.msg = self._TOKEN_IN_URL.sub(r"\1<redacted>", msg)
+                record.args = ()
+        except Exception:
+            # A logger must never be able to throw — WATCHDOG.md, after a
+            # NameError raised *while reporting a failure*.
+            pass
+        return True
+
+
+def install_token_redaction() -> None:
+    """Attach the redactor to httpx AND to the root handlers.
+
+    Both, deliberately. The logger-level filter covers records made by httpx
+    itself; the handler-level one covers anything that re-emits the URL through
+    another logger, and fails closed if httpx ever renames its logger.
+    Idempotent — importing this module twice must not stack filters.
+    """
+    def _attach(target) -> None:
+        if not any(isinstance(f, _RedactBotToken) for f in target.filters):
+            target.addFilter(_RedactBotToken())
+
+    _attach(logging.getLogger("httpx"))
+    for handler in logging.getLogger().handlers:
+        _attach(handler)
+
+
+install_token_redaction()
+
 def configured() -> bool:
     """Return True if Telegram bot credentials are set."""
     return bool(TELEGRAM_BOT_TOKEN) and bool(TELEGRAM_CHAT_ID)

@@ -559,27 +559,69 @@ async def _check_db_size(conn, failing_new: list[dict]) -> None:
         logger.info("sanity_probe db_size: %d MB (< %d MB cap)", size_mb, cap_mb)
 
 
+
+def classify_coverage_silence(rows):
+    """Split silent categories into (stopped, never).
+
+    `rows` carry `category` and `last_hit`. A non-null `last_hit` means the
+    category produced hits and then stopped — a regression with a date, worth
+    paging. A null `last_hit` means nothing in retained history, which is a
+    backlog and must not page.
+
+    Module level on purpose: inline in the check body this could only ever have
+    been verified by reading it, and `docs/WATCHDOG.md` records what that costs
+    — the coverage canary was "wrong in both directions" for days. Tested
+    against known-stopped AND known-never rows in
+    `server/tests/test_sanity_coverage_split.py`.
+    """
+    stopped = [(r["category"], r["last_hit"]) for r in rows if r["last_hit"] is not None]
+    never = [r["category"] for r in rows if r["last_hit"] is None]
+    return stopped, never
+
+
 async def _check_coverage_zero(conn, failing_new: list[dict]) -> None:
-    """Page when any active category has zero market_hits in the last 7
-    days. Catches adapter outages within a week (vs. weeks of waiting for
-    someone to notice volume drops in a chart). Threshold tunable via
-    COVERAGE_ZERO_DAYS env var.
+    """Page when a category that WAS producing market_hits stops.
+
+    Silence has two causes and only one is an outage. Until 2026-09-12 this
+    check treated them alike and paged *"3 categories have 0 hits in 7d.
+    Likely adapter outage"* for `comic_books`, `dnd` and `jewellery` — all
+    three of which have **zero hits ever** (measured on prod: `hits_ever = 0`,
+    `last_hit = NULL`). Nothing had broken; those categories have never had a
+    source. The page repeated every cycle, which is how a channel stops being
+    read — the rule `docs/WATCHDOG.md` sets twice, and the same split its
+    coverage canary already makes ("never any sold comps" is ONE aggregated
+    finding, not 46 pages).
+
+    So: a category with a last hit inside retention but nothing in the window
+    is a REGRESSION and pages, naming when it stopped. A category with no hit
+    at all in retained history is STRUCTURAL — logged, never paged, and the
+    watchdog's own "N categories have NO sold-comp source" finding already
+    states that backlog daily.
+
+    ⚠️ `market_hits` retention is ONE MONTH (`PARTITION_RETENTION_MONTHS_
+    MARKET_HITS=1`), so "no hit in retained history" cannot distinguish "never
+    had a source" from "died over a month ago". The log line says so rather
+    than asserting the stronger claim.
+
+    Window tunable via COVERAGE_ZERO_DAYS.
     """
     check_name = "coverage_zero_categories"
     days = int(os.getenv("COVERAGE_ZERO_DAYS", "7"))
     try:
+        # One pass, and it returns `last_hit` so the caller can tell a source
+        # that DIED from one that never existed. Measured on prod 2026-09-12:
+        # 2.9s against the full partitioned table, inside the 15s budget.
         rows = await asyncio.wait_for(
             conn.fetch(
                 f"""
-                SELECT c.category
+                SELECT c.category, max(mh.seen_at) AS last_hit
                 FROM (SELECT DISTINCT category FROM public.category_items
                       WHERE category IS NOT NULL) c
-                WHERE NOT EXISTS (
-                  SELECT 1 FROM public.market_hits mh
-                  WHERE mh.category = c.category
-                    AND mh.seen_at > now() - interval '{days} days'
-                )
-                ORDER BY c.category
+                LEFT JOIN public.market_hits mh ON mh.category = c.category
+                GROUP BY c.category
+                HAVING max(mh.seen_at) IS NULL
+                    OR max(mh.seen_at) <= now() - interval '{days} days'
+                ORDER BY 2 NULLS FIRST
                 """
             ),
             timeout=15.0,
@@ -588,24 +630,40 @@ async def _check_coverage_zero(conn, failing_new: list[dict]) -> None:
         logger.warning("sanity_probe coverage_zero: query failed: %s", e)
         return
 
-    silent_cats = [r["category"] for r in rows]
-    if not silent_cats:
-        logger.info("sanity_probe coverage_zero: all categories have hits in last %dd", days)
+    stopped, never = classify_coverage_silence(rows)
+
+    if never:
+        # Stated, never paged: this is a backlog, not an event, and the
+        # watchdog's own "no sold-comp source" finding reports the same set.
+        logger.info(
+            "sanity_probe %s: %d categories have no hit in RETAINED history "
+            "(retention is 1 month, so this is 'no source' or 'died >1mo ago', "
+            "not an outage): %s",
+            check_name, len(never), never[:8],
+        )
+
+    if not stopped:
+        if not never:
+            logger.info(
+                "sanity_probe coverage_zero: all categories have hits in last %dd", days
+            )
         return
 
+    stopped.sort(key=lambda t: t[1])
+    detail = ", ".join(f"{c} (last {ts:%Y-%m-%d})" for c, ts in stopped[:5])
     logger.warning(
-        "SANITY VIOLATION %s: %d categories have 0 hits in %dd: %s",
-        check_name, len(silent_cats), days, silent_cats[:8],
+        "SANITY VIOLATION %s: %d categories STOPPED producing hits within %dd: %s",
+        check_name, len(stopped), days, detail,
     )
     if _cooldown_expired(check_name):
         failing_new.append({
             "name": check_name,
             "description": (
-                f"{len(silent_cats)} categories have 0 hits in last {days}d. "
-                f"Likely adapter outage. First few: {', '.join(silent_cats[:5])}"
+                f"{len(stopped)} categories produced hits before and none in the "
+                f"last {days}d — a source that died, with a date. {detail}"
             ),
-            "violators": len(silent_cats),
-            "sample_id": silent_cats[0] if silent_cats else "",
+            "violators": len(stopped),
+            "sample_id": stopped[0][0],
         })
         _last_alerted_at[check_name] = datetime.now(timezone.utc)
 

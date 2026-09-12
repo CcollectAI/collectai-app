@@ -69,7 +69,11 @@ FROM (
     JOIN public.items i ON i.canonical_ref = pp.item_ref
     WHERE i.user_id = $1 AND NOT i.archived
       AND pp.q50 IS NOT NULL
-      AND pp.generated_at > $2 - interval '30 days'
+      -- $2::timestamptz for the same reason as value_change_worker.py: an
+      -- uncast bind in interval arithmetic is inferred as interval. This copy
+      -- has never failed only because the weekly digest is dark (nothing can
+      -- send it), so it would have broken on the day it was switched on.
+      AND pp.generated_at > $2::timestamptz - interval '30 days'
       AND pp.generated_at <= $2
     ORDER BY pp.item_ref, pp.generated_at DESC
 ) hp
