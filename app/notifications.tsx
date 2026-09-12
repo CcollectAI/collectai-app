@@ -34,6 +34,7 @@ import { timeAgo } from "@/lib/timeAgo";
 import { openAffiliateUrl } from "@/utils/affiliateHelpers";
 import { inAppListingHref } from "@/lib/ids";
 import { MS_PER_WEEK } from "@/constants/time";
+import { DATE_LOCALE, DATE_SHORT_YEAR } from '@/constants/dateFormats';
 import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 20;
@@ -86,7 +87,12 @@ function ctaLabel(deepLink: string): string {
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   if (diff < MS_PER_WEEK) return timeAgo(iso);
-  return new Date(iso).toLocaleDateString();
+  // Bare toLocaleDateString() takes the DEVICE locale, which rendered
+  // "8/20/2026" on this emulator — M/D/YYYY, ambiguous to the European
+  // audience this app is built for (8/20 or 20/8?) and unlike every other date
+  // in the app. src/constants/dateFormats.ts is the one place that decides;
+  // use it, as the charts and the event rows do.
+  return new Date(iso).toLocaleDateString(DATE_LOCALE, DATE_SHORT_YEAR);
 }
 
 function NotificationsScreen() {

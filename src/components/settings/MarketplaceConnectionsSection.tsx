@@ -39,6 +39,7 @@ import { logger } from '@/lib/logger';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import type { MarketplaceAccount } from '@/data/types';
+import { DATE_LOCALE, DATE_SHORT_YEAR } from '@/constants/dateFormats';
 
 type AccountWithDefaults = MarketplaceAccount & {
   defaultsConfigured: boolean;
@@ -62,7 +63,7 @@ function formatRelative(iso?: string | null): string {
   const d = Math.floor(hr / 24);
   if (d === 1) return 'yesterday';
   if (d < 30) return `${d} days ago`;
-  return new Date(iso).toLocaleDateString();
+  return new Date(iso).toLocaleDateString(DATE_LOCALE, DATE_SHORT_YEAR);
 }
 
 export function MarketplaceConnectionsSection() {

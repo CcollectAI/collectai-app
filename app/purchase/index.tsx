@@ -32,6 +32,7 @@ import { useFollowedCategories } from "@/hooks/useFollowedCategories";
 import type { PurchaseMandate, MandateDeal } from "@/data/types";
 import logger from "@/utils/logger";
 import { useTranslation } from 'react-i18next';
+import { DATE_LOCALE, DATE_SHORT_YEAR } from '@/constants/dateFormats';
 
 const DEALS_PAGE_SIZE = 10;
 
@@ -71,7 +72,7 @@ function formatRelativeTime(iso: string | null | undefined): string {
   const d = Math.floor(hr / 24);
   if (d === 1) return "yesterday";
   if (d < 7) return `${d} days ago`;
-  return new Date(iso).toLocaleDateString();
+  return new Date(iso).toLocaleDateString(DATE_LOCALE, DATE_SHORT_YEAR);
 }
 
 export default function AgentHubScreenWithBoundary() {

@@ -378,9 +378,16 @@ function SubscriptionScreen() {
               Plans couldn&apos;t load
             </Text>
             <Text style={[styles.comingSoonText, { color: colors.muted }]}>
-              We couldn&apos;t reach the App Store for the subscription options.
-              Check your connection and try again. Already subscribed? Use
-              Restore Purchases below.
+              {/* NAME THE STORE THE USER IS ACTUALLY IN. This said "App Store"
+                  unconditionally, so on Android the screen told a Play user we
+                  could not reach a store their device does not have — while the
+                  legal copy 130 lines below already did this correctly with the
+                  same Platform check. Seen on an Android device 2026-09-12: one
+                  screen naming two different stores. */}
+              We couldn&apos;t reach{' '}
+              {Platform.OS === 'ios' ? 'the App Store' : 'Google Play'} for the
+              subscription options. Check your connection and try again. Already
+              subscribed? Use Restore Purchases below.
             </Text>
             <AnimatedPressable
               onPress={fetchOfferings}

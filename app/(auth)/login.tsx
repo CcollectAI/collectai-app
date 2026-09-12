@@ -204,11 +204,11 @@ function LoginScreen() {
               <View style={[styles.iconCircleOuter, { backgroundColor: colors.brand.base + '15' }]}>
                 {Platform.OS === 'ios' ? (
                   <BlurView intensity={40} tint={isDark ? 'dark' : 'light'} style={styles.iconCircle}>
-                    <Image source={require('../../assets/icon.png')} style={{ width: 48, height: 48 }} resizeMode="contain" />
+                    <Image source={require('../../assets/icon.png')} style={styles.brandLogo} resizeMode="contain" />
                   </BlurView>
                 ) : (
                   <View style={[styles.iconCircle, { backgroundColor: colors.brand.base + '25' }]}>
-                    <Image source={require('../../assets/icon.png')} style={{ width: 48, height: 48 }} resizeMode="contain" />
+                    <Image source={require('../../assets/icon.png')} style={styles.brandLogo} resizeMode="contain" />
                   </View>
                 )}
               </View>
@@ -419,6 +419,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  // FILLS the circle. `icon.png` is OPAQUE cream (docs/ui-playbook.md § "The
+  // splash logo: `imageWidth` sizes the CANVAS, and `icon.png` is opaque"), so
+  // a 48pt image inside a 76pt tinted circle drew the cream as a visible
+  // SQUARE — the "tiny square box" that section records, seen on Android
+  // 2026-09-12 on the login screen and the onboarding hero. `overflow:
+  // 'hidden'` on the parent cannot help while the image stops short of the
+  // edge; the image itself has to reach it. 76 still clears the art's own
+  // diagonal (bbox ~0.97x the canvas), so nothing is sliced.
+  brandLogo: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
   },
   brandTitle: {
     fontSize: 30,
