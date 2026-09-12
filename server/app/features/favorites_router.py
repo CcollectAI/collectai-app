@@ -37,6 +37,7 @@ from app.auth import get_current_user_id
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.rate_limit import per_user_rate_limit
+from app.features.listing_photo_sql import with_listing_photo
 
 logger = logging.getLogger(__name__)
 
@@ -129,21 +130,23 @@ async def list_favorites(
     try:
         async with pool.acquire() as conn:
             rows = await conn.fetch(
-                """
+                with_listing_photo("""
                 SELECT f.id, f.listing_id, f.canonical_key, f.category, f.created_at,
                        -- A catalogue favourite has no listing, so it has no
                        -- listing_title. Without the fallback every such row
                        -- renders as an untitled card — saved, and unreadable.
                        COALESCE(l.listing_title, ci.title) AS listing_title,
                        l.price, l.currency, l.status AS listing_status,
-                       -- The SAME image expression the listing browse uses in
-                       -- p2p_listing_router (`COALESCE(i.image_url, ci.image_url)`),
-                       -- not a second one. `marketplace_listings` has NO
-                       -- image_url column of its own: the seller's photo lives
-                       -- on items, the catalogue fallback on category_items.
-                       -- Two copies of a photo rule drift, and the copy that
-                       -- drifts is the one nobody is looking at.
-                       COALESCE(i.image_url, ci.image_url) AS image_url
+                       -- The SAME image expression the listing browse uses,
+                       -- not a second one. This comment used to END with "Two
+                       -- copies of a photo rule drift, and the copy that drifts
+                       -- is the one nobody is looking at" — and then it did:
+                       -- the detail endpoint gained an item_images arm and this
+                       -- copy, browse and watchlist-matches kept the two-arm
+                       -- version, so the Marketplace grid showed no photo for
+                       -- 4 of 4 listings. Saying "the same as X" in prose is not
+                       -- the same as BEING X. It is one constant now.
+                       {LISTING_IMAGE} AS image_url
                   FROM public.favorites f
                   LEFT JOIN public.marketplace_listings l ON l.id = f.listing_id
                   -- LEFT JOIN throughout: a favourite must still render when the
@@ -165,7 +168,7 @@ async def list_favorites(
                  WHERE f.user_id = $1
                  ORDER BY f.created_at DESC
                  LIMIT $2 OFFSET $3
-                """,
+                """),
                 user_id,
                 limit,
                 offset,

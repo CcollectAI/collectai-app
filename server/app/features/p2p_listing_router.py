@@ -31,6 +31,7 @@ from app.lib.blocks import blocked_user_ids, is_blocked
 from app.lib.content_filter import find_blocked_term
 from app.lib.db_helpers import get_db_pool
 from app.rate_limit import per_user_rate_limit
+from app.features.listing_photo_sql import with_listing_photo
 
 logger = logging.getLogger(__name__)
 
@@ -629,6 +630,10 @@ async def _catalogue_image_hook(listing_id: str) -> None:
             # endpoint would never have been seen.
             row = await conn.fetchrow(
                 """
+                -- listing-photo-sql:exempt contribution, not display: the
+                -- catalogue fallback is deliberately absent, because copying
+                -- the catalogue's own image back into it is a no-op that looks
+                -- like progress. See _photo_catalogue_hook's docstring.
                 SELECT l.user_id, l.canonical_key, l.category,
                        COALESCE(
                          i.image_url,
@@ -1031,13 +1036,19 @@ async def browse_listings(
         rows = await conn.fetch(
             # archived-exempt: a LISTING browse. items is joined only for the
             # photo; what makes a listing visible is its own status.
-            """
+            with_listing_photo("""
             SELECT l.id, l.user_id, l.item_id, l.listing_title,
                    l.listing_description, l.price, l.currency,
                    l.condition_label, l.category, l.canonical_key,
                    l.ships_from, l.shipping_cost, l.status, l.created_at,
-                   COALESCE(i.image_url, ci.image_url) AS image_url,
-                   (i.image_url IS NULL AND ci.image_url IS NOT NULL) AS image_is_catalog,
+                   -- The grid rendered the empty placeholder for 4 of 4 active
+                   -- listings on 2026-09-12, every one of them holding 3-8 rows
+                   -- in item_images. This expression used to be
+                   -- COALESCE(i.image_url, ci.image_url) — the detail endpoint
+                   -- had gained the item_images arm and this had not. One copy
+                   -- now: app/features/listing_photo_sql.py.
+                   {LISTING_IMAGE} AS image_url,
+                   {LISTING_IMAGE_IS_CATALOG} AS image_is_catalog,
                    -- Social proof on the tile. It exists on the detail screen
                    -- already, but a signal a buyer only sees AFTER tapping
                    -- cannot influence whether they tap. Excludes the seller's
@@ -1060,7 +1071,7 @@ async def browse_listings(
                    -- (learning_duplicate_impl_silently_drops_the_fix).
                    EXISTS (SELECT 1 FROM public.user_public_profiles up
                             WHERE up.user_id = l.user_id) AS seller_profile_public,
-"""
+""")
             + _SELLER_REPUTATION_SQL.rstrip().rstrip(",")
             + """
             -- archived-exempt: a LISTING browse. `items` is joined only for the
@@ -1407,7 +1418,7 @@ async def get_listing(
 
     async with pool.acquire() as conn:
         r = await conn.fetchrow(
-            """
+            with_listing_photo("""
             SELECT l.id, l.user_id, l.item_id, l.listing_title,
                    l.listing_description, l.price, l.currency,
                    l.condition_label, l.category, l.canonical_key,
@@ -1419,17 +1430,8 @@ async def get_listing(
                    -- photos still got the catalogue stock shot on their own
                    -- listing, labelled "Stock photo" — the exact
                    -- misrepresentation §1h says to avoid, caused by us.
-                   COALESCE(
-                     i.image_url,
-                     (SELECT im.image_url FROM public.item_images im
-                       WHERE im.item_id = l.item_id
-                       ORDER BY im.position, im.created_at LIMIT 1),
-                     ci.image_url
-                   ) AS image_url,
-                   (i.image_url IS NULL
-                    AND NOT EXISTS (SELECT 1 FROM public.item_images im
-                                     WHERE im.item_id = l.item_id)
-                    AND ci.image_url IS NOT NULL) AS image_is_catalog,
+                   {LISTING_IMAGE} AS image_url,
+                   {LISTING_IMAGE_IS_CATALOG} AS image_is_catalog,
                    COALESCE(
                      (SELECT array_agg(im.image_url ORDER BY im.position, im.created_at)
                         FROM public.item_images im
@@ -1472,7 +1474,7 @@ async def get_listing(
                    -- consent (learning_prove_view_equivalence_with_real_auth_context).
                    EXISTS (SELECT 1 FROM public.user_public_profiles up
                             WHERE up.user_id = l.user_id) AS seller_profile_public,
-"""
+""")
             + _SELLER_REPUTATION_SQL
             + """
                    -- archived-exempt: ONE listing, addressed by its own id.
@@ -1619,7 +1621,7 @@ async def watchlist_matches(
         rows = await conn.fetch(
             # archived-exempt: matches WATCHLIST rows to live listings. Keyed
             # off the listing, and items is joined only for the photo.
-            """
+            with_listing_photo("""
             SELECT DISTINCT ON (w.id)
                    w.id AS watchlist_id, w.target_price,
                    -- The target is stored in the MEMBER's display currency, so
@@ -1630,7 +1632,7 @@ async def watchlist_matches(
                    w.target_price * COALESCE(fxw.rate, 1) AS target_price_eur,
                    l.id AS listing_id, l.listing_title, l.price, l.currency,
                    l.condition_label,
-                   COALESCE(i.image_url, ci.image_url) AS image_url,
+                   {LISTING_IMAGE} AS image_url,
                    l.price * COALESCE(fx.rate, 1) AS price_eur
             FROM public.watchlist_items w
             JOIN public.marketplace_listings l
@@ -1664,7 +1666,7 @@ async def watchlist_matches(
             -- single number; DISTINCT ON needs the ORDER BY to lead with the
             -- same expression it distinguishes on.
             ORDER BY w.id, l.price * COALESCE(fx.rate, 1) ASC
-            """,
+            """),
             user_id, SPARROW_MARKETPLACE_KEY, _STATUS_ACTIVE,
             *(await _fx_arrays()), hidden,
         )
