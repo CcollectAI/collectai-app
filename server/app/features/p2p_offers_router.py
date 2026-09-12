@@ -36,6 +36,7 @@ from app.errors import error_response
 from app.features.pagination import pagination_params
 from app.lib.blocks import raise_if_blocked
 from app.lib.db_helpers import get_db_pool
+from app.lib.money import format_money
 from app.lib.payment_rails import (
     DISCLAIMER as PAYMENT_DISCLAIMER,
     REGIONS,
@@ -659,7 +660,7 @@ async def _settle_completed_trade(conn, offer_id: str, listing_id: str,
                 conn, str(r["buyer_id"]),
                 "That item has sold",
                 f"\"{l['listing_title'] or 'An item'}\" sold to another buyer, so "
-                f"your {r['currency']} {float(r['amount']):.2f} offer was closed.",
+                f"your {format_money(float(r['amount']), r['currency'])} offer was closed.",
                 offer_id,
             )
     except Exception as exc:
@@ -1037,7 +1038,7 @@ async def create_offer(
         await _notify_trade(
             nconn, str(listing["seller_id"]),
             "New offer on your listing",
-            f"{out.currency} {out.amount:.2f} for \"{listing['listing_title'] or 'your item'}\". "
+            f"{format_money(out.amount, out.currency)} for \"{listing['listing_title'] or 'your item'}\". "
             "Open bids to accept, counter or decline.",
             out.id,
         )
@@ -1378,7 +1379,7 @@ async def respond_to_offer(
         # left waiting on silence assumes the app is broken, and "declined" is
         # information they can act on (offer elsewhere, or higher).
         title_ = fresh["listing_title"] or "your item"
-        amt = f"{fresh['currency']} {float(fresh['amount']):.2f}"
+        amt = format_money(float(fresh['amount']), fresh['currency'])
         if action == "accept":
             # WHO accepted decides who is told. Since 2026-08-15 a COUNTER is the
             # buyer's to answer, so this branch fires for both directions — and
