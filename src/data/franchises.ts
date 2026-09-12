@@ -53,7 +53,7 @@ export const FRANCHISES: Franchise[] = [
   },
   {
     id: 'pokemon_franchise',
-    name: 'Pokemon',
+    name: 'Pokémon',
     accentColor: '#FFD700',
     iconName: 'flash',
     categoryIds: ['pokemon', 'retro_pokemon', 'funko', 'nintendo_merch', 'plush_collectibles'],

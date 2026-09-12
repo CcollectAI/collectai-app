@@ -1855,7 +1855,7 @@ export const CATEGORY_GROUPS: { label: string; ids: CategoryId[] }[] = [
   { label: 'Music & Fandom', ids: ['kpop_merch', 'taylor_swift', 'pop_fandom', 'kpop_lightsticks'] },
   { label: 'Disney & Theme Parks', ids: ['disney', 'theme_park', 'ghibli'] },
   { label: 'Japan Exclusives', ids: ['bandai_premium', 'jp_magazine', 'jp_event'] },
-  { label: 'Nintendo & Pokemon', ids: ['nintendo_merch', 'retro_pokemon'] },
+  { label: 'Nintendo & Pokémon', ids: ['nintendo_merch', 'retro_pokemon'] },
   { label: 'IP-Specific', ids: ['one_piece', 'vtuber'] },
   { label: 'Niche', ids: ['keycaps', 'loungefly'] },
   { label: 'Collectibles', ids: ['blind_box', 'plush_collectibles'] },

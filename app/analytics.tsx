@@ -257,7 +257,7 @@ function AnalyticsScreen() {
 
   const MOCK_CATEGORIES = useMemo(
     () => [
-      { id: 'pokemon',  name: 'Pokemon',  ownedCount: 47, totalCount: 185, completionPct: 25 },
+      { id: 'pokemon',  name: 'Pokémon',  ownedCount: 47, totalCount: 185, completionPct: 25 },
       { id: 'lego',     name: 'LEGO',     ownedCount: 12, totalCount:  60, completionPct: 20 },
       { id: 'hot_toys', name: 'Hot Toys', ownedCount:  8, totalCount:  40, completionPct: 20 },
     ],

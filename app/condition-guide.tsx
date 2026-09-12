@@ -143,7 +143,7 @@ function getCategoryGroup(categoryId: string): string {
 type CategoryOption = { id: string; label: string };
 
 const CATEGORY_OPTIONS: CategoryOption[] = [
-  { id: 'pokemon', label: 'Pokemon TCG' },
+  { id: 'pokemon', label: 'Pokémon TCG' },
   { id: 'mtg', label: 'Magic: The Gathering' },
   { id: 'yugioh', label: 'Yu-Gi-Oh!' },
   { id: 'lorcana', label: 'Disney Lorcana' },
