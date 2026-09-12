@@ -12,6 +12,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { logger } from '@/lib/logger';
 
 import type { ExpoCalendarEntry } from '@/../types/api';
+import { DATE_LOCALE, DATE_SHORT_YEAR } from '@/constants/dateFormats';
 
 // Optional dependencies - graceful fallback if not installed
  
@@ -510,6 +511,36 @@ export function parseEventDate(dateStr: string, timeStr?: string): Date {
   }
 
   return new Date(`${dateStr}T00:00:00`);
+}
+
+/**
+ * The human "when" line for an event — "Sep 11, 2026 · 20:00".
+ *
+ * WHY (2026-09-09, found walking the app on Android): the events list, the
+ * detail hero and the share text each printed the RAW backend fields, so a card
+ * read "Convention • 2026-09-11 — 20:00:00" — an ISO date and a seconds-precise
+ * time, on the busiest surface in the app. `parseEventDate` was two lines away
+ * doing the hard part (AM/PM, trailing timezone abbreviations); nothing
+ * formatted its result. Six call sites, so this is the one chokepoint they all
+ * go through rather than six local format strings.
+ *
+ * Degrades precision, never existence: an unparseable TIME still yields the
+ * date, and an unparseable DATE falls back to the raw string rather than
+ * blanking the line. Both parts come from the SAME parsed instant, so a time
+ * carrying a timezone cannot print its converted clock beside the pre-shift day.
+ */
+export function formatEventWhen(dateStr?: string | null, timeStr?: string | null): string {
+  if (!dateStr) return '';
+  const withTime = timeStr ? parseEventDate(dateStr, timeStr) : null;
+  const hasTime = !!withTime && !isNaN(withTime.getTime());
+  const base = hasTime ? (withTime as Date) : parseEventDate(dateStr);
+  if (isNaN(base.getTime())) return dateStr;
+  const datePart = base.toLocaleDateString(DATE_LOCALE, DATE_SHORT_YEAR);
+  if (!hasTime) return datePart;
+  // Device locale for the clock (matches WeekViewCalendar), so a 12-hour phone
+  // reads "8:00 PM" and a 24-hour one "20:00".
+  const timePart = base.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  return `${datePart} · ${timePart}`;
 }
 
 export default {

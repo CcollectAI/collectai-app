@@ -48,6 +48,39 @@ Also observed: Cardmarket now answers our Crawl4AI scrape with
 outbound-request counting in place → then flip the manifest line and watch one
 cycle.
 
+## The Home card told a member with five watched items to start a watchlist (fixed 2026-09-09)
+
+Found walking the app on an Android emulator. `AlertsCard` is fed **triggered
+alerts**, is headed **"Watchlist"**, and had exactly one empty state: *"Start
+Your Watchlist — Track items you want and set price alerts"*. The account on
+screen (`simcheck@sparrowcollect.test`) holds **five `watchlist_items` rows** —
+confirmed by querying PostgREST **as that user's JWT**, 5 rows in 0.09 s — and
+zero alerts have ever fired for it. So the card invited a member to start
+something they already had.
+
+`alerts.length === 0` was answering two different questions with one sentence,
+and the same branch also caught the **failure** path: `useAlertsFeed` sets
+`error` and leaves `alerts` at `[]`, and Home destructured neither `error` nor
+`refetch`. A transport failure therefore rendered as "you have no watchlist" —
+the same shape as [[learning_empty_answer_rendered_as_zero]], on the input to
+the paid feature.
+
+Fixed by making the card say only things that are true without knowing the
+watchlist count:
+
+| state | copy |
+|---|---|
+| fetch failed | **Couldn't load alerts** · *Tap to try again* (retries) |
+| no alerts | **No alerts yet** · *Watchlist items alert you when they hit your target price* |
+
+`home.start_watchlist` is deleted from all seven locales — it had exactly one
+call site. Gate: `__tests__/components/alertsCardEmptyState.test.tsx`, in
+`verify:prebuild`, mutation-proven (restoring the old copy turns it red).
+
+**Not fixed, deliberately:** the card still cannot say *"we're watching 5
+items"*, because Home does not load the watchlist and adding a fetch to say it
+is a bigger call than the lie warranted. The copy above is true either way.
+
 ## The watchlist screen rendered EMPTY on a cold start (fixed 2026-08-10)
 
 Reported as "I press the watchlist item Bayou and it leads to an empty watchlist

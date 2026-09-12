@@ -19,6 +19,16 @@ type AlertsCardProps = {
   onViewAll?: () => void;
   onStartWatchlist?: () => void;
   showEmptyState?: boolean;
+  /**
+   * The alerts fetch FAILED, as opposed to returning nothing.
+   *
+   * Without it `alerts.length === 0` says both things at once and the card
+   * printed the more damaging one: a transport failure rendered as "Start Your
+   * Watchlist" (2026-09-09, Android walk — the account had five watchlist rows
+   * and the card invited it to start one).
+   */
+  failed?: boolean;
+  onRetry?: () => void;
 };
 
 type ThemeColors = ReturnType<typeof useAppTheme>['colors'];
@@ -104,7 +114,7 @@ function AlertItem({ alert, colors, onPress }: AlertItemProps) {
   );
 }
 
-function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, showEmptyState = true }: AlertsCardProps) {
+function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, showEmptyState = true, failed = false, onRetry }: AlertsCardProps) {
   const { colors } = useAppTheme();
   const unreadCount = useMemo(() => alerts.filter((a) => !a.isRead).length, [alerts]);
   const { t } = useTranslation();
@@ -139,23 +149,37 @@ function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, sh
           </AnimatedPressable>
         </View>
 
-        {/* Empty State - Start Watchlist prompt */}
+        {/* Empty state. NOT "start a watchlist" — this card lists triggered
+            ALERTS, and an empty alerts list says nothing about whether the
+            member watches anything. It is only ever one of two true things:
+            we could not ask, or nothing has fired yet. */}
         <AnimatedPressable
           style={styles.emptyState}
           onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-            onStartWatchlist?.();
+            if (failed) onRetry?.();
+            else onStartWatchlist?.();
           }}
           accessibilityRole="button"
-          accessibilityLabel={t('home.a11y_start_watchlist', { defaultValue: 'Start your watchlist' })}
+          accessibilityLabel={
+            failed
+              ? t('home.a11y_retry_alerts', { defaultValue: 'Retry loading alerts' })
+              : t('home.a11y_start_watchlist', { defaultValue: 'Start your watchlist' })
+          }
         >
           <View style={styles.emptyContent}>
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('home.start_watchlist', { defaultValue: 'Start Your Watchlist' })}</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              {failed
+                ? t('home.alerts_failed', { defaultValue: "Couldn't load alerts" })
+                : t('home.no_alerts_yet', { defaultValue: 'No alerts yet' })}
+            </Text>
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-              Track items you want and set price alerts
+              {failed
+                ? t('home.alerts_failed_hint', { defaultValue: 'Tap to try again' })
+                : t('home.no_alerts_hint', { defaultValue: 'Watchlist items alert you when they hit your target price' })}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+          <Ionicons name={failed ? 'refresh' : 'chevron-forward'} size={18} color={colors.muted} />
         </AnimatedPressable>
       </View>
     );

@@ -41,7 +41,7 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { AnimatedPressable } from '@/motion';
@@ -114,10 +114,28 @@ export const HeaderActions: React.FC<Props> = ({ size = 22, color }) => {
     return () => { cancelled = true; };
   }, [user?.id]);
 
+  // The cluster is on EVERY screen, including the three screens it navigates
+  // to — so on Settings the gear pushed **another copy of Settings**. Found on
+  // Android 2026-09-09: the tap looked like a no-op (the new screen is
+  // identical), and it took TWO back presses to leave. A control that silently
+  // deepens the stack is worse than one that does nothing.
+  //
+  // The icon stays rendered, tinted and marked selected, rather than being
+  // hidden: this component exists because clusters that change shape from
+  // screen to screen were the original complaint (see the header). This is the
+  // tab-bar convention — the control for where you already are is a state
+  // indicator, not a dead button.
+  const pathname = usePathname();
+  const isHere = useCallback(
+    (path: string) => pathname === path || pathname.startsWith(`${path}/`),
+    [pathname],
+  );
+
   const go = useCallback((path: '/notifications' | '/settings') => {
+    if (isHere(path)) return;
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     router.push(path);
-  }, [router, settings.hapticsEnabled]);
+  }, [router, settings.hapticsEnabled, isHere]);
 
   return (
     <View style={styles.row}>
@@ -126,9 +144,14 @@ export const HeaderActions: React.FC<Props> = ({ size = 22, color }) => {
         style={styles.iconBtn}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="button"
+        accessibilityState={{ selected: isHere('/notifications') }}
         accessibilityLabel={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`}
       >
-        <Ionicons name="notifications-outline" size={size} color={tint} />
+        <Ionicons
+          name="notifications-outline"
+          size={size}
+          color={isHere('/notifications') ? colors.accent : tint}
+        />
         {unread > 0 && (
           <View style={[styles.badge, { backgroundColor: colors.error }]}>
             <Text style={[styles.badgeText, { color: colors.accentText }]}>
@@ -138,7 +161,11 @@ export const HeaderActions: React.FC<Props> = ({ size = 22, color }) => {
         )}
       </AnimatedPressable>
 
-      <InboxHeaderButton color={tint} size={size} />
+      <InboxHeaderButton
+        color={isHere('/inbox') ? colors.accent : tint}
+        size={size}
+        active={isHere('/inbox')}
+      />
 
       <AnimatedPressable
         testID="open-settings-btn"
@@ -146,9 +173,14 @@ export const HeaderActions: React.FC<Props> = ({ size = 22, color }) => {
         style={styles.iconBtn}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="button"
+        accessibilityState={{ selected: isHere('/settings') }}
         accessibilityLabel="Settings"
       >
-        <Ionicons name="settings-outline" size={size} color={tint} />
+        <Ionicons
+          name="settings-outline"
+          size={size}
+          color={isHere('/settings') ? colors.accent : tint}
+        />
       </AnimatedPressable>
     </View>
   );

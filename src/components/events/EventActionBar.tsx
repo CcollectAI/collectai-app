@@ -19,6 +19,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 import type { CollectorsEvent } from '@/data/events';
+import { formatEventWhen } from '@/lib/calendar';
 
 interface EventActionBarProps {
   event: CollectorsEvent;
@@ -51,7 +52,7 @@ export const EventActionBar = React.memo(function EventActionBar({
       const link = event.onlineUrl || 'https://sparrowcollect.com';
       const message =
         `${event.title}` +
-        `\n${event.date}${event.time ? ` at ${event.time}` : ''}` +
+        `\n${formatEventWhen(event.date, event.time)}` +
         (event.location ? `\n${event.location}` : '') +
         `\n\n${link}` +
         `\n\nShared via Sparrow Collect`;

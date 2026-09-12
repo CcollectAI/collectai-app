@@ -380,12 +380,16 @@
     "add_first_item": "Ajoutez votre premier article",
     "a11y_watchlist_section": "Section liste de suivi",
     "a11y_start_watchlist": "Commencez votre liste de suivi",
-    "start_watchlist": "Commencez votre liste de suivi",
     "hot_right_now": "Tendance en ce moment",
     "a11y_retry_trending": "Recharger les articles tendance",
     "category_breakdown": "Répartition par catégorie",
     "a11y_all_items_az": "Voir tous les articles de votre collection, de A à Z",
-    "all_items_arrow": "Tous les articles →"
+    "all_items_arrow": "Tous les articles →",
+    "no_alerts_yet": "Aucune alerte pour l'instant",
+    "no_alerts_hint": "Les articles de votre liste de suivi vous alertent dès qu’ils atteignent votre prix cible",
+    "alerts_failed": "Impossible de charger les alertes",
+    "alerts_failed_hint": "Touchez pour réessayer",
+    "a11y_retry_alerts": "Réessayer de charger les alertes"
   },
   "items": {
     "title": "Objets",

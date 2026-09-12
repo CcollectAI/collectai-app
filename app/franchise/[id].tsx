@@ -23,12 +23,14 @@ import { CATEGORY_VISUAL, type CategoryId } from '@/data/categories';
 import { CategoryLabels } from '../../types/category';
 import { dataProvider } from '@/data';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 type SectionHeader = { type: 'header'; categoryId: string; label: string };
 type ItemRow = { type: 'row'; item: { id: string; name: string; categorySlug: string; imageUrl?: string; estimatedValueEur?: number } };
 type ListItem = SectionHeader | ItemRow;
 
 function FranchiseDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -108,7 +110,7 @@ function FranchiseDetailScreen() {
   if (!franchise) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-        <Stack.Screen options={{ headerTitle: 'Franchise' }} />
+        <Stack.Screen options={{ headerTitle: t('screen_titles.franchise') }} />
         <View style={styles.center}>
           <Text style={{ color: colors.muted }}>Franchise not found</Text>
         </View>

@@ -25,6 +25,7 @@ import { AnimatedPressable } from "@/motion";
 import { logger } from "@/lib/logger";
 import { timeAgo } from "@/lib/timeAgo";
 import { itemHref } from "@/lib/ids";
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 20;
 
@@ -36,6 +37,7 @@ const STATUS_CONFIG: Record<string, { icon: keyof typeof Ionicons.glyphMap; labe
 };
 
 function MySuggestionsContent() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const [suggestions, setSuggestions] = useState<MySuggestion[]>([]);
@@ -215,8 +217,8 @@ function MySuggestionsContent() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
-          headerTitle: "My Suggestions",
-          headerBackTitle: "Settings",
+          headerTitle: t('screen_titles.my_suggestions'),
+          headerBackTitle: t('screen_titles.back_settings'),
         }}
       />
 

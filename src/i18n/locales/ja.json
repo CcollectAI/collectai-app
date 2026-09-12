@@ -380,12 +380,16 @@
     "add_first_item": "最初のアイテムを追加",
     "a11y_watchlist_section": "ウォッチリストのセクション",
     "a11y_start_watchlist": "ウォッチリストを始める",
-    "start_watchlist": "ウォッチリストを始める",
     "hot_right_now": "いま話題",
     "a11y_retry_trending": "トレンドのアイテムを再読み込み",
     "category_breakdown": "カテゴリー別の内訳",
     "a11y_all_items_az": "コレクションの全アイテムをAからZで表示",
-    "all_items_arrow": "すべてのアイテム →"
+    "all_items_arrow": "すべてのアイテム →",
+    "no_alerts_yet": "アラートはまだありません",
+    "no_alerts_hint": "ウォッチリストのアイテムが目標価格に達するとお知らせします",
+    "alerts_failed": "アラートを読み込めませんでした",
+    "alerts_failed_hint": "タップして再試行",
+    "a11y_retry_alerts": "アラートの読み込みを再試行"
   },
   "items": {
     "title": "アイテム",

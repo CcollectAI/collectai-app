@@ -16,6 +16,7 @@ import { formatPrice, formatNumber } from '@/lib/format';
 import logger from '@/utils/logger';
 import { MEDAL_COLORS, TWITCH_PURPLE } from '@/constants/colors';
 import { BETA_MODE, COMMUNITY_GATED } from '@/config/featureFlags';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Category mode. `/leaderboard?categoryId=mtg` ranks the collectors of ONE
@@ -336,6 +337,7 @@ function getMedalColor(index: number, fallback: string): string {
 }
 
 const LeaderboardScreen: React.FC = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
@@ -463,7 +465,7 @@ const LeaderboardScreen: React.FC = () => {
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerTitle: 'Leaderboard' }} />
+      <Stack.Screen options={{ headerTitle: t('screen_titles.leaderboard') }} />
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}

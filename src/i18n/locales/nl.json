@@ -380,12 +380,16 @@
     "add_first_item": "Voeg je eerste item toe",
     "a11y_watchlist_section": "Volglijst-sectie",
     "a11y_start_watchlist": "Begin je volglijst",
-    "start_watchlist": "Begin je volglijst",
     "hot_right_now": "Nu populair",
     "a11y_retry_trending": "Trending items opnieuw laden",
     "category_breakdown": "Verdeling per categorie",
     "a11y_all_items_az": "Bekijk alle items in je collectie, A tot Z",
-    "all_items_arrow": "Alle items →"
+    "all_items_arrow": "Alle items →",
+    "no_alerts_yet": "Nog geen meldingen",
+    "no_alerts_hint": "Items op je volglijst waarschuwen je zodra ze je richtprijs bereiken",
+    "alerts_failed": "Meldingen konden niet worden geladen",
+    "alerts_failed_hint": "Tik om het opnieuw te proberen",
+    "a11y_retry_alerts": "Meldingen opnieuw laden"
   },
   "items": {
     "title": "Items",

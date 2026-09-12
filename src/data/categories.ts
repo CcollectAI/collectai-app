@@ -194,8 +194,14 @@ export const CATEGORIES: Category[] = [
     id: 'mtg',
     name: 'Magic: The Gathering',
     tagline: 'Reserve list, modern staples, and Commander all-stars.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/16321207/pexels-photo-16321207.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY UNTIL THERE IS A REAL MAGIC PHOTO. This tile carried a photo of
+    // framed **Yu-Gi-Oh!** cards (Curse of Dragon, Unity) — verified by
+    // downloading it, 2026-09-09, after seeing it on the Explore grid. That
+    // photo moved to the Yu-Gi-Oh! tile, where it is correct. Nothing in the
+    // stock set actually shows Magic cards, and a browse tile that puts one
+    // game's cards under another game's name is a claim, not a decoration.
+    // Both readers degrade to the accent tile + icon, so empty is honest.
+    bannerImageUrl: '',
     accentColor: '#4B0082',
     iconName: 'flame',
     collections: [
@@ -225,8 +231,10 @@ export const CATEGORIES: Category[] = [
     id: 'yugioh',
     name: 'Yu-Gi-Oh!',
     tagline: 'First editions, ghost rares, and competitive staples.',
+    // Photo 16321207: framed Yu-Gi-Oh! cards (Curse of Dragon, Unity) —
+    // verified by downloading it, 2026-09-09. It was on the Magic tile.
     bannerImageUrl:
-      'https://images.pexels.com/photos/9661252/pexels-photo-9661252.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+      'https://images.pexels.com/photos/16321207/pexels-photo-16321207.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
     accentColor: '#8B4513',
     iconName: 'triangle',
     collections: [
@@ -256,8 +264,10 @@ export const CATEGORIES: Category[] = [
     id: 'lorcana',
     name: 'Disney Lorcana',
     tagline: 'Storyborn, Dreamborn, and Enchanted foils.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/13321546/pexels-photo-13321546.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY UNTIL THERE IS A REAL LORCANA PHOTO — 13321546 is a Rider-Waite
+    // TAROT spread (The Fool, The Magician, The Empress), not Lorcana. Same
+    // reasoning as the Magic tile above.
+    bannerImageUrl: '',
     accentColor: '#6A5ACD',
     iconName: 'sparkles',
     collections: [

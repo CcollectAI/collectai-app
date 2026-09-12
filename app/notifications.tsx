@@ -34,6 +34,7 @@ import { timeAgo } from "@/lib/timeAgo";
 import { openAffiliateUrl } from "@/utils/affiliateHelpers";
 import { inAppListingHref } from "@/lib/ids";
 import { MS_PER_WEEK } from "@/constants/time";
+import { useTranslation } from 'react-i18next';
 
 const PAGE_SIZE = 20;
 
@@ -89,6 +90,7 @@ function relativeTime(iso: string): string {
 }
 
 function NotificationsScreen() {
+  const { t } = useTranslation();
   const { colors: theme } = useAppTheme();
   const router = useRouter();
 
@@ -342,7 +344,7 @@ function NotificationsScreen() {
     <View style={[s.container, { backgroundColor: theme.background }]}>
       <Stack.Screen
         options={{
-          headerTitle: "Notifications",
+          headerTitle: t('screen_titles.notifications'),
           headerRight: () =>
             unreadCount > 0 ? (
               <Pressable

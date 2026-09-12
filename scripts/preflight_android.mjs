@@ -193,6 +193,35 @@ function checkAdaptiveIconSafeZone() {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
+// 3c. Splash icon mask
+//
+// The same failure class one layer down: Android 12+ draws the splash icon on
+// a 288dp canvas and shows only a centred 192dp CIRCLE of it. The shipped
+// splash was a full-bleed logo at imageWidth 300, so the bird lost its head
+// and the "Sparrow Collect" wordmark was cut off the bottom entirely — while
+// the drawable inside the APK contained both.
+// ───────────────────────────────────────────────────────────────────────────
+function checkSplashMask() {
+  const script = join(REPO, "scripts/check_splash_mask.py");
+  if (!existsSync(script)) return;
+  for (const python of ["python3", "python"]) {
+    try {
+      execFileSync(python, [script], { cwd: REPO, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+      pass("splash artwork fits inside the Android 12 circular icon mask");
+      return;
+    } catch (e) {
+      if (e.code === "ENOENT") continue; // try the next interpreter
+      const output = `${e.stdout ?? ""}${e.stderr ?? ""}`;
+      fail(
+        "splash artwork is clipped by the Android 12 icon mask:\n" +
+          output.split("\n").filter(Boolean).map((l) => `        ${l.trim()}`).join("\n"),
+      );
+      return;
+    }
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
 // 4. Play listing images
 // ───────────────────────────────────────────────────────────────────────────
 function checkPlayAssets() {
@@ -441,6 +470,7 @@ checkAssetLinks();
 checkSubmitCredentials();
 checkRevenueCatKey();
 checkAdaptiveIconSafeZone();
+checkSplashMask();
 checkPlayAssets();
 checkModalBackButton();
 

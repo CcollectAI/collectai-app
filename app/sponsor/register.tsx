@@ -148,7 +148,7 @@ const SponsorRegisterScreen: React.FC = () => {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerTitle: 'Become a Sponsor' }} />
+      <Stack.Screen options={{ headerTitle: t('screen_titles.become_sponsor') }} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

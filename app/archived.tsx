@@ -38,8 +38,10 @@ import { dataProvider } from "@/data";
 import type { Item } from "@/data/types";
 import { logger } from "@/lib/logger";
 import { useToast } from "@/components/Toast";
+import { useTranslation } from 'react-i18next';
 
 function ArchivedContent() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { showToast } = useToast();
   const [items, setItems] = useState<Item[]>([]);
@@ -194,7 +196,7 @@ function ArchivedContent() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerTitle: "Archived", headerBackTitle: "Items" }} />
+      <Stack.Screen options={{ headerTitle: t('screen_titles.archived'), headerBackTitle: t('screen_titles.back_items') }} />
 
       {loading ? (
         <View style={styles.loader}>

@@ -26,6 +26,7 @@ import { radius, text, fontWeight } from '@/theme/tokens';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { moverKey, moverTitle, PCT_MIN_PRICE_EUR } from '@/components/marketplace/moverFormat';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 type Direction = 'gainers' | 'losers';
 type MetricWindow = '7d' | '30d';
@@ -108,6 +109,7 @@ function Segmented<T extends string>(props: {
 }
 
 function MarketMoversScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { limits } = useBillingLimits();
   const router = useRouter();
@@ -240,7 +242,7 @@ function MarketMoversScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Stack.Screen
           options={{
-            headerTitle: 'Market Movers',
+            headerTitle: t('screen_titles.market_movers'),
             headerTintColor: colors.text,
             headerStyle: { backgroundColor: colors.background },
           }}
@@ -254,7 +256,7 @@ function MarketMoversScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
-          headerTitle: 'Market Movers',
+          headerTitle: t('screen_titles.market_movers'),
           headerTintColor: colors.text,
           headerStyle: { backgroundColor: colors.background },
         }}

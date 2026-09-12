@@ -37,10 +37,12 @@ import { ProjectStepsCard } from "@/components/projects/ProjectStepsCard";
 import { ProjectNotesCard } from "@/components/projects/ProjectNotesCard";
 import { PaintRecipesCard } from "@/components/projects/PaintRecipesCard";
 import { safeGoBack } from '@/lib/goBack';
+import { useTranslation } from 'react-i18next';
 
 const PAINT_CATEGORIES = ["warhammer", "gunpla", "scale_models"] as const;
 
 function ProjectDetailScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { showToast } = useToast();
@@ -254,7 +256,7 @@ function ProjectDetailScreen() {
   if (loading) {
     return (
       <>
-        <Stack.Screen options={{ headerTitle: "Project" }} />
+        <Stack.Screen options={{ headerTitle: t('screen_titles.project') }} />
         <View style={[styles.safe, { backgroundColor: colors.background }]}>
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.accent} />
@@ -267,7 +269,7 @@ function ProjectDetailScreen() {
   if (error || !project) {
     return (
       <>
-        <Stack.Screen options={{ headerTitle: "Project" }} />
+        <Stack.Screen options={{ headerTitle: t('screen_titles.project') }} />
         <View style={[styles.safe, { backgroundColor: colors.background }]}>
           <View style={styles.loadingContainer}>
             <Ionicons name="alert-circle-outline" size={48} color={colors.muted} />

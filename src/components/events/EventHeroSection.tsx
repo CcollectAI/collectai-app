@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { KIND_ICON, KIND_LABEL } from '@/constants/eventConstants';
-import { parseEventDate, getCountdown } from '@/lib/calendar';
+import { parseEventDate, getCountdown, formatEventWhen } from '@/lib/calendar';
 import type { CollectorsEvent } from '@/data/events';
 
 const EVENT_SOURCE_LABELS: Record<string, string> = {
@@ -81,8 +81,7 @@ export const EventHeroSection = React.memo(function EventHeroSection({
       <View style={styles.metaRow}>
         <Ionicons name="calendar-outline" size={16} color={colors.muted} style={{ marginRight: 6 }} />
         <Text style={[styles.metaText, { color: colors.muted }]}>
-          {event.date}
-          {event.time ? ` \u2022 ${event.time}` : ''}
+          {formatEventWhen(event.date, event.time)}
         </Text>
       </View>
 

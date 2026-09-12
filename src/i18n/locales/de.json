@@ -380,12 +380,16 @@
     "add_first_item": "Füge dein erstes Objekt hinzu",
     "a11y_watchlist_section": "Beobachtungslisten-Bereich",
     "a11y_start_watchlist": "Beobachtungsliste starten",
-    "start_watchlist": "Beobachtungsliste starten",
     "hot_right_now": "Gerade angesagt",
     "a11y_retry_trending": "Trend-Artikel erneut laden",
     "category_breakdown": "Aufschlüsselung nach Kategorie",
     "a11y_all_items_az": "Alle Artikel deiner Sammlung ansehen, A bis Z",
-    "all_items_arrow": "Alle Artikel →"
+    "all_items_arrow": "Alle Artikel →",
+    "no_alerts_yet": "Noch keine Benachrichtigungen",
+    "no_alerts_hint": "Artikel auf deiner Beobachtungsliste melden sich, sobald sie deinen Zielpreis erreichen",
+    "alerts_failed": "Benachrichtigungen konnten nicht geladen werden",
+    "alerts_failed_hint": "Zum erneuten Versuch tippen",
+    "a11y_retry_alerts": "Benachrichtigungen erneut laden"
   },
   "items": {
     "title": "Objekte",

@@ -30,6 +30,7 @@ import { useSettings } from '@/lib/settings';
 import logger from '@/utils/logger';
 import { timeAgo } from '@/lib/timeAgo';
 import { MS_PER_WEEK } from '@/constants/time';
+import { useTranslation } from 'react-i18next';
 
 /* -------------------------------------------------------------------------- */
 /*  Helper: format timestamp                                                    */
@@ -53,6 +54,7 @@ function formatTimestamp(iso?: string): string {
 /* -------------------------------------------------------------------------- */
 
 const EventAnnouncementsScreen: React.FC = () => {
+  const { t } = useTranslation();
   const { eventId } = useLocalSearchParams<{ eventId?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -188,7 +190,7 @@ const EventAnnouncementsScreen: React.FC = () => {
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerTitle: 'Announcements' }} />
+      <Stack.Screen options={{ headerTitle: t('screen_titles.announcements') }} />
 
       {/* Loading */}
       {loading ? (

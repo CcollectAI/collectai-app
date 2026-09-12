@@ -32,7 +32,18 @@ interface PortfolioValueHeaderProps {
     text: string;
     muted: string;
   };
-  total: number;
+  /**
+   * The collection's value, or `null` when it is NOT YET KNOWN — still loading,
+   * or the fetch failed.
+   *
+   * Nullable for the same reason the chart carries `loadFailed`: the total is
+   * derived from `series`, so an empty series rendered a confident
+   * **"COLLECTION VALUE €0  +€0 (0.00%)"** to a member holding €1.348 of items
+   * (seen on Android 2026-09-09, for over a minute on a cold start). Zero is a
+   * real answer; "we could not ask" is not zero. Matches `formatPrice`, which
+   * already renders `—` for null.
+   */
+  total: number | null;
   delta: number;
   deltaPct: number;
   currency: Currency;
@@ -50,8 +61,13 @@ function formatPct(p?: number): string {
 }
 
 function formatDelta(n: number, currency: Currency, fp: PortfolioValueHeaderProps["formatPrice"]): string {
-  const sign = n >= 0 ? "+" : "";
-  return `${sign}${fp(n, currency)}`;
+  // The sign leads, always. Handing a negative straight to `formatPrice` put it
+  // between the symbol and the digits — "€-10" — while a gain read "+€10" two
+  // characters away. Format the magnitude and prefix the sign ourselves.
+  // ASCII hyphen, not U+2212: the percentage beside it comes from `toFixed`,
+  // which emits a hyphen, and two different minus glyphs on one line show.
+  const sign = n >= 0 ? "+" : "-";
+  return `${sign}${fp(Math.abs(n), currency)}`;
 }
 
 // ── Component ──────────────────────────────────────────────────────────
@@ -82,20 +98,34 @@ function PortfolioValueHeaderInner({
           </View>
         )}
       </View>
-      <AnimatedCounter
-        value={total}
-        format={(v) => fp(v)}
-        style={[s.totalValue, { color: theme.text }] as unknown as TextStyle}
-        enabled={animationsEnabled}
-        accessibilityLabel={`Collection value: ${fp(total)}`}
-      />
-      <Text
-        style={[s.deltaText, { color: isPositive ? colors.success : colors.danger }]}
-        accessibilityRole="text"
-        accessibilityLabel={`Change: ${formatDelta(delta, currency, fp)}, ${formatPct(deltaPct)}`}
-      >
-        {formatDelta(delta, currency, fp)} ({formatPct(deltaPct)})
-      </Text>
+      {total === null ? (
+        // Unknown, not zero. The delta line goes with it: "+€0 (0.00%)" beside
+        // a dash would state a change we cannot compute either.
+        <Text
+          style={[s.totalValue, { color: theme.muted }]}
+          accessibilityRole="text"
+          accessibilityLabel="Collection value: not available yet"
+        >
+          —
+        </Text>
+      ) : (
+        <>
+          <AnimatedCounter
+            value={total}
+            format={(v) => fp(v)}
+            style={[s.totalValue, { color: theme.text }] as unknown as TextStyle}
+            enabled={animationsEnabled}
+            accessibilityLabel={`Collection value: ${fp(total)}`}
+          />
+          <Text
+            style={[s.deltaText, { color: isPositive ? colors.success : colors.danger }]}
+            accessibilityRole="text"
+            accessibilityLabel={`Change: ${formatDelta(delta, currency, fp)}, ${formatPct(deltaPct)}`}
+          >
+            {formatDelta(delta, currency, fp)} ({formatPct(deltaPct)})
+          </Text>
+        </>
+      )}
     </View>
   );
 }

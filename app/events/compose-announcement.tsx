@@ -105,7 +105,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerTitle: 'Compose Announcement' }} />
+      <Stack.Screen options={{ headerTitle: t('screen_titles.compose_announcement') }} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

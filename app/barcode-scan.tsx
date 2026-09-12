@@ -462,7 +462,7 @@ function BarcodeScanScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerTitle: 'Scan Barcode' }} />
+      <Stack.Screen options={{ headerTitle: t('screen_titles.scan_barcode') }} />
 
       {scanState === 'scanning' && (
         <KeyboardAvoidingView

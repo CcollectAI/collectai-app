@@ -52,6 +52,7 @@ import type {
   MarketplaceId,
   CurrencyCode,
 } from '@/data/types';
+import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
 // Marketplace branding
@@ -334,6 +335,7 @@ const RevenueSummary = React.memo(function RevenueSummary({
 // ---------------------------------------------------------------------------
 
 function SellerDashboardScreen() {
+  const { t } = useTranslation();
   const { colors, status: statusTokens } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
@@ -536,7 +538,7 @@ function SellerDashboardScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerTitle: 'Seller Dashboard' }} />
+      <Stack.Screen options={{ headerTitle: t('screen_titles.seller_dashboard') }} />
 
       {/* Tab bar */}
       <View style={[styles.tabBar, { borderBottomColor: colors.border }]}>

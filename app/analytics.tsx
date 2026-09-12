@@ -399,7 +399,7 @@ function AnalyticsScreen() {
     if (hasEverHadItems !== true) {
       return (
         <View style={[styles.safe, { backgroundColor: colors.background }]}>
-          <Stack.Screen options={{ headerTitle: 'Analytics' }} />
+          <Stack.Screen options={{ headerTitle: t('screen_titles.analytics') }} />
           <View style={{ flex: 1, justifyContent: 'center' }}>
             <ItemsEmptyState />
           </View>
@@ -408,7 +408,7 @@ function AnalyticsScreen() {
     }
     return (
       <View style={[styles.safe, { backgroundColor: colors.background }]}>
-        <Stack.Screen options={{ headerTitle: 'Analytics' }} />
+        <Stack.Screen options={{ headerTitle: t('screen_titles.analytics') }} />
         <View style={styles.loadingContainer}>
           <SkeletonList count={3} type="analytics" />
         </View>
@@ -420,7 +420,7 @@ function AnalyticsScreen() {
   if (!isPreview && (effectiveSnapshot?.items?.length ?? 0) === 0) {
     return (
       <View style={[styles.safe, { backgroundColor: colors.background }]}>
-        <Stack.Screen options={{ headerTitle: 'Analytics' }} />
+        <Stack.Screen options={{ headerTitle: t('screen_titles.analytics') }} />
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <ItemsEmptyState />
         </View>
@@ -430,7 +430,7 @@ function AnalyticsScreen() {
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerTitle: 'Analytics' }} />
+      <Stack.Screen options={{ headerTitle: t('screen_titles.analytics') }} />
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}

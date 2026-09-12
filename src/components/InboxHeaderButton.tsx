@@ -20,11 +20,19 @@ type Props = {
   color?: string;
   /** Icon size, defaults to 24 */
   size?: number;
+  /**
+   * We are already ON /inbox. Tapping then pushed a SECOND inbox — the same
+   * defect the gear had on Settings (found on Android 2026-09-09): identical
+   * screen, so the tap reads as a no-op while the back stack grows. Marked
+   * selected and inert instead of hidden, so the cluster keeps its shape.
+   */
+  active?: boolean;
 };
 
 export const InboxHeaderButton: React.FC<Props> = ({
   color,
   size = 24,
+  active = false,
 }) => {
   const { colors } = useAppTheme();
   const iconColor = color ?? colors.text;
@@ -67,11 +75,13 @@ export const InboxHeaderButton: React.FC<Props> = ({
   return (
     <AnimatedPressable
       onPress={() => {
+        if (active) return;
         fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
         router.push('/inbox');
       }}
       style={styles.container}
       accessibilityRole="button"
+      accessibilityState={{ selected: active }}
       accessibilityLabel={`Inbox${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
     >
       <Ionicons name="chatbubble-ellipses-outline" size={size} color={iconColor} />

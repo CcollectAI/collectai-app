@@ -34,8 +34,10 @@ import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 function ImportUrlScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
@@ -77,7 +79,7 @@ function ImportUrlScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerTitle: 'Import from URL' }} />
+      <Stack.Screen options={{ headerTitle: t('screen_titles.import_url') }} />
       <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

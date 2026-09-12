@@ -380,12 +380,16 @@
     "add_first_item": "첫 번째 아이템 추가",
     "a11y_watchlist_section": "관심 목록 섹션",
     "a11y_start_watchlist": "관심 목록 시작하기",
-    "start_watchlist": "관심 목록 시작하기",
     "hot_right_now": "지금 인기",
     "a11y_retry_trending": "인기 아이템 다시 불러오기",
     "category_breakdown": "카테고리별 분석",
     "a11y_all_items_az": "컬렉션의 모든 아이템을 A~Z로 보기",
-    "all_items_arrow": "모든 아이템 →"
+    "all_items_arrow": "모든 아이템 →",
+    "no_alerts_yet": "아직 알림이 없습니다",
+    "no_alerts_hint": "관심 목록의 아이템이 목표 가격에 도달하면 알려드립니다",
+    "alerts_failed": "알림을 불러오지 못했습니다",
+    "alerts_failed_hint": "다시 시도하려면 탭하세요",
+    "a11y_retry_alerts": "알림 다시 불러오기"
   },
   "items": {
     "title": "아이템",

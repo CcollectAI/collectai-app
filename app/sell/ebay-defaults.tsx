@@ -44,6 +44,7 @@ import { useToast } from '@/components/Toast';
 import { SELLING_ENABLED } from '@/config/featureFlags';
 import { SellingUnavailable } from '@/components/sell/SellingUnavailable';
 import { safeGoBack } from '@/lib/goBack';
+import { useTranslation } from 'react-i18next';
 
 const FIELDS: Array<{
   key: 'ebay_category_id' | 'fulfillment_policy_id' | 'payment_policy_id' | 'return_policy_id' | 'location_key';
@@ -106,6 +107,7 @@ export default function EbayDefaultsScreenWithBoundary() {
 }
 
 function EbayDefaultsScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const router = useRouter();
@@ -184,7 +186,7 @@ function EbayDefaultsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-        <Stack.Screen options={{ headerTitle: 'eBay defaults' }} />
+        <Stack.Screen options={{ headerTitle: t('screen_titles.ebay_defaults') }} />
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -194,7 +196,7 @@ function EbayDefaultsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
-      <Stack.Screen options={{ headerTitle: 'eBay defaults' }} />
+      <Stack.Screen options={{ headerTitle: t('screen_titles.ebay_defaults') }} />
       <ScrollView
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"

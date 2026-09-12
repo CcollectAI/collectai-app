@@ -39,6 +39,23 @@ export default function Settings({ openProfileEditor = false }: { openProfileEdi
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={styles.content}
     >
+      {/* The screen had NO title at all (found on Android 2026-09-09): the
+          root stack registers it with `iconOnlyHeader`, whose `headerTitle: ''`
+          is only legitimate when the screen renders its own heading — and this
+          one opened straight into the Privacy card. `settings.title` already
+          existed in all seven locales with nothing rendering it. Spec is the
+          one in docs/ui-playbook.md § "The screen title had no spec". */}
+      <Text style={[styles.pageTitle, { color: colors.text }]} accessibilityRole="header">
+        {t('settings.title')}
+      </Text>
+
+      {/* Account FIRST. Its own comment calls this "the first row of the first
+          settings screen — the Apple-ID-row pattern", and HeaderActions says
+          the avatar came off the header cluster because identity lives here.
+          It was mounted FIFTH, under four settings cards, which is the Uber
+          burial that comment explicitly contrasts itself with. */}
+      <ProfileEditSection openEditorOnMount={openProfileEditor} />
+
       {/* Privacy Section */}
       <PrivacySettingsSection />
 
@@ -69,9 +86,6 @@ export default function Settings({ openProfileEditor = false }: { openProfileEdi
           (app/(tabs)/index.tsx:278-297, 845, 885), which work.
 
           See docs/alerts-and-insights.md § "Two preference stores". */}
-
-      {/* Account Section (profile, password, sign out, billing, etc.) */}
-      <ProfileEditSection openEditorOnMount={openProfileEditor} />
 
       {/* Marketplace connections (eBay OAuth, defaults, listing chain).
           Hidden with the rest of selling: the section invites the user to
@@ -278,6 +292,14 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 16,
     paddingBottom: 32,
+  },
+  // docs/ui-playbook.md § "The screen title had no spec, so it drifted eight
+  // ways": 24 / 800 / lineHeight 30 / left, on the screen's own 16 gutter.
+  pageTitle: {
+    fontSize: textToken['2xl'],
+    fontWeight: fw.extrabold,
+    lineHeight: 30,
+    textAlign: 'left',
   },
   section: {
     borderRadius: radius.md,

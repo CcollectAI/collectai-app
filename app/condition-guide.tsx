@@ -20,6 +20,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { AnimatedPressable } from '@/motion';
 import { BRAND_COLORS } from '@/constants/colors';
+import { useTranslation } from 'react-i18next';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Condition Grade Definitions
@@ -171,6 +172,7 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ConditionGuideScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const CONDITION_GRADES = getConditionGrades({ success: colors.success, warning: colors.warning, danger: colors.danger });
   const { settings } = useSettings();
@@ -187,7 +189,7 @@ function ConditionGuideScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerTitle: 'Condition Guide' }} />
+      <Stack.Screen options={{ headerTitle: t('screen_titles.condition_guide') }} />
 
       <ScrollView
         style={styles.scrollView}

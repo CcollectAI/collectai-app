@@ -570,7 +570,7 @@ const ManualAddScreen: React.FC = () => {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerTitle: 'Add Manually' }} />
+      <Stack.Screen options={{ headerTitle: t('screen_titles.add_manually') }} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === "ios" ? "padding" : undefined}

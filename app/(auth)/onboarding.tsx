@@ -496,7 +496,21 @@ function OnboardingScreen() {
                   {/* Gradient ring */}
                   <View style={[styles.iconRing, { borderColor: colors.brand.base + '40' }]}>
                     {item.icon === 'diamond-outline' ? (
-                      <Image source={require('../../assets/icon.png')} style={{ width: 64, height: 64 }} resizeMode="contain" />
+                      // `icon.png` is OPAQUE cream — docs/ui-playbook.md § "The
+                      // splash logo: `imageWidth` sizes the CANVAS, and
+                      // `icon.png` is opaque". At 64pt on a tinted circle it
+                      // drew the exact "tiny square box" that section records
+                      // for the native splash: a cream SQUARE inside the ring
+                      // (seen on Android 2026-09-09). Fill the ring and clip to
+                      // a circle instead, so the cream reads as the badge. 116
+                      // sits inside the 2pt border and still clears the art's
+                      // own diagonal (its bbox is ~0.97x the canvas, so a
+                      // smaller circle would slice the beak and tail).
+                      <Image
+                        source={require('../../assets/icon.png')}
+                        style={styles.brandLogo}
+                        resizeMode="contain"
+                      />
                     ) : (
                       <Ionicons name={item.icon} size={48} color={colors.brand.dark} />
                     )}
@@ -766,11 +780,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 32,
   },
+  brandLogo: {
+    width: 116,
+    height: 116,
+    borderRadius: 58,
+  },
   iconRing: {
     width: 120,
     height: 120,
     borderRadius: 60,
     borderWidth: 2,
+    // The brand logo fills this ring, and its PNG is an opaque cream square —
+    // without this the corners escape the circle.
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },

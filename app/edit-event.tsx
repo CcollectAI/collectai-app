@@ -214,7 +214,7 @@ const EditEventScreen: React.FC = () => {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ headerTitle: 'Edit Event' }} />
+      <Stack.Screen options={{ headerTitle: t('screen_titles.edit_event') }} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

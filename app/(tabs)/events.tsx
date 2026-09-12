@@ -40,7 +40,7 @@ import { useTranslation } from 'react-i18next';
 import { HeaderActions } from '@/components/HeaderActions';
 import { CountdownBadge } from '@/components/EventCountdown';
 import { KIND_ICON, KIND_LABEL } from '@/constants/eventConstants';
-import calendar, { parseEventDate, getCountdown } from '@/lib/calendar';
+import calendar, { parseEventDate, getCountdown, formatEventWhen } from '@/lib/calendar';
 import { CalendarGrid } from '@/components/CalendarGrid';
 import { WeekViewCalendar } from '@/components/events/WeekViewCalendar';
 import { useToast } from '@/components/Toast';
@@ -345,7 +345,7 @@ function EventsScreen() {
   const renderEventCard = (event: CollectorsEvent, showActions = true) => {
     const metaLine = [
       KIND_LABEL[event.kind],
-      event.date + (event.time ? ` — ${event.time}` : ''),
+      formatEventWhen(event.date, event.time),
     ]
       .filter(Boolean)
       .join(' • ');
@@ -369,7 +369,7 @@ function EventsScreen() {
           },
         ]}
         accessibilityRole="button"
-        accessibilityLabel={`${isSponsored ? 'Sponsored: ' : ''}${event.title}, ${KIND_LABEL[event.kind]}, ${event.date}${isPast ? ', past event' : ''}`}
+        accessibilityLabel={`${isSponsored ? 'Sponsored: ' : ''}${event.title}, ${KIND_LABEL[event.kind]}, ${formatEventWhen(event.date, event.time)}${isPast ? ', past event' : ''}`}
       >
         {/* Sponsored badge */}
         {isSponsored && (
@@ -789,7 +789,7 @@ function EventsScreen() {
                 style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={() => handleNearbyEventPress(ev.id)}
                 accessibilityRole="button"
-                accessibilityLabel={`${ev.title}, ${ev.date}${ev.distance_km != null ? `, ${ev.distance_km.toFixed(1)} km away` : ''}`}
+                accessibilityLabel={`${ev.title}, ${formatEventWhen(ev.date)}${ev.distance_km != null ? `, ${ev.distance_km.toFixed(1)} km away` : ''}`}
               >
                 <View style={styles.eventHeader}>
                   <View style={[styles.eventIcon, { backgroundColor: colors.accent }]}>
@@ -797,7 +797,7 @@ function EventsScreen() {
                   </View>
                   <View style={styles.eventInfo}>
                     <Text style={[styles.eventTitle, { color: colors.text }]} numberOfLines={2}>{ev.title}</Text>
-                    <Text style={[styles.eventMeta, { color: colors.muted }]}>{ev.date}</Text>
+                    <Text style={[styles.eventMeta, { color: colors.muted }]}>{formatEventWhen(ev.date)}</Text>
                     {ev.location && <Text style={[styles.eventLocation, { color: colors.muted }]}>{ev.location}</Text>}
                   </View>
                   {ev.distance_km != null && (

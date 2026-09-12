@@ -291,7 +291,9 @@ function PortfolioScreen() {
   // open whose result nothing renders, which is the dead-path shape this
   // codebase keeps rediscovering. `useAlertsFeed` below is separate and stays.
 
-  const { alerts, markAsRead } = useAlertsFeed({
+  // `error` and `refetch` are read: an alerts fetch that FAILED must not be
+  // rendered as "nothing to show" — see AlertsCard's `failed` prop.
+  const { alerts, markAsRead, error: alertsError, refetch: refetchAlerts } = useAlertsFeed({
     limit: 5,
     enabled: featureFlags.FEATURE_DATA_INSIGHTS_ALERTS
   });
@@ -662,7 +664,19 @@ function PortfolioScreen() {
             {/* Collection Value */}
             <PortfolioValueHeader
               theme={colors}
-              total={scrubPoint ? scrubPoint.v : total}
+              // `total` is derived from `series`, so an empty series prints
+              // €0 — the same lie `seriesFailed` exists to stop the chart
+              // telling ("no history yet" for a transport failure). Hand the
+              // header null while we have no series AND are still loading or
+              // have failed; once a series is in hand, keep showing it through
+              // a refresh rather than flashing a dash on every focus.
+              total={
+                scrubPoint
+                  ? scrubPoint.v
+                  : series.length === 0 && (loading || seriesFailed)
+                    ? null
+                    : total
+              }
               delta={delta}
               deltaPct={deltaPct}
               currency={settings.currency}
@@ -845,6 +859,8 @@ function PortfolioScreen() {
             onAlertPress={handleAlertPress}
             onStartWatchlist={handleWatchlistPress}
             showEmptyState={true}
+            failed={!!alertsError}
+            onRetry={refetchAlerts}
           />
         )}
 

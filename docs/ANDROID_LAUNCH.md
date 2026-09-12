@@ -534,6 +534,64 @@ understand. Mutation-proven: the pre-fix asset exits 1 naming the exact overflow
 beak, head and eye — and the complete treasure chest now sit inside the mask,
 with the teal `backgroundColor` as a ring around them.
 
+### The splash logo was clipped by the same class of mask (2026-09-09)
+
+Launching the app on the emulator showed the bird **with its head sliced off**
+and no "Sparrow Collect" wordmark at all — while `splashscreen_logo.png` pulled
+straight out of the APK contains the whole logo *and* the wordmark. The icon
+was fixed the day before; this is the same failure one layer down, and the icon
+gate could not see it because it reads a different asset entirely.
+
+Mechanism, read out of the installed plugin rather than assumed
+(`@expo/prebuild-config/.../expo-splash-screen/withAndroidSplashImages.js`):
+
+```js
+const size = imageWidth * multiplier;   // 300dp -> 900px at xxhdpi
+const canvasSize = 288 * multiplier;    // the Android 12 icon canvas: 864px
+```
+
+Two separate losses stack. `imageWidth: 300` is already **larger than the 288dp
+canvas**, so the composite crops before the device sees it; then the theme
+(`aapt2 dump resources`: `windowSplashScreenAnimatedIcon`, no icon background)
+means the platform shows only the inner **192dp of the 288dp canvas, masked to
+a circle**. Android's spec: 288dp canvas, art must fit a **192dp circle** — or
+240dp/160dp when an icon background is set.
+
+**The guarantee is a circle, not a box.** Art that fits 192dp wide still loses
+its corners, which is exactly why a wordmark under a logo disappears first.
+
+Fix — Android now gets the icon alone, at a width that fits the circle:
+
+```json
+"android": { "image": "./assets/icon.png", "imageWidth": 200 }
+```
+
+iOS keeps `splash.png` at 300 (a storyboard, no mask, wordmark intact), and the
+wordmark still arrives on Android a beat later from the JS `BrandedSplash`.
+Measured: the furthest artwork pixel goes from **174.1dp** from centre to
+**92.4dp**, against a 96dp mask radius.
+
+Gate: `scripts/check_splash_mask.py` (`npm run check:splash-mask`), wired into
+`preflight:android` next to the icon check. It resolves the *effective Android*
+config the way `withSplashScreen.js` merges it (`android` over the top level),
+measures the furthest artwork pixel **from the centre** — a radius, because the
+mask is round — and fails with the maximum `imageWidth` that would fit. Artwork
+is found by colour, not alpha: the art is opaque over cream, so an alpha bbox
+is the whole canvas. Mutation-proven in both directions: the shipped config
+exits 1 at 174.1dp, the fixed one exits 0 at 92.4dp.
+
+✅ **Verified on device** (2026-09-09, `android-apk` local build installed on
+the emulator): the launch screen shows the **whole bird — head, beak, eye and
+tail — and the complete chest**, nothing clipped. Two checks before that, both
+on the shipped artefact rather than on the config: `splashscreen_logo` extracted
+from the release APK (`aapt2 dump resources` — release builds obfuscate resource
+FILE names, so the drawable is `res/St.png`, and only the resource table maps it
+back), then put through the platform's own 192dp circular mask.
+
+The pre-fix replay reproduced the on-device clipping exactly — decapitated bird,
+no wordmark — which is the bar a preview has to clear before its "after" means
+anything.
+
 ### Stop rebuilding for JS changes — use the dev client (2026-09-08)
 
 Two local builds were spent verifying fixes on 2026-09-08, and only ONE of them

@@ -2000,6 +2000,89 @@ are catalog-reachable; TCG categories key predictions by TCGplayer product id
 (`lorcana:tcgplayer:702699:normal`) while the catalog uses set-slugs, so
 lorcana/digimon/one_piece_tcg sit at 0% until an id crosswalk exists.
 
+## The second Android walk, and what "Android-only" actually means (2026-09-09)
+
+Five defects, and the useful lesson is that only ONE of them was an Android
+bug. The device is where they were *seen*; the platform axis has to be
+established separately, per defect, before the fix is scoped.
+
+**Android-only — the splash logo was clipped by the Android 12 icon mask.**
+✅ **Fixed and verified on a release build installed on the device.**
+Reported as "the launch screen has the sparrow logo cutting off": the bird's
+head was gone and the "Sparrow Collect" wordmark was missing entirely, while
+`splashscreen_logo.png` inside the APK contains both. `imageWidth: 300` on a
+**288dp** canvas, of which the platform shows an inner **192dp circle**. Fixed
+under an `android` key so iOS keeps the wordmark it renders correctly. Gate
+`check:splash-mask`, in `preflight:android`. Full mechanism:
+`docs/ANDROID_LAUNCH.md`. **This is the same class as yesterday's launcher
+icon, one layer down — and yesterday's gate could not see it, because it reads
+a different asset.** A gate against a failure class covers the asset it names,
+not the class.
+
+**Both platforms — three defects that Android merely exposed first:**
+
+- **`COLLECTION VALUE €0  +€0 (0.00%)`** for over a minute on a cold start, to
+  an account holding €1.348. `total` is derived from `series`, and an empty
+  series is what "still loading" and "the fetch failed" both look like — the
+  exact thing `seriesFailed` already exists to stop the *chart* saying. The
+  header now takes `total: number | null` and prints `—`. The same line also
+  read **`€-10`** for a loss beside **`+€10`** for a gain, because
+  `formatPrice` puts a minus between the symbol and the digits; the sign is
+  now prefixed to the magnitude.
+- **`Convention • 2026-09-11 — 20:00:00`** on every event row. `parseEventDate`
+  was two lines from where the raw fields were interpolated. One
+  `formatEventWhen` chokepoint now serves all six call sites (list, detail
+  hero, nearby row, share text, two a11y labels); proven over **all 3,285 real
+  prod event rows**.
+- **"Start Your Watchlist"** shown to a member with five watchlist rows, and
+  again whenever the alerts fetch failed. See `docs/alerts-and-insights.md`.
+
+### The release-build walk found what the dev client could not (2026-09-09)
+
+A fresh `android-apk` install wipes the session, so the walk went through the
+**login → notification permission → six-step onboarding** path for the first
+time. Three more defects, all cross-platform:
+
+- **The header cluster pushed a duplicate of the screen you were already on.**
+  The gear on `/settings` pushed Settings again — identical screen, so the tap
+  reads as dead, and it took **two back presses to leave**. Same code path for
+  the bell on `/notifications` and the bubble on `/inbox`. Fixed in
+  `HeaderActions`: `usePathname()` decides, the current screen's icon renders
+  tinted + `selected` and does not navigate. `docs/ui-playbook.md`.
+- **Settings has no title.** Back chevron, three icons, then straight into the
+  Privacy card — every other screen names itself.
+- **The onboarding hero draws `icon.png` as a cream SQUARE inside a teal
+  circle** — the "tiny square box" this playbook already documents for the
+  splash (the PNG is opaque, so a tinted circle behind it shows as a frame).
+  The class was written down; a second surface walked into it anyway.
+
+**Neither — two "findings" that were correct as built**, recorded so they are
+not re-fixed: the back chevron on tab roots is deliberate (`TabBackButton`,
+added by request 2026-08-14, `safeGoBack` never dead-ends), and the countdown
+jumping from "1 day 23h" to "2 days" is the intended granularity change at
+`days === 2`. Checking the file's own comments cost two minutes; "fixing" them
+would have cost a regression.
+
+**Content, not code:** the Explore grid put one game's cards under another
+game's name three times — Magic showed **Yu-Gi-Oh!** cards, Yu-Gi-Oh! showed
+**Pokémon** Charizards, Lorcana showed a **Rider-Waite tarot** spread. Verified
+by downloading each photo, not by squinting at a thumbnail. The genuine
+Yu-Gi-Oh! photo moved to the Yu-Gi-Oh! tile; Magic and Lorcana are now `''`
+(both readers degrade to the accent tile + icon) because a wrong-game photo is
+a claim, not a decoration.
+
+Playbook entries for all of it: `docs/ui-playbook.md` — *"Everything above is
+the iOS half"* (splash mask), *"A backend field is a value, not a label"*
+(event dates), *"A number you do not have yet is not zero"* (the €0 header),
+*"An empty list answers ONE question"* (the watchlist card).
+
+**The emulator is not the app.** A 15 s Supabase timeout storm and a
+"Couldn't load listings" error both looked like product bugs; querying the same
+tables from the laptop **as that user's JWT** returned in 0.09–0.13 s, and the
+marketplace had 5 listings. Ask the server before believing the device. The dev
+client also ANR'd on a cold-booted AVD while Metro served 4,787 modules — which
+is why the walk moves to an `android-apk` build once native changes are queued.
+
 ## Four bugs a device found that no gate could (2026-09-08)
 
 Walking the app on an emulator with a real session found four defects in one

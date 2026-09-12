@@ -363,6 +363,66 @@ here.** The native splash renders the art at ~164pt; the animated overlay then
 renders `icon.png` in a 124pt box, so its art is ~73pt. They have never matched.
 Worth closing, but it is a separate change from adding the wordmark.
 
+### Everything above is the iOS half. Android masks the splash to a CIRCLE (2026-09-09)
+
+Reported as "the launch screen has the sparrow logo cutting off": on Android the
+bird had no head and the wordmark this section added was **not on screen at
+all**, while `splashscreen_logo.png` inside the APK contained both.
+
+`imageWidth: 300` is sized against an iPhone SE's 320pt above. Android never
+asked about screen width. The plugin
+(`@expo/prebuild-config/.../withAndroidSplashImages.js`) composites onto a fixed
+**288dp** canvas —
+
+```js
+const size = imageWidth * multiplier;   // 300dp → 900px at xxhdpi
+const canvasSize = 288 * multiplier;    // 864px
+```
+
+— so 300 is already *larger than the canvas* and gets cropped before the device
+sees it. Then Android 12+ (theme verified in the APK with `aapt2 dump
+resources`: `windowSplashScreenAnimatedIcon`, no icon background) shows only the
+inner **192dp of that 288dp canvas, masked to a circle**. Android's own spec:
+288dp canvas, artwork must fit a **192dp circle**; 240dp/160dp if you set an
+icon background.
+
+**Three rules follow, and only the first is about splashes:**
+
+1. **The guarantee is a circle, not a box.** Art that fits 192dp *wide* still
+   loses its corners — which is why a wordmark under a logo is the first thing
+   to disappear, and why the bird lost its beak and tail.
+2. **A number tuned for one platform is not a cross-platform number.**
+   `imageWidth: 300` was correct, measured, and documented — against the wrong
+   constraint for the other half of the userbase.
+3. **Platform-scope the fix, not the file.** Android now gets its own block, so
+   iOS keeps the wordmark it renders correctly:
+
+```json
+["expo-splash-screen", {
+  "image": "./assets/splash.png", "imageWidth": 300,
+  "backgroundColor": "#F9F9F4", "resizeMode": "contain",
+  "android": { "image": "./assets/icon.png", "imageWidth": 200 }
+}]
+```
+
+`icon.png`, not `splash.png`: Android 12's splash is designed to show the app
+ICON, and a wordmark that fits a 192dp circle is too small to read. The wordmark
+still arrives a beat later from `src/components/SplashScreen.tsx`. Measured: the
+furthest artwork pixel drops from **174.1dp** from centre to **92.4dp**, against
+a 96dp mask radius.
+
+Gate: **`npm run check:splash-mask`** (`scripts/check_splash_mask.py`), wired
+into `preflight:android`. It resolves the *effective Android* config the way
+`withSplashScreen.js` merges it, measures the furthest artwork pixel **from the
+centre** — a radius, because the mask is round — and names the maximum
+`imageWidth` that would fit. Artwork is found by COLOUR, not alpha: the art is
+opaque over cream, so an alpha bbox is the whole canvas and says nothing.
+
+⚠️ **`check:adaptive-icon` was already in `preflight:android` and could not see
+this.** It gates the same failure class one layer up, on
+`android.adaptiveIcon.foregroundImage` — a different asset. A gate covers the
+file it names, never the class.
+
 
 ## Never put a tall interactive component in a FlashList `ListHeaderComponent`
 
@@ -516,12 +576,29 @@ third thing"; reusing them couples two questions that can diverge. Each
 locale, so the wording cannot drift while the identities stay separate — the
 resolution `search.title` got when it took `nav.explore`'s value verbatim.
 
-⚠️ **Not yet wired into `verify:prebuild`, because it is still red.** The 26
-call sites need `useTranslation()` in 17 files whose component shapes differ
-(arrow components, function declarations, nested components), and hook placement
-is what produced a `useCallback` spliced into a `useEffect` body the same day. A
-red gate that is not wired documents the debt honestly; wiring it before the
-debt is paid would just break the build.
+~~⚠️ Not yet wired into `verify:prebuild`, because it is still red.~~ **Paid off
+2026-09-12 — all 26 wired, gate GREEN, and now in `verify:prebuild`.** The debt
+above was real: the 26 call sites needed `useTranslation()` in 12 files whose
+component shapes differ, and hook placement is what had gone wrong before.
+
+**The keys had been waiting the whole time.** All 20 `screen_titles.*` keys
+existed in all seven locales — seeded when the gate was written — and nothing
+consumed a single one. Capture without a consumer, on the i18n surface itself.
+
+Three things made a 26-site mechanical edit safe:
+
+1. **The compiler is the checker for scope.** Replace the literals first and
+   `tsc` names every file where `t` is not in scope — 12 of them, exactly. No
+   judgement about which files "probably" have the hook.
+2. **The gate's own output normalises quotes.** It prints `headerTitle: "X"`
+   whichever quote the source used, so a replace driven by that output matched
+   only 4 of 18 files. Both quote styles, or you silently fix a quarter of the
+   class — the same blindness `check:i18n-defaults` shipped with.
+3. **Insert the hook against the enclosing COMPONENT, not the nearest line.**
+   Scanning up to the last top-level `function X` / `const X: React.FC` puts it
+   as the first statement of the component. One file still needed hand-fixing:
+   the import landed inside a multi-line `import type { … }` block, which `tsc`
+   caught immediately.
 
 ## Component Checklist
 
@@ -2030,6 +2107,79 @@ checked separately.** Here it says what is true and what fixes it: *"Your
 public profile isn't set up yet — add a display name so other collectors can
 find you"*, with a route to Settings.
 
+## A backend field is a value, not a label (2026-09-09)
+
+Every row on the Events tab read **`Convention • 2026-09-11 — 20:00:00`** — an
+ISO date and a seconds-precise time, on the busiest list in the app. Six places
+interpolated `event.date` and `event.time` straight into text: the list card,
+the detail hero, the nearby row, the SHARE text (which leaves the app), and two
+accessibility labels.
+
+`parseEventDate` — which already handles AM/PM and trailing timezone
+abbreviations — sat **two lines away** in the same file, used for sorting and
+countdowns. Nothing formatted its result for display.
+
+`formatEventWhen(date, time)` in `src/lib/calendar.ts` is now the single
+chokepoint for all six: *"Sep 11, 2026 · 8:00 PM"*, date in the app's
+`DATE_LOCALE`, clock in the device's. Two rules it encodes:
+
+- **Degrade precision, never existence.** An unparseable TIME still yields the
+  date; an unparseable DATE falls back to the raw string rather than blanking
+  the line ([[learning_a_bad_time_must_not_delete_the_date]]).
+- **Both halves come from the same instant**, so a time carrying a timezone
+  cannot print its converted clock beside the pre-shift day.
+
+Verified over **all 3,285 real prod event rows** (2,781 with `HH:MM:SS`, 504
+with a null time) — no raw ISO, no seconds, no blank line. Gate:
+`__tests__/lib/formatEventWhen.test.ts`, in `verify:prebuild`.
+
+## A number you do not have yet is not zero (2026-09-09)
+
+Home's hero printed **`COLLECTION VALUE €0` / `+€0 (0.00%)`** for over a minute
+on an Android cold start, to an account holding €1.348. Nothing was broken: the
+total is derived from `series`, `series` starts `[]`, and `[]` reduces to 0.
+
+The screen already knew better one component lower. `seriesFailed` exists
+precisely so the CHART does not render "no history yet" for a transport failure
+— and the header above it, reading the same empty array, stated a number.
+
+**Rules for any headline figure:**
+
+- **Type it nullable.** `PortfolioValueHeader` takes `total: number | null`;
+  `null` renders `—` and **suppresses the delta line**, because "+€0 (0.00%)"
+  beside a dash is a second claim you cannot make either. This matches
+  `formatPrice`, which already renders `—` for null.
+- **Empty is three states, not one.** Still loading / the fetch failed /
+  genuinely nothing. Only the third may print `0`. Home passes null while
+  `series.length === 0 && (loading || seriesFailed)` and keeps the last value
+  through a refresh, so the figure never flashes a dash on every focus.
+- **The sign leads.** `formatPrice(-10)` puts the minus between symbol and
+  digits — `€-10`, beside a gain reading `+€10`. Format the magnitude and
+  prefix the sign yourself, with an ASCII hyphen so it matches the `toFixed`
+  percentage next to it.
+
+Gate: `__tests__/components/portfolioValueHeader.test.tsx`, in
+`verify:prebuild`, mutation-proven both ways.
+
+## An empty list answers ONE question — check which one (2026-09-09)
+
+The Home card headed **"Watchlist"** is fed **triggered alerts**, and its only
+empty state read *"Start Your Watchlist"*. The account on screen had **five
+watchlist rows** (verified against PostgREST as that user's JWT) and zero
+alerts, so the card invited a member to start something they already had — and
+said exactly the same thing when the fetch had FAILED, because `useAlertsFeed`
+sets `error` and leaves `alerts` at `[]`, and the screen destructured neither.
+
+**Before writing an empty state, name the question the empty array answered.**
+Here the array answers "have any alerts fired?", the header asks "do you watch
+anything?", and the copy answered a third question nobody asked. The card now
+says only what is true without knowing the watchlist count — *"No alerts yet"*,
+or *"Couldn't load alerts / Tap to try again"* when it failed. Full account:
+`docs/alerts-and-insights.md`. Gate:
+`__tests__/components/alertsCardEmptyState.test.tsx`.
+
+Related and older: [Your own empty state is a different sentence](#your-own-empty-state-is-a-different-sentence-2026-08-20).
+
 ## The top-right cluster is ONE component, on every screen (2026-08-20)
 
 Reported as *"top right on portfolio there's a settings icon, notification icon
@@ -2060,6 +2210,28 @@ under Settings → Privacy → Privacy Center, and it needed CNBC and Washington
 Post how-to articles to be findable. Row one of the first settings screen,
 behind a gear that is now on every screen, is the opposite of a fourth-level
 menu.
+
+### …including on the three screens it navigates TO (2026-09-09)
+
+"On every screen" turned out to include `/settings`, `/notifications` and
+`/inbox` — and each control pushed its own destination unconditionally. On
+Settings, **the gear pushed a second copy of Settings**.
+
+It is invisible by construction: the pushed screen is identical to the one you
+were on, so the tap reads as a dead control. What gives it away is BACK — it
+took **two presses to leave Settings**, which is how it was caught on Android.
+A control that silently deepens the back stack is worse than one that does
+nothing, because the user's own escape route is what breaks.
+
+**The control for the screen you are already on is a state indicator, not a
+button.** `HeaderActions` now compares `usePathname()` to each destination and,
+when they match, renders the icon in `colors.accent` with
+`accessibilityState={{ selected: true }}` and no navigation — the tab-bar
+convention.
+
+⚠️ **Not hidden — tinted.** Hiding it would shrink the cluster on three
+screens, which is the exact drift this component was created to end. Shape
+constant, behaviour correct.
 
 **Two defects this fixed that were not the reported one:**
 

@@ -29,7 +29,11 @@
           "image": "./assets/splash.png",
           "imageWidth": 300,
           "backgroundColor": "#F9F9F4",
-          "resizeMode": "contain"
+          "resizeMode": "contain",
+          "android": {
+            "image": "./assets/icon.png",
+            "imageWidth": 200
+          }
         }
       ],
       "expo-font",
