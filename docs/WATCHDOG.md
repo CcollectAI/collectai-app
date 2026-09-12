@@ -1097,9 +1097,36 @@ for every other host. Proven end to end with a real httpx call to
 absent from the captured log. The test also asserts the *unredacted* record
 really does leak, so a fixture that stops reproducing the bug fails the suite.
 
-⚠️ **The token in the existing logs is still there.** Rotating it is a
-BotFather action and is Merle's call; the four rotated `bake.log.*` files hold
-it too.
+#### It was never only Telegram (same day)
+
+The count that mattered came from asking the log a wider question:
+
+| host | parameter | lines in the live log |
+|---|---|---|
+| `app.ticketmaster.com` | `apikey` | **896** |
+| `api.seatgeek.com` | `client_id` | **752** |
+| `api.scrape.do` | `token` | **298** (billed per request) |
+| `api.telegram.org` | bot token, in the PATH | 81 |
+
+One cause: httpx logs every outbound request URL at INFO. The fix therefore
+belongs beside the uvicorn access-log redaction in `app/logging_filters.py`,
+not in `telegram_ops`, and it reuses that module's **fail-closed** allowlist —
+a query value is redacted unless its key is explicitly safe, so the next
+vendor's parameter is covered on the day it is added.
+
+⚠️ **The unit tests passed while the fix did nothing.** The filter guarded on
+`isinstance(arg, str)`; httpx passes an **httpx.URL object**, so every real
+request was skipped. Only an end-to-end run — real requests to all three hosts
+with dummy credentials, grepping the captured log — caught it. The fixture had
+been simpler than the thing it stood for. Confirmed live after deploy:
+
+```
+HTTP Request: GET https://app.ticketmaster.com/...?apikey=%3Credacted%3E... "200 OK"
+```
+
+⚠️ **The credentials in the existing logs are still there.** Rotating them is
+Merle's call — BotFather for the bot token, each vendor console for the rest —
+and the four rotated `bake.log.*` files hold them too.
 
 ⚠️ **`send_ops_alert`'s docstring says "We send ~3 alerts per month"** and uses
 that to justify a fresh `httpx.AsyncClient` per call. The measured rate during

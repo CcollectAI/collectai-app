@@ -493,6 +493,50 @@ drops uncategorised items, so the parts stop adding up to the total the header
 shows. Group on `COALESCE(NULLIF(category, ''), 'uncategorized')` instead
 (done in `portfolio_router`, `trends_and_deepdive_router`, `insights_router`).
 
+##### It happened again, in the same screen, twice (2026-09-12)
+
+Found on the first screen of an Android walk: Home's hero read **€1.288** while
+the stats strip 3 cm below it read **€1.348**. Both claim to be the collection's
+value. `/portfolio/timeseries` had drifted from its siblings in two independent
+ways, and the invariant it broke — *last point == `/portfolio/overview`* — was
+written in its own query comment.
+
+**1. The window excluded the prediction.** `per_day` held only predictions
+generated INSIDE the requested window, so an item last priced before the window
+start had no row on any day and fell through to `stored_value` — on the last
+day too:
+
+| range | last point | overview | |
+|---|---|---|---|
+| 30d | 1347.68 | 1347.68 | agree |
+| 7d | **1288.00** | 1347.68 | off by 59.68 |
+| 1d | **1323.29** | 1347.68 | off by 24.39 |
+
+Two items last priced 8 days ago account for exactly 59.68; all three for
+exactly 24.39. **The narrower the range, the wronger the number — and 7D is the
+default**, so Home opened on it. Fixed by carrying each item's last prediction
+in from before the window, stamped at the window start.
+
+**2. It overrode the user's own valuation.** `public.item_value_v1` ranks
+`attrs->>'value_choice' = 'mine'` ABOVE every prediction. The timeseries
+hand-rolled its own COALESCE chain and omitted that rung, so an item its owner
+had explicitly valued at €34.50 was drawn at the model's €79.25, running that
+account's curve €44.75 high at *every* range.
+
+**The rule this section states was followed in spirit and broken in fact.** The
+query's comment says it uses "the same COALESCE chain the sibling endpoints
+use" — it used a *copy* of an older version of that chain, written before
+`value_choice` existed. A copy is not the expression. `item_value_v1` is the one
+definition; a value site that cannot call it must be checked against it.
+
+`server/scripts/check_timeseries_invariant.py` executes the promise — it reads
+the route's OWN query text out of source (retyping it is how a check drifts from
+the thing it checks) and compares the last point to `item_value_v1` for the top
+accounts at every range. It went from naming 5 failing ranges to PASS
+everywhere. ⚠️ Its own first draft retyped a COALESCE chain as the reference and
+reported a 5.76 "drift" that was the reference being wrong — the mistake this
+section is about, made inside the checker for it.
+
 ##### There are TWO prediction tables. Use both.
 
 | table | what it is | joined by | historically read by |

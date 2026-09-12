@@ -2000,6 +2000,50 @@ are catalog-reachable; TCG categories key predictions by TCGplayer product id
 (`lorcana:tcgplayer:702699:normal`) while the catalog uses set-slugs, so
 lorcana/digimon/one_piece_tcg sit at 0% until an id crosswalk exists.
 
+## The Home headline was wrong, twice, and the watchdog was paging about itself (2026-09-12)
+
+**Home's hero read €1.288 while the stats strip 3 cm below it read €1.348.**
+`/portfolio/timeseries` had drifted from `/portfolio/overview` two independent
+ways, and the invariant it broke was written in its own query comment — nothing
+executed the promise, so nothing said so.
+
+- **The window excluded the prediction.** Only predictions generated INSIDE the
+  requested window were held, so an item last priced before the window start
+  fell through to its stored value on every day drawn, the last one included.
+  30d agreed; **7d was off by €59.68 and 1d by €24.39**, and **7D is the
+  default range** — Home opened on the wrong number. Two items priced 8 days
+  ago account for exactly 59.68.
+- **It overrode the user's own valuation.** `public.item_value_v1` ranks
+  `attrs->>'value_choice' = 'mine'` above every prediction; this query's
+  hand-rolled chain omitted that rung, so an item its owner had deliberately
+  valued at €34.50 was drawn at the model's €79.25 — €44.75 high at every
+  range. A screen that silently overrules the user is worse than a wrong total.
+
+Gate: `server/scripts/check_timeseries_invariant.py`, which reads the route's
+OWN query text out of source — retyping it is how a check drifts from the thing
+it checks, and its first draft did exactly that and reported a 5.76 "drift"
+that was its own reference being wrong. Full account: `docs/ARCHITECTURE.md`
+§ "One valuation expression".
+
+**Three Telegram alerts were firing hourly and two of them were the checks.**
+`value_change_worker` really was broken (`$2` inferred as `interval` — see
+`check:param-interval`), but the silent-writer probe was counting mandates the
+worker could never scan, and `coverage_zero_categories` called three categories
+with **zero hits ever** a "likely adapter outage". Full account:
+`docs/WATCHDOG.md`.
+
+**The alert lines were leaking credentials.** httpx logs every outbound URL at
+INFO: 896 Ticketmaster `apikey`, 752 SeatGeek `client_id`, 298 scrape.do
+`token`, 81 Telegram bot tokens — in a 0664 log plus four rotated copies. Fixed
+beside the uvicorn access-log redaction, fail-closed on the same allowlist.
+⚠️ **The unit tests passed while the fix did nothing** — httpx passes a URL
+OBJECT and the filter guarded on `isinstance(str)`. Only an end-to-end run
+caught it.
+
+⚠️ **Still in prod: five `DEMO …` items** on the main account (€900 LEGO,
+Charizard, Blue-Eyes, Lorcana box, Zoro), seeded 2026-08-19 for a trade
+walkthrough. Every portfolio figure measured today includes them.
+
 ## The second Android walk, and what "Android-only" actually means (2026-09-09)
 
 Five defects, and the useful lesson is that only ONE of them was an Android
