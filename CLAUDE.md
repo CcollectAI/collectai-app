@@ -1039,6 +1039,30 @@ from nowhere — the house failure mode, five instances in one day.
   deliberately commented-out `// import { SellTimingBadge }` counted as an
   import (reporting a phantom). Strip comments first — a comment is neither a
   reference nor a declaration.
+- **The watchlist showed `mtg` and `onepiece`** while Portfolio, one screen
+  earlier, showed "Pokémon Cards" for the same rows. `docs/TAXONOMY.md:110`
+  states "Never shows a raw slug" as the one property the app CAN promise about
+  categories, and nothing enforced it: **36 sites** across 20 files. New gate:
+  **`npm run check:category-display`**
+  (`scripts/check-category-display.mjs`), in `verify:prebuild`.
+  Two things this cost that are worth remembering:
+  - **`accessibilityLabel` is user-facing text.** Counting it found four labels
+    reading `one_piece_tcg` ALOUD. Same gap as `AlertsCard`, which kept saying
+    "Start your watchlist" to a screen reader an hour after the visible copy
+    stopped. **A fix that only lands in the pixels is half a fix** — sweep the
+    a11y layer in the same pass as the render.
+  - **The a11y rule silently did nothing on its first version** and the gate
+    went green on a file I had deliberately broken. Mutation-prove a new gate in
+    EVERY position it claims to cover, from a green baseline — one planted
+    defect is not proof of the rule that did not catch it.
+  The right implementation already existed in
+  `src/components/watchlist/WatchlistItemCard.tsx` and **nothing imported it**;
+  the shipped row is inline in `app/(tabs)/wishlist.tsx`. A correct duplicate is
+  worse than none — it answers the question you were about to ask about the live
+  code. `check:unrendered` asks "imported and never rendered"; **"never imported
+  at all" has no gate**, and 29 of 235 component files are in that state
+  (measured by module PATH — searching for the file's stem called `Toast.tsx`
+  dead while 61 files import `useToast` from it).
 - **Sharing to a DM delivered dead text.** RN does not linkify inside `<Text>`,
   so a shared listing arrived as characters the recipient could read and not
   follow. `src/lib/linkify.ts` + a `MessageBody` in the thread screen; our own

@@ -109,6 +109,55 @@ That is fine and the test asserts readability rather than registry membership:
 categories can also be user-typed (`CUSTOM_CATEGORY_SENTINEL`), so membership is
 not a property the app can promise. "Never shows a raw slug" is.
 
+### The promise had no enforcement until 2026-09-12
+
+It was stated here and violated in **36 places**, found by walking the watchlist
+on Android: rows read `mtg`, `pokemon`, `manga`, `onepiece` while Portfolio, one
+screen earlier, showed "Pokémon Cards" and "LEGO" for the same data.
+
+`npm run check:category-display` (`scripts/check-category-display.mjs`, in
+`verify:prebuild`) now enforces it. It flags a `.category` / `.condition` member
+expression that reaches a user without a display-name wrapper.
+
+Two design decisions in that gate, both load-bearing:
+
+- **`accessibilityLabel` counts as user-facing.** Writing that rule found four
+  labels reading `one_piece_tcg` aloud (`TopItemsList` ×3, `WatchlistWidget`),
+  and two `replace(/_/g, ' ')` labels whose visible twins had already been
+  fixed. It is the same gap that left `AlertsCard` saying "Start your watchlist"
+  to a screen reader an hour after the visible copy stopped saying it. **A fix
+  that only lands in the pixels is half a fix.**
+- **Guards are not renders.** `{item.category ? <Text/> : null}` reads the slug
+  to decide and shows none of it; `&&` on the left is a guard, but `??` and
+  `||` on the left are NOT — `{it.category ?? '—'}` renders the slug whenever
+  it is present. Flagging guards took the count from 28 to 53 of which half
+  were noise, which is how a gate stops being run
+  (`learning_the_gate_existed_and_was_never_run`).
+
+The first version of the accessibility rule **silently did nothing** — the
+`JSXExpressionContainer` branch returned before the attribute branch was
+reached, so the gate went green on a file I had deliberately broken. Only
+mutation-proving from a green baseline caught it. Prove a new gate FAILS on a
+planted defect in every position it claims to cover, not just one.
+
+### The correct row existed and shipped nowhere
+
+`src/components/watchlist/WatchlistItemCard.tsx` called `categoryDisplayName`
+and did this right. **Nothing imported it.** The row on screen is inline in
+`app/(tabs)/wishlist.tsx` and rendered `{item.category}` raw — and a comment in
+that file reasoned about what the display does by citing the dead component.
+
+**A correct duplicate is worse than no duplicate**: it answers the question you
+were about to ask about the shipped code, and answers it wrongly. Deleted.
+
+`check:unrendered` covers "imported and never put in a tree" — a different axis.
+"Never imported at all" has no gate. Measured 2026-09-12 by module path (NOT by
+exported symbol name — a first pass searching for the file's stem called
+`Toast.tsx` dead while 61 files import `useToast` from it): **29 of 235
+component files are imported by nothing**, including `WatchlistWidget.tsx` and
+`SearchStatusPanel.tsx`, both of which received fixes in this very sweep that
+therefore ship to no one. Worth a pass; not attempted here.
+
 ## `items.condition` follows this same rule (2026-08-31)
 
 The category work above was reasoned through once; condition had the identical
