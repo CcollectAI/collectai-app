@@ -335,7 +335,25 @@ export async function listItems(
       // TestFlight/production builds, so a warn here would be invisible on the
       // exact build where this matters most.
       logger.error('[SupabaseDataProvider] listItems timed out after %dms', ITEMS_READ_TIMEOUT_MS);
-      return [];
+      // RETHROW, not `return []` — the same reason the `if (error)` branch six
+      // lines below already gives, which this branch used to contradict.
+      //
+      // Seen on Android 2026-09-12: the Items tab opened on "Portfolio total:
+      // €0 / Start your collection / Add Your First Item" for an account
+      // holding €1.348 across 8 items, and stayed there. PostgREST returned
+      // those 8 rows to the same JWT throughout — the read had merely timed
+      // out, and `[]` told the collector their collection was empty AND
+      // offered to help them start one. A pull-to-refresh brought all 8 back.
+      //
+      // usePaginatedList already maps a TimeoutError to "Timed out loading.
+      // Pull to refresh." — an honest sentence it could not reach while this
+      // resolved successfully with nothing. Every caller handles a rejection
+      // (checked: YourItemsRail, CreateProjectModal, useItemDetail,
+      // useAlertsFeed, duplicateCheck), and CachedDataProvider's swr still
+      // serves a cache hit without ever calling this.
+      //
+      // No `throw` here: fall through to the shared one below, so there is
+      // exactly one exit from this catch.
     }
     throw e;
   }
