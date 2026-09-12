@@ -379,7 +379,6 @@
     "analytics": "Analyses",
     "add_first_item": "Ajoutez votre premier article",
     "a11y_watchlist_section": "Section liste de suivi",
-    "a11y_start_watchlist": "Commencez votre liste de suivi",
     "hot_right_now": "Tendance en ce moment",
     "a11y_retry_trending": "Recharger les articles tendance",
     "category_breakdown": "Répartition par catégorie",
@@ -389,7 +388,8 @@
     "no_alerts_hint": "Les articles de votre liste de suivi vous alertent dès qu’ils atteignent votre prix cible",
     "alerts_failed": "Impossible de charger les alertes",
     "alerts_failed_hint": "Touchez pour réessayer",
-    "a11y_retry_alerts": "Réessayer de charger les alertes"
+    "a11y_retry_alerts": "Réessayer de charger les alertes",
+    "a11y_open_watchlist": "Ouvrir votre liste de suivi"
   },
   "items": {
     "title": "Objets",

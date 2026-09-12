@@ -164,7 +164,12 @@ function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, sh
           accessibilityLabel={
             failed
               ? t('home.a11y_retry_alerts', { defaultValue: 'Retry loading alerts' })
-              : t('home.a11y_start_watchlist', { defaultValue: 'Start your watchlist' })
+              // Matches the VISIBLE copy. This still said "Start your
+              // watchlist" after the text stopped saying it, so a screen-reader
+              // user heard the exact sentence the sighted fix removed — the lie
+              // survived in the accessibility layer. Found on device
+              // 2026-09-12 by reading the a11y tree rather than the pixels.
+              : t('home.a11y_open_watchlist', { defaultValue: 'Open your watchlist' })
           }
         >
           <View style={styles.emptyContent}>

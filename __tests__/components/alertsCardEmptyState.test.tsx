@@ -56,4 +56,14 @@ describe('AlertsCard empty state', () => {
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(onStartWatchlist).not.toHaveBeenCalled();
   });
+
+  it('the accessibility label does not contradict the visible copy', () => {
+    // The visible text stopped saying "Start Your Watchlist"; the a11y label
+    // did not, so a screen-reader user still heard it. A fix that only lands in
+    // the pixels is half a fix.
+    render(<AlertsCard alerts={[]} />);
+    expect(screen.getByText('No alerts yet')).toBeTruthy();
+    expect(screen.queryByLabelText(/Start your watchlist/i)).toBeNull();
+    expect(screen.getByLabelText('Open your watchlist')).toBeTruthy();
+  });
 });
