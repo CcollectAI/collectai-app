@@ -1063,6 +1063,28 @@ from nowhere — the house failure mode, five instances in one day.
   at all" has no gate**, and 29 of 235 component files are in that state
   (measured by module PATH — searching for the file's stem called `Toast.tsx`
   dead while 61 files import `useToast` from it).
+- **The Marketplace grid showed no photo for any listing.** Measured on prod the
+  same minute: 4 of 4 active listings, each holding 3-8 rows in `item_images`,
+  and every tile rendered the empty placeholder. Tap one and the photo is there
+  — the DETAIL query coalesced through `item_images`, BROWSE did not.
+  `marketplace_listings` has no image column; the photo is in `items.image_url`,
+  then `item_images` (what `POST /items/{id}/images` writes — **it does not
+  backfill `items.image_url`**), then the catalogue. The rule was written FOUR
+  times and only detail got the fix.
+  **`favorites_router.py` had already written the warning in a comment** — "Two
+  copies of a photo rule drift, and the copy that drifts is the one nobody is
+  looking at" — and then drifted. *Prose asserting sameness is not sameness;* if
+  a comment says "the same expression as X", that is a request for a constant.
+  One copy now in `server/app/features/listing_photo_sql.py`, substituted via a
+  `{LISTING_IMAGE}` token rather than an f-string (the detail query has braces
+  of its own, and escaping unrelated SQL is a silent way to corrupt it). Gate:
+  **`npm run check:listing-photo-sql`**, in `verify:prebuild`.
+  The gate immediately found a **fifth** site that was deliberately different —
+  `_photo_catalogue_hook` contributes the seller's OWN photo and omits the
+  catalogue arm, because copying the catalogue into itself is a no-op that looks
+  like progress. So exceptions must state a reason **inside the SQL**. Its
+  no-reason mutation PASSED on the first attempt: the checker stripped before
+  splitting the line and read the next comment as the reason.
 - **Sharing to a DM delivered dead text.** RN does not linkify inside `<Text>`,
   so a shared listing arrived as characters the recipient could read and not
   follow. `src/lib/linkify.ts` + a `MessageBody` in the thread screen; our own
