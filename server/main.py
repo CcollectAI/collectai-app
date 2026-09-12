@@ -15,7 +15,10 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
 
-from app.logging_filters import install_access_log_redaction
+from app.logging_filters import (
+    install_access_log_redaction,
+    install_outbound_log_redaction,
+)
 from app.auth import require_ops_key
 from app.config import (
     SERVICE_VERSION,
@@ -137,6 +140,11 @@ app = FastAPI(title="Collectors Merge Service", version=SERVICE_VERSION, lifespa
 # this module, so the logger already exists and the filter sticks.
 install_access_log_redaction()
 
+# Same defect, outbound: httpx logs every request URL at INFO, so a vendor
+# credential in a query string (Ticketmaster apikey, SeatGeek client_id,
+# scrape.do token) landed in bake.log in full. Fails closed on the same
+# allowlist. See app/logging_filters.py.
+install_outbound_log_redaction()
 _logger = logging.getLogger("collectai.main")
 
 
