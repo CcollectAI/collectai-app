@@ -180,6 +180,47 @@ for them.
 
 `TCG_LISTINGS_BATCH=0` disables the pass without a deploy.
 
+## The main scrape is a ~58-day rotation (measured 2026-09-13)
+
+`marketplace_scrape_worker` (every 15 min, `MARKETPLACE_SCRAPE_BATCH=20` on
+prod, `MAX_DAYS=0`) picks, per cycle: 25% boost categories, then never-tried
+items, then **the least-recently-attempted item across the whole non-TCG
+catalogue** (`_get_stale_items` pass 2). The never-tried pool is empty, so pass
+2 is the rotation:
+
+| | |
+|---|---|
+| catalogue rows in it | 87,255 |
+| attempts / 24h | 1,512 |
+| **one full pass** | **~58 days** |
+| rows last tried > 30 days ago | 46,752 (54%) |
+
+A category is therefore visited in a burst and then left for weeks
+(one_piece_tcg and digimon: 09-01 → 09-06, nothing since). That is not an
+outage, and `coverage_zero_categories` now knows it — `docs/WATCHDOG.md`
+2026-09-13.
+
+**What the rotation costs depends on the reader**, and only one reader is hurt:
+
+| reader | reads | window | effect of a ~58-day revisit |
+|---|---|---|---|
+| catalogue price (`mv_catalog_item_price`) | `market_hits_daily` (cron 39 rollup) | **180 days** | none — an item re-priced every ~58 d always has rows in the window |
+| valuation (`valuation_worker`) | unprocessed sold comps, `is_listing IS NOT TRUE` | 90 d (bounded by retention) | none — eBay rows here are listings, excluded anyway |
+| **Target Hit** (`_check_watchlist_snipes`) | `market_hits` listings for the exact watched item | **30 minutes** | **a non-TCG watched item can match once per rotation, in a 30-minute window** |
+
+So `market_hits` retention (1 month) being shorter than the rotation does NOT
+empty catalogue prices — the daily rollup carries them. The real gap is
+freshness for **watched** items: the TCG pass puts watched mtg/pokemon/yugioh
+items first every cycle, and nothing does that for the other ~50 categories.
+Latent today (the 5 live watchlist rows are all free-text, so none can match
+exactly), live the first time a member watches a LEGO set with a target price.
+
+**Watched rows can monopolise a fixed-size pass.** On 2026-09-13 the TCG pass's 3
+slots were permanently filled by 3 cards watched by users deleted on 09-06, so
+its round-robin never ran (yugioh: 0 attempts in 7 days). The rows were
+orphans because `watchlist_items` has no FK to `auth.users`; see
+`docs/WATCHDOG.md`.
+
 ## Overview
 
 Sparrow Collect supports market data from multiple providers through a normalized adapter interface. This allows:

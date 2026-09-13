@@ -2046,6 +2046,44 @@ are catalog-reachable; TCG categories key predictions by TCGplayer product id
 (`lorcana:tcgplayer:702699:normal`) while the catalog uses set-slugs, so
 lorcana/digimon/one_piece_tcg sit at 0% until an id crosswalk exists.
 
+## The alert that paged about a scraper's rotation, and the watchlists of deleted users (2026-09-13)
+
+*"one_piece_tcg (last 2026-09-06), digimon (last 2026-09-06) STOPPED producing
+hits"* — hourly, on Telegram, the day after the 09-12 fix to the same check.
+eBay wrote 15.5k hits that day. The main scrape retries the least-recently-tried
+of **87,255** catalogue rows at **1,512/day, a ~58-day rotation**, and both
+categories had had their turn. The check now counts the scraper's own stamps
+(`category_items.last_scrape_attempt_at`) relative to the last hit: *not asked*
+is logged, *asked ≥25 times with nothing* or *a non-scraper writer went quiet* or
+*excluded from the rotation* pages. Full account: `docs/WATCHDOG.md` 2026-09-13.
+
+Three things were wrong in my own work before it shipped, each caught by running
+it against something that could discriminate, not by rereading:
+
+1. **The first rule paged on ANY later attempt.** Real prod rows at a 1-day window
+   paged three healthy categories with 1–2 stray empty attempts; healthy
+   categories return nothing on up to ~70% of items. Hence the measured minimum.
+2. **A comment claimed another probe covered the gap it did not** — a category
+   dropped from the rotation, the exact shape of the 08-06 SKIP_CATEGORIES outage.
+3. **A doc table said valuation reads 30 days.** It reads 90. Grepped before
+   committing.
+
+**And "account deletion leaves watchlist rows" was my wrong explanation.**
+`DELETE /account` clears them. The 09-06 purge went through GoTrue admin, which
+cascades only through FKs, and **69 of 115 user-keyed tables have no FK to
+`auth.users`** — 1,141 orphaned rows across 18 tables. 13 orphaned watchlist rows
+were monopolising the TCG listings pass (the same 3 dead users' cards every cycle,
+yugioh 0 attempts in 7 days); backed up and deleted. The other 17 tables are a
+decision, not a cleanup.
+
+**The rotation does not empty catalogue prices** — `mv_catalog_item_price` reads
+`market_hits_daily` over 180 days. What it costs is Target Hit for non-TCG
+watched items, which match only listings seen in the last 30 minutes. See
+`docs/MARKET_DATA.md` "The main scrape is a ~58-day rotation".
+
+⚠️ Committed `5d855a0`, **not deployed** — the rsync was refused by the session's
+permission gate, so the hourly page continues until deploy + nine gates + restart.
+
 ## The rest of the 2026-09-12 walk, on an emulator of its own
 
 The shared AVD kept losing the foreground to another project's app — a VascoApp

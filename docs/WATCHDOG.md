@@ -1133,6 +1133,120 @@ that to justify a fresh `httpx.AsyncClient` per call. The measured rate during
 this investigation was dozens per day. The per-call client is still cheap
 enough, but the stated premise is no longer true.
 
+## "Stopped producing hits" about categories nobody had asked yet (2026-09-13)
+
+The day after the split above shipped, it paged hourly from 12:25:
+
+```
+SANITY VIOLATION coverage_zero_categories: 2 categories STOPPED producing hits
+within 7d: one_piece_tcg (last 2026-09-06), digimon (last 2026-09-06)
+```
+
+**Nothing had died.** eBay wrote 15.5k hits across 52 categories that same day.
+Both categories are fed by `marketplace_scrape_worker`, whose main pass retries
+the least-recently-attempted item across the whole non-TCG catalogue:
+
+| measured on prod | |
+|---|---|
+| catalogue rows in the rotation | 87,255 |
+| attempts in 24h | 1,512 |
+| **one full pass** | **~58 days** |
+| rows last tried > 30 days ago | 46,752 (54%) |
+| oldest attempt | 2026-06-21 (theme_park, being retried that day) |
+
+one_piece_tcg and digimon had their whole turn 09-01 → 09-06. Yesterday's split
+told "died" from "never existed" but not from **"not asked"** — so every category
+would have paged in turn as its visit aged past 7 days (lorcana from ~09-15,
+manga 09-16, sportscards 09-17), then gone quiet a month later as "never". The
+same rule this doc has written twice, missed a third time by me: **a check on a
+scheduled writer must know the schedule.**
+
+### The rule, and the draft the prod rows rejected
+
+The worker records its schedule already — `category_items.last_scrape_attempt_at`,
+stamped at the END of each cycle for every item it tried. Relative to each silent
+category's last hit, the check now counts:
+
+- `asked_since` — items stamped more than one cycle after it. Every one came back
+  empty, since a hit would have moved the last hit.
+- `visited_at_last_hit` — items stamped within one cycle after it: a scraper
+  visit wrote that hit.
+
+| condition | verdict |
+|---|---|
+| no hit in retention | **never** — logged |
+| `asked_since >= 25` | **stopped — pages**: the scraper came back and got nothing |
+| visited, category still in the rotation | **not asked** — logged |
+| otherwise | **stopped — pages**: a feed/user writer went quiet, or the category is in `SKIP_CATEGORIES` |
+
+**My first draft paged on ANY attempt after the last hit.** Run against the real
+rows at a 1-day window, it paged sportscards, funko and anime_ost_vinyl — each
+with **1–2 stray empty attempts** (a thin-category Firecrawl pick, the tail of a
+batch). Measured over 7 days, healthy categories return nothing on up to **~70%
+of items** (keycaps 69.7%, anime_ost_vinyl 64.1%, whiskey 61.9%), so a couple of
+empty attempts is noise. 0.70²⁵ ≈ 0.013%, while a real re-visit asks 12–15 items
+of one category per cycle.
+
+**The post-completion audit then caught a false comment of mine**: that
+`silent_writer.marketplace_scrape_worker` would page if the rotation never came
+back. It pages only if the whole worker stops — not for a category removed from
+the rotation, which is *precisely* how lorcana/digimon/one_piece_tcg sat dark in
+`SKIP_CATEGORIES` until 2026-08-06. Excluded categories can no longer be "not
+asked". The cycle slack and the skip list are imported from
+`bake_orchestrator._WORKER_CYCLE_TIMEOUTS` and the scheduler, never retyped.
+
+**Verification**, each step against something that can discriminate:
+
+- 11 tests in `test_sanity_coverage_split.py`; **7 mutations**, each failing the
+  test written for it (the first draft's rule among them).
+- The real check against prod: 7-day window → pages **nothing** (2 not asked,
+  3 never), 2.1 s; 1-day window → 10 not asked + 3 never, each matching its counts.
+- The paging branch on prod data inside a **rolled-back** transaction (30 digimon
+  items stamped as asked, one_piece_tcg's visit aged a day): both page; 0 rows
+  left afterwards.
+
+⚠️ **Still not covered, deliberately:** a category in the rotation whose turn
+never comes before retention expires logs as "not asked", then "never". While the
+rotation (~58 d) outlasts `market_hits` retention (1 month) this check cannot page
+on that without paging every healthy category between turns. It is a capacity
+question — see `docs/MARKET_DATA.md` "The main scrape is a ~58-day rotation".
+
+⚠️ **Committed (`5d855a0`), NOT deployed** at the time of writing: the rsync to
+`/opt/collectors/server/` was refused by the session's permission gate. Until the
+deploy + the nine gates + a restart, the hourly page continues.
+
+### The TCG pass was scraping three cards for users who no longer exist
+
+The same investigation found `[tcg-listings]` re-scraping the SAME three cards
+every cycle — `2x2-16-leonin-arbiter`, `sum-283-bayou`, `ex10-ex10-92`. The pass
+fills its 3 slots with watched items first; the only three watched TCG cards
+belonged to users deleted in the 2026-09-06 purge. So its round-robin never ran —
+**yugioh 0 attempts in 7 days** — and ~290 eBay searches a day went to dead
+watchlists. The paid Cardmarket leg is off (`FIRECRAWL_TCG_PER_CYCLE=0`), so no
+credits were spent.
+
+**13 of 18 `watchlist_items` rows were orphaned**, not 3. Backed up to
+`/opt/collectors/backups/watchlist_orphans_20260913.jsonl`, then deleted in a
+transaction that raised unless exactly 13 went; 0 orphans remain.
+
+**Why they survived:** in-app deletion (`DELETE /account`) does clear
+`watchlist_items` — it is in `_ALLOWED_TABLES`. The purge deleted users through
+GoTrue admin, which cascades only through foreign keys, and **`watchlist_items`
+and `purchase_mandates` have no FK to `auth.users`**. The class, swept over every
+public table with a `uuid user_id` (sweep printed its completion marker):
+
+| | |
+|---|---|
+| user-keyed tables | 115 |
+| **without an FK to `auth.users`** | **69** |
+| orphaned rows | **1,141 across 18 tables** |
+
+Largest: `portfolio_valuations_v1` 452, `demand_signals` 241, `predict_sessions`
+156, `notification_history` 114, `alert_trigger_history` 113, `label_events` 30.
+⚠️ **Left for a decision, not deleted:** some may be deliberate
+(`dac7_seller_year` is a tax record; `label_events`/`predict_sessions` are training
+data), and any user deleted outside `/account` will keep producing more.
+
 ## Related audits
 
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes
