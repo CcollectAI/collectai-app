@@ -31,7 +31,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import sys
 
@@ -560,23 +560,75 @@ async def _check_db_size(conn, failing_new: list[dict]) -> None:
 
 
 
-def classify_coverage_silence(rows):
-    """Split silent categories into (stopped, never).
+# How many catalogue items the scraper must have asked about, all with nothing,
+# before a silent category counts as a source that died. Measured on prod
+# 2026-09-13 over 7 days of attempts: healthy categories return ZERO hits on up
+# to ~70% of items (keycaps 69.7%, anime_ost_vinyl 64.1%, whiskey 61.9%), so one
+# or two empty attempts — a thin-category Firecrawl pick, the tail of a batch —
+# say nothing. 0.70^25 ≈ 0.013%, while a genuine re-visit asks 12-15 items of
+# one category per cycle and crosses 25 within two cycles.
+COVERAGE_MIN_EMPTY_ATTEMPTS = 25
 
-    `rows` carry `category` and `last_hit`. A non-null `last_hit` means the
-    category produced hits and then stopped — a regression with a date, worth
-    paging. A null `last_hit` means nothing in retained history, which is a
-    backlog and must not page.
+
+def classify_coverage_silence(
+    rows,
+    rotation_excluded=frozenset(),
+    min_empty_attempts=COVERAGE_MIN_EMPTY_ATTEMPTS,
+):
+    """Split silent categories into (stopped, not_asked, never).
+
+    `rows` carry, per category:
+      - `last_hit` — max `market_hits.seen_at`;
+      - `asked_since` — catalogue items whose `last_scrape_attempt_at` is more
+        than one scrape cycle after `last_hit`. Every one of them was asked and
+        came back EMPTY, because a hit would have moved `last_hit`;
+      - `visited_at_last_hit` — items stamped within one cycle after `last_hit`,
+        i.e. the last hits were written by a scraper visit (`_mark_attempted`
+        stamps at the END of the cycle that produced them).
+
+    - `last_hit` NULL -> **never**: nothing in retained history. A backlog, not
+      an event; never pages.
+    - `asked_since >= min_empty_attempts` -> **stopped**, pages: the scraper came
+      back and got nothing, repeatedly. A source that died.
+    - `visited_at_last_hit > 0` and the category is still IN the rotation ->
+      **not_asked**: the silence began when the scraper's visit ended and it
+      has not been back in earnest. The rotation, not an outage — on 2026-09-13
+      a ~58-day rotation made `one_piece_tcg` and `digimon` page hourly while
+      eBay wrote 15.5k hits the same day. Logged.
+    - otherwise -> **stopped**, pages: the last hit came from a writer that is
+      not the scraper (a lorcast/scryfall feed, a user search) and it went quiet,
+      or the category is in `rotation_excluded` (the scraper's
+      `SKIP_CATEGORIES`) so the rotation will never come back for it. "Nobody
+      asked" is only benign for a category somebody WILL ask — a skip list
+      holding lorcana/digimon/one_piece_tcg is how 24,404 catalogue items went
+      silently dark until 2026-08-06.
+
+    A scraper that stops visiting EVERY category is not this check's job:
+    `silent_writer.marketplace_scrape_worker` pages on that.
+
+    ⚠️ Not covered: a category still in the rotation whose turn never comes
+    because the rotation is slower than `market_hits` retention (~58 days vs 1
+    month on 2026-09-13). It logs as not_asked, then as never. That is a
+    capacity decision, not something this check can page on without paging
+    every healthy category between its turns.
 
     Module level on purpose: inline in the check body this could only ever have
     been verified by reading it, and `docs/WATCHDOG.md` records what that costs
-    — the coverage canary was "wrong in both directions" for days. Tested
-    against known-stopped AND known-never rows in
-    `server/tests/test_sanity_coverage_split.py`.
+    — the coverage canary was "wrong in both directions" for days. Every
+    verdict is asserted in `server/tests/test_sanity_coverage_split.py`.
     """
-    stopped = [(r["category"], r["last_hit"]) for r in rows if r["last_hit"] is not None]
-    never = [r["category"] for r in rows if r["last_hit"] is None]
-    return stopped, never
+    stopped, not_asked, never = [], [], []
+    for r in rows:
+        cat, last_hit = r["category"], r["last_hit"]
+        if last_hit is None:
+            never.append(cat)
+        elif r["asked_since"] >= min_empty_attempts:
+            stopped.append((cat, last_hit))
+        elif r["visited_at_last_hit"] > 0 and cat not in rotation_excluded:
+            not_asked.append((cat, last_hit))
+        else:
+            stopped.append((cat, last_hit))
+    return stopped, not_asked, never
 
 
 async def _check_coverage_zero(conn, failing_new: list[dict]) -> None:
@@ -603,26 +655,54 @@ async def _check_coverage_zero(conn, failing_new: list[dict]) -> None:
     had a source" from "died over a month ago". The log line says so rather
     than asserting the stronger claim.
 
+    Since 2026-09-13 a third verdict: a category the marketplace scraper simply
+    has not revisited is NOT a regression either (see
+    `classify_coverage_silence`). A check on a scheduled writer must know the
+    schedule — `docs/WATCHDOG.md` "Checks must know the schedule they police".
+
     Window tunable via COVERAGE_ZERO_DAYS.
     """
+    # The scraper's batch stamp lands at most one cycle after its hits, and a
+    # cycle is killed at this bound. Read from the orchestrator, not retyped:
+    # a copied number is how a check drifts from the schedule it polices.
+    from workers.bake_orchestrator import _WORKER_CYCLE_TIMEOUTS
+    # Same reason: the rotation's own exclusion list, never a copy of it.
+    from workers.marketplace_scrape_scheduler import SKIP_CATEGORIES
+
     check_name = "coverage_zero_categories"
     days = int(os.getenv("COVERAGE_ZERO_DAYS", "7"))
+    cycle_slack = timedelta(seconds=_WORKER_CYCLE_TIMEOUTS["marketplace_scrape_worker"])
     try:
-        # One pass, and it returns `last_hit` so the caller can tell a source
-        # that DIED from one that never existed. Measured on prod 2026-09-12:
-        # 2.9s against the full partitioned table, inside the 15s budget.
+        # One pass over market_hits for `last_hit` (so a source that DIED is
+        # told from one that never existed), then the scraper's own stamps
+        # counted relative to it (so both are told from one nobody asked).
+        # Measured on prod 2026-09-13: 1.4s, inside the 15s budget.
         rows = await asyncio.wait_for(
             conn.fetch(
                 f"""
-                SELECT c.category, max(mh.seen_at) AS last_hit
-                FROM (SELECT DISTINCT category FROM public.category_items
-                      WHERE category IS NOT NULL) c
-                LEFT JOIN public.market_hits mh ON mh.category = c.category
-                GROUP BY c.category
-                HAVING max(mh.seen_at) IS NULL
-                    OR max(mh.seen_at) <= now() - interval '{days} days'
-                ORDER BY 2 NULLS FIRST
-                """
+                WITH silent AS (
+                    SELECT c.category, max(mh.seen_at) AS last_hit
+                    FROM (SELECT DISTINCT category FROM public.category_items
+                          WHERE category IS NOT NULL) c
+                    LEFT JOIN public.market_hits mh ON mh.category = c.category
+                    GROUP BY c.category
+                    HAVING max(mh.seen_at) IS NULL
+                        OR max(mh.seen_at) <= now() - interval '{days} days'
+                )
+                SELECT s.category, s.last_hit,
+                       count(*) FILTER (
+                           WHERE ci.last_scrape_attempt_at > s.last_hit + $1::interval
+                       ) AS asked_since,
+                       count(*) FILTER (
+                           WHERE ci.last_scrape_attempt_at >= s.last_hit
+                             AND ci.last_scrape_attempt_at <= s.last_hit + $1::interval
+                       ) AS visited_at_last_hit
+                FROM silent s
+                JOIN public.category_items ci ON ci.category = s.category
+                GROUP BY s.category, s.last_hit
+                ORDER BY s.last_hit NULLS FIRST
+                """,
+                cycle_slack,
             ),
             timeout=15.0,
         )
@@ -630,7 +710,19 @@ async def _check_coverage_zero(conn, failing_new: list[dict]) -> None:
         logger.warning("sanity_probe coverage_zero: query failed: %s", e)
         return
 
-    stopped, never = classify_coverage_silence(rows)
+    stopped, not_asked, never = classify_coverage_silence(rows, SKIP_CATEGORIES)
+
+    if not_asked:
+        # Stated, never paged: these are in the rotation and it will come back
+        # to them. See the ⚠️ in classify_coverage_silence for what that cannot
+        # promise while the rotation outlasts retention.
+        logger.info(
+            "sanity_probe %s: %d categories are silent because the marketplace "
+            "scraper has not been back since the visit that wrote their last hit "
+            "(rotation, not an outage): %s",
+            check_name, len(not_asked),
+            ", ".join(f"{c} (last {ts:%Y-%m-%d})" for c, ts in not_asked[:8]),
+        )
 
     if never:
         # Stated, never paged: this is a backlog, not an event, and the
@@ -643,7 +735,7 @@ async def _check_coverage_zero(conn, failing_new: list[dict]) -> None:
         )
 
     if not stopped:
-        if not never:
+        if not never and not not_asked:
             logger.info(
                 "sanity_probe coverage_zero: all categories have hits in last %dd", days
             )
