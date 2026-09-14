@@ -20,9 +20,13 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
   // The view `v_watchlist_items_v1` was never deployed (despite the
   // `_v1` naming convention used elsewhere). The data lives directly in
   // `watchlist_items`, which RLS scopes to the current user. Bare-table
-  // read is fine. Also drop `sort_order` — the column doesn't exist on
-  // the table; downstream code falls back to `priority`-based ordering.
-  // Found by audit_full_chain.py 2026-05-01.
+  // read is fine. Found by audit_full_chain.py 2026-05-01.
+  //
+  // `sort_order` IS selected, and the column exists: it was added 2026-07-31
+  // (20260731_watchlist_items_sort_order.sql, see updateWatchlistItem below).
+  // This comment used to say "drop sort_order — the column doesn't exist",
+  // two lines above a select that includes it; verified on prod 2026-09-13
+  // (information_schema + the member's own PostgREST read: 200, 5 rows).
   let data: unknown;
   let error: unknown;
   try {

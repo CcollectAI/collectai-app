@@ -344,7 +344,11 @@ function CategoryStoreScreen() {
           categoryId={String(categoryId)}
           collections={[]}
           groupBy={categoryMeta.collectionDimension ?? 'set'}
-          title={categoryMeta.collectionDimension === 'brand' ? '🏷 Browse by Brand' : '🗂 Browse by Set'}
+          title={categoryMeta.collectionDimension === 'brand'
+            ? t('category.browse_by_brand', { defaultValue: 'Browse by brand' })
+            // No emoji: the section already draws its own bookmark icon, and
+            // "🗂" beside it put two icons on one heading (walked 2026-09-14).
+            : t('category.browse_by_set', { defaultValue: 'Browse by set' })}
           onCollectionPress={(col) => router.push({
             pathname: '/catalog-set/[setCode]',
             params: {
@@ -442,7 +446,12 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 16,
-    paddingTop: 0,
+    // 16, the screen gutter — the help and guide heroes sit at the same gap.
+    // It was 0 (2026-02), from before ScreenHeader became a floating bar with
+    // a shadow and a high zIndex; with nothing above it (CategoryBrandHeader is
+    // a stub that renders null) the banner started UNDER the header and lost
+    // its rounded top corners (seen on Android 2026-09-13).
+    paddingTop: 16,
   },
   centered: {
     flex: 1,

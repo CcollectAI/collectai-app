@@ -35,32 +35,21 @@ import { usePhotoUpload } from '@/hooks/usePhotoUpload';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { track } from '@/analytics/track';
 import { useTranslation } from 'react-i18next';
+import { SPONSOR_TIERS as TIERS } from '@/constants/sponsorTiers';
 
 /* -------------------------------------------------------------------------- */
 /*  Static data                                                                */
 /* -------------------------------------------------------------------------- */
 
+// Every benefit is a feature that exists (checked 2026-09-14). The first used to
+// promise "Connect with thousands of dedicated collectors" to a platform with six
+// accounts, and "Analytics — track engagement, attendance & conversions" when no
+// sponsor-facing analytics screen exists.
 const BENEFITS = [
-  { icon: 'people-outline' as const, title: 'Reach Fans', desc: 'Connect with thousands of dedicated collectors' },
-  { icon: 'megaphone-outline' as const, title: 'Announce Drops', desc: 'Notify fans about limited editions & releases' },
-  { icon: 'eye-outline' as const, title: 'Brand Visibility', desc: 'Feature your brand across collector feeds' },
-  { icon: 'analytics-outline' as const, title: 'Analytics', desc: 'Track engagement, attendance & conversions' },
-];
-
-const TIERS = [
-  {
-    name: 'Featured',
-    features: ['Event listing', 'Category placement', 'Basic analytics'],
-  },
-  {
-    name: 'Promoted',
-    badge: 'POPULAR',
-    features: ['Everything in Featured', 'Homepage banner', 'Push notifications', 'Priority support'],
-  },
-  {
-    name: 'Spotlight',
-    features: ['Everything in Promoted', 'Dedicated landing page', 'Custom branding', 'Advanced analytics'],
-  },
+  { icon: 'people-outline' as const, title: 'Reach collectors', desc: 'Your event in front of people browsing its category' },
+  { icon: 'megaphone-outline' as const, title: 'Announcements', desc: 'Post updates to everyone who RSVP’d' },
+  { icon: 'eye-outline' as const, title: 'Brand visibility', desc: 'A “Sponsored” badge with your company name' },
+  { icon: 'people-circle-outline' as const, title: 'Attendance', desc: 'See how many are going or interested' },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -208,18 +197,12 @@ const SponsorRegisterScreen: React.FC = () => {
               >
                 {TIERS.map((tier) => (
                   <View
-                    key={tier.name}
+                    key={tier.id}
                     style={[
                       styles.tierCard,
-                      { backgroundColor: colors.card, borderColor: tier.badge ? colors.accent : colors.border },
-                      tier.badge && { borderWidth: 2 },
+                      { backgroundColor: colors.card, borderColor: colors.border },
                     ]}
                   >
-                    {tier.badge && (
-                      <View style={[styles.tierBadge, { backgroundColor: colors.accent }]}>
-                        <Text style={styles.tierBadgeText}>{tier.badge}</Text>
-                      </View>
-                    )}
                     <Text style={[styles.tierName, { color: colors.text }]}>{tier.name}</Text>
                     {tier.features.map((f) => (
                       <View key={f} style={styles.tierFeatureRow}>
@@ -506,19 +489,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     padding: 16,
-  },
-  tierBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  tierBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
   },
   tierName: {
     fontSize: 16,

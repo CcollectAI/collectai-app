@@ -59,6 +59,16 @@ the visible label got its own key while the a11y label (genuinely identical)
 reused the shared one. Checking each candidate cost seconds and prevented
 several silent copy changes.
 
+**A new string must reuse the locale's existing NOUN for a feature, not a fresh
+translation of the English verb (2026-09-13).** "…so it can't be watched from
+here" went into nl/de/fr/es as *volgen / beobachten / suivi / seguir*, while the
+button beside it in each locale says *volglijst / Beobachtungsliste / liste de
+suivi / lista de seguimiento*. Grammatical, translated, and inconsistent with
+the screen it appears on — and `check:i18n-defaults` and `i18n:parity` both pass,
+because they check the English and the key set, never the vocabulary. Before
+writing a translation, read the same locale's nearest existing key for that
+feature (here `catalog.add_to_watchlist`) and reuse its term.
+
 **Proper nouns are not translatable strings.** Brand names — CheckCheck,
 Legit Check, Discogs, Warhammer Community — are in `ALLOWLIST_STRINGS` in
 `check-i18n-strings.mjs` rather than wrapped, because wrapping one invites a
@@ -97,6 +107,22 @@ because a barrel re-export IS a reference and CLAUDE.md records assuming
 otherwise as a past mistake). **Checking reachability before translating is
 worth doing every time**: it turned 8 units of translation work into a
 deletion.
+
+## ⛔ Plural keys use the wrong suffix (found 2026-09-14, not fixed)
+
+`src/i18n/index.ts` sets `compatibilityJSON: 'v4'`, which resolves plurals with
+CLDR suffixes (`key_one` / `key_other`). The locales ship the old v3 form,
+`home.sets_in_progress` + `home.sets_in_progress_plural` — the only `_plural`
+key in en.json. Under v4 `_plural` is never looked up, so
+`t('home.sets_in_progress', { count: 3 })` falls back to the singular: **"3 set
+in progress"** on the Home tab (`AutoSetProgressList`, rendered by
+`(tabs)/index.tsx`). Not seen on a device — the walk account has no sets.
+
+Why it is not a one-line rename: ja/ko have only an `_other` form in CLDR, so
+`_one` keys would be missing there and `i18n:parity` (which wants every en key in
+every locale) would fail. Fix the parity checker to understand plural suffixes
+in the same change. Until then, new strings with a count pick the singular or
+plural key explicitly in code — see `category.set_item_count_one/_many`.
 
 ## How to do a slice
 

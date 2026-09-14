@@ -15,8 +15,16 @@
  * 1. **The header is OUTSIDE the list** — FlashList v2 absolutely-positions
  *    every cell including ListHeaderComponent, so a tall header renders and
  *    silently stops receiving touches. FlatList here regardless.
- * 2. **Bottom inset via `useTabBarInset`** — QuickNavBar is absolute and
- *    reserves no layout space, so without it the last card sits under the bar.
+ * 2. **No `useTabBarInset`.** This comment used to say QuickNavBar is absolute
+ *    and needs one. It is not: QuickNavBar is an in-flow row that reserves its
+ *    own height (see its styles, and docs/ui-playbook.md "The newest screens
+ *    keep shipping without the nav bar"). `useTabBarInset` is for `(tabs)`
+ *    screens under the absolute ExternalTabBar, and here it only added ~90pt of
+ *    blank space above the bar. Corrected 2026-09-13.
+ *
+ * And a failed load is not an empty list. "Nothing saved yet" is a claim about
+ * the member's favourites; after a request that never came back it is a false
+ * one, so failure gets its own sentence and a retry.
  */
 import React, { useCallback, useState } from 'react';
 import {
@@ -40,7 +48,6 @@ import { EmptyState } from '@/components/EmptyState';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
 import type { CurrencyCode } from '@/data/types';
@@ -58,18 +65,23 @@ function FavoritesScreen() {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { t } = useTranslation();
-  const bottomInset = useTabBarInset();
 
   const [rows, setRows] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  // The last load failed. Rows are KEPT on failure (a refresh that fails must
+  // not blank a list that was right a minute ago), so this only changes what
+  // an EMPTY list says: could-not-ask, not asked-and-there-are-none.
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const load = useCallback(async () => {
     try {
       setRows(await listFavorites());
+      setLoadFailed(false);
     } catch (err) {
       // logger.error, not warn — info/warn are stripped from release builds.
       logger.error('[favorites] load failed:', err);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -110,8 +122,23 @@ function FavoritesScreen() {
     if (f.listing_id) {
       router.push({ pathname: '/listing/[id]', params: { id: f.listing_id } });
     } else if (f.canonical_key) {
-      // Catalogue favourites open the catalogue item, not a listing.
-      router.push(`/catalog-item/${encodeURIComponent(f.canonical_key)}` as Href);
+      // Catalogue favourites open the catalogue item, not a listing — WITH the
+      // fields the row already carries. catalog-item/[key] takes its title,
+      // image and category ONLY from params (a bare key cannot be resolved:
+      // keys are bare, the category is what disambiguates them), so the old
+      // key-only push opened "Catalog item" with no image, searched the
+      // marketplaces for the words "Catalog item", and wrote a watchlist row
+      // with that title and an empty category. Same param shape as
+      // category-browse.tsx and catalog-set/[setCode].tsx.
+      router.push({
+        pathname: '/catalog-item/[key]',
+        params: {
+          key: f.canonical_key,
+          category: f.category ?? '',
+          title: f.title ?? '',
+          image_url: f.image_url ?? '',
+        },
+      } as unknown as Href);
     }
   }, [router, settings.hapticsEnabled]);
 
@@ -180,17 +207,38 @@ function FavoritesScreen() {
           data={rows}
           keyExtractor={(f) => f.id}
           renderItem={renderItem}
-          contentContainerStyle={[styles.listContent, { paddingBottom: bottomInset }]}
+          contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
           }
           ListEmptyComponent={
-            <EmptyState
-              icon="heart-outline"
-              title={t('favorites.empty')}
-              subtitle={t('favorites.empty_hint')}
-              colors={colors}
-            />
+            loadFailed ? (
+              <EmptyState
+                icon="cloud-offline-outline"
+                title={t('favorites.load_failed', { defaultValue: "Couldn't load your favourites" })}
+                subtitle={t('favorites.load_failed_hint', { defaultValue: 'Your saved items are safe — we just could not reach them.' })}
+                colors={colors}
+                action={
+                  <AnimatedPressable
+                    onPress={onRefresh}
+                    style={[styles.retryBtn, { backgroundColor: colors.accent }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+                  >
+                    <Text style={[styles.retryText, { color: colors.accentText }]}>
+                      {t('common.try_again', { defaultValue: 'Try again' })}
+                    </Text>
+                  </AnimatedPressable>
+                }
+              />
+            ) : (
+              <EmptyState
+                icon="heart-outline"
+                title={t('favorites.empty')}
+                subtitle={t('favorites.empty_hint')}
+                colors={colors}
+              />
+            )
           }
         />
       )}
@@ -211,7 +259,11 @@ export default function FavoritesScreenWithBoundary() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  listContent: { paddingHorizontal: 16, paddingTop: 8, gap: 10 },
+  // paddingBottom is plain spacing: QuickNavBar below the list reserves its
+  // own height, so no tab-bar inset belongs here (see the file header).
+  listContent: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16, gap: 10 },
+  retryBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, minHeight: 44, justifyContent: 'center' },
+  retryText: { fontSize: 14, fontWeight: '700' },
   card: {
     flexDirection: 'row',
     alignItems: 'center',

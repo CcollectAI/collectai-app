@@ -47,7 +47,7 @@ function TermsOfServiceScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>2. Account Registration</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          You must provide accurate and complete information when creating an account. You are responsible for maintaining the security of your account credentials, including any multi-factor authentication (MFA) settings. You must be at least 13 years old (or 16 in the EU) to use the Service. You may register using email/password or social login (Google, Apple).
+          You must provide accurate and complete information when creating an account. You are responsible for maintaining the security of your account credentials, including any multi-factor authentication (MFA) settings. You must be at least 13 years old (or 16 in the EU) to use the Service. You may register using an email address and password.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>3. User Content</Text>
@@ -84,7 +84,7 @@ function TermsOfServiceScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>5. Price Estimates & Valuations</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          Price estimates provided by Sparrow Collect are for informational purposes only. They are generated using machine learning models (Ridge regression with q10/q50/q90 quantile predictions) and aggregated marketplace data from 37 sources across 54 collectible categories. These estimates should not be relied upon as financial advice, appraisals, or insurance valuations. Actual market prices may differ significantly. We make no guarantees about the accuracy of any valuation.{'\n\n'}
+          Price estimates provided by Sparrow Collect are for informational purposes only. They are generated using machine learning models (Ridge regression with q10/q50/q90 quantile predictions) and aggregated marketplace data from public marketplace sources. These estimates should not be relied upon as financial advice, appraisals, or insurance valuations. Actual market prices may differ significantly. We make no guarantees about the accuracy of any valuation.{'\n\n'}
           Scarcity scores, demand heat signals, and social proof indicators (collector counts, trending status) are derived from aggregated data and are for informational purposes only. They should not be the sole basis for purchasing or selling decisions.{'\n\n'}
           Currency conversions are approximate and based on exchange rates refreshed every 8 hours. Shipping cost estimates are approximations and may differ from actual shipping costs.
         </Text>

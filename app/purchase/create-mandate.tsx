@@ -34,6 +34,7 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { SelectField, type SelectOption } from '@/components/form/SelectField';
 
 import { CATEGORIES as ALL_CATS } from '@/constants/categories';
+import { MARKETPLACE_BRAND_COLORS } from '@/constants/colors';
 import { safeGoBack } from '@/lib/goBack';
 import type { CatalogMatchHit } from '@/api/itemsApi';
 
@@ -398,7 +399,13 @@ function CreateMandateScreen() {
           const active = selectedSources.includes(s);
           return (
             <View key={s} style={styles.sourceToggleRow}>
-              <Text style={[styles.sourceToggleLabel, { color: colors.text }]}>{s}</Text>
+              {/* The brand's own spelling from MARKETPLACE_BRAND_COLORS — the one
+                  label map — not the slug. `textTransform: capitalize` on the
+                  slug rendered "Ebay" and "Tcgplayer" (seen on Android
+                  2026-09-13), and on the real label it would render "EBay". */}
+              <Text style={[styles.sourceToggleLabel, { color: colors.text }]}>
+                {MARKETPLACE_BRAND_COLORS[s]?.label ?? s}
+              </Text>
               <Switch
                 value={active}
                 onValueChange={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); toggleSource(s); }}
@@ -522,7 +529,6 @@ const styles = StyleSheet.create({
   sourceToggleLabel: {
     fontSize: 15,
     fontWeight: "500",
-    textTransform: "capitalize",
   },
 
   toggleRow: {

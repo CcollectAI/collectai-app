@@ -415,7 +415,9 @@
     "delete_a11y": "Geselecteerde items verwijderen",
     "a11y_download_csv": "Collectieoverzicht downloaden als CSV",
     "a11y_view_archived": "Gearchiveerde items bekijken en herstellen",
-    "a11y_open_projects": "Bouw- en schilderprojecten openen"
+    "a11y_open_projects": "Bouw- en schilderprojecten openen",
+    "section_total": "Totaal",
+    "portfolio_value_line": "Portfoliowaarde: {{value}}"
   },
   "scan": {
     "title": "QuickScan",
@@ -789,7 +791,11 @@
     "a11y_download_inventory": "Volledige inventaris downloaden als CSV",
     "download_inventory": "Volledige inventaris downloaden (CSV)",
     "a11y_confirm_delete": "Verwijderen van account bevestigen",
-    "a11y_type_delete": "Typ DELETE om te bevestigen"
+    "a11y_type_delete": "Typ DELETE om te bevestigen",
+    "blocked_load_failed": "Je geblokkeerde gebruikers konden niet worden geladen",
+    "blocked_load_failed_hint": "Er is niemand gedeblokkeerd — we konden de lijst alleen niet bereiken.",
+    "blocked_empty": "Geen geblokkeerde gebruikers",
+    "blocked_empty_hint": "Je hebt nog niemand geblokkeerd. Geblokkeerde gebruikers kunnen je geen berichten sturen."
   },
   "billing": {
     "free": "Gratis",
@@ -830,7 +836,12 @@
     "title": "Favorieten",
     "empty": "Nog niets bewaard",
     "empty_hint": "Tik op het hartje bij een advertentie om het hier te bewaren",
+    "load_failed": "Je favorieten konden niet worden geladen",
+    "load_failed_hint": "Je bewaarde items zijn veilig — we konden ze alleen niet bereiken.",
     "unavailable": "Niet meer beschikbaar"
+  },
+  "notifications": {
+    "mark_all_read": "Alles als gelezen markeren"
   },
   "diagnostics": {
     "title": "Diagnostiek",
@@ -866,7 +877,9 @@
     "notifications": "Meldingen",
     "project": "Project",
     "scan_barcode": "Streepjescode scannen",
-    "seller_dashboard": "Verkopersdashboard"
+    "seller_dashboard": "Verkopersdashboard",
+    "blocked_users": "Geblokkeerde gebruikers",
+    "projects": "Projecten"
   },
   "offers": {
     "still_waiting": "Nog in afwachting",
@@ -1043,6 +1056,7 @@
     "no_marketplaces": "Geen marktplaatsen beschikbaar voor dit item.",
     "a11y_add_watchlist": "Aan volglijst toevoegen",
     "add_to_watchlist": "Aan volglijst toevoegen",
+    "watch_needs_details": "We konden de gegevens van dit item niet laden, dus je kunt het hier niet aan je volglijst toevoegen.",
     "browse_title": "Catalogus verkennen",
     "browse_search_placeholder": "Zoek catalogusitems...",
     "a11y_search_items": "Catalogusitems zoeken",
@@ -1161,7 +1175,12 @@
     "a11y_close_collector_search": "Verzamelaarszoekopdracht sluiten",
     "a11y_invite_friends": "Nodig je vrienden uit",
     "invite_friends": "Vrienden uitnodigen",
-    "a11y_find_friends": "Vrienden zoeken om te volgen"
+    "a11y_find_friends": "Vrienden zoeken om te volgen",
+    "upcoming_events": "Aankomende evenementen",
+    "browse_by_set": "Blader per set",
+    "browse_by_brand": "Blader per merk",
+    "set_item_count_many": "{{count}} items",
+    "set_item_count_one": "1 item"
   },
   "analytics": {
     "a11y_retry": "Analysegegevens opnieuw laden",

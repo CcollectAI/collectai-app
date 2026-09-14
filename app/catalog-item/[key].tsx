@@ -61,6 +61,16 @@ function CatalogItemMuseumScreen() {
 
   const title = params.title || 'Catalog item';
   const category = params.category || '';
+  // A key alone does not identify an item: keys are BARE, and the category is
+  // what disambiguates them, so nothing can be fetched to fill the gaps. Most
+  // callers pass title + category; a key-only entry (a deep link, the
+  // item/[id] non-uuid redirect) arrives without them. Until 2026-09-13 the
+  // screen then wrote a watchlist row titled "Catalog item" with an EMPTY
+  // category — inert, since Target Hit joins on the category slug — and
+  // searched marketplaces for the words "Catalog item". Actions that WRITE or
+  // SEARCH on this identity check it first (docs/alerts-and-insights.md: a
+  // watch control with no category "refuses and says so").
+  const identityKnown = !!params.title && !!category;
   const setCode = params.set_code || null;
   const rarity = params.rarity || null;
   const brand = params.brand || null;
@@ -103,6 +113,13 @@ function CatalogItemMuseumScreen() {
 
   // Where-to-buy: public affiliate-tagged links (monetized).
   useEffect(() => {
+    // No real title means nothing to search for: the fallback 'Catalog item'
+    // is a label, and searching marketplaces for it returns other products.
+    // The card is not rendered in that case (see identityKnown).
+    if (!params.title) {
+      setLinksLoading(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -133,7 +150,7 @@ function CatalogItemMuseumScreen() {
     // it does not write it (the price-detail effect does), so it cannot tear
     // itself down the way scripts/check-self-cancelling-effects.mjs guards
     // against.
-  }, [title, category, settings.region, estPrice, linksNonce]);
+  }, [title, category, settings.region, estPrice, linksNonce, params.title]);
 
   // "From this set" — sibling catalog items sharing set_code (catalog-only).
   useEffect(() => {
@@ -175,6 +192,16 @@ function CatalogItemMuseumScreen() {
 
   const onAddToWatchlist = useCallback(async () => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    if (!identityKnown) {
+      // Refuse rather than write a row titled "Catalog item" with no category.
+      showToast({
+        message: t('catalog.watch_needs_details', {
+          defaultValue: "We couldn't load this item's details, so it can't be watched from here.",
+        }),
+        type: 'warning',
+      });
+      return;
+    }
     setAdding(true);
     try {
       // Go through the provider, not collectorsApi directly: the server
@@ -196,7 +223,7 @@ function CatalogItemMuseumScreen() {
     } finally {
       setAdding(false);
     }
-  }, [title, category, estPrice, params.key, settings.hapticsEnabled, showToast]);
+  }, [title, category, estPrice, params.key, settings.hapticsEnabled, showToast, identityKnown, t]);
 
   const onToggleFavorite = useCallback(async () => {
     if (!params.key) return;
@@ -204,7 +231,9 @@ function CatalogItemMuseumScreen() {
     try {
       // `category` is the slug this screen already loads with — the same
       // vocabulary market_hits and watchlist_items use.
-      const nowFavorite = await toggleFavorite({ canonical_key: params.key }, category);
+      // `|| null`: an unknown category is NULL, never '' — the column holds
+      // slugs, and an empty string is a slug that matches nothing.
+      const nowFavorite = await toggleFavorite({ canonical_key: params.key }, category || null);
       showToast({
         message: nowFavorite ? 'Saved to favourites' : 'Removed from favourites',
         type: 'success',
@@ -277,6 +306,13 @@ function CatalogItemMuseumScreen() {
           ) : (
             <Text style={[styles.priceMuted, { color: colors.muted }]}>{t('catalog.no_recent_sales', { defaultValue: 'No recent sales data' })}</Text>
           )}
+          {/* Provenance describes a NUMBER, so with no number there is none to
+              state — and the whole <Text> goes, not just its content, so an
+              empty line cannot hold space under "No recent sales data". The
+              null branch used to read "Estimated from the latest market
+              observation" there, two sentences contradicting each other (seen
+              on Android 2026-09-13). */}
+          {estPrice != null && (
           <Text style={[styles.priceSub, { color: colors.muted }]}>
             {/* "comps" read as completed sales and is not: 99.98% of the
                 rows behind these numbers are daily price-index observations
@@ -285,14 +321,13 @@ function CatalogItemMuseumScreen() {
                 drift into describing the same rows two ways. This endpoint
                 returns only a count -- no `sources` -- so it makes no provider
                 or market claim, which is the honest floor. */}
-            {estPrice == null
-              ? 'Estimated from the latest market observation'
-              : (priceDetail && priceDetail.comps_count >= 3)
-                ? `Median of ${priceDetail.comps_count} recent ${compNoun(null, priceDetail.comps_count)}`
-                : (priceDetail && priceDetail.comps_count > 0)
-                  ? `Based on ${priceDetail.comps_count} recent ${compNoun(null, priceDetail.comps_count)}`
-                  : 'Estimated from the latest market observation'}
+            {(priceDetail && priceDetail.comps_count >= 3)
+              ? `Median of ${priceDetail.comps_count} recent ${compNoun(null, priceDetail.comps_count)}`
+              : (priceDetail && priceDetail.comps_count > 0)
+                ? `Based on ${priceDetail.comps_count} recent ${compNoun(null, priceDetail.comps_count)}`
+                : 'Estimated from the latest market observation'}
           </Text>
+          )}
           {!limits?.advanced_analytics && (
             <AnimatedPressable
               style={[styles.proRow, { borderColor: colors.border }]}
@@ -339,7 +374,10 @@ function CatalogItemMuseumScreen() {
           </View>
         )}
 
-        {/* Where to buy — affiliate-tagged (monetized) */}
+        {/* Where to buy — affiliate-tagged (monetized). Not rendered without a
+            real title: there is nothing to search for, and "No marketplaces
+            available" would be a claim about a search we did not run. */}
+        {!!params.title && (
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionLabel, { color: colors.muted }]}>WHERE TO BUY</Text>
           {linksLoading ? (
@@ -372,6 +410,7 @@ function CatalogItemMuseumScreen() {
             ))
           )}
         </View>
+        )}
 
         {/* Primary CTA — WATCH, so it carries the eye.
             It wore a heart until 2026-08-11 while writing a watchlist row,

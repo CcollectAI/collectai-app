@@ -32,6 +32,7 @@ import { EmptyState } from '@/components/EmptyState';
 import logger from '@/utils/logger';
 import { logAuthState, logLoad, startTimer } from '@/utils/diagnostics';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { HeaderActions } from '@/components/HeaderActions';
 import { timeAgoShort } from '@/lib/timeAgo';
 import { MS_PER_WEEK } from '@/constants/time';
 import { radius, text, fontWeight } from '@/theme/tokens';
@@ -286,7 +287,7 @@ function InboxScreen() {
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Inbox</Text>
-          <View style={{ width: 32 }} />
+          <HeaderActions />
         </View>
         <View style={styles.loadingContainer}>
           <SkeletonList count={5} type="row" />
@@ -315,7 +316,13 @@ function InboxScreen() {
             </View>
           )}
         </View>
-        <View style={{ width: 32 }} />
+        {/* The shared cluster, in both header branches. This screen hides the
+            native header and draws its own, so HeaderActions never rendered
+            here — the 2026-09-09 "bubble tinted on /inbox" fix could not reach
+            it (seen on Android 2026-09-13). It replaces a 32pt spacer, not the
+            title row: the badge beside "Inbox" counts threads AND requests,
+            which the bubble's own count does not, so it stays. */}
+        <HeaderActions />
       </View>
 
       <ScrollView

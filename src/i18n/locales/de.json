@@ -415,7 +415,9 @@
     "delete_a11y": "Ausgewählte Objekte löschen",
     "a11y_download_csv": "Sammlungsübersicht als CSV herunterladen",
     "a11y_view_archived": "Archivierte Artikel ansehen und wiederherstellen",
-    "a11y_open_projects": "Bau- und Malprojekte öffnen"
+    "a11y_open_projects": "Bau- und Malprojekte öffnen",
+    "section_total": "Gesamt",
+    "portfolio_value_line": "Portfoliowert: {{value}}"
   },
   "scan": {
     "title": "QuickScan",
@@ -789,7 +791,11 @@
     "a11y_download_inventory": "Vollständiges Inventar als CSV herunterladen",
     "download_inventory": "Vollständiges Inventar herunterladen (CSV)",
     "a11y_confirm_delete": "Kontolöschung bestätigen",
-    "a11y_type_delete": "Zur Bestätigung DELETE eingeben"
+    "a11y_type_delete": "Zur Bestätigung DELETE eingeben",
+    "blocked_load_failed": "Deine blockierten Nutzer konnten nicht geladen werden",
+    "blocked_load_failed_hint": "Niemand wurde entsperrt — wir konnten die Liste nur nicht erreichen.",
+    "blocked_empty": "Keine blockierten Nutzer",
+    "blocked_empty_hint": "Du hast niemanden blockiert. Blockierte Nutzer können dir keine Nachrichten senden."
   },
   "billing": {
     "free": "Kostenlos",
@@ -830,7 +836,12 @@
     "title": "Favoriten",
     "empty": "Noch nichts gespeichert",
     "empty_hint": "Tippe auf das Herz eines Angebots, um es hier zu speichern",
+    "load_failed": "Deine Favoriten konnten nicht geladen werden",
+    "load_failed_hint": "Deine gespeicherten Artikel sind sicher — wir konnten sie nur gerade nicht abrufen.",
     "unavailable": "Nicht mehr verfügbar"
+  },
+  "notifications": {
+    "mark_all_read": "Alle als gelesen markieren"
   },
   "diagnostics": {
     "title": "Diagnose",
@@ -866,7 +877,9 @@
     "notifications": "Benachrichtigungen",
     "project": "Projekt",
     "scan_barcode": "Barcode scannen",
-    "seller_dashboard": "Verkäufer-Dashboard"
+    "seller_dashboard": "Verkäufer-Dashboard",
+    "blocked_users": "Blockierte Nutzer",
+    "projects": "Projekte"
   },
   "offers": {
     "still_waiting": "Warte noch",
@@ -1043,6 +1056,7 @@
     "no_marketplaces": "Keine Marktplätze für dieses Objekt verfügbar.",
     "a11y_add_watchlist": "Zur Beobachtungsliste",
     "add_to_watchlist": "Zur Beobachtungsliste",
+    "watch_needs_details": "Wir konnten die Details dieses Artikels nicht laden, daher kannst du ihn hier nicht zur Beobachtungsliste hinzufügen.",
     "browse_title": "Katalog durchsuchen",
     "browse_search_placeholder": "Katalogartikel suchen...",
     "a11y_search_items": "Katalogartikel suchen",
@@ -1161,7 +1175,12 @@
     "a11y_close_collector_search": "Sammlersuche schließen",
     "a11y_invite_friends": "Lade deine Freunde ein",
     "invite_friends": "Freunde einladen",
-    "a11y_find_friends": "Freunde zum Folgen finden"
+    "a11y_find_friends": "Freunde zum Folgen finden",
+    "upcoming_events": "Anstehende Veranstaltungen",
+    "browse_by_set": "Nach Set stöbern",
+    "browse_by_brand": "Nach Marke stöbern",
+    "set_item_count_many": "{{count}} Objekte",
+    "set_item_count_one": "1 Objekt"
   },
   "analytics": {
     "a11y_retry": "Analysedaten erneut laden",

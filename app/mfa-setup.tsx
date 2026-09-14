@@ -216,12 +216,14 @@ function MFASetupScreen() {
               <ActivityIndicator size="large" color={TIFFANY} style={{ marginTop: 16 }} />
             ) : (
               <AnimatedPressable
-                style={[styles.primaryBtn, { backgroundColor: TIFFANY }]}
+                // Same fix as "Enable 2FA" below — the next step of the same
+                // flow had the same 1.66:1 fill.
+                style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
                 onPress={handleVerify}
                 accessibilityRole="button"
                 accessibilityLabel={t('mfa.verify_a11y')}
               >
-                <Text style={styles.primaryBtnText}>{t('mfa.verify_enable')}</Text>
+                <Text style={[styles.primaryBtnText, { color: colors.accentText }]}>{t('mfa.verify_enable')}</Text>
               </AnimatedPressable>
             )}
 
@@ -282,13 +284,18 @@ function MFASetupScreen() {
               <ActivityIndicator size="large" color={TIFFANY} style={{ marginTop: 24 }} />
             ) : (
               <AnimatedPressable
-                style={[styles.primaryBtn, { backgroundColor: TIFFANY }]}
+                // colors.accent + colors.accentText, like every other primary
+                // button. It was `brand.base` (#81D8D0) under a hardcoded white
+                // label — 1.66:1, which read as a DISABLED control on the one
+                // screen that turns on account security (seen on Android
+                // 2026-09-13). brand.base is used elsewhere only as a faint tint.
+                style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
                 onPress={handleEnroll}
                 accessibilityRole="button"
                 accessibilityLabel={t('mfa.enable_a11y')}
               >
                 <Ionicons name="shield-checkmark-outline" size={18} color={colors.accentText} />
-                <Text style={styles.primaryBtnText}>{t('mfa.enable_2fa')}</Text>
+                <Text style={[styles.primaryBtnText, { color: colors.accentText }]}>{t('mfa.enable_2fa')}</Text>
               </AnimatedPressable>
             )}
           </View>
@@ -414,7 +421,11 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   primaryBtnText: {
-    color: '#FFFFFF',
+    // No colour here: every use sets colors.accentText inline. A hardcoded
+    // '#FFFFFF' in the base style is what left both buttons unreadable, and a
+    // literal cannot follow the palette — the high-contrast themes swap
+    // accentText (docs/ui-playbook.md "Never hardcode a colour on a themed
+    // background").
     fontSize: 16,
     fontWeight: '700',
   },

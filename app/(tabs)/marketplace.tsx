@@ -8,8 +8,10 @@
  * marketplace — fixed in the same spirit: one name, one destination.
  *
  * Renders the SAME implementation as `/listings` rather than a copy, so there
- * is one member marketplace, not two that drift. `asTab` suppresses the back
- * chevron and the in-body QuickNavBar, neither of which belongs on a tab.
+ * is one member marketplace, not two that drift. `asTab` suppresses the in-body
+ * QuickNavBar, which does not belong on a tab. It no longer suppresses the back
+ * chevron: `listings.tsx` shows it unconditionally since 2026-08-14 (by
+ * request), routed through safeGoBack so it still goes somewhere on a tab.
  *
  * The hub was parked at `app/market-hub.tsx` for a day and DELETED 2026-08-12
  * once its last three modules were resolved: Market Movers and Regional

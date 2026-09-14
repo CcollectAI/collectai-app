@@ -874,6 +874,48 @@ Let brands, retailers, and event organizers pay to promote events to CollectAI u
 | Config (3 Stripe price IDs) | `config.py` + `.env.example` | Done |
 | ~10 tests | `test_sponsor_router.py` | Done |
 
+### ⚠️ The app sells different tiers than this table (found 2026-09-13)
+
+Walked on Android: an event creator's "Promote" button reaches
+`/sponsor/dashboard` → `/sponsor/register`, and that screen lists tier features
+this spec does not have and nothing implements:
+
+| tier | this spec | the app's copy |
+|---|---|---|
+| Featured | highlighted card, "Sponsored" badge, top of feed | Event listing, Category placement, Basic analytics |
+| Promoted | Featured + push to category followers | Homepage banner, Push notifications, **Priority support** |
+| Spotlight | Promoted + brand logo + analytics dashboard | Dedicated landing page, Custom branding, Advanced analytics |
+
+No homepage sponsor banner, landing page or support queue exists; "Priority
+support" was already removed from the Pro paywall on 2026-08-15 for exactly this
+reason. The benefits grid also promises *"Connect with thousands of dedicated
+collectors"* (prod had 6 accounts). And the tier list is defined TWICE,
+identically — `app/sponsor/register.tsx` and
+`src/components/sponsor/TierPickerPanel.tsx` — so a fix to one drifts from the
+other.
+
+**Latent, not live:** all three `STRIPE_PRICE_ID_SPONSOR_*` are unset on the box,
+so no one can buy a tier today. ⛔ **Fix the copy (from THIS table, in one shared
+constant) before setting those env vars** — activation is the moment these
+become promises to paying customers.
+
+✅ **Copy fixed 2026-09-14** — `src/constants/sponsorTiers.ts` is now the one
+list (both screens import it), and every line was checked against the code:
+
+| tier | the app now says | built where |
+|---|---|---|
+| Featured | "Sponsored" badge with your company name · Boosted in the events feed | `(tabs)/events.tsx` badge + "by {sponsorName}"; `rpc_list_personalized_events_v1` sorts `is_sponsored` — **below the viewer's followed categories**, so not "top of feed" |
+| Promoted | + push notification to followers of the event's category | `billing_router.py` — but `CATEGORY_FOLLOW_ENABLED=false` hides the follow pill, and prod has **1** follow row (1 user, 1 category), so today it reaches at most one person |
+| Spotlight | "Everything in Promoted" — nothing more | ⛔ the spec's **brand logo** (`sponsorLogoUrl` is rendered nowhere) and **analytics dashboard** (`getSponsorAnalytics` has no screen; impressions/clicks are only counted) are NOT built |
+
+The "POPULAR" badge (a tier nobody had bought) and the benefits grid's
+"thousands of dedicated collectors" and "track … conversions" are gone.
+
+⛔ **Before activating Stripe prices:** Spotlight at EUR 199 currently buys
+nothing Promoted doesn't. Build the logo + sponsor analytics screen, or drop the
+tier. And the Promoted push is only worth EUR 79 once category follows are
+switched back on.
+
 ### To Activate
 
 Set 3 env vars (create one-time payment products in Stripe Dashboard):

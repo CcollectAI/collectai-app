@@ -3,15 +3,15 @@
  * Every pushed screen must offer a way back.
  *
  * `app/_layout.tsx` sets `headerShown: true` globally, so a route inherits the
- * native header and its back chevron for free. A screen only becomes a dead end
+ * root header and its safeGoBack chevron for free (the first check below makes
+ * sure that chevron is ours, not the native one). A screen only becomes a dead end
  * when it turns that off and does not replace it — and that is invisible at the
  * call site, because the screen looks complete in isolation.
  *
  * Tab ROOTS are exempt and must stay exempt: you cannot go "back" from a tab,
- * and a chevron there would be the only one of its kind in the app
- * (`app/(tabs)/marketplace.tsx` renders `/listings` with `asTab` precisely to
- * suppress it). This checker encodes that distinction rather than demanding a
- * back button everywhere, which would be the wrong rule.
+ * so this checker does not DEMAND a back control there. (The Market tab shows
+ * one anyway — `listings.tsx` renders it unconditionally since 2026-08-14, by
+ * request — which is allowed, not required.)
  *
  * Related but different gate: `check:back` (scripts/check-unguarded-back.mjs)
  * asks whether a back handler is SAFE (`safeGoBack`, not a bare
@@ -45,6 +45,40 @@ function walk(dir, out = []) {
   return out;
 }
 
+// "Inherits the global header" only counts as a way back if the global header's
+// back button is OURS. native-stack does not draw its own chevron at all when the
+// stack is empty (push tap, cold deep link), so until 2026-09-14 this gate passed
+// nine unregistered routes that opened with no back control. Require the
+// navigator's DEFAULT screenOptions to carry a headerLeft, not just iconOnlyHeader.
+{
+  // Comments stripped FIRST: a brace inside a comment would unbalance the scan,
+  // and a commented-out `// headerLeft:` must not count as present.
+  const layout = readFileSync(join(APP, '_layout.tsx'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+  const open = layout.indexOf('screenOptions={{');
+  // Balanced-brace scan: the block contains nested `{ ... }` objects.
+  let depth = 0;
+  let end = -1;
+  for (let i = open + 'screenOptions='.length; open >= 0 && i < layout.length; i++) {
+    if (layout[i] === '{') depth += 1;
+    else if (layout[i] === '}') {
+      depth -= 1;
+      if (depth === 0) { end = i; break; }
+    }
+  }
+  const block = open >= 0 && end > 0 ? layout.slice(open, end) : '';
+  if (!/headerLeft\s*:/.test(block)) {
+    console.error(
+      '[back-affordance] FAIL — the root <Stack screenOptions> in app/_layout.tsx has no ' +
+        'headerLeft.\nEvery route that is not registered with iconOnlyHeader then gets the ' +
+        'native back button, which is not drawn at all on an empty stack (push tap, cold ' +
+        'deep link). Add `headerLeft: () => <HeaderBackButton />` to the defaults.',
+    );
+    process.exit(1);
+  }
+}
+
 const offenders = [];
 let checked = 0;
 let inherited = 0;
@@ -57,7 +91,7 @@ for (const file of walk(APP)) {
 
   const hidesHeader = /headerShown\s*:\s*false/.test(src);
   if (!hidesHeader) {
-    // Inherits the global native header, which carries a back chevron.
+    // Inherits the root header, whose headerLeft was verified above.
     inherited += 1;
     continue;
   }
@@ -85,6 +119,6 @@ if (offenders.length) {
 }
 
 console.log(
-  `[back-affordance] PASS — ${checked} pushed screen(s): ${inherited} inherit the native header, ` +
+  `[back-affordance] PASS — ${checked} pushed screen(s): ${inherited} inherit the root header (safe headerLeft), ` +
     `${checked - inherited} suppress it and provide their own back control.`,
 );

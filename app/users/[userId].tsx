@@ -341,13 +341,17 @@ function UserProfileScreen() {
 
   const messageButtonDisabled = isUserBlocked || dmStatus === 'pending_outgoing';
 
-  // Loading state
+  // Loading state. Every return branch carries QuickNavBar, as the loaded one
+  // does: this screen hides the native header, so on a slow load the spinner
+  // branch had NO control on screen at all — measured ~30s on an Android
+  // emulator 2026-09-13 (docs/ui-playbook.md "Cover every return branch").
   if (loading) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
+        <QuickNavBar />
       </SafeAreaView>
     );
   }
@@ -424,6 +428,7 @@ function UserProfileScreen() {
               <Text style={[styles.retryBtnText, { color: colors.muted }]}>{t('common.go_back')}</Text>
             </AnimatedPressable>
           </View>
+          <QuickNavBar />
         </SafeAreaView>
       );
     }
@@ -447,6 +452,7 @@ function UserProfileScreen() {
             <Text style={[styles.retryBtnText, { color: colors.text }]}>{t('common.go_back')}</Text>
           </AnimatedPressable>
         </View>
+        <QuickNavBar />
       </SafeAreaView>
     );
   }

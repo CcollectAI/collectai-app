@@ -12,12 +12,23 @@ import { KIND_ICON, KIND_LABEL } from '@/constants/eventConstants';
 import { parseEventDate, getCountdown, formatEventWhen } from '@/lib/calendar';
 import type { CollectorsEvent } from '@/data/events';
 
+// Only sources a member can RECOGNISE get a badge. Measured 2026-09-13: live
+// events come from ticketmaster, seatgeek, rss, musicbrainz and newsletter, and
+// this map knew one of them — so the badge printed the raw backend value
+// ("ticketmaster", "rss") on 4 of 5 sources. Brand names are proper nouns and
+// stay untranslated (docs/I18N_BACKLOG.md). `rss` is a transport, not a place
+// anyone has heard of, so it gets no badge. An UNKNOWN source also gets none:
+// a new ingest source must add a label here, never leak its slug
+// (docs/ui-playbook.md "A backend field is a value, not a label").
 const EVENT_SOURCE_LABELS: Record<string, string> = {
   admin: 'Official',
   newsletter: 'Newsletter',
   community: 'Community',
   scraped: 'Scraped',
   user: 'Community',
+  ticketmaster: 'Ticketmaster',
+  seatgeek: 'SeatGeek',
+  musicbrainz: 'MusicBrainz',
 };
 
 interface EventHeroSectionProps {
@@ -64,11 +75,11 @@ export const EventHeroSection = React.memo(function EventHeroSection({
       </View>
 
       {/* Source badge for scraped events */}
-      {event.source && event.source !== 'user' && (
+      {event.source && event.source !== 'user' && EVENT_SOURCE_LABELS[event.source] && (
         <View style={[styles.sourceBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Ionicons name="globe-outline" size={12} color={colors.muted} style={{ marginRight: 4 }} />
           <Text style={[styles.sourceText, { color: colors.muted }]}>
-            {EVENT_SOURCE_LABELS[event.source] || event.source}
+            {EVENT_SOURCE_LABELS[event.source]}
           </Text>
         </View>
       )}

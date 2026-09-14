@@ -659,6 +659,34 @@ real rebuild. Batch them.
 7. **`uiautomator` itself crashes** (`FATAL EXCEPTION ... UiAutomation`). Those
    fatals are the tooling, not the app — check for `Process: io.sparrowcollect.app`
    before counting a fatal.
+8. **The dev client + Metro hangs this AVD; the release APK does not**
+   (2026-09-13). The "Stop rebuilding for JS changes" advice above is right on a
+   fast machine and wrong on this one: three "System UI / Process system isn't
+   responding" storms in one evening, all while Metro served 4,788 modules to the
+   dev client, against ~30 screens walked cleanly on a release APK the same day.
+   The emulator also died once while Gradle compiled beside it — **shut the AVD
+   down during a local build**, then cold-boot and wait ~30 s after
+   `sys.boot_completed` before driving it, because System UI's first ANR lands
+   right after boot.
+9. **The dev client asks for "Display over other apps" and the settings screen
+   swallows typed input.** Credentials typed for the login form went into that
+   screen. Pre-grant it instead:
+   `adb shell appops set io.sparrowcollect.app SYSTEM_ALERT_WINDOW allow`.
+   Stray taps on the dev menu also switch on the **Element Inspector** and the
+   **Performance monitor** overlay, which then persist across a reboot and sit
+   over the app — close the menu with its ✕, never by tapping near it.
+10. **`eas build --local` archives the project at "Compressing project files",
+    early in the build.** Anything edited after that line — a translation, a
+    comment — is NOT in the APK even though the build finishes later. Before
+    walking a build as "verification", grep its bundle for a string that exists
+    only in the change:
+    `unzip -p builds/sparrow-android-apk.apk assets/index.android.bundle | LC_ALL=C grep -a -c "<new string>"`.
+11. **`&` in a deep link sent through `adb shell am start -d` is a shell
+    separator on the device.** `sparrow://catalog-set/me4?category=pokemon&name=X`
+    arrived without `name`, and the screen fell back to its "Set" title — which
+    reads exactly like an app bug. Escape it (`\&`) or single-quote the whole
+    URL inside the device command, and before filing a missing-param bug check
+    that the param actually reached the screen.
 
 ### A false trail, recorded so it is not re-walked
 

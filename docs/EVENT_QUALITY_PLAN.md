@@ -298,6 +298,30 @@ took NULL `starts_at` from **509 → 334** in one pass (184 upserts, zero
   `"BTS WORLD TOUR 'ARIRANG' IN LOS ANGELES"` at the same venue. 47 upcoming
   rows sit at `status='rejected'` and every one I sampled had a published twin.
 
+## A fourth reader that skipped the gate (2026-09-14)
+
+The display gate has three copies (Python `is_display_ready`, SQL
+`events_helpers.display_gate_sql`, the RPC). The category page was a **fourth
+reader with no copy at all**: `categoryProvider.getCategoryStore` selected
+`v_events_with_attendees_v1` through supabase-js, and that view has no WHERE
+clause. Walked on Android, Sports Cards opened on "12. Cruz roja argentina" — a
+`source='newsletter'` row this plan quarantined on 2026-07-27. The same read
+also admitted non-published rows (the dedup quarantine's `status='rejected'`
+twins) and private events.
+
+Fixed by removing the reader rather than adding a fourth copy: the section now
+calls `GET /events?category_id=` (verified on prod — the row is gone, the card
+shows are there). `__tests__/data/noDirectEventViewRead.test.ts` fails on any
+direct app read of the view, and fails on the pre-fix code.
+
+⚠️ `events_helpers.display_gate_sql`'s docstring says `test_event_display_gate.py`
+pins the three copies against each other. **That test does not exist.** The
+copies are unpinned; write it before the next change to the predicate.
+
+⚠️ The RPC is not a safe substitute for the server route: it is SECURITY
+DEFINER and has **no `is_public` filter** — `list_events` drops private rows in
+Python afterwards. Any new direct caller of the RPC would leak them.
+
 ## What's intentionally NOT in scope
 
 - No ML model for spam classification — overkill for current scale. Rule-based beats a tiny model at <1k events/day.

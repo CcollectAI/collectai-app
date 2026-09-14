@@ -415,7 +415,9 @@
     "delete_a11y": "선택한 아이템 삭제",
     "a11y_download_csv": "컬렉션 개요를 CSV로 다운로드",
     "a11y_view_archived": "보관된 아이템 보기 및 복원",
-    "a11y_open_projects": "조립·도색 프로젝트 열기"
+    "a11y_open_projects": "조립·도색 프로젝트 열기",
+    "section_total": "합계",
+    "portfolio_value_line": "포트폴리오 가치: {{value}}"
   },
   "scan": {
     "title": "퀵 스캔",
@@ -789,7 +791,11 @@
     "a11y_download_inventory": "전체 인벤토리를 CSV로 다운로드",
     "download_inventory": "전체 인벤토리 다운로드(CSV)",
     "a11y_confirm_delete": "계정 삭제 확인",
-    "a11y_type_delete": "확인하려면 DELETE를 입력하세요"
+    "a11y_type_delete": "확인하려면 DELETE를 입력하세요",
+    "blocked_load_failed": "차단된 사용자를 불러오지 못했습니다",
+    "blocked_load_failed_hint": "차단이 해제된 사람은 없습니다. 목록에 연결하지 못했을 뿐입니다.",
+    "blocked_empty": "차단된 사용자가 없습니다",
+    "blocked_empty_hint": "아직 아무도 차단하지 않았습니다. 차단된 사용자는 메시지를 보낼 수 없습니다."
   },
   "billing": {
     "free": "무료",
@@ -830,7 +836,12 @@
     "title": "즐겨찾기",
     "empty": "아직 저장한 항목이 없습니다",
     "empty_hint": "상품의 하트를 눌러 여기에 저장하세요",
+    "load_failed": "즐겨찾기를 불러오지 못했습니다",
+    "load_failed_hint": "저장한 항목은 안전합니다. 불러오는 데 실패했을 뿐입니다.",
     "unavailable": "더 이상 이용할 수 없습니다"
+  },
+  "notifications": {
+    "mark_all_read": "모두 읽음으로 표시"
   },
   "diagnostics": {
     "title": "진단",
@@ -866,7 +877,9 @@
     "notifications": "알림",
     "project": "프로젝트",
     "scan_barcode": "바코드 스캔",
-    "seller_dashboard": "판매자 대시보드"
+    "seller_dashboard": "판매자 대시보드",
+    "blocked_users": "차단한 사용자",
+    "projects": "프로젝트"
   },
   "offers": {
     "still_waiting": "대기 중",
@@ -1043,6 +1056,7 @@
     "no_marketplaces": "이 아이템에 사용할 수 있는 마켓플레이스가 없습니다.",
     "a11y_add_watchlist": "관심 목록에 추가",
     "add_to_watchlist": "관심 목록에 추가",
+    "watch_needs_details": "이 항목의 세부 정보를 불러오지 못해 여기서는 관심 목록에 추가할 수 없습니다.",
     "browse_title": "카탈로그 둘러보기",
     "browse_search_placeholder": "카탈로그 아이템 검색...",
     "a11y_search_items": "카탈로그 아이템 검색",
@@ -1161,7 +1175,12 @@
     "a11y_close_collector_search": "수집가 검색 닫기",
     "a11y_invite_friends": "친구 초대하기",
     "invite_friends": "친구 초대",
-    "a11y_find_friends": "팔로우할 친구 찾기"
+    "a11y_find_friends": "팔로우할 친구 찾기",
+    "upcoming_events": "예정된 이벤트",
+    "browse_by_set": "세트별 둘러보기",
+    "browse_by_brand": "브랜드별 둘러보기",
+    "set_item_count_many": "아이템 {{count}}개",
+    "set_item_count_one": "아이템 1개"
   },
   "analytics": {
     "a11y_retry": "분석 데이터 다시 불러오기",

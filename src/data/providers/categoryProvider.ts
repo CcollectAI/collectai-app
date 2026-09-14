@@ -11,6 +11,8 @@ import type {
 import { getCategoryById } from '../categories';
 import { supabase } from '../../lib/supabase';
 import { collectorsApi } from '../../api/collectorsApi';
+import type { CollectorsEvent } from '../events';
+import { listCategoryEvents } from './eventsProvider';
 import { withTimeout, TimeoutError } from '../../lib/withTimeout';
 import logger from '../../utils/logger';
 
@@ -20,16 +22,6 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
   const category = getCategoryById(categoryId);
   if (!category) return null;
 
-  // items columns are `name`, `title`, `image_url` (not `images`). The
-  // earlier query referenced a nonexistent `images` array, which made
-  // PostgREST 400 with column-not-found and the catch silently returned
-  // [] — categories opened to an empty store every time.
-  type EventRow = { id: string; title: string; kind: string; date: string; time?: string };
-
-  // The two queries are independent — fire them in parallel so cellular
-  // round-trip latency stacks once, not twice. Each keeps its own timeout
-  // and treats a TimeoutError as "return null" (the same semantics as the
-  // previous sequential version). Non-timeout errors still propagate.
   // ── The items query lived HERE and is gone (2026-08-19) ──────────────
   // It selected your items in this category on EVERY category open, and
   // nothing had rendered them since the 2026-08-11 museum redesign removed
@@ -46,37 +38,22 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
   // with none show "No upcoming events" rather than filling the section with
   // off-topic events from a general pool (user decision 2026-06-18). Events
   // genuinely exist for ~10/54 categories (taylor_swift, kpop_merch, lego…).
-  const today = new Date().toISOString().split('T')[0];
-  const eventsP = (async (): Promise<EventRow[] | null> => {
-    try {
-      const catRes = await withTimeout(
-        supabase
-          .from('v_events_with_attendees_v1')
-          .select('id, title, kind, date, time')
-          .eq('category_id', categoryId)
-          .gte('date', today)
-          .order('date', { ascending: true })
-          .limit(5),
-        SUPABASE_READ_TIMEOUT_MS,
-        'getCategoryStore.events',
-      );
-      return (catRes.data ?? []) as EventRow[];
-    } catch (e) {
-      if (e instanceof TimeoutError) {
-        logger.error('[SupabaseDataProvider] getCategoryStore.events timed out');
-        return null;
-      }
-      throw e;
-    }
-  })();
-
-  const eventsData = await eventsP;
-
+  //
+  // Through the SERVER, not supabase-js (2026-09-14). The direct read of
+  // `v_events_with_attendees_v1` had no display gate, no status filter and no
+  // is_public check — see eventsProvider.listCategoryEvents. A failed read
+  // hides the section (null → []), exactly as a timeout did before.
+  let eventsData: CollectorsEvent[] | null = null;
+  try {
+    eventsData = await listCategoryEvents(categoryId, 5);
+  } catch (e) {
+    logger.error('[categoryProvider] getCategoryStore.events failed:', e);
+  }
 
   const upcomingEvents = (eventsData ?? []).map((e) => ({
     id: e.id,
     title: e.title,
-    kind: e.kind as 'collection_drop' | 'meetup' | 'stream',
+    kind: e.kind,
     date: e.date,
     time: e.time,
   }));

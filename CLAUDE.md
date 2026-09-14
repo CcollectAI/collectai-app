@@ -1663,7 +1663,9 @@ graph over `app/**` and reports any screen with no inbound edge. Proved against
 `app/market-hub.tsx` — restore it with its entry point repointed and the gate
 names it. **Advisory (exit 0)** like `audit_orphan_tables.py`, because it
 currently reports a real backlog: `/franchise/[id]`, `/sell/dashboard`,
-`/sets-to-complete`, `/twitch` are all live screens nothing navigates to. Flip
+`/sets-to-complete`, `/twitch` are all live screens nothing navigates to
+(`/franchise/[id]` is GATED since 2026-09-14 — `FRANCHISE_PAGES_ENABLED=false`
+redirects it to the tabs; its matcher returned `true` on every path). Flip
 `--strict` and add it to `verify:prebuild` once that list is empty.
 
 It does **not** catch the second half of the 2026-08-10 finding: a component
@@ -2081,8 +2083,151 @@ decision, not a cleanup.
 watched items, which match only listings seen in the last 30 minutes. See
 `docs/MARKET_DATA.md` "The main scrape is a ~58-day rotation".
 
-⚠️ Committed `5d855a0`, **not deployed** — the rsync was refused by the session's
-permission gate, so the hourly page continues until deploy + nine gates + restart.
+✅ **Deployed and verified the same day.** `5d855a0` was first refused by the
+session's permission gate, then rsynced on Merle's go-ahead: prod hash matched
+the pre-change commit, all nine gates PASS by hand, bake restarted 14:26:53 CEST,
+`/healthz` 200. From the next sanity cycle prod logs one_piece_tcg/digimon as
+*"not been back since the visit… (rotation, not an outage)"* and no
+`SANITY VIOLATION coverage_zero` has fired since. The TCG pass rotates across
+new cards (msh-191, me5-me5-10, tcgplayer:92757…) instead of the three dead
+watchlist cards.
+
+### The third Android walk, on a release APK (same day)
+
+Twenty-four defects (six found 09-14), **none Android-only** — layout, state and copy that Android
+merely showed first. Full table and rules: `docs/ui-playbook.md` "The third
+Android walk". The ones worth remembering here:
+
+- **Notifications had no header cluster at all.** A 2026-03 `headerRight`
+  override predated `HeaderActions` (08-20) by five months and replaced it with
+  "Mark All Read" — or with nothing. The 09-09 "tinted, not hidden" fix never
+  reached this screen because the screen threw the component away.
+- **A favourited catalogue item wrote junk.** The key-only push made
+  `catalog-item/[key]` write a watchlist row titled "Catalog item" with an
+  empty category. The screen now refuses rather than writing an inert row.
+- **`useTabBarInset` on three non-tab screens** "for QuickNavBar clearance" —
+  QuickNavBar has never been absolute in its entire history.
+
+- **Blocked users drew two stacked headers.** The route was never registered in
+  `app/_layout.tsx`, so it inherited the native header on top of a hand-rolled
+  one — the favorites bug, a second time.
+- **Nine unregistered routes had no back button on a cold open** (09-14), incl.
+  `offer/[offerId]`, which a new-offer push opens. They inherited the NATIVE
+  back button, which is not drawn on an empty stack; `check:back-affordance`
+  counted that as a pass. Fixed at the root `screenOptions` (safe `headerLeft`
+  for every route) and the gate now fails without it. Not yet seen on a device.
+- **Set tiles printed codes** (09-14): Pokémon's rail and set screen read
+  "Swsh8", "Smp". The name was in `category_items.attributes_json->>'set'`;
+  `mv_catalog_collections` now carries it as `set_name`, filled only when
+  UNIQUE in the category (sportscards reuses "Panini Prizm" for every year).
+  Measured before and after on all prod groups: 1,048 named, 141 top-12 labels
+  change, none for the worse. The real-data run caught my first humaniser
+  guard regressing "ad&d-2e" and "drawn-&-quarterly" — 48 unit tests had
+  passed. ✅ **Applied + deployed 2026-09-14**, in the order that matters:
+  SQL as `postgres` (1.0 s; 14,982 rows, 1,048 named, ACL byte-identical,
+  cron 42 active, a CONCURRENTLY refresh proven), lock regenerated — the
+  per-section diff was exactly `mv_catalog_collections.set_name` — and copied
+  back, nine gates PASS by hand, THEN the router. Seen on the device: "Cosmic
+  Eclipse · 272 items". The reverse order would have 500'd the rail, and
+  `check_sql_columns.py` cannot see an unaliased column.
+- **The category page served quarantined events** (09-14): Sports Cards'
+  first "upcoming event" was "12. Cruz roja argentina", a newsletter row. The
+  section read `v_events_with_attendees_v1` directly — no WHERE clause, so no
+  display gate, status or `is_public` — while `eventsProvider.ts` claimed that
+  read was gone. Now `GET /events?category_id=` (verified on prod: the row is
+  excluded), dates through `formatEventWhen`, kind maps shared. Gate:
+  `__tests__/data/noDirectEventViewRead` (fails on HEAD). Needs a build.
+- **Items tab** repeated a one-item section's price as "Collection total" and
+  was English-only — fixed 09-14, needs a build.
+- **Open, found 09-14:** (1) `postflight_smoke_test` pages on every restart
+  for `GET /collections/user/progress` → 500 — also in the 09-13 report, so not
+  this deploy's; (2) i18n runs `compatibilityJSON: 'v4'` (`_one`/`_other`) but
+  the locales ship `_plural` keys, so e.g. `home.sets_in_progress` prints
+  "3 set in progress"; (3) the walk account has no chat threads, deals or
+  projects, so `chat/[threadId]`, `purchase/deal/[dealId]` and `projects/[id]`
+  are still unwalked.
+- **`/franchise/[id]` gated** (09-14, on request): unreachable, English-only,
+  and its matcher returned `true` on every path — "Star Wars" would list every
+  LEGO/Funko/Disney item. `FRANCHISE_PAGES_ENABLED=false` redirects the route to
+  the tabs before the screen mounts, same shape as `SELLING_ENABLED`.
+- **Sponsor tiers sell features that do not exist** ("Homepage banner",
+  "Priority support", "Dedicated landing page", "thousands of collectors") —
+  reachable from event detail → Promote. Latent: no `STRIPE_PRICE_ID_SPONSOR_*`
+  is set, so nobody can buy. ✅ Copy fixed 09-14: ONE `src/constants/sponsorTiers.ts`
+  (was two identical lists), every line a feature that exists, "POPULAR"
+  badge and "thousands of collectors" gone. ⛔ **Spotlight now honestly lists
+  nothing beyond Promoted** — the spec's brand logo and analytics dashboard are
+  not built. Decide build-or-drop before activating it (`docs/MONETIZATION.md`).
+
+**Checked and NOT bugs**, each against the data rather than the screen:
+Watchlist's "Couldn't load" (the same read as that member: 200 in 0.30 s, 5
+rows); "Your public profile isn't set up yet" (that account's `display_name` and
+`username` really are empty); Condition Guide opening its picker (deliberate,
+`useState(!params.categoryId)`).
+
+⚠️ **Retracted the same night: the Terms' social-login sentence WAS a bug.** I
+first cleared *"You may register using email/password or social login (Google,
+Apple)"* because `login.tsx` implements both. It implements them behind
+`SOCIAL_LOGIN_ENABLED = false` (deliberate, App Store 4.8 — this file and
+`docs/AUTH_AND_WEB_DEPLOY.md` both say so), so no user can register that way.
+An import is not a button. Corrected to email-and-password in
+`app/legal/terms.tsx` and `web/terms.html` (the web copy still needs a deploy).
+The privacy policy's "If you use social login…" is conditional and stays true.
+
+**What the audits of my own code caught** — the reason to keep running them:
+
+1. **A lint run that reported "clean" had not run.** Flat-config ESLint rejected
+   `--no-eslintrc`, and my grep for `warning|error` did not match the rejection
+   message. A planted unused variable is what exposed it; the real comparison
+   against a `git worktree` of HEAD then showed zero new warnings — and caught
+   the plant, which is what makes that zero mean something.
+2. **A dead `router`** left in blocked-users when its only use (the hand-rolled
+   back button) was removed. `tsc` does not flag unused locals here.
+3. **Translations that were correct and still wrong.** The watch-refusal message
+   used a verb ("volgen", "beobachten", "suivi", "seguir") where each locale's
+   own button names a LIST ("volglijst", "Beobachtungsliste", …). Every gate
+   passed; only reading each locale's existing `add_to_watchlist` showed it.
+
+- **The 09-09 header-cluster fix never reached Inbox or Notifications.** The
+  section below says it covered `/notifications` and `/inbox`; one screen threw
+  `HeaderActions` away and the other never mounted it. A shared-component fix
+  covers only the screens that render the component.
+
+**Found and recorded, not fixed on the walk** (each is its own decision):
+
+- ✅ **Legal pages carried stale counts** — dropped 09-14 from privacy,
+  data-processing and Terms (app + `web/terms.html`). ⛔ The same read found
+  **disclosures that describe processing we do not do**, left for you because
+  they are legal meaning, not numbers: privacy "We generate CLIP embeddings
+  from your item images" (the CLIP tier was removed 07-27 and never ran; the
+  only 9 embeddings are from 2025-11) and "on-device classifiers" (none exist);
+  data-processing "multi-marketplace selling" (`SELLING_ENABLED=false`),
+  "Premium: 30/day" (there is no Premium tier), Firecrawl/Scrape.do as sources
+  (killswitched). `web/` marketing still says "54 categories" (live: 56) in
+  ~40 places — an understatement, not fixed.
+- ✅ **Ticketmaster locations** ("Epic Studios, Norwich , Great Britain",
+  "St Georges Hall, Bradford , Bradford") — 8 rows by 09-14.
+  `_compose_location` strips parts and drops an exact repeated segment.
+  Deployed; the next daily run rewrites upcoming rows (PostgREST merge-upsert).
+  Verified against the LIVE API before deploying: exactly the 2 broken of 115
+  distinct locations change — after a first version changed 17.
+- ✅ **Blocked users showed "no blocked users" after a failed load** — fixed
+  09-14 with a `loadFailed` state.
+- **A signed-in cold start showed Login for tens of seconds** on the emulator,
+  and Diagnostics logged `getAuthHeaders: NO TOKEN after refresh window —
+  request will go unauthenticated` in that window. `AuthProvider` documents
+  this as "a brief logged-out flash, never a logout"; here it was not brief.
+  Auth code — see `docs/AUTH_AND_WEB_DEPLOY.md` before touching it.
+
+⚠️ **Verification status at time of writing:** all of it is committed to
+nothing yet and has not been seen on a device. The dev client + Metro hung the
+emulator three times, so verification moved to a release APK — see
+`docs/ANDROID_LAUNCH.md` gotchas 8–10.
+
+Two prod data corrections, both counted and asserted: the 13 orphaned watchlist
+rows above, and one hand-seeded fixture row whose category was `onepiece` (not a
+slug; the app's own write path maps through `CATEGORY_NAME_TO_SLUG` and cannot
+produce it).
 
 ## The rest of the 2026-09-12 walk, on an emulator of its own
 

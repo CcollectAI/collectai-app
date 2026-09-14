@@ -211,6 +211,19 @@ in high-contrast dark, so "fixing" it would put **black on red**. The rule is
 about a fill that *inverts*; danger does not. It is allowlisted with that
 argument, because the next sweep will find it again.
 
+⚠️ **Still blind to one shape (found 2026-09-13):** a label colour in a
+`StyleSheet` entry with the themed fill passed INLINE on the parent.
+`app/mfa-setup.tsx` had `primaryBtnText: { color: '#FFFFFF' }` under
+`{ backgroundColor: colors.brand.base }` on two buttons — 1.66:1, read as
+disabled — and the gate passed. Same false negative the item-card section below
+records. Until the gate resolves style references, grep a screen for
+`'#FFFFFF'` / `'#fff'` inside `StyleSheet.create` whenever you touch its buttons.
+**Sized, not triaged:** 84 StyleSheet entries across 60 files hardcode a white
+text colour. Many are legitimate (gradient CTAs, photo overlays, red badges,
+avatar circles); which ones sit on a THEMED fill can only be answered per usage,
+so the fix is teaching the gate to resolve `styles.x` to its fill — not a
+judgment pass over 84 lines.
+
 **And the gate itself was wrong first.** Written with a ±6-line window, it went
 GREEN when the defect was reintroduced under a 4-line explanatory comment —
 the comment pushed the `backgroundColor` out of range. A gate that passes on
@@ -959,7 +972,11 @@ audit says they are already there:
 ```
 
 `app/_layout.tsx` sets `headerShown: true` globally, so a pushed route gets the
-native chevron for free. The only two that turn it off — `category-browse.tsx`
+native chevron for free. ⚠️ **Corrected 2026-09-14:** "for free" was true only
+on a warm stack — native-stack draws no chevron when there is nothing to pop, so
+a route opened by a push or cold deep link had none. The root `screenOptions`
+now carries the `safeGoBack` `headerLeft`, and this gate checks it (see "An
+unregistered route has no back button when it matters most"). The only two that turn it off — `category-browse.tsx`
 and `categories/[categoryId].tsx` — replace it with `<ScreenHeader />`, whose
 `showBack` defaults to true. They do that on purpose: the flat header keeps the
 back/chat/settings icons out of the iOS 26 glass capsules.
@@ -970,6 +987,12 @@ a chevron there would be the only one of its kind —
 suppress it, while the same screen reached as a pushed route *does* show back.
 So "the Marketplace screen is missing a back button" is the tab root, and it is
 consistent with Items, Events and Search rather than out of step with them.
+
+⚠️ **Superseded the same day (2026-08-14, by request):** `app/listings.tsx`
+now renders `<ScreenHeader>` with its back chevron unconditionally, routed
+through `safeGoBack`, so the Market tab DOES show one; `asTab` only suppresses
+the in-body QuickNavBar. Walked on Android 2026-09-14 and confirmed — not a bug,
+and the comment in `marketplace.tsx` that still claimed otherwise is corrected.
 
 `npm run check:back-affordance` encodes exactly that distinction: a screen fails
 only if it hides the header AND provides no `ScreenHeader`, `safeGoBack`,
@@ -2176,6 +2199,143 @@ exact `Platform` check the error text lacked, and as
 **Gating a control is a multi-file change**: the copy that sells it moves with
 it, in the same commit.
 
+## The third Android walk: rules this playbook already had, broken one branch out (2026-09-13)
+
+Walked on a release APK. Every defect below is a rule already written in this
+file, broken in a place the rule's first fix never looked. **None is
+Android-only** — each is plain JS layout, state or copy, so the fixes are not
+platform-scoped (`learning_found_on_one_platform_is_not_a_platform_bug`).
+
+| screen | seen | rule it broke |
+|---|---|---|
+| Open bids | the nav bar floating **halfway up the screen** under "Loading offers…" | QuickNavBar goes after a sibling that FILLS — the loading branch was `padding` only |
+| Analytics | no nav bar for the whole load | "Cover every return branch" — only the loaded return had it |
+| Market Movers, Archived | no nav bar at all | "The newest screens keep shipping without the nav bar" |
+| Notifications | **no header cluster** | "Not hidden — tinted": a 2026-03 `headerRight` override REPLACED `HeaderActions` with "Mark All Read", or with nothing |
+| Favourites | "Nothing saved yet" after a failed load | "An empty list answers ONE question" |
+| Catalogue item | "Catalog item", no image, and a price card reading **"No recent sales data" / "Estimated from the latest market observation"** | "NULL is a claim" — provenance printed for a number that does not exist |
+| Offers, Favourites, Tax reporting | ~90pt of blank space above the bar | `useTabBarInset` on screens with an IN-FLOW QuickNavBar |
+| Category page | the hero banner starting UNDER the header, rounded top cut off | the title spec's 16pt top gutter — `paddingTop: 0` dated from before ScreenHeader floated with a shadow |
+| Public profile | loading and both error branches with no nav bar; the spinner alone for ~30s | "Cover every return branch" — again |
+| Blocked users | **two stacked headers, two back buttons** | the double-header bug already recorded for favorites: an unregistered route inherits the native header on top of its own |
+| Build & paint projects | **no title anywhere** — header `''`, body opens on a button | `headerTitle: ''` is legitimate only when the body renders its own heading (the 2026-09-09 Settings bug) |
+| Event detail | a source chip reading **"ticketmaster"**, **"rss"** | "A backend field is a value, not a label" — the label map knew 1 of the 5 live sources; unknown sources now get no chip rather than their slug |
+| Inbox | **no header cluster** | the 2026-09-09 fix below says it covered `/inbox`; Inbox hides the native header and draws its own, so `HeaderActions` never mounted there |
+| New deal search | marketplace toggles reading **"Ebay"**, **"Tcgplayer"** | a slug under `textTransform: capitalize`; the label map `MARKETPLACE_BRAND_COLORS` already existed — and capitalize on the real label would have printed "EBay", so both had to change together |
+| Two-factor authentication | "Enable 2FA" and "Verify & Enable" **looking disabled** — white on `brand.base`, **1.66:1** | "Never hardcode a colour on a themed background": `'#FFFFFF'` lived in the StyleSheet, the fill inline, so `check:brand-colors` could not pair them; the next step of the same flow had the same defect |
+| Market Movers (2026-09-14) | opened by a **cold deep link: no back control at all**; warm, a Material arrow unlike every other screen's chevron | "The native header back button has the same defect" — nine routes are not registered in `app/_layout.tsx` and got the NATIVE back button, which native-stack **does not draw** on an empty stack. Fixed at the chokepoint: the root `screenOptions` now carries `headerLeft: <HeaderBackButton />` |
+| Category page → Browse by Set, set grid | Pokémon's tiles and the set screen titled **"Swsh8"**, **"Smp"** (Fusion Strike, SM Black Star Promos) | "A backend field is a value, not a label" — server-side: the name was in `attributes_json->>'set'`; the MV now carries it. ✅ Applied + deployed 2026-09-14, seen on the device ("Cosmic Eclipse · 272 items"). The heading was English-only and stacked a bookmark icon with a 🗂 emoji — now `category.browse_by_set/brand`, no emoji, and "1 items" is singular |
+| Category page → Upcoming events (2026-09-14) | Sports Cards' first event **"12. Cruz roja argentina"** — a scraped newsletter row; every date printed **"2026-09-17 · 16:00:00"** | The feed's display gate, bypassed: the section read `v_events_with_attendees_v1` directly, a view with **no WHERE clause** (newsletter quarantine, quality rejects, unpublished and private events all pass). Now `GET /events?category_id=` — the Events tab's gated read. And "A backend field is a value" in a seventh place: now `formatEventWhen`, in the row AND its a11y label. Gate: `__tests__/data/noDirectEventViewRead` (fails on HEAD) |
+| Items tab | **"Collection total €900"** under a one-item section whose row says €900; "Portfolio total:" and "Collection total" English on every locale | "A grouped list should not repeat" — a one-item section has no footer; the rest say `items.section_total`; the header reuses Home's own `home.portfolio_value` wording |
+| Blocked users | "No blocked users" after a failed load (recorded 09-13) | "An empty list answers ONE question" — now a `loadFailed` state with Try again, same as Favourites; the empty state is translated too |
+| Market Movers, Pro gate | the upgrade card running **edge to edge, 0pt gutter** | "The screen gutter is 16" — `UpgradePrompt` has no horizontal margin; analytics and sets-to-complete wrap it, movers did not |
+
+### An unregistered route has no back button when it matters most
+
+Nine route files are not registered in `app/_layout.tsx`: `market-movers`,
+`offer/[offerId]`, `archived`, `franchise/[id]`, `catalog-set/[setCode]`,
+`import-url`, `my-suggestions`, `sell/ebay-defaults`, `diagnostics`. They took
+the bare `screenOptions`, which set `headerRight` but not `headerLeft` — so they
+got the native back button. That button only exists when there is something to
+pop: force-stopped, then opened by `sparrow://market-movers`, the screen had a
+title and the header cluster and **no way back**. `offer/[offerId]` is what a
+new-offer push opens.
+
+Registering nine routes would fix nine; the next unregistered route would ship
+the bug again. The default now carries the safe `headerLeft`, and
+`check:back-affordance` — which had counted "inherits the native header" as a
+pass — **fails unless the root `screenOptions` has a `headerLeft`** (proven: it
+fails on HEAD, and with the line `//`- or `/* */`-commented out). The shared
+button's screen-reader label was a hardcoded "Go back"; it now uses
+`common.go_back_a11y`, which all 7 locales already had.
+
+⚠️ Not yet seen on a device: the installed APK predates the change.
+
+### A nav bar below a margin-only sibling floats
+
+Adding `<QuickNavBar />` to a branch is not enough: it lands directly under
+whatever came before it. Market Movers' spinner and empty state are
+`marginTop`-only, so the bar would have sat under a sentence exactly as Open
+bids' did. **Wrap every state in ONE `flex: 1` box and put the bar after it** —
+then no branch, present or future, can pin it mid-screen.
+
+### `useTabBarInset` is for `(tabs)` screens only — its own docstring says so
+
+Three non-tab screens used it "for QuickNavBar clearance". QuickNavBar has
+**never** been `position: absolute` (checked across its whole git history); it
+is an in-flow row that reserves its own height. The hook sizes clearance for
+the ABSOLUTE `ExternalTabBar`, and on these screens it only added dead space.
+The mix-up survived because `check:tab-inset` scans `app/(tabs)/` and so cannot
+see a non-tab screen using the hook at all.
+
+### A favourite without its params wrote junk
+
+`catalog-item/[key]` takes title, image and category **only** from route params
+— a bare key cannot be resolved, because keys are bare and the category is what
+disambiguates them. Favourites pushed the key alone, so the screen showed
+"Catalog item", searched marketplaces for the words "Catalog item", and **"Add to
+watchlist" wrote a row titled "Catalog item" with an empty category** — inert,
+since Target Hit joins on the category slug. Fixed at both ends: favourites now
+passes the fields its row already carries, and the screen **refuses** to watch
+or search on an unknown identity, the rule `docs/alerts-and-insights.md` already
+set for the marketplace eye ("refuses and says so").
+
+### Three things the audit of this very change caught
+
+1. **An empty `<Text>` is not no text.** The first F9 fix returned `null` INSIDE
+   the provenance `<Text>`, which can still hold a line under "No recent sales
+   data". The element itself must not render.
+2. **A dead style left behind.** Replacing Open bids' loading `pad` style
+   orphaned it — "a style left behind still reads as the definition".
+3. **`check:params` is blind to object-form pushes cast through
+   `as unknown as Href`.** A deliberately planted `bogus_param` on the new
+   favourites push PASSED ("23 push sites, 28 skipped"). The same shape is used
+   by category-browse, catalog-set and the item sibling rail, so none of those
+   handoffs is actually checked. Recorded, not fixed.
+4. **A dead variable when a header was replaced.** Swapping blocked-users' hand-
+   rolled header for `ScreenHeader` left `const router = useRouter()` with no
+   remaining use — its only reader was the deleted back button. `tsc` does not
+   flag unused locals in this project; a lint diff against a `git worktree` of
+   HEAD did. **When you delete a control, grep the values it was the last user
+   of.**
+5. **Translations in the wrong vocabulary.** See `docs/I18N_BACKLOG.md` — a new
+   string must reuse the locale's existing noun for the feature.
+
+**Also found, not fixed:** blocked-users' load failure leaves the list at `[]`,
+so a failed fetch renders "no blocked users" — the favourites bug above, on a
+safety screen. Recorded for its own change. ✅ Fixed 2026-09-14 (table above).
+
+### A comment saying "the last one" was not the last one (2026-09-14)
+
+`eventsProvider.ts` recorded, on 2026-07-27, that `getEventById`'s move to the
+server went "together with the last direct supabase-js read" of
+`v_events_with_attendees_v1`. `categoryProvider.ts` still read it — and served a
+newsletter row the feed had quarantined for seven weeks. The display-gate
+docstring also says `test_event_display_gate.py` pins its three copies against
+each other; **that file does not exist**. Two sentences, both believed, neither
+checked by anything. The static test now fails on any direct read of the view.
+
+### What the audit of this change caught
+
+1. **Real data beat the unit tests, twice.** The set-name humaniser guard passed
+   48 tests and still regressed "ad&d-2e"; the Ticketmaster location composer
+   passed 5 and still rewrote **15 of 115** live locations that were never
+   broken ("O2 Academy Glasgow, Glasgow" lost its city). Run the new rule over
+   the real inputs and read every change before believing a green suite.
+2. **A lint diff that compared against nothing.** Two files did not exist at
+   HEAD, so the HEAD side errored, printed no JSON, and `diff` against an empty
+   file "passed". Lint new files separately; compare only files present on both
+   sides.
+3. **An overclaim in my own copy.** The rewritten sponsor tier said "Shown first
+   in the events feed"; the RPC ranks followed categories above sponsored
+   events. Now "Boosted".
+
+⚠️ **Not a product bug, recorded so it is not re-fixed:** Watchlist showed
+"Couldn't load your watchlist" on first open. The app's exact PostgREST read, as
+that member, returned **200 in 0.30 s with 5 rows**; the emulator's 5 s read
+timed out behind a 6 s auth-profile hydrate. "Try again" loaded all five. The
+screen was right to say it failed.
+
 ## A backend field is a value, not a label (2026-09-09)
 
 Every row on the Events tab read **`Convention • 2026-09-11 — 20:00:00`** — an
@@ -2301,6 +2461,14 @@ convention.
 ⚠️ **Not hidden — tinted.** Hiding it would shrink the cluster on three
 screens, which is the exact drift this component was created to end. Shape
 constant, behaviour correct.
+
+⚠️ **Correction 2026-09-13: the fix reached ONE of the three screens.**
+`/settings` renders `HeaderActions`; `/notifications` threw it away with its own
+`headerRight`, and `/inbox` hides the native header and hand-rolls one — so
+neither ever showed the tinted icon this section describes. A fix to a shared
+component only reaches the screens that MOUNT it; check each named screen
+renders the component before recording it as covered. Both fixed on the third
+Android walk (see that section).
 
 **Two defects this fixed that were not the reported one:**
 

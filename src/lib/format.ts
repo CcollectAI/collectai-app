@@ -153,7 +153,7 @@ export function formatPrice(amount: number | null | undefined, currency: Currenc
  * Lives here (not in a component) because more than one surface renders a
  * per-item value: the detail card AND the collection list row. Two copies of
  * this rule would drift. NOTE: this is a PER-ITEM rule only — an aggregate
- * ("Collection total", "Portfolio total") of zero genuinely is zero and must
+ * (the Items section "Total", "Portfolio value") of zero genuinely is zero and must
  * keep rendering "€ 0".
  */
 /**

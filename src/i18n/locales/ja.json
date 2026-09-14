@@ -415,7 +415,9 @@
     "delete_a11y": "選択したアイテムを削除",
     "a11y_download_csv": "コレクション概要をCSVでダウンロード",
     "a11y_view_archived": "アーカイブしたアイテムを表示して復元",
-    "a11y_open_projects": "組み立て・塗装プロジェクトを開く"
+    "a11y_open_projects": "組み立て・塗装プロジェクトを開く",
+    "section_total": "合計",
+    "portfolio_value_line": "ポートフォリオ価値: {{value}}"
   },
   "scan": {
     "title": "クイックスキャン",
@@ -789,7 +791,11 @@
     "a11y_download_inventory": "全在庫をCSVでダウンロード",
     "download_inventory": "全在庫をダウンロード（CSV）",
     "a11y_confirm_delete": "アカウント削除を確認",
-    "a11y_type_delete": "確認のため DELETE と入力"
+    "a11y_type_delete": "確認のため DELETE と入力",
+    "blocked_load_failed": "ブロックしたユーザーを読み込めませんでした",
+    "blocked_load_failed_hint": "ブロックは解除されていません。リストに接続できなかっただけです。",
+    "blocked_empty": "ブロックしたユーザーはいません",
+    "blocked_empty_hint": "まだ誰もブロックしていません。ブロックしたユーザーはあなたにメッセージを送れません。"
   },
   "billing": {
     "free": "無料",
@@ -830,7 +836,12 @@
     "title": "お気に入り",
     "empty": "まだ保存されていません",
     "empty_hint": "出品のハートをタップするとここに保存されます",
+    "load_failed": "お気に入りを読み込めませんでした",
+    "load_failed_hint": "保存したアイテムは失われていません。読み込みに失敗しただけです。",
     "unavailable": "現在は利用できません"
+  },
+  "notifications": {
+    "mark_all_read": "すべて既読にする"
   },
   "diagnostics": {
     "title": "診断",
@@ -866,7 +877,9 @@
     "notifications": "通知",
     "project": "プロジェクト",
     "scan_barcode": "バーコードをスキャン",
-    "seller_dashboard": "出品者ダッシュボード"
+    "seller_dashboard": "出品者ダッシュボード",
+    "blocked_users": "ブロック中のユーザー",
+    "projects": "プロジェクト"
   },
   "offers": {
     "still_waiting": "まだ待機中",
@@ -1043,6 +1056,7 @@
     "no_marketplaces": "このアイテムに利用できるマーケットプレイスはありません。",
     "a11y_add_watchlist": "ウォッチリストに追加",
     "add_to_watchlist": "ウォッチリストに追加",
+    "watch_needs_details": "このアイテムの詳細を読み込めなかったため、ここからウォッチリストに追加できません。",
     "browse_title": "カタログを見る",
     "browse_search_placeholder": "カタログのアイテムを検索...",
     "a11y_search_items": "カタログのアイテムを検索",
@@ -1161,7 +1175,12 @@
     "a11y_close_collector_search": "コレクター検索を閉じる",
     "a11y_invite_friends": "友だちを招待する",
     "invite_friends": "友だちを招待",
-    "a11y_find_friends": "フォローする友だちを探す"
+    "a11y_find_friends": "フォローする友だちを探す",
+    "upcoming_events": "予定されているイベント",
+    "browse_by_set": "セットから探す",
+    "browse_by_brand": "ブランドから探す",
+    "set_item_count_many": "{{count}} 件",
+    "set_item_count_one": "1 件"
   },
   "analytics": {
     "a11y_retry": "分析データを再読み込み",

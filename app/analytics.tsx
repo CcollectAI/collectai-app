@@ -397,6 +397,11 @@ function AnalyticsScreen() {
     // they're prompted to add their first item instead of staring at grey
     // silhouettes. Returning users (hasEverHadItems === true) keep the
     // skeleton because real data is on its way.
+    // Every return branch carries QuickNavBar, not only the loaded one. The
+    // skeleton branch had none, so for the whole load — long on a cold start —
+    // the screen had no bottom bar while the loaded screen did (seen on Android
+    // 2026-09-13). docs/ui-playbook.md: "A screen with early returns needs the
+    // bar in all of them."
     if (hasEverHadItems !== true) {
       return (
         <View style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -404,6 +409,7 @@ function AnalyticsScreen() {
           <View style={{ flex: 1, justifyContent: 'center' }}>
             <ItemsEmptyState />
           </View>
+          <QuickNavBar />
         </View>
       );
     }
@@ -413,6 +419,7 @@ function AnalyticsScreen() {
         <View style={styles.loadingContainer}>
           <SkeletonList count={3} type="analytics" />
         </View>
+        <QuickNavBar />
       </View>
     );
   }
@@ -425,6 +432,7 @@ function AnalyticsScreen() {
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <ItemsEmptyState />
         </View>
+        <QuickNavBar />
       </View>
     );
   }

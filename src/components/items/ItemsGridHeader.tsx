@@ -9,6 +9,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { TabBackButton } from '@/components/TabBackButton';
 import { HeaderActions } from '@/components/HeaderActions';
 import { formatPrice } from '@/lib/format';
+import { useTranslation } from 'react-i18next';
 
 interface ItemsGridHeaderProps {
   portfolioTotal: number;
@@ -18,14 +19,17 @@ export const ItemsGridHeader = React.memo(function ItemsGridHeader({
   portfolioTotal,
 }: ItemsGridHeaderProps) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.headerRow}>
       <TabBackButton />
       <View style={styles.headerLeft}>
-        <Text style={[styles.title, { color: colors.text }]}>Items</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('items.title', { defaultValue: 'Items' })}</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          Portfolio total: {formatPrice(portfolioTotal)}
+          {/* "Portfolio value", Home's own wording (home.portfolio_value), not a
+              second name for the same number. Was English-only. */}
+          {t('items.portfolio_value_line', { defaultValue: 'Portfolio value: {{value}}', value: formatPrice(portfolioTotal) })}
         </Text>
       </View>
       {/* The one cluster — notifications, messages, settings. This comment used

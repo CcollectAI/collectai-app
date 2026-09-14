@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack, Redirect } from 'expo-router';
+import { FRANCHISE_PAGES_ENABLED } from '@/config/featureFlags';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
@@ -257,6 +258,8 @@ const styles = StyleSheet.create({
 });
 
 export default function FranchiseDetailScreenWithBoundary() {
+  // Gated before the screen mounts, so its fetch never fires — see the flag.
+  if (!FRANCHISE_PAGES_ENABLED) return <Redirect href="/(tabs)" />;
   return (
     <ScreenErrorBoundary screenName="Franchise Detail">
       <FranchiseDetailScreen />

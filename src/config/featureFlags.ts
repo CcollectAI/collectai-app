@@ -139,6 +139,23 @@ export const LIVE_PRICE_FETCH_ENABLED = false;
  */
 export const GAMIFICATION_UI_ENABLED = false;
 
+/**
+ * `/franchise/[id]` — items across categories for one franchise. OFF: nothing
+ * in the app links to it (`npm run check:reachable` has listed it since
+ * 2026-08-12), and it is not finished — "Franchise not found" is hardcoded
+ * English, and its matcher returns `true` on EVERY path (attribute match or
+ * not), so a franchise page lists every item you own in its categories: "Star
+ * Wars" maps to lego, funko, disney and five more, and would list all of them.
+ *
+ * Gated at the SCREEN, same reasoning as `SELLING_ENABLED`: a route with no
+ * button is still one deep link away. It redirects to the tabs rather than
+ * explaining itself, because no user has ever been told the page exists.
+ *
+ * Flip to true only together with an entry point and a matcher that checks the
+ * franchise instead of assuming it.
+ */
+export const FRANCHISE_PAGES_ENABLED = false;
+
 export const featureFlags = {
   darkMode: false,
   FEATURE_HAPTICS_MICRO_ANIMATIONS: true,

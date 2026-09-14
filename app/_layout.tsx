@@ -3,6 +3,7 @@ import { View, Pressable, ActivityIndicator, Text, TextInput, Animated as RNAnim
 import { StatusBar } from "expo-status-bar";
 import { Stack, useRouter, useSegments, usePathname, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SplashScreen from "expo-splash-screen";
 import {
@@ -219,6 +220,7 @@ const BACK_CHEVRON_OPTICAL = { transform: [{ translateX: -1.5 }] };
 function HeaderBackButton({ color }: { color?: string } = {}) {
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={() => safeGoBack(router)}
@@ -229,7 +231,7 @@ function HeaderBackButton({ color }: { color?: string } = {}) {
       // capsule a true circle and centres the glyph inside it.
       style={HEADER_BTN}
       accessibilityRole="button"
-      accessibilityLabel="Go back"
+      accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}
     >
       <Ionicons
         name="chevron-back"
@@ -415,6 +417,14 @@ function RootStack() {
           headerTitleStyle: { fontFamily: fonts.bold },
           headerBackTitle: '',
           headerBackButtonDisplayMode: 'minimal',
+          // The DEFAULT, not only iconOnlyHeader's. Nine routes are not
+          // registered below (market-movers, offer/[offerId], archived,
+          // franchise/[id], catalog-set/[setCode], import-url, my-suggestions,
+          // sell/ebay-defaults, diagnostics) and inherited the native back
+          // button — which native-stack does not draw at all when the stack is
+          // empty. Opened from a push tap or a cold deep link, those screens had
+          // no back control. Walked on Android 2026-09-14.
+          headerLeft: () => <HeaderBackButton />,
           headerRight: () => <HeaderRight />,
           headerStyle: { backgroundColor: colors.card },
           headerTintColor: colors.text,
@@ -470,6 +480,9 @@ function RootStack() {
             headerShown:true stacks the native bar on top of it — two headers
             and a dead gap between them. */}
         <Stack.Screen name="favorites" options={{ headerShown: false }} />
+        {/* Renders ScreenHeader. It was unregistered, so it inherited the
+            global native header on top of its own (2026-09-13). */}
+        <Stack.Screen name="settings/blocked-users" options={{ headerShown: false }} />
         {/* Renders its own ScreenHeader, so the navigator's must be off — without
             this it inherits the global header and the screen shows TWO stacked
             headers, each with its own back chevron and gear. Caught on the

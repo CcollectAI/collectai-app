@@ -15,7 +15,6 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -24,25 +23,33 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 import { QuickNavBar } from '@/components/QuickNavBar';
-import { safeGoBack } from '@/lib/goBack';
+import ScreenHeader from '@/components/ScreenHeader';
+import { useTranslation } from 'react-i18next';
+import { EmptyState } from '@/components/EmptyState';
 
 type BlockedUser = { id: string; name: string };
 
 function BlockedUsersScreen() {
-  const router = useRouter();
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { showToast } = useToast();
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
+  // A failed load is its own state. Without it the list stayed [] and rendered
+  // "No blocked users" — on a SAFETY screen, telling someone nobody is blocked
+  // when we simply could not ask (the favourites bug, 2026-09-13).
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const loadBlockedUsers = useCallback(async () => {
     try {
       const users = await dataProvider.listBlockedUsers();
       setBlockedUsers(users);
+      setLoadFailed(false);
     } catch (err) {
       logger.error('[BlockedUsers] loadBlockedUsers error:', err);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -117,20 +124,16 @@ function BlockedUsersScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <AnimatedPressable
-          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); safeGoBack(router); }}
-          style={styles.backBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.text} />
-        </AnimatedPressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Blocked Users</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    // No 'top' edge: ScreenHeader applies insets.top itself, so keeping it would
+    // pad the status bar twice (same note as app/favorites.tsx).
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+      {/* The shared flat header, not a hand-rolled one. This screen was not
+          registered in app/_layout.tsx, so it inherited the global native
+          header AND drew its own centred "‹ Blocked Users" row beneath it —
+          two stacked headers, two back buttons (seen on Android 2026-09-13).
+          The same bug docs/ui-playbook.md records for favorites. Registered
+          with headerShown: false now. */}
+      <ScreenHeader title={t('screen_titles.blocked_users', { defaultValue: 'Blocked users' })} />
 
       {loading ? (
         <View style={styles.centerContainer}>
@@ -153,15 +156,36 @@ function BlockedUsersScreen() {
             />
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="shield-checkmark-outline" size={64} color={colors.muted} />
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                No blocked users
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-                You haven&apos;t blocked anyone. Blocked users can&apos;t send you messages.
-              </Text>
-            </View>
+            loadFailed ? (
+              <EmptyState
+                icon="cloud-offline-outline"
+                title={t('account.blocked_load_failed', { defaultValue: "Couldn't load your blocked users" })}
+                subtitle={t('account.blocked_load_failed_hint', { defaultValue: 'Nobody has been unblocked — we just could not reach the list.' })}
+                colors={colors}
+                action={
+                  <AnimatedPressable
+                    onPress={onRefresh}
+                    style={[styles.retryBtn, { backgroundColor: colors.accent }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+                  >
+                    <Text style={[styles.retryText, { color: colors.accentText }]}>
+                      {t('common.try_again', { defaultValue: 'Try again' })}
+                    </Text>
+                  </AnimatedPressable>
+                }
+              />
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="shield-checkmark-outline" size={64} color={colors.muted} />
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                  {t('account.blocked_empty', { defaultValue: 'No blocked users' })}
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+                  {t('account.blocked_empty_hint', { defaultValue: "You haven't blocked anyone. Blocked users can't send you messages." })}
+                </Text>
+              </View>
+            )
           }
         />
       )}
@@ -173,21 +197,6 @@ function BlockedUsersScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  backBtn: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
   },
   centerContainer: {
     flex: 1,
@@ -202,6 +211,8 @@ const styles = StyleSheet.create({
   emptyListContent: {
     flexGrow: 1,
   },
+  retryBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, minHeight: 44, justifyContent: 'center' },
+  retryText: { fontSize: 14, fontWeight: '700' },
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',

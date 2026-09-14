@@ -16,6 +16,7 @@ import { Stack, useRouter, type Href } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useBillingLimits } from '@/hooks/useBillingLimits';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { QuickNavBar } from '@/components/QuickNavBar';
 import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
 import type { TopMover } from '@/api/dataMoatApi';
@@ -248,7 +249,12 @@ function MarketMoversScreen() {
             headerStyle: { backgroundColor: colors.background },
           }}
         />
-        <UpgradePrompt feature="Market Movers" requiredPlan="Pro" />
+        {/* A growing box, so QuickNavBar sits at the bottom rather than
+            directly under the prompt card. */}
+        <View style={[styles.stateArea, styles.gateArea]}>
+          <UpgradePrompt feature="Market Movers" requiredPlan="Pro" />
+        </View>
+        <QuickNavBar />
       </View>
     );
   }
@@ -315,6 +321,11 @@ function MarketMoversScreen() {
         </Text>
       </View>
 
+      {/* Every state renders inside one growing box: `loader` and `empty` are
+          margin-only, so without it QuickNavBar would sit directly under a
+          spinner or a sentence, halfway up the screen (the offers.tsx bug,
+          2026-09-13). */}
+      <View style={styles.stateArea}>
       {loading ? (
         <ActivityIndicator style={styles.loader} size="large" color={colors.accent} />
       ) : failed ? (
@@ -348,6 +359,8 @@ function MarketMoversScreen() {
           contentContainerStyle={styles.list}
         />
       )}
+      </View>
+      <QuickNavBar />
     </View>
   );
 }
@@ -423,6 +436,16 @@ const styles = StyleSheet.create({
   retryText: { fontSize: text.md, fontWeight: fontWeight.bold },
   loader: {
     marginTop: 40,
+  },
+  stateArea: {
+    flex: 1,
+  },
+  // UpgradePrompt carries no horizontal margin of its own (analytics and
+  // sets-to-complete wrap it in padded containers), so without this the card
+  // ran edge to edge, 0pt from the screen.
+  gateArea: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   empty: {
     alignItems: 'center',

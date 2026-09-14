@@ -999,7 +999,7 @@ const ItemsScreen: React.FC = () => {
             />
           )}
           renderSectionFooter={({ section }) => (
-            <ItemsSectionFooter total={section.total} />
+            <ItemsSectionFooter total={section.total} count={section.data.length} />
           )}
           ListHeaderComponent={headerElement}
           ListFooterComponent={footerElement}

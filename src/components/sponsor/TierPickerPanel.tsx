@@ -6,12 +6,8 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import type { SponsorTier } from '@/data/events';
 import { useTranslation } from 'react-i18next';
+import { SPONSOR_TIERS as TIERS } from '@/constants/sponsorTiers';
 
-const TIERS: { id: SponsorTier; name: string; badge?: string; features: string[] }[] = [
-  { id: 'featured', name: 'Featured', features: ['Event listing', 'Category placement', 'Basic analytics'] },
-  { id: 'promoted', name: 'Promoted', badge: 'POPULAR', features: ['Everything in Featured', 'Homepage banner', 'Push notifications', 'Priority support'] },
-  { id: 'spotlight', name: 'Spotlight', features: ['Everything in Promoted', 'Dedicated landing page', 'Custom branding', 'Advanced analytics'] },
-];
 
 const SHADOW_MD = Platform.select({
   ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 },
@@ -70,11 +66,6 @@ export const TierPickerPanel = React.memo(function TierPickerPanel({
             <View style={styles.tierInfo}>
               <View style={styles.tierNameRow}>
                 <Text style={[styles.tierName, { color: colors.text }]}>{tier.name}</Text>
-                {tier.badge && (
-                  <View style={[styles.badge, { backgroundColor: colors.accent }]}>
-                    <Text style={styles.badgeText}>{tier.badge}</Text>
-                  </View>
-                )}
               </View>
               {tier.features.map((f) => (
                 <View key={f} style={styles.featureRow}>
@@ -135,8 +126,6 @@ const styles = StyleSheet.create({
   tierInfo: { flex: 1 },
   tierNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
   tierName: { fontSize: 14, fontWeight: '700' },
-  badge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5 },
-  badgeText: { fontSize: 9, fontWeight: '800', color: '#FFFFFF', letterSpacing: 0.5 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
   featureText: { fontSize: 12, flex: 1 },
   billingRow: { flexDirection: 'row', gap: 8, marginTop: 12 },

@@ -14,7 +14,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect, Stack } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { dataProvider, type BuildPaintProject } from "@/data";
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -133,9 +133,17 @@ function BuildPaintProjectsScreen() {
     wishlist: wishlistProjects.length,
   }), [projects.length, inProgressProjects.length, finishedProjects.length, wishlistProjects.length]);
 
+  // The screen is registered with iconOnlyHeader (headerTitle ''), which is
+  // only legitimate when the body renders its own heading — this body opens on
+  // a "New Project" button, so the screen named itself nowhere (seen on Android
+  // 2026-09-13; the same defect the 2026-09-09 walk fixed on Settings). The
+  // title matches the "Projects" button that opens it. Set in both branches.
+  const titleOptions = { headerTitle: t('screen_titles.projects', { defaultValue: 'Projects' }) };
+
   if (loading) {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+        <Stack.Screen options={titleOptions} />
         <View style={styles.loadingContainer}>
           <SkeletonList count={4} type="card" />
         </View>
@@ -145,6 +153,7 @@ function BuildPaintProjectsScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+      <Stack.Screen options={titleOptions} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}>
         <Animated.View style={animatedStyle}>
           {/* Add button */}

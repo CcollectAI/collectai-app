@@ -14,10 +14,13 @@ import logger from '../../utils/logger';
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 // mapEventRow (the v_events_with_attendees_v1 shape) was deleted 2026-07-27
-// together with the last direct supabase-js read of that view — see
-// getEventById below for why. Keeping a second mapper around is how a fix
-// lands on the path nothing calls: every event now arrives in the EC2 API
-// shape, so there is exactly one mapper.
+// with getEventById's direct supabase-js read of that view — see below for why.
+// It was NOT the last one: categoryProvider kept reading the view until
+// 2026-09-14 (see listCategoryEvents). `__tests__/data/noDirectEventViewRead`
+// now fails on any direct read, so this sentence no longer has to be trusted.
+//
+// Keeping a second mapper around is how a fix lands on the path nothing calls:
+// every event now arrives in the EC2 API shape, so there is exactly one mapper.
 
 function mapEventApiResponse(row: Record<string, unknown>): CollectorsEvent {
   return {
@@ -142,6 +145,26 @@ export async function listEvents(pagination?: PaginationParams): Promise<Collect
     logger.error('[SupabaseDataProvider] listEvents error:', e);
     throw e instanceof Error ? e : new Error('Failed to load events');
   }
+}
+
+/**
+ * Upcoming events for ONE category, through the same gated server read as the
+ * Events tab (`GET /events?category_id=`).
+ *
+ * The category page used to select `v_events_with_attendees_v1` directly, and
+ * that view has no WHERE clause: it returned newsletter-quarantined rows,
+ * quality-score rejects, non-published duplicates and private events. Walked on
+ * Android 2026-09-14 — Sports Cards' first "upcoming event" was
+ * "12. Cruz roja argentina", a scraped newsletter row the feed has hidden since
+ * 2026-07-27. The server applies status, date, `is_public` and the display gate
+ * (events_helpers.build_event_conditions / rpc_list_personalized_events_v1).
+ */
+export async function listCategoryEvents(categoryId: string, limit = 5): Promise<CollectorsEvent[]> {
+  const data = await collectorsApi.get<{ events?: Record<string, unknown>[] } | Record<string, unknown>[]>(
+    `/events?category_id=${encodeURIComponent(categoryId)}&limit=${limit}`,
+  );
+  const rows = Array.isArray(data) ? data : ((data as { events?: Record<string, unknown>[] })?.events ?? []);
+  return rows.map(mapEventApiResponse);
 }
 
 export async function createEvent(input: CreateEventInput): Promise<CollectorsEvent> {

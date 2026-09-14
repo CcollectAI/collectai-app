@@ -415,7 +415,9 @@
     "delete_a11y": "Supprimer les objets sélectionnés",
     "a11y_download_csv": "Télécharger l'aperçu de la collection en CSV",
     "a11y_view_archived": "Voir les articles archivés et les restaurer",
-    "a11y_open_projects": "Ouvrir les projets de montage et peinture"
+    "a11y_open_projects": "Ouvrir les projets de montage et peinture",
+    "section_total": "Total",
+    "portfolio_value_line": "Valeur du portefeuille : {{value}}"
   },
   "scan": {
     "title": "QuickScan",
@@ -789,7 +791,11 @@
     "a11y_download_inventory": "Télécharger l'inventaire complet en CSV",
     "download_inventory": "Télécharger l'inventaire complet (CSV)",
     "a11y_confirm_delete": "Confirmer la suppression du compte",
-    "a11y_type_delete": "Tapez DELETE pour confirmer"
+    "a11y_type_delete": "Tapez DELETE pour confirmer",
+    "blocked_load_failed": "Impossible de charger vos utilisateurs bloqués",
+    "blocked_load_failed_hint": "Personne n’a été débloqué — nous n’avons simplement pas pu joindre la liste.",
+    "blocked_empty": "Aucun utilisateur bloqué",
+    "blocked_empty_hint": "Vous n’avez bloqué personne. Les utilisateurs bloqués ne peuvent pas vous envoyer de messages."
   },
   "billing": {
     "free": "Gratuit",
@@ -830,7 +836,12 @@
     "title": "Favoris",
     "empty": "Rien d'enregistré pour l'instant",
     "empty_hint": "Touchez le cœur d'une annonce pour l'enregistrer ici",
+    "load_failed": "Impossible de charger vos favoris",
+    "load_failed_hint": "Vos articles enregistrés sont en sécurité — nous n'avons simplement pas pu les récupérer.",
     "unavailable": "Plus disponible"
+  },
+  "notifications": {
+    "mark_all_read": "Tout marquer comme lu"
   },
   "diagnostics": {
     "title": "Diagnostics",
@@ -866,7 +877,9 @@
     "notifications": "Notifications",
     "project": "Projet",
     "scan_barcode": "Scanner le code-barres",
-    "seller_dashboard": "Tableau de bord vendeur"
+    "seller_dashboard": "Tableau de bord vendeur",
+    "blocked_users": "Utilisateurs bloqués",
+    "projects": "Projets"
   },
   "offers": {
     "still_waiting": "Toujours en attente",
@@ -1043,6 +1056,7 @@
     "no_marketplaces": "Aucune place de marché disponible pour cet article.",
     "a11y_add_watchlist": "Ajouter à la liste de suivi",
     "add_to_watchlist": "Ajouter à la liste de suivi",
+    "watch_needs_details": "Impossible de charger les détails de cet article, vous ne pouvez donc pas l'ajouter à la liste de suivi ici.",
     "browse_title": "Parcourir le catalogue",
     "browse_search_placeholder": "Rechercher des articles du catalogue...",
     "a11y_search_items": "Rechercher des articles du catalogue",
@@ -1161,7 +1175,12 @@
     "a11y_close_collector_search": "Fermer la recherche de collectionneurs",
     "a11y_invite_friends": "Invitez vos amis",
     "invite_friends": "Inviter des amis",
-    "a11y_find_friends": "Trouver des amis à suivre"
+    "a11y_find_friends": "Trouver des amis à suivre",
+    "upcoming_events": "Événements à venir",
+    "browse_by_set": "Parcourir par série",
+    "browse_by_brand": "Parcourir par marque",
+    "set_item_count_many": "{{count}} objets",
+    "set_item_count_one": "1 objet"
   },
   "analytics": {
     "a11y_retry": "Recharger les données d'analyse",

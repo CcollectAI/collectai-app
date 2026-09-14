@@ -12,7 +12,9 @@
  *
  * Playbook rules this is built around (docs/ui-playbook.md):
  *  - Header outside the list (FlashList hit-area bug) — and it's a FlatList.
- *  - `useTabBarInset` for QuickNavBar clearance.
+ *  - NO `useTabBarInset`: QuickNavBar is in-flow and reserves its own height.
+ *    (This line used to prescribe the inset for "QuickNavBar clearance"; it
+ *    only added ~90pt of blank space above the bar. Corrected 2026-09-13.)
  *  - No `accessibilityRole="tabbar"` (hard-crashes Android).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -34,7 +36,6 @@ import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { SwipeableRow } from '@/components/SwipeableRow';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { useAsync } from '@/hooks/useAsync';
 import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
@@ -127,7 +128,6 @@ function OffersScreen() {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
-  const bottomInset = useTabBarInset();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   /**
@@ -1528,7 +1528,13 @@ function OffersScreen() {
       ) : null}
 
       {loading && !refreshing ? (
-        <View style={styles.pad}>
+        // `loadingFill` (was a padding-only style): every sibling branch grows (EmptyState is
+        // flex 1, SectionList is a ScrollView), and this one did not — so
+        // QuickNavBar, the next sibling, rendered straight under one line of
+        // text, halfway up the screen. Seen on Android 2026-09-13. The bar only
+        // reaches the bottom if the branch above it fills (docs/ui-playbook.md
+        // "The newest screens keep shipping without the nav bar").
+        <View style={styles.loadingFill}>
           <Text style={[styles.loadingText, { color: colors.muted }]}>{t('offers.loading_offers', { defaultValue: 'Loading offers…' })}</Text>
         </View>
       ) : error ? (
@@ -1562,7 +1568,7 @@ function OffersScreen() {
               </Text>
             )
           )}
-          contentContainerStyle={[styles.list, { paddingBottom: bottomInset }]}
+          contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.accent} />}
           // Stated at the bottom, not the top: a banner above the list would
@@ -1796,7 +1802,7 @@ export default function OffersScreenWithBoundary() {
  */
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  pad: { padding: 16 },
+  loadingFill: { flex: 1, padding: 16 },
   loadingText: { fontSize: textToken.md },
   segmentWrap: { paddingHorizontal: 16, paddingTop: 8 },
   segment: {
@@ -1805,7 +1811,8 @@ const styles = StyleSheet.create({
   },
   segmentBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: radius.pill },
   segmentText: { fontSize: textToken.md, fontWeight: fontWeight.semibold },
-  list: { paddingHorizontal: 16, paddingTop: 2 },
+  // paddingBottom is plain spacing, not a tab-bar inset (see the file header).
+  list: { paddingHorizontal: 16, paddingTop: 2, paddingBottom: 16 },
   // More room and a softer corner: at 14pt padding with 8pt gaps the card read
   // as a dense list row rather than a document about one negotiation. The
   // shadow is the same token the marketplace tiles use, so the two screens

@@ -39,7 +39,6 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { useAsync } from '@/hooks/useAsync';
 import { useSettings } from '@/lib/settings';
 import { collectorsApi } from '@/api/collectorsApi';
@@ -52,7 +51,6 @@ function TaxReportingScreen() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
-  const bottomInset = useTabBarInset();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
   const { data, loading, error, retry } = useAsync(
@@ -73,7 +71,11 @@ function TaxReportingScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
       <ScreenHeader title={t('tax.title', { defaultValue: 'Sales & tax reporting' })} />
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomInset }]}>
+      {/* No tab-bar inset: QuickNavBar below is in-flow and reserves its own
+          height, so `styles.content`'s 16pt padding is all the bottom needs.
+          useTabBarInset is for (tabs) screens under the ABSOLUTE ExternalTabBar
+          and only added ~90pt of blank space here (2026-09-13). */}
+      <ScrollView contentContainerStyle={styles.content}>
         <Animated.View style={animatedStyle}>
 
           {loading ? (

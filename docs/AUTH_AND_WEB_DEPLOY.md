@@ -424,7 +424,36 @@ Re-verified: the second enroll returns 200 where it previously returned 422.
 **If `friendlyName` is ever made user-editable, keep the cleanup** — the
 collision is on that name.
 
+## Observed 2026-09-13: the "brief logged-out flash" was not brief (NOT changed)
+
+`AuthProvider.tsx` bounds `getSession()` at `AUTH_INIT_TIMEOUT_MS` (8s) and, on
+timeout, falls through with no session so the app is never stuck — documented
+there as *"a slow session is a brief logged-out flash, never a logout"*, and safe
+against the refresh-token reuse revocation above. That trade-off stands.
+
+What a release APK on a slow Android emulator actually showed on a signed-in
+cold start: **the Login screen, keyboard up on Email, for long enough to type
+most of an address**, before `onAuthStateChange` restored the session and the
+gate moved to Portfolio on its own. Settings → Diagnostics in the same window:
+
+```
+[silent-fallback] auth: profile hydrate failed after 6054ms via onAuthStateChange
+[DIAG auth] getAuthHeaders: NO TOKEN after refresh window — request will go unauthenticated
+```
+
+So during the flash the app both shows a signed-in member the sign-in form and
+fires unauthenticated requests. On that emulator Supabase calls were timing out
+at 15s, which is not a real phone — but it is what a phone on a bad network
+would see. Recorded, not fixed: any change here must be reasoned against the
+`processLock` / reuse-detection rules at the top of this file, not made on a walk.
+
 ## Login is email-only (App Store guideline 4.8)
+
+⚠️ **The Terms said otherwise until 2026-09-13.** `app/legal/terms.tsx` and
+`web/terms.html` read *"You may register using email/password or social login
+(Google, Apple)"* while this flag was false. Corrected to email and password
+(the web copy needs a deploy). The privacy policy's "If you use social login…"
+is conditional and stays true.
 
 Apple/Google sign-in is hidden behind **`SOCIAL_LOGIN_ENABLED=false`**
 (`src/config/featureFlags.ts`). Email-only avoids 4.8 (offering Google requires

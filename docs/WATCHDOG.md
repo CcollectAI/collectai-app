@@ -1211,9 +1211,12 @@ rotation (~58 d) outlasts `market_hits` retention (1 month) this check cannot pa
 on that without paging every healthy category between turns. It is a capacity
 question — see `docs/MARKET_DATA.md` "The main scrape is a ~58-day rotation".
 
-⚠️ **Committed (`5d855a0`), NOT deployed** at the time of writing: the rsync to
-`/opt/collectors/server/` was refused by the session's permission gate. Until the
-deploy + the nine gates + a restart, the hourly page continues.
+✅ **Deployed 2026-09-13 14:26 CEST** (`5d855a0`) after the permission gate first
+refused the rsync. Prod file hash matched the pre-change commit before the rsync;
+all nine gates PASS by hand; restart; `/healthz` 200. **Verified live:** the next
+sanity cycles logged one_piece_tcg/digimon as "not been back since the visit that
+wrote their last hit (rotation, not an outage)", and no `SANITY VIOLATION
+coverage_zero` has fired since.
 
 ### The TCG pass was scraping three cards for users who no longer exist
 

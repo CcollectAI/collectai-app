@@ -19,6 +19,7 @@
  */
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
+import { QuickNavBar } from "@/components/QuickNavBar";
 import {
   View,
   Text,
@@ -199,6 +200,12 @@ function ArchivedContent() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerTitle: t('screen_titles.archived'), headerBackTitle: t('screen_titles.back_items') }} />
 
+      {/* One growing box around every state, so QuickNavBar below always sits
+          at the bottom of the screen. The screen had no bar at all, so a member
+          arriving here had only the back chevron (seen on Android 2026-09-13;
+          docs/ui-playbook.md "The newest screens keep shipping without the nav
+          bar"). */}
+      <View style={styles.stateArea}>
       {loading ? (
         <View style={styles.loader}>
           <ActivityIndicator size="large" color={colors.accent} />
@@ -219,6 +226,8 @@ function ArchivedContent() {
           }
         />
       )}
+      </View>
+      <QuickNavBar />
     </View>
   );
 }
@@ -233,6 +242,7 @@ export default function ArchivedScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  stateArea: { flex: 1 },
   loader: { flex: 1, alignItems: "center", justifyContent: "center" },
   listContent: { padding: 16, paddingBottom: 32 },
   card: {

@@ -17,6 +17,7 @@ import { AutoRotatingCarousel } from '@/components/AutoRotatingCarousel';
 import { getCatalogCollectionsCached, prefetchSetGridFirstPage } from '@/data/catalogBrowseCache';
 import { type CategoryCollection } from '@/data/categories';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 type CatalogCollection = {
   collection_key: string;
@@ -38,6 +39,7 @@ type Props = {
 
 export default React.memo(function FeaturedCollectionsSection({ collections, categoryId, title, groupBy, onCollectionPress }: Props) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const [items, setItems] = useState<CatalogCollection[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -93,7 +95,7 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <Ionicons name="bookmark-outline" size={18} color={colors.accent} />
-        <Text style={[styles.title, { color: colors.text }]}>{title ?? 'Featured Collections'}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{title ?? t('category.browse_by_set', { defaultValue: 'Browse by set' })}</Text>
       </View>
 
       <AutoRotatingCarousel intervalMs={6000} horizontalInset={30}>
@@ -106,6 +108,12 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
           const coverUri = (col.cover_image && col.cover_image.length > 0)
             ? col.cover_image
             : null;
+          // Translated, and singular for one item (was "1 items" / English-only).
+          const meta = col.total_items > 1
+            ? t('category.set_item_count_many', { defaultValue: '{{count}} items', count: col.total_items })
+            : col.total_items === 1
+              ? t('category.set_item_count_one', { defaultValue: '1 item' })
+              : t('nav.explore', { defaultValue: 'Explore' });
 
           return (
             <AnimatedPressable
@@ -116,7 +124,7 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
               onPressIn={() => prefetchSetGridFirstPage(categoryId, groupBy, col.collection_key)}
               onPress={() => onCollectionPress?.({ collection_key: col.collection_key, display_name: col.display_name })}
               accessibilityRole="button"
-              accessibilityLabel={`Collection: ${col.display_name}`}
+              accessibilityLabel={`${col.display_name}, ${meta}`}
             >
               {coverUri ? (
                 <Image
@@ -133,7 +141,7 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
                 {col.display_name}
               </Text>
               <Text style={[styles.collMeta, { color: colors.muted }]} numberOfLines={1}>
-                {col.total_items > 0 ? `${col.total_items} items` : 'Explore'}
+                {meta}
               </Text>
             </AnimatedPressable>
           );

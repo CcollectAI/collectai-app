@@ -2,7 +2,8 @@
  * Notification History Screen
  *
  * Displays a paginated list of all notifications with unread indicators,
- * pull-to-refresh, infinite scroll, and "Mark All Read" header action.
+ * pull-to-refresh, infinite scroll, and a "Mark all as read" bar above the list
+ * (in the body, not the header — the header belongs to HeaderActions).
  */
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
@@ -348,29 +349,34 @@ function NotificationsScreen() {
 
   return (
     <View style={[s.container, { backgroundColor: theme.background }]}>
-      <Stack.Screen
-        options={{
-          headerTitle: t('screen_titles.notifications'),
-          headerRight: () =>
-            unreadCount > 0 ? (
-              <Pressable
-                onPress={handleMarkAllRead}
-                disabled={markingAllRead}
-                style={{ paddingHorizontal: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel="Mark all as read"
-              >
-                {markingAllRead ? (
-                  <ActivityIndicator size="small" color={theme.accent} />
-                ) : (
-                  <Text style={{ color: theme.accent, fontSize: textToken.md, fontWeight: fw.semibold }}>
-                    Mark All Read
-                  </Text>
-                )}
-              </Pressable>
-            ) : null,
-        }}
-      />
+      {/* No `headerRight` override. It used to REPLACE the root stack's
+          HeaderActions with "Mark All Read" — or with nothing at all when
+          nothing was unread — so this was the one screen in the app with no
+          bell · bubble · gear cluster (seen on Android 2026-09-13). The cluster
+          already renders the bell here tinted and inert
+          (docs/ui-playbook.md "…including on the three screens it navigates
+          TO": "Not hidden — tinted"). The action moved into the body. */}
+      <Stack.Screen options={{ headerTitle: t('screen_titles.notifications') }} />
+
+      {!loading && unreadCount > 0 && (
+        <View style={[s.markAllBar, { borderBottomColor: theme.border }]}>
+          <Pressable
+            onPress={handleMarkAllRead}
+            disabled={markingAllRead}
+            style={s.markAllBtn}
+            accessibilityRole="button"
+            accessibilityLabel={t('notifications.mark_all_read', { defaultValue: 'Mark all as read' })}
+          >
+            {markingAllRead ? (
+              <ActivityIndicator size="small" color={theme.accent} />
+            ) : (
+              <Text style={{ color: theme.accent, fontSize: textToken.md, fontWeight: fw.semibold }}>
+                {t('notifications.mark_all_read', { defaultValue: 'Mark all as read' })}
+              </Text>
+            )}
+          </Pressable>
+        </View>
+      )}
 
       {loading ? (
         <View style={s.loadingContainer}>
@@ -415,6 +421,19 @@ const s = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  // Right-aligned where the header action used to sit, so the control is found
+  // where people already looked for it. minHeight keeps the 44pt touch target.
+  markAllBar: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  markAllBtn: {
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: 4,
   },
   row: {
     flexDirection: "row",
