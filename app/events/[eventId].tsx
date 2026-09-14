@@ -26,7 +26,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type PublicUserProfile } from '@/data';
 import type { CollectorsEvent } from '@/data/events';
 import { getCategoryById } from '@/data/categories';
-import { getUserById } from '@/data/users';
+import { getUserById } from '@/data/users'; // demo-data-ok: attendee list only, and attendeeIds is hardcoded [] by eventsProvider, so it never renders (see EventAttendeesSection); the host card reads the real profile
 // PublicUserProfileCard moved to EventHostSection
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';

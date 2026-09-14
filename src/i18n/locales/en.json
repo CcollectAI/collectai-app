@@ -991,6 +991,7 @@
     "failed_to_send": "Failed to send",
     "tap_to_retry": "Tap to retry",
     "no_messages_yet": "No messages yet",
+    "load_failed": "Couldn't load this conversation",
     "start_conversation": "Send a message to start the conversation",
     "message_placeholder": "Type a message...",
     "a11y_message_input": "Message input"
@@ -1082,7 +1083,8 @@
     "a11y_find_collectors": "Find collectors to message",
     "find_collectors": "Find collectors",
     "a11y_test_chat": "Open a test chat to preview messaging",
-    "open_test_chat": "Open test chat"
+    "open_test_chat": "Open test chat",
+    "load_failed": "Couldn't load your messages"
   },
   "item_details": {
     "item_name": "Item name",

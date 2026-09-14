@@ -4,8 +4,8 @@ import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, Acti
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getUserById } from '@/data/users';
-import { EVENTS } from '@/data/events';
+import { getUserById } from '@/data/users'; // demo-data-ok: only matches the demo ids (collector-*); every real caller passes a UUID and falls through to the profiles row below
+import { EVENTS } from '@/data/events'; // demo-data-ok: opener prefill only, and no real event id matches — the attendee button that passes contextEventId never renders (EventAttendeesSection)
 import { supabase } from '@/lib/supabase';
 import { withTimeout } from '@/lib/withTimeout';
 import { dataProvider } from '@/data';

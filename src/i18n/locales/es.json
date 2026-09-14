@@ -991,6 +991,7 @@
     "failed_to_send": "Error al enviar",
     "tap_to_retry": "Toca para reintentar",
     "no_messages_yet": "Aún no hay mensajes",
+    "load_failed": "No se pudo cargar la conversación",
     "start_conversation": "Envía un mensaje para iniciar la conversación",
     "message_placeholder": "Escribe un mensaje...",
     "a11y_message_input": "Campo de mensaje"
@@ -1082,7 +1083,8 @@
     "a11y_find_collectors": "Encuentra coleccionistas a quienes escribir",
     "find_collectors": "Buscar coleccionistas",
     "a11y_test_chat": "Abrir un chat de prueba para ver la mensajería",
-    "open_test_chat": "Abrir chat de prueba"
+    "open_test_chat": "Abrir chat de prueba",
+    "load_failed": "No se pudieron cargar tus mensajes"
   },
   "item_details": {
     "item_name": "Nombre del artículo",

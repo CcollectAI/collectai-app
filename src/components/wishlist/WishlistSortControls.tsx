@@ -15,12 +15,10 @@ import { AnimatedPressable } from '@/motion';
 import { radius, text, fontWeight } from '@/theme/tokens';
 
 interface WishlistSortControlsProps {
-  onAlertsPress: () => void;
   onAddPress: () => void;
 }
 
 export const WishlistSortControls = React.memo(function WishlistSortControls({
-  onAlertsPress,
   onAddPress,
 }: WishlistSortControlsProps) {
   const { colors } = useAppTheme();
@@ -28,20 +26,13 @@ export const WishlistSortControls = React.memo(function WishlistSortControls({
   /* Sits INSIDE the screen's header row (right of the title) rather than on a
      full-width row of its own. The tab used to stack four separate blocks
      before any content — title row, this action row, a bordered stats card,
-     then the Deal Agent banner — which is what read as messy. Inbox is now an
-     icon-only button: it was the only pill carrying a text label for an action
-     the icon already states, and it competed with "Add", the primary action. */
+     then the Deal Agent banner — which is what read as messy.
+     The notifications bell that used to sit here is GONE (2026-09-14): the
+     header row now carries the shared HeaderActions cluster, whose bell opens
+     the same /notifications, and two bells side by side is the drift that
+     component exists to end. */
   return (
     <View style={styles.rightGroup}>
-      <AnimatedPressable
-        style={[styles.iconBtn, { borderColor: colors.border }]}
-        onPress={onAlertsPress}
-        accessibilityRole="button"
-        accessibilityLabel="Open your notifications"
-      >
-        <Ionicons name="notifications-outline" size={20} color={colors.text} />
-      </AnimatedPressable>
-
       <AnimatedPressable
         style={[styles.addPill, { backgroundColor: colors.accent }]}
         onPress={onAddPress}
@@ -57,14 +48,6 @@ export const WishlistSortControls = React.memo(function WishlistSortControls({
 
 const styles = StyleSheet.create({
   rightGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   addPill: {
     flexDirection: 'row',
     alignItems: 'center',

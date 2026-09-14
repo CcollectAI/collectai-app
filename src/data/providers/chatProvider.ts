@@ -62,8 +62,12 @@ export async function listInboxThreads(): Promise<DmThread[]> {
     }));
   } catch (e) {
     if (e instanceof TimeoutError) {
+      // Rethrown, not `return []` (2026-09-14). The inbox wrote this `[]` into
+      // its stale-while-revalidate cache, so one timeout painted "No messages
+      // yet" on that visit AND the next. All three callers catch: app/inbox.tsx
+      // (failed state), chat/[threadId] (header falls back), ShareToChatSheet
+      // (its own error state).
       logger.error('[SupabaseDataProvider] listInboxThreads timed out');
-      return [];
     }
     throw e;
   }
@@ -123,8 +127,9 @@ export async function listIncomingRequests(): Promise<DmRequest[]> {
     });
   } catch (e) {
     if (e instanceof TimeoutError) {
+      // Rethrown for the same reason as listInboxThreads above; app/inbox.tsx
+      // is the only caller and awaits both together.
       logger.error('[SupabaseDataProvider] listIncomingRequests timed out');
-      return [];
     }
     throw e;
   }
@@ -217,8 +222,12 @@ export async function getThreadMessages(threadId: string): Promise<DmMessage[]> 
     }));
   } catch (e) {
     if (e instanceof TimeoutError) {
+      // Rethrown, not `return []` (2026-09-14): a timeout is the likeliest
+      // failure on a poor connection, and `[]` rendered a real conversation as
+      // "No messages yet — Send a message to start the conversation". The one
+      // caller (app/chat/[threadId].tsx) now shows a failed state instead, and
+      // nothing caches this result (CachedDataProvider passes straight through).
       logger.error('[SupabaseDataProvider] getThreadMessages timed out');
-      return [];
     }
     throw e;
   }

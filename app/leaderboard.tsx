@@ -5,7 +5,6 @@ import { View, Text, ScrollView, StyleSheet, Animated, RefreshControl, ActivityI
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { USER_PROFILES } from '@/data/users';
 import { collectorsApi } from '@/api/collectorsApi';
 import { getCategoryLeaderboard, type CategoryLeaderboardEntry } from '@/api/socialApi';
 import { getCategoryById } from '@/data/categories';
@@ -347,6 +346,7 @@ const LeaderboardScreen: React.FC = () => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [apiEntries, setApiEntries] = useState<{
     rank: number;
     user_id: string;
@@ -366,24 +366,26 @@ const LeaderboardScreen: React.FC = () => {
       if (guard.cancelled) return;
       // gamification_router returns {leaderboard:[...], period, user_rank, total_count}.
       // Each entry has total_xp / level / current_streak (no `xp` field).
-      if (data?.leaderboard?.length) {
-        setApiEntries(
-          data.leaderboard.map((r) => ({
-            rank: r.rank,
-            user_id: r.user_id,
-            display_name: r.display_name ?? `Collector ${r.rank}`,
-            xp: r.total_xp,
-            level: r.level,
-            // Returned by the API and previously dropped on the floor; it is the
-            // natural secondary stat for an XP board.
-            streak: r.current_streak,
-            avatar_url: r.avatar_url,
-          })),
-        );
-      }
+      // An EMPTY board is an answer too, stored as [] — it used to leave
+      // apiEntries null, which fell through to the fixture board below.
+      setLoadFailed(false);
+      setApiEntries(
+        (data?.leaderboard ?? []).map((r) => ({
+          rank: r.rank,
+          user_id: r.user_id,
+          display_name: r.display_name ?? `Collector ${r.rank}`,
+          xp: r.total_xp,
+          level: r.level,
+          // Returned by the API and previously dropped on the floor; it is the
+          // natural secondary stat for an XP board.
+          streak: r.current_streak,
+          avatar_url: r.avatar_url,
+        })),
+      );
     } catch (err) {
       if (guard.cancelled) return;
-      logger.error('[Leaderboard] API fetch failed, using local fallback:', err);
+      logger.error('[Leaderboard] API fetch failed:', err);
+      setLoadFailed(true);
     } finally {
       if (!guard.cancelled) setLoading(false);
     }
@@ -404,17 +406,17 @@ const LeaderboardScreen: React.FC = () => {
     setRefreshing(false);
   }, [loadLeaderboard]);
 
-  // Use API data if available, fall back to local USER_PROFILES.
-  //
-  // These two sources measure DIFFERENT things, so each supplies its own
-  // display strings. The API board ranks by XP; the local sample ranks by
-  // collection value. Until 2026-07-31 the API branch was poured into the
-  // sample's shape — `totalEstimatedValueEur: entry.xp` — and the card renders
-  // that field through `formatPrice`, so a collector with 40 XP was shown as
-  // **"€40.00"**, their level as "1 item", and "0 categories" for everyone.
-  const rankedUsers = useMemo(() => {
-    if (apiEntries?.length) {
-      return apiEntries.map((entry) => ({
+  // API data only. This used to fall back to USER_PROFILES — a fixture array of
+  // invented collectors ("Rune @rune.mtgguy", €18.400) — whenever the API
+  // failed, returned an empty board, OR simply had not answered yet, so every
+  // visit opened on fake people and a failure kept them there. Seen on the
+  // Android route sweep 2026-09-14; the silent-failure gate missed it because it
+  // only recognised DEMO_/MOCK_ names (rule E2 now covers the fixture modules).
+  // (Earlier fix kept: an XP entry is formatted as XP, never through formatPrice
+  // — 40 XP once rendered as "€40.00".)
+  const rankedUsers = useMemo(
+    () =>
+      (apiEntries ?? []).map((entry) => ({
         ...apiEntryToRow({
           rank: entry.rank,
           user_id: entry.user_id,
@@ -424,20 +426,9 @@ const LeaderboardScreen: React.FC = () => {
           current_streak: entry.streak,
         }, settings.numberLocale),
         avatarColor: colors.accent,
-      }));
-    }
-    return [...USER_PROFILES]
-      .sort((a, b) => b.stats.totalEstimatedValueEur - a.stats.totalEstimatedValueEur)
-      .map((u) => ({
-        id: u.id,
-        displayName: u.displayName,
-        handle: u.handle,
-        avatarColor: u.avatarColor,
-        primary: formatPrice(u.stats.totalEstimatedValueEur),
-        secondary: `Rarity ${u.stats.rarityScore}`,
-        meta: `${u.stats.totalItems} ${u.stats.totalItems === 1 ? 'item' : 'items'} · ${u.stats.totalCategories} ${u.stats.totalCategories === 1 ? 'category' : 'categories'}`,
-      }));
-  }, [apiEntries, colors.accent, settings.numberLocale]);
+      })),
+    [apiEntries, colors.accent, settings.numberLocale],
+  );
 
   const { getItemStyle } = useStaggerReveal({
     count: rankedUsers.length,
@@ -491,7 +482,18 @@ const LeaderboardScreen: React.FC = () => {
           </AnimatedPressable>
         )}
 
-        {/* Leaderboard list */}
+        {/* Leaderboard list — the same four states as category mode above. */}
+        {loadFailed && !apiEntries?.length ? (
+          <Text style={[styles.catEmpty, { color: colors.muted }]}>
+            Couldn&apos;t load the leaderboard. Pull down to try again.
+          </Text>
+        ) : !apiEntries ? (
+          <ActivityIndicator style={{ marginTop: 24 }} color={colors.accent} />
+        ) : apiEntries.length === 0 ? (
+          <Text style={[styles.catEmpty, { color: colors.muted }]}>
+            Nobody is on the leaderboard yet.
+          </Text>
+        ) : null}
         {rankedUsers.map((user, index) => {
           const medalColor = getMedalColor(index, colors.muted);
           const staggerStyle = getItemStyle(index);

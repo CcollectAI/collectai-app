@@ -991,6 +991,7 @@
     "failed_to_send": "전송 실패",
     "tap_to_retry": "탭하여 다시 시도",
     "no_messages_yet": "아직 메시지가 없습니다",
+    "load_failed": "대화를 불러오지 못했습니다",
     "start_conversation": "메시지를 보내 대화를 시작하세요",
     "message_placeholder": "메시지 입력...",
     "a11y_message_input": "메시지 입력란"
@@ -1082,7 +1083,8 @@
     "a11y_find_collectors": "메시지를 보낼 수집가 찾기",
     "find_collectors": "수집가 찾기",
     "a11y_test_chat": "테스트 채팅을 열어 메시지 기능 미리보기",
-    "open_test_chat": "테스트 채팅 열기"
+    "open_test_chat": "테스트 채팅 열기",
+    "load_failed": "메시지를 불러오지 못했습니다"
   },
   "item_details": {
     "item_name": "아이템 이름",

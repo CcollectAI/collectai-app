@@ -44,6 +44,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import type { P2PWatchlistMatch } from '@/api/p2pApi';
 import type { CurrencyCode } from '@/data/types';
 import { WishlistSortControls } from '@/components/wishlist/WishlistSortControls';
+import { HeaderActions } from '@/components/HeaderActions';
 
 // Pull from single source of truth — all 36 categories + "Other"
 import { categoryDisplayName, CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
@@ -848,16 +849,6 @@ function WatchlistTabScreen() {
     )
   );
 
-  // ONE inbox. app/alerts.tsx used to live here and rendered
-  // `alert_trigger_history` while app/notifications.tsx rendered
-  // `notification_history` — two screens for one event, since
-  // deal_discovery_worker writes both for every Target Hit. Merged 2026-08-08.
-  const handleAlertsPress = useCallback(() => {
-    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    router.push('/notifications');
-  }, [router, settings.hapticsEnabled]);
-
-
   const handleAddPress = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     openModal();
@@ -869,7 +860,7 @@ function WatchlistTabScreen() {
      Alerts out here also means they stay put while the list scrolls, which is
      what you want from the two controls that create work. */
   const renderTopControls = () => (
-    <WishlistSortControls onAlertsPress={handleAlertsPress} onAddPress={handleAddPress} />
+    <WishlistSortControls onAddPress={handleAddPress} />
   );
 
   if (loading) {
@@ -902,6 +893,11 @@ function WatchlistTabScreen() {
             {t('wishlist.title')}
           </Text>
           {renderTopControls()}
+          {/* The shared cluster (bell · bubble · gear), 2026-09-14. This hidden
+              tab was the one screen the 2026-08-20 "one cluster on every
+              screen" audit never opened — it listed the five bar tabs — so the
+              Watchlist kept its own bell and had no inbox or settings. */}
+          <HeaderActions />
         </View>
 
         {/* Deal Agent — BELOW the stats summary as of 2026-08-15. It used to be

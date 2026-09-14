@@ -17,7 +17,7 @@ import {
   type ListRenderItemInfo,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -196,6 +196,12 @@ const styles = StyleSheet.create({
 });
 
 export default function ChatDemoScreenWithBoundary() {
+  // The ROUTE is dev-only too (2026-09-14). The Inbox button to it has been
+  // __DEV__-gated since 2026-09-12, but a release build still opened this
+  // placeholder conversation from `sparrow://chat-demo` — seen on the Android
+  // route sweep. Gated at the screen, the same shape as SELLING_ENABLED and
+  // FRANCHISE_PAGES_ENABLED.
+  if (!__DEV__) return <Redirect href="/inbox" />;
   return (
     <ScreenErrorBoundary screenName="Chat Demo">
       <ChatDemoScreen />

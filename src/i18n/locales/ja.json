@@ -991,6 +991,7 @@
     "failed_to_send": "送信に失敗しました",
     "tap_to_retry": "タップして再試行",
     "no_messages_yet": "まだメッセージはありません",
+    "load_failed": "会話を読み込めませんでした",
     "start_conversation": "メッセージを送って会話を始めましょう",
     "message_placeholder": "メッセージを入力...",
     "a11y_message_input": "メッセージ入力"
@@ -1082,7 +1083,8 @@
     "a11y_find_collectors": "メッセージを送るコレクターを探す",
     "find_collectors": "コレクターを探す",
     "a11y_test_chat": "テストチャットを開いてメッセージ機能を確認",
-    "open_test_chat": "テストチャットを開く"
+    "open_test_chat": "テストチャットを開く",
+    "load_failed": "メッセージを読み込めませんでした"
   },
   "item_details": {
     "item_name": "アイテム名",

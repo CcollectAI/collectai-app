@@ -118,6 +118,8 @@ function InboxScreen() {
   const [sentRequests, setSentRequests] = useState<DmThread[]>([]);
   const [requests, setRequests] = useState<DmRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  // Its own state, not an empty list: see the failed branch above the empty state.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
 
@@ -155,9 +157,11 @@ function InboxScreen() {
         requests: incomingRequests.length,
         ms: elapsed(),
       });
+      setLoadFailed(false);
     } catch (err) {
       logLoad('inbox', { error: err instanceof Error ? err.message : String(err), ms: elapsed() });
       logger.error('[InboxScreen] loadInbox error:', err);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -516,8 +520,31 @@ function InboxScreen() {
           </View>
         )}
 
+        {/* Failed, with nothing cached to show (2026-09-14). This used to fall
+            through to "No messages yet" — and the providers turned a timeout
+            into [] that was then CACHED, so the next visit said it too. A
+            cached inbox that was painted stays on screen (hasContent). */}
+        {!hasContent && loadFailed && (
+          <EmptyState
+            icon="cloud-offline-outline"
+            title={t('inbox.load_failed', { defaultValue: "Couldn't load your messages" })}
+            colors={colors}
+            style={{ paddingTop: 80 }}
+            action={
+              <AnimatedPressable
+                onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); loadInbox(); }}
+                style={[styles.emptyActionSecondary, { borderColor: colors.border }]}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+              >
+                <Text style={[styles.emptyActionSecondaryText, { color: colors.accent }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
+              </AnimatedPressable>
+            }
+          />
+        )}
+
         {/* Empty State */}
-        {!hasContent && (
+        {!hasContent && !loadFailed && (
           <EmptyState
             icon="chatbubbles-outline"
             title={t('chat.no_messages_yet', { defaultValue: 'No messages yet' })}

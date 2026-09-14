@@ -56,8 +56,9 @@ for (const abs of files) {
   // ── B. catch that swallows: no logger call anywhere in the block ────────
   for (const m of src.matchAll(/catch\s*(?:\([^)]*\))?\s*\{/g)) {
     // Skip a match inside a comment. verify-email.tsx's comment "a bare
-    // `catch {}`" was reported as a swallowed catch from 2026-09-05, which kept
-    // this blocking gate — and so verify:prebuild — red for nine days.
+    // `catch {}`" was reported as a swallowed catch from 2026-09-05. (It did not
+    // turn verify:prebuild red, as first written: this script only exits 1 with
+    // --strict, which verify:prebuild did not pass until 2026-09-14.)
     const lineStart = src.lastIndexOf('\n', m.index) + 1;
     const before = src.slice(lineStart, m.index);
     if (before.includes('//') || /^\s*\*/.test(before) || /^\s*\/\*/.test(before)) continue;
@@ -131,6 +132,27 @@ for (const abs of files) {
     const ctx = src.slice(Math.max(0, m.index - 200), m.index + 100);
     if (/__DEV__|isDev|MODE\s*===|process\.env\.NODE_ENV/.test(ctx)) continue;  // gated
     add('ungated-demo-data', rel, ln, `${m[0]} reachable in a release build`);
+  }
+
+  // ── E2. Fixture MODULES, whatever their exports are called (2026-09-14) ──
+  // Rule E matches a DEMO_/MOCK_/SAMPLE_/FAKE_ name prefix, and the two static
+  // fixture modules use plain names: `USER_PROFILES` (src/data/users.ts) and
+  // `EVENTS` (src/data/events.ts). app/leaderboard.tsx fell back to
+  // USER_PROFILES whenever the API failed or returned an empty board, so a
+  // release build ranked invented collectors ("Rune @rune.mtgguy — €18.400")
+  // — seen on the Android route sweep, with this rule green.
+  // Type-only imports are fine (the modules also hold shared types). A value
+  // use that is genuinely inert must say why, on its import line:
+  //   // demo-data-ok: <reason>
+  if (!isMock) {
+    for (const m of src.matchAll(/^import\s+(?!type\b)\{([^}]*)\}\s+from\s+['"](?:@\/data|(?:\.\.\/)+(?:src\/)?data)\/(users|events)['"];?[^\n]*$/gm)) {
+      const values = m[1].split(',').map((s) => s.trim()).filter((s) => s && !s.startsWith('type '));
+      const fixtures = values.filter((v) => /^(USER_PROFILES|EVENTS|getUserById|getSimilarUsers)\b/.test(v));
+      if (!fixtures.length) continue;
+      if (/demo-data-ok:/.test(m[0])) continue;
+      add('ungated-demo-data', rel, lineOf(src, m.index),
+          `imports fixture data (${fixtures.join(', ')}) from data/${m[2]} into a release build`);
+    }
   }
 
   // ── D. money/value coerced to 0 inside a sum ────────────────────────────

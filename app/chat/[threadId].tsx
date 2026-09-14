@@ -138,6 +138,11 @@ function ThreadDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
   const [failedMessageIds, setFailedMessageIds] = useState<Set<string>>(new Set());
+  // A failed load is its own state (2026-09-14). The catch below left messages
+  // at [] and the empty state invited "Send a message to start the
+  // conversation" over a conversation we simply could not read. Only the EMPTY
+  // state changes: a failed refresh keeps the messages already on screen.
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -155,8 +160,10 @@ function ThreadDetailScreen() {
     try {
       const msgs = await dataProvider.getThreadMessages(threadId);
       setMessages(msgs.map((m) => ({ ...m, localStatus: 'sent' })));
+      setLoadFailed(false);
     } catch (err) {
       logger.error('[ThreadDetail] loadMessages error:', err);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -551,11 +558,26 @@ function ThreadDetailScreen() {
           onContentSizeChange={handleContentSizeChange}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="chatbubble-outline" size={48} color={colors.muted} />
-              <Text style={[styles.emptyText, { color: colors.muted }]}>{t('chat.no_messages_yet', { defaultValue: 'No messages yet' })}</Text>
-              <Text style={[styles.emptySubtext, { color: colors.muted }]}>{t('chat.start_conversation', { defaultValue: 'Send a message to start the conversation' })}</Text>
-            </View>
+            loadFailed ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="cloud-offline-outline" size={48} color={colors.muted} />
+                <Text style={[styles.emptyText, { color: colors.muted }]}>{t('chat.load_failed', { defaultValue: "Couldn't load this conversation" })}</Text>
+                <AnimatedPressable
+                  onPress={onRefresh}
+                  style={[styles.retryBtn, { borderColor: colors.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+                >
+                  <Text style={[styles.retryText, { color: colors.accent }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
+                </AnimatedPressable>
+              </View>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="chatbubble-outline" size={48} color={colors.muted} />
+                <Text style={[styles.emptyText, { color: colors.muted }]}>{t('chat.no_messages_yet', { defaultValue: 'No messages yet' })}</Text>
+                <Text style={[styles.emptySubtext, { color: colors.muted }]}>{t('chat.start_conversation', { defaultValue: 'Send a message to start the conversation' })}</Text>
+              </View>
+            )
           }
         />
 
@@ -721,6 +743,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
+  retryBtn: { marginTop: 12, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, borderWidth: 1, minHeight: 44, justifyContent: 'center' },
+  retryText: { fontSize: text.md, fontWeight: '700' },
   typingBar: {
     paddingHorizontal: 16,
     paddingVertical: 6,

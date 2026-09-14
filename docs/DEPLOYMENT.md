@@ -212,6 +212,30 @@ ssh collectai 'curl -s -H "Host: api.sparrowcollect.com" http://127.0.0.1:8000/h
 # it works, only that it started.
 ```
 
+### 0a. A fix that was committed and never deployed looked like a live bug (2026-09-14)
+
+Walking the Marketplace on Android, every grid tile showed the empty-image
+placeholder. That exact defect was FIXED on 2026-09-12 (`1bab40a`,
+`listing_photo_sql.py`) — and prod still served `image_url: null` from browse
+while the detail endpoint returned 8 photos for the same listing. The box had
+the 08-22 `p2p_listing_router.py` and no `listing_photo_sql.py` at all.
+
+A full hash-diff (`find app pipelines workers -name "*.py" | xargs shasum` on
+both sides, joined) found **12 of 352** files behind: the 09-12 photo fix (3),
+09-12 notification money (`p2p_offers_router.py` + missing `lib/money.py`),
+08-27 `lib/condition_normalizer.py` (missing), 09-02 adapter fixes (2), 08-29
+`import_tcgcsv.py`, and the three 09-14 fixes. No SQL or lock changes among
+them. Deployed with the manual rsync (the wrapper script needs an interactive
+`y`): box copies backed up to `/opt/collectors/deploy_bak_20260914_evening.tgz`,
+hashes verified 12/12, nine gates PASS, every deployed module imported on the
+box, restart, `/healthz` 200 in 5 s, postflight smoke identical to the previous
+four restarts (108/8/161/2 — the two marketplace-health errors predate it).
+Verified live: browse returns photos for 4/4 listings, a rejected event 404s, the
+import template's examples are marked. Re-diff afterwards: **0**.
+
+**Before filing a server bug a commit already claims to fix, hash the file on
+the box.** Committed is not deployed, and nothing reports the gap.
+
 ### 0b-bis. The gates caught a file that would have taken prod down (2026-08-19)
 
 A worked example of why §0b is "run them by hand BEFORE restarting" rather than

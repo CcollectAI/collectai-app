@@ -991,6 +991,7 @@
     "failed_to_send": "Versturen mislukt",
     "tap_to_retry": "Tik om opnieuw te proberen",
     "no_messages_yet": "Nog geen berichten",
+    "load_failed": "Het gesprek kon niet worden geladen",
     "start_conversation": "Stuur een bericht om het gesprek te starten",
     "message_placeholder": "Typ een bericht...",
     "a11y_message_input": "Berichtveld"
@@ -1082,7 +1083,8 @@
     "a11y_find_collectors": "Vind verzamelaars om te berichten",
     "find_collectors": "Verzamelaars vinden",
     "a11y_test_chat": "Open een testchat om berichten te bekijken",
-    "open_test_chat": "Testchat openen"
+    "open_test_chat": "Testchat openen",
+    "load_failed": "Je berichten konden niet worden geladen"
   },
   "item_details": {
     "item_name": "Itemnaam",

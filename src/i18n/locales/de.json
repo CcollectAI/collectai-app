@@ -991,6 +991,7 @@
     "failed_to_send": "Senden fehlgeschlagen",
     "tap_to_retry": "Zum Wiederholen tippen",
     "no_messages_yet": "Noch keine Nachrichten",
+    "load_failed": "Das Gespräch konnte nicht geladen werden",
     "start_conversation": "Sende eine Nachricht, um das Gespräch zu beginnen",
     "message_placeholder": "Nachricht schreiben...",
     "a11y_message_input": "Nachrichteneingabe"
@@ -1082,7 +1083,8 @@
     "a11y_find_collectors": "Sammler zum Anschreiben finden",
     "find_collectors": "Sammler finden",
     "a11y_test_chat": "Test-Chat öffnen, um Nachrichten zu testen",
-    "open_test_chat": "Test-Chat öffnen"
+    "open_test_chat": "Test-Chat öffnen",
+    "load_failed": "Deine Nachrichten konnten nicht geladen werden"
   },
   "item_details": {
     "item_name": "Objektname",

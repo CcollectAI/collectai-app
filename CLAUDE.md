@@ -2190,13 +2190,21 @@ Android walk". The ones worth remembering here:
 - **Deal search Mercari toggle matched nothing** (09-14): sent `mercari`,
   caller tags `mercari_us`, policy compares exactly. 6 other toggles checked,
   match. Fixed client-side; 0 mandates in prod. `docs/API.md`.
-- ⚠️ **`verify:prebuild` has been red since 2026-09-05**: `check-silent-failures`
-  flagged `verify-email.tsx` twice — once a real silent resend catch, once the
-  words "bare `catch {}`" inside a comment. The gate now skips comment lines
-  (proven: a planted real swallow still fails) and the catch logs. Nobody saw it
-  because local builds do not run the prebuild suite.
-- **The import template imported its own examples** (09-14, SERVER — needs a
-  deploy): 2 of 3 example rows were unmarked and the importer skipped only
+- ⚠️ **`check-silent-failures` never blocked anything** (09-14). It exits 1
+  only with `--strict`, and `verify:prebuild` called it WITHOUT the flag — its
+  "blocking" was a printed label. Found when its new fixture rule reported 4
+  "blocking" findings and exited 0. ⛔ **Correction:** earlier the same day I
+  wrote (here, in the gate's comment, and in commit `ef6ffde`'s message) that two
+  verify-email findings had "kept verify:prebuild red since 09-05". I never
+  checked the exit code; it was green throughout — the gate simply printed them.
+  What stands: those were one real silent resend catch (now logs) and one
+  comment misread as code (the gate now skips comment lines). `verify:prebuild`
+  now passes `--strict`, proven to exit 1 with a fixture import reintroduced.
+  New rule E2: value imports from the fixture modules `data/users` /
+  `data/events` (`USER_PROFILES`, `EVENTS`, `getUserById`) — the Leaderboard
+  ranked invented collectors while the prefix-only rule E stayed green.
+- **The import template imported its own examples** (09-14, SERVER —
+  deployed ~21:07): 2 of 3 example rows were unmarked and the importer skipped only
   nameless rows, so filling in the template added a €9,800 Rolex. All marked,
   marked rows skipped (by marker, not name — the template round-trips with
   `/items-export/overview`). 0 such rows in prod. `docs/API.md` § Import.
@@ -2220,14 +2228,20 @@ Android walk". The ones worth remembering here:
   `createSharedCount` (one in-flight, TTL, per-user, failure consumes the
   window). Gate `headerBadgeFanout` — its retry test first passed WITHOUT the
   fix (synchronised mounts); rewritten to stagger. Needs a build.
+- ✅ **Server deployed 2026-09-14 ~21:07 (Merle's call): prod was 12 files
+  behind the repo.** Found because the Market grid still had no photos — the
+  09-12 fix was committed, never deployed. Deployed all 12 (09-12 photos +
+  notification money, 08-27 condition_normalizer, 09-02 adapters, import_tcgcsv,
+  today's import/chat/events fixes); gates PASS, smoke unchanged, live-verified,
+  re-diff 0. `docs/DEPLOYMENT.md` §0a.
 - **News articles were live in the Events feed as "New release" events**
   (09-14): an obituary ("CHEETAH CHROME Dies At 71") showed as a release with
   Share. `RSS_EVENTS_ENABLED=1` on prod although the 09-02 curation commit said it
   was not flipped; 386 published rows, ~18/day. The pipeline dates each item by
   `pubDate`, so no RSS item can carry a real event date. ✅ On Merle's call:
   flag OFF (9 gates PASS, bake restarted, healthy), 386 rows → `rejected` (ids on
-  the box), live feed 0 rss. ⚠️ The detail route still served rejected rows by
-  link — `_hidden_from_detail` fixes it in code, NEEDS DEPLOY. ⛔ Whether RSS
+  the box), live feed 0 rss. The detail route served rejected rows by link —
+  `_hidden_from_detail`, deployed 21:07, obituary now 404. ⛔ Whether RSS
   returns is open. `docs/EVENT_QUALITY_PLAN.md`.
 - **"They'll receive a notification" — nothing sends one** (09-14): the DM
   request compose promised it; `rpc_request_dm_v1` notifies no one, no trigger

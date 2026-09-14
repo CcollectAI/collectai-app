@@ -991,6 +991,7 @@
     "failed_to_send": "Échec de l’envoi",
     "tap_to_retry": "Appuyez pour réessayer",
     "no_messages_yet": "Aucun message pour le moment",
+    "load_failed": "Impossible de charger la conversation",
     "start_conversation": "Envoyez un message pour démarrer la conversation",
     "message_placeholder": "Écrivez un message...",
     "a11y_message_input": "Champ de message"
@@ -1082,7 +1083,8 @@
     "a11y_find_collectors": "Trouver des collectionneurs à contacter",
     "find_collectors": "Trouver des collectionneurs",
     "a11y_test_chat": "Ouvrir une discussion test pour prévisualiser la messagerie",
-    "open_test_chat": "Ouvrir la discussion test"
+    "open_test_chat": "Ouvrir la discussion test",
+    "load_failed": "Impossible de charger vos messages"
   },
   "item_details": {
     "item_name": "Nom de l’article",
