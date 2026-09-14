@@ -32,17 +32,15 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
-import { safeGoBack } from '@/lib/goBack';
+import ScreenHeader from '@/components/ScreenHeader';
+import { useAuthContext } from '@/providers/useAuthContext';
 
 const LAST_UPDATED = 'August 7, 2026';
 
 function MarketplaceTermsInner() {
-  const router = useRouter();
+  const { user } = useAuthContext();
   const { colors } = useAppTheme();
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -53,17 +51,12 @@ function MarketplaceTermsInner() {
   );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <AnimatedPressable
-          onPress={() => safeGoBack(router)}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </AnimatedPressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Marketplace Terms</Text>
-      </View>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+      {/* The shared header (2026-09-14; was a hand-rolled row with a Material
+          arrow and no cluster). Actions only when signed in: register.tsx opens
+          the Terms and Privacy Policy BEFORE an account exists, and a gear there
+          would send a half-registered visitor to a screen that needs one. */}
+      <ScreenHeader title="Marketplace Terms" showActions={!!user} />
 
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.updated, { color: colors.muted }]}>Last updated: {LAST_UPDATED}</Text>
@@ -231,11 +224,6 @@ export default function MarketplaceTermsScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  header: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
   content: { padding: 20 },
   updated: { fontSize: 12, marginBottom: 20 },
   section: { marginBottom: 22 },

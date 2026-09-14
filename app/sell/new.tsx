@@ -39,7 +39,7 @@
  * 3. **It says when a listing won't reach anyone** before they list, not after.
  *
  * Playbook (docs/ui-playbook.md): AnimatedPressable, theme colours only,
- * `colors.accentText` ONLY on an accent fill, safeGoBack, SafeAreaView from
+ * `colors.accentText` ONLY on an accent fill, safeGoBack (via ScreenHeader), SafeAreaView from
  * safe-area-context, no iOS-only accessibilityRole.
  */
 import React, { useCallback, useMemo, useState } from 'react';
@@ -64,11 +64,11 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { collectorsApi } from '@/api/collectorsApi';
 import { matchCatalog, type CatalogMatchHit } from '@/api/itemsApi';
 import { getCurrencySymbol } from '@/lib/format';
-import { safeGoBack } from '@/lib/goBack';
 import { CATEGORIES, CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
+import ScreenHeader from '@/components/ScreenHeader';
 
 /** Same vocabulary as ConditionValueSection. Two condition lists would drift,
  *  and a listing's condition is what a second-hand buyer reads first. */
@@ -367,17 +367,13 @@ function SellNewScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <AnimatedPressable
-          onPress={() => safeGoBack(router)}
-          accessibilityRole="button"
-          accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}
-        >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </AnimatedPressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('sell.sell_an_item', { defaultValue: 'Sell an item' })}</Text>
-      </View>
+    // No 'top' edge: ScreenHeader applies insets.top itself (see blocked-users).
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+      {/* The shared header, not a hand-rolled one (2026-09-14). The hand-rolled
+          row had a Material arrow and NO top-right cluster, while sell/pick —
+          the step right before this one — renders ScreenHeader with both; the
+          layout's registration comment already claimed this screen did. */}
+      <ScreenHeader title={t('sell.sell_an_item', { defaultValue: 'Sell an item' })} />
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Animated.View style={animatedStyle}>
@@ -698,11 +694,6 @@ export default function SellNewScreenWithBoundary() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  header: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  headerTitle: { fontSize: 18, fontWeight: fontWeight.bold },
   // 16 is the app-wide screen gutter (docs/ui-playbook.md).
   content: { padding: 16 },
   lede: { fontSize: textToken.sm, lineHeight: 19, marginBottom: 8 },

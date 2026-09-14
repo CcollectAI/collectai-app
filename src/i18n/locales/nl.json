@@ -744,7 +744,11 @@
     "promote_subtitle": "Bereik meer verzamelaars met een gesponsorde plaatsing"
   },
   "user_profile": {
-    "blocked_user": "Je hebt deze gebruiker geblokkeerd"
+    "blocked_user": "Je hebt deze gebruiker geblokkeerd",
+    "not_set_up_title": "Je openbare profiel is nog niet ingesteld",
+    "not_set_up_hint": "Kies een gebruikersnaam zodat andere verzamelaars je kunnen vinden en zien wat je verzamelt.",
+    "not_set_up_cta": "Kies een gebruikersnaam",
+    "not_set_up_cta_a11y": "Open instellingen om een gebruikersnaam te kiezen"
   },
   "items_detail": {
     "thin_cat_help": "Deze categorie heeft je gegevens nodig — geef hieronder aan wat je hebt betaald om de schattingen te verbeteren.",

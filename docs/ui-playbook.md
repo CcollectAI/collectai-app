@@ -2232,6 +2232,8 @@ platform-scoped (`learning_found_on_one_platform_is_not_a_platform_bug`).
 | Sponsor dashboard | "reach **thousands** of passionate collectors" | the same false claim the register screen had — a second copy the 09-14 sponsor fix missed because it only looked at the tier lists |
 | Events tab → Month / Week | October stopping on the 13th, **November with no events**, under "All Events (100)"; List read "Upcoming (94)" | The silent cap: the calendar filters LOADED events by day and only page one (100, the server max) was ever loaded — prod had **252**, 49 of them in November. The calendar views now page until the server runs out (3 requests; `src/lib/calendarPaging.ts`, stops on error and at 1,000), and both counts say "+" while more pages exist. Simulated against the live API: 252 loaded, November 49 |
 | Item detail → Edit (2026-09-14) | typed "ZZ" into the name, tapped **Cancel**: the title read **"Rayquaza ex (Emerald 097)ZZ"**; pressing back instead left with no warning | "A sweep fixes the read branch, not the edit branch" — Cancel reset only the attribute ref, never the core fields, and the tap-to-edit pickers call `onSaveEdits`, which writes `editableName`: the next unrelated edit would have SAVED the abandoned name. Now `useItemDetail` snapshots every field when edit mode opens and `cancelEdits` restores it; real changes arm `useUnsavedChanges` (already on add-manual, now translated) |
+| Sell an item; the 5 legal pages | a hand-rolled header: Material arrow, **no top-right cluster** — while `sell/pick`, the step right before, renders `ScreenHeader` (and the layout comment claimed `sell/new` did too) | "The top-right cluster is ONE component, on every screen" — enumerated every route registered `headerShown: false`: these 6 had neither `ScreenHeader` nor `HeaderActions`. All now `ScreenHeader`. The legal pages pass `showActions={!!user}`: `register.tsx` opens Terms and Privacy **before an account exists**, and a gear there would send a half-registered visitor to a screen that needs one. Left alone: the chat screens (a chat bubble inside a chat) — recorded, not decided |
+| Public profile, not set up | **"Add a display name"** → opens Edit Profile, which has **no display-name field** (only Username) | copy promising a field that does not exist. A username IS enough (`user_public_profiles` accepts either, and the server copies it into an empty display name), so the copy now says "Choose a username", translated in 7 locales |
 | Market Movers, Pro gate | the upgrade card running **edge to edge, 0pt gutter** | "The screen gutter is 16" — `UpgradePrompt` has no horizontal margin; analytics and sets-to-complete wrap it, movers did not |
 
 ### An unregistered route has no back button when it matters most
@@ -2362,6 +2364,13 @@ checked by anything. The static test now fails on any direct read of the view.
   opens the batch summary, back leaves. Nothing is lost — each batch item is
   saved to the collection when scanned. Recorded, not changed.
 - **"_____'s Pikachu"** in search is the card's real name.
+
+- **"Price seems off?" is ONE tap, no confirmation** — deliberate (the button
+  stays beside its result so a failure can be retried). `disagree` rows are not
+  training input (`train_price.py` reads only `sale_price` / `price_correction`).
+  ⚠️ A walk tap wrote one on prod from the test account; that row
+  (`eab31430…`) was deleted by id the same minute. **Before tapping a control on
+  a walk, check in code whether it writes.**
 
 ⚠️ **Not a product bug, recorded so it is not re-fixed:** Watchlist showed
 "Couldn't load your watchlist" on first open. The app's exact PostgREST read, as

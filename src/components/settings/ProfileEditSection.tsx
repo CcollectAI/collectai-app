@@ -58,7 +58,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
   const [editBio, setEditBio] = useState(profile?.bio ?? '');
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Arrived from "Add a display name" on your own empty public profile
+  // Arrived from "Choose a username" on your own empty public profile
   // (/settings?editProfile=1). Opening the editor is the whole point of that
   // trip: landing on Settings with the field still behind an Edit button is
   // what made the CTA feel like a loop even once the loop itself was gone.

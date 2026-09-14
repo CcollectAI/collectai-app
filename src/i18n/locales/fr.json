@@ -744,7 +744,11 @@
     "promote_subtitle": "Touchez plus de collectionneurs avec un placement sponsorisé"
   },
   "user_profile": {
-    "blocked_user": "Vous avez bloqué cet utilisateur"
+    "blocked_user": "Vous avez bloqué cet utilisateur",
+    "not_set_up_title": "Votre profil public n’est pas encore configuré",
+    "not_set_up_hint": "Choisissez un nom d'utilisateur pour que les autres collectionneurs puissent vous trouver et voir ce que vous collectionnez.",
+    "not_set_up_cta": "Choisir un nom d'utilisateur",
+    "not_set_up_cta_a11y": "Ouvrir les réglages pour choisir un nom d'utilisateur"
   },
   "items_detail": {
     "thin_cat_help": "Cette catégorie a besoin de vos données : indiquez ci-dessous le prix payé pour améliorer les estimations.",

@@ -744,7 +744,11 @@
     "promote_subtitle": "스폰서 노출로 더 많은 컬렉터에게 도달하세요"
   },
   "user_profile": {
-    "blocked_user": "이 사용자를 차단했습니다"
+    "blocked_user": "이 사용자를 차단했습니다",
+    "not_set_up_title": "공개 프로필이 아직 설정되지 않았습니다",
+    "not_set_up_hint": "사용자 이름을 정하면 다른 수집가가 회원님을 찾고 수집품을 볼 수 있습니다.",
+    "not_set_up_cta": "사용자 이름 정하기",
+    "not_set_up_cta_a11y": "설정을 열어 사용자 이름 정하기"
   },
   "items_detail": {
     "thin_cat_help": "이 카테고리는 데이터가 필요합니다. 구매 가격을 아래에 입력하면 추정치가 개선됩니다.",

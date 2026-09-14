@@ -744,7 +744,11 @@
     "promote_subtitle": "Reach more collectors with sponsored placement"
   },
   "user_profile": {
-    "blocked_user": "You have blocked this user"
+    "blocked_user": "You have blocked this user",
+    "not_set_up_title": "Your public profile isn't set up yet",
+    "not_set_up_hint": "Choose a username so other collectors can find you and see what you collect.",
+    "not_set_up_cta": "Choose a username",
+    "not_set_up_cta_a11y": "Open settings to choose a username"
   },
   "items_detail": {
     "thin_cat_help": "This category needs your data — share what you paid below to help improve estimates.",

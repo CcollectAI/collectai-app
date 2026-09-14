@@ -490,7 +490,8 @@ function RootStack() {
             gets its header before adding one). */}
         <Stack.Screen name="tax-reporting" options={{ headerShown: false }} />
         {/* Marketplace-only selling: list without a collection item. Renders
-            its own header, same as the other P2P screens. */}
+            ScreenHeader (since 2026-09-14 — before that a hand-rolled row with
+            no header cluster, despite this comment), same as sell/pick. */}
         <Stack.Screen name="sell/new" options={{ headerShown: false }} />
         {/* Same as sell/new: the screen renders its own ScreenHeader, so the
             native one would stack a SECOND header above it. Caught on the

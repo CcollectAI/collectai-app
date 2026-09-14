@@ -744,7 +744,11 @@
     "promote_subtitle": "Erreiche mehr Sammler mit gesponserter Platzierung"
   },
   "user_profile": {
-    "blocked_user": "Du hast diesen Nutzer blockiert"
+    "blocked_user": "Du hast diesen Nutzer blockiert",
+    "not_set_up_title": "Dein öffentliches Profil ist noch nicht eingerichtet",
+    "not_set_up_hint": "Wähle einen Benutzernamen, damit andere Sammler dich finden und sehen können, was du sammelst.",
+    "not_set_up_cta": "Benutzernamen wählen",
+    "not_set_up_cta_a11y": "Einstellungen öffnen, um einen Benutzernamen zu wählen"
   },
   "items_detail": {
     "thin_cat_help": "Diese Kategorie braucht deine Daten — gib unten an, was du bezahlt hast, um die Schätzungen zu verbessern.",

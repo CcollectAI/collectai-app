@@ -379,11 +379,15 @@ function UserProfileScreen() {
           <View style={styles.centerContainer}>
             <Ionicons name="person-circle-outline" size={48} color={colors.muted} />
             <Text style={[styles.errorTitle, { color: colors.text }]}>
-              Your public profile isn&apos;t set up yet
+              {t('user_profile.not_set_up_title', { defaultValue: "Your public profile isn't set up yet" })}
             </Text>
+            {/* "username", not "display name" (2026-09-14). The button opens Edit
+                Profile, whose only identity field is Username — the old copy sent
+                the member looking for a field that does not exist. A username is
+                also enough: user_public_profiles accepts display_name OR username,
+                and the server copies a username into an empty display name. */}
             <Text style={[styles.errorSubtitle, { color: colors.muted }]}>
-              Add a display name so other collectors can find you and see what
-              you collect.
+              {t('user_profile.not_set_up_hint', { defaultValue: 'Choose a username so other collectors can find you and see what you collect.' })}
             </Text>
             <AnimatedPressable
               style={[styles.retryBtn, { borderColor: colors.accent, backgroundColor: colors.accent }]}
@@ -415,9 +419,9 @@ function UserProfileScreen() {
                 })
               }
               accessibilityRole="button"
-              accessibilityLabel="Open settings to add a display name"
+              accessibilityLabel={t('user_profile.not_set_up_cta_a11y', { defaultValue: 'Open settings to choose a username' })}
             >
-              <Text style={[styles.retryBtnText, { color: colors.accentText }]}>Add a display name</Text>
+              <Text style={[styles.retryBtnText, { color: colors.accentText }]}>{t('user_profile.not_set_up_cta', { defaultValue: 'Choose a username' })}</Text>
             </AnimatedPressable>
             <AnimatedPressable
               style={styles.plainBackBtn}
