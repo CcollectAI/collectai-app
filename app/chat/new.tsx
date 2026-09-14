@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/EmptyState';
 import logger from '@/utils/logger';
 import { safeGoBack } from '@/lib/goBack';
 import { useTranslation } from 'react-i18next';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 type DmStatusState = 'loading' | 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined' | 'blocked';
 
@@ -156,7 +157,7 @@ const NewChatScreen: React.FC = () => {
       }, 800);
     } catch (err: unknown) {
       logger.error('[Chat/new] requestDm error:', err);
-      showToast({ message: err instanceof Error ? err.message : 'Failed to send. Please try again.', type: 'error' });
+      showToast({ message: userErrorMessage(err, 'Failed to send. Please try again.'), type: 'error' });
     } finally {
       setSending(false);
     }
@@ -384,9 +385,13 @@ const NewChatScreen: React.FC = () => {
             </Text>
           </AnimatedPressable>
 
-          {/* Info text */}
+          {/* Info text. It used to promise "They'll receive a notification" —
+              nothing sends one (no trigger, no caller of
+              notify_connection_request; prod: 46 requests, 0 notifications,
+              checked 2026-09-14). What IS true: the request lands in their
+              inbox and counts on their inbox badge. */}
           <Text style={[styles.infoText, { color: colors.muted }]}>
-            They'll receive a notification and can choose to accept or decline your request.
+            It will appear in their inbox, where they can accept or decline it.
           </Text>
         </View>
       </KeyboardAvoidingView>

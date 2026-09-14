@@ -47,6 +47,7 @@ import {
 } from '@/components/quickscan';
 import type { BatchScannedItem } from '@/components/quickscan';
 import { safeGoBack } from '@/lib/goBack';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 // TIFFANY removed — use colors.accent from theme instead
 
@@ -341,7 +342,7 @@ function QuickScanScreen() {
     } catch (err: unknown) {
       logger.error('[QuickScan] batch save error:', err);
       showToast({
-        message: (err as Error)?.message ?? 'Failed to save item.',
+        message: userErrorMessage(err, 'Failed to save item.'),
         type: 'error',
       });
     } finally {
@@ -555,7 +556,7 @@ function QuickScanScreen() {
       logger.error('[QuickScan] error:', err);
       fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
       showToast({
-        message: (err as Error)?.message ?? 'Unable to analyze image. Please try again.',
+        message: userErrorMessage(err, 'Unable to analyze image. Please try again.'),
         type: 'error',
       });
       // Go back to camera on error

@@ -34,6 +34,7 @@ import { useBillingLimits } from '@/hooks/useBillingLimits';
 import type { PurchasesPackage } from 'react-native-purchases';
 import { useToast } from '@/components/Toast';
 import { track } from '@/analytics/track';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 // Removed static SUCCESS/WARNING — use colors.success / colors.warning from theme
 
@@ -182,7 +183,7 @@ function SubscriptionScreen() {
         }
       })
       .catch((err: unknown) => {
-        setFetchError(err instanceof Error ? err.message : 'Could not load plans.');
+        setFetchError(userErrorMessage(err, 'Could not load plans.', 'Subscription'));
       })
       .finally(() => setLoading(false));
   }

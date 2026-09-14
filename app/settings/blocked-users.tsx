@@ -26,6 +26,7 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import ScreenHeader from '@/components/ScreenHeader';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '@/components/EmptyState';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 type BlockedUser = { id: string; name: string };
 
@@ -80,7 +81,7 @@ function BlockedUsersScreen() {
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
               setBlockedUsers((prev) => prev.filter((u) => u.id !== user.id));
             } catch (err: unknown) {
-              showToast({ message: err instanceof Error ? err.message : 'Failed to unblock user.', type: 'error' });
+              showToast({ message: userErrorMessage(err, 'Failed to unblock user.', 'BlockedUsers'), type: 'error' });
             } finally {
               setUnblockingId(null);
             }

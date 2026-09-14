@@ -33,6 +33,7 @@ import { useToast } from '@/components/Toast';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { safeGoBack } from '@/lib/goBack';
 import { useTranslation } from 'react-i18next';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -93,7 +94,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
       safeGoBack(router);
     } catch (err: unknown) {
       logger.error('[ComposeAnnouncement] error:', err);
-      showToast({ message: (err as Error)?.message || 'Failed to send announcement. Please try again.', type: 'error' });
+      showToast({ message: userErrorMessage(err, 'Failed to send announcement. Please try again.'), type: 'error' });
     } finally {
       setSaveState('idle');
     }

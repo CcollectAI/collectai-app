@@ -36,6 +36,7 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { track } from '@/analytics/track';
 import { useTranslation } from 'react-i18next';
 import { SPONSOR_TIERS as TIERS } from '@/constants/sponsorTiers';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 /* -------------------------------------------------------------------------- */
 /*  Static data                                                                */
@@ -125,7 +126,7 @@ const SponsorRegisterScreen: React.FC = () => {
       router.replace('/sponsor/dashboard');
     } catch (err: unknown) {
       logger.error('[SponsorRegister] error:', err);
-      showToast({ message: (err as Error)?.message || 'Failed to register company. Please try again.', type: 'error' });
+      showToast({ message: userErrorMessage(err, 'Failed to register company. Please try again.'), type: 'error' });
     } finally {
       setSaveState('idle');
     }

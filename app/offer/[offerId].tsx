@@ -59,6 +59,7 @@ import type { P2POffer } from '@/api/p2pApi';
 import { radius, text as textToken, fontWeight, shadow } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 /** Must match `MAX_COUNTERS` in the server router — see app/offers.tsx. */
 const MAX_COUNTERS = 5;
@@ -102,7 +103,7 @@ function TradeScreen() {
       // ("This offer has been countered 5 times", "Offer is already declined"),
       // not noise, and a generic message would hide the reason.
       logger.error('[trade] action failed:', e);
-      showToast({ message: (e as Error)?.message || 'That didn’t work', type: 'error' });
+      showToast({ message: userErrorMessage(e, 'That didn’t work'), type: 'error' });
     } finally {
       setBusy(false);
     }

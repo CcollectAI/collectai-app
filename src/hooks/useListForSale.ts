@@ -13,6 +13,7 @@ import type {
   MarketplaceFeeSchedule,
   CurrencyCode,
 } from '@/data/types';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -256,7 +257,7 @@ export function useListForSale(opts: {
       setVisible(false);
       return true;
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to create listings';
+      const message = userErrorMessage(err, 'Failed to create listings', 'useListForSale');
       setError(message);
       return false;
     } finally {

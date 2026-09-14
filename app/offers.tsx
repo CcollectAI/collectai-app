@@ -48,6 +48,7 @@ import { groupCompetingOffers } from '@/lib/offerGrouping';
 import { radius, text as textToken, fontWeight, shadow } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 type Role = 'all' | 'buying' | 'selling';
 
@@ -406,7 +407,7 @@ function OffersScreen() {
         // Surface the server's message: 409s here are meaningful states
         // ("already confirmed", "offer is already declined"), not failures.
         logger.error('[offers] action failed:', e);
-        showToast({ message: (e as Error)?.message || 'That didn\'t work', type: 'error' });
+        showToast({ message: userErrorMessage(e, 'That didn\'t work'), type: 'error' });
         // Resync even on failure. A client-side timeout does NOT mean the write
         // failed: POST /confirm took 26.5s server-side and returned 200 while
         // this screen had already given up, kept rendering the trade as live,

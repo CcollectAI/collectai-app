@@ -66,6 +66,7 @@ import {
   ItemsErrorState,
   ItemsSectionFooter,
 } from '@/components/items';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 // Screen row shape + the provider→screen mapper live in @/data/screenItem so
 // the mapping is unit-testable (see screenItem.test.ts). Aliased to `Item`
@@ -258,7 +259,7 @@ const ItemsScreen: React.FC = () => {
       showToast({ message: 'Archived', type: 'success', duration: 2000 });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
     } catch (err: unknown) {
-      showToast({ message: (err as Error)?.message || 'Failed to archive', type: 'error' });
+      showToast({ message: userErrorMessage(err, 'Failed to archive', 'Items'), type: 'error' });
       fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
     }
   }, [optimisticArchive, showToast, settings.hapticsEnabled]);
@@ -277,7 +278,7 @@ const ItemsScreen: React.FC = () => {
               await optimisticDelete.mutate(id);
               fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
             } catch (err: unknown) {
-              showToast({ message: (err as Error)?.message || 'Failed to delete', type: 'error' });
+              showToast({ message: userErrorMessage(err, 'Failed to delete', 'Items'), type: 'error' });
               fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
             }
           },
@@ -389,7 +390,7 @@ const ItemsScreen: React.FC = () => {
       exitMultiSelectMode();
     } catch (err: unknown) {
       logger.error('[Items] bulk export error:', err);
-      showToast({ message: (err as Error)?.message || 'Failed to export selected items', type: 'error' });
+      showToast({ message: userErrorMessage(err, 'Failed to export selected items'), type: 'error' });
       fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
     } finally {
       setBulkActionLoading(false);
@@ -417,7 +418,7 @@ const ItemsScreen: React.FC = () => {
               await optimisticBulkArchive.mutate(ids);
               fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
             } catch (err: unknown) {
-              showToast({ message: (err as Error)?.message || 'Failed to archive items', type: 'error' });
+              showToast({ message: userErrorMessage(err, 'Failed to archive items', 'Items'), type: 'error' });
               fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
             }
           },
@@ -447,7 +448,7 @@ const ItemsScreen: React.FC = () => {
               await optimisticBulkDelete.mutate(ids);
               fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
             } catch (err: unknown) {
-              showToast({ message: (err as Error)?.message || 'Failed to delete items', type: 'error' });
+              showToast({ message: userErrorMessage(err, 'Failed to delete items', 'Items'), type: 'error' });
               fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
             }
           },

@@ -123,14 +123,14 @@ function AnalyticsScreen() {
   const {
     data: snapshotData,
     loading: snapshotLoading,
-    error: snapshotError,
+    errorDetail: snapshotError,
     retry: retrySnapshot,
   } = useAsync(() => fetchPortfolioSnapshot(), []);
 
   const {
     data: categoryData,
     loading: categoriesLoading,
-    error: categoryError,
+    errorDetail: categoryError,
     retry: retryCategories,
   } = useAsync(() => dataProvider.listCategorySummaries(), []);
 

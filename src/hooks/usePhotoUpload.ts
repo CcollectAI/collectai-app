@@ -25,6 +25,7 @@ import { collectorsApi } from "@/api/collectorsApi";
 import type { ServerUploadResponse } from "@/api/collectorsApi";
 import { useAuthContext } from "@/providers/useAuthContext";
 import { logger } from "@/lib/logger";
+import { userErrorMessage } from "@/lib/userErrorMessage";
 
 /**
  * Ceiling for the presigned S3 PUT. Generous — a large photo on a weak mobile
@@ -141,7 +142,7 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
         } catch (serverErr: unknown) {
           logger.error(
             "[usePhotoUpload] Server-side upload failed, falling back to presigned URL:",
-            serverErr instanceof Error ? serverErr.message : String(serverErr),
+            serverErr instanceof Error ? serverErr.message : String(serverErr), // raw-error-ok: logged, never shown
           );
         }
 
@@ -201,9 +202,8 @@ export function usePhotoUpload(itemId: string): PhotoUploadResult {
         setDimensions(null);
         return presignResponse.cdn_url;
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Failed to upload photo";
-        logger.error("[usePhotoUpload] Error:", message);
-        setError(message);
+        logger.error("[usePhotoUpload] Error:", err);
+        setError(userErrorMessage(err, "Failed to upload photo"));
         return null;
       } finally {
         setUploading(false);

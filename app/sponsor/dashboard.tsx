@@ -33,6 +33,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { usePhotoUpload } from '@/hooks/usePhotoUpload';
 import { track } from '@/analytics/track';
 import { useTranslation } from 'react-i18next';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 const SponsorDashboardScreen: React.FC = () => {
   const router = useRouter();
@@ -176,7 +177,7 @@ const SponsorDashboardScreen: React.FC = () => {
       track({ name: 'sponsor_profile_updated' });
     } catch (err: unknown) {
       logger.error('[SponsorDashboard] save error:', err);
-      showToast({ message: (err as Error)?.message || 'Failed to update company. Please try again.', type: 'error' });
+      showToast({ message: userErrorMessage(err, 'Failed to update company. Please try again.'), type: 'error' });
     } finally { setSaving(false); }
   };
 
@@ -198,7 +199,7 @@ const SponsorDashboardScreen: React.FC = () => {
         if (url) { const { Linking } = require('react-native'); Linking.openURL(url); }
       } catch (err: unknown) {
         logger.error('[SponsorDashboard] subscription checkout error:', err);
-        showToast({ message: (err as Error)?.message || 'Failed to start subscription checkout.', type: 'error' });
+        showToast({ message: userErrorMessage(err, 'Failed to start subscription checkout.'), type: 'error' });
       }
     } else {
       setShowTierPicker(false);
@@ -229,7 +230,7 @@ const SponsorDashboardScreen: React.FC = () => {
       showToast({ message: 'Announcement sent to all attendees.', type: 'success' });
     } catch (err: unknown) {
       logger.error('[SponsorDashboard] send announcement error:', err);
-      showToast({ message: (err as Error)?.message || 'Failed to send announcement.', type: 'error' });
+      showToast({ message: userErrorMessage(err, 'Failed to send announcement.'), type: 'error' });
     } finally { setComposeSending(false); }
   };
 

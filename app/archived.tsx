@@ -41,6 +41,7 @@ import { logger } from "@/lib/logger";
 import { useToast } from "@/components/Toast";
 import { useTranslation } from 'react-i18next';
 import { categoryDisplayName } from '@/constants/categories';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 function ArchivedContent() {
   const { t } = useTranslation();
@@ -66,7 +67,7 @@ function ArchivedContent() {
       if (cancelledRef.current) return;
       logger.error("[Archived] Failed to load archived items:", err);
       setError(
-        err instanceof Error ? err.message : "Could not load archived items",
+        userErrorMessage(err, "Could not load archived items"),
       );
     } finally {
       if (!cancelledRef.current) {

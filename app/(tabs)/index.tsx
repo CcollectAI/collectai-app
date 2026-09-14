@@ -260,7 +260,14 @@ function PortfolioScreen() {
   // fetch transiently returns empty (a token cold-start / network blip must not
   // resurrect "add your first item" for an established collection).
   const { hasEverHadItems, markHasItems } = useHasEverHadItems();
-  const [loading, setLoading] = useState(false);
+  // TRUE until the first load settles. The first load waits for auth to
+  // hydrate (the focus effect below returns while `authLoading`), which is
+  // seconds on a cold start — and with `false` here that window rendered as a
+  // FINISHED empty load: walked on Android 2026-09-14, an account holding
+  // €1.348 in 8 items opened on "COLLECTION VALUE €0 / +€0 (0.00%)" and "No
+  // history yet. Add items to see your portfolio curve." Not started is a kind
+  // of loading. Pinned by __tests__/screens/homeInitialLoading.test.ts.
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -313,6 +320,13 @@ function PortfolioScreen() {
     const pct = startVal > 0 ? d / startVal : 0;
     return { total: endVal, delta: d, deltaPct: pct };
   }, [series]);
+  // `total` is derived from `series`, so an empty series computes €0 — the same
+  // lie `seriesFailed` exists to stop the chart telling. With no series AND a
+  // load still pending or failed, we do not know the value. ONE constant for
+  // both places that would state it: the header figure and the chart's
+  // screen-reader label (which announced "current value €0" under the skeleton).
+  // Once a series is in hand it stays shown through a refresh.
+  const valueUnknown = series.length === 0 && (loading || seriesFailed);
 
   const { loading: authLoading } = useAuthContext();
 
@@ -664,19 +678,8 @@ function PortfolioScreen() {
             {/* Collection Value */}
             <PortfolioValueHeader
               theme={colors}
-              // `total` is derived from `series`, so an empty series prints
-              // €0 — the same lie `seriesFailed` exists to stop the chart
-              // telling ("no history yet" for a transport failure). Hand the
-              // header null while we have no series AND are still loading or
-              // have failed; once a series is in hand, keep showing it through
-              // a refresh rather than flashing a dash on every focus.
-              total={
-                scrubPoint
-                  ? scrubPoint.v
-                  : series.length === 0 && (loading || seriesFailed)
-                    ? null
-                    : total
-              }
+              // null renders "—" and hides the delta line — see `valueUnknown`.
+              total={scrubPoint ? scrubPoint.v : valueUnknown ? null : total}
               delta={delta}
               deltaPct={deltaPct}
               currency={settings.currency}
@@ -716,7 +719,11 @@ function PortfolioScreen() {
                 announced an interactive control as part of an image. */}
             <View
               accessibilityRole="image"
-              accessibilityLabel={`Portfolio chart: current value ${formatPrice(total)}, ${isPositive ? 'up' : 'down'} ${formatPct(deltaPct)} over ${range}`}
+              accessibilityLabel={
+                valueUnknown
+                  ? 'Portfolio chart: value not loaded yet'
+                  : `Portfolio chart: current value ${formatPrice(total)}, ${isPositive ? 'up' : 'down'} ${formatPct(deltaPct)} over ${range}`
+              }
             >
               {loading ? (
                 <SkeletonPortfolioHeader />

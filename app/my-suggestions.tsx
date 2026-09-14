@@ -21,6 +21,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { radius, text as textToken, fontWeight as fw } from "@/theme/tokens";
 import { getMyCatalogSuggestions, type MySuggestion } from "@/api/intakeApi";
 import { QuickNavBar } from "@/components/QuickNavBar";
+import { EmptyState } from "@/components/EmptyState";
 import { AnimatedPressable } from "@/motion";
 import { logger } from "@/lib/logger";
 import { timeAgo } from "@/lib/timeAgo";
@@ -45,6 +46,11 @@ function MySuggestionsContent() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  // A failed first page is its own state. Without it the list stayed [] and
+  // read "No suggestions yet" when we simply could not ask — the favourites and
+  // blocked-users bug, found here by reading the code on the 2026-09-14 walk.
+  // A failed load-MORE leaves this alone: the rows on screen are still true.
+  const [loadFailed, setLoadFailed] = useState(false);
   const cancelledRef = useRef(false);
 
   const fetchSuggestions = useCallback(
@@ -56,10 +62,12 @@ function MySuggestionsContent() {
           setSuggestions((prev) => [...prev, ...data.suggestions]);
         } else {
           setSuggestions(data.suggestions);
+          setLoadFailed(false);
         }
         setTotal(data.total);
       } catch (err) {
         logger.error("[MySuggestions] Failed to fetch suggestions:", err);
+        if (!append && !cancelledRef.current) setLoadFailed(true);
       } finally {
         if (!cancelledRef.current) {
           setLoading(false);
@@ -190,6 +198,28 @@ function MySuggestionsContent() {
 
   const renderEmpty = useCallback(() => {
     if (loading) return null;
+    if (loadFailed) {
+      return (
+        <EmptyState
+          icon="cloud-offline-outline"
+          title="Couldn't load your suggestions"
+          subtitle="Nothing has been removed — we just could not reach the list."
+          colors={colors}
+          action={
+            <AnimatedPressable
+              onPress={onRefresh}
+              style={[styles.retryBtn, { backgroundColor: colors.accent }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+            >
+              <Text style={[styles.retryText, { color: colors.accentText }]}>
+                {t('common.try_again', { defaultValue: 'Try again' })}
+              </Text>
+            </AnimatedPressable>
+          }
+        />
+      );
+    }
     return (
       <View style={styles.empty}>
         <Ionicons name="sparkles-outline" size={48} color={colors.muted} />
@@ -202,7 +232,7 @@ function MySuggestionsContent() {
         </Text>
       </View>
     );
-  }, [loading, colors]);
+  }, [loading, loadFailed, colors, onRefresh, t]);
 
   const renderFooter = useCallback(() => {
     if (!loadingMore) return null;
@@ -338,4 +368,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
   },
+  // Same retry button as settings/blocked-users.tsx.
+  retryBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, minHeight: 44, justifyContent: "center" },
+  retryText: { fontSize: 14, fontWeight: "700" },
 });

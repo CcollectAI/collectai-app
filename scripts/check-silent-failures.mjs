@@ -55,6 +55,12 @@ for (const abs of files) {
 
   // ── B. catch that swallows: no logger call anywhere in the block ────────
   for (const m of src.matchAll(/catch\s*(?:\([^)]*\))?\s*\{/g)) {
+    // Skip a match inside a comment. verify-email.tsx's comment "a bare
+    // `catch {}`" was reported as a swallowed catch from 2026-09-05, which kept
+    // this blocking gate — and so verify:prebuild — red for nine days.
+    const lineStart = src.lastIndexOf('\n', m.index) + 1;
+    const before = src.slice(lineStart, m.index);
+    if (before.includes('//') || /^\s*\*/.test(before) || /^\s*\/\*/.test(before)) continue;
     let depth = 0, i = m.index + m[0].length - 1, end = -1;
     for (; i < src.length; i++) {
       if (src[i] === '{') depth++;

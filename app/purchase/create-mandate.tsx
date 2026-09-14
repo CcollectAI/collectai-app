@@ -37,16 +37,31 @@ import { CATEGORIES as ALL_CATS } from '@/constants/categories';
 import { MARKETPLACE_BRAND_COLORS } from '@/constants/colors';
 import { safeGoBack } from '@/lib/goBack';
 import type { CatalogMatchHit } from '@/api/itemsApi';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 const CATEGORY_OPTIONS: SelectOption[] = [
   { label: 'Any', value: '' },
   ...ALL_CATS.map((c) => ({ label: c.slug, value: c.slug })),
 ];
 
-const SOURCES = [
-  "ebay", "tcgplayer", "cardmarket", "mercari",
-  "discogs", "stockx", "bricklink",
+// `value` is what the policy engine compares: the `source` tag each caller
+// stamps on its hits (server/app/agents/adapters/<name>_caller.py), matched exactly
+// against `allowed_sources` (policy_engine.py check 5). `brand` is the label-map
+// key. They differ for Mercari: the toggle sent "mercari" while MercariUSCaller
+// tags "mercari_us", so switching Mercari on rejected every Mercari result
+// (found 2026-09-14; 0 mandates in prod, so nobody was affected yet). The other
+// six were checked against their callers and match.
+const SOURCES: { value: string; brand: string }[] = [
+  { value: "ebay", brand: "ebay" },
+  { value: "tcgplayer", brand: "tcgplayer" },
+  { value: "cardmarket", brand: "cardmarket" },
+  { value: "mercari_us", brand: "mercari" },
+  { value: "discogs", brand: "discogs" },
+  { value: "stockx", brand: "stockx" },
+  { value: "bricklink", brand: "bricklink" },
 ];
+// A search saved before the fix stored the old value.
+const LEGACY_SOURCE_VALUES: Record<string, string> = { mercari: "mercari_us" };
 
 const REGION_OPTIONS: SelectOption[] = [
   { value: "", label: "Any Region" },
@@ -124,7 +139,7 @@ function CreateMandateScreen() {
         setCategory(m.category ?? null);
         maxPriceField.setValue(m.maxPrice != null ? String(m.maxPrice) : '');
         setMinTrust(m.minTrustScore ?? 0.6);
-        setSelectedSources(m.allowedSources ?? []);
+        setSelectedSources((m.allowedSources ?? []).map((s) => LEGACY_SOURCE_VALUES[s] ?? s));
         setRegion(m.region ?? "");
         setStatus(m.status === "paused" ? "paused" : "active");
         // The API stores the NAMESPACED ref ("pokemon:base1-base1-1"); the
@@ -200,7 +215,7 @@ function CreateMandateScreen() {
       }
       safeGoBack(router);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to save";
+      const msg = userErrorMessage(err, "Failed to save", "CreateMandate");
       showToast({ message: msg, type: "error" });
     } finally {
       setSaving(false);
@@ -395,7 +410,7 @@ function CreateMandateScreen() {
 
         {/* Marketplace Sources — toggle switches */}
         <Text style={[styles.label, { color: colors.text }]}>MARKETPLACES</Text>
-        {SOURCES.map((s) => {
+        {SOURCES.map(({ value: s, brand }) => {
           const active = selectedSources.includes(s);
           return (
             <View key={s} style={styles.sourceToggleRow}>
@@ -404,7 +419,7 @@ function CreateMandateScreen() {
                   slug rendered "Ebay" and "Tcgplayer" (seen on Android
                   2026-09-13), and on the real label it would render "EBay". */}
               <Text style={[styles.sourceToggleLabel, { color: colors.text }]}>
-                {MARKETPLACE_BRAND_COLORS[s]?.label ?? s}
+                {MARKETPLACE_BRAND_COLORS[brand]?.label ?? brand}
               </Text>
               <Switch
                 value={active}

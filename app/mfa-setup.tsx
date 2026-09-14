@@ -31,6 +31,7 @@ import { useSettings } from '@/lib/settings';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { logger } from '@/lib/logger';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 type MFAFactor = {
   id: string;
@@ -111,7 +112,7 @@ function MFASetupScreen() {
       setQrUri(data.totp.qr_code);
       setFactorId(data.id);
     } catch (e: unknown) {
-      showToast({ message: e instanceof Error ? e.message : 'Failed to start MFA enrollment.', type: 'error' });
+      showToast({ message: userErrorMessage(e, 'Failed to start MFA enrollment.', 'MfaSetup'), type: 'error' });
     } finally {
       setEnrolling(false);
     }
@@ -144,7 +145,7 @@ function MFASetupScreen() {
       setTotpCode('');
       await loadFactors();
     } catch (e: unknown) {
-      showToast({ message: e instanceof Error ? e.message : 'Invalid code. Please try again.', type: 'error' });
+      showToast({ message: userErrorMessage(e, 'Invalid code. Please try again.', 'MfaSetup'), type: 'error' });
     } finally {
       setVerifying(false);
     }
@@ -166,7 +167,7 @@ function MFASetupScreen() {
               showToast({ message: 'Two-factor authentication has been removed.', type: 'success' });
               await loadFactors();
             } catch (e: unknown) {
-              showToast({ message: e instanceof Error ? e.message : 'Failed to disable 2FA.', type: 'error' });
+              showToast({ message: userErrorMessage(e, 'Failed to disable 2FA.', 'MfaSetup'), type: 'error' });
             }
           },
         },

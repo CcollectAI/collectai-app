@@ -16,6 +16,8 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { formatPrice, formatNumber } from "@/lib/format";
 import { BRAND_COLORS } from "@/constants/colors";
 import { categoryDisplayName } from '@/constants/categories';
+import { logger } from '@/lib/logger';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 type LoadState = "idle" | "loading" | "loaded" | "error";
 
 type TwitchCreator = {
@@ -67,18 +69,18 @@ const TwitchLeaderboardScreen: React.FC = () => {
           .limit(100);
 
         if (error) {
+          logger.error("[TwitchLeaderboard] load failed:", error);
           setState("error");
-          setErrorText(error.message ?? "Supabase error while loading Twitch data.");
+          setErrorText(userErrorMessage(error, "Couldn't load the Twitch leaderboard."));
           return;
         }
 
         setCreators((data ?? []) as TwitchCreator[]);
         setState("loaded");
       } catch (err) {
+        logger.error("[TwitchLeaderboard] load failed:", err);
         setState("error");
-        setErrorText(
-          (err instanceof Error ? err.message : null) || "Unexpected error while loading Twitch leaderboard."
-        );
+        setErrorText(userErrorMessage(err, "Couldn't load the Twitch leaderboard."));
       }
     };
 

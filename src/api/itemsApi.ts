@@ -1,7 +1,7 @@
 /**
  * Items-related API methods: provenance, progress, attributes, images, photos, for-sale toggle.
  */
-import { get, post, del, patch, put, postMultipart, API_BASE, getAuthHeaders } from "./httpClient";
+import { get, post, del, patch, put, postMultipart, API_BASE, getAuthHeaders, parseErrorResponse } from "./httpClient";
 import type { ServerUploadResponse } from "./types";
 
 // Photo upload — server-side optimized (preferred)
@@ -109,9 +109,11 @@ export const fetchDossierExportHtml = async (itemId: string): Promise<string> =>
   });
   if (!res.ok) {
     // Carry the server's own reason. A 403 here means the plan gate rejected
-    // them, which is a different conversation from a 500, and the caller can
-    // only say something useful if it knows which.
-    throw new Error(`Export failed (${res.status})`);
+    // them ("This feature requires pro plan or higher…"), which is a different
+    // conversation from a 500. Until 2026-09-14 this threw only
+    // `Export failed (403)`, so the member was shown the number and never the
+    // reason; an ApiError keeps the detail for userErrorMessage.
+    throw await parseErrorResponse('GET', `/dossier/${itemId}/export`, res);
   }
   return res.text();
 };

@@ -31,6 +31,7 @@ import type { DmThread } from '@/data/types';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import { logger } from '@/lib/logger';
 import { useTranslation } from 'react-i18next';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 export type SharePayload = {
   /** What the recipient will recognise it by. */
@@ -152,7 +153,7 @@ export function ShareToChatSheet({ visible, onClose, payload }: Props) {
       } catch (e: unknown) {
         logger.error('[ShareToChatSheet] send failed:', e);
         showToast({
-          message: (e as Error)?.message || "Couldn't send that",
+          message: userErrorMessage(e, "Couldn't send that"),
           type: 'error',
         });
       } finally {

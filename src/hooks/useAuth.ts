@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 /* ---------- Sentry (guarded so builds work before `npm i`) ---------- */
 import type { SentryModule } from '@/../types/api';
 import { logger } from '@/lib/logger';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 let Sentry: SentryModule | null = null;
 try {
   Sentry = require("@sentry/react-native");
@@ -42,7 +43,7 @@ export default function useAuth() {
     } catch (e: unknown) {
       // Profile might not exist yet (e.g., user didn't finish sign-up flow)
       setProfile(null);
-      setError(e instanceof Error ? e.message : "Failed to load profile");
+      setError(userErrorMessage(e, "Failed to load profile", "useAuth"));
     }
   }
 
@@ -62,7 +63,7 @@ export default function useAuth() {
         }
         await loadProfile(data.session?.user ?? null);
       } catch (e: unknown) {
-        if (on) setError(e instanceof Error ? e.message : "Failed to get session");
+        if (on) setError(userErrorMessage(e, "Failed to get session", "useAuth"));
       } finally {
         if (on) setLoading(false);
       }

@@ -17,6 +17,7 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 // Android: `presentationStyle="pageSheet"` is an iOS-only Modal API. On Android
 // the Modal is full-screen, so a header with only `paddingVertical` renders
 // UNDER the status bar — the close ✕ lands on the clock and the confirm action
@@ -161,7 +162,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
       } else {
         Alert.alert(
           'Error',
-          e instanceof Error ? e.message : 'Failed to delete account. Please try again.',
+          userErrorMessage(e, 'Failed to delete account. Please try again.'),
         );
       }
     } finally {
@@ -195,7 +196,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
       // Surface the server's reason (e.g. username already taken) instead of a
       // generic message — the user can only act on the specific one.
       showToast({
-        message: (e as Error)?.message || 'Failed to save profile changes',
+        message: userErrorMessage(e, 'Failed to save profile changes'),
         type: 'error',
       });
     } finally {
@@ -222,7 +223,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Password updated successfully', type: 'success' });
     } catch (e) {
-      showToast({ message: e instanceof Error ? e.message : 'Failed to change password', type: 'error' });
+      showToast({ message: userErrorMessage(e, 'Failed to change password', 'ProfileEditSection'), type: 'error' });
     } finally {
       setSavingPassword(false);
     }

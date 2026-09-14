@@ -16,6 +16,7 @@ import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 import { parseMoney } from '@/lib/format';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -334,7 +335,7 @@ export function useItemDetail(params: UseItemDetailParams) {
       logger.error('[useItemDetail] save notes failed:', err);
       // Never claim success on a failed write — that is the bug this replaced.
       showToast({
-        message: (err as Error)?.message || "Couldn't save your notes",
+        message: userErrorMessage(err, "Couldn't save your notes"),
         type: 'error',
       });
     } finally {
@@ -396,7 +397,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     } catch (err: unknown) {
       logger.error('[ItemDetail] save draft error:', err);
       fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
-      setSaveError(err instanceof Error ? err.message : 'Failed to save item');
+      setSaveError(userErrorMessage(err, 'Failed to save item'));
     } finally {
       setSavingDraft(false);
     }

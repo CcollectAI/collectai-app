@@ -102,7 +102,7 @@ function CatalogSetScreen() {
         });
       } catch (err) {
         logLoad(`set-grid:${category}/${setCode}`, {
-          error: err instanceof Error ? err.message : String(err),
+          error: err instanceof Error ? err.message : String(err), // raw-error-ok: load log
           ms: elapsed(),
         });
         logger.error("[CatalogSet] load error:", err);

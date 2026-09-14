@@ -40,6 +40,7 @@ import { supabase } from '@/lib/supabase';
 import { trackScreen } from '@/analytics/track';
 import { safeGoBack } from '@/lib/goBack';
 import { useTranslation } from 'react-i18next';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 // SWR cache for instant inbox first-paint on revisit (realtime + on-mount
 // revalidate keep it fresh; TTL just bounds offline staleness).
@@ -209,7 +210,7 @@ function InboxScreen() {
       fireHaptic(HapticIntent.JUDGMENT_LOCKED);
       await loadInbox();
     } catch (err: unknown) {
-      showToast({ message: err instanceof Error ? err.message : 'Failed to accept request', type: 'error' });
+      showToast({ message: userErrorMessage(err, 'Failed to accept request', 'Inbox'), type: 'error' });
     } finally {
       setProcessingRequestId(null);
     }
@@ -230,7 +231,7 @@ function InboxScreen() {
               await dataProvider.decideDmRequest(threadId, false);
               await loadInbox();
             } catch (err: unknown) {
-              showToast({ message: err instanceof Error ? err.message : 'Failed to decline request', type: 'error' });
+              showToast({ message: userErrorMessage(err, 'Failed to decline request', 'Inbox'), type: 'error' });
             } finally {
               setProcessingRequestId(null);
             }
@@ -259,7 +260,7 @@ function InboxScreen() {
               fireHaptic(HapticIntent.ALERT_TRIGGERED);
               await loadInbox();
             } catch (err: unknown) {
-              showToast({ message: err instanceof Error ? err.message : 'Failed to block user', type: 'error' });
+              showToast({ message: userErrorMessage(err, 'Failed to block user', 'Inbox'), type: 'error' });
             } finally {
               setProcessingRequestId(null);
             }

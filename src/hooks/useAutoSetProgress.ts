@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react';
 import { get } from '@/api/httpClient';
 import { logger } from '@/lib/logger';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 export type AutoSetEntry = {
   category: string;
@@ -77,7 +78,7 @@ export function useAutoSetProgress(category?: string): UseAutoSetProgressReturn 
       } catch (err) {
         logger.error('[useAutoSetProgress] fetch failed:', err);
         if (mounted) {
-          setError(err instanceof Error ? err.message : 'Failed to fetch');
+          setError(userErrorMessage(err, 'Failed to fetch'));
           setSets([]);
         }
       } finally {

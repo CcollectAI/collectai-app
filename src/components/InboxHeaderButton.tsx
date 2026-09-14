@@ -14,6 +14,22 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { logger } from '@/lib/logger';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { MESSAGING_ENABLED } from '@/config/featureFlags';
+import { useAuthContext } from '@/providers/useAuthContext';
+import { createSharedCount } from '@/lib/sharedCount';
+
+/**
+ * ONE count for every mounted inbox button. This used to fetch per instance and
+ * poll every 30s per instance — and the cluster is mounted on five tabs plus
+ * every stacked screen, so an idle member paid for it several times over
+ * (Diagnostics, 2026-09-14: nine chat_dm_requests_v1 timeouts in three
+ * seconds). Each mount still ticks, but only a stale shared value fetches.
+ */
+const INBOX_POLL_MS = 30_000;
+const inboxCount = createSharedCount(
+  () => dataProvider.getInboxUnreadCount(),
+  INBOX_POLL_MS,
+  (err) => logger.error('[InboxHeaderButton] Failed to fetch unread count:', err),
+);
 
 type Props = {
   /** Icon color — falls back to theme text color */
@@ -37,32 +53,22 @@ export const InboxHeaderButton: React.FC<Props> = ({
   const { colors } = useAppTheme();
   const iconColor = color ?? colors.text;
   const router = useRouter();
-  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const { user } = useAuthContext();
+  const userId = user?.id ?? null;
+  const [unreadCount, setUnreadCount] = useState<number>(() => inboxCount.peek(userId));
 
   useEffect(() => {
-    let mounted = true;
-
-    const fetchUnread = async () => {
-      try {
-        const count = await dataProvider.getInboxUnreadCount();
-        if (mounted) {
-          setUnreadCount(count);
-        }
-      } catch (err) {
-        logger.error('[InboxHeaderButton] Failed to fetch unread count:', err);
-      }
-    };
-
-    fetchUnread();
-
-    // Poll every 30 seconds for new messages
-    const interval = setInterval(fetchUnread, 30_000);
-
+    if (!MESSAGING_ENABLED) return;
+    const unsubscribe = inboxCount.subscribe(setUnreadCount);
+    setUnreadCount(inboxCount.peek(userId));
+    void inboxCount.refreshIfStale(userId);
+    // Every mount ticks; the shared count decides whether a tick fetches.
+    const interval = setInterval(() => { void inboxCount.refreshIfStale(userId); }, INBOX_POLL_MS);
     return () => {
-      mounted = false;
+      unsubscribe();
       clearInterval(interval);
     };
-  }, []);
+  }, [userId]);
 
   // Gated on MESSAGING_ENABLED, not on COMMUNITY_GATED (2026-08-20). The old
   // reuse hid this icon whenever the inbox was empty, so the header cluster

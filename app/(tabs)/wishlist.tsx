@@ -47,6 +47,7 @@ import { WishlistSortControls } from '@/components/wishlist/WishlistSortControls
 
 // Pull from single source of truth — all 36 categories + "Other"
 import { categoryDisplayName, CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 const CONGRATS_DISPLAY_DURATION = 2000;
 const CONGRATS_SPRING = { tension: 50, friction: 7, useNativeDriver: true as const };
@@ -144,7 +145,7 @@ function WatchlistTabScreen() {
       logger.error('[Watchlist] loadItems error:', err);
       // Keep whatever was already on screen. Blanking the list on a refresh
       // failure would reproduce the exact bug this state exists to fix.
-      setLoadError(err instanceof Error ? err.message : 'Could not load your watchlist');
+      setLoadError(userErrorMessage(err, 'Could not load your watchlist'));
       showToast({ message: 'Failed to load watchlist. Pull down to retry.', type: 'error' });
     } finally {
       setLoading(false);
@@ -345,7 +346,7 @@ function WatchlistTabScreen() {
       }
       loadItems();
     } catch (err: any) {
-      showToast({ message: err?.message || 'Failed to add item.', type: 'error' });
+      showToast({ message: userErrorMessage(err, 'Failed to add item.', 'Wishlist'), type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -366,7 +367,7 @@ function WatchlistTabScreen() {
               await dataProvider.removeWatchlistItem(item.id);
               loadItems();
             } catch (err: any) {
-              showToast({ message: err?.message || 'Failed to remove item.', type: 'error' });
+              showToast({ message: userErrorMessage(err, 'Failed to remove item.', 'Wishlist'), type: 'error' });
             }
           },
         },
@@ -413,7 +414,7 @@ function WatchlistTabScreen() {
       setEditTargetValue('');
       loadItems();
     } catch (err: any) {
-      showToast({ message: err?.message || 'Failed to update target price.', type: 'error' });
+      showToast({ message: userErrorMessage(err, 'Failed to update target price.', 'Wishlist'), type: 'error' });
     } finally {
       setEditTargetSaving(false);
     }
@@ -506,7 +507,7 @@ function WatchlistTabScreen() {
       // Reload list
       loadItems();
     } catch (err: any) {
-      showToast({ message: err?.message || 'Failed to add to collection.', type: 'error' });
+      showToast({ message: userErrorMessage(err, 'Failed to add to collection.', 'Wishlist'), type: 'error' });
     } finally {
       setAcquiring(false);
     }

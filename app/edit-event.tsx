@@ -45,6 +45,7 @@ import { EventLocationSection } from '@/components/events/EventLocationSection';
 import { FormField as FormFieldComponent } from '@/components/form';
 import { safeGoBack } from '@/lib/goBack';
 import { useTranslation } from 'react-i18next';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -139,7 +140,7 @@ const EditEventScreen: React.FC = () => {
       safeGoBack(router);
     } catch (err: unknown) {
       logger.error('[EditEvent] error:', err);
-      showToast({ message: (err as Error)?.message || 'Failed to update event. Please try again.', type: 'error' });
+      showToast({ message: userErrorMessage(err, 'Failed to update event. Please try again.'), type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -164,7 +165,7 @@ const EditEventScreen: React.FC = () => {
               safeGoBack(router);
             } catch (err: unknown) {
               logger.error('[EditEvent] cancel error:', err);
-              showToast({ message: (err as Error)?.message || 'Failed to cancel event.', type: 'error' });
+              showToast({ message: userErrorMessage(err, 'Failed to cancel event.'), type: 'error' });
             }
           },
         },

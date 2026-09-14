@@ -25,6 +25,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { GradientBackground } from '@/components/auth/GradientBackground';
 import { fonts } from '@/theme/tokens';
+import { logger } from '@/lib/logger';
 
 /** Supabase's own cooldown between confirmation sends, in seconds. */
 export const RESEND_COOLDOWN_S = 60;
@@ -43,9 +44,9 @@ export function rateLimitSeconds(e: unknown): number | null {
   const isRateLimit =
     err.status === 429 ||
     err.code === 'over_email_send_rate_limit' ||
-    /rate limit/i.test(err.message ?? '');
+    /rate limit/i.test(err.message ?? ''); // raw-error-ok: parsed for the cooldown, never shown
   if (!isRateLimit) return null;
-  const m = /after (\d+) second/i.exec(err.message ?? '');
+  const m = /after (\d+) second/i.exec(err.message ?? ''); // raw-error-ok: parsed for the cooldown, never shown
   const parsed = m ? parseInt(m[1], 10) : NaN;
   return Number.isFinite(parsed) && parsed > 0 ? parsed : RESEND_COOLDOWN_S;
 }
@@ -108,8 +109,11 @@ function VerifyEmailScreen() {
       const secs = rateLimitSeconds(e);
       if (secs !== null) {
         setCooldown(secs);
+      } else {
+        // Everything else stays silent ON SCREEN, deliberately — see above. The
+        // log is not the screen: a failed resend must still leave a trace.
+        logger.error('[VerifyEmail] resend failed:', e);
       }
-      // Everything else stays silent, deliberately — see above.
     } finally {
       setResending(false);
     }

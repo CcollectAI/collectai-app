@@ -31,6 +31,7 @@ import { GradientBackground } from '@/components/auth/GradientBackground';
 import { AuthTextInput } from '@/components/auth/AuthTextInput';
 import { fonts } from '@/theme/tokens';
 import { safeGoBack } from '@/lib/goBack';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 function ForgotPasswordScreen() {
   const router = useRouter();
@@ -86,7 +87,7 @@ function ForgotPasswordScreen() {
       setSent(true);
       setCooldown(60);
     } catch (e: unknown) {
-      showToast({ message: e instanceof Error ? e.message : t('auth.errors.reset_failed'), type: 'error' });
+      showToast({ message: userErrorMessage(e, t('auth.errors.reset_failed'), 'ForgotPassword'), type: 'error' });
     } finally {
       setLoading(false);
     }

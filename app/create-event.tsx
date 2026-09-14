@@ -48,6 +48,7 @@ import { EventLocationSection } from '@/components/events/EventLocationSection';
 import { EventTicketingSection } from '@/components/events/EventTicketingSection';
 import { safeGoBack } from '@/lib/goBack';
 import { useTranslation } from 'react-i18next';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 /* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
@@ -140,7 +141,7 @@ const CreateEventScreen: React.FC = () => {
       safeGoBack(router);
     } catch (err: any) {
       logger.error('[CreateEvent] error:', err);
-      showToast({ message: err?.message || 'Failed to create event. Please try again.', type: 'error' });
+      showToast({ message: userErrorMessage(err, 'Failed to create event. Please try again.'), type: 'error' });
     } finally {
       setSaving(false);
     }

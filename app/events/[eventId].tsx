@@ -53,6 +53,7 @@ import {
 } from '@/components/events';
 import { safeGoBack } from '@/lib/goBack';
 import { isEventPast } from '@/lib/calendar';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 function EventDetailScreen() {
   const { t } = useTranslation();
@@ -190,7 +191,7 @@ function EventDetailScreen() {
         }
       } catch (err) {
         logger.error('[EventDetail] ticket checkout error:', err);
-        showToast({ message: (err as Error)?.message || 'Failed to start ticket checkout.', type: 'error' });
+        showToast({ message: userErrorMessage(err, 'Failed to start ticket checkout.'), type: 'error' });
       }
       return;
     }
@@ -295,7 +296,7 @@ function EventDetailScreen() {
       logger.error('[EventDetail] waitlist error:', err);
       setRsvpStatus(prevStatus);
       showToast({
-        message: (err as Error)?.message || 'Could not join the waitlist. Please try again.',
+        message: userErrorMessage(err, 'Could not join the waitlist. Please try again.'),
         type: 'error',
       });
       loadEvent();

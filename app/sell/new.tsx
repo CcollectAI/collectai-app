@@ -50,6 +50,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 /** Buyer-facing gallery cap. See the photoUris comment for why 8. */
 const MAX_PHOTOS = 8;
@@ -333,7 +334,7 @@ function SellNewScreen() {
     } catch (err: unknown) {
       logger.error('[sell/new] create failed:', err);
       showToast({
-        message: (err as Error)?.message || 'Could not create the listing.',
+        message: userErrorMessage(err, 'Could not create the listing.'),
         type: 'error',
       });
     } finally {

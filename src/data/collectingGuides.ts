@@ -573,8 +573,8 @@ export const COLLECTING_GUIDES: Partial<Record<CategoryId, CollectingGuide>> = {
       'Roughly, Pokémon cards printed before the modern era, and in practice three groups. The Wizards of the Coast years (1999–2003) produced Base Set, Jungle, Fossil and the rest, printed in the middle of a craze by children who played with them — which is why survivors in good condition are scarce. The e-Card and EX era that followed introduced Gold Star cards, an ultra-rare treatment with a gold star beside the name. And running alongside both, Black Star Promos handed out at events and through magazines in tiny numbers. Knowing which era a card belongs to tells you more about its price than the Pokémon on it does.',
     glossary: [
       { term: '1st Edition', definition: 'A small stamp on the left of the artwork, applied only to the first print run of a set. It can multiply a card’s value several times over the identical unlimited version.' },
-      { term: 'Shadowless', definition: 'Very early Base Set cards printed without the drop shadow on the right of the art box. Rarer than the normal unlimited version — a PSA 10 Shadowless Charizard is about €52,324 in our catalogue.' },
-      { term: 'Gold Star', definition: 'A 2003–2007 ultra-rare treatment marked with a gold star. Mewtwo, Pikachu and Rayquaza Gold Stars are the top of our vintage catalogue at €60,000–€130,000.' },
+      { term: 'Shadowless', definition: 'Very early Base Set cards printed without the drop shadow on the right of the art box. Rarer than the normal unlimited version — a PSA 10 Shadowless Charizard is about €35,000 in our catalogue.' },
+      { term: 'Gold Star', definition: 'A 2003–2007 ultra-rare treatment marked with a gold star. Pikachu, Mewtwo and Rayquaza Gold Stars are the top of our vintage catalogue at roughly €60,000–€120,000.' },
       { term: 'Black Star Promo', definition: 'Event and magazine promos outside the numbered sets. The Lily Pad Mew #47 sits around €62,992.' },
     ],
     care:
@@ -586,8 +586,8 @@ export const COLLECTING_GUIDES: Partial<Record<CategoryId, CollectingGuide>> = {
     valueDrivers:
       'Grade above everything: the same card is a different asset at PSA 9 and PSA 10, and our two most expensive Charizards are both graded 10. Then era markers — 1st Edition and Shadowless status. Then the treatment: Gold Star and promo scarcity. Then the Pokémon, with Charizard, Pikachu and Mewtwo commanding premiums no other character gets.',
     holyGrail: {
-      title: 'Gold Star Mewtwo (EX Holon Phantoms #103)',
-      why: 'About €129,679, the most valuable card in our vintage catalogue — ahead of even a PSA 10 1st Edition Base Set Charizard at €124,529. Gold Stars were pulled at roughly one in every few booster boxes, and almost nobody protected them at the time.',
+      title: 'Gold Star Pikachu (EX Holon Phantoms #104)',
+      why: 'About €119,000, the most valuable card in our vintage catalogue — just ahead of a PSA 10 1st Edition Base Set Charizard at about €116,000, with the Gold Star Mewtwo from the same set near €92,000. Gold Stars were pulled at roughly one in every few booster boxes, and almost nobody protected them at the time.',
     },
     entryLevel: {
       title: 'Unlimited-era commons, uncommons and played holos',

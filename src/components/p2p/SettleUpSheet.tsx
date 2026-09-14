@@ -41,6 +41,7 @@ import type { P2PCarrier, P2PPaymentRail, P2PDeliveryAddress } from '@/api/p2pAp
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import { logger } from '@/lib/logger';
 import { useTranslation } from 'react-i18next';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 /** Same shape `OfferAmountSheet` takes — an index signature of `unknown`, not
  *  `string`, because the theme's `brand` value is a nested object and a
@@ -183,7 +184,7 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
       // Surface the server's message — "US addresses need a state" is
       // actionable in a way a generic failure is not.
       logger.error('[settleUp] address save failed:', e);
-      showToast({ message: (e as Error)?.message || "Couldn't save that", type: 'error' });
+      showToast({ message: userErrorMessage(e, "Couldn't save that"), type: 'error' });
     } finally {
       setSavingAddress(false);
     }

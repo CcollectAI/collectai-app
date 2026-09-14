@@ -72,9 +72,9 @@ export const APP_HELP: HelpTopic[] = [
           'It moves when the market moves, not only when you add something. A quiet week can still change it.',
       },
       {
-        action: 'Tap an item to see the range behind its number.',
+        action: 'Tap an item to see its value and where that number came from.',
         detail:
-          'We show a low, middle and high figure. The middle is our best estimate; the width between low and high is how much collectors actually disagree about that item right now. A narrow range means a liquid, well-traded thing. A wide one means treat the number with care.',
+          'A small label says where the value comes from — "Market estimate", "App estimate" or "Your estimate" — so you know how much weight to put on it.',
       },
       {
         action: 'Some items show no price at all, and that is deliberate.',
@@ -195,7 +195,7 @@ export const APP_HELP: HelpTopic[] = [
       {
         action: 'Export your collection first: Settings → Download full inventory as CSV.',
         detail:
-          'You get a normal spreadsheet file you can keep, open in Excel or Numbers, or import somewhere else. The file is built on your device and is not stored on our servers. There is a second export on the Collection tab if you only want the items you have selected.',
+          'You get a normal spreadsheet file you can keep, open in Excel or Numbers, or import somewhere else. We build it from your account and your phone saves or shares it. Your Items list also has an Export button.',
       },
       {
         action: 'To delete the account, open Settings and scroll to Delete Account.',
@@ -216,27 +216,22 @@ export const APP_HELP: HelpTopic[] = [
     id: 'settings-tour',
     title: 'What can I change in Settings?',
     summary:
-      'Currency, appearance and language, what you get notified about, your marketplace connections, and how you get paid.',
+      'Currency, region and language, what you get notified about, and how you get paid.',
     keywords: [
       'settings', 'preferences', 'options', 'currency', 'euro', 'dollar',
       'dark mode', 'theme', 'language', 'notifications', 'push', 'alerts off',
-      'connections', 'ebay', 'payment', 'paypal', 'tax', 'bug', 'tips',
+      'payment', 'paypal', 'tax', 'bug', 'tips',
     ],
     steps: [
       {
-        action: 'Currency and appearance: Settings → Appearance.',
+        action: 'Currency and region: Settings → Region & Currency.',
         detail:
-          'Change your currency and every price in the app converts, including your collection total. Dark mode and language live here too.',
+          'Change your currency and every price in the app converts, including your collection total. Language and display options are under Preferences.',
       },
       {
         action: 'Notifications: choose what is worth interrupting you for.',
         detail:
-          'Price drops and new listings are separate switches, so you can keep the alert you set a target price for and silence the rest.',
-      },
-      {
-        action: 'Marketplace connections: link the sites you already sell on.',
-        detail:
-          'This is also where you disconnect one — disconnecting stops us reading that account, it does not touch anything you have listed there.',
+          'Each kind is its own switch — Price alerts, Target Hit, Portfolio value, Messages and more — so you can keep the alert you set a target price for and silence the rest.',
       },
       {
         action: 'Payment handles: how a buyer pays you.',
@@ -244,9 +239,9 @@ export const APP_HELP: HelpTopic[] = [
           'Sparrow never holds your money. These are the handles we show a buyer so the two of you can settle directly, which is why they are yours to set and change.',
       },
       {
-        action: 'Further down: Tax reporting, the Condition guide, Report a bug, and Reset tips.',
+        action: 'Further down: Sales & tax reporting, the Condition guide, Report a bug, and Reset Feature Tips.',
         detail:
-          '"Reset tips" brings back the little first-time hints if you dismissed them and want them again.',
+          '"Reset Feature Tips" brings back the little first-time hints if you dismissed them and want them again.',
       },
     ],
     footnote:
@@ -269,7 +264,7 @@ export const APP_HELP: HelpTopic[] = [
       {
         action: 'Send an offer, or message the seller first if you have questions.',
         detail:
-          'You can offer less than the asking price. The seller can accept it, turn it down, or send a counter — you will see "Counter sent" on the bid, and you can accept or decline that in turn.',
+          'You can offer less than the asking price. The seller can accept it, turn it down, or send a counter — the bid then reads "Seller countered — your call", and you can accept or decline that in turn.',
       },
       {
         action: 'Once a price is agreed, arrange payment and delivery between yourselves.',
@@ -277,13 +272,13 @@ export const APP_HELP: HelpTopic[] = [
           'Add your delivery address when asked, then pay the seller directly by whatever method you both agree. Sparrow shows the seller\'s payment handles; it never takes the money.',
       },
       {
-        action: 'Tap "Mark as received" when it arrives, then rate the seller.',
+        action: 'Tap "Mark received" (on the trade page: "I received it") when it arrives, then rate the seller.',
         detail:
           'Both sides confirm, and both sides rate. Ratings are what make the next trade safer for everyone.',
       },
     ],
     footnote:
-      'Say it plainly: there is no buyer protection, no escrow and no checkout. Sparrow never handles money, so a payment method with its own dispute route protects you and a bank transfer to a stranger does not. Full terms are in Marketplace Terms, linked from Settings.',
+      'Say it plainly: there is no buyer protection, no escrow and no checkout. Sparrow never handles money, so a payment method with its own dispute route protects you and a bank transfer to a stranger does not. Full terms are in Marketplace Terms, linked from the Market tab.',
   },
   {
     id: 'get-paid-and-ship',
@@ -307,11 +302,11 @@ export const APP_HELP: HelpTopic[] = [
       {
         action: 'Book the parcel and add the tracking code.',
         detail:
-          'Use "Book the parcel" for a carrier, then paste the tracking code into the bid so the buyer can follow it.',
+          'Open the trade and tap "Ship it" to pick a carrier, then add the tracking code so the buyer can follow it.',
       },
       {
-        action: 'Tap "Mark as sent", and rate the buyer once they confirm.',
-        detail: 'The buyer taps "Mark as received" at their end, and then you can rate each other.',
+        action: 'Tap "Mark sent" (on the trade page: "I sent it"), and rate the buyer once they confirm.',
+        detail: 'The buyer taps "Mark received" at their end, and then you can rate each other.',
       },
     ],
     footnote:
@@ -328,9 +323,9 @@ export const APP_HELP: HelpTopic[] = [
     ],
     steps: [
       {
-        action: 'Open a category page and choose "Sets to complete".',
+        action: 'Open a category page and choose "Finish a set".',
         detail:
-          'It groups your collections into Almost there, Making progress and Starting out, based on how much of each set you own.',
+          'It groups your collections into Almost there, Making progress and Getting started, based on how much of each set you own.',
       },
       {
         action: 'Tap a set to see what you already have.',
@@ -344,20 +339,20 @@ export const APP_HELP: HelpTopic[] = [
     id: 'deal-agent',
     title: 'Can Sparrow watch the market for me?',
     summary:
-      'Yes — a deal search runs continuously across marketplaces and tells you when something matches. Pro feature.',
+      'Yes — a deal search checks marketplaces every half hour and tells you when something matches. Pro feature.',
     keywords: [
       'deal', 'deals', 'agent', 'hunt', 'search', 'mandate', 'automatic', 'bot',
       'find deals', 'bargain', 'under', 'budget', 'snipe',
     ],
     steps: [
       {
-        action: 'Open Deal Agent from the Watchlist tab, then "New Deal Search".',
-        detail: 'It is the banner directly under the watchlist header.',
+        action: 'Open your Watchlist from its card on Portfolio, tap the Deal Agent banner, then "Watch".',
+        detail: 'The banner sits directly under the watchlist header.',
       },
       {
-        action: 'Give it a name, a category and a maximum price per item.',
+        action: 'Type what you are looking for, pick a category and set a maximum price per item.',
         detail:
-          'Name it for yourself ("Pokemon grails under 200"). The maximum price is the filter that does the real work.',
+          'What you type is the search sent to marketplaces, so write it the way a listing would ("Charizard Base Set holo"), not a nickname. The maximum price is the filter that does the real work.',
       },
       {
         action: 'Optionally link it to a catalogue item with "Find this item in the catalogue".',
@@ -374,18 +369,18 @@ export const APP_HELP: HelpTopic[] = [
   },
   {
     id: 'no-price-yet',
-    title: 'Why does my item say "No price yet"?',
+    title: 'Why does my item say "Not priced yet"?',
     summary:
       'Because we have no sold prices for that exact thing — and we would rather say so than show you a number we made up.',
     keywords: [
-      'no price', 'zero', 'no value', 'missing price', 'not valued', 'unpriced',
+      'no price', 'no price yet', 'not priced', 'zero', 'no value', 'missing price', 'not valued', 'unpriced',
       'blank', 'why', 'wrong value', 'estimate',
     ],
     steps: [
       {
-        action: 'Check the item is matched to the right catalogue entry.',
+        action: 'Link the item to the catalogue if it was never matched.',
         detail:
-          'Open the item and confirm the catalogue match. A mismatched or unmatched item has nothing to price against.',
+          'Open the item and use "Fill in details from our catalogue". An item with no catalogue match has nothing to price against.',
       },
       {
         action: 'Expect gaps in categories that trade rarely.',
@@ -409,9 +404,12 @@ export const APP_HELP: HelpTopic[] = [
       {
         action: 'Find the thing you want, and tap the eye icon.',
         detail:
-          'The eye is the watchlist and asks for a target price. The heart just saves something you like — no target, no alerts.',
+          'The eye adds it to your watchlist with a starting target: the listing’s price, or our estimate for a catalogue item. The heart just saves something you like — no target, no alerts.',
       },
-      { action: 'Set the price you would actually pay.' },
+      {
+        action: 'Change the target to the price you would actually pay.',
+        detail: 'Open your Watchlist from its card on Portfolio and edit the target on that item.',
+      },
       {
         action: 'We check the market and send a notification when it lands.',
         detail:
@@ -429,7 +427,7 @@ export const APP_HELP: HelpTopic[] = [
       {
         action: 'Results are grouped by what they are.',
         detail:
-          'Your own items come first, then the catalogue, then people and events. What you collect ranks higher — following your categories makes results better.',
+          'Help answers come first, then your own items, then the catalogue, people and events. The categories you picked when you joined rank higher.',
       },
       {
         action: 'Nothing typed? Browse by category instead.',
@@ -450,12 +448,12 @@ export const APP_HELP: HelpTopic[] = [
       {
         action: 'Pro adds the analysis on top.',
         detail:
-          'Advanced analytics, market movers, set completion tracking, condition grading, dossier exports, and no cap on watchlist slots or daily alerts.',
+          'Advanced analytics, market movers, set completion tracking, deal searches, and no cap on watchlist slots or daily alerts.',
       },
       {
         action: 'Manage or cancel it from Settings → Manage Subscription.',
         detail:
-          'Billing runs through the App Store, so your plan is cancelled there and keeps working until the period you have paid for runs out.',
+          'Billing runs through the App Store on iPhone and Google Play on Android, so your plan is cancelled there and keeps working until the period you have paid for runs out.',
       },
     ],
   },
@@ -469,14 +467,14 @@ export const APP_HELP: HelpTopic[] = [
       {
         action: 'Correct the name, category or condition.',
         detail:
-          'Category matters most: it decides which market we price the item against, so a miscategorised item will keep showing an odd value until it is fixed.',
+          'Category matters most: together with the catalogue match it decides which price the item is looked up against, so a miscategorised item can show an odd value, or none, until it is fixed.',
       },
       {
         action: 'Save. Your version wins from then on.',
       },
     ],
     footnote:
-      'If the valuation still looks wrong after fixing the category, it usually means we have too few sold comps for that exact thing.',
+      'If the value still looks wrong, the item may be matched to the wrong catalogue entry, or we may have too few sold prices for that exact thing. You can always set a value yourself.',
   },
 ];
 

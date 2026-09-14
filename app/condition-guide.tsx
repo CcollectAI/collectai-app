@@ -298,9 +298,11 @@ function ConditionGuideScreen() {
               {descriptions[grade.abbreviation] ?? CATEGORY_DESCRIPTIONS.default[grade.abbreviation]}
             </Text>
 
-            {/* Price impact */}
+            {/* Price impact. A neutral tag, not a trend arrow: the arrow was
+                trending-down on every card, so Mint's "100% of market value"
+                read as a loss (walked on Android 2026-09-14). */}
             <View style={[styles.priceImpactRow, { backgroundColor: colors.background }]}>
-              <Ionicons name="trending-down-outline" size={14} color={colors.muted} />
+              <Ionicons name="pricetag-outline" size={14} color={colors.muted} />
               <Text style={[styles.priceImpactText, { color: colors.muted }]}>
                 {grade.priceImpact}
               </Text>

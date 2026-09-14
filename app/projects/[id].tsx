@@ -38,6 +38,7 @@ import { ProjectNotesCard } from "@/components/projects/ProjectNotesCard";
 import { PaintRecipesCard } from "@/components/projects/PaintRecipesCard";
 import { safeGoBack } from '@/lib/goBack';
 import { useTranslation } from 'react-i18next';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 const PAINT_CATEGORIES = ["warhammer", "gunpla", "scale_models"] as const;
 
@@ -120,7 +121,7 @@ function ProjectDetailScreen() {
       setError(null);
     } catch (err: unknown) {
       logger.error("[ProjectDetail] loadProject error:", err);
-      setError((err as Error)?.message || "Failed to load project");
+      setError(userErrorMessage(err, "Failed to load project"));
     } finally {
       setLoading(false);
     }
@@ -144,7 +145,7 @@ function ProjectDetailScreen() {
       await dataProvider.setBuildPaintProgress(project.id, pendingPercent, newStatus);
       await loadProject();
     } catch (err: unknown) {
-      showToast({ message: (err as Error)?.message || "Failed to save progress", type: "error" });
+      showToast({ message: userErrorMessage(err, "Failed to save progress", "Projects"), type: "error" });
     } finally {
       setSavingProgress(false);
     }
@@ -157,7 +158,7 @@ function ProjectDetailScreen() {
       await dataProvider.markBuildPaintProjectComplete(project.id, !project.isCompleted);
       await loadProject();
     } catch (err: unknown) {
-      showToast({ message: (err as Error)?.message || "Failed to toggle complete", type: "error" });
+      showToast({ message: userErrorMessage(err, "Failed to toggle complete", "Projects"), type: "error" });
     } finally {
       setTogglingComplete(false);
     }
@@ -172,7 +173,7 @@ function ProjectDetailScreen() {
       const stepsData = await dataProvider.listBuildPaintSteps(project.id);
       setSteps(stepsData);
     } catch (err: unknown) {
-      showToast({ message: (err as Error)?.message || "Failed to add step", type: "error" });
+      showToast({ message: userErrorMessage(err, "Failed to add step", "Projects"), type: "error" });
     } finally {
       setAddingStep(false);
     }
@@ -184,7 +185,7 @@ function ProjectDetailScreen() {
       const stepsData = await dataProvider.listBuildPaintSteps(projectId);
       setSteps(stepsData);
     } catch (err: unknown) {
-      showToast({ message: (err as Error)?.message || "Failed to toggle step", type: "error" });
+      showToast({ message: userErrorMessage(err, "Failed to toggle step", "Projects"), type: "error" });
     }
   };
 
@@ -197,7 +198,7 @@ function ProjectDetailScreen() {
       const notesData = await dataProvider.listBuildPaintNotes(project.id);
       setNotes(notesData);
     } catch (err: unknown) {
-      showToast({ message: (err as Error)?.message || "Failed to add note", type: "error" });
+      showToast({ message: userErrorMessage(err, "Failed to add note", "Projects"), type: "error" });
     } finally {
       setAddingNote(false);
     }
@@ -211,7 +212,7 @@ function ProjectDetailScreen() {
       const stepsData = await dataProvider.listBuildPaintSteps(project.id);
       setSteps(stepsData);
     } catch (err: unknown) {
-      showToast({ message: (err as Error)?.message || "Failed to apply template", type: "error" });
+      showToast({ message: userErrorMessage(err, "Failed to apply template", "Projects"), type: "error" });
     } finally {
       setApplyingTemplate(false);
     }
@@ -226,7 +227,7 @@ function ProjectDetailScreen() {
         setPaintRecipes(recipes);
         showToast({ message: "Paint recipes saved", type: "success" });
       } catch (err: unknown) {
-        showToast({ message: (err as Error)?.message || "Failed to save recipes", type: "error" });
+        showToast({ message: userErrorMessage(err, "Failed to save recipes", "Projects"), type: "error" });
       } finally {
         setSavingRecipes(false);
       }

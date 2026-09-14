@@ -34,6 +34,7 @@ import { getPendingReferralCode, clearPendingReferralCode } from '@/lib/referral
 import { GradientBackground } from '@/components/auth/GradientBackground';
 import { AuthTextInput } from '@/components/auth/AuthTextInput';
 import { fonts } from '@/theme/tokens';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 function RegisterScreen() {
   const router = useRouter();
@@ -235,7 +236,7 @@ function RegisterScreen() {
       }
       router.replace('/(auth)/onboarding');
     } catch (e: unknown) {
-      showToast({ message: e instanceof Error ? e.message : t('auth.errors.sign_up_failed'), type: 'error' });
+      showToast({ message: userErrorMessage(e, t('auth.errors.sign_up_failed'), 'Register'), type: 'error' });
     } finally {
       setLoading(false);
     }

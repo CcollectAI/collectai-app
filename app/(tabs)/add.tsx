@@ -32,6 +32,7 @@ import { HeaderActions } from '@/components/HeaderActions';
 import { TabBackButton } from '@/components/TabBackButton';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 /**
  * Add screen:
@@ -194,7 +195,7 @@ const handleImportCollectionFile = async () => {
         total: 0,
         inserted: 0,
         skipped: 0,
-        error: e instanceof Error ? e.message : 'Import failed',
+        error: userErrorMessage(e, 'Import failed'),
       });
     }
   };

@@ -37,6 +37,7 @@ import { BarcodeModeSelector } from '@/components/barcode/BarcodeModeSelector';
 import { PermissionScreen } from '@/components/quickscan/PermissionScreen';
 import { safeGoBack } from '@/lib/goBack';
 import { useTranslation } from 'react-i18next';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 /** Barcode types accepted by the scanner */
 const SUPPORTED_BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'isbn'] as const;
@@ -429,7 +430,7 @@ function BarcodeScanScreen() {
     } catch (err) {
       logger.error('[BarcodeScan] add to watchlist failed:', err);
       showToast({
-        message: (err as Error)?.message || 'Could not add to your watchlist',
+        message: userErrorMessage(err, 'Could not add to your watchlist'),
         type: 'error',
       });
     } finally {

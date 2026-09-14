@@ -13,6 +13,7 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert, Linking } from 'react-native';
 import { DossierReportSection } from '@/components/DossierReportSection';
+import { ApiError } from '@/api/httpClient';
 
 jest.mock('@/hooks/useAppTheme', () => ({
   useAppTheme: () => ({ colors: { text: '#000', muted: '#888', border: '#ddd', accent: '#40C9C6', card: '#fff' } }),
@@ -54,12 +55,27 @@ describe('dossier export', () => {
     expect(openURL).not.toHaveBeenCalled();
   });
 
-  it('tells the member when the export fails, rather than logging silently', async () => {
-    mockFetchHtml.mockRejectedValue(new Error('Export failed (403)'));
+  it('tells the member WHY the export failed, rather than logging silently', async () => {
+    // 2026-09-14: this used to assert the member saw "403". A status code is not
+    // a reason — the plan gate writes one, and that sentence is what reaches them.
+    mockFetchHtml.mockRejectedValue(
+      new ApiError('GET', '/dossier/x/export', 403, 'This feature requires pro plan or higher. Your current plan: free.'),
+    );
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     const { getByLabelText } = render(<DossierReportSection {...props} />);
     fireEvent.press(getByLabelText(/export/i));
     await waitFor(() => expect(alert).toHaveBeenCalled());
-    expect(String(alert.mock.calls[0][1])).toMatch(/403/);
+    const body = String(alert.mock.calls[0][1]);
+    expect(body).toMatch(/requires pro plan/);
+    expect(body).not.toMatch(/403|GET|\/dossier/);
+  });
+
+  it('says a plain sentence on a server failure, never the status line', async () => {
+    mockFetchHtml.mockRejectedValue(new ApiError('GET', '/dossier/x/export', 500, 'GET /dossier/x/export failed'));
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const { getByLabelText } = render(<DossierReportSection {...props} />);
+    fireEvent.press(getByLabelText(/export/i));
+    await waitFor(() => expect(alert).toHaveBeenCalled());
+    expect(String(alert.mock.calls[0][1])).toBe('Could not build the report. Please try again.');
   });
 });

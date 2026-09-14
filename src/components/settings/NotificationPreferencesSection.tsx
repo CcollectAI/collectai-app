@@ -28,6 +28,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { featureFlags } from '@/config/featureFlags';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 /** Exactly the 8 keys the server accepts. */
 type NotificationPrefs = {
@@ -70,7 +71,13 @@ const TOGGLE_ITEMS: { key: keyof NotificationPrefs; label: string; hint: string 
   { key: 'value_changes', label: 'Portfolio value', hint: 'Summaries when your collection value moves' },
   { key: 'item_value_changes', label: 'Item value changes', hint: 'When a single item you own changes in value' },
   { key: 'chat_messages', label: 'Messages', hint: 'New direct messages from other collectors' },
-  { key: 'connection_requests', label: 'Connection requests', hint: 'When someone asks to connect with you' },
+  // The connection_requests row is NOT here either (2026-09-14). Nothing sends
+  // that notification: `rpc_request_dm_v1` writes the request and notifies no
+  // one, no trigger exists on the chat/DM tables, and
+  // `push_service.notify_connection_request` has no caller but its own test.
+  // Prod held 46 DM requests and zero connection notifications, ever. The key
+  // stays in NotificationPrefs/DEFAULT_PREFS so stored rows are not orphaned —
+  // restore the toggle in the same change that adds a sender.
   { key: 'event_announcements', label: 'Event announcements', hint: 'Updates from events you have RSVP\'d to' },
   // Restored in place (between item_value_changes and chat_messages is where it
   // read) the moment the worker is scheduled again.
@@ -120,7 +127,7 @@ function NotificationPreferencesSectionInner() {
       logger.error('[Settings] Failed to save notification preference:', e);
       setPrefs(previous);
       showToast({
-        message: (e as Error)?.message || 'Could not save that notification setting',
+        message: userErrorMessage(e, 'Could not save that notification setting'),
         type: 'error',
       });
     } finally {

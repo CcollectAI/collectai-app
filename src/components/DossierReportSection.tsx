@@ -25,6 +25,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
 import { collectorsApi } from "@/api/collectorsApi";
 import logger from "@/utils/logger";
+import { userErrorMessage } from "@/lib/userErrorMessage";
 
 // ── Exported types ──────────────────────────────────────────────────────
 
@@ -190,7 +191,7 @@ export const DossierReportSection = React.memo(function DossierReportSection({
                 logger.error("[ItemDetail] dossier export failed:", err);
                 Alert.alert(
                   "Export failed",
-                  (err as Error)?.message || "Could not build the report. Please try again.",
+                  userErrorMessage(err, "Could not build the report. Please try again."),
                 );
               } finally {
                 setExporting(false);

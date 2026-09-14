@@ -37,6 +37,7 @@ import { useAuthContext } from '@/providers/useAuthContext';
 import { setRecoveryPending } from '@/auth/recoveryState';
 import { fonts } from '@/theme/tokens';
 import { useTranslation } from 'react-i18next';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 function ResetPasswordScreen() {
   const { t } = useTranslation();
@@ -78,7 +79,7 @@ function ResetPasswordScreen() {
       router.replace('/(tabs)');
     } catch (e: unknown) {
       showToast({
-        message: e instanceof Error ? e.message : 'Could not update password. Please try again.',
+        message: userErrorMessage(e, 'Could not update password. Please try again.', 'ResetPassword'),
         type: 'error',
       });
     } finally {

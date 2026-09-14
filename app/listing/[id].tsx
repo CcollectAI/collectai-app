@@ -47,6 +47,7 @@ import { collectorsApi } from "@/api/collectorsApi";
 import { categoryDisplayName } from "@/constants/categories";
 import { radius, text as textToken, fontWeight } from "@/theme/tokens";
 import logger from "@/utils/logger";
+import { userErrorMessage } from "@/lib/userErrorMessage";
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -168,7 +169,7 @@ function ListingDetailScreen() {
         // with the number they typed.
         logger.error("[listing] offer failed:", e);
         showToast({
-          message: (e as Error)?.message || "Could not send the offer",
+          message: userErrorMessage(e, "Could not send the offer"),
           type: "error",
         });
       } finally {
@@ -272,9 +273,9 @@ function ListingDetailScreen() {
       retry();
     } catch (e) {
       logger.error("[listing] price update failed:", e);
-      const detail = e instanceof Error && e.message ? ` (${e.message})` : "";
+      const reason = userErrorMessage(e, "");
       showToast({
-        message: `Couldn't update the price${detail}`,
+        message: `Couldn't update the price${reason ? ` (${reason})` : ""}`,
         type: "error",
       });
     } finally {
@@ -529,7 +530,13 @@ function ListingDetailScreen() {
             </Text>
           ) : (
             <Text style={[styles.allIn, { color: colors.muted }]}>
-              Shipping not stated — ask the seller
+              {/* "Ask the seller" only while Message seller is on screen: it
+                  renders for a buyer (`!is_mine`) on a live listing (`!isGone`),
+                  below. A sold listing kept inviting a question nobody could
+                  send, and the seller's own listing told them to ask themselves
+                  (Android walk 2026-09-14; "Copy is part of the control",
+                  docs/ui-playbook.md). */}
+              {listing.is_mine || isGone ? "Shipping not stated" : "Shipping not stated — ask the seller"}
             </Text>
           )}
 

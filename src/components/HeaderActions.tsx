@@ -52,6 +52,7 @@ import { useAuthContext } from '@/providers/useAuthContext';
 import { InboxHeaderButton } from '@/components/InboxHeaderButton';
 import { getNotificationHistory } from '@/api/notificationsApi';
 import { logger } from '@/lib/logger';
+import { createSharedCount } from '@/lib/sharedCount';
 
 /**
  * One shared count for every mounted cluster. Module scope on purpose: two
@@ -59,7 +60,15 @@ import { logger } from '@/lib/logger';
  * should not each pay for the same number.
  */
 const UNREAD_TTL_MS = 60_000;
-const unreadCache = { value: 0, at: 0, userId: null as string | null };
+// Shared, with ONE in-flight request (2026-09-14). The old cache was written
+// only when a response landed, so five tab headers mounting together sent five
+// requests before any of them could fill it — see src/lib/sharedCount.ts.
+const notificationCount = createSharedCount(
+  () => getNotificationHistory({ limit: 1, offset: 0 }).then((d) => d.unread_count),
+  UNREAD_TTL_MS,
+  // error, not warn: warn is stripped in release builds.
+  (err) => logger.error('[HeaderActions] notification count failed:', err),
+);
 
 type Props = {
   /** Glyph size. 22 matches every existing header; the root stack passes none. */
@@ -86,33 +95,16 @@ export const HeaderActions: React.FC<Props> = ({ size = 22, color }) => {
   // honest and costs one request a minute at worst.
   // (CLAUDE.md: measure the cost you add rather than assuming it is small.)
   const { user } = useAuthContext();
-  const [unread, setUnread] = useState(unreadCache.userId === user?.id ? unreadCache.value : 0);
+  // Whose count is held matters as much as how old it is: module scope survives
+  // a sign-out, so the shared count is keyed by user id.
+  const userId = user?.id ?? null;
+  const [unread, setUnread] = useState(() => notificationCount.peek(userId));
   useEffect(() => {
-    let cancelled = false;
-    // Whose count is cached matters as much as how old it is: module scope
-    // survives a sign-out, so without this the next account would wear the
-    // previous one's badge for up to a minute.
-    if (unreadCache.userId !== (user?.id ?? null)) {
-      unreadCache.value = 0;
-      unreadCache.at = 0;
-      unreadCache.userId = user?.id ?? null;
-      setUnread(0);
-    }
-    if (!user?.id) return;
-    if (Date.now() - unreadCache.at < UNREAD_TTL_MS) {
-      setUnread(unreadCache.value);
-      return;
-    }
-    getNotificationHistory({ limit: 1, offset: 0 })
-      .then((data) => {
-        unreadCache.value = data.unread_count;
-        unreadCache.at = Date.now();
-        unreadCache.userId = user?.id ?? null;
-        if (!cancelled) setUnread(data.unread_count);
-      })
-      .catch((err) => logger.warn('[HeaderActions] notification count failed:', err));
-    return () => { cancelled = true; };
-  }, [user?.id]);
+    const unsubscribe = notificationCount.subscribe(setUnread);
+    setUnread(notificationCount.peek(userId));
+    void notificationCount.refreshIfStale(userId);
+    return unsubscribe;
+  }, [userId]);
 
   // The cluster is on EVERY screen, including the three screens it navigates
   // to — so on Settings the gear pushed **another copy of Settings**. Found on

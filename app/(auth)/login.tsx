@@ -46,6 +46,7 @@ import { GradientBackground } from '@/components/auth/GradientBackground';
 import { AuthTextInput } from '@/components/auth/AuthTextInput';
 import { fonts } from '@/theme/tokens';
 import { SOCIAL_LOGIN_ENABLED } from '@/config/featureFlags';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -99,7 +100,7 @@ function LoginScreen() {
             router.replace('/(tabs)');
           })
           .catch((e: unknown) => {
-            showToast({ message: e instanceof Error ? e.message : t('auth.errors.google_sign_in_failed'), type: 'error' });
+            showToast({ message: userErrorMessage(e, t('auth.errors.google_sign_in_failed'), 'Login'), type: 'error' });
           })
           .finally(() => setLoading(false));
       }
@@ -126,7 +127,7 @@ function LoginScreen() {
       // mistaken for "the button does nothing".
       console.error('[apple-signin] AppleAuthentication.signInAsync failed', e);
       showToast({
-        message: `Apple sign-in unavailable: ${e instanceof Error ? e.message : 'unknown error'}`,
+        message: `Apple sign-in unavailable: ${userErrorMessage(e, 'unknown error')}`,
         type: 'error',
       });
       return;
@@ -158,7 +159,7 @@ function LoginScreen() {
       router.replace('/(tabs)');
     } catch (e: unknown) {
       console.error('[apple-signin] unexpected error after credential exchange', e);
-      showToast({ message: e instanceof Error ? e.message : t('auth.errors.apple_sign_in_failed'), type: 'error' });
+      showToast({ message: userErrorMessage(e, t('auth.errors.apple_sign_in_failed')), type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -182,7 +183,7 @@ function LoginScreen() {
       track({ name: 'user_logged_in', properties: { method: 'email' } });
       router.replace('/(tabs)');
     } catch (e: unknown) {
-      showToast({ message: e instanceof Error ? e.message : t('auth.errors.sign_in_failed'), type: 'error' });
+      showToast({ message: userErrorMessage(e, t('auth.errors.sign_in_failed'), 'Login'), type: 'error' });
     } finally {
       setLoading(false);
     }

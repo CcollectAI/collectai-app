@@ -50,6 +50,7 @@ import { getCategoryFields } from '@/constants/categoryFields';
 import { dmyToIso } from '@/lib/eventDate';
 import { getCurrencySymbol } from '@/lib/format';
 import { withTimeout, TimeoutError } from '@/lib/withTimeout';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 // supabase-js ships NO per-request timeout, and both auth reads below sit
 // BETWEEN setSaveState("saving") and any state that clears it. A stalled auth
@@ -330,7 +331,7 @@ const ManualAddScreen: React.FC = () => {
         logger.error(
           e instanceof TimeoutError
             ? `[ManualAdd] auth resolution timed out after ${AUTH_RESOLVE_TIMEOUT_MS}ms`
-            : `[ManualAdd] auth resolution failed: ${e instanceof Error ? e.message : String(e)}`,
+            : `[ManualAdd] auth resolution failed: ${e instanceof Error ? e.message : String(e)}`, // raw-error-ok: log line
         );
       }
       if (!userId) {
@@ -466,9 +467,11 @@ const ManualAddScreen: React.FC = () => {
       );
 
       if (error) {
-        logger.warn("[ManualAdd] insert error:", error.message);
+        // error, not warn: warn is stripped in release, and the raw text no
+        // longer reaches the screen, so this line is the only place it lives.
+        logger.error("[ManualAdd] insert error:", error.message);
         setSaveState("error");
-        setErrorText(error.message || "Couldn't save item — check your connection and try again.");
+        setErrorText(userErrorMessage(error, "Couldn't save item — check your connection and try again."));
         fireHaptic(HapticIntent.ALERT_TRIGGERED);
         return;
       }
@@ -503,13 +506,13 @@ const ManualAddScreen: React.FC = () => {
       logger.error(
         isTimeout
           ? `[ManualAdd] save timed out: ${err.label ?? ''}`
-          : `[ManualAdd] unexpected error: ${err?.message ?? String(err)}`,
+          : `[ManualAdd] unexpected error: ${err?.message ?? String(err)}`, // raw-error-ok: log line
       );
       setSaveState("error");
       setErrorText(
         isTimeout
           ? "Saving is taking too long — check your connection and try again. Your details are kept."
-          : (err?.message || "Something unexpected happened — try saving again."),
+          : userErrorMessage(err, "Something unexpected happened — try saving again."),
       );
       fireHaptic(HapticIntent.ALERT_TRIGGERED);
     } finally {

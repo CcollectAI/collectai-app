@@ -54,7 +54,12 @@ export const BarcodeModeSelector = React.memo(function BarcodeModeSelector({
               borderColor: colors.border,
               color: colors.text,
             }]}
-            placeholder="978-0-123456-78-9"
+            // Digits only, like the keypad. "978-0-123456-78-9" (17 monospace
+            // chars) was wider than the input beside Look Up and wrapped, its
+            // last digit clipped (Android walk 2026-09-14) — and number-pad has
+            // no hyphen key, so it showed a format nobody could type. 13 digits
+            // measured on a 411dp device: one line with room to spare.
+            placeholder="9780123456789"
             placeholderTextColor={colors.muted}
             value={manualIsbn}
             onChangeText={onChangeIsbn}

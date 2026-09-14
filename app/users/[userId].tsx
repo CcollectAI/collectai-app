@@ -41,6 +41,7 @@ import { UserAchievementsSection } from '@/components/users/UserAchievementsSect
 import { UserCategoriesSection } from '@/components/users/UserCategoriesSection';
 import { UserCollectionPreview } from '@/components/users/UserCollectionPreview';
 import { safeGoBack } from '@/lib/goBack';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 type DmStatusType = 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined';
 
@@ -164,7 +165,7 @@ function UserProfileScreen() {
         fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
         showToast({ message: 'Unblocked', type: 'success' });
       } catch (err: unknown) {
-        showToast({ message: err instanceof Error ? err.message : 'Failed to unblock user', type: 'error' });
+        showToast({ message: userErrorMessage(err, 'Failed to unblock user', 'PublicProfile'), type: 'error' });
       }
     } else {
       // Block
@@ -184,7 +185,7 @@ function UserProfileScreen() {
                 fireHaptic(HapticIntent.ALERT_TRIGGERED);
                 showToast({ message: 'Blocked', type: 'success' });
               } catch (err: unknown) {
-                showToast({ message: err instanceof Error ? err.message : 'Failed to block user', type: 'error' });
+                showToast({ message: userErrorMessage(err, 'Failed to block user', 'PublicProfile'), type: 'error' });
               }
             },
           },

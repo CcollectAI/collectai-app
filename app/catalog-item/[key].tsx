@@ -40,6 +40,7 @@ import { openAffiliateUrl } from '@/utils/affiliateHelpers';
 import { colors as tokens } from '@/theme/tokens';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import logger from '@/utils/logger';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 import type { CatalogItemData } from '@/components/CatalogBrowseSection';
 import ScreenHeader from '@/components/ScreenHeader';
 import { useTranslation } from 'react-i18next';
@@ -216,10 +217,11 @@ function CatalogItemMuseumScreen() {
       });
       showToast({ message: `${title} added to watchlist`, type: 'success' });
     } catch (e) {
-      // Surface the real failure (status + detail) — a generic message hides
-      // whether this is auth, network, or a server error.
-      const detail = e instanceof Error && e.message ? ` (${e.message})` : '';
-      showToast({ message: `Couldn't add to watchlist — try again${detail}`, type: 'error' });
+      // The status and path go to the log; the member gets the server's own
+      // sentence when it wrote one (ui-playbook: err.message is for the log).
+      logger.error('[CatalogItem] add to watchlist failed:', e);
+      const reason = userErrorMessage(e, '');
+      showToast({ message: `Couldn't add to watchlist — try again${reason ? ` (${reason})` : ''}`, type: 'error' });
     } finally {
       setAdding(false);
     }

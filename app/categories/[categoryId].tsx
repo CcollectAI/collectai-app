@@ -47,6 +47,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { guideFor } from '@/data/collectingGuides';
 import logger from '@/utils/logger';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 import { logAuthState, logLoad, startTimer } from '@/utils/diagnostics';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { useToast } from '@/components/Toast';
@@ -162,10 +163,10 @@ function CategoryStoreScreen() {
       // Revert on error
       setFollowing(!newFollowing);
       logger.error('[Category] Follow toggle failed', err);
-      // Surface the real failure (status + detail) — a generic message hides
-      // whether this is auth, network, or a server error.
-      const detail = err instanceof Error && err.message ? ` (${err.message})` : '';
-      showToast({ message: `Could not update follow status. Please try again.${detail}`, type: 'error' });
+      // The status and path are in the log line above; the member gets the
+      // server's own sentence when it wrote one (err.message is for the log).
+      const reason = userErrorMessage(err, '');
+      showToast({ message: `Could not update follow status. Please try again.${reason ? ` (${reason})` : ''}`, type: 'error' });
     }
   }, [following, categoryId, showToast]);
 

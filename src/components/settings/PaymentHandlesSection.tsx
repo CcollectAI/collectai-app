@@ -37,6 +37,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import type { P2PPaymentRail } from '@/api/p2pApi';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import { logger } from '@/lib/logger';
+import { userErrorMessage } from '@/lib/userErrorMessage';
 
 export function PaymentHandlesSection() {
   const { colors } = useAppTheme();
@@ -95,7 +96,7 @@ export function PaymentHandlesSection() {
         // reason ("characters we cannot put in a link"), which is actionable —
         // a generic failure toast is not.
         logger.error('[paymentHandles] save failed:', e);
-        showToast({ message: (e as Error)?.message || "Couldn't save that", type: 'error' });
+        showToast({ message: userErrorMessage(e, "Couldn't save that"), type: 'error' });
       } finally {
         setSavingKey(null);
       }
