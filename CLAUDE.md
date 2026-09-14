@@ -2149,6 +2149,8 @@ Android walk". The ones worth remembering here:
 - **Raw exception text on three screens** (09-14): Analytics read
   "categories: Request timed out after 15000ms". `err.message` is for the log;
   now translated sentences. The timeout was the emulator (~50 ms as the member).
+  Audit follow-up: Categories' retry showed an empty list mid-retry (no
+  `setLoading`) under an English "Error" title — fixed.
 - **Audit of my own item-edit fix**: the page's loader fills fields after the
   row arrives, so opening Edit first read as an unsaved change and Cancel
   restored blanks — `adoptLoadedValues` moves the snapshot. And six screens lost

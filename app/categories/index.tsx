@@ -241,15 +241,19 @@ function CategoriesListScreen() {
       {error ? (
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={48} color={colors.muted} />
-          <Text style={[styles.errorText, { color: colors.text }]}>Error</Text>
-          <Text style={[styles.errorMessage, { color: colors.muted }]}>{error}</Text>
+          {/* The sentence IS the title. It used to sit under a hardcoded
+              English "Error", with err.message as the body. */}
+          <Text style={[styles.errorText, { color: colors.text }]}>{error}</Text>
           <AnimatedPressable
             style={[styles.retryBtn, { backgroundColor: colors.accent }]}
-            onPress={loadCategories}
+            // setLoading first: loadCategories clears `error` before it fetches,
+            // so without the spinner the screen fell through to the list branch
+            // with no categories for the length of the retry.
+            onPress={() => { setLoading(true); loadCategories(); }}
             accessibilityRole="button"
             accessibilityLabel={t('category.a11y_retry_categories', { defaultValue: 'Retry loading categories' })}
           >
-            <Text style={[styles.retryBtnText, { color: colors.accentText }]}>Retry</Text>
+            <Text style={[styles.retryBtnText, { color: colors.accentText }]}>{t('common.retry', { defaultValue: 'Retry' })}</Text>
           </AnimatedPressable>
         </View>
       ) : (
@@ -493,12 +497,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginTop: 12,
-  },
-  errorMessage: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 16,
   },
   retryBtn: {
     paddingHorizontal: 24,
