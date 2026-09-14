@@ -40,6 +40,7 @@ import { useTranslation } from 'react-i18next';
 import { HeaderActions } from '@/components/HeaderActions';
 import { CountdownBadge } from '@/components/EventCountdown';
 import { KIND_ICON, KIND_LABEL } from '@/constants/eventConstants';
+import { shouldPageCalendar } from '@/lib/calendarPaging';
 import calendar, { parseEventDate, getCountdown, formatEventWhen } from '@/lib/calendar';
 import { CalendarGrid } from '@/components/CalendarGrid';
 import { WeekViewCalendar } from '@/components/events/WeekViewCalendar';
@@ -107,6 +108,24 @@ function EventsScreen() {
     // pageSize 100 (server max): the Week/Month calendar filters loaded events by
     // day, so it needs a wide upcoming window or future weeks render empty.
   } = usePaginatedList<CollectorsEvent>(eventFetcher, { pageSize: 100 });
+
+  // Week and Month filter the LOADED events by day, so they need every upcoming
+  // event, not the first page. pageSize 100 is the server's max, and on
+  // 2026-09-14 prod had 252 upcoming events: page one ended on Oct 13, so the
+  // Month view showed October stopping mid-month and November with no events at
+  // all — a calendar saying "nothing on" for dates it never asked about. List
+  // mode keeps paging on scroll; the calendar views page until the server runs
+  // out. Stops on an error (it stays set until a refresh, so this cannot loop)
+  // and at CALENDAR_MAX_EVENTS (src/lib/calendarPaging.ts), where the counts
+  // below say "+".
+  const calendarView = viewMode === 'week' || viewMode === 'calendar';
+  useEffect(() => {
+    if (shouldPageCalendar({
+      calendarView, hasMore, loading, loadingMore: isLoadingMore, error, loadedCount: events.length,
+    })) {
+      void loadMore();
+    }
+  }, [calendarView, hasMore, loading, isLoadingMore, error, events.length, loadMore]);
 
 
   const [now, setNow] = useState(() => new Date());
@@ -222,13 +241,15 @@ function EventsScreen() {
   const sections = useMemo(() => {
     const result: { title: string; isPast: boolean; data: CollectorsEvent[] }[] = [];
     if (filteredUpcoming.length > 0) {
-      result.push({ title: `Upcoming (${filteredUpcoming.length})`, isPast: false, data: filteredUpcoming });
+      // "+" while more pages exist: the count is of what is LOADED, and 94 of 252
+      // read as the total.
+      result.push({ title: `Upcoming (${filteredUpcoming.length}${hasMore ? '+' : ''})`, isPast: false, data: filteredUpcoming });
     }
     if (filteredPast.length > 0) {
       result.push({ title: `Past Events (${filteredPast.length})`, isPast: true, data: filteredPast });
     }
     return result;
-  }, [filteredUpcoming, filteredPast]);
+  }, [filteredUpcoming, filteredPast, hasMore]);
 
   // All filtered events combined (for calendar grid prop and calendar filtering)
   const allFilteredEvents = useMemo(
@@ -740,7 +761,7 @@ function EventsScreen() {
         <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 4 }]}>
           {selectedCalendarDate
             ? `Events on ${selectedCalendarDate} (${calendarFilteredEvents.length})`
-            : `All Events (${calendarFilteredEvents.length})`}
+            : `All Events (${calendarFilteredEvents.length}${hasMore ? '+' : ''})`}
         </Text>
       )}
     </>
