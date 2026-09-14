@@ -2228,6 +2228,8 @@ platform-scoped (`learning_found_on_one_platform_is_not_a_platform_bug`).
 | Category page → Upcoming events (2026-09-14) | Sports Cards' first event **"12. Cruz roja argentina"** — a scraped newsletter row; every date printed **"2026-09-17 · 16:00:00"** | The feed's display gate, bypassed: the section read `v_events_with_attendees_v1` directly, a view with **no WHERE clause** (newsletter quarantine, quality rejects, unpublished and private events all pass). Now `GET /events?category_id=` — the Events tab's gated read. And "A backend field is a value" in a seventh place: now `formatEventWhen`, in the row AND its a11y label. Gate: `__tests__/data/noDirectEventViewRead` (fails on HEAD) |
 | Items tab | **"Collection total €900"** under a one-item section whose row says €900; "Portfolio total:" and "Collection total" English on every locale | "A grouped list should not repeat" — a one-item section has no footer; the rest say `items.section_total`; the header reuses Home's own `home.portfolio_value` wording |
 | Blocked users | "No blocked users" after a failed load (recorded 09-13) | "An empty list answers ONE question" — now a `loadFailed` state with Try again, same as Favourites; the empty state is translated too |
+| Categories index (2026-09-14) | the franchise filter pills rendered as **~340dp-tall empty cards** ("Star Wars", "Marvel / MCU") above the list | A horizontal `ScrollView` defaults to `flexGrow: 1`; in a flex column beside a FlashList it took the free space and stretched its row. `CategorySortChips` already carried the `flexGrow: 0` fix and says why. Enumerated all 16 horizontal ScrollViews: this was the only one in a flex column with free space — the rest sit inside a vertical scroll or a content-sized card. Also: the "owned / total" slash was `colors.border` and vanished, so "2 / 20478" read as two numbers |
+| Sponsor dashboard | "reach **thousands** of passionate collectors" | the same false claim the register screen had — a second copy the 09-14 sponsor fix missed because it only looked at the tier lists |
 | Market Movers, Pro gate | the upgrade card running **edge to edge, 0pt gutter** | "The screen gutter is 16" — `UpgradePrompt` has no horizontal margin; analytics and sets-to-complete wrap it, movers did not |
 
 ### An unregistered route has no back button when it matters most
@@ -2326,7 +2328,13 @@ checked by anything. The static test now fails on any direct read of the view.
    HEAD, so the HEAD side errored, printed no JSON, and `diff` against an empty
    file "passed". Lint new files separately; compare only files present on both
    sides.
-3. **An overclaim in my own copy.** The rewritten sponsor tier said "Shown first
+3. **A catch that turned a failure into a cached empty list.** The first
+   category-events fix caught `listCategoryEvents` errors into `[]`. The store
+   runs inside stale-while-revalidate, so that `[]` was cached for 5 minutes and
+   a failed background revalidate would OVERWRITE a good cached list. Now it
+   throws; the screen already catches. Before adding a catch to a provider,
+   check whether its caller caches the return value.
+4. **An overclaim in my own copy.** The rewritten sponsor tier said "Shown first
    in the events feed"; the RPC ranks followed categories above sponsored
    events. Now "Boosted".
 

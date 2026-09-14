@@ -250,7 +250,7 @@ const SponsorDashboardScreen: React.FC = () => {
         <EmptyState
           icon="megaphone-outline"
           title={t('sponsor.dashboard_empty_title', { defaultValue: 'Start Sponsoring Events' })}
-          subtitle="Register your company to create sponsored events and reach thousands of passionate collectors."
+          subtitle="Register your company to create sponsored events and put them in front of collectors browsing their category."
           colors={colors}
           action={
             <AnimatedPressable

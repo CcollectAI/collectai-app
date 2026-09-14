@@ -207,7 +207,9 @@ function CategoriesListScreen() {
               <Text style={[styles.ownedStat, { color: colors.success }]}>
                 {cat.ownedCount}
               </Text>
-              <Text style={[styles.statSep, { color: colors.border }]}>/</Text>
+              {/* muted, not border: in `border` the slash vanished on the card
+                  and "2 / 20478" read as two unrelated numbers. */}
+              <Text style={[styles.statSep, { color: colors.muted }]}>/</Text>
               <Text style={[styles.totalStat, { color: colors.muted }]}>
                 {cat.totalCount}
               </Text>
@@ -276,6 +278,12 @@ function CategoriesListScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            // flexGrow: 0 — the same fix CategorySortChips carries. A horizontal
+            // ScrollView defaults to flexGrow: 1, so in this flex column it took
+            // space from the FlashList below and stretched every pill to ~340dp:
+            // tall empty cards reading "Star Wars", "Marvel / MCU" (walked on
+            // Android 2026-09-14).
+            style={styles.franchisePillsScroll}
             contentContainerStyle={styles.franchisePillsContainer}
           >
             {FRANCHISES.map((fr) => {
@@ -355,11 +363,15 @@ const styles = StyleSheet.create({
     gap: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  franchisePillsScroll: {
+    flexGrow: 0,
+  },
   franchisePillsContainer: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     gap: 8,
     flexDirection: 'row',
+    alignItems: 'center',
   },
   franchisePill: {
     flexDirection: 'row',
