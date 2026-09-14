@@ -2142,6 +2142,10 @@ Android walk". The ones worth remembering here:
   prod has 252 upcoming, 49 in November. The calendar views now page until the
   server runs out (`src/lib/calendarPaging.ts`), counts show "+" while more
   exist. Simulated against the live API. Needs a build.
+- ⛔ **Watches priced from other models** (09-14, NOT fixed — decision):
+  SB04 Grey Sector showed ~€7,885 from ONE comp, "Sartory Billard Frosted
+  Platinum SB05". 70 of 128 watches with comps in retention have no comp
+  containing their reference number. See `docs/MARKET_DATA.md`.
 - **Raw exception text on three screens** (09-14): Analytics read
   "categories: Request timed out after 15000ms". `err.message` is for the log;
   now translated sentences. The timeout was the emulator (~50 ms as the member).

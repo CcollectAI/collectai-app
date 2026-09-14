@@ -180,6 +180,35 @@ for them.
 
 `TCG_LISTINGS_BATCH=0` disables the pass without a deploy.
 
+## ⛔ Watches are priced from other models (measured 2026-09-14, not fixed)
+
+Walked on Android: the Watches catalogue rail showed **Sartory Billard SB04
+Grey Sector at ~€7,885**. `mv_catalog_item_price` holds €7,884.78 from exactly
+**one** comp — an eBay listing titled **"Sartory Billard Frosted Platinum
+SB05"**, a different (platinum) model. `market_hits_daily` shows the same single
+wrong comp back to June.
+
+It is a class. Of the **128** watches with comps still inside `market_hits`
+retention (1 month), all carry their reference in the catalogue title — and for
+**70 (55%) no comp contains that reference**:
+
+| catalogue item | priced from |
+|---|---|
+| Citizen Eco-Drive Paradigm (AW1550-50E) | "… Paradigm … BM0190-54L …" |
+| Doxa SUB 300 Carbon Divingstar | "DOXA … Folding clasp for a SUB 300T" (an accessory) |
+| Formex Essence 43 Leggera Chrono | "Formex 4Speed GT325 …", "Formex Essence 39 …" |
+| Citizen Promaster Sky Navihawk (CC9020-54E) | "… Navihawk C651-T005535 …" |
+| Casio Baby-G BGD-565 (BGD-565-4) | "BGD-565SC-4BJF" — a near-variant, arguably fine |
+
+Some misses are variants (`BGD-565` vs `BGD-565-4`), most are other watches.
+Unlike cards, a watch HAS a structured identity — the reference number — so this
+is not the keyword-rule trap §"Known limitation" warns about. But the obvious
+gate (require the reference in the comp title) would **unprice most of these 70**:
+a wrong number replaced by no number. That is the "pick the smaller lie" decision
+and it is the product owner's, not a walk's. Options, measured before choosing:
+reference gate at ingest (normalised, variant-tolerant) · a display floor of ≥N
+comps for categories with structured references · both.
+
 ## The main scrape is a ~58-day rotation (measured 2026-09-13)
 
 `marketplace_scrape_worker` (every 15 min, `MARKETPLACE_SCRAPE_BATCH=20` on
