@@ -368,7 +368,7 @@ function SellNewScreen() {
 
   return (
     // No 'top' edge: ScreenHeader applies insets.top itself (see blocked-users).
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right', 'bottom']}>
       {/* The shared header, not a hand-rolled one (2026-09-14). The hand-rolled
           row had a Material arrow and NO top-right cluster, while sell/pick —
           the step right before this one — renders ScreenHeader with both; the

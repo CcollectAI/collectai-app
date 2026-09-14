@@ -2341,6 +2341,16 @@ checked by anything. The static test now fails on any direct read of the view.
 4. **An overclaim in my own copy.** The rewritten sponsor tier said "Shown first
    in the events feed"; the RPC ranks followed categories above sponsored
    events. Now "Boosted".
+5. **A snapshot that the page's own loader invalidated.** The item-edit Cancel
+   fix snapshots the fields when edit opens — but the screen fills name,
+   category, condition, value and cost basis in when the saved row ARRIVES. Open
+   Edit before that and the fill read as an unsaved edit (a false prompt) and
+   Cancel put the blanks back. Loaded values now go through `adoptLoadedValues`,
+   which moves the snapshot with them; a test pins it. **Before snapshotting a
+   form, find every writer of its fields, not just the member's inputs.**
+6. **`edges={['left', 'right']}` dropped more than the top.** Six screens given
+   `ScreenHeader` lost their BOTTOM inset along with the top one the comment
+   meant to remove. Now `['left', 'right', 'bottom']`.
 
 **Checked 2026-09-14 and NOT bugs** — each traced to code or data before deciding:
 

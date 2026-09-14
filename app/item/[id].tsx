@@ -378,16 +378,16 @@ function ItemDetailScreen() {
   useEffect(() => {
     if (!savedCore || adoptedCoreRef.current) return;
     if (savedCore.name && detail.editableName === "Unknown item") {
-      detail.setEditableName(savedCore.name);
+      detail.adoptLoadedValues({ name: savedCore.name });
     }
     if (savedCore.category && detail.editableCategory === "Not set") {
-      detail.setEditableCategory(savedCore.category);
+      detail.adoptLoadedValues({ category: savedCore.category });
     }
     if (savedCore.condition && detail.editableCondition === "Not set") {
-      detail.setEditableCondition(savedCore.condition);
+      detail.adoptLoadedValues({ condition: savedCore.condition });
     }
     if (savedCore.value != null && (detail.editableValue === "0" || !detail.editableValue)) {
-      detail.setEditableValue(String(savedCore.value));
+      detail.adoptLoadedValues({ value: String(savedCore.value) });
     }
     // Notes come from the DB, not just route params. Without this the save
     // fixed in useItemDetail would still LOOK broken: reopening the item (deep
@@ -402,7 +402,7 @@ function ItemDetailScreen() {
     // field would show empty for an item that HAS a purchase price. Guarded on
     // the field still being empty so a member mid-edit is never overwritten.
     if (savedCore.purchasePrice != null && !detail.editablePurchasePrice) {
-      detail.setEditablePurchasePrice(String(savedCore.purchasePrice));
+      detail.adoptLoadedValues({ purchasePrice: String(savedCore.purchasePrice) });
     }
     // Fees adopt on the SAME terms. Without this the row renders empty for a
     // member who has already entered fees — and worse, the save path compares
@@ -411,7 +411,7 @@ function ItemDetailScreen() {
     // invisible. Half-wiring a field is how it looks broken while being
     // correct one layer down.
     if (savedCore.acquisitionFees != null && !detail.editableAcquisitionFees) {
-      detail.setEditableAcquisitionFees(String(savedCore.acquisitionFees));
+      detail.adoptLoadedValues({ acquisitionFees: String(savedCore.acquisitionFees) });
     }
     adoptedCoreRef.current = true;
   }, [savedCore, detail]);

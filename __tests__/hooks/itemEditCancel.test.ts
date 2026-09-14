@@ -156,6 +156,19 @@ describe('item edit cancel', () => {
     expect(result.current.editsDirty).toBe(false);
   });
 
+  it('treats values that load while editing as the baseline, not as edits', async () => {
+    // The item screen fills cost basis in when the saved row arrives. If the
+    // member opened Edit first, that must not read as unsaved, and Cancel must
+    // not put the blank back.
+    const { result } = renderHook(() => useItemDetail({ ...defaultParams, initialPurchasePrice: '' }));
+    act(() => { result.current.setIsEditing(true); });
+    await waitFor(() => expect(result.current.isEditing).toBe(true));
+    act(() => { result.current.adoptLoadedValues({ purchasePrice: '58', name: 'Charizard Base Set' }); });
+    expect(result.current.editsDirty).toBe(false);
+    act(() => { result.current.cancelEdits(); });
+    expect(result.current.editablePurchasePrice).toBe('58');
+  });
+
   it('snapshots again on the next edit session, not the first one', async () => {
     const { result } = renderHook(() => useItemDetail(defaultParams));
     act(() => { result.current.setIsEditing(true); });

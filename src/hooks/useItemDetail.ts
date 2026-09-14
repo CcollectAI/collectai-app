@@ -141,6 +141,35 @@ export function useItemDetail(params: UseItemDetailParams) {
     editableAcquisitionFees !== editSnapshot.acquisitionFees
   );
 
+  // The item screen fills name / category / condition / value / cost basis in
+  // once the saved row arrives, and only into fields that are still empty. If
+  // that lands AFTER edit mode opened, a plain setter would make the form look
+  // dirty (a false "unsaved changes" prompt) and Cancel would restore the
+  // pre-load blanks.
+  // Loaded values are the baseline, not an edit, so they move the snapshot too.
+  const adoptLoadedValues = useCallback((v: {
+    name?: string; category?: string; collection?: string;
+    condition?: string; value?: string; purchasePrice?: string; acquisitionFees?: string;
+  }) => {
+    if (v.name !== undefined) setEditableName(v.name);
+    if (v.category !== undefined) setEditableCategory(v.category);
+    if (v.collection !== undefined) setEditableCollection(v.collection);
+    if (v.condition !== undefined) setEditableCondition(v.condition);
+    if (v.value !== undefined) setEditableValue(v.value);
+    if (v.purchasePrice !== undefined) setEditablePurchasePrice(v.purchasePrice);
+    if (v.acquisitionFees !== undefined) setEditableAcquisitionFees(v.acquisitionFees);
+    setEditSnapshot((prev) => prev && {
+      ...prev,
+      ...(v.name !== undefined ? { name: v.name } : {}),
+      ...(v.category !== undefined ? { category: v.category } : {}),
+      ...(v.collection !== undefined ? { collection: v.collection } : {}),
+      ...(v.condition !== undefined ? { condition: v.condition } : {}),
+      ...(v.value !== undefined ? { value: v.value } : {}),
+      ...(v.purchasePrice !== undefined ? { purchasePrice: v.purchasePrice } : {}),
+      ...(v.acquisitionFees !== undefined ? { acquisitionFees: v.acquisitionFees } : {}),
+    });
+  }, []);
+
   const cancelEdits = useCallback(() => {
     if (editSnapshot) {
       setEditableName(editSnapshot.name);
@@ -519,7 +548,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     editableValue, setEditableValue,
     editablePurchasePrice, setEditablePurchasePrice,
     editableAcquisitionFees, setEditableAcquisitionFees,
-    editsDirty, cancelEdits,
+    editsDirty, cancelEdits, adoptLoadedValues,
 
     // Notes & save
     notes, setNotes,

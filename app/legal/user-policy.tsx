@@ -18,7 +18,7 @@ function UserPolicyScreenInner() {
   const { colors } = useAppTheme();
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right', 'bottom']}>
       {/* The shared header (2026-09-14; was a hand-rolled row with a Material
           arrow and no cluster). Actions only when signed in: register.tsx opens
           the Terms and Privacy Policy BEFORE an account exists, and a gear there
