@@ -688,6 +688,34 @@ real rebuild. Batch them.
     URL inside the device command, and before filing a missing-param bug check
     that the param actually reached the screen.
 
+12. **An app ANR during a `system_server` stall is not an app hang**
+    (2026-09-14). `dumpsys activity processes` showed
+    `io.sparrowcollect.app … mNotResponding=true`, screencap kept returning a
+    frozen frame (the status-bar clock stuck at 14:13 for 20 minutes) and every
+    `adb shell` call hung. It reads exactly like a main-thread freeze. Logcat
+    said otherwise: `I/Watchdog(670): WAITED_UNTIL_PRE_WATCHDOG` twice, a
+    `system_server_pre_watchdog` DropBox entry, and only THEN `InputDispatcher
+    … spent 31928ms processing MotionEvent` for the app — the system process
+    stalled and the app's input queued behind it. **Before filing an ANR, grep
+    logcat for `PRE_WATCHDOG` in the same minute.** Recovery without a reboot:
+    `am force-stop io.sparrowcollect.app`, then deep-link back in. The ANR trace
+    files in `/data/anr` are system-only on this `user` build; logcat is the
+    evidence.
+
+13. **`input keyevent` puts the device in key-navigation mode, and the first
+    focusable control grows a grey square** (2026-09-14). After one
+    `input keyevent 4` (to close a keyboard), every later screen drew a filled
+    grey box behind the header's back chevron — it looked like a styling
+    regression in `ScreenHeader`, whose back button has no background. The dump
+    said `focused="true"`; one `input tap` on empty space cleared it. Touch users
+    never enter that mode. **Check `focused=` in the dump before filing a
+    highlight bug, and tap once after any keyevent.**
+
+14. **Know which account the AVD is signed in as.** `SparrowWalk` is
+    `simcheck@sparrowcollect.test`, not Merle's account. A leaderboard row
+    reading "Merle" was taken for the session on 2026-09-14 and one as-the-member
+    DB check ran against the wrong user. Read Settings' identity row first.
+
 ### A false trail, recorded so it is not re-walked
 
 Several cycles went into a "Save to Collection is permanently disabled" bug

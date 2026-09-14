@@ -130,6 +130,59 @@ was wired into `verify:prebuild`.
   "Where does my collection value come from?" is first, because every question
   about a collection app eventually becomes that one.
 
+## The help drifted away from the app: 21 claims false (2026-09-14)
+
+A claim-by-claim check of all 15 topics against the code (Android walk) flagged
+22 statements; 21 held up as false or misleading (one did not — below). Most
+were true when written and were left behind by a later change nobody traced
+back to the help; a few ("name it for yourself") were wrong from the start:
+
+- **Features removed or shelved:** marketplace connections in Settings
+  (`SELLING_ENABLED=false`), the "Price drops / New listings" switches (removed
+  2026-08-06), condition grading and dossier exports sold as Pro (both shelved),
+  a low/middle/high range on the item page (only a fresh scan passes it).
+- **Labels renamed:** Appearance → Region & Currency / Preferences, "Sets to
+  complete" → "Finish a set", "Starting out" → "Getting started", "Mark as
+  sent/received" → "Mark sent/received", "Book the parcel" → "Ship it", "New
+  Deal Search" → "Watch", "Counter sent" (a toast to the SENDER) → "Seller
+  countered — your call".
+- **Mechanics misdescribed:** the deal search runs every 30 minutes, not
+  "continuously"; its name field IS the marketplace search text, so "name it for
+  yourself" produced a bad search; the eye sets the target silently (listing
+  price or estimate) instead of asking; help results come before your items;
+  billing is also Google Play; Watchlist and Collection are not in the tab bar.
+
+⚠️ **The check itself was wrong once, and the first rewrite repeated it.** It
+marked "category decides which market we price the item against" as false
+because `item_value_v1` looks up `canonical_ref`. But `trg_items_canonical_ref`
+fires `BEFORE UPDATE OF category` and builds `canonical_ref` as
+`category || ':' || canonical_key` — so category really does decide the price
+join. The rewrite that said "editing it does not re-price" was reverted before
+it shipped. **Trace a column to its writer, including triggers, before
+declaring what it does not depend on.**
+
+It also surfaced a real bug, not copy: the Mercari toggle's source tag
+(`docs/API.md` § `allowed_sources`).
+
+**Rule added:** a PR that renames a label, removes a control or shelves a
+feature greps `src/data/appHelp.ts` for the old wording. Nothing enforces it.
+
+## Collecting guides quote prices that drift (2026-09-14)
+
+`retro_pokemon`'s holy grail said the Gold Star Mewtwo was "about €129,679, the
+most valuable card in our vintage catalogue — ahead of a PSA 10 1st Edition
+Charizard at €124,529". Queried the same day: Mewtwo **€92,476**, THIRD, behind
+Gold Star Pikachu (€119,037) and that Charizard (€116,407); the Shadowless PSA 10
+Charizard was quoted €52,324 and is €35,220. Corrected, rounded, and the grail is
+now the Pikachu. The `pokemon` guide's €7,524 Umbreon and the €62,992 Lily Pad
+Mew were still exact.
+
+⛔ **Open, not fixed:** the guides hold **302 hard-coded € figures** and 119 "in
+our catalogue" claims. The rule above ("run the query") was applied once, at
+writing time; prices move nightly and superlatives flip. Options: a checker that
+maps each figure to a catalogue row and fails on >25% drift or a changed
+ranking, or rewriting figures as ranges and orderings that survive drift.
+
 ## Sets to complete — the chain behind the screen
 
 `app/sets-to-complete.tsx` was empty for **every account, always**, and the

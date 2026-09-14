@@ -2235,6 +2235,14 @@ platform-scoped (`learning_found_on_one_platform_is_not_a_platform_bug`).
 | Sell an item; the 5 legal pages | a hand-rolled header: Material arrow, **no top-right cluster** — while `sell/pick`, the step right before, renders `ScreenHeader` (and the layout comment claimed `sell/new` did too) | "The top-right cluster is ONE component, on every screen" — enumerated every route registered `headerShown: false`: these 6 had neither `ScreenHeader` nor `HeaderActions`. All now `ScreenHeader`. The legal pages pass `showActions={!!user}`: `register.tsx` opens Terms and Privacy **before an account exists**, and a gear there would send a half-registered visitor to a screen that needs one. Left alone: the chat screens (a chat bubble inside a chat) — recorded, not decided |
 | Public profile, not set up | **"Add a display name"** → opens Edit Profile, which has **no display-name field** (only Username) | copy promising a field that does not exist. A username IS enough (`user_public_profiles` accepts either, and the server copies it into an empty display name), so the copy now says "Choose a username", translated in 7 locales |
 | Analytics; Categories index; Build & paint projects | a red banner reading **"categories: Request timed out after 15000ms"** | NEW RULE: **`err.message` is for the log, never the screen.** It carries internal labels and millisecond counts. Enumerated the 5 screens rendering `{error}`: Home and Purchase set written sentences; these 3 passed the exception text through. Now a translated sentence, the raw detail logged (Analytics logged nothing before). The timeout itself was the emulator — the same view answered in **~50 ms as that member** (set role authenticated + JWT claims), 3 runs. The audit of that fix found the Categories error block still titled with a hardcoded English **"Error"** and a **Retry that cleared the error without setting `loading`**, so the list branch rendered empty for the length of the retry — both fixed, and the orphaned `errorMessage` style removed |
+| 79 toasts, banners and alerts (2026-09-14, static read while the APK built) | `showToast({ message: err?.message \|\| 'Failed to …' })` — for any backend call the member reads **"POST /purchase/mandates failed (409): Mandate limit reached (3)…"**; the dossier export (shelved on the item screen, so latent) would have said **"Export failed (403)"** | The row above, its TOAST branch: that sweep enumerated `{error}` in JSX. One chokepoint now — `userErrorMessage(err, fallback, logLabel?)`: a 4xx ApiError gives its server `detail`; a written sentence passes; method/path, ms timeouts, network, Postgres text, status+XML get the fallback. Checked against all 286 real server 4xx details (0 withheld). **Withholding text must not delete it**: 36 of the sites never logged, so the member's screen was the only record — 35 pass `logLabel` (the shared `useAsync` instead exposes `errorDetail`), which logs exactly when text is withheld (not always: `logger.error` is a Sentry event, and the other sites already log). Gate `check:raw-error-copy`, mutation-proven. Audit of the change caught: a `logger.warn` (stripped in release) left as the raw text's only home; an S3 "status 403: <?xml" message the first regex let through; a test asserting the member sees "403" |
+| Condition Guide (2026-09-14, release APK) | Mint's **"100% of market value"** beside a **trending-down arrow** — every grade card hardcoded `trending-down-outline` | An icon is a claim too. Now a neutral `pricetag-outline` on all six. The body (grade names, descriptions) is English on every locale — the tracked i18n backlog, not new |
+| Request to Connect (`chat/new`) | **"They'll receive a notification and can choose to accept or decline your request."** | "Copy is part of the control", with no control behind it at all: no sender exists (no trigger, `notify_connection_request` called only by its test; prod 46 requests, 0 notifications). Now "It will appear in their inbox, where they can accept or decline it." — which the inbox and its badge do. Settings' "Connection requests" switch, which controlled nothing, is hidden the way the weekly-digest switch was |
+| Listing detail, sold (buyer view) | "This listing is no longer available (sold)" above **"Shipping not stated — ask the seller"** | "Copy is part of the control": Message seller is gated on `!is_mine && !isGone`, the sentence pointing at it was not — and the seller's own listing told them to ask themselves. Same condition on both now |
+| Diagnostics | the screen works; its log showed **nine `chat_dm_requests_v1` timeouts in 3 seconds** | The timeouts were the emulator's network (as on 09-09); the COUNT of them was code: the header's inbox badge polled per mounted instance. See the correction under "The top-right cluster is ONE component" |
+| Scan Barcode → Manual Entry | the placeholder **"978-0-123456-78-9" wrapping to a second line, last digit clipped** | 17 monospace chars (17px + 1px spacing) ≈ 220dp in a ~214dp input beside Look Up — and `keyboardType="number-pad"` has no hyphen key, so it showed a format nobody could type. Now `9780123456789`; typed on the device first to measure: one line with room at 411dp. ⚠️ A 360dp phone has ~50dp less — not measured |
+| My Suggestions | nothing wrong on screen (the signed-in test account really has 0 rows — first queried against the WRONG account, a leaderboard name taken for the session; re-queried as `simcheck`, still 0) — but in code a failed first page was caught, logged, and rendered **"No suggestions yet"** | "An empty list answers ONE question", a fourth screen after Favourites, Blocked users and Watchlist. `loadFailed` + Try again, same component as Blocked users; a failed load-MORE keeps the rows already shown |
+| Help (15 topics) | claims naming controls that are gone or renamed: "marketplace connections" in Settings, "Mark as sent", "Sets to complete", condition grading as a Pro feature | "Copy is part of the control" (2026-09-12). **21 false or misleading**, each traced to code; full list in `docs/HELP_AND_GUIDES.md`. Checking the claims also found a real bug the help merely described: the deal search's Mercari toggle sent a source tag no caller emits (`docs/API.md` § `allowed_sources`) |
 | Market Movers, Pro gate | the upgrade card running **edge to edge, 0pt gutter** | "The screen gutter is 16" — `UpgradePrompt` has no horizontal margin; analytics and sets-to-complete wrap it, movers did not |
 
 ### An unregistered route has no back button when it matters most
@@ -2375,6 +2383,32 @@ checked by anything. The static test now fails on any direct read of the view.
   opens the batch summary, back leaves. Nothing is lost — each batch item is
   saved to the collection when scanned. Recorded, not changed.
 - **"_____'s Pikachu"** in search is the card's real name.
+- **Leaderboard shows one XP row** (09-14) — `/leaderboard` is deep-link-only
+  by design: with `COMMUNITY_GATED` the Analytics tier badge renders
+  non-tappable (`PortfolioTierBadge.tsx`), exactly as `featureFlags.ts` says.
+- **Sponsor "Push notification to followers of the event's category"** looked
+  hollow (follow button hidden by `CATEGORY_FOLLOW_ENABLED=false`, 1 row in
+  `user_category_follows`) — it is not: onboarding's category picker writes
+  follows through `saveFollowedCategories` → the same `/follow` endpoint. A grep
+  for `followCategory` missed that caller; grep the ENDPOINT, not one wrapper.
+- ⚠️ **A path glob in a `//` comment broke a gate** (my own, 2026-09-14): writing
+  `adapters/*_caller.py` in a line comment put `/*` in the file, and
+  `check:unrendered-components` read everything after it as a block comment — so
+  it reported `ScreenErrorBoundary` as never rendered in `create-mandate.tsx`,
+  which it is. Only the full `verify:prebuild` before the commit caught it. Write
+  `<name>_caller.py` in comments.
+- **A grey filled square behind the back chevron** on two listing screens —
+  Android key-navigation focus after an `adb input keyevent`, not a style
+  (`focused="true"`; one tap cleared it). `docs/ANDROID_LAUNCH.md` gotcha 13.
+- **A listing with no photo shows a large tinted tile with an image icon** —
+  the deliberate `heroEmpty` branch, not the empty-card rule: it states "no
+  photo" rather than looking like a failed load.
+- **Condition Guide opens with its category picker expanded** — deliberate,
+  `useState(!params.categoryId)` (also recorded 09-13).
+- **A registered route's back chevron on a cold deep link is NOT evidence for
+  the unregistered-route fix.** Help showed one after a force-stop, but Help is
+  registered with `iconOnlyHeader`; the fix only concerns the nine unregistered
+  routes. Verify it on one of those.
 
 - **"Price seems off?" is ONE tap, no confirmation** — deliberate (the button
   stays beside its result so a failure can be retried). `disagree` rows are not
@@ -2442,6 +2476,21 @@ precisely so the CHART does not render "no history yet" for a transport failure
 
 Gate: `__tests__/components/portfolioValueHeader.test.tsx`, in
 `verify:prebuild`, mutation-proven both ways.
+
+⚠️ **Correction 2026-09-14: "still loading" had a fourth state inside it —
+not started.** The next Android walk opened the same €1.348 account on
+**"€0 / +€0 (0.00%)" and "No history yet. Add items to see your portfolio
+curve."** The guard above was right and never fired: `loading` was
+`useState(false)`, and the first load waits for auth to hydrate (seconds on a
+cold start), so for that whole window the screen held a FINISHED empty load. The
+component test passed because it hands the header `null` directly — it never
+saw the state that decides whether `null` is passed. Now `loading` starts
+`true`; one `valueUnknown` constant feeds both the header and the chart's
+screen-reader label, which was still announcing "current value €0" under the
+skeleton. Enumerated: Home is the only screen whose false-initialised loader
+waits on auth. Gate: `__tests__/screens/homeInitialLoading.test.ts`
+(mutation-proven). **A flag named `loading` that starts `false` claims the
+load already happened.**
 
 ## An empty list answers ONE question — check which one (2026-09-09)
 
@@ -2555,6 +2604,24 @@ header — five tabs plus 15 `ScreenHeader` users. The count is now cached at
 module scope with a 60s TTL, so it is one request a minute at worst instead of
 one per screen opened. Any time you move a fetch from a screen into a shared
 component, ask how many mounts you just created.
+
+⚠️ **Correction 2026-09-14: that sentence was true of neither badge.** Walked on
+Android, Diagnostics held **nine `chat_dm_requests_v1` timeouts inside three
+seconds**. (1) The 60s cache belonged to the BELL only; `InboxHeaderButton`,
+rendered by the same cluster, fetched per instance on mount and **polled every
+30s per instance** — five tabs plus every stacked screen, each paying
+`auth.getUser()` + two queries. (2) The bell's cache was written only when a
+response LANDED, so headers mounting together at launch all fired before any
+could fill it. Now both use `createSharedCount` (`src/lib/sharedCount.ts`): one
+in-flight request, a TTL, keyed by user, and a failure uses up its window so an
+outage retries once per window instead of on every mount's tick. The inbox badge
+also gained the user keying the bell had. Gate
+`__tests__/components/headerBadgeFanout.test.tsx` (in `verify:prebuild`): red on
+the old code (5 calls for 5 mounts), and the retry test was first written so
+that it PASSED with the fix removed — mounts started together tick together;
+it now staggers them. **A cache written on response is not a dedupe.**
+Not changed: `getInboxUnreadCount` still calls `auth.getUser()` (a network
+round-trip) — auth calls are not altered on a walk (`docs/AUTH_AND_WEB_DEPLOY.md`).
 
 ## A tab's label and its TITLE are a third thing (2026-08-20)
 

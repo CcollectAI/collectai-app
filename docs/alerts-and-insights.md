@@ -478,6 +478,20 @@ python3 server/scripts/audit_orphan_stores.py --writers-file /tmp/writers.json
 Current state: **17 orphans, 10 with rows.** Known-good ones go in
 `KNOWN_ORPHANS` with a reason that must be TRUE.
 
+### The inverse: a preference with no sender (2026-09-14)
+
+The audit above finds writers with no reader. The Android walk found the mirror
+image: `connection_requests`, a notification PREFERENCE (Settings switch
+"Connection requests", stored, read by `notify.py`'s type map) for an event that
+nothing ever emits. `rpc_request_dm_v1` writes the request and notifies no one;
+there is no trigger on any chat/DM table; `push_service.notify_connection_request`
+is called only by `test_push_service.py`. Prod: **46 DM requests, 0 connection
+notifications** in `notification_history`. The request compose screen promised
+"They'll receive a notification". The switch is hidden (key kept) and the copy
+corrected; emitting the notification — from the RPC via a webhook, or by moving
+the request behind an API route that calls `notify_user` — is not built.
+**A switch is a promise that something can fire; check the emitter exists.**
+
 ## The guidance subsystem is GONE too (2026-08-08)
 
 `user_notifications` + `guidance_runs` + 30 functions + 6 views, removed. The

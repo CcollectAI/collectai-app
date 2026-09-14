@@ -2155,6 +2155,104 @@ Android walk". The ones worth remembering here:
   now translated sentences. The timeout was the emulator (~50 ms as the member).
   Audit follow-up: Categories' retry showed an empty list mid-retry (no
   `setLoading`) under an English "Error" title — fixed.
+  ⚠️ **That sweep enumerated `{error}` and missed the TOAST branch** (found
+  later 09-14): 79 on-screen sites did `err?.message || 'Failed to …'` or
+  appended `(${e.message})` (the gate's first run flagged 82 lines; 6 were
+  log/parse lines, 3 suffixes were found after). The fallback never
+  runs for a backend call — `ApiError.message` is always
+  `"POST /purchase/mandates failed (409): Mandate limit reached (3)…"`. Now ONE
+  chokepoint, `userErrorMessage(err, fallback, logLabel?)`
+  (`src/lib/userErrorMessage.ts`): a 4xx ApiError gives its server `detail`,
+  written sentences ("Invalid login credentials") pass, plumbing (method/path,
+  ms timeouts, network, Postgres, "status 403: <?xml") gets the fallback. Run over
+  all **286 real server 4xx details: 0 wrongly withheld**. `logLabel` logs the
+  raw text only when withheld, on the 35 sites that did not log — `logger.error`
+  is a Sentry event, so sites that already log pass no label. `useAsync` (the
+  36th) returns `error` (safe) + `errorDetail` (log) and does not log itself.
+  Dossier export threw only `Export failed (403)` — now an ApiError carrying the
+  plan gate's sentence; latent, the dossier section is shelved on the item
+  screen. Gate `check:raw-error-copy` (in `verify:prebuild`, fails on HEAD,
+  mutation-proven). Not in the 09-14 APK. Fallbacks are still English on
+  most of these screens.
+- **Home still opened on "€0 / No history yet"** (walked 09-14, release APK,
+  €1.348 account): the 09-09 null guard never fired because `loading` started
+  `false` while the first load waited seconds for auth. Now `true`; one
+  `valueUnknown` feeds the header and the chart's a11y label (it said "current
+  value €0" under the skeleton). Static gate `homeInitialLoading`. Needs a build.
+- **Help said 21 things the app does not do** (09-14): marketplace connections
+  in Settings, removed notification switches, shelved grading/dossier sold as
+  Pro, renamed buttons. Rewritten against code; `docs/HELP_AND_GUIDES.md`. The
+  claim check was itself wrong once — category DOES drive the price join
+  (`trg_items_canonical_ref` fires on `UPDATE OF category`) — caught before
+  shipping. Collecting guides: `retro_pokemon` called a €92k card the most
+  valuable at €129k; fixed. ⛔ 302 hard-coded € figures in the guides drift
+  nightly and nothing checks them — decision needed.
+- **Deal search Mercari toggle matched nothing** (09-14): sent `mercari`,
+  caller tags `mercari_us`, policy compares exactly. 6 other toggles checked,
+  match. Fixed client-side; 0 mandates in prod. `docs/API.md`.
+- ⚠️ **`verify:prebuild` has been red since 2026-09-05**: `check-silent-failures`
+  flagged `verify-email.tsx` twice — once a real silent resend catch, once the
+  words "bare `catch {}`" inside a comment. The gate now skips comment lines
+  (proven: a planted real swallow still fails) and the catch logs. Nobody saw it
+  because local builds do not run the prebuild suite.
+- **The import template imported its own examples** (09-14, SERVER — needs a
+  deploy): 2 of 3 example rows were unmarked and the importer skipped only
+  nameless rows, so filling in the template added a €9,800 Rolex. All marked,
+  marked rows skipped (by marker, not name — the template round-trips with
+  `/items-export/overview`). 0 such rows in prod. `docs/API.md` § Import.
+  ⚠️ Server pytest could not run locally: the pinned deps do not build on
+  Python 3.14 and `brew install python@3.12` needs Xcode CLT 26.3. Verified via a
+  stub harness on the real router, mutation-proven; CI runs the real suite once
+  this is pushed.
+- **Free member on `/purchase` can fill a deal search and get a 403 toast** —
+  only via a DEEP LINK: Home and the Watchlist banner (`wishlist.tsx:73`) both
+  route free members to `/subscription`, and `docs/MONETIZATION.md` §1 records
+  the server-side 403 as the deliberate deep-link gate ("without needing the
+  screens to self-gate"). First written up as an open decision; corrected after
+  reading that section. Minor: the 403 toast has no upgrade button.
+- **My Suggestions** rendered "No suggestions yet" for a failed load (code; the
+  device showed a true empty). `loadFailed` + Try again. **Condition Guide**
+  showed a trending-down arrow on "100% of market value"; neutral icon now.
+  **Barcode manual entry** placeholder wrapped and clipped; 13 digits now.
+- **The header inbox badge polled once per mounted screen** (09-14, from the
+  Diagnostics log: 9 `chat_dm_requests_v1` timeouts in 3 s). No cache, a 30s
+  interval per instance; the bell's 60s cache had no in-flight dedupe. Both now
+  `createSharedCount` (one in-flight, TTL, per-user, failure consumes the
+  window). Gate `headerBadgeFanout` — its retry test first passed WITHOUT the
+  fix (synchronised mounts); rewritten to stagger. Needs a build.
+- **"They'll receive a notification" — nothing sends one** (09-14): the DM
+  request compose promised it; `rpc_request_dm_v1` notifies no one, no trigger
+  exists on the chat/DM tables, `notify_connection_request` has only a test
+  caller, and prod held 46 requests against 0 connection notifications ever.
+  Copy now says the request lands in their inbox (true). The Settings switch
+  "Connection requests" controlled nothing and is hidden like the weekly digest
+  (key kept, not orphaned). ⛔ Building a sender is a decision, not a walk fix.
+- **Message push could read "Message from None"** (SERVER, needs deploy):
+  `_notify_new_message` read only `user_public_profiles.display_name`. Now
+  COALESCEs public name → profiles.display_name → username → "Someone"; the
+  exact SQL was run on prod (Merle → "Merle", simcheck → NULL → "Someone").
+- **Sold listing said "ask the seller"** with no Message seller button (and the
+  seller's own listing said it to them). Copy now gated like the control.
+  Checked, not bugs: a grey square behind the back chevron (adb key-navigation
+  focus, `ANDROID_LAUNCH.md` gotcha 13) and the no-photo tile (deliberate).
+- ⚠️ **The `SparrowWalk` AVD is signed in as `simcheck@sparrowcollect.test`**
+  (`03d1b2fd…`, the throwaway account), NOT Merle's `4a1d…`. On 09-14 a
+  leaderboard row reading "Merle" was taken for the session and one per-user DB
+  check ran against the wrong member; a listing then read "(you)" on a row my
+  query had attributed to another member — the screen was right. Read the account from Settings' identity row
+  before any as-the-member query.
+- **Walked 09-14 on the 15:31 APK, no defect:** P2P listing detail (seller view
+  of simcheck's own active listing — "(you)" is correct), Leaderboard (deep-link-only by
+  design), Sets to complete (Pro gate → /subscription), Pokémon guide, Add tab
+  (template endpoint is public, 200 CSV), Deal Agent list, Create Event (not
+  submitted), Sponsor register (not submitted). **Seen on device:** a cold deep
+  link to an UNREGISTERED route (`my-suggestions`, process 22 s old) has a back
+  chevron that lands on Portfolio — the 09-14 root `headerLeft` fix works.
+  ⛔ Sponsor register collects a **Company Logo** that nothing renders
+  (`sponsorLogoUrl`, per `sponsorTiers.ts`) — part of the Spotlight
+  build-or-drop decision already open in `docs/MONETIZATION.md` §3.
+  ⚠️ `__tests__/components/settings.test.tsx` has **2 stale snapshots on HEAD**
+  (the Settings identity row) and is not in `verify:prebuild`.
 - **Audit of my own item-edit fix**: the page's loader fills fields after the
   row arrives, so opening Edit first read as an unsaved change and Cancel
   restored blanks — `adoptLoadedValues` moves the snapshot. And six screens lost

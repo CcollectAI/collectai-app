@@ -225,6 +225,18 @@ product decision rather than a bug.
 | GET | `/api/imports/template` | No | Download CSV import template |
 | POST | `/api/imports/collection` | JWT | Import collection from CSV/Excel |
 
+**Example rows are skipped by MARKER, never by name (2026-09-14, needs deploy).**
+The template ships three example rows, and only the first said "(delete this
+row)"; the importer skipped nothing but nameless rows. A member who typed their
+own rows under the examples imported a €9,800 Rolex and a LEGO Falcon they do
+not own (0 such rows in prod when found). All three are now `EXAMPLE – … (delete
+this row)` and rows matching that marker are skipped with "Example row from the
+template — skipped". Not by name: the template is the round-trip format of
+`/items-export/overview`, so a member's own export can hold a real "Rolex
+Submariner 116610LN". Tests in `server/tests/test_import_router.py`; run locally
+through a stub harness (the full server venv needs Xcode CLT 26.3 to build),
+mutation-proven — with the skip removed, the unchanged template imports 3 rows.
+
 ## Smart Deal Agent
 
 | Method | Path | Auth | Description |
@@ -287,6 +299,21 @@ Two rules that screen has to honour, both learned by getting them wrong:
   `null`; a field left out of the PATCH body reads as "unchanged". The screen
   detects intent via `model_fields_set`, because the server's
   `model_dump(exclude_none=True)` cannot tell the two apart.
+
+### `allowed_sources` — must be the CALLER's source tag, exactly (2026-09-14)
+
+`policy_engine.py` check 5 rejects a hit unless `hit["source"] in
+allowed_sources` — an exact string match, and nothing validates the values on
+write (no CHECK, no enum). So a toggle is only as good as the tag its caller
+stamps: `server/app/agents/adapters/<name>_caller.py`, the `"source"` field.
+
+`create-mandate.tsx` sent **`"mercari"`** while `MercariUSCaller` tags
+**`"mercari_us"`**: switching Mercari on would have rejected every Mercari
+result (whether the Mercari caller is configured on prod was not checked). The other six toggles (ebay, tcgplayer, cardmarket, discogs, stockx,
+bricklink) were checked against their callers and match. The screen now keeps
+`value` (the tag) apart from `brand` (the label-map key) and maps a stored
+legacy `mercari` on load. Prod had **0 mandates** when found, so nobody was
+affected. Found by checking the help page's "pick which marketplaces" claim.
 
 ## Catalog Browser
 

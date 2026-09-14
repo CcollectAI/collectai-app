@@ -905,8 +905,8 @@ list (both screens import it), and every line was checked against the code:
 | tier | the app now says | built where |
 |---|---|---|
 | Featured | "Sponsored" badge with your company name · Boosted in the events feed | `(tabs)/events.tsx` badge + "by {sponsorName}"; `rpc_list_personalized_events_v1` sorts `is_sponsored` — **below the viewer's followed categories**, so not "top of feed" |
-| Promoted | + push notification to followers of the event's category | `billing_router.py` — but `CATEGORY_FOLLOW_ENABLED=false` hides the follow pill, and prod has **1** follow row (1 user, 1 category), so today it reaches at most one person |
-| Spotlight | "Everything in Promoted" — nothing more | ⛔ the spec's **brand logo** (`sponsorLogoUrl` is rendered nowhere) and **analytics dashboard** (`getSponsorAnalytics` has no screen; impressions/clicks are only counted) are NOT built |
+| Promoted | + push notification to followers of the event's category | `billing_router.py` — `CATEGORY_FOLLOW_ENABLED=false` hides the follow pill, and prod has **1** follow row (1 user, 1 category), so today it reaches at most one person. Not structural (checked 2026-09-14): onboarding's category picker writes follows via `saveFollowedCategories` → the same `/follow` endpoint, so the audience grows with real sign-ups |
+| Spotlight | "Everything in Promoted" — nothing more | ⛔ the spec's **brand logo** (`sponsorLogoUrl` is rendered nowhere) and **analytics dashboard** (`getSponsorAnalytics` has no screen; impressions/clicks are only counted) are NOT built. `/sponsor/register` still ASKS for a company logo (walked 2026-09-14) — upload data nothing displays; decide it with the rest of Spotlight |
 
 The "POPULAR" badge (a tier nobody had bought) and the benefits grid's
 "thousands of dedicated collectors" and "track … conversions" are gone.
