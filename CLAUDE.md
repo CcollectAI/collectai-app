@@ -2142,6 +2142,10 @@ Android walk". The ones worth remembering here:
   prod has 252 upcoming, 49 in November. The calendar views now page until the
   server runs out (`src/lib/calendarPaging.ts`), counts show "+" while more
   exist. Simulated against the live API. Needs a build.
+- ⛔ **54% of the events feed is concerts labelled "Convention"** (09-14, NOT
+  fixed — taxonomy decision): music queries hard-code `kind_default =
+  "convention"` and there is no concert kind. 136 of 252. See
+  `docs/EVENT_QUALITY_PLAN.md`.
 - ⛔ **Watches priced from other models** (09-14, NOT fixed — decision):
   SB04 Grey Sector showed ~€7,885 from ONE comp, "Sartory Billard Frosted
   Platinum SB05". 70 of 128 watches with comps in retention have no comp

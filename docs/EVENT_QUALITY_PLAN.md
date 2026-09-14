@@ -322,6 +322,41 @@ copies are unpinned; write it before the next change to the predicate.
 DEFINER and has **no `is_public` filter** — `list_events` drops private rows in
 Python afterwards. Any new direct caller of the RPC would leak them.
 
+## ⛔ Half the feed is concerts labelled "Convention" (measured 2026-09-14, not fixed)
+
+Walked on Android: Taylor Swift's category page listed "Candlelight - A Tribute
+to Taylor Swift" and "Steve Hackman conducts Taylor Swift: The Symphony Era",
+each as **"Convention"**; the Events tab showed LE SSERAFIM at Crypto.com Arena
+the same way.
+
+Cause: the Ticketmaster and SeatGeek query tables hard-code `kind_default =
+"convention"` for music keywords — `bts`, `blackpink`, `k-pop`, `taylor swift`
+(`ticketmaster_events.py` QUERIES) — and `EventKind` has no concert kind at all
+(`collection_drop | meetup | stream | convention | release`).
+
+Through the feed's own gate (published, upcoming, public, score ≥ 40, not
+newsletter):
+
+| category | kind | source | rows |
+|---|---|---|---|
+| kpop_merch | convention | ticketmaster | 91 |
+| lego | convention | ticketmaster | 56 |
+| taylor_swift | convention | ticketmaster | 33 |
+| comic_books | convention | ticketmaster + seatgeek | 32 |
+| sportscards | convention | ticketmaster + seatgeek | 17 |
+| kpop_merch | convention | seatgeek | 7 |
+| taylor_swift | convention | seatgeek | 5 |
+
+**136 of 252 feed events (54%) are music events called conventions.** LEGO,
+comics and card shows may genuinely be shows. The Events tab's "Convention"
+filter chip therefore mostly returns concerts.
+
+Not fixed on the walk because the honest fix is a taxonomy change, not a label:
+a `concert` kind needs the `events.kind` CHECK constraint, `EventKind`,
+`KIND_LABEL`/`KIND_ICON`, the filter chips, the create-event picker and 7
+locales, plus a backfill of the music-keyword rows — and Ticketmaster's own
+`classifications[].segment` ("Music") is the better source than our keyword.
+
 ## What's intentionally NOT in scope
 
 - No ML model for spam classification — overkill for current scale. Rule-based beats a tiny model at <1k events/day.
