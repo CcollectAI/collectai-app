@@ -41,16 +41,15 @@ export async function getCategoryStore(categoryId: string): Promise<CategoryStor
   //
   // Through the SERVER, not supabase-js (2026-09-14). The direct read of
   // `v_events_with_attendees_v1` had no display gate, no status filter and no
-  // is_public check — see eventsProvider.listCategoryEvents. A failed read
-  // hides the section (null → []), exactly as a timeout did before.
-  let eventsData: CollectorsEvent[] | null = null;
-  try {
-    eventsData = await listCategoryEvents(categoryId, 5);
-  } catch (e) {
-    logger.error('[categoryProvider] getCategoryStore.events failed:', e);
-  }
+  // is_public check — see eventsProvider.listCategoryEvents.
+  //
+  // A failed read THROWS, it is not caught into []. CachedDataProvider wraps
+  // this in stale-while-revalidate: a [] returned here is cached for 5 minutes,
+  // and a background revalidate that "succeeds" with [] overwrites a good cached
+  // events list. The category screen already catches and logs the throw.
+  const eventsData: CollectorsEvent[] = await listCategoryEvents(categoryId, 5);
 
-  const upcomingEvents = (eventsData ?? []).map((e) => ({
+  const upcomingEvents = eventsData.map((e) => ({
     id: e.id,
     title: e.title,
     kind: e.kind,
