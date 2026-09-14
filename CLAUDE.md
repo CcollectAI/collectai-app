@@ -2094,7 +2094,7 @@ watchlist cards.
 
 ### The third Android walk, on a release APK (same day)
 
-Twenty-eight defects (ten found 09-14), **none Android-only** — layout, state and copy that Android
+Thirty defects (twelve found 09-14), **none Android-only** — layout, state and copy that Android
 merely showed first. Full table and rules: `docs/ui-playbook.md` "The third
 Android walk". The ones worth remembering here:
 
@@ -2142,6 +2142,15 @@ Android walk". The ones worth remembering here:
   prod has 252 upcoming, 49 in November. The calendar views now page until the
   server runs out (`src/lib/calendarPaging.ts`), counts show "+" while more
   exist. Simulated against the live API. Needs a build.
+- **Six screens drew a header with no cluster** (09-14): Sell an item and the
+  five legal pages. Enumerated from every `headerShown: false` registration;
+  now `ScreenHeader` (legal: actions only when signed in — register opens them
+  pre-account). The chat screens also lack the cluster; not decided.
+- **The not-set-up profile said "Add a display name"** and opened a form with
+  no such field; now "Choose a username" (which is sufficient), translated.
+- ⚠️ **A walk tap wrote to prod**: "Price seems off?" submits in one tap. The
+  row (test account, `disagree`, not training input) was deleted by id. Check
+  in code whether a control writes BEFORE tapping it on a walk.
 - **Cancelling an item edit kept the edit** (09-14): "Rayquaza …ZZ" stayed on
   screen after Cancel, and the next inline picker save would have written it;
   back/swipe discarded edits silently. Snapshot + restore in `useItemDetail`,
