@@ -1032,6 +1032,21 @@ async def delete_template(
 # Endpoints — Single event + update/delete (parameterized routes last)
 # ---------------------------------------------------------------------------
 
+def _hidden_from_detail(status: Optional[str], is_public: bool, created_by: Optional[str], user_id: Optional[str]) -> bool:
+    """Whether GET /events/{id} must answer 404 for this row.
+
+    Private events stay visible to their creator only. `rejected` is the
+    PIPELINES' quarantine status (event_dedup.py twins; the RSS news rows taken
+    out of the feed on 2026-09-14) and never has a creator in prod (556 rows,
+    0 with created_by) — before this, a quarantined article kept opening from any
+    shared link. Deliberately NOT the feed's display gate: past, cancelled and
+    low-scored events must still open for the members who RSVP'd to them.
+    """
+    if created_by is not None and created_by == user_id:
+        return False
+    return (not is_public) or status == "rejected"
+
+
 @core_router.get("/{event_id}", response_model=EventResponse, summary="Get event detail")
 async def get_event(
     event_id: str,
@@ -1082,8 +1097,8 @@ async def get_event(
 
                 event = row_to_event(dict(row), user_id=user_id)
 
-                # Hide non-public events unless the user is the creator
-                if not event.is_public and event.created_by != user_id:
+                # Hide non-public and quarantined events unless the user is the creator
+                if _hidden_from_detail(event.status, event.is_public, event.created_by, user_id):
                     raise error_response(404, "Event not found", code=ErrorCode.NOT_FOUND)
 
                 # If the view didn't include rsvp status, look it up separately
@@ -1132,8 +1147,8 @@ async def get_event(
     if ev is None:
         raise error_response(404, "Event not found", code=ErrorCode.NOT_FOUND)
 
-    # Hide non-public events unless the user is the creator
-    if not ev.get("is_public", True) and ev.get("created_by") != user_id:
+    # Hide non-public and quarantined events unless the user is the creator
+    if _hidden_from_detail(ev.get("status"), ev.get("is_public", True), ev.get("created_by"), user_id):
         raise error_response(404, "Event not found", code=ErrorCode.NOT_FOUND)
 
     rsvps = IN_MEMORY_RSVPS.get(event_id, {})

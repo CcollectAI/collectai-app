@@ -357,6 +357,62 @@ a `concert` kind needs the `events.kind` CHECK constraint, `EventKind`,
 locales, plus a backfill of the music-keyword rows — and Ticketmaster's own
 `classifications[].segment` ("Music") is the better source than our keyword.
 
+## ⛔ The RSS feeds are back in the feed as news, dated by publication (measured 2026-09-14, not fixed)
+
+Walked on Android: the event screen for **"DEAD BOYS Guitarist CHEETAH CHROME
+Dies At 71"** — an obituary from blabbermouth.net — rendered as a **"New release"**
+with his photo, "Event ended" and a Share button. Served by the live `GET /events`
+the app calls, alongside "Why Blizzard is betting on vanilla nostalgia…" and
+"Three Times Tudor Got The Design Brief Completely Right".
+
+**History.** 2026-06-15: 1,569 junk `rss`/newsletter rows purged and
+`RSS_EVENTS_ENABLED` gated off. 2026-09-02 (`3261776`): feeds curated, four
+quarantined, topic rules added — commit says *"The flag is NOT flipped here."*
+Prod `/opt/collectors/.env` now has `RSS_EVENTS_ENABLED=1`, uncommented, and the
+source has written **391 rows since 2026-09-02, 386 published**, averaging
+**18.4 feed events a day (max 45)**.
+
+| feed | published |
+|---|---:|
+| blabbermouth.net ("music/vinyl releases") | 115 |
+| belloflostsouls.net | 37 |
+| geeknative.com | 33 |
+| fratellowatches.com / hodinkee.com / sneakernews.com | 29 each |
+| 8 more | 114 |
+
+**The structural defect is the date, not the filter.** `rss_events.py`
+sets `date` from the item's `pubDate` (lines ~367–412). An article is therefore
+an event on the day it is WRITTEN: it passes the feed gate (`date >= CURRENT_DATE`)
+for exactly that day and reads "Event ended" the next. A real announcement gets
+the wrong date — "Lancaster Watch Weekend Returns September 25–27" is dated its
+publish day, not the 25th. No title rule can fix that, and the relevance filter
+leaks the very classes its own docstring excludes ("Why X…", retrospectives,
+general news; blabbermouth is a metal news site, so concert cancellations and
+deaths match `\bannounc`/`\brelease\b`).
+
+**Done the same evening (decided by Merle):**
+1. `RSS_EVENTS_ENABLED=0` in `/opt/collectors/.env` with a dated comment
+   (backup `.env.bak_20260914_rss`). The unit reads it via `EnvironmentFile`, so
+   the bake was restarted — no server code had changed since the running process
+   started, all nine preflight gates PASSED first, `/healthz` 200 within 6 s, and
+   `/proc/<pid>/environ` shows `RSS_EVENTS_ENABLED=0`.
+2. The 386 rows set to `status='rejected'` (not deleted — the dedup quarantine
+   status, no triggers on `events`), inside one transaction restricted to the
+   saved id list AND `source='rss' AND status='published'`, asserting exactly 386.
+   Ids: `/opt/collectors/rss_unpublish_ids_20260914.txt`. Reverse with the same
+   list. Live `GET /events` then served 100 events, **0 rss**.
+3. ⚠️ `GET /events/{id}` still returned the obituary (200, `status: rejected`):
+   the detail route gated only `is_public`. Fixed in code —
+   `_hidden_from_detail` in `events_core.py` 404s a `rejected` row for anyone
+   but its creator (556 rejected rows in prod, 0 with a creator) and also closes
+   a private-with-no-creator gap (0 such rows). Test in
+   `test_events_router.py`. **Needs a server deploy** — until then a shared link
+   still opens the article.
+
+**Still open:** whether RSS returns at all — and if so only with an event date
+EXTRACTED from the text (`_extract_dates` exists), never `pubDate`, and without
+blabbermouth.
+
 ## What's intentionally NOT in scope
 
 - No ML model for spam classification — overkill for current scale. Rule-based beats a tiny model at <1k events/day.

@@ -322,6 +322,18 @@ class TestGetEvent:
         # user_rsvp_status may be None or absent
         assert r.json().get("user_rsvp_status") is None
 
+    def test_a_quarantined_event_is_not_found_by_link(self):
+        """2026-09-14: 386 RSS news articles (an obituary among them) were set to
+        status='rejected' to take them out of the feed — and the detail route
+        still served every one of them by id, so any shared link kept working.
+        `rejected` is the pipelines' quarantine status (dedup twins, RSS); it has
+        no creator, so this hides nobody's own event."""
+        resp = client.post("/events", json=_valid_event_payload())
+        event_id = resp.json()["id"]
+        _IN_MEMORY_EVENTS[event_id]["status"] = "rejected"
+        r = client.get(f"/events/{event_id}")
+        assert r.status_code == 404
+
 
 # ===========================================================================
 # RSVP — POST /events/{event_id}/rsvp

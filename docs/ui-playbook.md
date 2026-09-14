@@ -2391,6 +2391,12 @@ checked by anything. The static test now fails on any direct read of the view.
   `user_category_follows`) — it is not: onboarding's category picker writes
   follows through `saveFollowedCategories` → the same `/follow` endpoint. A grep
   for `followCategory` missed that caller; grep the ENDPOINT, not one wrapper.
+- **Twitch leaderboard speaks to a developer** ("Add rows to the twitch_creators
+  table in Supabase") — a known stub (memory `project_twitch_is_stub`: leave the
+  FE alone until an ingestion worker exists) and reachable only by typed deep
+  link; the leaderboard's button to it is `COMMUNITY_GATED`.
+- **Register's "Creator code (optional)"** is wired end to end: signup metadata
+  → `handle_new_user` reads it. No member has used one yet.
 - ⚠️ **A path glob in a `//` comment broke a gate** (my own, 2026-09-14): writing
   `adapters/*_caller.py` in a line comment put `/*` in the file, and
   `check:unrendered-components` read everything after it as a block comment — so

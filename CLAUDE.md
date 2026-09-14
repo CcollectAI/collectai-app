@@ -2220,6 +2220,15 @@ Android walk". The ones worth remembering here:
   `createSharedCount` (one in-flight, TTL, per-user, failure consumes the
   window). Gate `headerBadgeFanout` — its retry test first passed WITHOUT the
   fix (synchronised mounts); rewritten to stagger. Needs a build.
+- **News articles were live in the Events feed as "New release" events**
+  (09-14): an obituary ("CHEETAH CHROME Dies At 71") showed as a release with
+  Share. `RSS_EVENTS_ENABLED=1` on prod although the 09-02 curation commit said it
+  was not flipped; 386 published rows, ~18/day. The pipeline dates each item by
+  `pubDate`, so no RSS item can carry a real event date. ✅ On Merle's call:
+  flag OFF (9 gates PASS, bake restarted, healthy), 386 rows → `rejected` (ids on
+  the box), live feed 0 rss. ⚠️ The detail route still served rejected rows by
+  link — `_hidden_from_detail` fixes it in code, NEEDS DEPLOY. ⛔ Whether RSS
+  returns is open. `docs/EVENT_QUALITY_PLAN.md`.
 - **"They'll receive a notification" — nothing sends one** (09-14): the DM
   request compose promised it; `rpc_request_dm_v1` notifies no one, no trigger
   exists on the chat/DM tables, `notify_connection_request` has only a test
@@ -2241,6 +2250,13 @@ Android walk". The ones worth remembering here:
   check ran against the wrong member; a listing then read "(you)" on a row my
   query had attributed to another member — the screen was right. Read the account from Settings' identity row
   before any as-the-member query.
+- **Walked 09-14 later, no defect:** sign-out confirm → Login, Register (creator
+  code wired to `handle_new_user`), Forgot password (not submitted — it sends a
+  real email), sign back in as simcheck, Diagnostics, Request to Connect, Twitch
+  leaderboard (known stub). Still unwalked: organiser event screens (the walk
+  account owns no event, and creating one would publish it), `projects/[id]`,
+  `purchase/deal/[dealId]` (no data), verify-email / reset-password (need a real
+  signup or recovery link).
 - **Walked 09-14 on the 15:31 APK, no defect:** P2P listing detail (seller view
   of simcheck's own active listing — "(you)" is correct), Leaderboard (deep-link-only by
   design), Sets to complete (Pro gate → /subscription), Pokémon guide, Add tab
