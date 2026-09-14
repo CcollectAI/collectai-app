@@ -293,7 +293,7 @@ Two rules that screen has to honour, both learned by getting them wrong:
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/catalog/{category_id}/items` | No (IP rate limit) | Browse the catalog. `sort=value\|newest\|set\|title` (`value` ranks by latest comp price and implies `priced_only`), `priced_only`, `q`, `rarity`, `limit`, `offset`. `total` is always the full category count. Drives the category-page overview rail. |
-| GET | `/catalog/{category_id}/collections` | No | Set_code-grouped discovery collections with cover art |
+| GET | `/catalog/{category_id}/collections` | No | Set_code-grouped discovery collections with cover art. `display_name` is the catalogue's own set name when it is unique in the category (`mv_catalog_collections.set_name`), else the code — humanised only if all-lowercase. ✅ `server/scripts/20260914_collection_set_names.sql` applied and the router deployed 2026-09-14, in that order — the reverse 500s the rail. Recreating the MV again? Same order, and check `relacl` came back |
 | POST | `/catalog/match` | JWT + Rate Limit | Match a manual (title, category) entry → best catalog item_key for canonical_key |
 
 ## Catalog Learning

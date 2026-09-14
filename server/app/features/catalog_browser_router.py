@@ -709,8 +709,33 @@ async def get_top_movers(
 # ---------------------------------------------------------------------------
 
 def _humanize_set_code(set_code: str) -> str:
-    """gundam-wing -> Gundam Wing; base-set-2 -> Base Set 2."""
+    """gundam-wing -> Gundam Wing; base-set-2 -> Base Set 2.
+
+    Only an all-lowercase code is rewritten. Many categories store a code that
+    is already the display form, and `str.capitalize()` lowercases the rest of
+    each word: "CBS/Sony" became "Cbs/sony", "SB Dunk Low" "Sb Dunk Low",
+    "BT01-03A" "Bt01 03a". A code with no letters ("10274-1", a LEGO set number)
+    is kept too. Lowercase codes with other punctuation ("ad&d-2e",
+    "drawn-&-quarterly") are still rewritten — returning them raw was worse,
+    which is how the first version of this guard regressed them (2026-09-14).
+    """
+    if any(ch.isupper() for ch in set_code) or not any(ch.isalpha() for ch in set_code):
+        return set_code
     return " ".join(w.capitalize() for w in set_code.replace("_", "-").split("-") if w)
+
+
+def _collection_display_name(grp: str, set_name: Optional[str], group_by: str) -> str:
+    """The rail's label for one group.
+
+    Brands are already display-ready. A set prefers the catalogue's own name
+    (`mv_catalog_collections.set_name`, only filled when that name is unique in
+    its category, so "2023-panini-prizm" keeps its year instead of becoming
+    "Panini Prizm"); the humanised code is the fallback. Before 2026-09-14 the
+    fallback was the only source, and Pokémon's top sets read "Swsh8" and "Smp".
+    """
+    if group_by == "brand":
+        return grp
+    return set_name or _humanize_set_code(grp)
 
 
 @router.get(
@@ -752,7 +777,7 @@ async def browse_catalog_collections(
     dim = "brand" if group_by == "brand" else "set"
     rows = await pool.fetch(
         """
-        SELECT grp, total_items, cover_image
+        SELECT grp, total_items, cover_image, set_name
         FROM mv_catalog_collections
         WHERE category = $1 AND dim = $2
         ORDER BY total_items DESC, grp
@@ -766,8 +791,7 @@ async def browse_catalog_collections(
     collections = [
         CatalogCollection(
             collection_key=r["grp"],
-            # Brands are already display-ready; only set codes need humanizing.
-            display_name=r["grp"] if group_by == "brand" else _humanize_set_code(r["grp"]),
+            display_name=_collection_display_name(r["grp"], r["set_name"], group_by),
             total_items=int(r["total_items"]),
             cover_image=r["cover_image"],
         )

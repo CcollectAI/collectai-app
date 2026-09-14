@@ -8896,6 +8896,10 @@
       "nullable": true,
       "type": "text"
     },
+    "mv_catalog_collections.set_name": {
+      "nullable": true,
+      "type": "text"
+    },
     "mv_catalog_collections.total_items": {
       "nullable": true,
       "type": "int8"
@@ -22559,7 +22563,8 @@
       "dim",
       "grp",
       "total_items",
-      "cover_image"
+      "cover_image",
+      "set_name"
     ],
     "mv_catalog_item_price": [
       "category",

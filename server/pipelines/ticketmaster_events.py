@@ -116,6 +116,32 @@ def _keyword_matches_event(event: dict[str, Any], keyword: str) -> bool:
     return _normalise(keyword) in _normalise(_event_identity_text(event))
 
 
+def _compose_location(*parts: Optional[str]) -> Optional[str]:
+    """Join venue, city and country into one display string.
+
+    Ticketmaster's names carry trailing whitespace ("Epic Studios, Norwich ")
+    and a venue name often already ends with its city ("St Georges Hall,
+    Bradford"). A bare ", ".join printed "Epic Studios, Norwich , Great
+    Britain" and "St Georges Hall, Bradford , Bradford, Great Britain" — 8
+    upcoming rows on prod, walked on Android 2026-09-13/14. Each part is
+    stripped, and a part identical to the previous comma segment is skipped.
+    """
+    out = ""
+    for raw in parts:
+        part = (raw or "").strip().strip(",").strip()
+        if not part:
+            continue
+        # Only an exact repeat of the previous comma SEGMENT is dropped. A venue
+        # whose name merely contains its city ("O2 Academy Glasgow") keeps the
+        # city: a first version matched any suffix and rewrote 15 of 115 live
+        # locations that were never broken — and event_quality scores a
+        # comma-separated city+country, so fewer segments could cost score.
+        if out and out.rsplit(",", 1)[-1].strip().lower() == part.lower():
+            continue
+        out = f"{out}, {part}" if out else part
+    return out or None
+
+
 def _event_to_scraped(
     event: dict[str, Any],
     category_id: str,
@@ -137,8 +163,7 @@ def _event_to_scraped(
     city = (venue.get("city") or {}).get("name")
     country = (venue.get("country") or {}).get("name")
     venue_name = venue.get("name")
-    location_parts = [p for p in (venue_name, city, country) if p]
-    location = ", ".join(location_parts) if location_parts else None
+    location = _compose_location(venue_name, city, country)
 
     images = event.get("images") or []
     image_url: Optional[str] = None
