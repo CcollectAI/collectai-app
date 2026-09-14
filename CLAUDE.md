@@ -2094,7 +2094,7 @@ watchlist cards.
 
 ### The third Android walk, on a release APK (same day)
 
-Twenty-four defects (six found 09-14), **none Android-only** — layout, state and copy that Android
+Twenty-seven defects (nine found 09-14), **none Android-only** — layout, state and copy that Android
 merely showed first. Full table and rules: `docs/ui-playbook.md` "The third
 Android walk". The ones worth remembering here:
 
@@ -2137,6 +2137,16 @@ Android walk". The ones worth remembering here:
   read was gone. Now `GET /events?category_id=` (verified on prod: the row is
   excluded), dates through `formatEventWhen`, kind maps shared. Gate:
   `__tests__/data/noDirectEventViewRead` (fails on HEAD). Needs a build.
+- **The Events calendar showed November empty** (09-14): Week/Month filter
+  loaded events by day and only page one (100, the server max) was loaded;
+  prod has 252 upcoming, 49 in November. The calendar views now page until the
+  server runs out (`src/lib/calendarPaging.ts`), counts show "+" while more
+  exist. Simulated against the live API. Needs a build.
+- **Categories index franchise pills stretched to ~340dp empty cards** — a
+  horizontal ScrollView's default `flexGrow: 1`; all 16 enumerated, one live.
+- ⚠️ **My own first category-events fix caught errors into `[]`**, which the
+  stale-while-revalidate cache would have stored for 5 minutes and let a failed
+  revalidate overwrite good data. Found by the audit, fixed before any build.
 - **Items tab** repeated a one-item section's price as "Collection total" and
   was English-only — fixed 09-14, needs a build.
 - **Open, found 09-14:** (1) `postflight_smoke_test` pages on every restart
