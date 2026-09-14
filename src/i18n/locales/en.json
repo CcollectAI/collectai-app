@@ -43,7 +43,10 @@
     "a11y_next_day": "Next day",
     "save_changes": "Save Changes",
     "a11y_save_changes": "Save changes",
-    "a11y_cancel_editing": "Cancel editing"
+    "a11y_cancel_editing": "Cancel editing",
+    "unsaved_title": "Unsaved Changes",
+    "unsaved_message": "You have unsaved changes. Discard them and leave?",
+    "discard": "Discard"
   },
   "add_tab": {
     "subtitle": "Fast, camera-first flow.",

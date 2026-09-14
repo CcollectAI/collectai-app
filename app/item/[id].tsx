@@ -42,6 +42,7 @@ import { featureFlags, LIVE_PRICE_FETCH_ENABLED } from "@/config/featureFlags";
 import { radius, text, fontWeight, gap, shadow } from "@/theme/tokens";
 import { collectorsApi } from "@/api/collectorsApi";
 import { enrichOnDemand } from "@/api/marketplaceApi";
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import logger from "@/utils/logger";
 import { formatPrice, getCurrencySymbol, isUnpriced, UNPRICED_LABEL } from "@/lib/format";
 import { computeItemDelta } from '@/lib/portfolioAnalytics';
@@ -416,6 +417,7 @@ function ItemDetailScreen() {
   }, [savedCore, detail]);
   const {
     isEditing, setIsEditing,
+    editsDirty, cancelEdits,
     editableName, setEditableName,
     editableCategory, setEditableCategory,
     editableCollection, setEditableCollection,
@@ -459,8 +461,12 @@ function ItemDetailScreen() {
    * merge endpoint is a lost update).
    */
   const editedAttrsRef = React.useRef<Record<string, string>>({});
+  // Mirrors "editedAttrsRef is non-empty" as STATE, so the unsaved-changes guard
+  // below re-registers when an attribute is edited (a ref change renders nothing).
+  const [attrsEdited, setAttrsEdited] = useState(false);
   const onChangeAttribute = useCallback((key: string, value: string) => {
     editedAttrsRef.current[key] = value;
+    setAttrsEdited(true);
   }, []);
 
   const saveEditsWithAttributes = useCallback(async () => {
@@ -480,6 +486,7 @@ function ItemDetailScreen() {
         // save having failed.
         setSavedAttrs((prev) => ({ ...(prev ?? {}), ...edited }));
         editedAttrsRef.current = {};
+        setAttrsEdited(false);
       } catch (e) {
         logger.error('[ItemDetail] attribute save failed:', e);
         showToast({ message: "Couldn't save those details", type: 'error' });
@@ -488,6 +495,19 @@ function ItemDetailScreen() {
     }
     await onSaveEdits();
   }, [id, isDraft, onSaveEdits, showToast]);
+
+  // Leaving edit mode with changes asks first — back button, Android back and
+  // the iOS swipe all go through beforeRemove. Before 2026-09-14 they discarded
+  // the edits silently (walked on Android). Same hook add-manual uses.
+  const discardEdits = useCallback(() => {
+    editedAttrsRef.current = {};
+    setAttrsEdited(false);
+    cancelEdits();
+  }, [cancelEdits]);
+  useUnsavedChanges({
+    isDirty: isEditing && (editsDirty || attrsEdited),
+    onDiscard: discardEdits,
+  });
 
   // Photo & gallery management (extracted to useItemGallery hook)
   const gallery = useItemGallery(id, isDraft, imageUri);
@@ -1105,7 +1125,10 @@ function ItemDetailScreen() {
               // ref survives the cancel, and the next unrelated save would
               // silently write the abandoned values — an edit the member
               // explicitly took back.
-              onCancel={() => { editedAttrsRef.current = {}; setIsEditing(false); }}
+              // and the core fields back to what they held when edit opened
+              // (cancelEdits) — otherwise the abandoned name stays on screen
+              // and the next inline save writes it.
+              onCancel={discardEdits}
             />
           )}
 

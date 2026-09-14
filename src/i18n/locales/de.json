@@ -43,7 +43,10 @@
     "a11y_next_day": "Nächster Tag",
     "save_changes": "Änderungen speichern",
     "a11y_save_changes": "Änderungen speichern",
-    "a11y_cancel_editing": "Bearbeiten abbrechen"
+    "a11y_cancel_editing": "Bearbeiten abbrechen",
+    "unsaved_title": "Ungespeicherte Änderungen",
+    "unsaved_message": "Du hast ungespeicherte Änderungen. Verwerfen und verlassen?",
+    "discard": "Verwerfen"
   },
   "add_tab": {
     "subtitle": "Schneller, kamerazuerst Flow.",

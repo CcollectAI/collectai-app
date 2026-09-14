@@ -2094,7 +2094,7 @@ watchlist cards.
 
 ### The third Android walk, on a release APK (same day)
 
-Twenty-seven defects (nine found 09-14), **none Android-only** — layout, state and copy that Android
+Twenty-eight defects (ten found 09-14), **none Android-only** — layout, state and copy that Android
 merely showed first. Full table and rules: `docs/ui-playbook.md` "The third
 Android walk". The ones worth remembering here:
 
@@ -2142,6 +2142,13 @@ Android walk". The ones worth remembering here:
   prod has 252 upcoming, 49 in November. The calendar views now page until the
   server runs out (`src/lib/calendarPaging.ts`), counts show "+" while more
   exist. Simulated against the live API. Needs a build.
+- **Cancelling an item edit kept the edit** (09-14): "Rayquaza …ZZ" stayed on
+  screen after Cancel, and the next inline picker save would have written it;
+  back/swipe discarded edits silently. Snapshot + restore in `useItemDetail`,
+  unsaved-changes guard on the screen. Tested (`itemEditCancel`, mutation-proven).
+  ⚠️ `__tests__/hooks/useItemDetail.test.ts` has **5 failing tests on HEAD** —
+  the for-sale toggle deleted 09-08 — and is not in `verify:prebuild`, so nobody
+  sees it. Delete or rewrite those five.
 - **Categories index franchise pills stretched to ~340dp empty cards** — a
   horizontal ScrollView's default `flexGrow: 1`; all 16 enumerated, one live.
 - ⚠️ **My own first category-events fix caught errors into `[]`**, which the

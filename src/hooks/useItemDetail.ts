@@ -103,6 +103,57 @@ export function useItemDetail(params: UseItemDetailParams) {
   // is not a shape a single purchase has.
   const [editableAcquisitionFees, setEditableAcquisitionFees] = useState(initialAcquisitionFees ?? '');
 
+  // What the fields held when edit mode OPENED. Cancel restores it.
+  //
+  // Cancel used to only flip `isEditing` off, so the abandoned values stayed in
+  // state: walked on Android 2026-09-14, typing "ZZ" into the name and tapping
+  // Cancel left the title reading "Rayquaza ex (Emerald 097)ZZ" — and the
+  // tap-to-edit pickers call onSaveEdits, which writes `editableName`, so the
+  // NEXT unrelated edit would have saved the name the member took back.
+  //
+  // Taken in an effect on `isEditing` so every way into edit mode is covered —
+  // the Edit button and the three inline pickers — and before any field can
+  // change (a change needs a later event than the render that opened it).
+  type EditSnapshot = {
+    name: string; category: string; collection: string; condition: string;
+    value: string; purchasePrice: string; acquisitionFees: string;
+  };
+  const [editSnapshot, setEditSnapshot] = useState<EditSnapshot | null>(null);
+  useEffect(() => {
+    if (!isEditing) { setEditSnapshot(null); return; }
+    setEditSnapshot((prev) => prev ?? {
+      name: editableName, category: editableCategory, collection: editableCollection,
+      condition: editableCondition, value: editableValue,
+      purchasePrice: editablePurchasePrice, acquisitionFees: editableAcquisitionFees,
+    });
+    // Only the open/close transition matters; the field values are read at
+    // that moment on purpose.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditing]);
+
+  const editsDirty = isEditing && editSnapshot !== null && (
+    editableName !== editSnapshot.name ||
+    editableCategory !== editSnapshot.category ||
+    editableCollection !== editSnapshot.collection ||
+    editableCondition !== editSnapshot.condition ||
+    editableValue !== editSnapshot.value ||
+    editablePurchasePrice !== editSnapshot.purchasePrice ||
+    editableAcquisitionFees !== editSnapshot.acquisitionFees
+  );
+
+  const cancelEdits = useCallback(() => {
+    if (editSnapshot) {
+      setEditableName(editSnapshot.name);
+      setEditableCategory(editSnapshot.category);
+      setEditableCollection(editSnapshot.collection);
+      setEditableCondition(editSnapshot.condition);
+      setEditableValue(editSnapshot.value);
+      setEditablePurchasePrice(editSnapshot.purchasePrice);
+      setEditableAcquisitionFees(editSnapshot.acquisitionFees);
+    }
+    setIsEditing(false);
+  }, [editSnapshot]);
+
   // ── Notes & save state ─────────────────────────────────────────────────
   const [notes, setNotes] = useState(initialNotes || '');
   const [savingNotes, setSavingNotes] = useState(false);
@@ -468,6 +519,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     editableValue, setEditableValue,
     editablePurchasePrice, setEditablePurchasePrice,
     editableAcquisitionFees, setEditableAcquisitionFees,
+    editsDirty, cancelEdits,
 
     // Notes & save
     notes, setNotes,

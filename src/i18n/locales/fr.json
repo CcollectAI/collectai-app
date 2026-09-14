@@ -43,7 +43,10 @@
     "a11y_next_day": "Jour suivant",
     "save_changes": "Enregistrer les modifications",
     "a11y_save_changes": "Enregistrer les modifications",
-    "a11y_cancel_editing": "Annuler la modification"
+    "a11y_cancel_editing": "Annuler la modification",
+    "unsaved_title": "Modifications non enregistrées",
+    "unsaved_message": "Vous avez des modifications non enregistrées. Les abandonner et quitter ?",
+    "discard": "Abandonner"
   },
   "add_tab": {
     "subtitle": "Flux rapide, photo d'abord.",

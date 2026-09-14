@@ -43,7 +43,10 @@
     "a11y_next_day": "次の日",
     "save_changes": "変更を保存",
     "a11y_save_changes": "変更を保存",
-    "a11y_cancel_editing": "編集をキャンセル"
+    "a11y_cancel_editing": "編集をキャンセル",
+    "unsaved_title": "未保存の変更",
+    "unsaved_message": "保存していない変更があります。破棄して戻りますか？",
+    "discard": "破棄"
   },
   "add_tab": {
     "subtitle": "高速、カメラ優先のフロー。",

@@ -8,6 +8,7 @@
 import { useEffect } from 'react';
 import { Alert } from 'react-native';
 import { useNavigation } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 interface UseUnsavedChangesOptions {
   /** Whether the form has unsaved changes */
@@ -18,6 +19,7 @@ interface UseUnsavedChangesOptions {
 
 export function useUnsavedChanges({ isDirty, onDiscard }: UseUnsavedChangesOptions) {
   const navigation = useNavigation();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!isDirty) return;
@@ -27,12 +29,12 @@ export function useUnsavedChanges({ isDirty, onDiscard }: UseUnsavedChangesOptio
       e.preventDefault();
 
       Alert.alert(
-        'Unsaved Changes',
-        'You have unsaved changes. Discard them and leave?',
+        t('common.unsaved_title', { defaultValue: 'Unsaved Changes' }),
+        t('common.unsaved_message', { defaultValue: 'You have unsaved changes. Discard them and leave?' }),
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: t('common.cancel', { defaultValue: 'Cancel' }), style: 'cancel' },
           {
-            text: 'Discard',
+            text: t('common.discard', { defaultValue: 'Discard' }),
             style: 'destructive',
             onPress: () => {
               onDiscard?.();
@@ -45,5 +47,5 @@ export function useUnsavedChanges({ isDirty, onDiscard }: UseUnsavedChangesOptio
     });
 
     return unsubscribe;
-  }, [isDirty, navigation, onDiscard]);
+  }, [isDirty, navigation, onDiscard, t]);
 }

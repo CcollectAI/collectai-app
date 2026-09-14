@@ -43,7 +43,10 @@
     "a11y_next_day": "Día siguiente",
     "save_changes": "Guardar cambios",
     "a11y_save_changes": "Guardar cambios",
-    "a11y_cancel_editing": "Cancelar la edición"
+    "a11y_cancel_editing": "Cancelar la edición",
+    "unsaved_title": "Cambios sin guardar",
+    "unsaved_message": "Tienes cambios sin guardar. ¿Descartarlos y salir?",
+    "discard": "Descartar"
   },
   "add_tab": {
     "subtitle": "Flujo rápido, cámara primero.",

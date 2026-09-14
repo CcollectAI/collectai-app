@@ -43,7 +43,10 @@
     "a11y_next_day": "Volgende dag",
     "save_changes": "Wijzigingen opslaan",
     "a11y_save_changes": "Wijzigingen opslaan",
-    "a11y_cancel_editing": "Bewerken annuleren"
+    "a11y_cancel_editing": "Bewerken annuleren",
+    "unsaved_title": "Niet-opgeslagen wijzigingen",
+    "unsaved_message": "Je hebt wijzigingen die niet zijn opgeslagen. Weggooien en teruggaan?",
+    "discard": "Weggooien"
   },
   "add_tab": {
     "subtitle": "Snelle, camera-gerichte flow.",
