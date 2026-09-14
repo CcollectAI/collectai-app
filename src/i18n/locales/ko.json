@@ -585,7 +585,8 @@
     "no_steps_yet": "아직 추가된 단계가 없습니다",
     "add_step_placeholder": "단계 추가...",
     "a11y_new_step": "새 단계 제목",
-    "a11y_add_step": "단계 추가"
+    "a11y_add_step": "단계 추가",
+    "load_failed": "프로젝트를 불러오지 못했습니다"
   },
   "watchlist": {
     "add_title": "관심 목록에 추가",
@@ -1187,7 +1188,8 @@
     "browse_by_set": "세트별 둘러보기",
     "browse_by_brand": "브랜드별 둘러보기",
     "set_item_count_many": "아이템 {{count}}개",
-    "set_item_count_one": "아이템 1개"
+    "set_item_count_one": "아이템 1개",
+    "list_load_failed": "카테고리를 불러오지 못했습니다"
   },
   "analytics": {
     "a11y_retry": "분석 데이터 다시 불러오기",
@@ -1198,7 +1200,8 @@
     "portfolio_tier": "포트폴리오 등급",
     "tap_view_leaderboard": "탭하여 리더보드 보기",
     "a11y_how_scores": "점수는 어떻게 계산되나요?",
-    "how_scores_calculated": "이 점수는 어떻게 계산되나요?"
+    "how_scores_calculated": "이 점수는 어떻게 계산되나요?",
+    "load_failed": "분석 일부를 불러오지 못했습니다."
   },
   "guide": {
     "no_guide_yet": "이 카테고리의 가이드가 아직 없습니다",

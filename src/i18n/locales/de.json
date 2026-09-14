@@ -585,7 +585,8 @@
     "no_steps_yet": "Noch keine Schritte hinzugefügt",
     "add_step_placeholder": "Schritt hinzufügen...",
     "a11y_new_step": "Titel des neuen Schritts",
-    "a11y_add_step": "Schritt hinzufügen"
+    "a11y_add_step": "Schritt hinzufügen",
+    "load_failed": "Deine Projekte konnten nicht geladen werden"
   },
   "watchlist": {
     "add_title": "Zur Merkliste hinzufügen",
@@ -1187,7 +1188,8 @@
     "browse_by_set": "Nach Set stöbern",
     "browse_by_brand": "Nach Marke stöbern",
     "set_item_count_many": "{{count}} Objekte",
-    "set_item_count_one": "1 Objekt"
+    "set_item_count_one": "1 Objekt",
+    "list_load_failed": "Kategorien konnten nicht geladen werden"
   },
   "analytics": {
     "a11y_retry": "Analysedaten erneut laden",
@@ -1198,7 +1200,8 @@
     "portfolio_tier": "Portfolio-Stufe",
     "tap_view_leaderboard": "Tippen, um die Rangliste zu sehen",
     "a11y_how_scores": "Wie werden die Werte berechnet?",
-    "how_scores_calculated": "Wie werden diese Werte berechnet?"
+    "how_scores_calculated": "Wie werden diese Werte berechnet?",
+    "load_failed": "Ein Teil deiner Analysen konnte nicht geladen werden."
   },
   "guide": {
     "no_guide_yet": "Noch kein Leitfaden für diese Kategorie",

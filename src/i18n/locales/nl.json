@@ -585,7 +585,8 @@
     "no_steps_yet": "Nog geen stappen toegevoegd",
     "add_step_placeholder": "Voeg een stap toe...",
     "a11y_new_step": "Titel van nieuwe stap",
-    "a11y_add_step": "Stap toevoegen"
+    "a11y_add_step": "Stap toevoegen",
+    "load_failed": "Je projecten konden niet worden geladen"
   },
   "watchlist": {
     "add_title": "Toevoegen aan volglijst",
@@ -1187,7 +1188,8 @@
     "browse_by_set": "Blader per set",
     "browse_by_brand": "Blader per merk",
     "set_item_count_many": "{{count}} items",
-    "set_item_count_one": "1 item"
+    "set_item_count_one": "1 item",
+    "list_load_failed": "Categorieën konden niet worden geladen"
   },
   "analytics": {
     "a11y_retry": "Analysegegevens opnieuw laden",
@@ -1198,7 +1200,8 @@
     "portfolio_tier": "Portefeuilleniveau",
     "tap_view_leaderboard": "Tik om de ranglijst te bekijken",
     "a11y_how_scores": "Hoe worden scores berekend?",
-    "how_scores_calculated": "Hoe worden deze scores berekend?"
+    "how_scores_calculated": "Hoe worden deze scores berekend?",
+    "load_failed": "Een deel van je analyse kon niet worden geladen."
   },
   "guide": {
     "no_guide_yet": "Nog geen gids voor deze categorie",

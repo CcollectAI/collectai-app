@@ -141,10 +141,21 @@ function AnalyticsScreen() {
     if (e instanceof Error) return e.message;
     return String(e);
   };
+  // The banner used to print the raw parts — walked on Android 2026-09-14 it
+  // read "categories: Request timed out after 15000ms": an internal label and a
+  // millisecond count, on a member-facing screen. The detail goes to the log
+  // (it went nowhere before — useAsync does not log); the member gets a
+  // sentence and the Retry beside it.
   const errorParts: string[] = [];
   if (snapshotError) errorParts.push(`snapshot: ${errMsg(snapshotError)}`);
   if (categoryError) errorParts.push(`categories: ${errMsg(categoryError)}`);
-  const error = errorParts.length ? errorParts.join(' · ') : null;
+  const errorDetail = errorParts.length ? errorParts.join(' · ') : null;
+  useEffect(() => {
+    if (errorDetail) logger.error('[Analytics] load failed:', errorDetail);
+  }, [errorDetail]);
+  const error = errorDetail
+    ? t('analytics.load_failed', { defaultValue: "Some of your analytics couldn't load." })
+    : null;
   const retry = useCallback(async () => {
     await Promise.all([retrySnapshot(), retryCategories()]);
   }, [retrySnapshot, retryCategories]);
@@ -485,7 +496,7 @@ function AnalyticsScreen() {
               accessibilityLabel={t('analytics.a11y_retry', { defaultValue: 'Retry loading analytics data' })}
             >
               <Ionicons name="refresh-outline" size={14} color="#fff" />
-              <Text style={styles.errorRetryText}>Retry</Text>
+              <Text style={styles.errorRetryText}>{t('common.retry', { defaultValue: 'Retry' })}</Text>
             </AnimatedPressable>
           </View>
         )}

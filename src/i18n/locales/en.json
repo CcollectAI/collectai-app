@@ -585,7 +585,8 @@
     "no_steps_yet": "No steps added yet",
     "add_step_placeholder": "Add a step...",
     "a11y_new_step": "New step title",
-    "a11y_add_step": "Add step"
+    "a11y_add_step": "Add step",
+    "load_failed": "Couldn't load your projects"
   },
   "watchlist": {
     "add_title": "Add to Watchlist",
@@ -1187,7 +1188,8 @@
     "browse_by_set": "Browse by set",
     "browse_by_brand": "Browse by brand",
     "set_item_count_many": "{{count}} items",
-    "set_item_count_one": "1 item"
+    "set_item_count_one": "1 item",
+    "list_load_failed": "Couldn't load categories"
   },
   "analytics": {
     "a11y_retry": "Retry loading analytics data",
@@ -1198,7 +1200,8 @@
     "portfolio_tier": "Portfolio Tier",
     "tap_view_leaderboard": "Tap to view leaderboard",
     "a11y_how_scores": "How are scores calculated?",
-    "how_scores_calculated": "How are these scores calculated?"
+    "how_scores_calculated": "How are these scores calculated?",
+    "load_failed": "Some of your analytics couldn't load."
   },
   "guide": {
     "no_guide_yet": "No guide for this category yet",

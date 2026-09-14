@@ -2094,7 +2094,7 @@ watchlist cards.
 
 ### The third Android walk, on a release APK (same day)
 
-Thirty defects (twelve found 09-14), **none Android-only** — layout, state and copy that Android
+Thirty-one defects (thirteen found 09-14), **none Android-only** — layout, state and copy that Android
 merely showed first. Full table and rules: `docs/ui-playbook.md` "The third
 Android walk". The ones worth remembering here:
 
@@ -2142,6 +2142,13 @@ Android walk". The ones worth remembering here:
   prod has 252 upcoming, 49 in November. The calendar views now page until the
   server runs out (`src/lib/calendarPaging.ts`), counts show "+" while more
   exist. Simulated against the live API. Needs a build.
+- **Raw exception text on three screens** (09-14): Analytics read
+  "categories: Request timed out after 15000ms". `err.message` is for the log;
+  now translated sentences. The timeout was the emulator (~50 ms as the member).
+- **Audit of my own item-edit fix**: the page's loader fills fields after the
+  row arrives, so opening Edit first read as an unsaved change and Cancel
+  restored blanks — `adoptLoadedValues` moves the snapshot. And six screens lost
+  their bottom inset to `edges={['left','right']}`.
 - **Six screens drew a header with no cluster** (09-14): Sell an item and the
   five legal pages. Enumerated from every `headerShown: false` registration;
   now `ScreenHeader` (legal: actions only when signed in — register opens them

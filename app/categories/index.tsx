@@ -76,12 +76,13 @@ function CategoriesListScreen() {
       setCategories(data);
     } catch (err: unknown) {
       logger.error('[CategoriesList] loadCategories error:', err);
-      setError((err as Error)?.message || 'Failed to load categories');
+      // A sentence, not err.message ("Request timed out after 15000ms").
+      setError(t('category.list_load_failed', { defaultValue: "Couldn't load categories" }));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadCategories();

@@ -585,7 +585,8 @@
     "no_steps_yet": "Aún no se han añadido pasos",
     "add_step_placeholder": "Añade un paso...",
     "a11y_new_step": "Título del nuevo paso",
-    "a11y_add_step": "Añadir paso"
+    "a11y_add_step": "Añadir paso",
+    "load_failed": "No se pudieron cargar tus proyectos"
   },
   "watchlist": {
     "add_title": "Añadir a la lista de seguimiento",
@@ -1187,7 +1188,8 @@
     "browse_by_set": "Explorar por colección",
     "browse_by_brand": "Explorar por marca",
     "set_item_count_many": "{{count}} artículos",
-    "set_item_count_one": "1 artículo"
+    "set_item_count_one": "1 artículo",
+    "list_load_failed": "No se pudieron cargar las categorías"
   },
   "analytics": {
     "a11y_retry": "Volver a cargar los datos de análisis",
@@ -1198,7 +1200,8 @@
     "portfolio_tier": "Nivel de cartera",
     "tap_view_leaderboard": "Toca para ver la clasificación",
     "a11y_how_scores": "¿Cómo se calculan las puntuaciones?",
-    "how_scores_calculated": "¿Cómo se calculan estas puntuaciones?"
+    "how_scores_calculated": "¿Cómo se calculan estas puntuaciones?",
+    "load_failed": "Parte de tu análisis no se pudo cargar."
   },
   "guide": {
     "no_guide_yet": "Aún no hay guía para esta categoría",

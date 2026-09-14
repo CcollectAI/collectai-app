@@ -585,7 +585,8 @@
     "no_steps_yet": "Aucune étape ajoutée pour l'instant",
     "add_step_placeholder": "Ajouter une étape...",
     "a11y_new_step": "Titre de la nouvelle étape",
-    "a11y_add_step": "Ajouter l'étape"
+    "a11y_add_step": "Ajouter l'étape",
+    "load_failed": "Impossible de charger vos projets"
   },
   "watchlist": {
     "add_title": "Ajouter à la liste de suivi",
@@ -1187,7 +1188,8 @@
     "browse_by_set": "Parcourir par série",
     "browse_by_brand": "Parcourir par marque",
     "set_item_count_many": "{{count}} objets",
-    "set_item_count_one": "1 objet"
+    "set_item_count_one": "1 objet",
+    "list_load_failed": "Impossible de charger les catégories"
   },
   "analytics": {
     "a11y_retry": "Recharger les données d'analyse",
@@ -1198,7 +1200,8 @@
     "portfolio_tier": "Niveau de portefeuille",
     "tap_view_leaderboard": "Touchez pour voir le classement",
     "a11y_how_scores": "Comment les scores sont-ils calculés ?",
-    "how_scores_calculated": "Comment ces scores sont-ils calculés ?"
+    "how_scores_calculated": "Comment ces scores sont-ils calculés ?",
+    "load_failed": "Une partie de vos analyses n’a pas pu être chargée."
   },
   "guide": {
     "no_guide_yet": "Pas encore de guide pour cette catégorie",

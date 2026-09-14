@@ -585,7 +585,8 @@
     "no_steps_yet": "手順はまだ追加されていません",
     "add_step_placeholder": "手順を追加...",
     "a11y_new_step": "新しい手順のタイトル",
-    "a11y_add_step": "手順を追加"
+    "a11y_add_step": "手順を追加",
+    "load_failed": "プロジェクトを読み込めませんでした"
   },
   "watchlist": {
     "add_title": "ウォッチリストに追加",
@@ -1187,7 +1188,8 @@
     "browse_by_set": "セットから探す",
     "browse_by_brand": "ブランドから探す",
     "set_item_count_many": "{{count}} 件",
-    "set_item_count_one": "1 件"
+    "set_item_count_one": "1 件",
+    "list_load_failed": "カテゴリを読み込めませんでした"
   },
   "analytics": {
     "a11y_retry": "分析データを再読み込み",
@@ -1198,7 +1200,8 @@
     "portfolio_tier": "ポートフォリオのランク",
     "tap_view_leaderboard": "タップしてランキングを表示",
     "a11y_how_scores": "スコアはどのように計算されますか？",
-    "how_scores_calculated": "これらのスコアはどのように計算されますか？"
+    "how_scores_calculated": "これらのスコアはどのように計算されますか？",
+    "load_failed": "分析の一部を読み込めませんでした。"
   },
   "guide": {
     "no_guide_yet": "このカテゴリーのガイドはまだありません",

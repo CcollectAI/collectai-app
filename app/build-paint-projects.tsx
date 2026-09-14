@@ -70,11 +70,12 @@ function BuildPaintProjectsScreen() {
       setError(null);
     } catch (err: unknown) {
       logger.error("[BuildPaintProjects] loadProjects error:", err);
-      setError((err as Error)?.message || "Failed to load projects");
+      // A sentence, not err.message — the raw text is in the log line above.
+      setError(t("projects.load_failed", { defaultValue: "Couldn't load your projects" }));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
