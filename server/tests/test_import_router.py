@@ -209,6 +209,40 @@ class TestImportCollectionValidation:
         resp = client.post("/api/imports/collection")
         assert resp.status_code == 422
 
+    def test_the_template_uploaded_unchanged_imports_nothing(self):
+        """2026-09-14: only the first example row said "(delete this row)" and
+        the importer skipped nothing but nameless rows, so a member who added
+        their own rows under the examples also imported a €9,800 Rolex and a
+        LEGO Falcon they do not own. Every example row is now marked, and the
+        importer skips marked rows."""
+        template = client.get("/api/imports/template").content
+        resp = client.post(
+            "/api/imports/collection",
+            files={"file": ("sparrow_collect_overview.csv", io.BytesIO(template), "text/csv")},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total_rows"] == 3
+        assert data["inserted_count"] == 0
+        assert data["skipped_count"] == 3
+        assert all("example" in e["message"].lower() for e in data["errors"])
+
+    def test_a_real_item_named_like_an_example_still_imports(self):
+        """The template is the round-trip format of /items-export/overview, so a
+        member's own export can hold a real "Rolex Submariner 116610LN". Only the
+        example MARKER may cause a skip — never the item's name."""
+        csv_data = _csv_bytes([
+            ["Rolex Submariner 116610LN", "watches", "Excellent", "", "", "no", "9800.00", "mine"],
+            ["EXAMPLE – Something I renamed but kept the marker (delete this row)", "lego", "", "", "", "", "", ""],
+        ])
+        resp = client.post(
+            "/api/imports/collection",
+            files={"file": ("mine.csv", io.BytesIO(csv_data), "text/csv")},
+        )
+        data = resp.json()
+        assert data["inserted_count"] == 1
+        assert data["skipped_count"] == 1
+
 
 # ---------------------------------------------------------------------------
 # Tests: POST /api/imports/collection — Edge cases

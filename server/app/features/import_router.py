@@ -11,6 +11,7 @@ import csv
 import io
 import json
 import logging
+import re
 import uuid as _uuid
 from typing import Any, Dict, List, Optional
 
@@ -84,6 +85,21 @@ IMPORT_COLUMNS = [
 # Three example rows covering distinct categories so users see the variety
 # of supported inputs (TCG-graded, sealed LEGO set, watch with purchase
 # history). All optional except `name` + `category`.
+#
+# EVERY example carries the marker, and the importer skips marked rows
+# (2026-09-14). Only the first one used to say "(delete this row)", and the
+# importer skipped nothing but nameless rows — so a member who typed their own
+# rows under the examples also imported a €9,800 Rolex and a LEGO Falcon they
+# do not own. Skipping is by MARKER, never by name: this file is the round-trip
+# format of /items-export/overview, so a member's own export can contain a real
+# "Rolex Submariner 116610LN".
+_EXAMPLE_ROW_RE = re.compile(r"^\s*EXAMPLE\s*[–—-]\s.*\(delete this row\)\s*$", re.IGNORECASE)
+
+
+def _is_example_row(name: str) -> bool:
+    return bool(_EXAMPLE_ROW_RE.match(name))
+
+
 IMPORT_EXAMPLE_ROWS = [
     {
         "name": "EXAMPLE – Charizard Base Set Holo 1st Edition (delete this row)",
@@ -100,7 +116,7 @@ IMPORT_EXAMPLE_ROWS = [
         "notes": "My favourite card",
     },
     {
-        "name": "LEGO Star Wars UCS Millennium Falcon 75192",
+        "name": "EXAMPLE – LEGO Star Wars UCS Millennium Falcon 75192 (delete this row)",
         "category": "lego",
         "condition": "Mint",
         "grade": "",
@@ -114,7 +130,7 @@ IMPORT_EXAMPLE_ROWS = [
         "notes": "Sealed in original shipping carton",
     },
     {
-        "name": "Rolex Submariner 116610LN",
+        "name": "EXAMPLE – Rolex Submariner 116610LN (delete this row)",
         "category": "watches",
         "condition": "Excellent",
         "grade": "",
@@ -235,6 +251,10 @@ async def import_collection(
         if not name or str(name).strip() == "":
             skipped += 1
             errors.append({"row": idx, "message": "Missing required 'name' column"})
+            continue
+        if _is_example_row(str(name)):
+            skipped += 1
+            errors.append({"row": idx, "message": "Example row from the template — skipped"})
             continue
 
         # Canonical 12-column schema (see IMPORT_COLUMNS at top of file).

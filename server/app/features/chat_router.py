@@ -78,12 +78,23 @@ async def _notify_new_message(
     try:
         from app.push import send_push_to_user
 
-        # Get sender display name for the notification title
+        # Sender name for the notification title. This read ONLY
+        # user_public_profiles.display_name (2026-09-14): a member without a
+        # public profile was "Someone" although `profiles` had their username,
+        # and a public row with a NULL display_name (a username alone is a valid
+        # public profile) would have titled the push "Message from None".
         sender_row = await conn.fetchrow(
-            "SELECT display_name FROM user_public_profiles WHERE user_id = $1::uuid",
+            """
+            SELECT COALESCE(NULLIF(upp.display_name, ''),
+                            NULLIF(p.display_name, ''),
+                            NULLIF(p.username, '')) AS name
+            FROM profiles p
+            LEFT JOIN user_public_profiles upp ON upp.user_id = p.id
+            WHERE p.id = $1::uuid
+            """,
             sender_id,
         )
-        sender_name = sender_row["display_name"] if sender_row else "Someone"
+        sender_name = (sender_row["name"] if sender_row else None) or "Someone"
 
         # Truncate preview
         preview = text_preview[:100] + "..." if len(text_preview) > 100 else text_preview
