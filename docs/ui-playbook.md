@@ -2339,6 +2339,29 @@ checked by anything. The static test now fails on any direct read of the view.
    in the events feed"; the RPC ranks followed categories above sponsored
    events. Now "Boosted".
 
+**Checked 2026-09-14 and NOT bugs** — each traced to code or data before deciding:
+
+- **Market tab back chevron** — added on request 2026-08-14 (`listings.tsx`); the
+  `asTab` comment that said otherwise is corrected.
+- **"Deal Agent" on the Watchlist** — the banner opens `/purchase` (mandates),
+  which IS the Smart Deal Agent; the Target Hit rename was for deal alerts.
+- **Red left edge on watchlist cards** — the member's own `priority: 'high'`.
+- **Categories index pills** were filter pills, not links to the now-gated
+  `/franchise/[id]` — gating it broke nothing (their layout was the bug).
+- **Search deep link ignoring `?q=`** — only when a `/search` screen is already
+  mounted (the `useState` initialiser reads the param once). From a cold start
+  the query fills and runs. No in-app push hits that path.
+- **Nearby → "Don't allow" drops back to List** — deliberate, with a
+  "Location permission needed" toast.
+- **Edit Profile has no display-name field** — `user_public_profiles` accepts
+  `display_name OR username`, and the server copies a username into an empty
+  display name, so a username alone makes a member discoverable.
+- **QuickScan's native back AND in-body ✕** — a visual double exit, kept because
+  the cluster is required on every screen. They differ only in batch mode: ✕
+  opens the batch summary, back leaves. Nothing is lost — each batch item is
+  saved to the collection when scanned. Recorded, not changed.
+- **"_____'s Pikachu"** in search is the card's real name.
+
 ⚠️ **Not a product bug, recorded so it is not re-fixed:** Watchlist showed
 "Couldn't load your watchlist" on first open. The app's exact PostgREST read, as
 that member, returned **200 in 0.30 s with 5 rows**; the emulator's 5 s read
