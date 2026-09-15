@@ -29,6 +29,8 @@ import { featureFlags } from '@/config/featureFlags';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 /** Exactly the 8 keys the server accepts. */
 type NotificationPrefs = {
@@ -90,12 +92,20 @@ function NotificationPreferencesSectionInner() {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const [prefs, setPrefs] = useState<NotificationPrefs>(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
+  // A failed read must not render DEFAULT_PREFS: those are all ON, so a member
+  // who had switched price alerts off would see them on — the settings screen
+  // stating a preference the server does not hold. Hide the switches instead.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setLoadFailed(false);
     (async () => {
       try {
         const res = await collectorsApi.getNotificationPreferences() as
@@ -106,13 +116,15 @@ function NotificationPreferencesSectionInner() {
         // a category as off while pushes still arrive).
         if (res?.preferences) setPrefs({ ...DEFAULT_PREFS, ...res.preferences });
       } catch (e) {
-        if (!cancelled) logger.error('[Settings] Failed to load notification preferences:', e);
+        if (cancelled) return;
+        logger.error('[Settings] Failed to load notification preferences:', e);
+        setLoadFailed(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [retryNonce]);
 
   const updatePref = useCallback(async (key: keyof NotificationPrefs, value: boolean) => {
     const previous = prefs;
@@ -147,6 +159,21 @@ function NotificationPreferencesSectionInner() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.accent} />
           <Text style={[styles.loadingText, { color: colors.muted }]}>Loading settings...</Text>
+        </View>
+      ) : loadFailed ? (
+        <View style={styles.errorRow}>
+          <Text style={[styles.settingHint, { color: colors.muted }]}>
+            {t('settings.notification_prefs_load_failed', { defaultValue: "Couldn't load your notification settings" })}
+          </Text>
+          <AnimatedPressable
+            onPress={() => setRetryNonce((n) => n + 1)}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+          >
+            <Text style={[styles.retryText, { color: colors.accent }]}>
+              {t('common.try_again', { defaultValue: 'Try again' })}
+            </Text>
+          </AnimatedPressable>
         </View>
       ) : (
         TOGGLE_ITEMS.map((item, idx) => (
@@ -224,5 +251,17 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: textToken.md,
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 10,
+    paddingVertical: 8,
+  },
+  retryText: {
+    fontSize: textToken.md,
+    fontWeight: fw.bold,
+    minHeight: 24,
   },
 });

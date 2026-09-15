@@ -322,6 +322,10 @@ export class TCGPlayerAdapter implements MarketProviderAdapter {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       logger.error(TAG, 'lookup error:', msg);
+      // empty-ok: unreachable — nothing outside src/lib/marketProviders imports
+      // these adapters and no code calls .lookup() (checked 2026-09-15). null
+      // matches the interface contract and the 429/non-ok branches above;
+      // when this is wired, those branches need the same failed-vs-none split.
       return null;
     }
   }

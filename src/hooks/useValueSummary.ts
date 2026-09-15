@@ -83,6 +83,8 @@ export function useValueSummary() {
 
       logger.info('[ValueSummary] Shown', { trigger: trig, money: summary.total_money_saved, hours: summary.hours_saved });
     } catch (err) {
+      // empty-ok: an opportunistic celebration banner — a failed fetch simply
+      // does not show it; nothing on screen reads "you saved nothing".
       logger.error('[ValueSummary] Failed to fetch:', err);
     } finally {
       setLoading(false);

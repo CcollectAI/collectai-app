@@ -62,8 +62,10 @@ function useTwitchStats(): { stats: TwitchStats; loading: boolean } {
           dropsCount: "\u2014", // No drops table yet
         });
       } catch (e) {
+        // empty-ok: the stats start as PLACEHOLDER dashes ("—"), and a failure
+        // keeps them — unknown renders as unknown, never as 0. Known stub
+        // (no ingestion worker); reachable only by typed deep link.
         logger.error('[silent-fallback] twitch: creators load failed:', e);
-        // Table doesn't exist or network error — keep placeholder dashes
       } finally {
         if (!cancelled) setLoading(false);
       }

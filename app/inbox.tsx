@@ -297,6 +297,7 @@ function InboxScreen() {
         <View style={styles.loadingContainer}>
           <SkeletonList count={5} type="row" />
         </View>
+        <QuickNavBar />
       </SafeAreaView>
     );
   }

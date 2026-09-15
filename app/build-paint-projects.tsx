@@ -148,6 +148,7 @@ function BuildPaintProjectsScreen() {
         <View style={styles.loadingContainer}>
           <SkeletonList count={4} type="card" />
         </View>
+        <QuickNavBar />
       </SafeAreaView>
     );
   }

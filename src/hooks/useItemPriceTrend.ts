@@ -21,6 +21,11 @@ export function useItemPriceTrend(itemId: string | undefined, isDraft: boolean) 
 
   const [priceTrendData, setPriceTrendData] = useState<PriceTrendData | null>(null);
   const [priceTrendLoading, setPriceTrendLoading] = useState(false);
+  // A failed fetch is not "no price data". It also has to stop the auto-fetch
+  // effect below: that effect fires on `visible && !data && !loading`, and a
+  // failure leaves exactly that state — so without this flag every failure
+  // re-requested the trend in a loop for as long as the chart was visible.
+  const [priceTrendFailed, setPriceTrendFailed] = useState(false);
   const [priceTrendRange, setPriceTrendRange] = useState(90);
   const [priceTrendVisible, setPriceTrendVisible] = useState(false);
   const [priceTrendHoverValue, setPriceTrendHoverValue] = useState<number | null>(null);
@@ -29,6 +34,7 @@ export function useItemPriceTrend(itemId: string | undefined, isDraft: boolean) 
   const fetchPriceTrend = useCallback(async (days: number) => {
     if (!itemId || isDraft) return;
     setPriceTrendLoading(true);
+    setPriceTrendFailed(false);
     try {
       const data = await collectorsApi.getItemPriceTrend(itemId, days);
       setPriceTrendData(data);
@@ -36,17 +42,21 @@ export function useItemPriceTrend(itemId: string | undefined, isDraft: boolean) 
       setPriceTrendHoverDate(null);
     } catch (err) {
       logger.error('[useItemPriceTrend] fetch error:', err);
+      // Clear rather than keep: the range selector already shows the NEW range,
+      // so the old curve under it would be a different claim. The failed flag
+      // tells the reader this is not "no data".
       setPriceTrendData(null);
+      setPriceTrendFailed(true);
     } finally {
       setPriceTrendLoading(false);
     }
   }, [itemId, isDraft]);
 
   useEffect(() => {
-    if (priceTrendVisible && !priceTrendData && !priceTrendLoading) {
+    if (priceTrendVisible && !priceTrendData && !priceTrendLoading && !priceTrendFailed) {
       fetchPriceTrend(priceTrendRange);
     }
-  }, [priceTrendVisible, priceTrendData, priceTrendLoading, priceTrendRange, fetchPriceTrend]);
+  }, [priceTrendVisible, priceTrendData, priceTrendLoading, priceTrendFailed, priceTrendRange, fetchPriceTrend]);
 
   const handleRangeChange = useCallback((days: number) => {
     setPriceTrendRange(days);
@@ -69,6 +79,7 @@ export function useItemPriceTrend(itemId: string | undefined, isDraft: boolean) 
   return {
     priceTrendData,
     priceTrendLoading,
+    priceTrendFailed,
     priceTrendRange,
     priceTrendVisible, setPriceTrendVisible,
     priceTrendHoverValue,

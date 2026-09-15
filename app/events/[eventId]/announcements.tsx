@@ -65,24 +65,35 @@ const EventAnnouncementsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [announcements, setAnnouncements] = useState<EventAnnouncement[]>([]);
   const [event, setEvent] = useState<CollectorsEvent | null>(null);
+  // A failed announcements read rendered "No announcements yet" — the logging
+  // catch left the list at []. Only the LIST decides this state.
+  const [loadFailed, setLoadFailed] = useState(false);
   const markedReadRef = useRef<Set<string>>(new Set());
 
   /* ---- load data ---- */
   const loadData = useCallback(async () => {
     if (!eventId) return;
     setLoading(true);
-    try {
-      const [announcementList, eventData] = await Promise.all([
-        dataProvider.listEventAnnouncements(eventId),
-        dataProvider.getEventById(eventId),
-      ]);
-      setAnnouncements(announcementList);
-      setEvent(eventData);
-    } catch (err: unknown) {
-      logger.error('[EventAnnouncements] loadData error:', err);
-    } finally {
-      setLoading(false);
+    setLoadFailed(false);
+    // Settled separately: the event is read only to decide whether you are the
+    // host (the compose button). getEventById now throws on a failed load, and
+    // inside one Promise.all that would have hidden announcements that loaded.
+    const [announcementsResult, eventResult] = await Promise.allSettled([
+      dataProvider.listEventAnnouncements(eventId),
+      dataProvider.getEventById(eventId),
+    ]);
+    if (announcementsResult.status === 'fulfilled') {
+      setAnnouncements(announcementsResult.value);
+    } else {
+      logger.error('[EventAnnouncements] announcements load error:', announcementsResult.reason);
+      setLoadFailed(true);
     }
+    if (eventResult.status === 'fulfilled') {
+      setEvent(eventResult.value);
+    } else {
+      logger.error('[EventAnnouncements] event load error:', eventResult.reason);
+    }
+    setLoading(false);
   }, [eventId]);
 
   useEffect(() => {
@@ -196,6 +207,19 @@ const EventAnnouncementsScreen: React.FC = () => {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      ) : loadFailed && announcements.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="cloud-offline-outline" size={48} color={colors.muted} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('announcement.load_failed', { defaultValue: "Couldn't load announcements" })}</Text>
+          <AnimatedPressable
+            onPress={loadData}
+            style={[styles.retryBtn, { borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.try_again')}
+          >
+            <Text style={[styles.retryText, { color: colors.accent }]}>{t('common.try_again')}</Text>
+          </AnimatedPressable>
         </View>
       ) : announcements.length === 0 ? (
         /* Empty state */
@@ -316,6 +340,20 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
+  },
+
+  retryBtn: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  retryText: {
+    fontSize: 15,
+    fontWeight: '700',
   },
 
   /* Empty state */

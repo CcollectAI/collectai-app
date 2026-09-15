@@ -119,6 +119,10 @@ export function useNetworkStatus(): NetworkStatus {
           commit(true); // optimistic on error
         }
       } catch (err) {
+        // empty-ok: an unreadable network state commits "online" on purpose — the
+        // false "You're offline" banner at login is the bug this hook exists to
+        // avoid (2026-06-11, header comment), and a real outage still fails loud
+        // at each request.
         logger.error('[useNetworkStatus] check failed:', err);
         commit(true); // optimistic on error
       }

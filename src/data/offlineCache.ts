@@ -99,6 +99,9 @@ export async function cacheGet<T = unknown>(key: string): Promise<T | null> {
     return JSON.parse(row.data) as T;
   } catch (err) {
     logger.error('[offlineCache] cacheGet error:', err);
+    // empty-ok: null is a cache MISS, never rendered as data — every caller
+    // (swr in CachedDataProvider, catalogBrowseCache, inbox) falls through to
+    // the network on null, so a broken cache costs a fetch, not a false empty.
     return null;
   }
 }
@@ -186,6 +189,8 @@ export async function cacheEvictExpired(): Promise<number> {
     return deleted;
   } catch (err) {
     logger.error('[offlineCache] cacheEvictExpired error:', err);
+    // empty-ok: housekeeping count, rendered nowhere; expired rows are also
+    // pruned lazily by cacheGet.
     return 0;
   }
 }

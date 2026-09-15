@@ -191,7 +191,11 @@ async function loadSeriesFromBackend(): Promise<TimeSeriesPoint[] | null> {
     return mapped;
   } catch (error) {
     logger.error('[portfolioAnalyticsStore] Timeseries backend error:', error);
-    return null;
+    // THROW. null here fell to [] in fetchPortfolioSeries, and analytics
+    // computed an empty portfolio from a failed read — the silence the header
+    // above describes. fetchPortfolioSnapshot's callers catch (analytics via
+    // useAsync → its error state; Home's mock branch).
+    throw error instanceof Error ? error : new Error('Could not load portfolio history');
   }
 }
 
@@ -287,7 +291,8 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
     return mapped;
   } catch (error) {
     logger.error('[portfolioAnalyticsStore] Items backend error:', error);
-    return null;
+    // THROW, same reason: `?? []` in every caller turned a failure into "you own nothing".
+    throw error instanceof Error ? error : new Error('Could not load portfolio items');
   }
 }
 
@@ -319,7 +324,8 @@ async function loadSetsFromBackend(): Promise<
     // logger.error, not warn: warn is stripped in release builds, so a backend
     // failure here left no trace at all in exactly the build that matters.
     logger.error('[portfolioAnalyticsStore] Sets backend error:', error);
-    return __DEV__ ? DEMO_SETS : [];
+    // THROW, same as the two loaders above (a sibling the gate did not match).
+    throw error instanceof Error ? error : new Error('Could not load portfolio sets');
   }
 }
 

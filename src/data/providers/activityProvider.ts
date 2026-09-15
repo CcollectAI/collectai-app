@@ -25,7 +25,8 @@ export async function getUserActivity(userId: string, limit = 20, offset = 0): P
     }));
   } catch (e) {
     logger.error('[silent-catch] activityProvider.ts:26:', e);
-    return [];
+    // THROW: an empty feed reads as "no activity".
+    throw e instanceof Error ? e : new Error('Could not load activity');
   }
 }
 
@@ -84,6 +85,8 @@ export async function unifiedSearch(query: string, limit = 5) {
     };
   } catch (e) {
     logger.error('[silent-catch] activityProvider.ts:80:', e);
-    return { items: [], catalog: [], users: [], events: [], categories: [] };
+    // THROW: app/search.tsx already renders an error state from its catch,
+    // which never ran — a failed search printed "no results".
+    throw e instanceof Error ? e : new Error('Search failed');
   }
 }

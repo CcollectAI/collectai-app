@@ -115,9 +115,28 @@ describe('getEventById — reads the backend, not the RLS-blocked view', () => {
     expect(ev?.isAttending).toBe(true);
   });
 
+  // The client throws an ApiError carrying `status` (src/api/httpClient.ts), not
+  // a bare Error — the old fixture rejected with `new Error('404 …')`, a shape
+  // the real client never produces, so it could not tell a 404 from a timeout.
+  const apiError = (status: number) =>
+    Object.assign(new Error(`GET /events/x failed (${status})`), { name: 'ApiError', status });
+
   it('returns null (not a throw) when the event is missing or private', async () => {
-    mockGet.mockRejectedValue(new Error('404 Event not found'));
+    mockGet.mockRejectedValue(apiError(404));
     await expect(getEventById('nope')).resolves.toBeNull();
+  });
+
+  it('returns null for a malformed id (400) — a broken link, not an outage', async () => {
+    mockGet.mockRejectedValue(apiError(400));
+    await expect(getEventById('not-a-uuid')).resolves.toBeNull();
+  });
+
+  it('THROWS on a failed load, so the screen can say so instead of "not found"', async () => {
+    mockGet.mockRejectedValue(apiError(500));
+    await expect(getEventById('ev-1')).rejects.toThrow();
+    const timeout = Object.assign(new Error('Timed out after 5000ms (http)'), { name: 'TimeoutError' });
+    mockGet.mockRejectedValue(timeout);
+    await expect(getEventById('ev-1')).rejects.toBe(timeout);
   });
 });
 

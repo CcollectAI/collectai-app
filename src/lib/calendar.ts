@@ -123,7 +123,10 @@ async function getDefaultCalendarId(): Promise<string | null> {
     return modifiableCalendar?.id || null;
   } catch (error) {
     logger.error('[Calendar] Error getting calendars:', error);
-    return null;
+    // THROW: null means "this device has no writable calendar", and
+    // addToCalendar reported a failed getCalendarsAsync as exactly that. Its
+    // own catch turns the throw into { success: false }.
+    throw error instanceof Error ? error : new Error('Could not read calendars');
   }
 }
 
@@ -363,7 +366,10 @@ async function getStoredCalendarEvents(): Promise<StoredCalendarEvent[]> {
     return data ? JSON.parse(data) : [];
   } catch (e) {
     logger.error('[silent-catch] calendar.ts:343:', e);
-    return [];
+    // THROW: storeCalendarEvent reads, merges and WRITES BACK — a failed read
+    // as [] would wipe every stored event mapping. All three readers
+    // (isEventInCalendar, removeFromCalendar, addToCalendar) catch.
+    throw e instanceof Error ? e : new Error('Could not read stored calendar events');
   }
 }
 
@@ -379,7 +385,9 @@ async function getStoredReminders(): Promise<StoredReminder[]> {
     return data ? JSON.parse(data) : [];
   } catch (e) {
     logger.error('[silent-catch] calendar.ts:358:', e);
-    return [];
+    // THROW, same reason: storeReminder writes the merged list back. Readers
+    // (hasReminder, cancelReminder, scheduleReminder) catch.
+    throw e instanceof Error ? e : new Error('Could not read stored reminders');
   }
 }
 

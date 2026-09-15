@@ -127,7 +127,12 @@ export class SupabaseDataProvider implements DataProvider {
       }));
     } catch (err) {
       logger.error('[SupabaseDataProvider] listAlertsFeed error:', err);
-      return [];
+      // THROW, not `return []`. CachedDataProvider wraps this in swr, which
+      // STORED the [] for TTL_MEDIUM, and useAlertsFeed's catch — which sets the
+      // `error` Home renders as "Couldn't load alerts" — never ran. A failed
+      // feed read "No alerts yet" (docs/ui-playbook.md, "An empty list answers
+      // ONE question").
+      throw err instanceof Error ? err : new Error('Could not load alerts');
     }
   }
 
@@ -161,7 +166,8 @@ export class SupabaseDataProvider implements DataProvider {
       }));
     } catch (err) {
       logger.error('[SupabaseDataProvider] listAlertRules error:', err);
-      return [];
+      // THROW: an empty list of rules is indistinguishable from "you have none".
+      throw err instanceof Error ? err : new Error('Could not load alert rules');
     }
   }
 

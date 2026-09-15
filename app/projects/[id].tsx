@@ -262,6 +262,7 @@ function ProjectDetailScreen() {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.accent} />
           </View>
+          <QuickNavBar />
         </View>
       </>
     );
@@ -286,6 +287,7 @@ function ProjectDetailScreen() {
               <Text style={[styles.backBtnText, { color: colors.text }]}>Go back</Text>
             </AnimatedPressable>
           </View>
+          <QuickNavBar />
         </View>
       </>
     );

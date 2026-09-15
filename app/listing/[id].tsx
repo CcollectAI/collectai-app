@@ -49,6 +49,7 @@ import { radius, text as textToken, fontWeight } from "@/theme/tokens";
 import logger from "@/utils/logger";
 import { userErrorMessage } from "@/lib/userErrorMessage";
 import { useTranslation } from 'react-i18next';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 /**
  * The seller row: a plain View, or an AnimatedPressable when the seller's
@@ -99,7 +100,21 @@ function ListingDetailScreen() {
     loading,
     error,
     retry,
-  } = useAsync(async () => (id ? collectorsApi.getP2PListing(id) : null), [id]);
+  } = useAsync(async () => {
+    if (!id) return null;
+    try {
+      return await collectorsApi.getP2PListing(id);
+    } catch (err: unknown) {
+      // 404 LISTING_NOT_FOUND (also a blocked seller, deliberately the same 404)
+      // and 400 (not a uuid) mean GONE → null → "Listing unavailable".
+      // Anything else — a timeout, a 5xx — is a FAILED load and must not say
+      // "It may have been removed by the seller" (screen sweep, API down,
+      // 2026-09-15). Rethrow so useAsync sets `error`.
+      const e = err as { name?: unknown; status?: unknown };
+      if (e?.name === 'ApiError' && (e.status === 404 || e.status === 400)) return null;
+      throw err;
+    }
+  }, [id]);
 
   const handleMessage = useCallback(() => {
     if (!listing) return;
@@ -310,11 +325,38 @@ function ListingDetailScreen() {
         <View style={styles.center}>
           <Text style={[styles.muted, { color: colors.muted }]}>Loading…</Text>
         </View>
+        <QuickNavBar />
       </View>
     );
   }
 
-  if (error || !listing) {
+  if (error && !listing) {
+    return (
+      <View style={[styles.safe, { backgroundColor: colors.background }]}>
+        <ScreenHeader title="Listing" />
+        <EmptyState
+          icon="cloud-offline-outline"
+          title={t('listings.load_failed', { defaultValue: "Couldn't load this listing" })}
+          colors={colors}
+          action={
+            <AnimatedPressable
+              onPress={retry}
+              style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+            >
+              <Text style={[styles.primaryBtnText, { color: colors.accentText }]}>
+                {t('common.try_again', { defaultValue: 'Try again' })}
+              </Text>
+            </AnimatedPressable>
+          }
+        />
+        <QuickNavBar />
+      </View>
+    );
+  }
+
+  if (!listing) {
     return (
       <View style={[styles.safe, { backgroundColor: colors.background }]}>
         <ScreenHeader title="Listing" />
@@ -338,6 +380,7 @@ function ListingDetailScreen() {
             </AnimatedPressable>
           }
         />
+        <QuickNavBar />
       </View>
     );
   }
@@ -1013,6 +1056,7 @@ function ListingDetailScreen() {
           onSubmit={submitOffer}
         />
       ) : null}
+      <QuickNavBar />
     </View>
   );
 }

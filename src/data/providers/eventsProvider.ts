@@ -113,9 +113,16 @@ export async function getEventById(eventId: string): Promise<CollectorsEvent | n
     if (!data || !data.id) return null;
     return mapEventApiResponse(data);
   } catch (e) {
-    // 404 (not found, or private + not yours) is a legitimate null, not a crash.
+    // 404 (not found, private + not yours, or rejected — events_core.py
+    // get_event) and 400 (not a uuid: a broken link) are a legitimate null.
+    // Anything else — a timeout, a 500, no network — THROWS. It used to return
+    // null too, so a failed load rendered "Event not found" and CachedDataProvider's
+    // swr stored that null for TTL_LONG. Every caller catches: event detail,
+    // edit-event ("Failed to load event."), announcements.
+    const status = (e as { status?: unknown } | null)?.status;
+    if (status === 404 || status === 400) return null;
     logger.error('[eventsProvider] getEventById error:', e);
-    return null;
+    throw e instanceof Error ? e : new Error('Could not load event');
   }
 }
 
@@ -457,6 +464,7 @@ export async function searchEvents(params: {
     })) as CollectorsEvent[];
   } catch (e) {
     logger.error('[silent-catch] eventsProvider.ts:407:', e);
-    return [];
+    // THROW: an empty result is indistinguishable from "no events match".
+    throw e instanceof Error ? e : new Error('Event search failed');
   }
 }

@@ -182,6 +182,9 @@ function FilterSheetInner({
         setPresets(JSON.parse(stored));
       }
     } catch (err) {
+      // empty-ok: presets are a device-local convenience in AsyncStorage (no
+      // server copy); an unreadable/corrupt entry leaves the preset row empty,
+      // and the filters themselves still work.
       logger.error('[FilterSheet] Failed to load presets:', err);
     }
   }, []);

@@ -45,6 +45,8 @@ import { cleanCatalogItem } from "@/lib/catalogPresentation";
 import { formatPrice } from "@/lib/format";
 import type { CatalogItemData } from "@/components/CatalogBrowseSection";
 import logger from "@/utils/logger";
+import { EmptyState } from "@/components/EmptyState";
+import { useTranslation } from "react-i18next";
 
 const PAGE_SIZE = 40;
 
@@ -60,6 +62,7 @@ function CategoryBrowseScreen() {
   const { categoryId, sort: sortParam } = useLocalSearchParams<{ categoryId: string; sort?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const { settings } = useSettings();
   // Recomputes on rotation / split-view instead of freezing at module load.
   const { width: screenW } = useWindowDimensions();
@@ -89,6 +92,10 @@ function CategoryBrowseScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // The first page FAILED. The catch used to clear the list into "No catalog
+  // items yet" / "No matching items" — a timeout told the member the category
+  // or their search had nothing (2026-09-15 gate).
+  const [loadFailed, setLoadFailed] = useState(false);
   const [search, setSearch] = useState("");
   // Same default as the category page rail: highest-earning items lead.
   // The BY SET rail's "See all" deep-links here with ?sort=set.
@@ -113,12 +120,19 @@ function CategoryBrowseScreen() {
         if (id !== reqId.current) return; // superseded
         const page = (res?.items ?? []) as CatalogItemData[];
         setItems((prev) => (mode === "append" ? [...prev, ...page] : page));
+        if (mode === "replace") setLoadFailed(false);
         if (typeof res?.total === "number") setTotal(res.total);
         // Fewer rows than asked for → that was the last page.
         if (page.length < PAGE_SIZE) setReachedEnd(true);
       } catch (err) {
         logger.error("[CategoryBrowse] load error:", err);
-        if (mode === "replace" && id === reqId.current) setItems([]);
+        // A new search or sort must not keep the previous query's rows, so a
+        // failed first page still clears — and says it failed. A failed
+        // load-MORE keeps what is shown.
+        if (mode === "replace" && id === reqId.current) {
+          setItems([]);
+          setLoadFailed(true);
+        }
       } finally {
         if (id === reqId.current) {
           setLoading(false);
@@ -134,8 +148,8 @@ function CategoryBrowseScreen() {
   useEffect(() => {
     setLoading(true);
     setReachedEnd(false);
-    const t = setTimeout(() => fetchPage(0, search, sort, "replace"), search ? 400 : 0);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => fetchPage(0, search, sort, "replace"), search ? 400 : 0);
+    return () => clearTimeout(timer);
   }, [fetchPage, search, sort]);
 
   const handleRefresh = useCallback(() => {
@@ -336,6 +350,30 @@ function CategoryBrowseScreen() {
             loadingMore ? <ActivityIndicator color={colors.accent} style={s.footerSpinner} /> : null
           }
           ListEmptyComponent={
+            loadFailed ? (
+              <EmptyState
+                icon="cloud-offline-outline"
+                title={t('catalog.items_load_failed', { defaultValue: "Couldn't load these items" })}
+                subtitle={t('common.load_failed_hint', { defaultValue: 'Nothing is missing — we just could not reach the list.' })}
+                colors={colors}
+                action={
+                  <AnimatedPressable
+                    onPress={() => {
+                      setLoading(true);
+                      setReachedEnd(false);
+                      fetchPage(0, search, sort, "replace");
+                    }}
+                    style={[s.retryBtn, { backgroundColor: colors.accent }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+                  >
+                    <Text style={[s.retryText, { color: colors.accentText }]}>
+                      {t('common.try_again', { defaultValue: 'Try again' })}
+                    </Text>
+                  </AnimatedPressable>
+                }
+              />
+            ) : (
             <View style={s.emptyContainer}>
               <Ionicons name="search-outline" size={48} color={colors.muted} />
               <Text style={[s.emptyTitle, { color: colors.text }]}>
@@ -360,6 +398,7 @@ function CategoryBrowseScreen() {
                     : "This category's catalog is still being curated"}
               </Text>
             </View>
+            )
           }
         />
       )}
@@ -447,6 +486,8 @@ const s = StyleSheet.create({
   emptyContainer: { alignItems: "center", paddingTop: 64, paddingHorizontal: 32 },
   emptyTitle: { fontSize: 16, fontWeight: "700", marginTop: 12 },
   emptySubtitle: { fontSize: 13, textAlign: "center", marginTop: 4 },
+  retryBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, minHeight: 44, justifyContent: "center" },
+  retryText: { fontSize: 14, fontWeight: "700" },
   // Swipe viewer (mirrors app/catalog-set/[setCode].tsx).
   viewerPage: { paddingHorizontal: 20, alignItems: "center" },
   viewerHero: { width: "100%", height: 340, marginBottom: 20 },

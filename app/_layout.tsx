@@ -444,7 +444,11 @@ function RootStack() {
         <Stack.Screen name="chat/new" options={{ headerShown: false }} />
         <Stack.Screen name="chat-demo" options={{ headerShown: false }} />
         <Stack.Screen name="catalog-item/[key]" options={{ headerShown: false }} />
-        <Stack.Screen name="users/[userId]" options={{ headerShown: false }} />
+        {/* iconOnlyHeader, not headerShown:false (2026-09-15): the screen drew no
+            header cluster and no back control in ANY branch — its "not set up"
+            branch was flagged NO_CLUSTER by the screen sweep. The body keeps the
+            identity card as its heading and the ⋯ menu row. */}
+        <Stack.Screen name="users/[userId]" options={iconOnlyHeader} />
         <Stack.Screen name="search" options={{ headerShown: false }} />
 
         {/* All other screens: icon-only header (no text) */}

@@ -49,6 +49,14 @@ const SponsorDashboardScreen: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [sponsoredEvents, setSponsoredEvents] = useState<CollectorsEvent[]>([]);
   const [announcements, setAnnouncements] = useState<EventAnnouncement[]>([]);
+  // Two failures this screen used to render as facts (2026-09-15):
+  //  - the company read failing left `company` null, which is the "Start
+  //    Sponsoring Events / Get Started" branch — an existing sponsor was invited
+  //    to register a second company;
+  //  - the events or announcements read failing wrote [], so the KPI grid said
+  //    0 campaigns / 0 reach / 0 sent.
+  const [companyLoadFailed, setCompanyLoadFailed] = useState(false);
+  const [campaignsLoadFailed, setCampaignsLoadFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showTierPicker, setShowTierPicker] = useState(false);
   const [selectedTier, setSelectedTier] = useState<SponsorTier>('featured');
@@ -95,6 +103,8 @@ const SponsorDashboardScreen: React.FC = () => {
 
   const loadCompany = useCallback(async () => {
     setLoading(true);
+    setCompanyLoadFailed(false);
+    setCampaignsLoadFailed(false);
     try {
       const companies = await dataProvider.getMySponsorCompanies();
       if (companies.length > 0) {
@@ -106,32 +116,43 @@ const SponsorDashboardScreen: React.FC = () => {
         setEditContactEmail(c.contactEmail);
         setEditDescription(c.description ?? '');
 
-        let sponsored: CollectorsEvent[] = [];
+        let sponsored: CollectorsEvent[] | null = null;
         try {
           const events = await dataProvider.listEvents({ limit: 50 });
           sponsored = events.filter((e) => e.sponsorName === c.name || e.sponsorCompanyId === c.id);
           setSponsoredEvents(sponsored);
         } catch (e) {
+          // Events already on screen (a pull-to-refresh) stay; the grid and
+          // lists are hidden behind the failed notice instead of reading 0.
           logger.error('[silent-fallback] sponsor: sponsored events load failed:', e);
-          setSponsoredEvents([]);
+          setCampaignsLoadFailed(true);
         }
 
-        if (sponsored.length > 0) {
-          try {
-            const annPromises = sponsored.slice(0, 10).map((event) =>
-              dataProvider.listEventAnnouncements(event.id).catch(() => [] as EventAnnouncement[]),
-            );
-            const results = await Promise.all(annPromises);
+        if (sponsored && sponsored.length > 0) {
+          // A per-event failure used to become [] inside the map, so one failed
+          // event silently dropped its announcements from the "Sent" count.
+          let anyAnnouncementFailed = false;
+          const annPromises = sponsored.slice(0, 10).map((event) =>
+            dataProvider.listEventAnnouncements(event.id).catch((e: unknown) => {
+              logger.error('[silent-fallback] sponsor: announcements load failed:', e);
+              anyAnnouncementFailed = true;
+              return [] as EventAnnouncement[];
+            }),
+          );
+          const results = await Promise.all(annPromises);
+          if (anyAnnouncementFailed) {
+            setCampaignsLoadFailed(true);
+          } else {
             const allAnns = results.flat().sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
             setAnnouncements(allAnns.slice(0, 20));
-          } catch (e) {
-            logger.error('[silent-fallback] sponsor: dashboard load failed:', e);
-            setAnnouncements([]);
           }
-        } else { setAnnouncements([]); }
+        } else if (sponsored) { setAnnouncements([]); }
       } else { setCompany(null); }
     } catch (err: unknown) {
+      // A company already on screen stays; with none, the failed state below
+      // replaces "Start Sponsoring Events".
       logger.error('[SponsorDashboard] loadCompany error:', err);
+      setCompanyLoadFailed(true);
     } finally { setLoading(false); }
   }, []);
 
@@ -210,6 +231,11 @@ const SponsorDashboardScreen: React.FC = () => {
   const handleAnnounce = () => {
     if (!company) return;
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    if (sponsoredEvents.length === 0 && campaignsLoadFailed) {
+      // Not "create an event first" — we could not read the events at all.
+      showToast({ message: t('sponsor.campaigns_load_failed', { defaultValue: "Couldn't load your campaigns" }), type: 'error' });
+      return;
+    }
     if (sponsoredEvents.length === 0) { showToast({ message: 'Create an event first to send announcements.', type: 'info' }); return; }
     setComposeEventId(sponsoredEvents[0].id); setComposeTitle(''); setComposeBody(''); setShowCompose(true);
   };
@@ -241,6 +267,30 @@ const SponsorDashboardScreen: React.FC = () => {
           <ActivityIndicator size="large" color={colors.accent} />
           <Text style={[styles.loadingText, { color: colors.muted }]}>{t('sponsor.dashboard_loading', { defaultValue: 'Loading dashboard...' })}</Text>
         </View>
+        <QuickNavBar />
+      </View>
+    );
+  }
+
+  if (!company && companyLoadFailed) {
+    return (
+      <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        <EmptyState
+          icon="cloud-offline-outline"
+          title={t('sponsor.dashboard_load_failed', { defaultValue: "Couldn't load your dashboard" })}
+          colors={colors}
+          action={
+            <AnimatedPressable
+              onPress={loadCompany}
+              style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+            >
+              <Text style={[styles.primaryBtnText, { color: colors.accentText }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
+            </AnimatedPressable>
+          }
+        />
+        <QuickNavBar />
       </View>
     );
   }
@@ -265,6 +315,7 @@ const SponsorDashboardScreen: React.FC = () => {
             </AnimatedPressable>
           }
         />
+        <QuickNavBar />
       </View>
     );
   }
@@ -293,8 +344,24 @@ const SponsorDashboardScreen: React.FC = () => {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       >
         <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
-          {/* KPI Metrics Grid */}
-          <SponsorKpiGrid metrics={kpiMetrics} />
+          {/* KPI Metrics Grid — hidden, not zeroed, when its inputs failed. */}
+          {campaignsLoadFailed ? (
+            <AnimatedPressable
+              onPress={loadCompany}
+              style={[styles.failedNotice, { backgroundColor: colors.card, borderColor: colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+            >
+              <Ionicons name="cloud-offline-outline" size={18} color={colors.muted} />
+              <Text style={[styles.failedNoticeText, { color: colors.muted }]}>
+                {t('sponsor.campaigns_load_failed', { defaultValue: "Couldn't load your campaigns" })}
+                {' · '}
+                <Text style={{ color: colors.accent, fontWeight: '700' }}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
+              </Text>
+            </AnimatedPressable>
+          ) : (
+            <SponsorKpiGrid metrics={kpiMetrics} />
+          )}
 
           {/* Quick Actions */}
           {!editing && !showTierPicker && !showEventPicker && (
@@ -336,6 +403,7 @@ const SponsorDashboardScreen: React.FC = () => {
             saving={saving} onCancelEdit={handleCancelEdit} onSaveEdit={handleSaveEdit}
           />
 
+          {!campaignsLoadFailed && (
           <CampaignsTable
             events={sponsoredEvents}
             onEventPress={(id) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push(`/events/${encodeURIComponent(id)}`); }}
@@ -343,6 +411,7 @@ const SponsorDashboardScreen: React.FC = () => {
             onCreateEvent={handleCreateEvent}
             hapticsEnabled={settings.hapticsEnabled}
           />
+          )}
 
           {!!showCompose && (
             <AnnouncementComposer
@@ -354,12 +423,14 @@ const SponsorDashboardScreen: React.FC = () => {
             />
           )}
 
-          <AnnouncementsListSection
-            announcements={announcements}
-            eventNameMap={eventNameMap}
-            hasEvents={sponsoredEvents.length > 0}
-            onAnnounce={handleAnnounce}
-          />
+          {!campaignsLoadFailed && (
+            <AnnouncementsListSection
+              announcements={announcements}
+              eventNameMap={eventNameMap}
+              hasEvents={sponsoredEvents.length > 0}
+              onAnnounce={handleAnnounce}
+            />
+          )}
 
           <View style={{ height: 40 }} />
         </Animated.View>
@@ -373,6 +444,8 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   loadingText: { fontSize: 13 },
+  failedNotice: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 16 },
+  failedNoticeText: { flex: 1, fontSize: 13, lineHeight: 18 },
   titleRow: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 },
   headerTitle: { fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
   headerSubtitle: { fontSize: 12, marginTop: 2 },

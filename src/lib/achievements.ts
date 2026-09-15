@@ -230,7 +230,10 @@ export async function loadEarnedAchievements(): Promise<EarnedAchievement[]> {
     return stored ? JSON.parse(stored) : [];
   } catch (e) {
     logger.error('[silent-catch] achievements.ts:230:', e);
-    return [];
+    // THROW, not []: saveEarnedAchievement reads, appends and WRITES BACK, so
+    // a failed read returned as [] would overwrite every earned achievement
+    // with one. A JSON.parse failure throws too — the stored value is unreadable.
+    throw e instanceof Error ? e : new Error('Could not read achievements');
   }
 }
 

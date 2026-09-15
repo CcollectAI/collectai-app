@@ -50,6 +50,8 @@ export async function getBatchPresence(userIds: string[]): Promise<UserPresence[
     }));
   } catch (e) {
     logger.error('[silent-fallback] presence: update failed:', e);
+    // empty-ok: presence is cosmetic, like getUserPresence above — no entry
+    // renders as offline, the correct degraded state, and no screen calls this.
     return [];
   }
 }

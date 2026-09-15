@@ -127,8 +127,8 @@ export async function searchUsers(query: string): Promise<PublicUserProfile[]> {
   const pattern = `%${query.trim()}%`;
 
   // supabase-js has no per-request timeout; without this a stalled round-trip
-  // pins the "Find friends" spinner forever. Time out to [] so the caller falls
-  // through to its existing "No collectors found" empty state.
+  // pins the "Find friends" spinner forever. A timeout THROWS like the error
+  // branch below — it used to return [], which printed "No collectors found".
   let data: unknown;
   let error: unknown;
   try {
@@ -149,7 +149,7 @@ export async function searchUsers(query: string): Promise<PublicUserProfile[]> {
     ));
   } catch (e) {
     logger.error('[SupabaseDataProvider] searchUsers timed out or threw:', e);
-    return [];
+    throw e instanceof Error ? e : new Error('Could not search collectors');
   }
 
   if (error) {

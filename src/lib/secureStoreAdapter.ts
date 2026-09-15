@@ -84,6 +84,9 @@ export const secureStoreAdapter = {
       return out;
     } catch (err) {
       logger.error("[secureStore] getItem failed:", err);
+      // empty-ok: this is supabase-js's auth storage. null = no stored session,
+      // the contract its hydrate expects; a throw here breaks session restore
+      // (docs/AUTH_AND_WEB_DEPLOY.md — do not change auth behaviour).
       return null;
     }
   },

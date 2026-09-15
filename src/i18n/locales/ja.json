@@ -46,7 +46,8 @@
     "a11y_cancel_editing": "編集をキャンセル",
     "unsaved_title": "未保存の変更",
     "unsaved_message": "保存していない変更があります。破棄して戻りますか？",
-    "discard": "破棄"
+    "discard": "破棄",
+    "load_failed_hint": "何も失われていません。リストに接続できなかっただけです。"
   },
   "add_tab": {
     "subtitle": "高速、カメラ優先のフロー。",
@@ -392,7 +393,10 @@
     "alerts_failed": "アラートを読み込めませんでした",
     "alerts_failed_hint": "タップして再試行",
     "a11y_retry_alerts": "アラートの読み込みを再試行",
-    "a11y_open_watchlist": "ウォッチリストを開く"
+    "a11y_open_watchlist": "ウォッチリストを開く",
+    "breakdown_load_failed": "カテゴリー別の内訳を読み込めませんでした",
+    "estimated_share_one": "このうち{{amount}}は推定額です — 相場のないアイテム1件",
+    "estimated_share_many": "このうち{{amount}}は推定額です — 相場のないアイテム{{count}}件"
   },
   "items": {
     "title": "アイテム",
@@ -527,6 +531,9 @@
     "diagnostics_desc": "この端末で記録された最近のエラー",
     "getting_paid": "支払いの受け取り",
     "payment_handles_load_failed": "これを読み込めませんでした。",
+    "notification_prefs_load_failed": "通知設定を読み込めませんでした",
+    "privacy_load_failed": "プライバシー設定を読み込めませんでした",
+    "privacy_save_failed": "プライバシー設定を保存できませんでした",
     "a11y_accessibility_section": "アクセシビリティ設定のセクション",
     "high_contrast_mode": "ハイコントラストモード",
     "reduce_motion": "視差効果を減らす",
@@ -554,6 +561,7 @@
     "select_category_a11y": "カテゴリーを選択",
     "remove_linked_item": "リンクしたアイテムを解除",
     "link_to_portfolio_item": "ポートフォリオのアイテムにリンク",
+    "portfolio_items_load_failed": "ポートフォリオのアイテムを読み込めませんでした",
     "title_required": "タイトル *",
     "title_a11y": "プロジェクト名",
     "create_project": "プロジェクトを作成",
@@ -614,7 +622,8 @@
     "subject_a11y": "お知らせの件名",
     "message_placeholder": "お知らせを入力…",
     "message_a11y": "お知らせの本文",
-    "send_a11y": "お知らせを送信"
+    "send_a11y": "お知らせを送信",
+    "load_failed": "お知らせを読み込めませんでした"
   },
   "project_header": {
     "mark_complete_a11y": "プロジェクトを完了にする",
@@ -736,13 +745,15 @@
     "cancel_a11y": "登録をキャンセル",
     "remove_a11y": "この認証方法を削除",
     "enable_a11y": "二要素認証を有効にする",
-    "enable_2fa": "二要素認証を有効化"
+    "enable_2fa": "二要素認証を有効化",
+    "load_failed": "二要素認証の状態を確認できませんでした"
   },
   "event_detail": {
     "not_found": "イベントが見つかりません",
     "promote_a11y": "このイベントを宣伝",
     "promote_title": "このイベントを宣伝",
-    "promote_subtitle": "スポンサー枠でより多くのコレクターに届けます"
+    "promote_subtitle": "スポンサー枠でより多くのコレクターに届けます",
+    "load_failed": "このイベントを読み込めませんでした"
   },
   "user_profile": {
     "blocked_user": "このユーザーをブロックしています",
@@ -849,7 +860,8 @@
     "unavailable": "現在は利用できません"
   },
   "notifications": {
-    "mark_all_read": "すべて既読にする"
+    "mark_all_read": "すべて既読にする",
+    "load_failed": "通知を読み込めませんでした"
   },
   "diagnostics": {
     "title": "診断",
@@ -887,7 +899,8 @@
     "scan_barcode": "バーコードをスキャン",
     "seller_dashboard": "出品者ダッシュボード",
     "blocked_users": "ブロック中のユーザー",
-    "projects": "プロジェクト"
+    "projects": "プロジェクト",
+    "categories": "カテゴリー"
   },
   "offers": {
     "still_waiting": "まだ待機中",
@@ -977,7 +990,8 @@
     "change_price": "価格を変更",
     "a11y_new_asking_price": "新しい希望価格",
     "a11y_save_new_price": "新しい価格を保存",
-    "make_an_offer": "オファーを出す"
+    "make_an_offer": "オファーを出す",
+    "load_failed": "出品を読み込めませんでした"
   },
   "chat": {
     "collector_not_found": "コレクターが見つかりません",
@@ -994,7 +1008,8 @@
     "load_failed": "会話を読み込めませんでした",
     "start_conversation": "メッセージを送って会話を始めましょう",
     "message_placeholder": "メッセージを入力...",
-    "a11y_message_input": "メッセージ入力"
+    "a11y_message_input": "メッセージ入力",
+    "status_check_failed": "このコレクターにメッセージを送れるか確認できませんでした"
   },
   "sell": {
     "sell_an_item": "アイテムを売る",
@@ -1011,11 +1026,13 @@
     "a11y_list_on_marketplace": "マーケットプレイスに出品",
     "pick_choose_item": "アイテムを選択",
     "pick_empty_title": "コレクションにはまだ何もありません",
-    "pick_a11y_sell_external": "コレクションにないものを販売"
+    "pick_a11y_sell_external": "コレクションにないものを販売",
+    "catalog_check_failed": "カタログを確認できませんでした"
   },
   "purchase": {
     "invalid_deal_link": "無効な取引リンク",
     "deal_not_found": "取引が見つかりません",
+    "deal_load_failed": "取引を読み込めませんでした",
     "listing_price": "出品価格",
     "price_analysis": "価格分析",
     "band_low": "低 (q10)",
@@ -1076,7 +1093,10 @@
     "set_view_full_details": "詳細をすべて表示",
     "set_empty_title": "このセットは空です",
     "set_empty_sub": "アイテムは現在準備中です",
-    "a11y_back_to_set": "セットに戻る"
+    "a11y_back_to_set": "セットに戻る",
+    "price_load_failed": "市場価値を読み込めませんでした。",
+    "a11y_retry_price": "市場価値をもう一度読み込む",
+    "items_load_failed": "これらのアイテムを読み込めませんでした"
   },
   "inbox": {
     "sent_requests": "送信したリクエスト",
@@ -1139,6 +1159,8 @@
     "a11y_new_campaign": "新しいキャンペーン",
     "new_campaign": "新しいキャンペーン",
     "dashboard_loading": "ダッシュボードを読み込み中...",
+    "dashboard_load_failed": "ダッシュボードを読み込めませんでした",
+    "campaigns_load_failed": "キャンペーンを読み込めませんでした",
     "dashboard_empty_title": "イベントのスポンサーを始める",
     "dashboard_a11y_get_started": "始める",
     "dashboard_get_started": "始める",
@@ -1191,7 +1213,8 @@
     "browse_by_brand": "ブランドから探す",
     "set_item_count_many": "{{count}} 件",
     "set_item_count_one": "1 件",
-    "list_load_failed": "カテゴリを読み込めませんでした"
+    "list_load_failed": "カテゴリを読み込めませんでした",
+    "collector_search_failed": "コレクターを検索できませんでした"
   },
   "analytics": {
     "a11y_retry": "分析データを再読み込み",
@@ -1203,7 +1226,8 @@
     "tap_view_leaderboard": "タップしてランキングを表示",
     "a11y_how_scores": "スコアはどのように計算されますか？",
     "how_scores_calculated": "これらのスコアはどのように計算されますか？",
-    "load_failed": "分析の一部を読み込めませんでした。"
+    "load_failed": "分析の一部を読み込めませんでした。",
+    "snapshot_load_failed": "分析を読み込めませんでした"
   },
   "guide": {
     "no_guide_yet": "このカテゴリーのガイドはまだありません",

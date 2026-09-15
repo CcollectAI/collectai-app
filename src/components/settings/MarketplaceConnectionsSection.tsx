@@ -74,6 +74,9 @@ export function MarketplaceConnectionsSection() {
 
   const [accounts, setAccounts] = useState<AccountWithDefaults[]>([]);
   const [loading, setLoading] = useState(true);
+  // A failed list is not "No marketplaces connected yet" — that copy sits
+  // above a Connect button, inviting a second OAuth for an account that exists.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
 
@@ -112,8 +115,11 @@ export function MarketplaceConnectionsSection() {
         }),
       );
       setAccounts(withDefaults);
+      setLoadFailed(false);
     } catch (e) {
       logger.error('list_marketplace_accounts_failed', { error: String(e) });
+      // Accounts already on screen (a refetch on focus) stay shown.
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -201,7 +207,24 @@ export function MarketplaceConnectionsSection() {
           </View>
         ) : (
           <>
-            {accounts.length === 0 && (
+            {accounts.length === 0 && loadFailed && (
+              <View style={styles.emptyRow}>
+                <Text style={[styles.emptyText, { color: colors.muted }]}>
+                  {t('settings.payment_handles_load_failed', { defaultValue: "Couldn't load this." })}
+                </Text>
+                <AnimatedPressable
+                  onPress={() => { setLoading(true); loadAccounts(); }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+                >
+                  <Text style={[styles.emptyText, { color: colors.accent, fontWeight: '700' }]}>
+                    {t('common.try_again', { defaultValue: 'Try again' })}
+                  </Text>
+                </AnimatedPressable>
+              </View>
+            )}
+
+            {accounts.length === 0 && !loadFailed && (
               <View style={styles.emptyRow}>
                 <Text style={[styles.emptyText, { color: colors.muted }]}>
                   No marketplaces connected yet. Sparrow can help you list items
@@ -310,7 +333,7 @@ export function MarketplaceConnectionsSection() {
               );
             })}
 
-            {!ebayConnected && (
+            {!ebayConnected && !(loadFailed && accounts.length === 0) && (
               <View
                 style={[
                   styles.connectRow,

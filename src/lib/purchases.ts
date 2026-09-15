@@ -133,6 +133,9 @@ export async function getCustomerInfo(): Promise<CustomerInfo | null> {
     return await Purchases.getCustomerInfo();
   } catch (e) {
     logger.error('[purchases] getCustomerInfo failed:', e);
+    // empty-ok: null → planFromCustomerInfo gives 'free', which useBillingLimits
+    // (the only caller) treats as "ask the server" and calls getBillingStatus.
+    // A throw would skip that fallback and pin a paying member at free.
     return null;
   }
 }
@@ -143,7 +146,13 @@ export async function getOfferings(): Promise<PurchasesOfferings | null> {
     return await Purchases.getOfferings();
   } catch (e) {
     logger.error('[purchases] getOfferings failed:', e);
-    return null;
+    // THROW. app/subscription.tsx reads null as "RevenueCat returned no current
+    // offering" and logs reason=no-offering → check the Paid Applications
+    // Agreement — the misdiagnosis that ran for days in 2026-08
+    // (docs/MONETIZATION.md). Its .catch shows "Could not load plans." instead.
+    // The not-configured guard above still returns null, as purchasesStatus.test
+    // requires.
+    throw e instanceof Error ? e : new Error('Could not load offerings');
   }
 }
 
@@ -177,6 +186,9 @@ export async function restorePurchases(): Promise<CustomerInfo | null> {
     return await Purchases.restorePurchases();
   } catch (e) {
     logger.error('[purchases] restorePurchases failed:', e);
+    // empty-ok: the only caller (subscription.tsx handleRestore) renders null as
+    // an ERROR toast, "Restore unavailable. Please try again." — distinct from
+    // "No previous purchases found" — and has no catch for a throw.
     return null;
   }
 }

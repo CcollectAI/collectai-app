@@ -192,7 +192,10 @@ function extractItems(raw: unknown): ItemRow[] {
  *  that must agree is how a capped aggregate comes back. */
 export const HOME_ITEMS_PAGE = 50;
 
-async function loadItemsFromCollection(): Promise<ItemRow[]> {
+/** `null` = the read FAILED; `[]` = the collection is really empty. Both callers
+ *  check for null — the `[]` this used to return on failure left Home on an
+ *  empty item list with no error whenever the overview also came back empty. */
+async function loadItemsFromCollection(): Promise<ItemRow[] | null> {
   try {
     const items = await dataProvider.listItems({ limit: HOME_ITEMS_PAGE, offset: 0 });
     return (items ?? [])
@@ -207,7 +210,8 @@ async function loadItemsFromCollection(): Promise<ItemRow[]> {
       .filter((r) => Number.isFinite(r.value));
   } catch (e) {
     logger.error('[Portfolio] Items-tab fallback failed:', e);
-    return [];
+    // empty-ok: null is this helper's FAILED value, not "none" — both callers in loadData check `=== null` and set the error.
+    return null;
   }
 }
 
@@ -285,6 +289,10 @@ function PortfolioScreen() {
   // Category breakdown state
   const [categoryBreakdown, setCategoryBreakdown] = useState<CategoryBreakdownItem[]>([]);
   const [breakdownLoading, setBreakdownLoading] = useState(false);
+  // The last breakdown read FAILED. Separate from an empty breakdown, which
+  // renders "Add items to your collection…" — that sentence was shown to
+  // members who own items whenever this read timed out (Android, 2026-09-15).
+  const [breakdownFailed, setBreakdownFailed] = useState(false);
 
 
   // Point under the user's finger on the chart. Drives the big COLLECTION VALUE
@@ -357,7 +365,14 @@ function PortfolioScreen() {
             // tokenless/cold-start 401 than an actually empty collection, and
             // the two are indistinguishable on screen.
             const fallback = await loadItemsFromCollection();
-            setItems(fallback.sort((a, b) => b.value - a.value));
+            if (fallback === null) {
+              // Overview said "no items" AND the collection read failed: we do
+              // not know what they own. Not "empty" — an error.
+              setItems([]);
+              setError("Could not load portfolio data.");
+            } else {
+              setItems(fallback.sort((a, b) => b.value - a.value));
+            }
           }
         } catch (realErr: unknown) {
           logger.error("[Portfolio] Real backend error, falling back:", realErr);
@@ -368,8 +383,8 @@ function PortfolioScreen() {
           // showed "Could not load portfolio data" over a collection the Items
           // tab was displaying perfectly well.
           const fallback = await loadItemsFromCollection();
-          setItems(fallback.sort((a, b) => b.value - a.value));
-          if (!fallback.length) setError("Could not load portfolio data.");
+          setItems((fallback ?? []).sort((a, b) => b.value - a.value));
+          if (!fallback?.length) setError("Could not load portfolio data.");
         }
       } else {
         // Mock mode: use analytics store or fallback
@@ -388,6 +403,9 @@ function PortfolioScreen() {
               : [];
             if ((snap as Record<string, unknown>)?.tierSummary) setTierSummary((snap as Record<string, unknown>).tierSummary as typeof tierSummary);
           } catch (mockErr) {
+            // empty-ok: mock mode only — this branch runs when
+            // USE_REAL_BACKEND is false (SUPABASE_MODE mock/off), which no
+            // release profile builds, and it renders demo data, not a member's.
             logger.error("[Portfolio] Mock store error:", mockErr);
           }
         }
@@ -449,15 +467,14 @@ function PortfolioScreen() {
       const res: unknown = await collectorsApi.getPortfolioCategoryBreakdown();
       const cats = mapCategoryBreakdown(res);
       setCategoryBreakdown(cats);
+      setBreakdownFailed(false);
     } catch (err: unknown) {
-      // logger.error, not warn — warn is stripped in release builds, so this
-      // failure was invisible on exactly the builds where it matters. The
-      // catch also resets the breakdown to [], which renders as "no
-      // categories" and is indistinguishable from a genuinely empty
-      // portfolio; without a surviving trace there is nothing to tell them
-      // apart after the fact.
+      // logger.error, not warn — warn is stripped in release builds. The catch
+      // used to reset the breakdown to [], which rendered "Add items to your
+      // collection" to a member who owns items. Now the section says it could
+      // not load, and a failed REFRESH keeps the rows already on screen.
       logger.error('[Portfolio] category breakdown fetch failed:', err);
-      setCategoryBreakdown([]);
+      setBreakdownFailed(true);
     } finally {
       setBreakdownLoading(false);
     }
@@ -695,11 +712,25 @@ function PortfolioScreen() {
                 categories with no sold-comp source the estimate is all anyone
                 has, and dropping it would show a collection worth less than
                 the member knows it is. What was missing was saying so. */}
-            {estimatedShare ? (
+            {/* "…of THIS" points at the headline, so it is said only while the
+                headline states a number. When the chart read failed and the
+                item fallback succeeded, the header read "—" while this line
+                still said "€1.155 of this is estimated" (Android, 2026-09-15) —
+                the same `valueUnknown` as the header gates both. Plural keys
+                are picked in code: the locales' plural suffixes do not match
+                i18next v4 (docs/I18N_BACKLOG.md). */}
+            {estimatedShare && !valueUnknown ? (
               <Text style={[styles.estimatedNote, { color: colors.muted }]}>
-                {formatPrice(estimatedShare.total, settings.currency)} of this is
-                estimated — {estimatedShare.count} item
-                {estimatedShare.count === 1 ? '' : 's'} we have no market comps for
+                {estimatedShare.count === 1
+                  ? t('home.estimated_share_one', {
+                      amount: formatPrice(estimatedShare.total, settings.currency),
+                      defaultValue: '{{amount}} of this is estimated — 1 item we have no market comps for',
+                    })
+                  : t('home.estimated_share_many', {
+                      amount: formatPrice(estimatedShare.total, settings.currency),
+                      count: estimatedShare.count,
+                      defaultValue: '{{amount}} of this is estimated — {{count}} items we have no market comps for',
+                    })}
               </Text>
             ) : null}
 
@@ -842,6 +873,8 @@ function PortfolioScreen() {
           theme={colors}
           breakdown={categoryBreakdown}
           loading={breakdownLoading}
+          failed={breakdownFailed}
+          onRetry={loadCategoryBreakdown}
           formatPrice={(v) => formatPrice(v)}
           resolveCategoryName={(raw) => {
             // Same resolution the items-tab copy used: the registry name when

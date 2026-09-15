@@ -46,7 +46,8 @@
     "a11y_cancel_editing": "Annuler la modification",
     "unsaved_title": "Modifications non enregistrées",
     "unsaved_message": "Vous avez des modifications non enregistrées. Les abandonner et quitter ?",
-    "discard": "Abandonner"
+    "discard": "Abandonner",
+    "load_failed_hint": "Rien ne manque — nous n’avons simplement pas pu joindre la liste."
   },
   "add_tab": {
     "subtitle": "Flux rapide, photo d'abord.",
@@ -392,7 +393,10 @@
     "alerts_failed": "Impossible de charger les alertes",
     "alerts_failed_hint": "Touchez pour réessayer",
     "a11y_retry_alerts": "Réessayer de charger les alertes",
-    "a11y_open_watchlist": "Ouvrir votre liste de suivi"
+    "a11y_open_watchlist": "Ouvrir votre liste de suivi",
+    "breakdown_load_failed": "Impossible de charger votre répartition par catégorie",
+    "estimated_share_one": "{{amount}} de ce montant est estimé — 1 objet sans comparables de marché",
+    "estimated_share_many": "{{amount}} de ce montant est estimé — {{count}} objets sans comparables de marché"
   },
   "items": {
     "title": "Objets",
@@ -527,6 +531,9 @@
     "diagnostics_desc": "Erreurs récentes enregistrées sur cet appareil",
     "getting_paid": "Être payé",
     "payment_handles_load_failed": "Impossible de charger ceci.",
+    "notification_prefs_load_failed": "Impossible de charger vos paramètres de notifications",
+    "privacy_load_failed": "Impossible de charger vos paramètres de confidentialité",
+    "privacy_save_failed": "Impossible d’enregistrer le paramètre de confidentialité",
     "a11y_accessibility_section": "Section des paramètres d'accessibilité",
     "high_contrast_mode": "Mode contraste élevé",
     "reduce_motion": "Réduire les animations",
@@ -554,6 +561,7 @@
     "select_category_a11y": "Choisir une catégorie",
     "remove_linked_item": "Retirer l'objet lié",
     "link_to_portfolio_item": "Lier à un objet du portefeuille",
+    "portfolio_items_load_failed": "Impossible de charger vos objets du portefeuille",
     "title_required": "Titre *",
     "title_a11y": "Titre du projet",
     "create_project": "Créer le projet",
@@ -614,7 +622,8 @@
     "subject_a11y": "Objet de l'annonce",
     "message_placeholder": "Rédigez votre annonce...",
     "message_a11y": "Message de l'annonce",
-    "send_a11y": "Envoyer l'annonce"
+    "send_a11y": "Envoyer l'annonce",
+    "load_failed": "Impossible de charger les annonces"
   },
   "project_header": {
     "mark_complete_a11y": "Marquer le projet comme terminé",
@@ -736,13 +745,15 @@
     "cancel_a11y": "Annuler l'inscription",
     "remove_a11y": "Supprimer ce facteur",
     "enable_a11y": "Activer l'authentification à deux facteurs",
-    "enable_2fa": "Activer la 2FA"
+    "enable_2fa": "Activer la 2FA",
+    "load_failed": "Impossible de vérifier l’état de votre authentification à deux facteurs"
   },
   "event_detail": {
     "not_found": "Événement introuvable",
     "promote_a11y": "Promouvoir cet événement",
     "promote_title": "Promouvoir cet événement",
-    "promote_subtitle": "Touchez plus de collectionneurs avec un placement sponsorisé"
+    "promote_subtitle": "Touchez plus de collectionneurs avec un placement sponsorisé",
+    "load_failed": "Impossible de charger cet événement"
   },
   "user_profile": {
     "blocked_user": "Vous avez bloqué cet utilisateur",
@@ -849,7 +860,8 @@
     "unavailable": "Plus disponible"
   },
   "notifications": {
-    "mark_all_read": "Tout marquer comme lu"
+    "mark_all_read": "Tout marquer comme lu",
+    "load_failed": "Impossible de charger vos notifications"
   },
   "diagnostics": {
     "title": "Diagnostics",
@@ -887,7 +899,8 @@
     "scan_barcode": "Scanner le code-barres",
     "seller_dashboard": "Tableau de bord vendeur",
     "blocked_users": "Utilisateurs bloqués",
-    "projects": "Projets"
+    "projects": "Projets",
+    "categories": "Catégories"
   },
   "offers": {
     "still_waiting": "Toujours en attente",
@@ -977,7 +990,8 @@
     "change_price": "Modifier le prix",
     "a11y_new_asking_price": "Nouveau prix demandé",
     "a11y_save_new_price": "Enregistrer le nouveau prix",
-    "make_an_offer": "Faire une offre"
+    "make_an_offer": "Faire une offre",
+    "load_failed": "Impossible de charger l’annonce"
   },
   "chat": {
     "collector_not_found": "Collectionneur introuvable",
@@ -994,7 +1008,8 @@
     "load_failed": "Impossible de charger la conversation",
     "start_conversation": "Envoyez un message pour démarrer la conversation",
     "message_placeholder": "Écrivez un message...",
-    "a11y_message_input": "Champ de message"
+    "a11y_message_input": "Champ de message",
+    "status_check_failed": "Impossible de vérifier si vous pouvez écrire à ce collectionneur"
   },
   "sell": {
     "sell_an_item": "Vendre un article",
@@ -1011,11 +1026,13 @@
     "a11y_list_on_marketplace": "Publier sur la place de marché",
     "pick_choose_item": "Choisir un article",
     "pick_empty_title": "Rien dans votre collection pour l'instant",
-    "pick_a11y_sell_external": "Vendre un article qui n'est pas dans ma collection"
+    "pick_a11y_sell_external": "Vendre un article qui n'est pas dans ma collection",
+    "catalog_check_failed": "Impossible de vérifier le catalogue"
   },
   "purchase": {
     "invalid_deal_link": "Lien d’offre invalide",
     "deal_not_found": "Offre introuvable",
+    "deal_load_failed": "Impossible de charger l’offre",
     "listing_price": "Prix affiché",
     "price_analysis": "Analyse des prix",
     "band_low": "Bas (q10)",
@@ -1076,7 +1093,10 @@
     "set_view_full_details": "Voir tous les détails",
     "set_empty_title": "Cet ensemble est vide",
     "set_empty_sub": "Les articles sont encore en cours de sélection",
-    "a11y_back_to_set": "Retour à l'ensemble"
+    "a11y_back_to_set": "Retour à l'ensemble",
+    "price_load_failed": "Impossible de charger la valeur de marché.",
+    "a11y_retry_price": "Réessayer de charger la valeur de marché",
+    "items_load_failed": "Impossible de charger ces objets"
   },
   "inbox": {
     "sent_requests": "Demandes envoyées",
@@ -1139,6 +1159,8 @@
     "a11y_new_campaign": "Nouvelle campagne",
     "new_campaign": "Nouvelle campagne",
     "dashboard_loading": "Chargement du tableau de bord...",
+    "dashboard_load_failed": "Impossible de charger votre tableau de bord",
+    "campaigns_load_failed": "Impossible de charger vos campagnes",
     "dashboard_empty_title": "Commencez à sponsoriser des événements",
     "dashboard_a11y_get_started": "Commencer",
     "dashboard_get_started": "Commencer",
@@ -1191,7 +1213,8 @@
     "browse_by_brand": "Parcourir par marque",
     "set_item_count_many": "{{count}} objets",
     "set_item_count_one": "1 objet",
-    "list_load_failed": "Impossible de charger les catégories"
+    "list_load_failed": "Impossible de charger les catégories",
+    "collector_search_failed": "Impossible de rechercher des collectionneurs"
   },
   "analytics": {
     "a11y_retry": "Recharger les données d'analyse",
@@ -1203,7 +1226,8 @@
     "tap_view_leaderboard": "Touchez pour voir le classement",
     "a11y_how_scores": "Comment les scores sont-ils calculés ?",
     "how_scores_calculated": "Comment ces scores sont-ils calculés ?",
-    "load_failed": "Une partie de vos analyses n’a pas pu être chargée."
+    "load_failed": "Une partie de vos analyses n’a pas pu être chargée.",
+    "snapshot_load_failed": "Impossible de charger vos analyses"
   },
   "guide": {
     "no_guide_yet": "Pas encore de guide pour cette catégorie",

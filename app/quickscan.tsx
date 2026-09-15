@@ -194,6 +194,7 @@ function QuickScanScreen() {
   useEffect(() => {
     if (!featureFlags.FEATURE_EDGE_CLASSIFICATION) return;
     let cancelled = false;
+    // empty-ok: both reads only seed an OPTIONAL classifier prior — on failure the effect returns without setting a hint, and nothing renders "none".
     Promise.all([
       dataProvider.listItems({ limit: 500, offset: 0 }).catch(() => []),
       AsyncStorage.getItem('@sparrowcollect/followed_categories').catch(() => null),
@@ -419,6 +420,8 @@ function QuickScanScreen() {
             setCapturedUri(null);
           }
         } catch (err: unknown) {
+          // empty-ok: clearing the captured photo IS the retry — the toast names
+          // the failure and the camera reopens; nothing claims "no items".
           logger.error('[QuickScan] multi-detect error:', err);
           showToast({ message: "All-at-once scan failed. Try one at a time.", type: 'error' });
           setPhase('camera');
@@ -553,6 +556,8 @@ function QuickScanScreen() {
         setPhase('result');
       }
     } catch (err: unknown) {
+      // empty-ok: clearing the captured photo returns to the camera for a retry,
+      // and the error toast below says the analysis failed.
       logger.error('[QuickScan] error:', err);
       fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
       showToast({

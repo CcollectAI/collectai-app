@@ -55,6 +55,11 @@ function MFASetupScreen() {
   const INPUT_BG = colors.card;
   const [loading, setLoading] = useState(true);
   const [factors, setFactors] = useState<MFAFactor[]>([]);
+  // A failed factor read is not "2FA is not enabled". Rendering that told a
+  // member WITH an authenticator enrolled that their account was unprotected,
+  // under an Enable button. No automatic retry: listFactors reads the user
+  // over the network (docs/AUTH_AND_WEB_DEPLOY.md), so only a tap re-asks.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [qrUri, setQrUri] = useState<string | null>(null);
   const [factorId, setFactorId] = useState<string | null>(null);
@@ -69,13 +74,14 @@ function MFASetupScreen() {
 
   async function loadFactors(cancelled = false) {
     setLoading(true);
+    setLoadFailed(false);
     try {
       const { data, error } = await supabase.auth.mfa.listFactors();
       if (error) throw error;
       if (!cancelled) setFactors(data?.totp ?? []);
     } catch (e) {
-      logger.error('[silent-fallback] mfa: enroll/challenge step failed:', e);
-      // MFA not available or error
+      logger.error('[silent-fallback] mfa: listFactors failed:', e);
+      if (!cancelled) setLoadFailed(true);
     } finally {
       if (!cancelled) setLoading(false);
     }
@@ -185,6 +191,26 @@ function MFASetupScreen() {
 
         {loading ? (
           <ActivityIndicator size="large" color={TIFFANY} style={{ marginTop: 40 }} />
+        ) : loadFailed && !qrUri ? (
+          <View style={styles.statusSection}>
+            <View style={styles.statusBadge}>
+              <Ionicons name="cloud-offline-outline" size={32} color={MUTED} />
+              {/* statusBadge is a row: let the sentence wrap beside the icon. */}
+              <Text style={[styles.statusDesc, { color: MUTED, flexShrink: 1, marginBottom: 0, textAlign: 'left' }]}>
+                {t('mfa.load_failed', { defaultValue: "Couldn't check your two-factor authentication status" })}
+              </Text>
+            </View>
+            <AnimatedPressable
+              style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
+              onPress={() => loadFactors()}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+            >
+              <Text style={[styles.primaryBtnText, { color: colors.accentText }]}>
+                {t('common.try_again', { defaultValue: 'Try again' })}
+              </Text>
+            </AnimatedPressable>
+          </View>
         ) : qrUri ? (
           /* Enrollment flow: show QR + code entry */
           <View style={styles.enrollSection}>

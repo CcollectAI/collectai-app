@@ -34,6 +34,11 @@ interface CategoryBreakdownSectionProps {
   };
   breakdown: CategoryBreakdownItem[];
   loading: boolean;
+  /** The last read failed. With no rows on screen this renders a failed
+   *  state, never the "Add items…" empty copy — that sentence was shown to
+   *  members who own items whenever the read timed out. */
+  failed?: boolean;
+  onRetry?: () => void;
   formatPrice: (amount: number) => string;
   onCategoryPress?: (categoryName: string) => void;
   /** Opens the whole collection, unfiltered. Omit to hide the action. */
@@ -47,6 +52,8 @@ function CategoryBreakdownSectionInner({
   theme,
   breakdown,
   loading,
+  failed = false,
+  onRetry,
   formatPrice,
   onCategoryPress,
   onAllItemsPress,
@@ -81,6 +88,25 @@ function CategoryBreakdownSectionInner({
       {loading ? (
         <View style={[s.breakdownCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <SkeletonList count={3} type="row" />
+        </View>
+      ) : isEmpty && failed ? (
+        <View style={[s.breakdownCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={[s.breakdownEmpty, s.breakdownFailed, { color: theme.muted }]}>
+            {t('home.breakdown_load_failed', { defaultValue: "Couldn't load your category breakdown" })}
+          </Text>
+          {onRetry && (
+            <AnimatedPressable
+              onPress={onRetry}
+              hitSlop={8}
+              style={s.breakdownRetry}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+            >
+              <Text style={[s.sectionAction, { color: theme.accent }]}>
+                {t('common.try_again', { defaultValue: 'Try again' })}
+              </Text>
+            </AnimatedPressable>
+          )}
         </View>
       ) : isEmpty ? (
         // Real empty state — no fabricated demo data. The breakdown is real
@@ -262,6 +288,15 @@ const s = StyleSheet.create({
     fontSize: textToken.md,
     textAlign: "center",
     paddingVertical: 16,
+  },
+  breakdownFailed: {
+    paddingBottom: 4,
+  },
+  breakdownRetry: {
+    alignSelf: "center",
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: 12,
   },
   previewBadge: {
     paddingHorizontal: 8,

@@ -43,6 +43,7 @@ import {
   type RawPersonalizedInsights,
 } from "@/data/personalizedInsights";
 import { ItemsEmptyState } from "@/components/items";
+import { EmptyState } from "@/components/EmptyState";
 import { splitPortfolioByValueSource, summariseMarkets, rankPositions, rankMovers } from '@/lib/portfolioAnalytics';
 import { formatPrice } from "@/lib/format";
 import { QuickNavBar } from "@/components/QuickNavBar";
@@ -413,7 +414,10 @@ function AnalyticsScreen() {
     // the screen had no bottom bar while the loaded screen did (seen on Android
     // 2026-09-13). docs/ui-playbook.md: "A screen with early returns needs the
     // bar in all of them."
-    if (hasEverHadItems !== true) {
+    // `=== false`, not `!== true`: `null` means the flag is still being READ
+    // from storage, and "Start your collection" before we know is a claim we
+    // cannot make (docs/ui-playbook.md "A failed read is not 'none'").
+    if (hasEverHadItems === false) {
       return (
         <View style={[styles.safe, { backgroundColor: colors.background }]}>
           <Stack.Screen options={{ headerTitle: t('screen_titles.analytics') }} />
@@ -435,8 +439,40 @@ function AnalyticsScreen() {
     );
   }
 
-  // Loaded with no items: also short-circuit to the hero CTA.
-  if (!isPreview && (effectiveSnapshot?.items?.length ?? 0) === 0) {
+  // The snapshot FAILED and there is nothing to show. This used to fall into
+  // the hero below — `effectiveSnapshot?.items?.length ?? 0` reads a failed
+  // load as zero items — so with the API down a member holding 8 items was told
+  // "Start your collection" (seen on Android 2026-09-15). The error banner and
+  // Retry live in the loaded return, which that early return never reached.
+  if (!isPreview && snapshotError && !effectiveSnapshot) {
+    return (
+      <View style={[styles.safe, { backgroundColor: colors.background }]}>
+        <Stack.Screen options={{ headerTitle: t('screen_titles.analytics') }} />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            icon="cloud-offline-outline"
+            title={t('analytics.snapshot_load_failed', { defaultValue: "Couldn't load your analytics" })}
+            colors={colors}
+            action={
+              <AnimatedPressable
+                onPress={retry}
+                style={[styles.failedRetryBtn, { backgroundColor: colors.accent }]}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+              >
+                <Text style={[styles.failedRetryText, { color: colors.accentText }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
+              </AnimatedPressable>
+            }
+          />
+        </View>
+        <QuickNavBar />
+      </View>
+    );
+  }
+
+  // Loaded with no items: also short-circuit to the hero CTA. Only after a
+  // SUCCESSFUL load — a failure is handled above.
+  if (!isPreview && effectiveSnapshot && (effectiveSnapshot.items?.length ?? 0) === 0) {
     return (
       <View style={[styles.safe, { backgroundColor: colors.background }]}>
         <Stack.Screen options={{ headerTitle: t('screen_titles.analytics') }} />
@@ -1035,6 +1071,8 @@ export default function AnalyticsScreenWithBoundary() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  failedRetryBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 999, minHeight: 44, justifyContent: 'center' },
+  failedRetryText: { fontSize: 15, fontWeight: '700' },
   safe: {
     flex: 1,
     // backgroundColor set inline via colors.background

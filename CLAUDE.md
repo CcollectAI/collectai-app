@@ -2,6 +2,79 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-26
 
+## A failed read said "you have none" on 74 sites — and the gate that checks catches approved all of them (2026-09-15)
+
+The 09-15 Android walk opened Home on **"Add items to your collection"** under
+Category Breakdown, to an account holding €1.348. Merle: *how have we not gotten
+this fix after months of fixing.* The honest answer, and the reason to read
+this section before fixing the next "empty after failure":
+
+1. **The class was fixed per screen, never swept.** Seven screens had been fixed
+   for exactly this (Watchlist, Favourites, Blocked users, My Suggestions, chat,
+   inbox, Leaderboard), each found on a walk, each with a test for that screen.
+2. **The gate asked the wrong question.** `check-silent-failures` rule B passes
+   any catch that logs. The breakdown catch logged with `logger.error` and THEN
+   did `setCategoryBreakdown([])` — its own comment called the result
+   indistinguishable from an empty portfolio.
+
+**Rule F `empty-on-failure`** now enumerates it (blocking, `verify:prebuild
+--strict`): a catch or `.catch` that writes/returns `[]`/`null`/`0`, or a read's
+catch that leaves state at its empty initial value, needs a failure state, a
+rethrow, or `// empty-ok: <checkable reason>`. First run 65, 74 once it learned
+the promise-chain and helper spellings — every one given a verdict, zero left.
+Mutation-proven on three shapes. Worst ones: Privacy settings rendered its
+DEFAULTS ("Allow discovery" ON) after a failed read; 2FA said "not enabled" to a
+member with a factor; the chat thread drew the member's own messages as the
+other person's; Request to Connect opened the composer after a failed BLOCK
+check (`rpc_request_dm_v1` does not check blocks); calendar/achievement readers
+returned `[]` and the merge wrote it back over stored data. Full table:
+`docs/ui-playbook.md` "A failed read is not 'none'".
+
+**Three agents did the triage in parallel; the audit is what made it
+trustworthy** — every new rethrow checked caller by caller (swr's background
+revalidate catches; every foreground caller is in try/.catch/useAsync/allSettled),
+two agent claims re-read against HEAD before they went in the playbook, the chat
+id change proven equivalent (`user_public_profile_v1.user_id` = the auth uid
+`isMe` compares against), and `verify:prebuild` green (53 suites, 391 tests).
+`settings.test.tsx`'s 2 failures are the Profile/Appearance snapshots stale on
+HEAD since May, unchanged by this diff.
+
+**Also this session:**
+- **Walking is now a script: `npm run walk`** (`scripts/walk/`): all 79 routes in
+  one run, machine checks (title, back, cluster, nav bar, raw text,
+  untranslated, slow load > 5 s, crash), a contact sheet, states via
+  `--locale` / `--small` / an API-down round. Walks are ROUNDS — log everything,
+  tag class/one-off/decision, fix the batch, one JS swap, re-sweep the flagged
+  routes. Method + round log: `docs/ANDROID_LAUNCH.md` "Screen sweep". Round 1
+  (API down): 20 flagged → two classes fixed at chokepoints
+  (`usePaginatedList.loadMore` after a failed first page; `check:navbar` rule 2
+  "every screen renders the bar unless exempt by design") — table in
+  `docs/ui-playbook.md` "Screen sweep round 1". Recheck on the device: all
+  chrome flags cleared.
+- **The same walk found the nav-bar rule's gap**: "cover every return branch"
+  (playbook, since 08-16) had no checker; 19 loading/not-found/failed branches in
+  10 screens dropped the QuickNavBar. Fixed; `npm run check:navbar` (AST, in
+  prebuild, mutation-proven). Categories index had no title at all — fixed.
+- **Walked on the device with the API down, all correct:** Home (breakdown
+  failed state, no estimate line), Notifications (+ retry spinner), notification
+  settings, deal detail, category browse, catalogue set, catalogue item price +
+  marketplaces, event detail, announcements, sponsor dashboard, Leaderboard
+  (no fixture rows), chat-demo → Inbox. With Supabase up: Items tab totals sum to
+  the €1.348 header, one-item sections have no footer, item edit Cancel restores
+  the name, Watchlist cluster fits at 411dp, categories pills compact.
+- ⛔ **Production API unreachable** (from ~20:00 CEST): `api.sparrowcollect.com`
+  443 and SSH 22 both time out from the laptop while Google/Supabase answer in
+  0.1 s. Local AWS credentials are invalid (`InvalidClientTokenId`), so instance
+  state could not be read — needs the EC2 console. The walk's timeouts were this,
+  not only the emulator (`docs/ANDROID_LAUNCH.md` gotcha 17).
+- **`scripts/android_jsswap.sh`** — JS-only APK in minutes by swapping a
+  Hermes bundle into the last release APK and debug-signing it. Proven with the
+  base APK's own bundle. `docs/ANDROID_LAUNCH.md` "JS-only APK".
+- **The first release build failed silently** (Metro died at 34% under memory
+  pressure from another project's emulator) and its completion notice said exit 0
+  (the `echo`'s) — gotchas 15–16. Its log carried the keystore payload and was
+  scrubbed; the keystore is not rotated (Merle's call).
+
 ## Five screenshots, eleven defects, and three of my own (2026-08-27)
 
 Build 154 went to TestFlight and came back as five photographs. Every defect in
@@ -1833,6 +1906,7 @@ rest, declare done — then the user hits the next one. `npm run verify:silent`
 | `unknown-as-zero` | "unknown" as "zero" |
 | `swallowed-catch` | no trace at all |
 | `prod-invisible-log` | a trace stripped from release builds |
+| `empty-on-failure` (2026-09-15) | a failed read as "you have none" — **a catch that LOGS still counts**; exempt only by a failure state, a rethrow, or `// empty-ok: <reason>` |
 
 **Each new AXIS needs its own sweep — the existing gates are axis-shaped and
 report PASS on everything outside their axis** (2026-08-09). Three more classes,

@@ -41,7 +41,8 @@ export function useRegionalDemand() {
           }
         }
       } catch (e) {
-        // Cache miss or unparseable entry — fall through to the network.
+        // empty-ok: a cache miss or unparseable entry — falls through to the
+        // network read below, which is the real source.
         // logger.error, not warn: warn is stripped from release builds.
         logger.error('[regionalDemand] cache read failed:', e);
       }
@@ -60,6 +61,8 @@ export function useRegionalDemand() {
         }
       } catch (err) {
         // Decoration on top of a grid: a failure must never block the screen.
+        // empty-ok: RegionalInsightsSection returns null for [] — a failure hides
+        // the decoration and prints no "no demand" copy.
         logger.error('[regionalDemand] getDemandHeatByRegion error:', err);
       }
     })();

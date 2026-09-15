@@ -46,7 +46,8 @@
     "a11y_cancel_editing": "편집 취소",
     "unsaved_title": "저장되지 않은 변경 사항",
     "unsaved_message": "저장되지 않은 변경 사항이 있습니다. 버리고 나가시겠습니까?",
-    "discard": "버리기"
+    "discard": "버리기",
+    "load_failed_hint": "사라진 것은 없습니다. 목록에 연결하지 못했을 뿐입니다."
   },
   "add_tab": {
     "subtitle": "빠른 카메라 우선 흐름.",
@@ -392,7 +393,10 @@
     "alerts_failed": "알림을 불러오지 못했습니다",
     "alerts_failed_hint": "다시 시도하려면 탭하세요",
     "a11y_retry_alerts": "알림 다시 불러오기",
-    "a11y_open_watchlist": "관심 목록 열기"
+    "a11y_open_watchlist": "관심 목록 열기",
+    "breakdown_load_failed": "카테고리별 분석을 불러오지 못했습니다",
+    "estimated_share_one": "이 중 {{amount}}은(는) 추정치입니다 — 시세가 없는 아이템 1개",
+    "estimated_share_many": "이 중 {{amount}}은(는) 추정치입니다 — 시세가 없는 아이템 {{count}}개"
   },
   "items": {
     "title": "아이템",
@@ -527,6 +531,9 @@
     "diagnostics_desc": "이 기기에 기록된 최근 오류",
     "getting_paid": "대금 수령",
     "payment_handles_load_failed": "불러오지 못했습니다.",
+    "notification_prefs_load_failed": "알림 설정을 불러오지 못했습니다",
+    "privacy_load_failed": "개인정보 설정을 불러오지 못했습니다",
+    "privacy_save_failed": "개인정보 설정을 저장하지 못했습니다",
     "a11y_accessibility_section": "접근성 설정 섹션",
     "high_contrast_mode": "고대비 모드",
     "reduce_motion": "동작 줄이기",
@@ -554,6 +561,7 @@
     "select_category_a11y": "카테고리 선택",
     "remove_linked_item": "연결된 아이템 제거",
     "link_to_portfolio_item": "포트폴리오 아이템에 연결",
+    "portfolio_items_load_failed": "포트폴리오 아이템을 불러오지 못했습니다",
     "title_required": "제목 *",
     "title_a11y": "프로젝트 제목",
     "create_project": "프로젝트 만들기",
@@ -614,7 +622,8 @@
     "subject_a11y": "공지 제목",
     "message_placeholder": "공지를 작성하세요…",
     "message_a11y": "공지 내용",
-    "send_a11y": "공지 보내기"
+    "send_a11y": "공지 보내기",
+    "load_failed": "공지를 불러오지 못했습니다"
   },
   "project_header": {
     "mark_complete_a11y": "프로젝트를 완료로 표시",
@@ -736,13 +745,15 @@
     "cancel_a11y": "등록 취소",
     "remove_a11y": "이 인증 수단 제거",
     "enable_a11y": "2단계 인증 사용",
-    "enable_2fa": "2단계 인증 켜기"
+    "enable_2fa": "2단계 인증 켜기",
+    "load_failed": "2단계 인증 상태를 확인하지 못했습니다"
   },
   "event_detail": {
     "not_found": "이벤트를 찾을 수 없습니다",
     "promote_a11y": "이 이벤트 홍보",
     "promote_title": "이 이벤트 홍보",
-    "promote_subtitle": "스폰서 노출로 더 많은 컬렉터에게 도달하세요"
+    "promote_subtitle": "스폰서 노출로 더 많은 컬렉터에게 도달하세요",
+    "load_failed": "이 이벤트를 불러오지 못했습니다"
   },
   "user_profile": {
     "blocked_user": "이 사용자를 차단했습니다",
@@ -849,7 +860,8 @@
     "unavailable": "더 이상 이용할 수 없습니다"
   },
   "notifications": {
-    "mark_all_read": "모두 읽음으로 표시"
+    "mark_all_read": "모두 읽음으로 표시",
+    "load_failed": "알림을 불러오지 못했습니다"
   },
   "diagnostics": {
     "title": "진단",
@@ -887,7 +899,8 @@
     "scan_barcode": "바코드 스캔",
     "seller_dashboard": "판매자 대시보드",
     "blocked_users": "차단한 사용자",
-    "projects": "프로젝트"
+    "projects": "프로젝트",
+    "categories": "카테고리"
   },
   "offers": {
     "still_waiting": "대기 중",
@@ -977,7 +990,8 @@
     "change_price": "가격 변경",
     "a11y_new_asking_price": "새 희망 가격",
     "a11y_save_new_price": "새 가격 저장",
-    "make_an_offer": "제안하기"
+    "make_an_offer": "제안하기",
+    "load_failed": "리스팅을 불러오지 못했습니다"
   },
   "chat": {
     "collector_not_found": "수집가를 찾을 수 없습니다",
@@ -994,7 +1008,8 @@
     "load_failed": "대화를 불러오지 못했습니다",
     "start_conversation": "메시지를 보내 대화를 시작하세요",
     "message_placeholder": "메시지 입력...",
-    "a11y_message_input": "메시지 입력란"
+    "a11y_message_input": "메시지 입력란",
+    "status_check_failed": "이 컬렉터에게 메시지를 보낼 수 있는지 확인하지 못했습니다"
   },
   "sell": {
     "sell_an_item": "아이템 판매",
@@ -1011,11 +1026,13 @@
     "a11y_list_on_marketplace": "마켓플레이스에 등록",
     "pick_choose_item": "아이템 선택",
     "pick_empty_title": "컬렉션에 아직 아무것도 없습니다",
-    "pick_a11y_sell_external": "컬렉션에 없는 물건 판매"
+    "pick_a11y_sell_external": "컬렉션에 없는 물건 판매",
+    "catalog_check_failed": "카탈로그를 확인하지 못했습니다"
   },
   "purchase": {
     "invalid_deal_link": "유효하지 않은 거래 링크",
     "deal_not_found": "거래를 찾을 수 없습니다",
+    "deal_load_failed": "거래를 불러오지 못했습니다",
     "listing_price": "리스팅 가격",
     "price_analysis": "가격 분석",
     "band_low": "낮음 (q10)",
@@ -1076,7 +1093,10 @@
     "set_view_full_details": "전체 세부정보 보기",
     "set_empty_title": "이 세트는 비어 있습니다",
     "set_empty_sub": "아이템을 아직 정리하는 중입니다",
-    "a11y_back_to_set": "세트로 돌아가기"
+    "a11y_back_to_set": "세트로 돌아가기",
+    "price_load_failed": "시장 가치를 불러오지 못했습니다.",
+    "a11y_retry_price": "시장 가치를 다시 불러오기",
+    "items_load_failed": "이 아이템을 불러오지 못했습니다"
   },
   "inbox": {
     "sent_requests": "보낸 요청",
@@ -1139,6 +1159,8 @@
     "a11y_new_campaign": "새 캠페인",
     "new_campaign": "새 캠페인",
     "dashboard_loading": "대시보드 불러오는 중...",
+    "dashboard_load_failed": "대시보드를 불러오지 못했습니다",
+    "campaigns_load_failed": "캠페인을 불러오지 못했습니다",
     "dashboard_empty_title": "이벤트 후원 시작하기",
     "dashboard_a11y_get_started": "시작하기",
     "dashboard_get_started": "시작하기",
@@ -1191,7 +1213,8 @@
     "browse_by_brand": "브랜드별 둘러보기",
     "set_item_count_many": "아이템 {{count}}개",
     "set_item_count_one": "아이템 1개",
-    "list_load_failed": "카테고리를 불러오지 못했습니다"
+    "list_load_failed": "카테고리를 불러오지 못했습니다",
+    "collector_search_failed": "컬렉터를 검색하지 못했습니다"
   },
   "analytics": {
     "a11y_retry": "분석 데이터 다시 불러오기",
@@ -1203,7 +1226,8 @@
     "tap_view_leaderboard": "탭하여 리더보드 보기",
     "a11y_how_scores": "점수는 어떻게 계산되나요?",
     "how_scores_calculated": "이 점수는 어떻게 계산되나요?",
-    "load_failed": "분석 일부를 불러오지 못했습니다."
+    "load_failed": "분석 일부를 불러오지 못했습니다.",
+    "snapshot_load_failed": "분석을 불러오지 못했습니다"
   },
   "guide": {
     "no_guide_yet": "이 카테고리의 가이드가 아직 없습니다",

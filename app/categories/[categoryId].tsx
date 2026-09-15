@@ -113,6 +113,10 @@ function CategoryStoreScreen() {
       });
     } catch (err: unknown) {
       logLoad(`category:${categoryId}`, { error: err instanceof Error ? err.message : String(err), ms: elapsed() });
+      // empty-ok: CategoryEventsSection returns null for an empty list (no
+      // "No upcoming events" copy), and setEvents runs only on success, so a
+      // failed read hides the section or keeps the events already shown — it
+      // never claims the category has none.
       logger.error('[CategoryStore] store fetch error:', err);
     }
 
@@ -188,6 +192,7 @@ function CategoryStoreScreen() {
             <Text style={[styles.backButtonText, { color: colors.text }]}>{t('common.go_back', { defaultValue: 'Go back' })}</Text>
           </AnimatedPressable>
         </View>
+        <QuickNavBar />
       </View>
     );
   }

@@ -97,6 +97,10 @@ function FranchiseDetailScreen() {
 
       setItems(result);
     } catch (err) {
+      // empty-ok: unreachable — FRANCHISE_PAGES_ENABLED is false and the route
+      // redirects before this loader mounts (gated 2026-09-14, English-only,
+      // matcher returns true on every path). Give it a failed state BEFORE
+      // enabling the flag: today a failure here would read as "no items".
       logger.error('[FranchiseDetail] loadItems error:', err);
     } finally {
       setLoading(false);

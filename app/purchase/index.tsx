@@ -281,8 +281,18 @@ function AgentHubScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["left", "right"]}>
         <View style={[styles.container, { paddingTop: 12 }]}>
-          {/* Header skeleton */}
-          <View style={[styles.skeletonHeader, { backgroundColor: colors.card }]} />
+          {/* The real header, not a grey bar: the title and subtitle are fixed
+              strings, so there is nothing to wait for — and a skeleton bar in
+              their place left the loading screen with no title at all (screen
+              sweep, 2026-09-15). */}
+          <View style={styles.headerRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.headerTitle, { color: colors.text }]}>{t('purchase.sparrows_watch', { defaultValue: "Sparrow's Watch" })}</Text>
+              <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
+                We watch marketplaces and alert you when your price is hit.
+              </Text>
+            </View>
+          </View>
           {/* Scan-status row skeleton */}
           <View style={[styles.skeletonScan, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={[styles.skeletonDot, { backgroundColor: colors.border }]} />
@@ -319,6 +329,7 @@ function AgentHubScreen() {
             ))}
           </View>
         </View>
+        <QuickNavBar />
       </SafeAreaView>
     );
   }
@@ -926,7 +937,6 @@ const styles = StyleSheet.create({
   loadMoreText: { fontSize: 14, fontWeight: "700" },
 
   // Skeleton — matches the new layout (scan-status row + mandate cards + deal rows with thumbs)
-  skeletonHeader: { height: 28, width: 200, borderRadius: 6, marginBottom: 24, opacity: 0.6 },
   skeletonScan: {
     flexDirection: "row", alignItems: "center", gap: 14,
     borderWidth: 1, borderRadius: 12,

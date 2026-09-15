@@ -19,7 +19,7 @@ import { safeGoBack } from '@/lib/goBack';
 import { useTranslation } from 'react-i18next';
 import { userErrorMessage } from '@/lib/userErrorMessage';
 
-type DmStatusState = 'loading' | 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined' | 'blocked';
+type DmStatusState = 'loading' | 'failed' | 'none' | 'pending_outgoing' | 'pending_incoming' | 'accepted' | 'declined' | 'blocked';
 
 const NewChatScreen: React.FC = () => {
   const { t } = useTranslation();
@@ -111,6 +111,7 @@ const NewChatScreen: React.FC = () => {
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
   const [dmStatus, setDmStatus] = useState<DmStatusState>('loading');
+  const [statusRetryKey, setStatusRetryKey] = useState(0);
 
   // Check DM status and block state on mount
   useEffect(() => {
@@ -130,12 +131,16 @@ const NewChatScreen: React.FC = () => {
         }
       } catch (err) {
         logger.error('[Chat/new] status check error:', err);
-        setDmStatus('none');
+        // NOT 'none'. 'none' opens the request composer, and rpc_request_dm_v1
+        // does not check blocks — a failed block check must not read as "you
+        // may message this collector".
+        setDmStatus('failed');
       }
     };
 
+    setDmStatus('loading');
     checkStatus();
-  }, [toUserId]);
+  }, [toUserId, statusRetryKey]);
 
   // Redirect to existing thread if already accepted
   useEffect(() => {
@@ -206,6 +211,28 @@ const NewChatScreen: React.FC = () => {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (dmStatus === 'failed') {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+        <EmptyState
+          icon="cloud-offline-outline"
+          title={t('chat.status_check_failed', { defaultValue: "Couldn't check whether you can message this collector" })}
+          colors={colors}
+          action={
+            <AnimatedPressable
+              onPress={() => setStatusRetryKey((k) => k + 1)}
+              style={[styles.emptyBtn, { borderColor: colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+            >
+              <Text style={[styles.emptyBtnText, { color: colors.text }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
+            </AnimatedPressable>
+          }
+        />
       </SafeAreaView>
     );
   }

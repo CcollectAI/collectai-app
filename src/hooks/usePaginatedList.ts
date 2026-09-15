@@ -228,8 +228,16 @@ export function usePaginatedList<T>(
 
   const loadMore = useCallback((): Promise<void> => {
     if (!hasMore || isLoadingMore || isLoading) return Promise.resolve();
+    // A FAILED first page leaves `items` empty and `hasMore` at its initial
+    // true — and an empty FlatList is "at the end", so onEndReached fires,
+    // loadMore starts a request, the footer spinner turns under the screen's
+    // failed state, the request times out, the footer leaves, the layout changes
+    // and it fires again. Seen by the screen sweep with the API down on the
+    // Events tab (2026-09-15). Recovery is the screen's Try again / pull to
+    // refresh, which call refresh(), not loadMore.
+    if (error && items.length === 0) return Promise.resolve();
     return fetchPage(false);
-  }, [hasMore, isLoadingMore, isLoading, fetchPage]);
+  }, [hasMore, isLoadingMore, isLoading, error, items.length, fetchPage]);
 
   const refresh = useCallback((): Promise<void> => {
     return fetchPage(true);

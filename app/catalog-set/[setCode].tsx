@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter, Stack, type Href } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
+import { EmptyState } from "@/components/EmptyState";
 import { browseCatalogItems } from "@/api/intakeApi";
 import { browseCatalogItemsCached, SET_GRID_PAGE_SIZE } from "@/data/catalogBrowseCache";
 import { useAppTheme } from "@/hooks/useAppTheme";
@@ -34,6 +35,7 @@ import type { CatalogItemData } from "@/components/CatalogBrowseSection";
 import logger from "@/utils/logger";
 import { logAuthState, logLoad, startTimer } from "@/utils/diagnostics";
 import { useTranslation } from "react-i18next";
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 const PAGE_SIZE = SET_GRID_PAGE_SIZE;
 const NUM_COLS = 3;
@@ -62,6 +64,9 @@ function CatalogSetScreen() {
   const [total, setTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  // The first page FAILED — not an empty set. The catch used to clear the grid
+  // into "This set is empty / Items are still being curated" (2026-09-15 gate).
+  const [loadFailed, setLoadFailed] = useState(false);
   const reqId = useRef(0);
 
   const fetchPage = useCallback(
@@ -91,6 +96,7 @@ function CatalogSetScreen() {
         if (id !== reqId.current) return;
         const page = (res?.items ?? []) as CatalogItemData[];
         setItems((prev) => (mode === "append" ? [...prev, ...page] : page));
+        if (mode === "replace") setLoadFailed(false);
         if (typeof res?.total === "number") setTotal(res.total);
         logLoad(`set-grid:${category}/${setCode}`, {
           dimension: dimension ?? "set",
@@ -106,7 +112,12 @@ function CatalogSetScreen() {
           ms: elapsed(),
         });
         logger.error("[CatalogSet] load error:", err);
-        if (mode === "replace" && id === reqId.current) setItems([]);
+        // A failed load-MORE keeps the rows already shown; a failed first page
+        // says so instead of rendering the empty-set copy.
+        if (mode === "replace" && id === reqId.current) {
+          setItems([]);
+          setLoadFailed(true);
+        }
       } finally {
         if (id === reqId.current) {
           setLoading(false);
@@ -122,12 +133,22 @@ function CatalogSetScreen() {
     fetchPage(0, "replace");
   }, [fetchPage]);
 
+  const retryFirstPage = useCallback(() => {
+    setLoading(true);
+    fetchPage(0, "replace");
+  }, [fetchPage]);
+
   const handleEndReached = useCallback(() => {
     if (loading || loadingMore) return;
+    // After a failed first page the grid is empty, and an empty FlatList is
+    // "at the end": this fired a load-more at offset 0 whose spinner turned
+    // under "Couldn't load these items" and re-fired as the footer left
+    // (screen sweep, API down, 2026-09-15). Try again owns recovery.
+    if (loadFailed || items.length === 0) return;
     if (total != null && items.length >= total) return;
     setLoadingMore(true);
     fetchPage(items.length, "append");
-  }, [loading, loadingMore, total, items.length, fetchPage]);
+  }, [loading, loadingMore, loadFailed, total, items.length, fetchPage]);
 
   const openItem = useCallback(
     (it: CatalogItemData) => {
@@ -266,11 +287,32 @@ function CatalogSetScreen() {
             loadingMore ? <ActivityIndicator color={colors.accent} style={styles.footer} /> : null
           }
           ListEmptyComponent={
+            loadFailed ? (
+              <EmptyState
+                icon="cloud-offline-outline"
+                title={t('catalog.items_load_failed', { defaultValue: "Couldn't load these items" })}
+                subtitle={t('common.load_failed_hint', { defaultValue: 'Nothing is missing — we just could not reach the list.' })}
+                colors={colors}
+                action={
+                  <AnimatedPressable
+                    onPress={retryFirstPage}
+                    style={[styles.retryBtn, { backgroundColor: colors.accent }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+                  >
+                    <Text style={[styles.retryText, { color: colors.accentText }]}>
+                      {t('common.try_again', { defaultValue: 'Try again' })}
+                    </Text>
+                  </AnimatedPressable>
+                }
+              />
+            ) : (
             <View style={styles.empty}>
               <Ionicons name="albums-outline" size={48} color={colors.muted} />
               <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('catalog.set_empty_title', { defaultValue: 'This set is empty' })}</Text>
               <Text style={[styles.emptySub, { color: colors.muted }]}>{t('catalog.set_empty_sub', { defaultValue: 'Items are still being curated' })}</Text>
             </View>
+            )
           }
         />
       )}
@@ -312,6 +354,7 @@ function CatalogSetScreen() {
           </View>
         </Modal>
       )}
+      <QuickNavBar />
     </View>
   );
 }
@@ -335,6 +378,8 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
   footer: { marginVertical: 16 },
   empty: { alignItems: "center", paddingTop: 64, paddingHorizontal: 32 },
+  retryBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, minHeight: 44, justifyContent: "center" },
+  retryText: { fontSize: 14, fontWeight: "700" },
   emptyTitle: { fontSize: 16, fontWeight: "700", marginTop: 12 },
   emptySub: { fontSize: 13, textAlign: "center", marginTop: 4 },
   // Swipe viewer

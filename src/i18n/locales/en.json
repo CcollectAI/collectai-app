@@ -46,7 +46,8 @@
     "a11y_cancel_editing": "Cancel editing",
     "unsaved_title": "Unsaved Changes",
     "unsaved_message": "You have unsaved changes. Discard them and leave?",
-    "discard": "Discard"
+    "discard": "Discard",
+    "load_failed_hint": "Nothing is missing — we just could not reach the list."
   },
   "add_tab": {
     "subtitle": "Fast, camera-first flow.",
@@ -392,7 +393,10 @@
     "alerts_failed": "Couldn't load alerts",
     "alerts_failed_hint": "Tap to try again",
     "a11y_retry_alerts": "Retry loading alerts",
-    "a11y_open_watchlist": "Open your watchlist"
+    "a11y_open_watchlist": "Open your watchlist",
+    "breakdown_load_failed": "Couldn't load your category breakdown",
+    "estimated_share_one": "{{amount}} of this is estimated — 1 item we have no market comps for",
+    "estimated_share_many": "{{amount}} of this is estimated — {{count}} items we have no market comps for"
   },
   "items": {
     "title": "Items",
@@ -527,6 +531,9 @@
     "diagnostics_desc": "Recent errors recorded on this device",
     "getting_paid": "Getting paid",
     "payment_handles_load_failed": "Couldn't load this.",
+    "notification_prefs_load_failed": "Couldn't load your notification settings",
+    "privacy_load_failed": "Couldn't load your privacy settings",
+    "privacy_save_failed": "Failed to save privacy setting",
     "a11y_accessibility_section": "Accessibility settings section",
     "high_contrast_mode": "High Contrast Mode",
     "reduce_motion": "Reduce Motion",
@@ -554,6 +561,7 @@
     "select_category_a11y": "Select category",
     "remove_linked_item": "Remove linked item",
     "link_to_portfolio_item": "Link to portfolio item",
+    "portfolio_items_load_failed": "Couldn't load your portfolio items",
     "title_required": "Title *",
     "title_a11y": "Project title",
     "create_project": "Create Project",
@@ -614,7 +622,8 @@
     "subject_a11y": "Announcement subject",
     "message_placeholder": "Write your announcement...",
     "message_a11y": "Announcement message",
-    "send_a11y": "Send announcement"
+    "send_a11y": "Send announcement",
+    "load_failed": "Couldn't load announcements"
   },
   "project_header": {
     "mark_complete_a11y": "Mark project as complete",
@@ -736,13 +745,15 @@
     "cancel_a11y": "Cancel enrollment",
     "remove_a11y": "Remove this factor",
     "enable_a11y": "Enable two-factor authentication",
-    "enable_2fa": "Enable 2FA"
+    "enable_2fa": "Enable 2FA",
+    "load_failed": "Couldn't check your two-factor authentication status"
   },
   "event_detail": {
     "not_found": "Event not found",
     "promote_a11y": "Promote this event",
     "promote_title": "Promote This Event",
-    "promote_subtitle": "Reach more collectors with sponsored placement"
+    "promote_subtitle": "Reach more collectors with sponsored placement",
+    "load_failed": "Couldn't load this event"
   },
   "user_profile": {
     "blocked_user": "You have blocked this user",
@@ -849,7 +860,8 @@
     "unavailable": "No longer available"
   },
   "notifications": {
-    "mark_all_read": "Mark all as read"
+    "mark_all_read": "Mark all as read",
+    "load_failed": "Couldn't load your notifications"
   },
   "diagnostics": {
     "title": "Diagnostics",
@@ -887,7 +899,8 @@
     "scan_barcode": "Scan Barcode",
     "seller_dashboard": "Seller Dashboard",
     "blocked_users": "Blocked users",
-    "projects": "Projects"
+    "projects": "Projects",
+    "categories": "Categories"
   },
   "offers": {
     "still_waiting": "Still waiting",
@@ -977,7 +990,8 @@
     "change_price": "Change price",
     "a11y_new_asking_price": "New asking price",
     "a11y_save_new_price": "Save the new price",
-    "make_an_offer": "Make an offer"
+    "make_an_offer": "Make an offer",
+    "load_failed": "Couldn't load this listing"
   },
   "chat": {
     "collector_not_found": "Collector not found",
@@ -994,7 +1008,8 @@
     "load_failed": "Couldn't load this conversation",
     "start_conversation": "Send a message to start the conversation",
     "message_placeholder": "Type a message...",
-    "a11y_message_input": "Message input"
+    "a11y_message_input": "Message input",
+    "status_check_failed": "Couldn't check whether you can message this collector"
   },
   "sell": {
     "sell_an_item": "Sell an item",
@@ -1011,11 +1026,13 @@
     "a11y_list_on_marketplace": "List it on the marketplace",
     "pick_choose_item": "Choose an item",
     "pick_empty_title": "Nothing in your collection yet",
-    "pick_a11y_sell_external": "Sell something not in my collection"
+    "pick_a11y_sell_external": "Sell something not in my collection",
+    "catalog_check_failed": "Couldn't check the catalogue"
   },
   "purchase": {
     "invalid_deal_link": "Invalid deal link",
     "deal_not_found": "Deal not found",
+    "deal_load_failed": "Couldn't load this deal",
     "listing_price": "Listing Price",
     "price_analysis": "Price Analysis",
     "band_low": "Low (q10)",
@@ -1076,7 +1093,10 @@
     "set_view_full_details": "View full details",
     "set_empty_title": "This set is empty",
     "set_empty_sub": "Items are still being curated",
-    "a11y_back_to_set": "Back to set"
+    "a11y_back_to_set": "Back to set",
+    "price_load_failed": "Couldn't load the market value.",
+    "a11y_retry_price": "Try loading the market value again",
+    "items_load_failed": "Couldn't load these items"
   },
   "inbox": {
     "sent_requests": "Sent Requests",
@@ -1139,6 +1159,8 @@
     "a11y_new_campaign": "New campaign",
     "new_campaign": "New Campaign",
     "dashboard_loading": "Loading dashboard...",
+    "dashboard_load_failed": "Couldn't load your dashboard",
+    "campaigns_load_failed": "Couldn't load your campaigns",
     "dashboard_empty_title": "Start Sponsoring Events",
     "dashboard_a11y_get_started": "Get started",
     "dashboard_get_started": "Get Started",
@@ -1191,7 +1213,8 @@
     "browse_by_brand": "Browse by brand",
     "set_item_count_many": "{{count}} items",
     "set_item_count_one": "1 item",
-    "list_load_failed": "Couldn't load categories"
+    "list_load_failed": "Couldn't load categories",
+    "collector_search_failed": "Couldn't search collectors"
   },
   "analytics": {
     "a11y_retry": "Retry loading analytics data",
@@ -1203,7 +1226,8 @@
     "tap_view_leaderboard": "Tap to view leaderboard",
     "a11y_how_scores": "How are scores calculated?",
     "how_scores_calculated": "How are these scores calculated?",
-    "load_failed": "Some of your analytics couldn't load."
+    "load_failed": "Some of your analytics couldn't load.",
+    "snapshot_load_failed": "Couldn't load your analytics"
   },
   "guide": {
     "no_guide_yet": "No guide for this category yet",

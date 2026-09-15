@@ -46,7 +46,8 @@
     "a11y_cancel_editing": "Bewerken annuleren",
     "unsaved_title": "Niet-opgeslagen wijzigingen",
     "unsaved_message": "Je hebt wijzigingen die niet zijn opgeslagen. Weggooien en teruggaan?",
-    "discard": "Weggooien"
+    "discard": "Weggooien",
+    "load_failed_hint": "Er ontbreekt niets — we konden de lijst alleen niet bereiken."
   },
   "add_tab": {
     "subtitle": "Snelle, camera-gerichte flow.",
@@ -392,7 +393,10 @@
     "alerts_failed": "Meldingen konden niet worden geladen",
     "alerts_failed_hint": "Tik om het opnieuw te proberen",
     "a11y_retry_alerts": "Meldingen opnieuw laden",
-    "a11y_open_watchlist": "Je volglijst openen"
+    "a11y_open_watchlist": "Je volglijst openen",
+    "breakdown_load_failed": "Je verdeling per categorie kon niet worden geladen",
+    "estimated_share_one": "{{amount}} hiervan is geschat — 1 item waarvoor we geen referenties hebben",
+    "estimated_share_many": "{{amount}} hiervan is geschat — {{count}} items waarvoor we geen referenties hebben"
   },
   "items": {
     "title": "Items",
@@ -527,6 +531,9 @@
     "diagnostics_desc": "Recente fouten op dit apparaat",
     "getting_paid": "Betaald worden",
     "payment_handles_load_failed": "Kon dit niet laden.",
+    "notification_prefs_load_failed": "Je meldingsinstellingen konden niet worden geladen",
+    "privacy_load_failed": "Je privacyinstellingen konden niet worden geladen",
+    "privacy_save_failed": "Privacyinstelling kon niet worden opgeslagen",
     "a11y_accessibility_section": "Sectie toegankelijkheidsinstellingen",
     "high_contrast_mode": "Hoog contrast",
     "reduce_motion": "Beweging verminderen",
@@ -554,6 +561,7 @@
     "select_category_a11y": "Categorie kiezen",
     "remove_linked_item": "Gekoppeld item verwijderen",
     "link_to_portfolio_item": "Koppelen aan item uit portfolio",
+    "portfolio_items_load_failed": "Je items uit het portfolio konden niet worden geladen",
     "title_required": "Titel *",
     "title_a11y": "Projecttitel",
     "create_project": "Project aanmaken",
@@ -614,7 +622,8 @@
     "subject_a11y": "Onderwerp van aankondiging",
     "message_placeholder": "Schrijf je aankondiging...",
     "message_a11y": "Bericht van aankondiging",
-    "send_a11y": "Aankondiging verzenden"
+    "send_a11y": "Aankondiging verzenden",
+    "load_failed": "Aankondigingen konden niet worden geladen"
   },
   "project_header": {
     "mark_complete_a11y": "Project markeren als voltooid",
@@ -736,13 +745,15 @@
     "cancel_a11y": "Inschrijving annuleren",
     "remove_a11y": "Deze factor verwijderen",
     "enable_a11y": "Tweestapsverificatie aanzetten",
-    "enable_2fa": "Tweestapsverificatie aanzetten"
+    "enable_2fa": "Tweestapsverificatie aanzetten",
+    "load_failed": "De status van je tweestapsverificatie kon niet worden gecontroleerd"
   },
   "event_detail": {
     "not_found": "Evenement niet gevonden",
     "promote_a11y": "Dit evenement promoten",
     "promote_title": "Dit evenement promoten",
-    "promote_subtitle": "Bereik meer verzamelaars met een gesponsorde plaatsing"
+    "promote_subtitle": "Bereik meer verzamelaars met een gesponsorde plaatsing",
+    "load_failed": "Dit evenement kon niet worden geladen"
   },
   "user_profile": {
     "blocked_user": "Je hebt deze gebruiker geblokkeerd",
@@ -849,7 +860,8 @@
     "unavailable": "Niet meer beschikbaar"
   },
   "notifications": {
-    "mark_all_read": "Alles als gelezen markeren"
+    "mark_all_read": "Alles als gelezen markeren",
+    "load_failed": "Je meldingen konden niet worden geladen"
   },
   "diagnostics": {
     "title": "Diagnostiek",
@@ -887,7 +899,8 @@
     "scan_barcode": "Streepjescode scannen",
     "seller_dashboard": "Verkopersdashboard",
     "blocked_users": "Geblokkeerde gebruikers",
-    "projects": "Projecten"
+    "projects": "Projecten",
+    "categories": "Categorieën"
   },
   "offers": {
     "still_waiting": "Nog in afwachting",
@@ -977,7 +990,8 @@
     "change_price": "Prijs wijzigen",
     "a11y_new_asking_price": "Nieuwe vraagprijs",
     "a11y_save_new_price": "Nieuwe prijs opslaan",
-    "make_an_offer": "Doe een bod"
+    "make_an_offer": "Doe een bod",
+    "load_failed": "De advertentie kon niet worden geladen"
   },
   "chat": {
     "collector_not_found": "Verzamelaar niet gevonden",
@@ -994,7 +1008,8 @@
     "load_failed": "Het gesprek kon niet worden geladen",
     "start_conversation": "Stuur een bericht om het gesprek te starten",
     "message_placeholder": "Typ een bericht...",
-    "a11y_message_input": "Berichtveld"
+    "a11y_message_input": "Berichtveld",
+    "status_check_failed": "Kon niet controleren of je deze verzamelaar een bericht kunt sturen"
   },
   "sell": {
     "sell_an_item": "Een item verkopen",
@@ -1011,11 +1026,13 @@
     "a11y_list_on_marketplace": "Plaats op de marktplaats",
     "pick_choose_item": "Kies een item",
     "pick_empty_title": "Nog niets in je collectie",
-    "pick_a11y_sell_external": "Iets verkopen dat niet in mijn collectie zit"
+    "pick_a11y_sell_external": "Iets verkopen dat niet in mijn collectie zit",
+    "catalog_check_failed": "De catalogus kon niet worden gecontroleerd"
   },
   "purchase": {
     "invalid_deal_link": "Ongeldige deal-link",
     "deal_not_found": "Deal niet gevonden",
+    "deal_load_failed": "De deal kon niet worden geladen",
     "listing_price": "Vraagprijs",
     "price_analysis": "Prijsanalyse",
     "band_low": "Laag (q10)",
@@ -1076,7 +1093,10 @@
     "set_view_full_details": "Volledige details bekijken",
     "set_empty_title": "Deze set is leeg",
     "set_empty_sub": "Items worden nog samengesteld",
-    "a11y_back_to_set": "Terug naar set"
+    "a11y_back_to_set": "Terug naar set",
+    "price_load_failed": "De marktwaarde kon niet worden geladen.",
+    "a11y_retry_price": "Probeer de marktwaarde opnieuw te laden",
+    "items_load_failed": "Deze items konden niet worden geladen"
   },
   "inbox": {
     "sent_requests": "Verzonden verzoeken",
@@ -1139,6 +1159,8 @@
     "a11y_new_campaign": "Nieuwe campagne",
     "new_campaign": "Nieuwe campagne",
     "dashboard_loading": "Dashboard laden...",
+    "dashboard_load_failed": "Je dashboard kon niet worden geladen",
+    "campaigns_load_failed": "Je campagnes konden niet worden geladen",
     "dashboard_empty_title": "Begin met evenementen sponsoren",
     "dashboard_a11y_get_started": "Aan de slag",
     "dashboard_get_started": "Aan de slag",
@@ -1191,7 +1213,8 @@
     "browse_by_brand": "Blader per merk",
     "set_item_count_many": "{{count}} items",
     "set_item_count_one": "1 item",
-    "list_load_failed": "Categorieën konden niet worden geladen"
+    "list_load_failed": "Categorieën konden niet worden geladen",
+    "collector_search_failed": "Kon niet naar verzamelaars zoeken"
   },
   "analytics": {
     "a11y_retry": "Analysegegevens opnieuw laden",
@@ -1203,7 +1226,8 @@
     "tap_view_leaderboard": "Tik om de ranglijst te bekijken",
     "a11y_how_scores": "Hoe worden scores berekend?",
     "how_scores_calculated": "Hoe worden deze scores berekend?",
-    "load_failed": "Een deel van je analyse kon niet worden geladen."
+    "load_failed": "Een deel van je analyse kon niet worden geladen.",
+    "snapshot_load_failed": "Je analyse kon niet worden geladen"
   },
   "guide": {
     "no_guide_yet": "Nog geen gids voor deze categorie",

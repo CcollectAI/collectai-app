@@ -44,6 +44,7 @@ import { userErrorMessage } from '@/lib/userErrorMessage';
 import type { CatalogItemData } from '@/components/CatalogBrowseSection';
 import ScreenHeader from '@/components/ScreenHeader';
 import { useTranslation } from 'react-i18next';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 type AffiliateLink = { source: string; url: string; affiliate_url: string; label: string };
 
@@ -111,6 +112,13 @@ function CatalogItemMuseumScreen() {
   // line ("Based on N recent comps"). Fetched on mount; the nav param shows
   // instantly meanwhile.
   const [priceDetail, setPriceDetail] = useState<{ estimated_price: number | null; comps_count: number } | null>(null);
+  // Whether the price-detail read has answered. With no price in the route,
+  // "No recent sales data" is only true once it has — before, a pending OR
+  // failed read printed that sentence for items that do have sales. Nothing to
+  // fetch (no key or category) counts as answered.
+  const [priceLoading, setPriceLoading] = useState<boolean>(!!(params.key && category));
+  const [priceFailed, setPriceFailed] = useState(false);
+  const [priceNonce, setPriceNonce] = useState(0);
 
   // Where-to-buy: public affiliate-tagged links (monetized).
   useEffect(() => {
@@ -136,6 +144,9 @@ function CatalogItemMuseumScreen() {
       } catch (e) {
         // logger.error, not warn: release builds strip info/warn, so a warn
         // here is invisible on exactly the builds where this was reported.
+        // empty-ok: null is this screen's FAILED marker, not "none" — the card
+        // renders "Couldn't load marketplaces" + Try again for null and "No
+        // marketplaces available" only for [].
         logger.error('[museum] affiliate links failed:', e);
         if (!cancelled) setLinks(null);
       } finally {
@@ -166,6 +177,9 @@ function CatalogItemMuseumScreen() {
           .slice(0, 10);
         if (!cancelled) setSiblings(sameSet);
       } catch (e) {
+        // empty-ok: "From this set" renders only when siblings exist and has no
+        // empty copy, so a failed read hides an optional section — it never
+        // tells the member the set has no other items.
         logger.error('[museum] siblings fetch failed:', e);
       }
     })();
@@ -178,18 +192,25 @@ function CatalogItemMuseumScreen() {
   useEffect(() => {
     if (!params.key || !category) return;
     let cancelled = false;
+    setPriceLoading(true);
+    setPriceFailed(false);
     (async () => {
       try {
         const res = await collectorsApi.getCatalogItemPrice(category, params.key as string);
-        if (cancelled || !res) return;
-        setPriceDetail({ estimated_price: res.estimated_price, comps_count: res.comps_count });
-        if (res.estimated_price != null) setEstPrice(res.estimated_price);
+        if (cancelled) return;
+        if (res) {
+          setPriceDetail({ estimated_price: res.estimated_price, comps_count: res.comps_count });
+          if (res.estimated_price != null) setEstPrice(res.estimated_price);
+        }
       } catch (e) {
         logger.error('[museum] price detail fetch failed:', e);
+        if (!cancelled) setPriceFailed(true);
+      } finally {
+        if (!cancelled) setPriceLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [params.key, category]);
+  }, [params.key, category, priceNonce]);
 
   const onAddToWatchlist = useCallback(async () => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -269,7 +290,12 @@ function CatalogItemMuseumScreen() {
   const clean = cleanCatalogItem({ title, brand, rarity, setCode });
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ paddingBottom: 48 }}>
+    // The nav bar sits OUTSIDE the scroller (a bar inside it would scroll away),
+    // after a filling sibling — docs/ui-playbook.md "A nav bar below a
+    // margin-only sibling floats". This screen had no QuickNavBar at all
+    // (screen sweep, 2026-09-15).
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 48 }}>
       {/* Shared flat header. This screen used to hand-roll a back-only circle,
           which is why the settings icon was missing here while every other
           non-tab screen has it — the exact duplication ScreenHeader was written
@@ -305,6 +331,20 @@ function CatalogItemMuseumScreen() {
           <Text style={[styles.sectionLabel, { color: colors.muted }]}>MARKET VALUE</Text>
           {estPrice != null ? (
             <Text style={[styles.price, { color: colors.text }]}>~{formatPrice(estPrice)}</Text>
+          ) : priceLoading ? (
+            <ActivityIndicator color={colors.accent} style={{ marginTop: 12, alignSelf: 'flex-start' }} />
+          ) : priceFailed ? (
+            <View style={{ marginTop: 8 }}>
+              <Text style={[styles.priceSub, { color: colors.muted }]}>{t('catalog.price_load_failed', { defaultValue: "Couldn't load the market value." })}</Text>
+              <AnimatedPressable
+                onPress={() => setPriceNonce((n) => n + 1)}
+                style={[styles.retryBtn, { borderColor: colors.accent }]}
+                accessibilityRole="button" accessibilityLabel={t('catalog.a11y_retry_price', { defaultValue: 'Try loading the market value again' })}
+              >
+                <Text style={[styles.buyLabel, { color: colors.accent }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
+                <Ionicons name="refresh" size={16} color={colors.accent} />
+              </AnimatedPressable>
+            </View>
           ) : (
             <Text style={[styles.priceMuted, { color: colors.muted }]}>{t('catalog.no_recent_sales', { defaultValue: 'No recent sales data' })}</Text>
           )}
@@ -450,6 +490,8 @@ function CatalogItemMuseumScreen() {
         </View>
       </View>
     </ScrollView>
+    <QuickNavBar />
+    </View>
   );
 }
 

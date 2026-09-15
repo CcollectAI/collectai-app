@@ -76,7 +76,10 @@ function MarketMoversSectionInner() {
         if (!cancelled) setMovers(res?.movers ?? []);
       })
       .catch((err) => {
-        logger.warn('[MarketMovers] fetch failed', err);
+        // logger.error: warn is stripped in release builds, which left this
+        // failure with no trace at all.
+        logger.error('[MarketMovers] fetch failed', err);
+        // empty-ok: an empty list HIDES the whole card (`movers.length === 0 → return null`) — no "no movers" sentence is shown; the full screen behind "See all" has its own failed state.
         if (!cancelled) setMovers([]);
       })
       .finally(() => {

@@ -93,6 +93,8 @@ export async function getPendingReferralCode(): Promise<string | null> {
     return normaliseCode(await AsyncStorage.getItem(PENDING_KEY));
   } catch (e) {
     logger.error('[referral] failed to read pending code', e);
+    // empty-ok: prefill only. register.tsx leaves the creator-code field empty
+    // for the member to type, and its .then has no catch.
     return null;
   }
 }

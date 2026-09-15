@@ -67,6 +67,9 @@ function EventDetailScreen() {
 
   const [event, setEvent] = useState<CollectorsEvent | null>(null);
   const [loading, setLoading] = useState(true);
+  // The event read FAILED — distinct from not found. Without it a timeout
+  // rendered "Event not found / This event doesn't exist yet".
+  const [loadFailed, setLoadFailed] = useState(false);
   const [hostProfile, setHostProfile] = useState<PublicUserProfile | null>(null);
   const [hostProfileLoading, setHostProfileLoading] = useState(false);
   const [alertsOn, setAlertsOn] = useState(false);
@@ -84,8 +87,12 @@ function EventDetailScreen() {
     try {
       const eventData = await dataProvider.getEventById(eventId);
       setEvent(eventData);
+      setLoadFailed(false);
     } catch (err) {
+      // A failed REFRESH keeps the event already on screen (setEvent is not
+      // called); with nothing shown, the failed state below renders.
       logger.error('[EventDetail] loadEvent error:', err);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -108,7 +115,11 @@ function EventDetailScreen() {
     setHostProfileLoading(true);
     dataProvider.getPublicUserProfile(event.hostUserId)
       .then((p) => { if (!cancelled) setHostProfile(p); })
-      .catch(() => { if (!cancelled) setHostProfile(null); })
+      .catch((err) => {
+        logger.error('[EventDetail] host profile load failed:', err);
+        // empty-ok: EventHostSection renders NOTHING for a null profile (EventHostSection.tsx `!profile && !loading`) — no false claim, the card is just absent.
+        if (!cancelled) setHostProfile(null);
+      })
       .finally(() => { if (!cancelled) setHostProfileLoading(false); });
     return () => { cancelled = true; };
   }, [event?.hostUserId]);
@@ -151,7 +162,11 @@ function EventDetailScreen() {
         const unread = announcements.filter((a) => !a.isRead).length;
         setUnreadAnnouncementCount(unread);
       })
-      .catch(() => { if (!cancelled) setUnreadAnnouncementCount(0); });
+      .catch((err) => {
+        logger.error('[EventDetail] announcement count load failed:', err);
+        // empty-ok: 0 only hides the unread badge; the announcements screen itself shows its own failed state.
+        if (!cancelled) setUnreadAnnouncementCount(0);
+      });
     return () => { cancelled = true; };
   }, [eventId, isCommunityEvent]);
 
@@ -414,6 +429,29 @@ function EventDetailScreen() {
         <View style={styles.loadingContainer}>
           <SkeletonEventCard />
         </View>
+        <QuickNavBar />
+      </View>
+    );
+  }
+
+  if (!event && loadFailed) {
+    return (
+      <View style={[styles.safe, { backgroundColor: colors.background }]}>
+        <View style={styles.emptyContainer}>
+          <Ionicons name="cloud-offline-outline" size={48} color={colors.muted} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            {t('event_detail.load_failed', { defaultValue: "Couldn't load this event" })}
+          </Text>
+          <AnimatedPressable
+            onPress={loadEvent}
+            style={[styles.emptyBtn, { borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+          >
+            <Text style={[styles.emptyBtnText, { color: colors.text }]}>{t('common.try_again', { defaultValue: 'Try again' })}</Text>
+          </AnimatedPressable>
+        </View>
+        <QuickNavBar />
       </View>
     );
   }
@@ -437,6 +475,7 @@ function EventDetailScreen() {
             <Text style={[styles.emptyBtnText, { color: colors.text }]}>{t('common.go_back')}</Text>
           </AnimatedPressable>
         </View>
+        <QuickNavBar />
       </View>
     );
   }

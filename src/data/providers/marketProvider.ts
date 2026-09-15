@@ -43,21 +43,11 @@ export async function lookupByBarcode(
     };
   } catch (err: unknown) {
     logger.error('[SupabaseDataProvider] lookupByBarcode API error:', err);
-
-    return {
-      title: null,
-      categoryId: null,
-      subtypeId: null,
-      taxonomyVersion: 'v1.0',
-      collections: [],
-      attributes: {},
-      missingRequired: ['title', 'categoryId'],
-      priceBand: null,
-      rationale: ['Barcode lookup failed - try manual search'],
-      barcode,
-      barcodeType: opts?.codeType ?? 'unknown',
-      imageUrl: null,
-    };
+    // THROW. The all-null "result" this returned was rendered as a lookup that
+    // found nothing, and app/barcode-scan.tsx's fallback catch — "Could not
+    // find product information", plus the catalogue-suggestion modal — could
+    // never run.
+    throw err instanceof Error ? err : new Error('Barcode lookup failed');
   }
 }
 
@@ -97,12 +87,7 @@ export async function marketSearch(
     };
   } catch (err: unknown) {
     logger.error('[SupabaseDataProvider] marketSearch API error:', err);
-
-    return {
-      hits: [],
-      providers: [],
-      totalRaw: 0,
-      confidence: 0,
-    };
+    // THROW: zero hits at confidence 0 reads as "no market for this".
+    throw err instanceof Error ? err : new Error('Market search failed');
   }
 }

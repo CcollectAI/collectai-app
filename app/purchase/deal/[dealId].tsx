@@ -28,6 +28,8 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { formatPrice } from "@/lib/format";
 import { collectorsApi } from "@/api/collectorsApi";
 import { useToast } from "@/components/Toast";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
+import logger from "@/utils/logger";
 import type { MandateDeal } from "@/data/types";
 import { useTranslation } from 'react-i18next';
 
@@ -49,23 +51,39 @@ function DealDetailScreen() {
 
   const [deal, setDeal] = useState<MandateDeal | null>(null);
   const [loading, setLoading] = useState(true);
+  // Why there is no deal. Every failure used to render "Deal not found": a free
+  // member's 403 PLAN_REQUIRED (the route is Pro) and a timeout both said the
+  // deal did not exist, with an English toast on top and no way to retry.
+  const [missReason, setMissReason] = useState<'not_found' | 'plan' | 'failed'>('not_found');
+  const [reloadKey, setReloadKey] = useState(0);
   const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     if (!dealId) return;
     let cancelled = false;
+    setLoading(true);
     (async () => {
       try {
         const d = await collectorsApi.getDeal(dealId) as MandateDeal;
         if (!cancelled) setDeal(d);
-      } catch {
-        if (!cancelled) showToast({ message: "Failed to load deal", type: "error" });
+      } catch (err: unknown) {
+        if (cancelled) return;
+        const e = err as { name?: unknown; status?: unknown; code?: unknown };
+        const status = e?.name === 'ApiError' ? e.status : undefined;
+        if (status === 404 || status === 400) {
+          setMissReason('not_found'); // 400 = not a uuid: a broken link, same answer
+        } else if (e?.code === 'PLAN_REQUIRED') {
+          setMissReason('plan');
+        } else {
+          logger.error('[DealDetail] load failed:', err);
+          setMissReason('failed');
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [dealId]);
+  }, [dealId, reloadKey]);
 
   const handleBuyIt = useCallback(async () => {
     if (!deal) return;
@@ -120,6 +138,7 @@ function DealDetailScreen() {
           <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
           <Text style={[styles.errorText, { color: colors.text }]}>{t('purchase.invalid_deal_link', { defaultValue: 'Invalid deal link' })}</Text>
         </View>
+        <QuickNavBar />
       </SafeAreaView>
     );
   }
@@ -130,6 +149,38 @@ function DealDetailScreen() {
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
+        <QuickNavBar />
+      </SafeAreaView>
+    );
+  }
+
+  if (!deal && missReason === 'plan') {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["left", "right"]}>
+        <View style={styles.gateWrap}>
+          <UpgradePrompt feature="Deal Search" requiredPlan="Pro" />
+        </View>
+        <QuickNavBar />
+      </SafeAreaView>
+    );
+  }
+
+  if (!deal && missReason === 'failed') {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["left", "right"]}>
+        <View style={styles.loadingWrap}>
+          <Ionicons name="cloud-offline-outline" size={40} color={colors.muted} />
+          <Text style={[styles.errorText, { color: colors.text }]}>{t('purchase.deal_load_failed')}</Text>
+          <AnimatedPressable
+            style={[styles.retryBtn, { borderColor: colors.border }]}
+            onPress={() => setReloadKey((k) => k + 1)}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.try_again')}
+          >
+            <Text style={[styles.retryText, { color: colors.accent }]}>{t('common.try_again')}</Text>
+          </AnimatedPressable>
+        </View>
+        <QuickNavBar />
       </SafeAreaView>
     );
   }
@@ -141,6 +192,7 @@ function DealDetailScreen() {
           <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
           <Text style={[styles.errorText, { color: colors.text }]}>{t('purchase.deal_not_found', { defaultValue: 'Deal not found' })}</Text>
         </View>
+        <QuickNavBar />
       </SafeAreaView>
     );
   }
@@ -370,6 +422,11 @@ const styles = StyleSheet.create({
   container: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 },
   loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
   errorText: { fontSize: 16, fontWeight: "600" },
+  // UpgradePrompt carries no horizontal margin of its own (see market-movers).
+  // flex: 1 so the QuickNavBar after it sits at the bottom, not under the card.
+  gateWrap: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
+  retryBtn: { marginTop: 4, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, borderWidth: 1, minHeight: 44, justifyContent: "center" },
+  retryText: { fontSize: 15, fontWeight: "700" },
 
   // Image
   image: { width: "100%", height: 200, borderRadius: 12, marginBottom: 12 },

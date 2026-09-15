@@ -34,25 +34,34 @@ const CategoryCollectorSearch: React.FC<Props> = ({ colors, onClose }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<PublicUserProfile[]>([]);
   const [loading, setLoading] = useState(false);
+  // A failed search printed "No collectors found". Cleared on every new query.
+  const [failed, setFailed] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   const debounced = useDebounce(query.trim(), 350);
 
   useEffect(() => {
     if (!debounced) {
       setResults([]);
+      setFailed(false);
       setLoading(false);
       return;
     }
     let cancelled = false;
     setLoading(true);
+    setFailed(false);
     dataProvider.searchUsers(debounced)
       .then((rows) => { if (!cancelled) setResults(rows); })
       .catch((err) => {
-        logger.warn('[CategoryCollectorSearch] searchUsers error:', err);
-        if (!cancelled) setResults([]);
+        // logger.error: warn is stripped in release builds.
+        logger.error('[CategoryCollectorSearch] searchUsers error:', err);
+        if (!cancelled) {
+          setResults([]);
+          setFailed(true);
+        }
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [debounced]);
+  }, [debounced, retryKey]);
 
   const openProfile = useCallback((userId: string) => {
     onClose();
@@ -95,6 +104,18 @@ const CategoryCollectorSearch: React.FC<Props> = ({ colors, onClose }) => {
             <View style={styles.stateRow}>
               <ActivityIndicator size="small" color={colors.accent} />
             </View>
+          ) : failed ? (
+            <AnimatedPressable
+              onPress={() => setRetryKey((k) => k + 1)}
+              style={styles.stateRow}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.try_again')}
+            >
+              <Text style={[styles.emptyText, { color: colors.muted, paddingVertical: 0 }]}>
+                {t('category.collector_search_failed', { defaultValue: "Couldn't search collectors" })}
+              </Text>
+              <Text style={[styles.retryText, { color: colors.accent }]}>{t('common.try_again')}</Text>
+            </AnimatedPressable>
           ) : results.length === 0 ? (
             <Text style={[styles.emptyText, { color: colors.muted }]}>
               No collectors found
@@ -177,6 +198,11 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     textAlign: 'center',
     fontSize: 13,
+  },
+  retryText: {
+    marginTop: 6,
+    fontSize: 13,
+    fontWeight: '700',
   },
   resultRow: {
     flexDirection: 'row',

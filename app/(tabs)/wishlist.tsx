@@ -179,6 +179,10 @@ function WatchlistTabScreen() {
       // the exact builds where a silently-missing marketplace row matters. The
       // "don't alarm the user" judgement belongs to the toast, not to whether
       // the failure leaves a trace at all.
+      // empty-ok: an enrichment, not the list. A row with no match renders no
+      // marketplace line at all (`matches[item.id] ? … : null`), so a failed
+      // read never states "nobody is selling this" — the watchlist itself has
+      // its own failed state above.
       logger.error('[Watchlist] marketplace matches unavailable:', err);
     }
   }, []);

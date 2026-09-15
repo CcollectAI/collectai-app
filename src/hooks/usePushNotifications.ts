@@ -129,6 +129,9 @@ export function usePushNotifications(userId: string | null) {
           // Silently ignore
         }
       } catch (e) {
+        // empty-ok: push setup renders nothing and claims nothing; on Android FCM
+        // is not configured yet (docs/ANDROID_LAUNCH.md), so this throws there by
+        // design and the app must work without push.
         logger.error('[silent-catch] usePushNotifications.ts:129:', e);
         // expo-notifications is not available (web, certain Expo Go versions)
         // or another error occurred — silently ignore.
@@ -162,6 +165,8 @@ export function usePushNotifications(userId: string | null) {
           const badgeCount = await Notifications.getBadgeCountAsync();
           await Notifications.setBadgeCountAsync(badgeCount + 1);
         } catch (e) {
+          // empty-ok: the OS app-icon badge is cosmetic and unsupported on some
+          // launchers; no in-app count is derived from it.
           logger.error('[silent-catch] usePushNotifications.ts:161:', e);
           // Badge count not supported on all platforms
         }

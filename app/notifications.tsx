@@ -29,6 +29,8 @@ import {
   type NotificationItem,
 } from "@/api/collectorsApi";
 import { QuickNavBar } from "@/components/QuickNavBar";
+import { EmptyState } from "@/components/EmptyState";
+import { AnimatedPressable } from "@/motion";
 import logger from '@/utils/logger';
 import type { Href } from "expo-router";
 import { timeAgo } from "@/lib/timeAgo";
@@ -108,6 +110,9 @@ function NotificationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [markingAllRead, setMarkingAllRead] = useState(false);
+  // The first page FAILED. Its catch used to render "No notifications yet"
+  // with an unread count of 0 — an outage read as an empty, all-read inbox.
+  const [loadFailed, setLoadFailed] = useState(false);
   const loadedRef = useRef(false);
 
   const fetchPage = useCallback(
@@ -124,18 +129,17 @@ function NotificationsScreen() {
         }
         setTotalCount(data.total_count);
         setUnreadCount(data.unread_count);
+        if (replace) setLoadFailed(false);
       } catch (err) {
         // logger.error, not .warn — warn is stripped from TestFlight builds.
         logger.error('[Notifications] fetch failed:', err);
         // NO mock fallback. This used to substitute 8 fabricated notifications
         // (invented price drops, deals, followers) that a user could not tell
         // from real ones — so a total backend outage rendered as a healthy,
-        // populated inbox. An empty list is honest; the empty state renders.
-        if (replace && offset === 0) {
-          setNotifications([]);
-          setTotalCount(0);
-          setUnreadCount(0);
-        }
+        // populated inbox. Nor an empty list: that rendered "No notifications
+        // yet", the same lie in the other direction. A failed first page says
+        // it failed; a failed refresh or load-more keeps what is shown.
+        if (replace && offset === 0) setLoadFailed(true);
       }
     },
     [],
@@ -335,7 +339,26 @@ function NotificationsScreen() {
     [theme, handleTap],
   );
 
-  const ListEmpty = loading ? null : (
+  const ListEmpty = loading ? null : loadFailed ? (
+    <EmptyState
+      icon="cloud-offline-outline"
+      title={t('notifications.load_failed', { defaultValue: "Couldn't load your notifications" })}
+      subtitle={t('common.load_failed_hint', { defaultValue: 'Nothing is missing — we just could not reach the list.' })}
+      colors={theme}
+      action={
+        <AnimatedPressable
+          onPress={onRefresh}
+          style={[s.retryBtn, { backgroundColor: theme.accent }]}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+        >
+          <Text style={[s.retryText, { color: theme.accentText }]}>
+            {t('common.try_again', { defaultValue: 'Try again' })}
+          </Text>
+        </AnimatedPressable>
+      }
+    />
+  ) : (
     <View style={s.emptyState}>
       <Ionicons name="notifications-off-outline" size={48} color={theme.muted} />
       <Text style={[s.emptyTitle, { color: theme.text }]}>
@@ -490,6 +513,17 @@ const s = StyleSheet.create({
     fontSize: textToken.md,
     textAlign: "center",
     lineHeight: 20,
+  },
+  retryBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 999,
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  retryText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
   footer: {
     paddingVertical: 16,

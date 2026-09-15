@@ -63,6 +63,8 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [categoryItems, setCategoryItems] = useState<Item[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
+  // A failed read is not "No portfolio items in this category".
+  const [itemsLoadFailed, setItemsLoadFailed] = useState(false);
   const [showStepPreview, setShowStepPreview] = useState(false);
 
   // Reset state when modal opens with new initial values
@@ -97,12 +99,14 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
     setShowCategoryPicker(false);
 
     setLoadingItems(true);
+    setItemsLoadFailed(false);
     try {
       const items = await dataProvider.listItems();
       setCategoryItems(items.filter((i) => i.category === catId));
     } catch (err) {
       logger.error('[CreateProjectModal] category items fetch failed:', err);
       setCategoryItems([]);
+      setItemsLoadFailed(true);
     } finally {
       setLoadingItems(false);
     }
@@ -230,6 +234,20 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
                         Link to a portfolio item ({categoryItems.length} items)
                       </Text>
                       <Ionicons name="chevron-down" size={18} color={colors.muted} />
+                    </AnimatedPressable>
+                  ) : itemsLoadFailed && selectedCategoryId ? (
+                    <AnimatedPressable
+                      onPress={() => handleSelectCategory(selectedCategoryId)}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+                    >
+                      <Text style={[styles.noItemsText, { color: colors.muted }]}>
+                        {t('projects.portfolio_items_load_failed', { defaultValue: "Couldn't load your portfolio items" })}
+                        {' · '}
+                        <Text style={{ color: colors.accent, fontWeight: '700' }}>
+                          {t('common.try_again', { defaultValue: 'Try again' })}
+                        </Text>
+                      </Text>
                     </AnimatedPressable>
                   ) : (
                     <Text style={[styles.noItemsText, { color: colors.muted }]}>

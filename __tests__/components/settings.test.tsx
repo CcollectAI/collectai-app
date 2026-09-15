@@ -83,10 +83,17 @@ jest.mock('../../src/components/Toast', () => ({
   useToast: () => ({ showToast: jest.fn() }),
 }));
 
+// A signed-in session and a privacy row that does not exist yet (maybeSingle →
+// null, no error) — the one case where the default toggles ARE the truth. The
+// mock used to return `session: null`, and the section rendered defaults for
+// it; that pinned the bug where a failed/absent read showed "Allow discovery"
+// ON to a member who had turned it off. See the failure-state tests below.
+const mockMaybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+const mockGetSession = jest.fn().mockResolvedValue({ data: { session: { user: { id: 'user-1' } } } });
 jest.mock('../../src/lib/supabase', () => ({
   supabase: {
     auth: {
-      getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
+      getSession: (...args: unknown[]) => mockGetSession(...args),
       getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'user-1' } } }),
       updateUser: jest.fn().mockResolvedValue({ error: null }),
     },
@@ -94,6 +101,7 @@ jest.mock('../../src/lib/supabase', () => ({
       select: jest.fn(() => ({
         eq: jest.fn(() => ({
           single: jest.fn().mockResolvedValue({ data: null, error: null }),
+          maybeSingle: (...args: unknown[]) => mockMaybeSingle(...args),
         })),
       })),
       upsert: jest.fn().mockResolvedValue({ error: null }),
@@ -329,5 +337,22 @@ describe('PrivacySettingsSection', () => {
     const tree = render(<PrivacySettingsSection />);
     await screen.findByText('Show collection value', {}, { timeout: 2000 });
     expect(tree.toJSON()).toMatchSnapshot();
+  });
+
+  // A failed read must not render the defaults (discovery ON) as the member's
+  // settings. The client RESOLVES a timeout as { error }, it does not throw.
+  it('shows a failed state, not default toggles, when the read errors', async () => {
+    mockMaybeSingle.mockResolvedValueOnce({ data: null, error: { code: 'TIMEOUT' } });
+    render(<PrivacySettingsSection />);
+    expect(await screen.findByText("Couldn't load your privacy settings", {}, { timeout: 2000 })).toBeTruthy();
+    expect(screen.queryByText('Allow discovery')).toBeNull();
+    expect(screen.getByLabelText('Try again')).toBeTruthy();
+  });
+
+  it('shows a failed state, not default toggles, with no session', async () => {
+    mockGetSession.mockResolvedValueOnce({ data: { session: null } });
+    render(<PrivacySettingsSection />);
+    expect(await screen.findByText("Couldn't load your privacy settings", {}, { timeout: 2000 })).toBeTruthy();
+    expect(screen.queryByText('Allow discovery')).toBeNull();
   });
 });

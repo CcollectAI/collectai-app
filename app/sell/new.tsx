@@ -51,6 +51,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 /** Buyer-facing gallery cap. See the photoUris comment for why 8. */
 const MAX_PHOTOS = 8;
@@ -154,6 +155,10 @@ function SellNewScreen() {
   const [match, setMatch] = useState<CatalogMatchHit | null>(null);
   const [matching, setMatching] = useState(false);
   const [matchTried, setMatchTried] = useState(false);
+  // The fifth state the four below were missing: the check itself FAILED. It
+  // used to fall into "No catalogue match for that title … try the exact
+  // product name", sending a seller to retype a title that may match fine.
+  const [matchFailed, setMatchFailed] = useState(false);
 
   const parsedPrice = useMemo(() => {
     const n = parseFloat(price.replace(/[^0-9.,]/g, '').replace(',', '.'));
@@ -182,6 +187,7 @@ function SellNewScreen() {
     const t = title.trim();
     if (t.length < 3 || !categorySlug || matching) return;
     setMatching(true);
+    setMatchFailed(false);
     try {
       const res = await matchCatalog(t, categorySlug);
       // `best` only. The alternatives list is for a picker; offering five
@@ -199,6 +205,7 @@ function SellNewScreen() {
       // matters is how the canonical_key gap went unmeasured for months.
       logger.error('[sell/new] catalogue match failed:', e);
       setMatch(null);
+      setMatchFailed(true);
     } finally {
       setMatching(false);
       setMatchTried(true);
@@ -639,6 +646,22 @@ function SellNewScreen() {
                 Members watching this item will be alerted when you list it.
               </Text>
             </View>
+          ) : matchFailed ? (
+            <AnimatedPressable
+              onPress={runMatch}
+              style={[styles.notice, { borderColor: colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+            >
+              <Ionicons name="cloud-offline-outline" size={16} color={colors.muted} />
+              <Text style={[styles.noticeText, { color: colors.muted }]}>
+                {t('sell.catalog_check_failed', { defaultValue: "Couldn't check the catalogue" })}
+                {' · '}
+                <Text style={{ color: colors.accent, fontWeight: fontWeight.bold }}>
+                  {t('common.try_again', { defaultValue: 'Try again' })}
+                </Text>
+              </Text>
+            </AnimatedPressable>
           ) : matchTried ? (
             <View style={[styles.notice, { borderColor: colors.border }]}>
               <Ionicons name="information-circle-outline" size={16} color={colors.muted} />
@@ -681,6 +704,7 @@ function SellNewScreen() {
           <View style={{ height: 40 }} />
         </Animated.View>
       </ScrollView>
+      <QuickNavBar />
     </SafeAreaView>
   );
 }

@@ -22,7 +22,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { dataProvider, type DmMessage, type DmThread, type PublicUserProfile } from '@/data';
+import { dataProvider, type DmMessage, type DmThread } from '@/data';
+import { useAuthContext } from '@/providers/useAuthContext';
 import { supabase } from '@/lib/supabase';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
@@ -134,7 +135,7 @@ function ThreadDetailScreen() {
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
   const [threadInfo, setThreadInfo] = useState<DmThread | null>(null);
-  const [currentUser, setCurrentUser] = useState<PublicUserProfile | null>(null);
+  const { user } = useAuthContext();
   const [refreshing, setRefreshing] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
   const [failedMessageIds, setFailedMessageIds] = useState<Set<string>>(new Set());
@@ -151,8 +152,13 @@ function ThreadDetailScreen() {
   const presenceChannelRef = useRef<any>(null);
   const isNearBottomRef = useRef(true);
 
-  // Current user ID (empty string fallback before profile loads)
-  const currentUserId = currentUser?.id ?? '';
+  // The member's id comes from the SESSION, not a profile fetch (2026-09-15).
+  // It used to be `getMyProfile()?.id`, and a failed or null profile — which
+  // getMyProfile also caches for the session on a cold-start auth miss — left
+  // this '', so `isMe` was false on every row and the member's own messages
+  // rendered as the other person's, their sends included. Only the id was ever
+  // read from that profile.
+  const currentUserId = user?.id ?? '';
 
   // Load messages
   const loadMessages = useCallback(async () => {
@@ -177,19 +183,12 @@ function ThreadDetailScreen() {
       const found = threads.find((t) => t.id === threadId);
       if (found) setThreadInfo(found);
     } catch (err) {
+      // empty-ok: header decoration only — the title falls back to "Chat" and
+      // the avatar to an initial; the messages have their own failed state
+      // (loadFailed) and nothing here claims the conversation is empty.
       logger.error('[ThreadDetail] loadThreadInfo error:', err);
     }
   }, [threadId]);
-
-  // Load current user profile
-  const loadCurrentUser = useCallback(async () => {
-    try {
-      const profile = await dataProvider.getMyProfile();
-      if (profile) setCurrentUser(profile);
-    } catch (err) {
-      logger.error('[ThreadDetail] loadCurrentUser error:', err);
-    }
-  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -202,8 +201,7 @@ function ThreadDetailScreen() {
   useEffect(() => {
     loadMessages();
     loadThreadInfo();
-    loadCurrentUser();
-  }, [loadMessages, loadThreadInfo, loadCurrentUser]);
+  }, [loadMessages, loadThreadInfo]);
 
   // Mark thread as read on mount + whenever screen regains focus
   useFocusEffect(
@@ -521,6 +519,7 @@ function ThreadDetailScreen() {
         <View style={styles.loadingContainer}>
           <SkeletonChat />
         </View>
+        <QuickNavBar />
       </SafeAreaView>
     );
   }

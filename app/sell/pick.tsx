@@ -53,6 +53,7 @@ import { formatPrice } from '@/lib/format';
 import { categoryDisplayName } from '@/constants/categories';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import { useTranslation } from 'react-i18next';
+import { QuickNavBar } from '@/components/QuickNavBar';
 
 function SellPickScreen() {
   const router = useRouter();
@@ -194,6 +195,7 @@ function SellPickScreen() {
           }
         />
       )}
+      <QuickNavBar />
     </View>
   );
 }

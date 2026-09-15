@@ -130,7 +130,7 @@ function UserProfileScreen() {
         setDmStatus(status);
       } catch (e) {
         logger.error('[silent-fallback] users: profile action failed:', e);
-        // Silently ignore state check errors
+        // empty-ok: nothing here renders "none". Message opens chat/new, which re-checks block + DM status and shows its own failed state; a stale "Block" option is harmless because rpc_block_user_v1 is ON CONFLICT DO NOTHING.
       }
     };
 
@@ -470,11 +470,10 @@ function UserProfileScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
-        {/* No back control: no other screen in the app carries an inline "‹ Back"
-            row, and this one is always reached by a push (a listing's seller, a
-            search result, a chat), so the platform's own affordances apply — the
-            iOS edge swipe and the Android system back, both handled by
-            expo-router. The error state below keeps an explicit "Go back",
+        {/* The back control and the bell/bubble/gear cluster come from the native
+            header (`iconOnlyHeader` in app/_layout.tsx, 2026-09-15) — this route
+            was `headerShown: false` and had neither in any branch. This row keeps
+            only the ⋯ menu. The error states below keep an explicit "Go back",
             because a dead end must offer a way out. */}
         <View style={styles.topRow}>
           <AnimatedPressable

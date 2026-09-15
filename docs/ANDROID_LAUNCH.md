@@ -716,6 +716,126 @@ real rebuild. Batch them.
     reading "Merle" was taken for the session on 2026-09-14 and one as-the-member
     DB check ran against the wrong user. Read Settings' identity row first.
 
+15. **Metro can die mid-bundle with no error, and the build says only
+    `hermesc … exit value 5`** (2026-09-15). The log's last bundling line was
+    `34.0% (478/909)`, then `Error! Failed to open file: …/index.android.bundle`
+    — hermesc had nothing to compile. The code was fine: `npx expo export:embed`
+    run on its own bundled all 4,675 modules. The likely cause was memory:
+    another project's `VascoWalk` emulator (4.2 GB) booted beside the Gradle
+    build with swap at ~9.8/10 GB. The retry with
+    `GRADLE_OPTS=-Dorg.gradle.workers.max=4` passed. **Before blaming code for a
+    bundle failure, run the bundle step alone; before a build, `ps` for other
+    emulators.**
+
+16. **`cmd; echo "EXIT=$?"` in a background job reports the ECHO's exit code.**
+    The first build's completion notice said "exit code 0" over a failed build.
+    End with `rc=$?; echo "EXIT=$rc"; exit $rc`, and read the log's
+    `BUILD SUCCESSFUL` line or the APK timestamp — not the notice. The failed log
+    also carried the keystore payload (memory `learning_local_android_build_setup`);
+    scrub it the moment a build fails.
+
+17. **When every request times out, check the API from the LAPTOP before
+    blaming the emulator** (2026-09-15). A cold start of "Couldn't load" and 15 s
+    timeouts read as the emulator's network, as on 09-09 — and
+    `curl https://api.sparrowcollect.com/healthz` from the Mac timed out too, while
+    Google and Supabase answered in 0.1 s. Production was unreachable on 443 and
+    22. One `curl` separates "the emulator" from "the API".
+
+### JS-only APK: minutes, not a 25-minute build (2026-09-15)
+
+A walk's fixes are usually JS. `scripts/android_jsswap.sh` bundles the working
+tree with the `android-apk` profile's env (`eas env:exec production` plus that
+profile's pinned `EXPO_PUBLIC_BETA_UNLOCK_ALL=false` / `SUPABASE_MODE=strict`),
+compiles it with the repo's `hermesc`, swaps `assets/index.android.bundle` into
+the last real release APK, zipaligns, and signs with `~/.android/debug.keystore`:
+
+```bash
+scripts/android_jsswap.sh bundle     # ~3 min
+scripts/android_jsswap.sh pack       # seconds → builds/sparrow-android-jsswap.apk
+scripts/android_jsswap.sh install    # uninstall + install on emulator-5560
+```
+
+Proven 2026-09-15 by packing the base APK's OWN bundle back in (same CRC) and
+installing it: launch, sign-in and onboarding ran with no fatal.
+
+- ⚠️ **Only when nothing native changed** since the base APK — its native code
+  is reused byte for byte. A native dep, icon, permission or `app.json` plugin
+  change needs the real build.
+- ⚠️ **The bundle must be STORED** (`zip -0`); the base APK does not deflate it.
+- ⚠️ **Install uninstalls first** (debug key ≠ Expo keystore): the session and
+  onboarding flag are wiped. Onboarding's Skip writes the detected
+  region/currency to the account — check Settings → Region & Currency after.
+- ⚠️ Grep the packed APK for a string only the change has (gotcha 10) before
+  walking it as verification.
+
+### Screen sweep: walk every route in one run (2026-09-15)
+
+Walks used to be one deep link at a time, from memory, one state per screen,
+with a rebuild after each finding — no inventory, so no coverage number and no
+way to tell when we are done. `scripts/walk/` replaces the mechanical half:
+
+```bash
+WALK_EMAIL=… WALK_PASSWORD=… npm run walk                      # normal
+WALK_EMAIL=… WALK_PASSWORD=… npm run walk -- --locale nl       # Dutch
+WALK_EMAIL=… WALK_PASSWORD=… npm run walk -- --small           # ~360dp phone
+npm run walk -- --only 'settings,notifications' --timeout 20   # a subset
+```
+
+- **`routes.json`** is the inventory: one entry per file under `app/` (79). A
+  new screen not listed is reported as UNLISTED. Every exemption (`expect`) and
+  `skip` carries a written reason.
+- **Per route:** deep link → wait until the UI dump stops changing → screenshot,
+  uiautomator XML, JS error log → checks: FOCUS, CRASH, **SLOW_LOAD** (a
+  spinner or skeleton still up at `--spinner-budget`, default 5 s), STILL_LOADING,
+  NO_TITLE, NO_BACK, NO_CLUSTER, NO_NAVBAR, RAW_TEXT (ms counts, HTTP plumbing,
+  undefined/NaN, raw i18n keys, `€-10`), UNTRANSLATED / LIKELY_ENGLISH (non-en).
+- **Output:** `builds/walk/<local time>-<label>/index.html` — a contact sheet,
+  flagged screens first, plus a "repeated across screens" list (a flag on ≥40%
+  of screens is one finding about shared chrome, shown once).
+- **Fixtures** for dynamic routes (item, listing, event, deal, project, offer)
+  are read from Supabase AS the walk account via `run.sh` (URL/anon key from
+  `eas env:exec production`). Unresolved → SKIPPED with the fixture named.
+- **Read-only** except one step: `--locale` sets the app's own Settings →
+  Language (local-only, `AsyncStorage '@settings'`), VERIFIES the row now reads
+  that locale's word, and restores "System default". `cmd locale
+  set-app-locales` does not reach this app (no `localeConfig`) — proven by a
+  "nl" run that rendered English — and the `user` emulator has no root.
+- **Proven before trusting it:** on a bundle that still had two known defects it
+  flagged Categories NO_TITLE and the sponsor dashboard NO_TITLE + NO_NAVBAR; a
+  Dutch run flagged the Leaderboard's hard-coded English and Twitch's
+  developer copy while Notifications came back as "Meldingen".
+
+**How a round works** — the point is batching, not the script:
+1. Install the current code ONCE (`scripts/android_jsswap.sh` if only JS changed).
+2. Run the states: normal, `--locale nl`, `--small`, and a failure state (an
+   APK whose bundle points at a dead API, or simply a round while the API is down).
+3. Review the contact sheets; tag every finding **class** (gate first, fix all),
+   **one-off** (fix), or **decision** (Merle's list).
+4. Fix the whole batch, one JS swap, re-run only the flagged routes (`--only`).
+5. Record per round: findings by tag. The walk is done when a round has zero
+   gated-class findings, zero new classes, and the decision list is closed.
+
+**Speed.** `uiautomator dump` waits for the UI to go IDLE, so a spinning screen
+makes each dump slow (7 s measured; one route took 102 s before the cap). The
+wait loop dumps once at `--spinner-budget` (5 s) — anything still loading there
+is SLOW_LOAD — then confirms once; each dump is capped at 10 s and counted
+against the route's budget, and a capped-out final dump reports `NO_DUMP`
+rather than judging an empty tree. Most settled screens take ~12 s.
+
+**Round log** (the convergence record — add a row per round):
+
+| round | build | state | walked | flagged | class / one-off / decision / sweep-rule | notes |
+|---|---|---|---|---|---|---|
+| 1 · 2026-09-15 22:17 | jsswap 21:53 | API down | 65/79 | 20 | 2 / 3 / 2 / 3 | classes: spinner under a failed state (`usePaginatedList`), no nav bar in any branch (`check:navbar` rule 2) |
+| 1-recheck · 23:42 | jsswap 23:40 | API down | 21 flagged routes | 9 | — | all chrome flags cleared; 8 SLOW_LOAD = the API timing out; Deal Agent title fixed after |
+
+Not covered by the machine checks (review the screenshots for these): layout,
+overlap and truncation, wrong numbers, copy that is grammatical but false, and
+anything behind a tap (the sweep never taps). Data-dependent screens need a
+walk account that HAS the data (chat threads, deals, projects, an organised
+event) — simcheck has none, so those routes are SKIPPED until a second seeded
+account exists.
+
 ### A false trail, recorded so it is not re-walked
 
 Several cycles went into a "Save to Collection is permanently disabled" bug

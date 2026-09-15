@@ -155,6 +155,100 @@ for (const abs of files) {
     }
   }
 
+  // ── F. A failed READ rendered as "you have none" (2026-09-15) ────────────
+  // Rule B passes any catch that logs. Home's category breakdown logged with
+  // logger.error and then did setCategoryBreakdown([]), which renders "Add
+  // items to your collection" to a member who owns items — the comment above
+  // it even said the two were indistinguishable. Seven screens had been fixed
+  // for this one at a time (Watchlist, Favourites, Blocked users, My
+  // Suggestions, chat, inbox, Leaderboard), each found on a walk, none swept.
+  // Three shapes, one question — can the member tell "failed" from "empty"?
+  //   F1  render code: a catch writes an empty literal into state
+  //   F1b render code: a READ's catch writes nothing, so state stays at its
+  //       initial []/null, and no toast says otherwise
+  //   F2  a provider returns []/null/0 from a catch — no caller can tell
+  // Not a finding: a failure flag (set…Error/…Failed), a rethrow, or a written
+  // reason — `empty-ok: <why the empty value is the truth or harmless>` inside
+  // the catch. Mutations are out of scope: a failed save that toasts is
+  // correct feedback, not a lie about data.
+  if (!isMock) {
+    const renderCode = rel.startsWith('app/') || /^src\/(components|hooks|screens|features)\//.test(rel);
+    const providerCode = /^src\/(data|lib|store|api|services)\//.test(rel);
+    const braceBack = (close) => {
+      let depth = 0;
+      for (let i = close; i >= 0; i--) {
+        if (src[i] === '}') depth++;
+        else if (src[i] === '{' && --depth === 0) return i;
+      }
+      return -1;
+    };
+    const braceFwd = (open) => {
+      let depth = 0;
+      for (let i = open; i < src.length; i++) {
+        if (src[i] === '{') depth++;
+        else if (src[i] === '}' && --depth === 0) return i;
+      }
+      return -1;
+    };
+    // A failure recorded as a VALUE counts too: `setMissReason('failed')`
+    // (purchase/deal/[dealId].tsx) is a failed state, whatever the setter is called.
+    const FAILURE_SIGNAL = /\bset\w*(Error|Failed|Fail|Failure)\w*\s*\(|\bthrow\b|\bset[A-Z]\w*\(\s*['"](error|failed)['"]\s*\)|empty-ok:|best-effort:/;
+    // `Promise.all(` counts: a screen that loads two reads at once and catches
+    // both into nothing (events/[eventId]/announcements.tsx) is the same shape.
+    const READ_CALL = /\bawait\s+(?:[\w.]+\.)?(get|list|fetch|load|browse|search|lookup|query|find|read)\w*\s*\(|\.select\s*\(|\bawait\s+Promise\.all\s*\(/i;
+    for (const m of (renderCode || providerCode) ? src.matchAll(/\}\s*catch\s*(?:\([^)]*\))?\s*\{/g) : []) {
+      const lineStart = src.lastIndexOf('\n', m.index) + 1;
+      const before = src.slice(lineStart, m.index);
+      if (before.includes('//') || /^\s*\*/.test(before)) continue;
+      const tryOpen = braceBack(m.index);
+      if (tryOpen < 0 || !/\btry\s*$/.test(src.slice(Math.max(0, tryOpen - 12), tryOpen))) continue;
+      const tryBody = src.slice(tryOpen, m.index);
+      if (!/\bawait\b/.test(tryBody)) continue;
+      const open = m.index + m[0].length - 1;
+      const close = braceFwd(open);
+      if (close < 0) continue;
+      const body = src.slice(open, close);
+      if (FAILURE_SIGNAL.test(body)) continue;
+      const ln = lineOf(src, m.index);
+      // `return __DEV__ ? DEMO_X : []` is the same return in a release build.
+      const EMPTY_RETURN = /\breturn\s+(?:__DEV__\s*\?[^;]*?:\s*)?(\[\]|null|0|\{[^}]*:\s*\[\])\s*;/;
+      if (renderCode) {
+        const empties = body.match(/\bset[A-Z]\w*\(\s*(\[\]|null|0|\{\})\s*\)/g);
+        if (empties) {
+          add('empty-on-failure', rel, ln, `catch writes ${empties.join(', ')} — a failed load renders as empty`);
+        } else if (EMPTY_RETURN.test(body)) {
+          // A helper inside a screen file is a provider by another name.
+          add('empty-on-failure', rel, ln, 'helper returns an empty value from a catch — its caller cannot tell failed from none');
+        } else if (READ_CALL.test(tryBody) && /\bset[A-Z]\w*\s*\(/.test(tryBody) && !/showToast|Alert\.alert/.test(body)) {
+          add('empty-on-failure', rel, ln, 'a read\'s catch leaves state at its initial value with no failure state or toast');
+        }
+      } else if (EMPTY_RETURN.test(body)) {
+        add('empty-on-failure', rel, ln, 'provider returns an empty value from a catch — callers cannot tell failed from none');
+      }
+    }
+
+    // The promise-chain spellings of the same two shapes. `.catch(() => {})`
+    // is NOT one: it returns undefined from fire-and-forget work (a heartbeat,
+    // a flag write) and is rule B's business, not a value a screen renders.
+    for (const m of (renderCode || providerCode) ? src.matchAll(/\.catch\(\s*(?:\([^)]*\)|\w+)?\s*=>\s*(\[\]|null|0)\s*\)/g) : []) {
+      // The reason sits on the call's line or up to 3 lines above it — by LINE,
+      // not by character window, which a long reason comment silently outgrew.
+      const ln = lineOf(src, m.index);
+      const lines = src.split('\n').slice(Math.max(0, ln - 4), ln).join('\n');
+      if (/empty-ok:|best-effort:/.test(lines)) continue;
+      add('empty-on-failure', rel, lineOf(src, m.index), `${m[0]} — a failure resolves as an empty value`);
+    }
+    for (const m of renderCode ? src.matchAll(/\.catch\(\s*(?:\([^)]*\)|\w+)?\s*=>\s*\{/g) : []) {
+      const open = src.indexOf('{', m.index);
+      const close = braceFwd(open);
+      if (close < 0) continue;
+      const body = src.slice(open, close);
+      if (FAILURE_SIGNAL.test(body)) continue;
+      const empties = body.match(/\bset[A-Z]\w*\(\s*(\[\]|null|0)\s*\)/g);
+      if (empties) add('empty-on-failure', rel, lineOf(src, m.index), `.catch writes ${empties.join(', ')} — a failed load renders as empty`);
+    }
+  }
+
   // ── D. money/value coerced to 0 inside a sum ────────────────────────────
   // "unknown price" rendered as "worth 0" and silently folded into a total.
   if (!isMock) {
@@ -164,16 +258,19 @@ for (const abs of files) {
   }
 }
 
-// All six classes are at 0 and each was proven by reintroducing its bug, so
-// every one now blocks. swallowed-catch and prod-invisible-log were a reported
+// All seven classes are at 0 and each was proven by reintroducing its bug, so
+// every one now blocks. (empty-on-failure joined 2026-09-15 at 74 findings,
+// all given a verdict the same day.) swallowed-catch and prod-invisible-log were a reported
 // backlog until 2026-07-25, when they were closed mechanically: 91 catches got
 // a logger.error, and 182 warn/info calls inside catch blocks were raised to
 // error so a failure survives the release build that strips warn/info.
 const BLOCKING = ['ungated-demo-data', 'capped-aggregate', 'unchecked-write',
-                  'unknown-as-zero', 'swallowed-catch', 'prod-invisible-log'];
+                  'unknown-as-zero', 'swallowed-catch', 'prod-invisible-log',
+                  'empty-on-failure'];
 const byClass = findings.reduce((a, f) => ((a[f.cls] ??= []).push(f), a), {});
-const ORDER = ['ungated-demo-data', 'capped-aggregate', 'unchecked-write', 'unknown-as-zero', 'swallowed-catch', 'prod-invisible-log'];
+const ORDER = ['ungated-demo-data', 'capped-aggregate', 'unchecked-write', 'unknown-as-zero', 'swallowed-catch', 'prod-invisible-log', 'empty-on-failure'];
 const SEVERITY = {
+  'empty-on-failure': 'renders a failed load as "you have none"',
   'ungated-demo-data': 'renders invented data as the user\'s real data',
   'capped-aggregate': 'renders a partial number as the whole truth',
   'unchecked-write': 'reports success when the write failed',

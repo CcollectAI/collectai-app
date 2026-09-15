@@ -14,6 +14,8 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import { clearProfileCache } from '@/data/providers/userProvider';
+import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 type PrivacySettings = {
   showCollectionValue: boolean;
@@ -33,12 +35,21 @@ function PrivacySettingsSectionInner() {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const [privacy, setPrivacy] = useState<PrivacySettings>(DEFAULT_PRIVACY);
   const [loadingPrivacy, setLoadingPrivacy] = useState(true);
+  // DEFAULT_PRIVACY says "Allow discovery" and "Show collection value" are ON.
+  // Rendered after a FAILED read, it told a member who had switched discovery
+  // off that they were discoverable. Only "no row" (maybeSingle → null, no
+  // error) means the defaults are the truth; everything else is a failure.
+  const [privacyLoadFailed, setPrivacyLoadFailed] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    setLoadingPrivacy(true);
+    setPrivacyLoadFailed(false);
     const loadPrivacySettings = async () => {
       try {
         // getSession() reads the cached session from local storage (instant);
@@ -49,7 +60,9 @@ function PrivacySettingsSectionInner() {
         const user = session?.user;
         if (cancelled) return;
         if (!user) {
-          setLoadingPrivacy(false);
+          // Settings is a signed-in screen; no session here is the cold-start
+          // window, not a member without settings. Say so rather than defaults.
+          setPrivacyLoadFailed(true);
           return;
         }
 
@@ -60,7 +73,14 @@ function PrivacySettingsSectionInner() {
           .maybeSingle();
 
         if (cancelled) return;
-        if (data && !error) {
+        // The client RESOLVES a timeout as { error: { code: 'TIMEOUT' } } rather
+        // than throwing (installRequestTimeouts), so the catch below never sees it.
+        if (error) {
+          logger.error('[Settings] Failed to load privacy settings:', error);
+          setPrivacyLoadFailed(true);
+          return;
+        }
+        if (data) {
           setPrivacy({
             showCollectionValue: data.show_collection_value ?? true,
             showItemCount: data.show_item_count ?? true,
@@ -70,6 +90,7 @@ function PrivacySettingsSectionInner() {
         }
       } catch (err) {
         logger.error('[Settings] Failed to load privacy settings:', err);
+        if (!cancelled) setPrivacyLoadFailed(true);
       } finally {
         if (!cancelled) setLoadingPrivacy(false);
       }
@@ -77,7 +98,7 @@ function PrivacySettingsSectionInner() {
 
     loadPrivacySettings();
     return () => { cancelled = true; };
-  }, []);
+  }, [retryNonce]);
 
   const updatePrivacy = async (key: keyof PrivacySettings, value: boolean) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -89,7 +110,10 @@ function PrivacySettingsSectionInner() {
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
       if (!user) {
-        setSavingPrivacy(false);
+        // Nothing was written — do not leave the optimistic toggle standing,
+        // which reads exactly like a saved change.
+        setPrivacy(prevPrivacy);
+        showToast({ message: t('settings.privacy_save_failed', { defaultValue: 'Failed to save privacy setting' }), type: 'error' });
         return;
       }
 
@@ -111,9 +135,10 @@ function PrivacySettingsSectionInner() {
         });
 
       if (error) {
-        logger.warn('[Settings] Failed to save privacy setting:', error);
+        // logger.error, not warn — warn is stripped in release builds.
+        logger.error('[Settings] Failed to save privacy setting:', error);
         setPrivacy(prevPrivacy);
-        showToast({ message: 'Failed to save privacy setting', type: 'error' });
+        showToast({ message: t('settings.privacy_save_failed', { defaultValue: 'Failed to save privacy setting' }), type: 'error' });
       } else {
         // Profiles are cached for the session and now carry privacy-gated
         // stats, so without this the user would toggle "Show collection value"
@@ -122,7 +147,9 @@ function PrivacySettingsSectionInner() {
       }
     } catch (err) {
       logger.error('[Settings] Privacy update error:', err);
+      // The toggle snaps back; without a message that reads as a dead switch.
       setPrivacy(prevPrivacy);
+      showToast({ message: t('settings.privacy_save_failed', { defaultValue: 'Failed to save privacy setting' }), type: 'error' });
     } finally {
       setSavingPrivacy(false);
     }
@@ -147,6 +174,21 @@ function PrivacySettingsSectionInner() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.accent} />
           <Text style={[styles.loadingText, { color: colors.muted }]}>Loading settings...</Text>
+        </View>
+      ) : privacyLoadFailed ? (
+        <View style={styles.errorRow}>
+          <Text style={[styles.settingHint, { color: colors.muted }]}>
+            {t('settings.privacy_load_failed', { defaultValue: "Couldn't load your privacy settings" })}
+          </Text>
+          <AnimatedPressable
+            onPress={() => setRetryNonce((n) => n + 1)}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+          >
+            <Text style={[styles.retryText, { color: colors.accent }]}>
+              {t('common.try_again', { defaultValue: 'Try again' })}
+            </Text>
+          </AnimatedPressable>
         </View>
       ) : (
         TOGGLE_ITEMS.map((item, idx) => (
@@ -221,5 +263,17 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: textToken.md,
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 10,
+    paddingVertical: 8,
+  },
+  retryText: {
+    fontSize: textToken.md,
+    fontWeight: fw.bold,
+    minHeight: 24,
   },
 });

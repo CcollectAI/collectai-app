@@ -114,6 +114,10 @@ function EbayDefaultsScreen() {
   const { showToast } = useToast();
 
   const [loading, setLoading] = useState(true);
+  // A failed read is not "no defaults yet" (that is a 200 with null). Showing
+  // the blank form after a failure invited the member to save blanks — or a
+  // partial re-entry — over the defaults they already had.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>({
     ebay_category_id: '',
@@ -124,6 +128,7 @@ function EbayDefaultsScreen() {
   });
 
   const load = useCallback(async () => {
+    setLoadFailed(false);
     try {
       const r = (await getEbayDefaults()) as Partial<FormState> | undefined;
       if (r) {
@@ -137,6 +142,7 @@ function EbayDefaultsScreen() {
       }
     } catch (e) {
       logger.error('get_ebay_defaults_failed', { error: String(e) });
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -189,6 +195,28 @@ function EbayDefaultsScreen() {
         <Stack.Screen options={{ headerTitle: t('screen_titles.ebay_defaults') }} />
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (loadFailed) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+        <Stack.Screen options={{ headerTitle: t('screen_titles.ebay_defaults') }} />
+        <View style={[styles.loadingWrap, { gap: 12, paddingHorizontal: 16 }]}>
+          <Text style={[styles.intro, { color: colors.muted, textAlign: 'center' }]}>
+            {t('settings.payment_handles_load_failed', { defaultValue: "Couldn't load this." })}
+          </Text>
+          <AnimatedPressable
+            onPress={() => { setLoading(true); load(); }}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.try_again', { defaultValue: 'Try again' })}
+          >
+            <Text style={[styles.helpLink, { color: colors.accent }]}>
+              {t('common.try_again', { defaultValue: 'Try again' })}
+            </Text>
+          </AnimatedPressable>
         </View>
       </SafeAreaView>
     );

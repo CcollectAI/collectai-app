@@ -60,6 +60,8 @@ export function useFormDraft({ draftKey, formState, onRestore }: UseFormDraftOpt
           }
         }
       } catch (err) {
+        // empty-ok: a draft that cannot be read leaves the form blank, exactly as
+        // with no saved draft; nothing claims the member has no data.
         logger.error('[useFormDraft] failed to load draft:', err);
       }
     })();

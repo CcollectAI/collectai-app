@@ -206,7 +206,9 @@ export async function listFollowedCategories(): Promise<string[]> {
     return data?.categories ?? [];
   } catch (e) {
     logger.error('[SupabaseDataProvider] listFollowedCategories error:', e);
-    return [];
+    // THROW, same as follow/unfollow above: CachedDataProvider's swr would
+    // store [] for TTL_MEDIUM and serve "follows nothing" after one failure.
+    throw e instanceof Error ? e : new Error('Could not load followed categories');
   }
 }
 

@@ -65,6 +65,9 @@ export default React.memo(function FeaturedCollectionsSection({ collections, cat
             await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
             continue;
           }
+          // empty-ok: a discovery carousel with no empty copy — a failure falls
+          // back to the category's static collections or hides the section
+          // (`display.length === 0 → null`); nothing says "this category has none".
           logger.error('[FeaturedCollections] catalog fetch failed:', err);
           if (!cancelled) setLoaded(true);
           return;

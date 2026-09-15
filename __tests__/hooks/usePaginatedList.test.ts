@@ -88,6 +88,35 @@ describe('usePaginatedList', () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
+  it('loadMore is a no-op after a FAILED first page (no footer-spinner loop under the failed state)', async () => {
+    // An empty FlatList is "at the end", so onEndReached fires on a failed,
+    // empty list. Without the guard loadMore re-requested page 0 on every
+    // layout change (screen sweep, Events tab, API down, 2026-09-15).
+    const fetcher = jest.fn()
+      .mockRejectedValueOnce(new Error('boom'))
+      .mockResolvedValueOnce([{ id: 1 }]);
+    const { result } = renderHook(() => usePaginatedList(fetcher, { pageSize: 20 }));
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+    expect(result.current.error).toBeTruthy();
+    expect(result.current.items).toEqual([]);
+
+    await act(async () => {
+      await result.current.loadMore();
+    });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(result.current.isLoadingMore).toBe(false);
+
+    // Recovery is refresh (Try again / pull to refresh), and it still works.
+    await act(async () => {
+      await result.current.refresh();
+    });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(result.current.items).toEqual([{ id: 1 }]);
+  });
+
   it('refresh resets offset and replaces items', async () => {
     const page1 = [{ id: 1 }, { id: 2 }];
     const refreshed = [{ id: 3 }, { id: 4 }];

@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type CategorySummary } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -50,8 +50,13 @@ function categoryLabel(id: string): string {
 }
 
 export default function CategoriesListScreenWithBoundary() {
+  const { t } = useTranslation();
   return (
     <ScreenErrorBoundary screenName="Categories">
+      {/* Registered with iconOnlyHeader (headerTitle ''), and the body opens on
+          a search box — so the screen had NO title anywhere (seen 2026-09-15).
+          Set here, above every branch, so loading/error/list all carry it. */}
+      <Stack.Screen options={{ headerTitle: t('screen_titles.categories') }} />
       <CategoriesListScreen />
     </ScreenErrorBoundary>
   );
@@ -231,6 +236,7 @@ function CategoriesListScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
+        <QuickNavBar />
       </SafeAreaView>
     );
   }

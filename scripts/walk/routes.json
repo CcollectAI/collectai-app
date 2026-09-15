@@ -1,0 +1,483 @@
+{
+  "_about": "Route inventory for scripts/walk/sweep.mjs — one entry per file under app/ (79 on 2026-09-15). `url` may reference {fixtures} resolved at run time (see sweep.mjs --help). `expect` overrides the default chrome checks {title, back, cluster, navbar}; every override and every `skip` carries a reason. A new screen missing from this file is reported by the sweep as UNLISTED.",
+  "defaults": {
+    "title": true,
+    "back": true,
+    "cluster": true,
+    "navbar": true
+  },
+  "routes": [
+    {
+      "route": "(tabs)/index",
+      "url": "sparrow://home/portfolio",
+      "expect": {
+        "back": false
+      },
+      "why": "tab root: no back required (home/portfolio redirects here)"
+    },
+    {
+      "route": "(tabs)/items",
+      "url": "sparrow://items",
+      "expect": {
+        "back": false
+      },
+      "why": "tab root"
+    },
+    {
+      "route": "(tabs)/marketplace",
+      "url": "sparrow://marketplace",
+      "expect": {
+        "back": false
+      },
+      "why": "tab root"
+    },
+    {
+      "route": "(tabs)/events",
+      "url": "sparrow://events",
+      "expect": {
+        "back": false
+      },
+      "why": "tab root"
+    },
+    {
+      "route": "(tabs)/add",
+      "url": "sparrow://add",
+      "expect": {
+        "back": false
+      },
+      "why": "tab root"
+    },
+    {
+      "route": "(tabs)/search",
+      "url": "sparrow://search",
+      "expect": {
+        "back": false,
+        "title": false
+      },
+      "why": "Explore tab root opens on its search box"
+    },
+    {
+      "route": "(tabs)/wishlist",
+      "url": "sparrow://wishlist"
+    },
+    {
+      "route": "(auth)/login",
+      "skip": "signed-in sweep: auth screens redirect away; run with --signed-out",
+      "signedOut": true,
+      "url": "sparrow://login"
+    },
+    {
+      "route": "(auth)/register",
+      "skip": "signed-in sweep",
+      "signedOut": true,
+      "url": "sparrow://register"
+    },
+    {
+      "route": "(auth)/forgot-password",
+      "skip": "signed-in sweep",
+      "signedOut": true,
+      "url": "sparrow://forgot-password"
+    },
+    {
+      "route": "(auth)/reset-password",
+      "skip": "needs a recovery link",
+      "url": "sparrow://reset-password"
+    },
+    {
+      "route": "(auth)/verify-email",
+      "skip": "needs a real signup",
+      "url": "sparrow://verify-email"
+    },
+    {
+      "route": "(auth)/onboarding",
+      "skip": "Skip/Next WRITE settings to the account; walk by hand after a fresh install",
+      "url": "sparrow://onboarding"
+    },
+    {
+      "route": "index",
+      "url": "sparrow://",
+      "redirect": true,
+      "why": "<Redirect href=/(tabs)>"
+    },
+    {
+      "route": "home/portfolio",
+      "url": "sparrow://home/portfolio",
+      "redirect": true,
+      "why": "<Redirect href=/(tabs)>"
+    },
+    {
+      "route": "alerts",
+      "url": "sparrow://alerts",
+      "redirect": true,
+      "why": "<Redirect href=/notifications>"
+    },
+    {
+      "route": "chat-demo",
+      "url": "sparrow://chat-demo",
+      "redirect": true,
+      "why": "release builds redirect to /inbox"
+    },
+    {
+      "route": "franchise/[id]",
+      "url": "sparrow://franchise/star-wars",
+      "redirect": true,
+      "why": "FRANCHISE_PAGES_ENABLED=false redirects to tabs"
+    },
+    {
+      "route": "l/[id]",
+      "url": "sparrow://l/{listingId}",
+      "needs": [
+        "listingId"
+      ],
+      "redirect": true,
+      "why": "share link → /listing/[id]"
+    },
+    {
+      "route": "add-manual",
+      "url": "sparrow://add-manual"
+    },
+    {
+      "route": "analytics",
+      "url": "sparrow://analytics"
+    },
+    {
+      "route": "archived",
+      "url": "sparrow://archived"
+    },
+    {
+      "route": "barcode-scan",
+      "url": "sparrow://barcode-scan",
+      "skip": "camera permission prompt needs a human tap"
+    },
+    {
+      "route": "quickscan",
+      "url": "sparrow://quickscan",
+      "skip": "camera permission prompt needs a human tap"
+    },
+    {
+      "route": "build-paint-projects",
+      "url": "sparrow://build-paint-projects"
+    },
+    {
+      "route": "catalog-item/[key]",
+      "url": "sparrow://catalog-item/{catalogKey}?category={categoryId}&title={catalogTitle}",
+      "expect": {
+        "title": false
+      },
+      "why": "the item's / event's own name is the body heading (like item/[id])"
+    },
+    {
+      "route": "catalog-set/[setCode]",
+      "url": "sparrow://catalog-set/{setCode}?category={categoryId}&name={setName}"
+    },
+    {
+      "route": "categories/index",
+      "url": "sparrow://categories"
+    },
+    {
+      "route": "categories/[categoryId]",
+      "url": "sparrow://categories/{categoryId}",
+      "expect": {
+        "back": true
+      }
+    },
+    {
+      "route": "category-browse",
+      "url": "sparrow://category-browse?categoryId={categoryId}"
+    },
+    {
+      "route": "chat/[threadId]",
+      "url": "sparrow://chat/{threadId}",
+      "needs": [
+        "threadId"
+      ]
+    },
+    {
+      "route": "chat/new",
+      "url": "sparrow://chat/new?toUserId={otherUserId}",
+      "needs": [
+        "otherUserId"
+      ],
+      "expect": {
+        "navbar": false
+      },
+      "why": "chat compose is exempt from the nav bar (ui-playbook 2026-08-16)"
+    },
+    {
+      "route": "condition-guide",
+      "url": "sparrow://condition-guide?categoryId={categoryId}"
+    },
+    {
+      "route": "create-event",
+      "url": "sparrow://create-event"
+    },
+    {
+      "route": "diagnostics",
+      "url": "sparrow://diagnostics",
+      "expect": {
+        "navbar": false,
+        "rawText": false
+      },
+      "why": "developer log screen: raw error text is its content; no nav bar by design (check:navbar NO_NAVBAR_BY_DESIGN)"
+    },
+    {
+      "route": "edit-event",
+      "url": "sparrow://edit-event?eventId={ownEventId}",
+      "needs": [
+        "ownEventId"
+      ]
+    },
+    {
+      "route": "events/[eventId]",
+      "url": "sparrow://events/{eventId}",
+      "needs": [
+        "eventId"
+      ],
+      "expect": {
+        "title": false
+      },
+      "why": "the item's / event's own name is the body heading (like item/[id])"
+    },
+    {
+      "route": "events/[eventId]/announcements",
+      "url": "sparrow://events/{eventId}/announcements",
+      "needs": [
+        "eventId"
+      ]
+    },
+    {
+      "route": "events/compose-announcement",
+      "url": "sparrow://events/compose-announcement?eventId={ownEventId}",
+      "needs": [
+        "ownEventId"
+      ]
+    },
+    {
+      "route": "favorites",
+      "url": "sparrow://favorites"
+    },
+    {
+      "route": "guide/[categoryId]",
+      "url": "sparrow://guide/{categoryId}"
+    },
+    {
+      "route": "help/index",
+      "url": "sparrow://help"
+    },
+    {
+      "route": "help/[topicId]",
+      "url": "sparrow://help/{helpTopicId}"
+    },
+    {
+      "route": "import-url",
+      "url": "sparrow://import-url",
+      "expect": {
+        "navbar": false
+      },
+      "why": "not reachable in the app; its input autofocuses and the keyboard covers the bottom"
+    },
+    {
+      "route": "inbox",
+      "url": "sparrow://inbox"
+    },
+    {
+      "route": "item/[id]",
+      "url": "sparrow://item/{itemId}",
+      "needs": [
+        "itemId"
+      ],
+      "expect": {
+        "title": false
+      },
+      "why": "the item's own name is the body heading"
+    },
+    {
+      "route": "leaderboard",
+      "url": "sparrow://leaderboard"
+    },
+    {
+      "route": "legal/terms",
+      "url": "sparrow://legal/terms",
+      "expect": {
+        "navbar": false
+      },
+      "why": "opened from Register before an account exists (approved 2026-09-15; check:navbar NO_NAVBAR_BY_DESIGN)"
+    },
+    {
+      "route": "legal/privacy-policy",
+      "url": "sparrow://legal/privacy-policy",
+      "expect": {
+        "navbar": false
+      },
+      "why": "opened from Register before an account exists (approved 2026-09-15; check:navbar NO_NAVBAR_BY_DESIGN)"
+    },
+    {
+      "route": "legal/data-processing",
+      "url": "sparrow://legal/data-processing",
+      "expect": {
+        "navbar": false
+      },
+      "why": "opened from Register before an account exists (approved 2026-09-15; check:navbar NO_NAVBAR_BY_DESIGN)"
+    },
+    {
+      "route": "legal/marketplace-terms",
+      "url": "sparrow://legal/marketplace-terms",
+      "expect": {
+        "navbar": false
+      },
+      "why": "opened from Register before an account exists (approved 2026-09-15; check:navbar NO_NAVBAR_BY_DESIGN)"
+    },
+    {
+      "route": "legal/user-policy",
+      "url": "sparrow://legal/user-policy",
+      "expect": {
+        "navbar": false
+      },
+      "why": "opened from Register before an account exists (approved 2026-09-15; check:navbar NO_NAVBAR_BY_DESIGN)"
+    },
+    {
+      "route": "listing/[id]",
+      "url": "sparrow://listing/{listingId}",
+      "needs": [
+        "listingId"
+      ]
+    },
+    {
+      "route": "listings",
+      "url": "sparrow://listings"
+    },
+    {
+      "route": "market-movers",
+      "url": "sparrow://market-movers"
+    },
+    {
+      "route": "mfa-setup",
+      "url": "sparrow://mfa-setup"
+    },
+    {
+      "route": "my-suggestions",
+      "url": "sparrow://my-suggestions"
+    },
+    {
+      "route": "notifications",
+      "url": "sparrow://notifications"
+    },
+    {
+      "route": "offer/[offerId]",
+      "url": "sparrow://offer/{offerId}",
+      "needs": [
+        "offerId"
+      ]
+    },
+    {
+      "route": "offers",
+      "url": "sparrow://offers"
+    },
+    {
+      "route": "projects/[id]",
+      "url": "sparrow://projects/{projectId}",
+      "needs": [
+        "projectId"
+      ]
+    },
+    {
+      "route": "purchase/index",
+      "url": "sparrow://purchase"
+    },
+    {
+      "route": "purchase/create-mandate",
+      "url": "sparrow://purchase/create-mandate"
+    },
+    {
+      "route": "purchase/deal/[dealId]",
+      "url": "sparrow://purchase/deal/{dealId}",
+      "needs": [
+        "dealId"
+      ]
+    },
+    {
+      "route": "search",
+      "url": "sparrow://search?q=charizard"
+    },
+    {
+      "route": "sell/dashboard",
+      "url": "sparrow://sell/dashboard",
+      "expect": {
+        "title": false
+      },
+      "why": "renders SellingUnavailable while SELLING_ENABLED=false (external eBay cross-listing, not P2P)"
+    },
+    {
+      "route": "sell/ebay-defaults",
+      "url": "sparrow://sell/ebay-defaults",
+      "expect": {
+        "title": false,
+        "navbar": false
+      },
+      "why": "renders SellingUnavailable while SELLING_ENABLED=false"
+    },
+    {
+      "route": "sell/new",
+      "url": "sparrow://sell/new"
+    },
+    {
+      "route": "sell/pick",
+      "url": "sparrow://sell/pick"
+    },
+    {
+      "route": "sets-to-complete",
+      "url": "sparrow://sets-to-complete"
+    },
+    {
+      "route": "settings",
+      "url": "sparrow://settings"
+    },
+    {
+      "route": "settings/blocked-users",
+      "url": "sparrow://settings/blocked-users"
+    },
+    {
+      "route": "sponsor/dashboard",
+      "url": "sparrow://sponsor/dashboard"
+    },
+    {
+      "route": "sponsor/register",
+      "url": "sparrow://sponsor/register"
+    },
+    {
+      "route": "subscription",
+      "url": "sparrow://subscription"
+    },
+    {
+      "route": "tax-reporting",
+      "url": "sparrow://tax-reporting"
+    },
+    {
+      "route": "twitch",
+      "url": "sparrow://twitch"
+    },
+    {
+      "route": "twitch-leaderboard",
+      "url": "sparrow://twitch-leaderboard"
+    },
+    {
+      "route": "users/[userId]",
+      "url": "sparrow://users/{userId}",
+      "needs": [
+        "userId"
+      ],
+      "expect": {
+        "title": false
+      },
+      "why": "the identity card is the heading; back + cluster come from iconOnlyHeader (2026-09-15)"
+    }
+  ],
+  "static": {
+    "categoryId": "pokemon",
+    "catalogKey": "sm10-sm10-101",
+    "catalogTitle": "Sweep test card",
+    "setCode": "sm10",
+    "setName": "Unbroken Bonds",
+    "helpTopicId": "add-an-item"
+  }
+}

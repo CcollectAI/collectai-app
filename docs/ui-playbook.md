@@ -1882,6 +1882,22 @@ Two details worth keeping:
   render but not to its `if (!guide)` / not-found branch, so a bad deep link
   still stranded you. A screen with early returns needs the bar in all of them.
 
+⚠️ **2026-09-15: the rule above had no gate, and 19 branches in 10 screens broke
+it** — found because the sponsor dashboard's new failed state (and its old
+loading and empty states) had no bar, seen with the API down. Mostly loading and
+not-found branches: build-paint-projects, category page, categories index, chat
+thread, event detail ×3, inbox, project detail ×2, deal detail ×5, Deal Agent,
+sponsor dashboard ×3. Fixed by inserting the bar as the last child after a
+`flex: 1` sibling (the deal screen's `gateWrap` had none and got it).
+**Gate: `npm run check:navbar`** (`scripts/check-navbar-branches.mjs`, in
+`verify:prebuild`) — AST-based, because the first regex count said 42 files by
+counting nested helper components; exempt with `// navbar-ok: <reason>`.
+Mutation-proven. It checks presence, not placement.
+The same walk found **Categories index with no title anywhere** (`iconOnlyHeader`
+sets `headerTitle: ''` and the body opens on a search box); of the 29
+`iconOnlyHeader` routes it was the only one with neither a native nor a body
+title. Now `screen_titles.categories`, set above every branch.
+
 ## An always-rendered card is an empty grey box when its field is null (2026-08-17)
 
 `EventHeroSection` rendered the description card unconditionally. Most scraped
@@ -2433,6 +2449,108 @@ checked by anything. The static test now fails on any direct read of the view.
 that member, returned **200 in 0.30 s with 5 rows**; the emulator's 5 s read
 timed out behind a 6 s auth-profile hydrate. "Try again" loaded all five. The
 screen was right to say it failed.
+
+## A failed read is not "none" — enumerated, not walked (2026-09-15)
+
+Home, on a cold start with the API unreachable, showed **Category Breakdown:
+"Add items to your collection to see how their value breaks down by category"**
+to an account holding €1.348, and **"€1.155 of this is estimated"** under a `—`
+headline. The breakdown's catch did `logger.error(…)` then
+`setCategoryBreakdown([])`, and the comment above it said the two states were
+indistinguishable.
+
+**Why it survived months of fixing.** "An empty list answers ONE question"
+(below) had been fixed seven times — Watchlist, Favourites, Blocked users, My
+Suggestions, chat, inbox, Leaderboard — each found on a walk, each pinned by a
+test for THAT screen, none swept. And the one gate that looks at catches, rule
+B of `check-silent-failures`, asks "was it logged?": a catch that logs AND
+renders empty passed it. The 09-09 "not zero" fix covered the headline and
+never looked at the other sections of the same screen.
+
+**The gate: `empty-on-failure`** (`scripts/check-silent-failures.mjs` rule F,
+blocking in `verify:prebuild --strict`). A finding is any of:
+
+| shape | example |
+|---|---|
+| a catch in render code writes `[]`/`null`/`0` into state | `setCategoryBreakdown([])` |
+| a READ's catch writes nothing, so state stays at its initial empty value, and no toast | `mfa-setup` `listFactors` → "2FA is not enabled" |
+| a provider/helper returns `[]`/`null`/`0` (also `__DEV__ ? DEMO : []`) from a catch | `listAlertsFeed`, `loadItemsFromCollection` |
+| `.catch(() => [])` / `.catch(() => null)` | quickscan's classifier prior |
+| a `.catch(e => { … })` in render code writes an empty value | `MarketMoversSection` `setMovers([])` |
+
+Not a finding: a failure flag (`set…Error/…Failed`, or a setter given `'failed'`/
+`'error'`), a rethrow, or **`// empty-ok: <why>`** within the catch or up to 3 lines
+above a `.catch` — the reason must be checkable ("EventHostSection renders
+nothing for null"), the same contract as `best-effort:`. `.catch(() => {})` is
+NOT this class (it returns nothing from fire-and-forget work; rule B's
+business). Mutations are out of scope: a failed save that toasts is correct.
+Proven: reintroducing Home's `setCategoryBreakdown([])`, `getEventById`'s
+`return null`, and a bare `.catch(() => [])` each exit 1 on the right line.
+
+**74 sites, each with a verdict** (65 on the first run, 9 more once the gate
+learned the promise-chain and helper spellings). The real defects:
+
+| screen | a failed read said | now |
+|---|---|---|
+| Home — breakdown | "Add items to your collection…" | "Couldn't load your category breakdown" + Try again; a failed refresh keeps the rows |
+| Home — estimate line | "€1.155 of this is estimated" under `—` | hidden while `valueUnknown`; translated (`home.estimated_share_one/_many`) |
+| Home — items fallback | an empty item list, no error, when the overview was also empty | the helper returns `null` for FAILED; both callers set the error |
+| **Privacy settings** | the DEFAULTS — "Allow discovery" ON — to a member who had switched it off; a timeout resolves as `{error}`, so the catch never saw it | "Couldn't load your privacy settings"; only "no row yet" shows defaults; every failed save reverts + toasts |
+| **Notification settings** | every switch ON | failed state, switches hidden |
+| **Two-factor auth** | "2FA is not enabled" + Enable, to a member WITH a factor | failed state; retry is tap-only (auth call) |
+| **Chat thread** | the member's own messages drawn as the other person's (`getMyProfile` null → `isMe` false) — also for any member with discovery off, whom `user_public_profile_v1` hides | id from the session (`useAuthContext().user.id`), the profile fetch removed |
+| **Request to Connect** | the composer ("none"), after a failed BLOCK check — `rpc_request_dm_v1` does not check blocks | "Couldn't check whether you can message this collector" + Try again |
+| **Sponsor dashboard** | "Start Sponsoring Events / Get Started" to an existing sponsor; 0 campaigns | failed states; KPIs hidden behind a retry, never 0 |
+| Notifications | "No notifications yet", unread 0 | failed state; a failed refresh keeps the list |
+| Catalogue item price | "No recent sales data" while pending OR failed | spinner, then "Couldn't load the market value" |
+| Catalogue set / category browse | "This set is empty" / "No catalog items yet" | failed state; load-more failure keeps rows |
+| Event detail | "Event not found" on a timeout (and swr cached that null 15 min) | provider throws on non-404/400; "Couldn't load this event" |
+| Announcements | "No announcements yet" | failed state; `allSettled` so one failure does not hide the other |
+| Sell an item / eBay defaults / marketplace connections | "No catalogue match"; a blank form that could be SAVED over real defaults; "No marketplaces connected" | failed states (the last two behind `SELLING_ENABLED`) |
+| Collector search, project item picker | "No collectors found"; "No portfolio items in this category" | failed states |
+| Subscription | a failed RevenueCat offerings read logged `reason=no-offering` — the log line that pointed at the Paid Applications Agreement in 08 | `getOfferings` throws; "Could not load plans." |
+| Calendar / reminders / achievements storage | a failed read as `[]`, then the merge WROTE BACK — wiping stored mappings | the readers throw; every caller catches |
+| Price trend hook | refetch loop on failure | `priceTrendFailed` stops it (the chart is mounted nowhere) |
+
+**Rethrows were checked caller by caller** — every function that now throws has
+all its callers inside `try`, a `.catch`, `useAsync` or `allSettled`, and swr's
+background revalidate catches (a cache hit cannot surface an unhandled
+rejection). `getCustomerInfo` deliberately still returns null: a throw would
+skip `useBillingLimits`' server fallback and pin a paying member at free
+(`docs/MONETIZATION.md`). `secureStoreAdapter` is Supabase's auth storage and is
+unchanged.
+
+**Not covered — say so:** a failure written as a BOOLEAN — event detail's
+`listMyDropAlerts().catch(() => setAlertsOn(false))` shows the alert toggle OFF
+after a failed read (rule F matches `[]`/`null`/`0` only; `set…(false)` is also
+every `setLoading(false)`, so it needs a narrower rule); a read with no catch at all (an unhandled rejection is
+a different gate); a toast-only read whose list still says "none" underneath;
+reads that feed a section which hides itself are allowed by reason, not by
+rule. Found, not fixed: the sponsor dashboard finds sponsored events only among
+`listEvents({limit: 50})` (a capped read); `userProvider.getMyProfile` caches
+`null` for the session on a cold-start auth miss.
+
+## Screen sweep round 1: what the machine found (2026-09-15)
+
+The first full `npm run walk` (API down, 65 of 79 routes walked) flagged 20
+screens; every flag was tagged class / one-off / decision / sweep-rule before any
+fix, fixed as one batch, installed once, and re-swept — each fix below was
+confirmed on the device by the recheck's own dump text, not assumed.
+
+| found | tag | fix | seen after |
+|---|---|---|---|
+| Events tab: a spinner turning under "Failed to load events"; catalogue set: the same under "Couldn't load these items" | **class** | An empty FlatList is "at the end", so `onEndReached` fired on a FAILED first page and `loadMore` re-requested page 0 on every layout change. Fixed at the chokepoint — `usePaginatedList.loadMore` returns when `error && items.length === 0` (Events, Listings, Watchlist, Items) — plus catalog-set's own handler. `category-browse` already carried the guard and said why; notifications / my-suggestions are safe by `length >= total`. Test in `usePaginatedList.test.ts`, mutation-proven | Events tab `ok`; catalogue set no spinner |
+| Catalogue item, catalogue set, listing detail, sell pick, sell new: **no nav bar in any branch** | **class** | rule 1 of `check:navbar` only compared branches WITHIN a screen that had the bar somewhere. Rule 2: every route file renders `<QuickNavBar />` unless it is in `NO_NAVBAR_BY_DESIGN` with a reason (auth, tabs, redirects, camera, chat compose, legal, diagnostics, import-url, gated eBay defaults). Mutation-proven. Catalogue item's root was the ScrollView itself — wrapped, the bar outside the scroller | all five show the bar |
+| Public profile ("not set up"): no back control, no header cluster | one-off (of a class) | `users/[userId]` was `headerShown: false` with no `HeaderActions` in ANY branch; its comment ("no other screen carries an inline back row") predated `ScreenHeader`. Now `iconOnlyHeader`. Enumerated every `headerShown: false` route: the rest are chat (recorded undecided), redirects and auth | Go back + Notifications/Inbox/Settings |
+| Listing detail with the API down: **"Listing unavailable — It may have been removed by the seller"** | class ("failed ≠ gone", as the deal screen) | the fetcher maps 404 `LISTING_NOT_FOUND` / 400 to null (gone); anything else throws → "Couldn't load this listing" + Try again (7 locales, each locale's own noun) | "Couldn't load this listing" |
+| Deal Agent loading: a grey bar where the title goes | one-off | the title and subtitle are fixed strings — render them; orphaned `skeletonHeader` style removed | next round |
+| Legal pages without a nav bar | **decision → exempt** | opened from Register before an account exists (approved 2026-09-15) | — |
+| "Selling is coming soon" (sell dashboard, eBay defaults) | not a bug | `SELLING_ENABLED` gates EXTERNAL eBay/Mercari/Cardmarket cross-listing, not the member marketplace, which is live; nothing links to those routes | — |
+| NO_TITLE on centred failure states; Diagnostics' raw text; Import URL's keyboard | sweep rule | a Try again state counts as titled; `routes.json` exemptions with reasons; "Loading…" text now counts as loading | — |
+
+**Also by the audit of this batch:** the lint diff caught one warning introduced
+by the batch itself — the inserted `QuickNavBar` import landed below a `const`
+in `sell/new.tsx` (`import/first`) — moved into the import block.
 
 ## A backend field is a value, not a label (2026-09-09)
 
