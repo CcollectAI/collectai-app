@@ -228,10 +228,19 @@ deploy — your call.
 Also open from K, in order: `p2p_listing_router.py:789` creates an `items` row
 then a `marketplace_listings` row with **no transaction** (`pool.acquire()`), so
 a failed listing insert leaves an item the member never added sitting in their
-collection badged "Listed"; `calendar.ts:174/228` writes the OS calendar event
-and its mapping separately, so "Failed to add" can leave an event in the calendar
-the app can no longer remove; `create-event.tsx:131` swallows a failed template
+collection badged "Listed"; `create-event.tsx:131` swallows a failed template
 save and navigates back as if both worked.
+
+✅ `calendar.ts` add/remove — **fixed 2026-09-17.** Adding wrote the OS event
+then the mapping; a failed mapping left an event this app could not see, behind
+the words "Failed to add", offering itself again — a second tap duplicated it.
+It now rolls the OS event back, and says plainly when the rollback ALSO fails
+(that is the case where the event really is in their calendar). Removing had the
+mirror bug: an event the member had already deleted in their own calendar app
+made `deleteEventAsync` throw, the mapping stayed, so the app kept saying "on
+your calendar" and every later attempt threw the same way — it now prunes the
+mapping when the event is genuinely gone and keeps it when the delete failed for
+any other reason. Four tests, two mutations proven.
 
 ✅ `useItemDetail` `estimated_value` — **fixed 2026-09-17**, and it was worse
 than the sweep reported. Besides being parsed after the first write and dropped

@@ -184,12 +184,34 @@ export async function addToCalendar(params: {
       ],
     });
 
-    // Store the mapping
-    await storeCalendarEvent({
-      eventId: params.eventId,
-      calendarEventId,
-      createdAt: new Date().toISOString(),
-    });
+    // The mapping is what lets the app say "on your calendar" and remove it
+    // again. If it fails AFTER the OS event exists, the member is left with an
+    // event this app can no longer see: "Failed to add" on something that WAS
+    // added, offering itself again — and a second tap makes a duplicate
+    // (class sweep K, 2026-09-17). Roll the event back instead.
+    try {
+      await storeCalendarEvent({
+        eventId: params.eventId,
+        calendarEventId,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (mappingError: unknown) {
+      logger.error('[Calendar] mapping write failed after the event was created:', mappingError);
+      try {
+        await Calendar.deleteEventAsync(calendarEventId);
+      } catch (rollbackError: unknown) {
+        // Both halves failed. Say so plainly — the event IS in their calendar,
+        // and pretending otherwise is what produces the duplicate.
+        logger.error('[Calendar] rollback failed; an orphan event remains:', rollbackError);
+        fireHaptic(HapticIntent.ALERT_TRIGGERED);
+        return {
+          success: false,
+          error: 'Added to your calendar, but we could not save it here. Remove it in your calendar app before adding it again.',
+        };
+      }
+      fireHaptic(HapticIntent.ALERT_TRIGGERED);
+      return { success: false, error: 'Could not add to your calendar — nothing was changed.' };
+    }
 
     fireHaptic(HapticIntent.CONFIDENCE_HIGH);
     return { success: true, calendarEventId };
@@ -214,6 +236,23 @@ export async function isEventInCalendar(eventId: string): Promise<boolean> {
 }
 
 /**
+ * Is this OS calendar event still there?
+ *
+ * Used to tell "the member already deleted it in their calendar app" (fine,
+ * prune our mapping) from "the delete failed" (keep it — there is still
+ * something to remove). `getEventAsync` throws for an id that no longer exists.
+ */
+async function calendarEventExists(calendarEventId: string): Promise<boolean> {
+  if (!Calendar?.getEventAsync) return false;
+  try {
+    return Boolean(await Calendar.getEventAsync(calendarEventId));
+  } catch {
+    // empty-ok: a throw here IS the answer — the event is gone.
+    return false;
+  }
+}
+
+/**
  * Remove an event from calendar
  */
 export async function removeFromCalendar(eventId: string): Promise<boolean> {
@@ -224,7 +263,21 @@ export async function removeFromCalendar(eventId: string): Promise<boolean> {
     const event = stored.find((e) => e.eventId === eventId);
 
     if (event) {
-      await Calendar.deleteEventAsync(event.calendarEventId);
+      try {
+        await Calendar.deleteEventAsync(event.calendarEventId);
+      } catch (deleteError: unknown) {
+        // An event the member already deleted in their own calendar app throws
+        // here, and the old code then left the mapping in place — so the app
+        // still showed "on your calendar" and every later attempt threw the
+        // same way. Prune the mapping when the event is genuinely gone; keep it
+        // when the delete failed for any other reason, because then it is still
+        // there to remove (class sweep K, 2026-09-17).
+        const stillThere = await calendarEventExists(event.calendarEventId);
+        if (stillThere) throw deleteError;
+        // error, not warn: warn is stripped from release builds, and this is
+        // the branch that only ever happens on a real device.
+        logger.error('[Calendar] event was already gone; pruning the stale mapping', deleteError);
+      }
       const updated = stored.filter((e) => e.eventId !== eventId);
       await AsyncStorage.setItem(CALENDAR_STORAGE_KEY, JSON.stringify(updated));
       fireHaptic(HapticIntent.CONFIDENCE_HIGH);
