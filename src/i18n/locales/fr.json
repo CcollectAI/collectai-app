@@ -129,7 +129,8 @@
     "a11y_ticket_price": "Prix du billet en euros",
     "a11y_prev_week": "Semaine précédente",
     "a11y_current_week": "Aller à la semaine en cours",
-    "a11y_next_week": "Semaine suivante"
+    "a11y_next_week": "Semaine suivante",
+    "template_not_saved": "Événement créé — mais il n'a pas été enregistré comme modèle."
   },
   "marketplace": {
     "find_collectors": "Trouver des collectionneurs",

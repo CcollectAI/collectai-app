@@ -129,13 +129,34 @@ const CreateEventScreen: React.FC = () => {
 
       const created = await dataProvider.createEvent(input);
 
-      // Save as template if toggled on
+      // Save as template if toggled on.
+      //
+      // The event itself is NOT rolled back when this fails — it is the thing
+      // the member came to do, and it succeeded. But the screen used to log the
+      // failure and navigate back as if both halves had worked, so a member who
+      // ticked "save as template" left believing they had one (class sweep K,
+      // 2026-09-17). Say it instead.
+      //
+      // The copy deliberately does not offer to "save it as a template later":
+      // this screen is the ONLY caller of createEventTemplate in the app, so
+      // there is no later. Promising one would be the second bug.
+      let templateSaved = true;
       if (saveAsTemplate && templateName.trim()) {
         try {
           await dataProvider.createEventTemplate(templateName.trim(), created.id);
         } catch (tplErr: unknown) {
+          templateSaved = false;
           logger.error('[CreateEvent] template save error:', tplErr);
         }
+      }
+
+      if (!templateSaved) {
+        showToast({
+          message: t('events.template_not_saved', {
+            defaultValue: 'Event created — but it was not saved as a template.',
+          }),
+          type: 'error',
+        });
       }
 
       safeGoBack(router);

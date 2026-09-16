@@ -129,7 +129,8 @@
     "a11y_ticket_price": "Ticketprijs in euro's",
     "a11y_prev_week": "Vorige week",
     "a11y_current_week": "Naar huidige week",
-    "a11y_next_week": "Volgende week"
+    "a11y_next_week": "Volgende week",
+    "template_not_saved": "Evenement aangemaakt — maar het is niet als sjabloon opgeslagen."
   },
   "marketplace": {
     "find_collectors": "Verzamelaars vinden",

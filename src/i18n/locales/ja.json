@@ -129,7 +129,8 @@
     "a11y_ticket_price": "チケット価格（ユーロ）",
     "a11y_prev_week": "前の週",
     "a11y_current_week": "今週に移動",
-    "a11y_next_week": "次の週"
+    "a11y_next_week": "次の週",
+    "template_not_saved": "イベントを作成しました。ただしテンプレートとしては保存されていません。"
   },
   "marketplace": {
     "find_collectors": "コレクターを探す",

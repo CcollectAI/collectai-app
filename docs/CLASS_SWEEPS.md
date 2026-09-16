@@ -228,8 +228,20 @@ deploy — your call.
 Also open from K, in order: `p2p_listing_router.py:789` creates an `items` row
 then a `marketplace_listings` row with **no transaction** (`pool.acquire()`), so
 a failed listing insert leaves an item the member never added sitting in their
-collection badged "Listed"; `create-event.tsx:131` swallows a failed template
-save and navigates back as if both worked.
+collection badged "Listed"; ✅ `create-event.tsx` save-as-template — **fixed 2026-09-17.** The template save
+was wrapped in its own try/catch that logged and continued, so a member who
+ticked "save as template" navigated back believing they had one. The event is
+deliberately NOT rolled back — it is what they came to do and it succeeded — but
+the toast now says the template was not saved. The copy does not offer to "save
+it as a template later": this screen is the only caller of `createEventTemplate`
+in the app, so there is no later, and promising one would be the second bug.
+
+**A gap worth gating:** `check-silent-failures --strict` passes that code both
+before and after the fix, because the catch *logged*. Rule B asks "was it
+logged?" — the same wrong question that let the 74 empty-on-failure sites
+through until rule F was written. The shape to catch: a catch inside a
+user-initiated action that logs and continues, while the action's PRIMARY write
+already succeeded. Nobody has written that rule yet.
 
 ✅ `calendar.ts` add/remove — **fixed 2026-09-17.** Adding wrote the OS event
 then the mapping; a failed mapping left an event this app could not see, behind
