@@ -471,7 +471,7 @@ function CatalogItemMuseumScreen() {
             onPress={onAddToWatchlist} disabled={adding}
             accessibilityRole="button" accessibilityLabel={t('catalog.a11y_add_watchlist', { defaultValue: 'Add to watchlist' })}
           >
-            <Ionicons name="eye-outline" size={18} color="#fff" />
+            <Ionicons name="eye-outline" size={18} color={colors.accentText}/>
             <Text style={styles.ctaText}>{t('catalog.add_to_watchlist', { defaultValue: 'Add to watchlist' })}</Text>
           </AnimatedPressable>
 

@@ -1530,7 +1530,7 @@ function ItemDetailScreen() {
                       accessibilityLabel={t('items_detail.enrich_button_a11y')}
                     >
                       {enriching ? (
-                        <ActivityIndicator size="small" color="#fff" />
+                        <ActivityIndicator size="small" color={theme.accentText}/>
                       ) : (
                         <Text style={styles.enrichBtnText}>{t('items_detail.enrich_button')}</Text>
                       )}

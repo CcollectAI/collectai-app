@@ -144,7 +144,7 @@ function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, sh
             accessibilityRole="button"
             accessibilityLabel={t('wishlist.add_button_a11y', { defaultValue: 'Add to watchlist' })}
           >
-            <Ionicons name="add" size={16} color="#FFFFFF" />
+            <Ionicons name="add" size={16} color={colors.accentText}/>
             <Text style={styles.addBtnText}>Add</Text>
           </AnimatedPressable>
         </View>
@@ -216,7 +216,7 @@ function AlertsCardInner({ alerts, onAlertPress, onViewAll, onStartWatchlist, sh
           accessibilityRole="button"
           accessibilityLabel={t('wishlist.add_button_a11y', { defaultValue: 'Add to watchlist' })}
         >
-          <Ionicons name="add" size={16} color="#FFFFFF" />
+          <Ionicons name="add" size={16} color={colors.accentText}/>
           <Text style={styles.addBtnText}>Add</Text>
         </AnimatedPressable>
       </View>

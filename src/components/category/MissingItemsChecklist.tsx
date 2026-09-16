@@ -57,7 +57,7 @@ const MissingItemsChecklist: React.FC<Props> = ({
                 isOwned && { backgroundColor: colors.accent },
               ]}
             >
-              {isOwned && <Ionicons name="checkmark" size={12} color="#fff" />}
+              {isOwned && <Ionicons name="checkmark" size={12} color={colors.accentText}/>}
             </View>
             <View style={styles.missingInfo}>
               <Text

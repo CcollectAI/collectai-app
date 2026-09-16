@@ -77,6 +77,9 @@ interface GradingSectionProps {
     text: string;
     muted: string;
     accent: string;
+    // Label colour for anything drawn ON the accent fill — BLACK in the
+    // high-contrast dark palette, so a hardcoded white was wrong there.
+    accentText: string;
     border: string;
     background: string;
     card: string;
@@ -395,10 +398,10 @@ function GradingSectionInner({
               accessibilityState={{ busy: gradingLookupLoading }}
             >
               {gradingLookupLoading ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={theme.accentText}/>
               ) : (
                 <>
-                  <Ionicons name="search" size={18} color="#fff" />
+                  <Ionicons name="search" size={18} color={theme.accentText}/>
                   <Text style={s.modalConfirmBtnText}>{t('grading.look_up')}</Text>
                 </>
               )}

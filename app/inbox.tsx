@@ -389,7 +389,7 @@ function InboxScreen() {
                     accessibilityLabel={`Accept message request from ${req.fromUserName}`}
                   >
                     {processingRequestId === req.threadId ? (
-                      <ActivityIndicator size="small" color="#fff" />
+                      <ActivityIndicator size="small" color={colors.accentText}/>
                     ) : (
                       <Text style={styles.acceptBtnText}>Accept</Text>
                     )}
@@ -571,7 +571,7 @@ function InboxScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={t('inbox.a11y_find_collectors', { defaultValue: 'Find collectors to message' })}
                 >
-                  <Ionicons name="search" size={16} color="#fff" style={{ marginRight: 6 }} />
+                  <Ionicons name="search" size={16} color={colors.accentText}style={{ marginRight: 6 }} />
                   <Text style={styles.emptyActionPrimaryText}>{t('inbox.find_collectors', { defaultValue: 'Find collectors' })}</Text>
                 </AnimatedPressable>
                 {/* Dev-only. app/chat-demo.tsx is a local-only placeholder whose

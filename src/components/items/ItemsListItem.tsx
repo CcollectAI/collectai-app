@@ -109,7 +109,7 @@ export const ItemsListItem = React.memo(function ItemsListItem({
               accessibilityLabel={`Select ${item.name}`}
             >
               {selected && (
-                <Ionicons name="checkmark" size={14} color="#fff" />
+                <Ionicons name="checkmark" size={14} color={colors.accentText}/>
               )}
             </View>
           </View>

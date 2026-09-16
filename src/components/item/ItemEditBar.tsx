@@ -25,7 +25,7 @@ export const ItemEditBar = React.memo(function ItemEditBar({ onSave, onCancel }:
         accessibilityRole="button"
         accessibilityLabel={t('common.a11y_save_changes', { defaultValue: 'Save changes' })}
       >
-        <Ionicons name="checkmark-circle" size={18} color="#fff" />
+        <Ionicons name="checkmark-circle" size={18} color={theme.accentText}/>
         <Text style={styles.editBarBtnPrimaryText}>{t('common.save_changes', { defaultValue: 'Save Changes' })}</Text>
       </AnimatedPressable>
       <AnimatedPressable

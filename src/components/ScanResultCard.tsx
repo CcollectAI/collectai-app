@@ -229,7 +229,7 @@ function ScanResultCardInner({
               accessibilityRole="button"
               accessibilityLabel={t('scan.share_a11y')}
             >
-              <Ionicons name="share-outline" size={20} color="#FFFFFF" />
+              <Ionicons name="share-outline" size={20} color={colors.accentText}/>
             </AnimatedPressable>
             <AnimatedPressable
               style={styles.heroActionBtn}
@@ -494,7 +494,7 @@ function ScanResultCardInner({
                 >
                   {!!isSelected && (
                     <View style={[styles.altSelectedBadge, { backgroundColor: colors.brand.base }]}>
-                      <Ionicons name="checkmark" size={10} color="#FFFFFF" />
+                      <Ionicons name="checkmark" size={10} color={colors.accentText}/>
                     </View>
                   )}
                   <View style={styles.altInfo}>
@@ -552,7 +552,7 @@ function ScanResultCardInner({
               accessibilityRole="button"
               accessibilityLabel={t('scan.add_to_collection')}
             >
-              <Ionicons name="add-circle" size={22} color="#FFFFFF" />
+              <Ionicons name="add-circle" size={22} color={colors.accentText}/>
             <Text style={styles.addBtnText} numberOfLines={1}>
               {t('scan.add_to_collection')}
             </Text>

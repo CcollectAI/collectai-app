@@ -128,7 +128,7 @@ function ChatDemoScreen() {
             accessibilityRole="button"
             accessibilityLabel="Send test message"
           >
-            <Ionicons name="arrow-up" size={20} color="#fff" />
+            <Ionicons name="arrow-up" size={20} color={colors.accentText}/>
           </AnimatedPressable>
         </View>
       </SafeAreaView>

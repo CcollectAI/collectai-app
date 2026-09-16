@@ -338,7 +338,7 @@ function DealDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('purchase.a11y_buy_it', { defaultValue: 'Buy it' })}
             >
-              <Ionicons name="open-outline" size={18} color="#fff" />
+              <Ionicons name="open-outline" size={18} color={colors.accentText}/>
               <Text style={styles.buyBtnText}>{t('purchase.buy_it', { defaultValue: 'Buy It' })}</Text>
             </AnimatedPressable>
 
@@ -351,10 +351,10 @@ function DealDetailScreen() {
                 accessibilityLabel="I got it"
               >
                 {confirming ? (
-                  <ActivityIndicator size="small" color="#fff" />
+                  <ActivityIndicator size="small" color={colors.accentText}/>
                 ) : (
                   <>
-                    <Ionicons name="checkmark" size={18} color="#fff" />
+                    <Ionicons name="checkmark" size={18} color={colors.accentText}/>
                     <Text style={styles.buyBtnText}>I Got It</Text>
                   </>
                 )}

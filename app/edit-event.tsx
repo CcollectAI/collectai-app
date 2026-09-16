@@ -452,7 +452,7 @@ const EditEventScreen: React.FC = () => {
                 accessibilityRole="button"
                 accessibilityLabel={t('edit_event.a11y_cancel_event', { defaultValue: 'Cancel event' })}
               >
-                <Ionicons name="close-circle-outline" size={20} color="#FFFFFF" />
+                <Ionicons name="close-circle-outline" size={20} color={colors.accentText}/>
                 <Text style={styles.cancelEventButtonText}>{t('edit_event.cancel_event', { defaultValue: 'Cancel Event' })}</Text>
               </AnimatedPressable>
             </View>

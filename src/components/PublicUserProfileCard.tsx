@@ -166,7 +166,7 @@ export const PublicUserProfileCard: React.FC<Props> = ({
           accessibilityLabel={`Connect with ${profile.displayName}`}
           style={[styles.connectBtn, { backgroundColor: colors.accent }]}
         >
-          <Ionicons name="chatbubble-ellipses-outline" size={16} color="#ffffff" />
+          <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.accentText}/>
           <Text style={styles.connectBtnText}>Connect</Text>
         </AnimatedPressable>
       )}

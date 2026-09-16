@@ -118,7 +118,7 @@ export const CampaignsTable = React.memo(function CampaignsTable({
               style={{ paddingVertical: 16 }}
               action={
                 <AnimatedPressable onPress={onCreateEvent} style={[styles.primaryBtn, { backgroundColor: colors.accent }]} accessibilityRole="button" accessibilityLabel={t('sponsor.a11y_create_first_event', { defaultValue: 'Create your first event' })}>
-                  <Ionicons name="add" size={16} color="#FFFFFF" />
+                  <Ionicons name="add" size={16} color={colors.accentText}/>
                   <Text style={styles.primaryBtnText}>{t('sponsor.new_campaign', { defaultValue: 'New Campaign' })}</Text>
                 </AnimatedPressable>
               }

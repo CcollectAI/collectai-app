@@ -69,6 +69,10 @@ interface Props {
     text: string;
     muted: string;
     accent: string;
+    // Label colour for anything drawn ON an accent fill. Added 2026-09-17:
+    // the checkmark here was a hardcoded white, which is wrong in the
+    // high-contrast dark palette where accentText is BLACK.
+    accentText: string;
     border: string;
   };
 }
@@ -555,7 +559,7 @@ function FilterSheetInner({
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('filters.price_range')}</Text>
                 {(config.priceMin !== null || config.priceMax !== null) && (
                   <View style={[styles.countBadge, { backgroundColor: colors.accent }]}>
-                    <Ionicons name="checkmark" size={12} color="#fff" />
+                    <Ionicons name="checkmark" size={12} color={colors.accentText}/>
                   </View>
                 )}
               </View>

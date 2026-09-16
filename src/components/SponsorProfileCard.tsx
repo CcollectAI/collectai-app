@@ -266,7 +266,7 @@ const SponsorProfileCardInner: React.FC<SponsorProfileCardProps> = ({
                 accessibilityLabel={t('sponsor_profile.save_a11y')}
               >
                 {!!saving ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={colors.accentText}/>
                 ) : (
                   <Text style={styles.primaryBtnText}>{t('sponsor_profile.save_changes')}</Text>
                 )}

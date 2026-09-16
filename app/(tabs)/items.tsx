@@ -1071,6 +1071,7 @@ const ItemsScreen: React.FC = () => {
           text: colors.text,
           muted: colors.muted,
           accent: colors.accent,
+          accentText: colors.accentText,
           border: colors.border,
         }}
       />

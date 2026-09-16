@@ -675,7 +675,7 @@ function AgentHubScreen() {
                           accessibilityRole="link"
                           accessibilityLabel={`Open ${deal.listingTitle} listing`}
                         >
-                          <Ionicons name="open-outline" size={14} color="#FFFFFF" />
+                          <Ionicons name="open-outline" size={14} color={colors.accentText}/>
                         </AnimatedPressable>
                       )}
                     </View>

@@ -391,7 +391,7 @@ const CreateEventScreen: React.FC = () => {
                     accessibilityRole="button"
                     accessibilityLabel={t('create_event.a11y_add_detail_desc', { defaultValue: 'Add detail to description' })}
                   >
-                    <Ionicons name="arrow-up" size={18} color="#fff" />
+                    <Ionicons name="arrow-up" size={18} color={colors.accentText}/>
                   </AnimatedPressable>
                 </View>
                 {form.descriptionField.touched && form.descriptionField.error && <Text style={[styles.fieldError, { color: colors.danger }]}>{form.descriptionField.error}</Text>}

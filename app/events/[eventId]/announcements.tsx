@@ -253,7 +253,7 @@ const EventAnnouncementsScreen: React.FC = () => {
           accessibilityRole="button"
           accessibilityLabel="Compose announcement"
         >
-          <Ionicons name="create-outline" size={24} color="#FFFFFF" />
+          <Ionicons name="create-outline" size={24} color={colors.accentText}/>
         </AnimatedPressable>
       )}
       <QuickNavBar />

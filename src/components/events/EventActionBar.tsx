@@ -74,7 +74,7 @@ export const EventActionBar = React.memo(function EventActionBar({
           <Ionicons
             name={isStream ? 'logo-twitch' : 'open-outline'}
             size={16}
-            color="#ffffff"
+            color={colors.accentText}
             style={{ marginRight: 6 }}
           />
           <Text style={[styles.primaryBtnText, { color: colors.card }]}>

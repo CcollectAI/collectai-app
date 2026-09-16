@@ -314,7 +314,7 @@ const SponsorDashboardScreen: React.FC = () => {
               accessibilityRole="button"
               accessibilityLabel={t('sponsor.dashboard_a11y_get_started', { defaultValue: 'Get started' })}
             >
-              <Ionicons name="rocket-outline" size={16} color="#FFFFFF" />
+              <Ionicons name="rocket-outline" size={16} color={colors.accentText}/>
               <Text style={[styles.primaryBtnText, { color: colors.accentText }]}>{t('sponsor.dashboard_get_started', { defaultValue: 'Get Started' })}</Text>
             </AnimatedPressable>
           }

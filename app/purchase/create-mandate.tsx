@@ -470,10 +470,10 @@ function CreateMandateScreen() {
           accessibilityLabel={isEdit ? "Save changes" : "Activate search"}
         >
           {saving ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <ActivityIndicator size="small" color={colors.accentText}/>
           ) : (
             <>
-              <Ionicons name={isEdit ? "checkmark" : "flash"} size={18} color="#fff" />
+              <Ionicons name={isEdit ? "checkmark" : "flash"} size={18} color={colors.accentText}/>
               <Text style={styles.saveBtnText}>{isEdit ? "Save Changes" : "Activate"}</Text>
             </>
           )}

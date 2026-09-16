@@ -23,7 +23,7 @@ function ScreenFallback({ screenName, fallbackMessage, onRetry }: { screenName?:
         {fallbackMessage || 'An error occurred. Please try again.'}
       </Text>
       <Pressable style={[styles.retry, { backgroundColor: colors.accent }]} onPress={onRetry} accessibilityRole="button">
-        <Ionicons name="refresh-outline" size={18} color="#fff" />
+        <Ionicons name="refresh-outline" size={18} color={colors.accentText}/>
         <Text style={styles.retryText}>Retry</Text>
       </Pressable>
     </View>

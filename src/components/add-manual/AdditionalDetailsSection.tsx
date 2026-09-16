@@ -204,7 +204,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
                 accessibilityRole="button"
                 accessibilityLabel={t('add_manual.done_notes_a11y')}
               >
-                <Ionicons name="checkmark" size={18} color="#fff" />
+                <Ionicons name="checkmark" size={18} color={colors.accentText}/>
               </TouchableOpacity>
             )}
           </View>

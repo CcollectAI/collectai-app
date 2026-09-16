@@ -94,7 +94,7 @@ const CategoryCollectorSearch: React.FC<Props> = ({ colors, onClose }) => {
           accessibilityRole="button"
           accessibilityLabel={t('category.a11y_close_collector_search', { defaultValue: 'Close collector search' })}
         >
-          <Ionicons name="close" size={18} color="#fff" />
+          <Ionicons name="close" size={18} color={colors.accentText}/>
         </AnimatedPressable>
       </View>
 

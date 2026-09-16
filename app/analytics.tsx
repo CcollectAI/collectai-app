@@ -531,7 +531,7 @@ function AnalyticsScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('analytics.a11y_retry', { defaultValue: 'Retry loading analytics data' })}
             >
-              <Ionicons name="refresh-outline" size={14} color="#fff" />
+              <Ionicons name="refresh-outline" size={14} color={colors.accentText}/>
               <Text style={styles.errorRetryText}>{t('common.retry', { defaultValue: 'Retry' })}</Text>
             </AnimatedPressable>
           </View>

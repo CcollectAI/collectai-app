@@ -2589,6 +2589,46 @@ rendered in that branch), which is why the small-screen round exists.
 Also clean at 360dp, both previously recorded as unmeasured: the Watchlist
 header cluster (~387dp estimated) and the barcode manual-entry placeholder.
 
+## The accent button fails contrast in the palette almost everyone uses (2026-09-17)
+
+Computed, not eyeballed — white on the live accent:
+
+| palette | accent | accentText | ratio | |
+|---|---|---|---|---|
+| light | `#40C9C6` | `#FFFFFF` | **2.02:1** | fails 4.5:1 *and* the 3:1 UI floor |
+| dark | `#40C9C6` | `#FFFFFF` | **2.02:1** | same token in both |
+| high-contrast light | `#0052CC` | `#FFFFFF` | 6.82:1 | ✓ |
+| high-contrast dark | `#4DA6FF` | `#000000` | 8.21:1 | ✓ |
+
+So the two palettes that ship by default are the two that fail, on every
+accent-filled control in the app. **It is a brand decision, not a bug to fix
+unilaterally** — `#40C9C6` is the Tiffany accent. Two ways out, both one line:
+dark ink on the same fill (`#0B3B39` → 6.11:1), or a darker fill under white
+(`#0A7A77` → 5.17:1).
+
+Note what the playbook used to prescribe — "use `colors.accentText`" — fixes the
+INVERSION (white label on a light fill in high-contrast dark) and does nothing
+for the contrast, because `accentText` *is* white in three of the four palettes.
+The `brand.base` row from the 2FA fix (1.66:1) is the same story: made
+theme-correct, never made readable.
+
+### The gate had a second blind spot, and its own table was stale
+
+`check:brand-colors` matched `color:` (the style form) but not `color=` (the JSX
+prop form) — and this app draws most of its icons with `<Ionicons color="#fff">`.
+43 hardcoded whites sat on themed fills, invisible to the gate the playbook
+points at, including the Deal Agent, the Inbox and the filter sheet. All 43 now
+use `colors.accentText`, which is a no-op in three palettes and a REAL fix in
+high-contrast dark, where the label should be black.
+
+The gate's own docstring also listed `#1fb6ff` / `#38bdf8` — values from
+`src/theme/colors.ts`, a `LegacyTheme` whose only reader (`useColorTheme`) has
+**no callers anywhere**. A gate that documents the dead palette teaches the wrong
+colour to whoever reads it next. Corrected, with the measured ratios.
+
+Threading `accentText` through the 43 sites is also what makes the brand decision
+above a one-line change instead of a 300-site sweep.
+
 ## A translated screen with an English date (2026-09-17)
 
 Round 3 of the sweep (`npm run walk -- --locale nl`) reads the app in Dutch and

@@ -32,7 +32,7 @@ export const SponsorQuickActions = React.memo(function SponsorQuickActions({
   return (
     <View style={[styles.actionsBar, { backgroundColor: colors.card, borderColor: colors.border }, SHADOW_SM]}>
       <AnimatedPressable onPress={onCreateEvent} style={[styles.actionBtn, { backgroundColor: colors.accent }]} accessibilityRole="button" accessibilityLabel={t('sponsor.a11y_new_campaign', { defaultValue: 'New campaign' })}>
-        <Ionicons name="add" size={15} color="#FFFFFF" />
+        <Ionicons name="add" size={15} color={colors.accentText}/>
         <Text style={styles.actionBtnPrimaryText}>{t('sponsor.new_campaign', { defaultValue: 'New Campaign' })}</Text>
       </AnimatedPressable>
       <AnimatedPressable onPress={onEditProfile} style={[styles.actionBtn, styles.actionBtnOutline, { borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('account.edit_profile_a11y', { defaultValue: 'Edit profile' })}>

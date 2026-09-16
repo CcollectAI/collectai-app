@@ -142,7 +142,7 @@ export function ProvenanceTimeline({
                       { backgroundColor: colors.accent, borderColor: colors.accent + '30' },
                     ]}
                   >
-                    <Ionicons name={config.icon} size={14} color="#FFFFFF" />
+                    <Ionicons name={config.icon} size={14} color={colors.accentText}/>
                   </View>
                   {!isLast && (
                     <View

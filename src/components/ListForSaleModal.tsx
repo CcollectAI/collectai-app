@@ -436,10 +436,10 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                 }
               >
                 {submitting ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={colors.accentText}/>
                 ) : (
                   <>
-                    <Ionicons name="pricetag" size={18} color="#FFFFFF" />
+                    <Ionicons name="pricetag" size={18} color={colors.accentText}/>
                     <Text style={styles.submitBtnText}>
                       {selectedIds.length === 0
                         ? 'Select a Marketplace'

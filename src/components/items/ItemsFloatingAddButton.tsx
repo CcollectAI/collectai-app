@@ -24,7 +24,7 @@ export const ItemsFloatingAddButton = React.memo(function ItemsFloatingAddButton
       accessibilityRole="button"
       accessibilityLabel="Add new item"
     >
-      <Ionicons name="add" size={22} color="#fff" />
+      <Ionicons name="add" size={22} color={colors.accentText}/>
       <Text style={styles.floatingAddText}>Add Item</Text>
     </AnimatedPressable>
   );

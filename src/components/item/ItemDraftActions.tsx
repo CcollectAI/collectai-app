@@ -52,10 +52,10 @@ export const ItemDraftActions = React.memo(function ItemDraftActions({ savingDra
           accessibilityLabel={t('item_detail.save_a11y', { defaultValue: 'Save to collection' })}
         >
           {savingDraft ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color={theme.accentText}/>
           ) : (
             <>
-              <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" />
+              <Ionicons name="checkmark-circle" size={18} color={theme.accentText}/>
               <Text style={styles.saveDraftButtonText}>{t('item_detail.save', { defaultValue: 'Save to Collection' })}</Text>
             </>
           )}

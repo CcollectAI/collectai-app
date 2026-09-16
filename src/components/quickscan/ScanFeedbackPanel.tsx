@@ -100,7 +100,7 @@ function ScanFeedbackPanelInner({
         accessibilityRole="button"
         accessibilityLabel={`Submit ${labelPrefix} correction`}
       >
-        <Ionicons name="checkmark" size={iconSize} color="#FFF" />
+        <Ionicons name="checkmark" size={iconSize} color={colors.accentText}/>
       </AnimatedPressable>
       <AnimatedPressable
         onPress={() => setEditingField(null)}
