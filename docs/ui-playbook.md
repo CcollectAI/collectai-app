@@ -2552,6 +2552,31 @@ confirmed on the device by the recheck's own dump text, not assumed.
 by the batch itself — the inserted `QuickNavBar` import landed below a `const`
 in `sell/new.tsx` (`import/first`) — moved into the import block.
 
+## Rounds 2-3: the sweep's own false positives, and what Dutch showed (2026-09-16)
+
+**Round 2 (API down) found no new app defect** — 24 flags, all SLOW_LOAD or
+NOT_IDLE from hanging requests, plus ONE the tool got wrong: `listings`
+NO_NAVBAR from a 15-node tree captured mid-render, while the screenshot taken a
+moment later showed the bar. **A capture is evidence only if it is the same
+moment as the screenshot.** The sweep now re-dumps and re-checks before
+reporting NO_NAVBAR / NO_TITLE / NO_CLUSTER / NO_BACK.
+
+**Round 3 (Dutch) found the accessibility half of the i18n backlog.** `favorites`
+read "Go back" while `archived` read "Terug" — 153 hard-coded
+`accessibilityLabel`s, four of which the sweep reported as repeated on 45-59
+screens each. Fixed at the five shared components; the rest are ranked in
+`docs/I18N_BACKLOG.md`. The same round caught the real tab bar hard-coding
+**"Events"** while its other four labels went through `t('nav.*')`.
+
+**Three of the round's flags were the tool, not the app** — worth writing down,
+because a checker that cries wolf stops being read:
+
+| flag | why it was wrong | fix |
+|---|---|---|
+| NO_NAVBAR on all 7 tab routes (Dutch) | the check looked for the ENGLISH tab words; the real tab bar uses `t('nav.*')` ("Markt", "Toevoegen", "Ontdek") while QuickNavBar keeps English literals by design | each slot accepts either spelling |
+| `catalog-item` "landed on Home" | a deep link sent while the app was still booting is swallowed — the 12 s wait was a guess | cold start waits for the tab bar (≤45 s), and a route that unexpectedly shows Home re-sends its link once, then reports WRONG_SCREEN rather than judging the wrong screen |
+| one route took 102 s | `uiautomator dump` waits for the UI to go IDLE, so a spinning screen holds a dump; only the gaps between dumps were budgeted | each dump capped at 10 s and counted against the route budget; a screen that never idles is NOT_IDLE, with one long dump so it still gets its checks |
+
 ## A backend field is a value, not a label (2026-09-09)
 
 Every row on the Events tab read **`Convention • 2026-09-11 — 20:00:00`** — an

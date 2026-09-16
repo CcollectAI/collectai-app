@@ -47,7 +47,10 @@
     "unsaved_title": "未保存の変更",
     "unsaved_message": "保存していない変更があります。破棄して戻りますか？",
     "discard": "破棄",
-    "load_failed_hint": "何も失われていません。リストに接続できなかっただけです。"
+    "load_failed_hint": "何も失われていません。リストに接続できなかっただけです。",
+    "inbox_a11y": "受信箱",
+    "unread_count_a11y": "未読 {{count}} 件",
+    "main_navigation_a11y": "メインナビゲーション"
   },
   "add_tab": {
     "subtitle": "高速、カメラ優先のフロー。",
@@ -341,7 +344,8 @@
     "wishlist": "ウォッチリスト",
     "explore": "さがす",
     "settings": "設定",
-    "profile": "プロフィール"
+    "profile": "プロフィール",
+    "events": "イベント"
   },
   "home": {
     "collection_get_started": "最初のアイテムを追加して始めましょう",

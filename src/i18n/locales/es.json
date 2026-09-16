@@ -47,7 +47,10 @@
     "unsaved_title": "Cambios sin guardar",
     "unsaved_message": "Tienes cambios sin guardar. ¿Descartarlos y salir?",
     "discard": "Descartar",
-    "load_failed_hint": "No falta nada: simplemente no pudimos acceder a la lista."
+    "load_failed_hint": "No falta nada: simplemente no pudimos acceder a la lista.",
+    "inbox_a11y": "Bandeja de entrada",
+    "unread_count_a11y": "{{count}} sin leer",
+    "main_navigation_a11y": "Navegación principal"
   },
   "add_tab": {
     "subtitle": "Flujo rápido, cámara primero.",
@@ -341,7 +344,8 @@
     "wishlist": "Lista de seguimiento",
     "explore": "Explorar",
     "settings": "Ajustes",
-    "profile": "Perfil"
+    "profile": "Perfil",
+    "events": "Eventos"
   },
   "home": {
     "collection_get_started": "Empieza añadiendo tu primer artículo",

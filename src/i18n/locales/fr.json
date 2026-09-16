@@ -47,7 +47,10 @@
     "unsaved_title": "Modifications non enregistrées",
     "unsaved_message": "Vous avez des modifications non enregistrées. Les abandonner et quitter ?",
     "discard": "Abandonner",
-    "load_failed_hint": "Rien ne manque — nous n’avons simplement pas pu joindre la liste."
+    "load_failed_hint": "Rien ne manque — nous n’avons simplement pas pu joindre la liste.",
+    "inbox_a11y": "Boîte de réception",
+    "unread_count_a11y": "{{count}} non lus",
+    "main_navigation_a11y": "Navigation principale"
   },
   "add_tab": {
     "subtitle": "Flux rapide, photo d'abord.",
@@ -341,7 +344,8 @@
     "wishlist": "Liste de suivi",
     "explore": "Explorer",
     "settings": "Paramètres",
-    "profile": "Profil"
+    "profile": "Profil",
+    "events": "Événements"
   },
   "home": {
     "collection_get_started": "Commencez par ajouter votre premier article",

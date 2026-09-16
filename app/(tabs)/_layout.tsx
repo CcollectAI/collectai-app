@@ -205,7 +205,9 @@ export default function TabsLayout() {
         name="events"
         options={{
           title: "Events",
-          tabBarLabel: "Events",
+          // t(), like the other four: this label was the one English literal in a
+          // translated bar (Dutch round, 2026-09-16).
+          tabBarLabel: t("nav.events"),
           tabBarAccessibilityLabel: "Events tab — community events and drops",
           href: BETA_MODE ? null : undefined,
           tabBarIcon: ({ color, size, focused }) => (

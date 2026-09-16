@@ -47,7 +47,10 @@
     "unsaved_title": "Niet-opgeslagen wijzigingen",
     "unsaved_message": "Je hebt wijzigingen die niet zijn opgeslagen. Weggooien en teruggaan?",
     "discard": "Weggooien",
-    "load_failed_hint": "Er ontbreekt niets — we konden de lijst alleen niet bereiken."
+    "load_failed_hint": "Er ontbreekt niets — we konden de lijst alleen niet bereiken.",
+    "inbox_a11y": "Postvak",
+    "unread_count_a11y": "{{count}} ongelezen",
+    "main_navigation_a11y": "Hoofdnavigatie"
   },
   "add_tab": {
     "subtitle": "Snelle, camera-gerichte flow.",
@@ -341,7 +344,8 @@
     "wishlist": "Verlanglijst",
     "explore": "Ontdek",
     "settings": "Instellingen",
-    "profile": "Profiel"
+    "profile": "Profiel",
+    "events": "Evenementen"
   },
   "home": {
     "collection_get_started": "Begin door je eerste item toe te voegen",

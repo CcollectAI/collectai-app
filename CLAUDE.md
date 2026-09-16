@@ -50,7 +50,15 @@ HEAD since May, unchanged by this diff.
   (`usePaginatedList.loadMore` after a failed first page; `check:navbar` rule 2
   "every screen renders the bar unless exempt by design") — table in
   `docs/ui-playbook.md` "Screen sweep round 1". Recheck on the device: all
-  chrome flags cleared.
+  chrome flags cleared. **Round 2 (API down): no new app defect.** **Round 3
+  (`--locale nl`): the accessibility half of the i18n backlog** — 153 hard-coded
+  `accessibilityLabel`s, four of them on 45-59 screens (a screen reader in Dutch
+  heard English almost everywhere); fixed at the five shared chrome components,
+  plus the tab bar's hard-coded "Events". ~145 remain, ranked in
+  `docs/I18N_BACKLOG.md`. Three flags were the TOOL, not the app — a mid-render
+  capture, an English-only tab-label check, and a deep link swallowed during
+  boot; all three fixed and written up, because a checker that cries wolf stops
+  being read.
 - **The same walk found the nav-bar rule's gap**: "cover every return branch"
   (playbook, since 08-16) had no checker; 19 loading/not-found/failed branches in
   10 screens dropped the QuickNavBar. Fixed; `npm run check:navbar` (AST, in

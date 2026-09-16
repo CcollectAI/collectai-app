@@ -11,6 +11,7 @@
  * hand-rolling its own.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,6 +31,7 @@ type Props = {
 };
 
 export default function ScreenHeader({ title, showBack = true, showActions = true }: Props) {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
@@ -71,7 +73,7 @@ export default function ScreenHeader({ title, showBack = true, showActions = tru
             style={styles.iconBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+            accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}
           >
             <Ionicons name="chevron-back" size={26} color={colors.text} />
           </AnimatedPressable>

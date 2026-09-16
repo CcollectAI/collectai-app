@@ -40,6 +40,7 @@
  * circle (docs/ui-playbook.md). No `marginRight` tweaks here.
  */
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -78,6 +79,7 @@ type Props = {
 };
 
 export const HeaderActions: React.FC<Props> = ({ size = 22, color }) => {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const router = useRouter();
@@ -137,7 +139,7 @@ export const HeaderActions: React.FC<Props> = ({ size = 22, color }) => {
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="button"
         accessibilityState={{ selected: isHere('/notifications') }}
-        accessibilityLabel={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`}
+        accessibilityLabel={`${t('screen_titles.notifications')}${unread > 0 ? `, ${t('common.unread_count_a11y', { count: unread })}` : ''}`}
       >
         <Ionicons
           name="notifications-outline"
@@ -166,7 +168,7 @@ export const HeaderActions: React.FC<Props> = ({ size = 22, color }) => {
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="button"
         accessibilityState={{ selected: isHere('/settings') }}
-        accessibilityLabel="Settings"
+        accessibilityLabel={t('nav.settings')}
       >
         <Ionicons
           name="settings-outline"

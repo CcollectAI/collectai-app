@@ -108,6 +108,38 @@ otherwise as a past mistake). **Checking reachability before translating is
 worth doing every time**: it turned 8 units of translation work into a
 deletion.
 
+## The ACCESSIBILITY half of the backlog — 153 hard-coded labels (measured 2026-09-16)
+
+A Dutch sweep round (`npm run walk -- --locale nl`, which sets the app's own
+Language and verifies it) showed English on a screen otherwise fully Dutch:
+`favorites` read **"Go back"** while `archived` read "Terug". A screen reader in
+Dutch was hearing English on almost every screen.
+
+```bash
+grep -rnE 'accessibility(Label|Hint)="[^"]+"' app src | grep -v '{t('   # 153
+```
+
+✅ **Fixed: the shared chrome**, which is where the leverage was — the same four
+strings appeared on 45–59 screens each (the sweep collapses a flag on ≥40% of
+screens into one finding, which is how they stood out):
+
+| component | was | now |
+|---|---|---|
+| `ScreenHeader`, `TabBackButton` | `accessibilityLabel="Go back"` | `t('common.go_back_a11y')` |
+| `HeaderActions` | `"Notifications, 3 unread"`, `"Settings"` | `t('screen_titles.notifications')` + `t('common.unread_count_a11y')`, `t('nav.settings')` |
+| `InboxHeaderButton` | `"Inbox, 2 unread"` | `t('common.inbox_a11y')` + the same count key |
+| `QuickNavBar` | `"Main navigation"` | `t('common.main_navigation_a11y')` |
+| `(tabs)/_layout` | `tabBarLabel: "Events"` — the ONE English literal in a bar whose other four labels were `t('nav.*')` | `t('nav.events')` (new key) |
+
+⚠️ None of those five components imported `useTranslation`; the first pass
+called `t()` without it and only `tsc` caught it. Check the hook exists before
+using `t` in a component that never needed it.
+
+**~145 remain**, one to a few per file — same ranking rule as below: reachable
+screens first. `QuickNavBar`'s five TAB LABELS stay English literals by
+deliberate decision (ui-playbook 2026-08-19); the real tab bar translates them,
+so the two bars disagree in Dutch — Merle's call, not a bug to fix silently.
+
 ## ⛔ Plural keys use the wrong suffix (found 2026-09-14, not fixed)
 
 `src/i18n/index.ts` sets `compatibilityJSON: 'v4'`, which resolves plurals with

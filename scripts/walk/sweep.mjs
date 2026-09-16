@@ -13,6 +13,7 @@
  * Per route: deep link → wait until the UI dump stops changing → screenshot +
  * uiautomator XML + the app's JS error log → checks:
  *   FOCUS        another window has focus (ANR dialog, permission prompt, other app)
+ *   WRONG_SCREEN the deep link never left Home (re-sent once) — the route was not judged
  *   CRASH        FATAL EXCEPTION in io.sparrowcollect.app
  *   SLOW_LOAD    a spinner/skeleton still up at --spinner-budget (default 5s)
  *   STILL_LOADING a spinner/skeleton still up at --timeout
@@ -24,6 +25,8 @@
  *                [object, an i18n key like "home.title", "{{count}}", €-10
  *   UNTRANSLATED (--locale ≠ en) a string equal to an en.json value whose
  *                translation in that locale differs
+ *   NOT_IDLE     uiautomator never saw the UI idle within 10 s (continuous animation)
+ *   NO_DUMP      no UI tree even with a 30 s dump — see the screenshot
  *   JS_ERRORS    count of E/ReactNativeJS lines while on the screen (info only)
  *
  * States, no Gradle build needed:
@@ -78,7 +81,7 @@ const OUT = arg('out', join(ROOT, 'builds', 'walk', `${stamp}-${LABEL}`));
 
 // ── adb helpers ──────────────────────────────────────────────────────────────
 const adb = (args, opts = {}) => {
-  const r = spawnSync(ADB, ['-s', SERIAL, ...args], { encoding: opts.binary ? 'buffer' : 'utf8', timeout: (opts.timeout ?? 60) * 1000, maxBuffer: 64 * 1024 * 1024 });
+  const r = spawnSync(ADB, ['-s', SERIAL, ...args], { encoding: opts.binary ? 'buffer' : 'utf8', timeout: Math.max(1000, Math.round((opts.timeout ?? 60) * 1000)), maxBuffer: 64 * 1024 * 1024 });
   if (r.error && !opts.allowFail) throw new Error(`adb ${args.join(' ')}: ${r.error.message}`);
   return r.stdout;
 };
@@ -127,7 +130,18 @@ const EN_FUNCTION_WORDS = new Set(['the', 'your', 'you', 'to', 'and', 'of', 'thi
 const enValueToKeys = new Map();
 for (const [k, v] of Object.entries(EN)) { if (v.length >= 4) { if (!enValueToKeys.has(v)) enValueToKeys.set(v, []); enValueToKeys.get(v).push(k); } }
 
-const TABS = ['Portfolio', 'Market', 'Add', 'Events', 'Explore'];
+// The bar is drawn by TWO components with DIFFERENT label sources: QuickNavBar
+// (non-tab screens) uses plain English literals by design (ui-playbook
+// 2026-08-19), while the real tab bar uses t('nav.*'). So each slot accepts
+// either spelling — a Dutch run flagged all 7 tab routes NO_NAVBAR against the
+// English list (2026-09-16).
+const TAB_SLOTS = [['Portfolio', 'nav.portfolio'], ['Market', 'nav.market'], ['Add', 'nav.add'], ['Events', 'nav.events'], ['Explore', 'nav.explore']];
+const TABS = TAB_SLOTS.map(([literal]) => literal);
+const tabAlternatives = (locale) => {
+  const m = Object.fromEntries(flat(localeFile(locale)));
+  return TAB_SLOTS.map(([literal, key]) => [literal, m[key]].filter(Boolean));
+};
+const TAB_ALTS = tabAlternatives(LOCALES.includes(LOCALE) ? LOCALE : 'en');
 const RAW_PATTERNS = [
   [/\b\d{3,6} ?ms\b/, 'millisecond count'],
   [/\bfailed \(\d{3}\)|\b(GET|POST|PUT|PATCH|DELETE) \/[a-z]/, 'HTTP plumbing'],
@@ -163,8 +177,8 @@ function check(nodes, expect, W, H, focusLine, logs) {
   if (expect.back && !app.some((n) => GO_BACK.has(n.desc) || GO_BACK.has(n.text))) flags.push(['NO_BACK', 'no "Go back" control']);
   if (expect.cluster && !(header.some((n) => /^Notifications/.test(n.desc)) && header.some((n) => n.desc === 'Settings'))) flags.push(['NO_CLUSTER', 'bell/gear cluster missing']);
   if (expect.navbar) {
-    const labels = new Set(bottom.map((n) => n.text || n.desc));
-    const missing = TABS.filter((t) => !labels.has(t));
+    const labels = new Set(bottom.flatMap((n) => [n.text, n.desc]).filter(Boolean));
+    const missing = TAB_ALTS.filter((alts) => !alts.some((a) => labels.has(a))).map((alts) => alts[0]);
     if (missing.length) flags.push(['NO_NAVBAR', `missing: ${missing.join(', ')}`]);
   }
   for (const n of app) {
@@ -287,17 +301,35 @@ async function setAppLanguage(optionLabel, expectRowLabel) {
   tapNode(opt);
   await sleep(2000);
   if (expectRowLabel) {
-    const applied = parseNodes(dumpXml()).some((n) => n.desc === expectRowLabel || n.text === expectRowLabel);
-    if (!applied) throw new Error(`language: "${optionLabel}" did not apply (row does not read "${expectRowLabel}") — aborting rather than reporting English as untranslated`);
+    // POLL: the row needs a re-render, and a single check 2 s after the tap
+    // failed on a fresh install while the language HAD applied (2026-09-16).
+    let applied = false;
+    for (let i = 0; i < 6 && !applied; i++) {
+      applied = parseNodes(dumpXml()).some((n) => n.desc === expectRowLabel || n.text === expectRowLabel);
+      if (!applied) await sleep(2000);
+    }
+    if (!applied) throw new Error(`language: "${optionLabel}" did not apply (row never read "${expectRowLabel}") — aborting rather than reporting English as untranslated`);
   }
 }
 
+// Wait for the APP, not a fixed delay: a deep link sent while the app is still
+// booting is swallowed and the screen stays on Home (seen 2026-09-16: a
+// "catalog-item" capture was Home's loading skeleton). Ready = the tab bar.
 const coldStart = async () => {
   sh(`am force-stop ${PKG}`);
   await sleep(1500);
   sh(`monkey -p ${PKG} -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1`, { allowFail: true });
-  await sleep(12000);
+  const t0 = Date.now();
+  await sleep(6000);
+  while (Date.now() - t0 < 45000) {
+    const labels = new Set(parseNodes(dumpXml()).map((n) => n.text || n.desc));
+    if (TABS.every((t) => labels.has(t))) break;
+    await sleep(2000);
+  }
+  await sleep(2000);
 };
+// Home's own header. A route that should not be Home but shows this landed wrong.
+const looksLikeHome = (xml) => xml.includes('COLLECTION VALUE');
 
 const results = [];
 let sinceRestart = 0;
@@ -331,9 +363,18 @@ try {
     // SLOW_LOAD, and we keep waiting (cheaply) until it settles or TIMEOUT_S.
     const t0 = Date.now();
     const elapsed = () => (Date.now() - t0) / 1000;
+    const homeIsRight = r.route === '(tabs)/index' || r.redirect;
     await sleep(SPINNER_BUDGET_S * 1000);
     let xml = dumpXml();
     let nodes = parseNodes(xml);
+    let wrongScreen = false;
+    if (!homeIsRight && looksLikeHome(xml)) {
+      // The deep link was swallowed — send it once more before judging anything.
+      sh(`am start -a android.intent.action.VIEW -d '${url}' ${PKG} >/dev/null 2>&1`, { allowFail: true });
+      await sleep(SPINNER_BUDGET_S * 1000);
+      xml = dumpXml(); nodes = parseNodes(xml);
+      wrongScreen = looksLikeHome(xml);
+    }
     let slowAt = null;
     // An empty dump means uiautomator never saw the UI idle within the cap —
     // something is still animating, which at the budget is SLOW_LOAD too.
@@ -353,19 +394,42 @@ try {
     writeFileSync(join(OUT, 'shots', `${slug}.png`), png);
     // The loop's last dump IS the settled screen — no third slow dump, unless
     // it capped out, in which case one more try before judging an empty tree.
-    if (!xml) { xml = dumpXml(); nodes = parseNodes(xml); }
+    // Capped dumps all came back empty: the UI never went idle within 10 s. One
+    // long dump (30 s) so the screen still gets its checks, and NOT_IDLE says
+    // that something keeps animating — itself worth a look (a spinner or
+    // shimmer still running after the screen has settled on a failure).
+    let notIdle = false;
+    if (!xml) { notIdle = true; xml = dumpXml(30); nodes = parseNodes(xml); }
     writeFileSync(join(OUT, 'dumps', `${slug}.xml`), xml);
     const log = sh(`logcat -d -v brief ReactNativeJS:E AndroidRuntime:E '*:S'`, { allowFail: true }) || '';
     const errors = log.split('\n').filter((l) => l.startsWith('E/ReactNativeJS'));
     const fatalBlock = log.includes('FATAL EXCEPTION') && log.includes(`Process: ${PKG}`);
     const logs = { slowAt, errors, fatal: fatalBlock ? (log.split('\n').find((l) => /Exception|Error/.test(l) && !l.includes('FATAL')) || 'FATAL EXCEPTION').slice(0, 160) : null };
 
-    const res = !xml
+    const res = wrongScreen
+      ? { title: null, flags: [['WRONG_SCREEN', 'still on Home after re-sending the deep link — route not reached, not judged']] }
+      : !xml
       // No tree to check: say THAT, instead of reporting NO_TITLE/NO_NAVBAR on nothing.
       ? { title: null, flags: [['NO_DUMP', `uiautomator never saw the UI idle (${DUMP_CAP_S}s cap, twice) — something keeps animating; see the screenshot`]] }
       : r.redirect
       ? { title: null, flags: focus().includes(PKG) ? [] : [['FOCUS', 'not in the app after redirect']] }
       : check(nodes, expect, W, H, focus(), logs);
+    // A chrome flag can be a CAPTURE artefact: the loop's last dump can land
+    // mid-render (2026-09-16: `listings` was flagged NO_NAVBAR from a 15-node
+    // tree while the screenshot, taken later, showed the bar). Re-dump once and
+    // re-check before believing it.
+    const CHROME = ['NO_NAVBAR', 'NO_TITLE', 'NO_CLUSTER', 'NO_BACK'];
+    if (!wrongScreen && xml && res.flags.some(([k]) => CHROME.includes(k))) {
+      const xml2 = dumpXml();
+      if (xml2) {
+        const res2 = check(parseNodes(xml2), expect, W, H, focus(), logs);
+        if (res2.flags.filter(([k]) => CHROME.includes(k)).length < res.flags.filter(([k]) => CHROME.includes(k)).length) {
+          writeFileSync(join(OUT, 'dumps', `${slug}.xml`), xml2);
+          res.title = res2.title; res.flags = res2.flags;
+        }
+      }
+    }
+    if (notIdle && xml) res.flags.push(['NOT_IDLE', `UI never idle within ${DUMP_CAP_S}s — something keeps animating`]);
     if (logs.fatal) { res.flags.push(['CRASH', logs.fatal]); await coldStart(); sinceRestart = 0; }
     const real = res.flags.filter(([k]) => k !== 'JS_ERRORS');
     console.log(`${real.length ? real.map(([k]) => k).join(' ') : 'ok'}  (${settleS}s)`);

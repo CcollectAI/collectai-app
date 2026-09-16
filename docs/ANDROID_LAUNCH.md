@@ -828,6 +828,8 @@ rather than judging an empty tree. Most settled screens take ~12 s.
 |---|---|---|---|---|---|---|
 | 1 · 2026-09-15 22:17 | jsswap 21:53 | API down | 65/79 | 20 | 2 / 3 / 2 / 3 | classes: spinner under a failed state (`usePaginatedList`), no nav bar in any branch (`check:navbar` rule 2) |
 | 1-recheck · 23:42 | jsswap 23:40 | API down | 21 flagged routes | 9 | — | all chrome flags cleared; 8 SLOW_LOAD = the API timing out; Deal Agent title fixed after |
+| 2 · 2026-09-16 00:08 | jsswap 23:57 | API down | 65/79 | 24 | 0 / 0 / 0 / 1 | **no new app defect**: 21 SLOW_LOAD + 5 NOT_IDLE are the dead API; `listings` NO_NAVBAR was a mid-render capture (tool fixed: re-dump before believing a chrome flag). Deal Agent title confirmed |
+| 3 · 2026-09-16 07:56 | same | API down, `--locale nl` | 65/79 | 56 | 1 / 1 / 1 / 1 | **class**: 153 hard-coded `accessibilityLabel`s — 4 of them on 45-59 screens (fixed at `ScreenHeader`/`TabBackButton`/`HeaderActions`/`InboxHeaderButton`/`QuickNavBar`); **one-off**: the tab bar hard-coded "Events"; **decision**: ~145 remaining + QuickNavBar's deliberate English tab labels; **tool**: NO_NAVBAR on all 7 tab routes (the check now accepts each locale's labels) |
 
 Not covered by the machine checks (review the screenshots for these): layout,
 overlap and truncation, wrong numbers, copy that is grammatical but false, and

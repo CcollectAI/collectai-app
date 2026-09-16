@@ -17,6 +17,7 @@
  * nothing is worse than an absent one.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -26,6 +27,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { safeGoBack } from '@/lib/goBack';
 
 export function TabBackButton({ color }: { color?: string } = {}) {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   return (
@@ -34,7 +36,7 @@ export function TabBackButton({ color }: { color?: string } = {}) {
       style={styles.btn}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       accessibilityRole="button"
-      accessibilityLabel="Go back"
+      accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}
     >
       <Ionicons name="chevron-back" size={24} color={color ?? colors.text} />
     </AnimatedPressable>

@@ -6,6 +6,7 @@
  * the style prop to an inner Animated.View, which breaks flex: 1 in a row layout.
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname, type Href } from 'expo-router';
@@ -42,6 +43,7 @@ const TABS: TabDef[] = [
 ];
 
 export function QuickNavBar() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
   const router = useRouter();
@@ -67,7 +69,7 @@ export function QuickNavBar() {
       // "tablist" is the container role Android actually supports, and it is
       // valid on both platforms. Guarded by scripts/preflight_android.mjs.
       accessibilityRole="tablist"
-      accessibilityLabel="Main navigation"
+      accessibilityLabel={t('common.main_navigation_a11y', { defaultValue: 'Main navigation' })}
     >
       {TABS.map((tab) => {
         const isActive = tab.matchPrefix ? pathname.startsWith(tab.matchPrefix) : false;

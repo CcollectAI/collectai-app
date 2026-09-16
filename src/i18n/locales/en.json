@@ -47,7 +47,10 @@
     "unsaved_title": "Unsaved Changes",
     "unsaved_message": "You have unsaved changes. Discard them and leave?",
     "discard": "Discard",
-    "load_failed_hint": "Nothing is missing — we just could not reach the list."
+    "load_failed_hint": "Nothing is missing — we just could not reach the list.",
+    "inbox_a11y": "Inbox",
+    "unread_count_a11y": "{{count}} unread",
+    "main_navigation_a11y": "Main navigation"
   },
   "add_tab": {
     "subtitle": "Fast, camera-first flow.",
@@ -341,7 +344,8 @@
     "wishlist": "Watchlist",
     "explore": "Explore",
     "settings": "Settings",
-    "profile": "Profile"
+    "profile": "Profile",
+    "events": "Events"
   },
   "home": {
     "collection_get_started": "Get started by adding your first item",

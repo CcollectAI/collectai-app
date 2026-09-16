@@ -5,6 +5,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -51,6 +52,7 @@ export const InboxHeaderButton: React.FC<Props> = ({
   active = false,
 }) => {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const iconColor = color ?? colors.text;
   const router = useRouter();
   const { user } = useAuthContext();
@@ -88,7 +90,7 @@ export const InboxHeaderButton: React.FC<Props> = ({
       style={styles.container}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      accessibilityLabel={`Inbox${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+      accessibilityLabel={`${t('common.inbox_a11y')}${unreadCount > 0 ? `, ${t('common.unread_count_a11y', { count: unreadCount })}` : ''}`}
     >
       <Ionicons name="chatbubble-ellipses-outline" size={size} color={iconColor} />
       {unreadCount > 0 && (

@@ -47,7 +47,10 @@
     "unsaved_title": "Ungespeicherte Änderungen",
     "unsaved_message": "Du hast ungespeicherte Änderungen. Verwerfen und verlassen?",
     "discard": "Verwerfen",
-    "load_failed_hint": "Es fehlt nichts — wir konnten die Liste nur nicht erreichen."
+    "load_failed_hint": "Es fehlt nichts — wir konnten die Liste nur nicht erreichen.",
+    "inbox_a11y": "Posteingang",
+    "unread_count_a11y": "{{count}} ungelesen",
+    "main_navigation_a11y": "Hauptnavigation"
   },
   "add_tab": {
     "subtitle": "Schneller, kamerazuerst Flow.",
@@ -341,7 +344,8 @@
     "wishlist": "Merkliste",
     "explore": "Entdecken",
     "settings": "Einstellungen",
-    "profile": "Profil"
+    "profile": "Profil",
+    "events": "Events"
   },
   "home": {
     "collection_get_started": "Leg los, indem du deinen ersten Artikel hinzufügst",
