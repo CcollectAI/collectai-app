@@ -254,6 +254,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                                 Fees
                               </Text>
                               <Text style={[styles.feeValue, { color: colors.danger }]}>
+                                {/* currency-ok: fees are derived from the price the seller typed into this sheet, whose input is prefixed with their own currency symbol (line ~227). */}
                                 -{formatPrice(fee.totalFees, settings.currency)}
                               </Text>
                             </View>
@@ -263,6 +264,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                                 You receive
                               </Text>
                               <Text style={[styles.feeValue, { color: colors.success }]}>
+                                {/* currency-ok: net = the seller's typed price minus fees, so already in settings.currency. */}
                                 {formatPrice(fee.netProceeds, settings.currency)}
                               </Text>
                             </View>
@@ -391,9 +393,11 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                         </View>
                         <View style={styles.comparisonRight}>
                           <Text style={[styles.comparisonFees, { color: colors.danger }]}>
+                            {/* currency-ok: same typed-price origin as the fee row above. */}
                             -{formatPrice(fb.totalFees, settings.currency)}
                           </Text>
                           <Text style={[styles.comparisonNet, { color: colors.success }]}>
+                            {/* currency-ok: same typed-price origin as the fee row above. */}
                             {formatPrice(fb.netProceeds, settings.currency)}
                           </Text>
                         </View>

@@ -49,7 +49,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { useAsync } from '@/hooks/useAsync';
 import { useSettings } from '@/lib/settings';
 import { dataProvider, type Item } from '@/data';
-import { formatPrice } from '@/lib/format';
+import { fmtCurrency } from '@/lib/format';
 import { categoryDisplayName } from '@/constants/categories';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import { useTranslation } from 'react-i18next';
@@ -124,14 +124,17 @@ function SellPickScreen() {
           <Text style={[styles.rowMeta, { color: colors.muted }]} numberOfLines={1}>
             {[
               item.category ? categoryDisplayName(item.category) : null,
-              item.price ? formatPrice(item.price, settings.currency, settings.numberLocale) : null,
+              // `Item.price` is the EUR valuation (itemsProvider maps it from
+              // `q50_eur` / item_value_v1), so it must be CONVERTED into the
+              // member's currency, not just labelled with their symbol.
+              item.price ? fmtCurrency(item.price, settings) : null,
             ].filter(Boolean).join(' · ')}
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={16} color={colors.muted} />
       </AnimatedPressable>
     );
-  }, [colors, pick, settings.currency, settings.numberLocale]);
+  }, [colors, pick, settings]);
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>

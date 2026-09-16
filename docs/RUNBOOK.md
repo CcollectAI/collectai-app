@@ -131,6 +131,32 @@ iPhone → Settings → Privacy & Security → Analytics & Improvements → Anal
 
 **Symptoms:** API endpoints return 5xx or timeout. App shows error toasts everywhere.
 
+> ### ⛔ FIRST: unreachable from your laptop is NOT "down" (2026-09-16)
+>
+> On 2026-09-15 ~20:00 the laptop lost the API: HTTPS timed out, **SSH 22 timed
+> out, ping got no reply**, while Google and Supabase answered in 0.1 s. That was
+> called "the instance is down or hung" and Merle was asked to reboot it from the
+> AWS console. **It was never down** — `uptime` 61 days, `collectai-bake` active
+> since the 09-14 deploy, and `bake.log` kept logging ~90 lines/hour right
+> through the window. The block was on the network path to that one laptop (a
+> security-group / IP allowlist change; the home IP had changed).
+>
+> All three symptoms fail identically for a firewall that no longer allows your
+> IP, and **EC2 security groups normally drop ICMP**, so "ping fails" proves
+> nothing here. Before saying DOWN, get a second vantage point or a server-side
+> fact:
+>
+> ```bash
+> curl -m 10 https://api.sparrowcollect.com/healthz      # from a phone hotspot / another host
+> ssh collectai 'uptime; systemctl is-active collectai-bake.service'
+> ssh collectai 'grep -aoE "^2026-[0-9-]+ [0-9]{2}" /opt/collectors/bake.log | sort | uniq -c | tail -20'
+> ```
+>
+> A steady lines-per-hour count across the window means the box was serving and
+> the problem is your path to it. **Never ask for a reboot on unreachability
+> alone** — rebooting a healthy instance risks a public-IP change and real
+> downtime. Say "unreachable from here" until you have one of the facts above.
+
 > ### ⚠️ First: is the box dead, or just busy?
 >
 > `collectai-bake.service` runs the API **and all 20 workers in ONE uvicorn

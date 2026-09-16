@@ -738,8 +738,12 @@ real rebuild. Batch them.
     blaming the emulator** (2026-09-15). A cold start of "Couldn't load" and 15 s
     timeouts read as the emulator's network, as on 09-09 — and
     `curl https://api.sparrowcollect.com/healthz` from the Mac timed out too, while
-    Google and Supabase answered in 0.1 s. Production was unreachable on 443 and
-    22. One `curl` separates "the emulator" from "the API".
+    Google and Supabase answered in 0.1 s. One `curl` separates "the emulator"
+    from "the network path to the API".
+    ⚠️ It does NOT tell you the server is down. That laptop was blocked on 443,
+    22 and ICMP for ~24 h while the box had **61 days of uptime** and was serving
+    all along — see `docs/RUNBOOK.md` §2 "unreachable from your laptop is NOT
+    down", and do not ask for a reboot on that evidence.
 
 ### JS-only APK: minutes, not a 25-minute build (2026-09-15)
 

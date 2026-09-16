@@ -333,6 +333,9 @@ function WatchlistTabScreen() {
       // rule at all. So promise that, and only that.
       if (targetPrice && !isNaN(targetPrice) && targetPrice > 0) {
         showToast({
+          // The member typed this into a field labelled in their own currency and
+          // it is STORED that way (targetPriceCurrency: settings.currency above).
+          // currency-ok: already in the member's currency — converting would restate their own number.
           message: `Target set \u2014 we'll alert you if it's listed below ${formatPrice(targetPrice, settings.currency)}`,
           type: 'success',
         });
@@ -407,6 +410,7 @@ function WatchlistTabScreen() {
       if (newTarget && !isNaN(newTarget) && newTarget > 0) {
         fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
         showToast({
+          // currency-ok: an edited target is stored in the member's own currency (as above), so this echoes back what they typed.
           message: `Target set \u2014 we'll alert you if it's listed below ${formatPrice(newTarget, settings.currency)}`,
           type: 'success',
         });

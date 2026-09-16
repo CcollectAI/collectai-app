@@ -2589,6 +2589,80 @@ rendered in that branch), which is why the small-screen round exists.
 Also clean at 360dp, both previously recorded as unmeasured: the Watchlist
 header cluster (~387dp estimated) and the barcode manual-entry placeholder.
 
+## Every money figure was wrong for non-EUR members (2026-09-16)
+
+Found by a CLASS sweep, not by walking: five device rounds missed it because the
+walk account is EUR, where the two formatters agree.
+
+`src/lib/format.ts` has two, and only one converts:
+
+```ts
+fmtCurrency(amountEUR, settings)       // convertEUR() then format   ✅ for backend money
+formatPrice(amount, currency, locale)  // formats AS GIVEN, no FX    ✅ only if already in that currency
+```
+
+**60 render sites passed the MEMBER's currency to the non-converting one** on
+amounts the backend returns in EUR. Onboarding sets a non-EUR currency from the
+region (`REGION_DEFAULTS`), so for a US member Home's hero read **$1.348** for
+€1.347,68; JPY read **¥1.348** for ~¥221.000 (~160× out), KRW ₩1.348 for ~₩2M.
+
+**The nuance that makes this a per-site decision, not a find-and-replace:**
+`marketplace_listings` carries its own `price` + `currency`; `items` carries BOTH
+EUR columns (`predicted_price_eur`, `purchase_price_eur`, `acquisition_fees_eur`)
+and the member's own (`purchase_price` + `purchase_currency`, `asking_price`).
+Converting an amount that is already in that currency is a second bug. Every site
+was traced to its column before being changed or exempted.
+
+| area | what a member saw | fix |
+|---|---|---|
+| Home hero, chart a11y, stats strip, breakdown rows | EUR under the wrong symbol; the a11y label even disagreed with the counter beside it | a pre-bound converting formatter passed into `PortfolioValueHeader` |
+| Analytics ×13, Category performance ×6, Leaderboard, user categories | every figure ×1.08 out for USD | `fmtCurrency` |
+| Offers: `committed` total | **amounts in different currencies added together** — $100 + ¥8000 rendered "€8100" | each leg converted before summing |
+| Offers ×12, listing detail, trade screen, sell picker | a ¥8000 listing shown as "€8000" | one `viewerPrice()` per screen |
+| Watchlist target, sell-modal fees, for-sale bar, price filter | already the member's own number | `// currency-ok: <reason>` |
+
+**And the same rule on the WRITE side.** `items.estimated_value` is summed as EUR
+by `/portfolio/*` (the `value_choice = 'mine'` rung of `item_value_v1`), but both
+writers stored the member's typed number raw — a USD member typing `100` filed
+**€100**. `add-manual` had always normalised its purchase price this way, so the
+arithmetic existed one line above the bug. Now `memberAmountToEUR(amount, settings)`
+(`src/lib/fx.ts`), used by `add-manual` and `useItemDetail`.
+⚠️ That change forced its pair: the item screen's value FIELD is seeded from EUR,
+so converting only on save would have restated an untouched 125 as €113. The field
+now holds the member's currency on both ends (`toMemberNumber`), and the P/L
+converts `purchasePriceEur` so both legs share one currency.
+
+**Gate: `npm run check:currency`** (`scripts/check-currency-conversion.mjs`, in
+`verify:prebuild`) — flags `formatPrice(x, <member currency>)`; exempt with
+`// currency-ok: <why it is already in that currency>`. It cannot see two shapes,
+both found by hand and fixed: a formatter passed as a PROP (Home's hero), and a
+render with no currency argument at all (unconverted EUR under a euro symbol).
+
+**Tests, each proven to fail:** `memberAmountToEUR.test.ts` (typed → stored EUR →
+displayed round-trip; 3 of 4 fail if the conversion is removed) and
+`portfolioTotalLabel.test.ts`.
+
+⚠️ **Not yet seen on a device** (no build taken at the time of writing): verified
+by the gate, `tsc`, 401 tests and mutation proofs only.
+
+## The Items tab's "Portfolio value" was a sum of the loaded pages (2026-09-16)
+
+It summed `dataSource` — the pages fetched so far, `ITEMS_PAGE_SIZE = 20` —
+under Home's own label (`home.portfolio_value`). Over 20 items the Items tab
+printed LESS than Home for the same fact and grew as the member scrolled: the
+2026-09-12 €1.288-vs-€1.348 bug, re-created client-side.
+
+Now `/portfolio/overview.total_value` — the source Home uses — with the loaded
+sum as a fallback, marked `+` while pages remain (the Events tab's convention).
+The rule lives in `src/lib/portfolioTotalLabel.ts` so it can be tested; three
+mutations (ignore the server total, drop the `+`, drop the conversion) each make
+it red.
+
+**Why no gate caught it:** `check-silent-failures` rule A looks for a literal
+`limit: <n>` within ~1200 chars before the `reduce`. The cap here is a named
+constant, under a different key, 500+ lines away — three independent reasons it
+could not fire.
+
 ## A backend field is a value, not a label (2026-09-09)
 
 Every row on the Events tab read **`Convention • 2026-09-11 — 20:00:00`** — an

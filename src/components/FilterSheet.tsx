@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { parseMoney } from '@/lib/format';
 import {
   View,
   Text,
@@ -224,7 +225,9 @@ function FilterSheetInner({
   }, []);
 
   const handlePriceChange = useCallback((field: 'priceMin' | 'priceMax', value: string) => {
-    const numValue = value === '' ? null : parseFloat(value);
+    // parseMoney: this is the PRICE filter's typed input; parseFloat dropped the
+    // cents of "12,50" and read "1.250,00" as 1.25 (class sweep, 2026-09-16).
+    const numValue = value === '' ? null : parseMoney(value);
     setConfig((prev) => ({
       ...prev,
       [field]: isNaN(numValue as number) ? null : numValue,

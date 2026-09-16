@@ -282,6 +282,8 @@ export function computeItemDelta(
   valueEur: number | null | undefined,
 ): { pl: number; pct: number } | null {
   if (costBasisEur == null || valueEur == null) return null;
+  // numeric-ok: both params are typed `number | null | undefined` — this is a
+  // defensive cast of a NUMBER, not a parse of anything a member typed.
   const cost = Number(costBasisEur);
   const value = Number(valueEur);
   if (!Number.isFinite(cost) || !Number.isFinite(value)) return null;

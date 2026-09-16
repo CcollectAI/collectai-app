@@ -3,6 +3,7 @@
  * Extracted from sponsor/dashboard.tsx for reusability and file-size reduction.
  */
 import React from 'react';
+import { isEventPast } from '@/lib/calendar';
 import { useTranslation } from 'react-i18next';
 import {
   View,
@@ -28,9 +29,9 @@ function getEventStatusColor(
 ): string {
   if (event.status === 'cancelled') return themeColors.danger;
   if (event.status === 'draft') return themeColors.warning;
-  const eventDate = new Date(event.date);
-  const now = new Date();
-  if (eventDate < now) return themeColors.muted;
+  // isEventPast: see CampaignsTable — the chip greyed out on the morning of
+  // the event, so the sponsor thought announcing was pointless.
+  if (isEventPast(event.date, event.time, event.endDate)) return themeColors.muted;
   return themeColors.success;
 }
 

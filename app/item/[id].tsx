@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { convertEUR } from '@/lib/fx';
 import { router , useLocalSearchParams, Redirect } from 'expo-router';
 import { isUuid } from '@/lib/ids';
 import {
@@ -44,7 +45,7 @@ import { collectorsApi } from "@/api/collectorsApi";
 import { enrichOnDemand } from "@/api/marketplaceApi";
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import logger from "@/utils/logger";
-import { formatPrice, getCurrencySymbol, isUnpriced, UNPRICED_LABEL } from "@/lib/format";
+import { formatPrice, getCurrencySymbol, isUnpriced, parseMoney, UNPRICED_LABEL } from "@/lib/format";
 import { computeItemDelta } from '@/lib/portfolioAnalytics';
 import { ValueSourceChip } from "@/components/ValueSourceChip";
 import type { CurrencyCode } from "@/data/types";
@@ -102,7 +103,9 @@ interface PriceTrendData {
 // Helper: parse string|number to number for formatPrice
 const toNum = (value: string | number | undefined | null): number | undefined => {
   if (value === undefined || value === null || value === '') return undefined;
-  const num = typeof value === 'string' ? parseFloat(value) : value;
+  // parseMoney for strings: `toNum` is fed editableValue, which a member types —
+  // "12,50" via parseFloat is 12 (class sweep, 2026-09-16).
+  const num = typeof value === 'string' ? (parseMoney(value) ?? NaN) : value;
   if (isNaN(num)) return undefined;
   return num;
 };
@@ -356,10 +359,21 @@ function ItemDetailScreen() {
   const adoptedCoreRef = useRef(false);
 
   // ── Consolidated local state (useItemDetail hook) ──────────────────────
+  // The value FIELD holds the member's own currency — it is what they read and
+  // what they type — while every stored money column is EUR. So EUR comes in
+  // here converted, and useItemDetail converts back on save
+  // (memberAmountToEUR). Before 2026-09-16 the field was seeded with the EUR
+  // number under the member's symbol, and the typed number was filed as EUR.
+  const toMemberNumber = useCallback(
+    (eur: number | null | undefined): string =>
+      eur == null || !Number.isFinite(eur) ? '' : String(Math.round(convertEUR(eur, settings) * 100) / 100),
+    [settings],
+  );
+
   const detail = useItemDetail({
     id, isDraft,
     initialName: name, initialCategory: category, initialCollection: collection,
-    initialCondition: condition, initialValue: value, initialNotes: initialNotes,
+    initialCondition: condition, initialValue: toMemberNumber(toNum(value)), initialNotes: initialNotes,
     // RAW half, and the currency it is in — see the note on the state itself.
     // `savedCore` is the fetched row; before it lands these are empty, which is
     // correct: an empty field means "not set", and the adopt-effect below fills
@@ -387,7 +401,7 @@ function ItemDetailScreen() {
       detail.adoptLoadedValues({ condition: savedCore.condition });
     }
     if (savedCore.value != null && (detail.editableValue === "0" || !detail.editableValue)) {
-      detail.adoptLoadedValues({ value: String(savedCore.value) });
+      detail.adoptLoadedValues({ value: toMemberNumber(toNum(savedCore.value)) });
     }
     // Notes come from the DB, not just route params. Without this the save
     // fixed in useItemDetail would still LOOK broken: reopening the item (deep
@@ -414,7 +428,7 @@ function ItemDetailScreen() {
       detail.adoptLoadedValues({ acquisitionFees: String(savedCore.acquisitionFees) });
     }
     adoptedCoreRef.current = true;
-  }, [savedCore, detail]);
+  }, [savedCore, detail, toMemberNumber]);
   const {
     isEditing, setIsEditing,
     editsDirty, cancelEdits,
@@ -991,6 +1005,7 @@ function ItemDetailScreen() {
       const message =
         `Check out my ${editableName} on Sparrow Collect` +
         (editableCondition && editableCondition !== 'Not set' ? `\nCondition: ${editableCondition}` : '') +
+        // currency-ok: `val` comes from editableValue, which holds the member's own currency
         (val ? `\nEstimated value: ${formatPrice(val, settings.currency)}` : '') +
         `\n\nhttps://sparrowcollect.com`;
       await Share.share({ message });
@@ -1329,6 +1344,7 @@ function ItemDetailScreen() {
                         the primary thing rather than as more decoration
                         (docs/ui-playbook.md, "48 accent usages"). */}
                     <Text style={[styles.valuationAmount, { color: theme.accent }]}>
+                      {/* currency-ok: editableValue is in the member's currency (seeded via toMemberNumber) */}
                       {formatPrice(toNum(editableValue), settings.currency)}
                     </Text>
                     {savedCore?.valueSource ? <ValueSourceChip source={savedCore.valueSource} /> : null}
@@ -1357,8 +1373,14 @@ function ItemDetailScreen() {
                   and "+EUR 0 (0%)" would state a measured break-even for a
                   member who simply never told us what they paid. */}
               {!isDraft && !isEditing && !isUnpriced(editableValue) ? (() => {
+                // BOTH legs in the member's currency: `purchasePriceEur` is
+                // EUR, `editableValue` is what they typed. Subtracting one from
+                // the other unconverted mixed two currencies (2026-09-16).
+                const paidInMemberCurrency = savedCore?.purchasePriceEur == null
+                  ? savedCore?.purchasePriceEur
+                  : convertEUR(savedCore.purchasePriceEur, settings);
                 const delta = computeItemDelta(
-                  savedCore?.purchasePriceEur,
+                  paidInMemberCurrency,
                   toNum(editableValue),
                 );
                 if (!delta) return null;
@@ -1370,10 +1392,12 @@ function ItemDetailScreen() {
                 const sign = delta.pl > 0 ? '+' : delta.pl < 0 ? '-' : '';
                 return (
                   <Text style={[styles.valuationDelta, { color: tone }]}>
+                    {/* currency-ok: both legs converted above, so this is already in settings.currency */}
                     {sign}{formatPrice(Math.abs(delta.pl), settings.currency)}
                     {' ('}{sign}{Math.abs(delta.pct).toFixed(1)}%{') '}
                     <Text style={{ color: theme.muted }}>
-                      on {formatPrice(toNum(savedCore?.purchasePriceEur), settings.currency)} paid
+                      {/* currency-ok: paidInMemberCurrency is converted above */}
+                      on {formatPrice(paidInMemberCurrency ?? null, settings.currency)} paid
                     </Text>
                   </Text>
                 );

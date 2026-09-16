@@ -52,7 +52,7 @@ import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { useTranslation } from "react-i18next";
-import { formatPrice } from "@/lib/format";
+import { fmtCurrency } from '@/lib/format';
 import { useToast } from "@/components/Toast";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
 import { collectorsApi } from "@/api/collectorsApi";
@@ -700,7 +700,15 @@ function PortfolioScreen() {
               delta={delta}
               deltaPct={deltaPct}
               currency={settings.currency}
-              formatPrice={formatPrice}
+              // A CONVERTING formatter, not the raw one. `total` comes from
+              // /portfolio/timeseries in EUR, and the raw formatPrice only
+              // relabels: a member whose region set USD read "$1.348" for
+              // €1.347,68, and a JPY member was ~160x out (2026-09-16 class
+              // sweep). One bound function also keeps the counter, the delta
+              // and the screen-reader label on the same number — the a11y
+              // label called fp(total) with no currency at all, so it said
+              // euros while the counter said dollars.
+              formatPrice={(amount: number) => fmtCurrency(amount, settings)}
               // Counter animation is a tween to a target; while scrubbing the
               // target changes every few ms, so it lags the finger. Snap instead.
               animationsEnabled={settings.animationsEnabled && !scrubPoint}
@@ -723,11 +731,11 @@ function PortfolioScreen() {
               <Text style={[styles.estimatedNote, { color: colors.muted }]}>
                 {estimatedShare.count === 1
                   ? t('home.estimated_share_one', {
-                      amount: formatPrice(estimatedShare.total, settings.currency),
+                      amount: fmtCurrency(estimatedShare.total, settings),
                       defaultValue: '{{amount}} of this is estimated — 1 item we have no market comps for',
                     })
                   : t('home.estimated_share_many', {
-                      amount: formatPrice(estimatedShare.total, settings.currency),
+                      amount: fmtCurrency(estimatedShare.total, settings),
                       count: estimatedShare.count,
                       defaultValue: '{{amount}} of this is estimated — {{count}} items we have no market comps for',
                     })}
@@ -753,7 +761,7 @@ function PortfolioScreen() {
               accessibilityLabel={
                 valueUnknown
                   ? 'Portfolio chart: value not loaded yet'
-                  : `Portfolio chart: current value ${formatPrice(total)}, ${isPositive ? 'up' : 'down'} ${formatPct(deltaPct)} over ${range}`
+                  : `Portfolio chart: current value ${fmtCurrency(total, settings)}, ${isPositive ? 'up' : 'down'} ${formatPct(deltaPct)} over ${range}`
               }
             >
               {loading ? (
@@ -826,7 +834,7 @@ function PortfolioScreen() {
             <View style={[styles.globalStatDivider, { backgroundColor: colors.border }]} />
             <View style={styles.globalStatItem}>
               <Text style={[styles.globalStatValue, { color: colors.accent }]}>
-                {formatPrice(globalStatsTotalValue)}
+                {fmtCurrency(globalStatsTotalValue, settings)}
               </Text>
               <Text style={[styles.globalStatLabel, { color: colors.muted }]}>{t('home.portfolio')}</Text>
             </View>
@@ -875,7 +883,10 @@ function PortfolioScreen() {
           loading={breakdownLoading}
           failed={breakdownFailed}
           onRetry={loadCategoryBreakdown}
-          formatPrice={(v) => formatPrice(v)}
+          // Converting, like the hero above it: these rows are EUR from
+          // /analytics/portfolio/category-breakdown and sit directly under the
+          // collection value, so they must not use a different rate or symbol.
+          formatPrice={(v: number) => fmtCurrency(v, settings)}
           resolveCategoryName={(raw) => {
             // Same resolution the items-tab copy used: the registry name when
             // it is a real category, else formatCategoryName — never the raw

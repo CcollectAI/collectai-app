@@ -12,7 +12,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { formatPrice } from '@/lib/format';
+import { fmtCurrency } from '@/lib/format';
 import { radius, text, fontWeight, shadow } from '@/theme/tokens';
 import { categoryDisplayName } from '@/constants/categories';
 
@@ -81,7 +81,7 @@ function CategoryPerformanceSectionInner({
             style={[styles.catStatRow, { borderBottomColor: colors.border }]}
             onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push(`/categories/${encodeURIComponent(cat.category)}` as Href); }}
             accessibilityRole="button"
-            accessibilityLabel={`${categoryDisplayName(cat.category)}: ${cat.item_count} items, ${formatPrice(cat.total_value, settings.currency ?? 'EUR')}, 7d ${cat.trend}`}
+            accessibilityLabel={`${categoryDisplayName(cat.category)}: ${cat.item_count} items, ${fmtCurrency(cat.total_value, settings)}, 7d ${cat.trend}`}
           >
             <View style={styles.catStatLeft}>
               <View style={styles.catStatNameRow}>
@@ -104,13 +104,13 @@ function CategoryPerformanceSectionInner({
                   : cat.min_item_value != null &&
                     cat.max_item_value != null &&
                     cat.max_item_value > cat.min_item_value
-                    ? `${cat.item_count} items · median ${formatPrice(cat.median_value, settings.currency ?? 'EUR')} · ${formatPrice(cat.min_item_value, settings.currency ?? 'EUR')}–${formatPrice(cat.max_item_value, settings.currency ?? 'EUR')}`
-                    : `${cat.item_count} items · median ${formatPrice(cat.median_value, settings.currency ?? 'EUR')}`}
+                    ? `${cat.item_count} items · median ${fmtCurrency(cat.median_value, settings)} · ${fmtCurrency(cat.min_item_value, settings)}–${fmtCurrency(cat.max_item_value, settings)}`
+                    : `${cat.item_count} items · median ${fmtCurrency(cat.median_value, settings)}`}
               </Text>
             </View>
             <View style={styles.catStatRight}>
               <Text style={[styles.catStatValue, { color: colors.text }]}>
-                {formatPrice(cat.total_value, settings.currency ?? 'EUR')}
+                {fmtCurrency(cat.total_value, settings)}
               </Text>
               <View style={styles.catStatTrend}>
                 <Ionicons name={trendIcon} size={12} color={trendColor} />

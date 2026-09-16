@@ -546,6 +546,10 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
     // One chip for the range: "€10–€100" is a single idea, and splitting it into
     // two chips invites half-removals that read as a broken control.
     if (priceMin !== null || priceMax !== null) {
+      // priceMin/priceMax are numbers the MEMBER typed into the filter in their
+      // own currency (sent to the server as price_min/price_max), so echoing
+      // them back unconverted is exactly what they typed.
+      // currency-ok: the member's own input, already in settings.currency.
       const fmt = (v: number) => formatPrice(v, settings.currency, settings.numberLocale);
       const label =
         priceMin !== null && priceMax !== null
@@ -691,6 +695,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
             // Formatted in the VIEWER's currency, the same conversion the tile
             // does — sending "€8000" for a ¥8000 listing would be the exact bug
             // ListingCard converts to avoid.
+            // currency-ok: convertCurrency (below) moves it into settings.currency first.
             priceLabel: formatPrice(
               convertCurrency(
                 shareFor.price,

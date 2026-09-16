@@ -281,6 +281,7 @@ export const ItemDetailsCard = React.memo(function ItemDetailsCard(props: ItemDe
         accessibilityLabel={
           isUnpriced(editableValue)
             ? `Estimated value: ${UNPRICED_LABEL}`
+            // currency-ok: this label mirrors the INPUT on the same row (the block is gated on isDraft || isEditing), and that input holds the number exactly as the member typed it — unconverted. Announcing a converted figure would read back a different number from the one on screen. The write path storing that raw number into items.estimated_value, which the server reads as EUR (portfolio_router.py:170), is a separate defect reported 2026-09-16.
             : `Estimated value: ${formatPrice(toNum(editableValue), settings.currency)}`
         }
       >

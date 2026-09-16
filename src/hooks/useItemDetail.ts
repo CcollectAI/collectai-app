@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { memberAmountToEUR } from '@/lib/fx';
 import { Platform, Keyboard } from 'react-native';
 import { router } from 'expo-router';
 import { dataProvider } from '@/data';
@@ -353,11 +354,11 @@ export function useItemDetail(params: UseItemDetailParams) {
       // sent four fields and the estimate and condition were simply lost, so a
       // scanned item was saved with no value and the member had to retype the
       // figure the app had just shown them.
-      const num = (v: string | undefined) => {
-        if (v === undefined || v === '') return null;
-        const n = parseFloat(v);
-        return Number.isNaN(n) ? null : n;
-      };
+      // parseMoney, not parseFloat: this field is typed by a member, and on a
+      // nl/de/fr keyboard "12,50" parses as 12 — the cents vanish silently
+      // (class sweep, 2026-09-16). parseMoney treats the LAST separator as the
+      // decimal point, so "1.250,00" is 1250 rather than 1.25.
+      const num = (v: string | undefined) => (v === undefined || v === '' ? null : parseMoney(v));
       const scanValue = num(editableValue) ?? num(q50) ?? num(initialValue);
       const persisted = await dataProvider.persistQuickscanDraft({
         photoUri: imageUri || '',
@@ -421,8 +422,14 @@ export function useItemDetail(params: UseItemDetailParams) {
       // the name/category, leaving a partial save behind an error toast.
       if (editableCollection && editableCollection !== 'Not set') extraPatch.collection_name = editableCollection;
       if (editableCondition && editableCondition !== 'Not set') extraPatch.condition = editableCondition;
-      const numericValue = parseFloat(editableValue);
-      if (!isNaN(numericValue) && numericValue > 0) extraPatch.estimated_value = numericValue;
+      const numericValue = parseMoney(editableValue) ?? NaN;
+      // EUR for storage: the member types in their own currency and the server
+      // sums `estimated_value` as EUR (item_value_v1, `value_choice = 'mine'`).
+      // Writing it raw filed $100 as EUR 100 (class sweep, 2026-09-16); the
+      // add-manual writer has always normalised its purchase price this way.
+      if (!isNaN(numericValue) && numericValue > 0) {
+        extraPatch.estimated_value = memberAmountToEUR(numericValue, settings);
+      }
       if (Object.keys(extraPatch).length > 0) {
         // Check the error: this used to discard the result, so a failed or
         // timed-out write fell straight through to "Changes saved" — a false
@@ -449,10 +456,14 @@ export function useItemDetail(params: UseItemDetailParams) {
       const purchaseChanged = trimmedPurchase !== (initialPurchasePrice ?? '').trim();
       const feesChanged = trimmedFees !== (initialAcquisitionFees ?? '').trim();
 
-      const parseMoney = (raw: string, label: string): number | null => {
+      // Validation wrapper around the CANONICAL parser. This used to be a local
+      // `parseMoney` that shadowed the import and only did
+      // `replace(',', '.')`, so a typed "1.250,00" became 1.25 — a cost basis
+      // 1000x low (class sweep, 2026-09-16).
+      const parseMoneyField = (raw: string, label: string): number | null => {
         if (raw === '') return null;
-        const n = parseFloat(raw.replace(',', '.'));
-        if (isNaN(n) || n < 0) throw new Error(`Enter ${label} of 0 or more, or leave it blank`);
+        const n = parseMoney(raw);
+        if (n === null || n < 0) throw new Error(`Enter ${label} of 0 or more, or leave it blank`);
         return n;
       };
 
@@ -465,12 +476,12 @@ export function useItemDetail(params: UseItemDetailParams) {
         // states and the route distinguishes them via model_fields_set.
         await collectorsApi.updateItemPurchase(
           id,
-          purchaseChanged ? parseMoney(trimmedPurchase, 'a purchase price') : undefined,
+          purchaseChanged ? parseMoneyField(trimmedPurchase, 'a purchase price') : undefined,
           // The currency the FIELD is in: the one it was stored in if we have
           // it, else the member's current setting. Never inferred server-side.
           (initialPurchaseCurrency || settings.currency || 'EUR') as string,
           undefined,
-          feesChanged ? parseMoney(trimmedFees, 'fees') : undefined,
+          feesChanged ? parseMoneyField(trimmedFees, 'fees') : undefined,
         );
       }
 
@@ -483,7 +494,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     } finally {
       setSavingNotes(false);
     }
-  }, [id, isDraft, editableName, editableCategory, editableCollection, editableCondition, editableValue, editablePurchasePrice, initialPurchasePrice, editableAcquisitionFees, initialAcquisitionFees, initialPurchaseCurrency, settings.currency, settings.hapticsEnabled, showToast]);
+  }, [id, isDraft, editableName, editableCategory, editableCollection, editableCondition, editableValue, editablePurchasePrice, initialPurchasePrice, editableAcquisitionFees, initialAcquisitionFees, initialPurchaseCurrency, settings, showToast]);
 
   // ── Feedback handlers ──────────────────────────────────────────────────
   const onSubmitSalePrice = useCallback(async () => {

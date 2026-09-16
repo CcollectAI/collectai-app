@@ -40,6 +40,26 @@ export function convertEUR(amountEUR: number, s: Pick<Settings,'currency'|'fxRat
 }
 
 /** Convert between any two supported currencies via EUR as pivot. */
+/**
+ * A member-entered amount, normalised to EUR **for storage**.
+ *
+ * Every money column the backend sums is EUR (`purchase_price_eur`,
+ * `predicted_price_eur`, and `items.estimated_value`, which
+ * `/portfolio/*` reads as the member's own valuation via
+ * `item_value_v1`'s `value_choice = 'mine'` rung). A number typed by a member
+ * is in THEIR currency, so writing it raw files $100 as EUR 100 — found
+ * 2026-09-16 by a class sweep. `add-manual` already did this for
+ * `purchase_price_eur`; this is that arithmetic, named, so both writers share it.
+ *
+ * Rounded to cents, like the purchase path.
+ */
+export function memberAmountToEUR(
+  amount: number,
+  s: Pick<Settings, 'currency' | 'fxRates'>,
+): number {
+  return Math.round(convertCurrency(amount, s.currency, 'EUR', s.fxRates) * 100) / 100;
+}
+
 export function convertCurrency(
   amount: number,
   from: Currency,

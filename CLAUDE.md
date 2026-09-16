@@ -75,11 +75,17 @@ HEAD since May, unchanged by this diff.
   (no fixture rows), chat-demo → Inbox. With Supabase up: Items tab totals sum to
   the €1.348 header, one-item sections have no footer, item edit Cancel restores
   the name, Watchlist cluster fits at 411dp, categories pills compact.
-- ⛔ **Production API unreachable** (from ~20:00 CEST): `api.sparrowcollect.com`
-  443 and SSH 22 both time out from the laptop while Google/Supabase answer in
-  0.1 s. Local AWS credentials are invalid (`InvalidClientTokenId`), so instance
-  state could not be read — needs the EC2 console. The walk's timeouts were this,
-  not only the emulator (`docs/ANDROID_LAUNCH.md` gotcha 17).
+- ⛔→✅ **"Production API unreachable" was MY WRONG DIAGNOSIS** (2026-09-15
+  ~20:00 → 09-16 20:45). 443, SSH 22 and ping all failed from the laptop while
+  Google/Supabase answered in 0.1 s, and I called the instance down or hung and
+  asked Merle to reboot it. It was never down: **uptime 61 days**, bake active
+  since the 09-14 deploy, `bake.log` logging ~90 lines/hour throughout. The block
+  was the network path to that laptop (security-group / IP allowlist; the home IP
+  had changed). EC2 SGs drop ICMP, so "ping fails" proves nothing. Rounds 1-4 of
+  the sweep therefore ran against a dead-to-us API — useful as failure-state
+  rounds, but loaded/empty states waited a day for nothing.
+  `docs/RUNBOOK.md` §2 opens with the right diagnostic;
+  memory `learning_unreachable_is_not_down`.
 - **`scripts/android_jsswap.sh`** — JS-only APK in minutes by swapping a
   Hermes bundle into the last release APK and debug-signing it. Proven with the
   base APK's own bundle. `docs/ANDROID_LAUNCH.md` "JS-only APK".

@@ -77,6 +77,9 @@ function CatalogItemMuseumScreen() {
   const rarity = params.rarity || null;
   const brand = params.brand || null;
   const imageUrl = params.image_url || null;
+  // numeric-ok: a route param, always `String(<number>)` written by the pushing
+  // screen (search.tsx:636, market-movers.tsx:182, category-browse.tsx:187,
+  // barcode-scan.tsx:337) — machine-formatted with a dot, never typed.
   const paramPrice = params.estimated_price ? parseFloat(params.estimated_price) : null;
 
   /**

@@ -43,6 +43,8 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useAsync } from "@/hooks/useAsync";
 import { useSettings } from "@/lib/settings";
 import { formatPrice } from "@/lib/format";
+import { convertCurrency } from "@/lib/fx";
+import type { CurrencyCode } from "@/data/types";
 import { collectorsApi } from "@/api/collectorsApi";
 import { categoryDisplayName } from "@/constants/categories";
 import { radius, text as textToken, fontWeight } from "@/theme/tokens";
@@ -95,6 +97,8 @@ function ListingDetailScreen() {
   const { settings } = useSettings();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
 
+
+
   const {
     data: listing,
     loading,
@@ -115,6 +119,26 @@ function ListingDetailScreen() {
       throw err;
     }
   }, [id]);
+
+  /**
+   * A listing's `price` is in `listing.currency` — the SELLER's currency, set
+   * when they listed it (`sell/new.tsx` posts `currency: settings.currency`),
+   * not the viewer's. Formatting it with the viewer's currency printed the
+   * seller's number under the viewer's symbol.
+   *
+   * Convert, like the grid tile already does (`listings.tsx:169`), so the same
+   * listing reads the same in the grid and here.
+   */
+  const viewerPrice = useCallback(
+    (amount: number) =>
+      // currency-ok: convertCurrency has already moved this into settings.currency.
+      formatPrice(
+        convertCurrency(amount, (listing?.currency as CurrencyCode) || "EUR", settings.currency, settings.fxRates),
+        settings.currency,
+        settings.numberLocale,
+      ),
+    [listing?.currency, settings.currency, settings.fxRates, settings.numberLocale],
+  );
 
   const handleMessage = useCallback(() => {
     if (!listing) return;
@@ -543,11 +567,7 @@ function ListingDetailScreen() {
             {listing.title}
           </Text>
           <Text style={[styles.price, { color: colors.text }]}>
-            {formatPrice(
-              listing.price,
-              settings.currency,
-              settings.numberLocale,
-            )}
+            {viewerPrice(listing.price)}
           </Text>
           {/* All-in price. `shipping_cost` is NULLABLE and null means "the
               seller didn't say", which is NOT zero — rendering it as "free
@@ -568,7 +588,7 @@ function ListingDetailScreen() {
                   // the one worth showing. The exact shipping figure is
                   // deliberately NOT rendered alongside it: any second money
                   // number here re-creates the sum the reader will check.
-                  `${formatPrice(listing.price + listing.shipping_cost, settings.currency, settings.numberLocale)} total incl. shipping`
+                  `${viewerPrice(listing.price + listing.shipping_cost)} total incl. shipping`
                 : "Free shipping"}
             </Text>
           ) : (
@@ -940,11 +960,7 @@ function ListingDetailScreen() {
         <View style={styles.sheetBody}>
           <Text style={[styles.sheetLabel, { color: colors.muted }]}>
             Currently{" "}
-            {formatPrice(
-              listing.price,
-              settings.currency,
-              settings.numberLocale,
-            )}
+            {viewerPrice(listing.price)}
           </Text>
           <View
             style={[

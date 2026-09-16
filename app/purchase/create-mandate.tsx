@@ -6,6 +6,9 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
+// parseMoney: a member typing "12,50" on a nl/de keyboard had their
+// buying threshold stored as 12 (class sweep, 2026-09-16).
+import { parseMoney } from '@/lib/format';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
@@ -193,7 +196,7 @@ function CreateMandateScreen() {
           name: nameField.value.trim(),
           status,
           category: category || undefined,
-          max_price: parseFloat(maxPriceField.value),
+          max_price: parseMoney(maxPriceField.value) ?? 0,
           min_trust_score: minTrust,
           allowed_sources: selectedSources.length ? selectedSources : undefined,
           region: region || undefined,
@@ -205,7 +208,7 @@ function CreateMandateScreen() {
           name: nameField.value.trim(),
           search_query: nameField.value.trim(),
           category: category || undefined,
-          max_price: parseFloat(maxPriceField.value),
+          max_price: parseMoney(maxPriceField.value) ?? 0,
           min_trust_score: minTrust,
           allowed_sources: selectedSources.length ? selectedSources : undefined,
           region: region || undefined,

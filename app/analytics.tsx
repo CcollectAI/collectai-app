@@ -45,7 +45,7 @@ import {
 import { ItemsEmptyState } from "@/components/items";
 import { EmptyState } from "@/components/EmptyState";
 import { splitPortfolioByValueSource, summariseMarkets, rankPositions, rankMovers } from '@/lib/portfolioAnalytics';
-import { formatPrice } from "@/lib/format";
+import { fmtCurrency } from '@/lib/format';
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { useAsync } from "@/hooks/useAsync";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
@@ -573,7 +573,7 @@ function AnalyticsScreen() {
 
             <Text style={[styles.heroLabel, { color: colors.muted }]}>{t('analytics.current_value', { defaultValue: 'Current value' })}</Text>
             <Text style={[styles.heroValue, { color: colors.text }]}>
-              {formatPrice(pl.currentValue, settings.currency ?? 'EUR')}
+              {fmtCurrency(pl.currentValue, settings)}
             </Text>
 
             {/* ONE explanation, once. The no-baseline case was written three
@@ -583,10 +583,10 @@ function AnalyticsScreen() {
             {pl.hasBaseline ? (
               <View style={styles.heroDeltaRow}>
                 <Text style={[styles.heroDelta, { color: isPositive ? colors.success : colors.danger }]}>
-                  {`${pl.deltaAbs >= 0 ? '+' : ''}${formatPrice(pl.deltaAbs, settings.currency ?? 'EUR')}`}
+                  {`${pl.deltaAbs >= 0 ? '+' : ''}${fmtCurrency(pl.deltaAbs, settings)}`}
                 </Text>
                 <Text style={[styles.heroFrom, { color: colors.muted }]}>
-                  {`from ${formatPrice(pl.startValue, settings.currency ?? 'EUR')}`}
+                  {`from ${fmtCurrency(pl.startValue, settings)}`}
                 </Text>
               </View>
             ) : (
@@ -605,7 +605,7 @@ function AnalyticsScreen() {
                   <Text style={[styles.splitLabel, { color: colors.muted }]}>{t('analytics.you_paid', { defaultValue: 'You paid' })}</Text>
                   <Text style={[styles.splitValue, { color: colors.text }]}>
                     {valueSplit.purchaseCount > 0
-                      ? formatPrice(valueSplit.purchaseTotal, settings.currency ?? 'EUR')
+                      ? fmtCurrency(valueSplit.purchaseTotal, settings)
                       : '—'}
                   </Text>
                   <Text style={[styles.splitMeta, { color: colors.muted }]}>
@@ -616,7 +616,7 @@ function AnalyticsScreen() {
                   <Text style={[styles.splitLabel, { color: colors.muted }]}>Market</Text>
                   <Text style={[styles.splitValue, { color: colors.text }]}>
                     {valueSplit.marketCount > 0
-                      ? formatPrice(valueSplit.marketTotal, settings.currency ?? 'EUR')
+                      ? fmtCurrency(valueSplit.marketTotal, settings)
                       : '—'}
                   </Text>
                   {/* WHICH markets that figure rests on. EU and US price the
@@ -643,7 +643,7 @@ function AnalyticsScreen() {
                   <Text style={[styles.splitLabel, { color: colors.muted }]}>Estimated</Text>
                   <Text style={[styles.splitValue, { color: colors.muted }]}>
                     {valueSplit.estimateCount > 0
-                      ? formatPrice(valueSplit.estimateTotal, settings.currency ?? 'EUR')
+                      ? fmtCurrency(valueSplit.estimateTotal, settings)
                       : '—'}
                   </Text>
                   <Text style={[styles.splitMeta, { color: colors.muted }]}>
@@ -722,7 +722,7 @@ function AnalyticsScreen() {
                     <Text style={[styles.allocationName, { color: colors.text }]}>{categoryDisplayName(a.category)}</Text>
                   </View>
                   <View style={styles.allocationRight}>
-                    <Text style={[styles.allocationValue, { color: colors.text }]}>{formatPrice(a.totalValue, settings.currency ?? 'EUR')}</Text>
+                    <Text style={[styles.allocationValue, { color: colors.text }]}>{fmtCurrency(a.totalValue, settings)}</Text>
                     <Text style={[styles.allocationPct, { color: colors.muted }]}>{formatPct(a.weight, false)}</Text>
                   </View>
                 </View>
@@ -844,7 +844,7 @@ function AnalyticsScreen() {
                   </View>
                   <View style={styles.posRight}>
                     <Text style={[styles.posPl, { color: colors.text }]}>
-                      {formatPrice(it.currentValue, settings.currency ?? 'EUR')}
+                      {fmtCurrency(it.currentValue, settings)}
                     </Text>
                     <Text style={[styles.posPlPct, { color: up ? colors.success : colors.danger }]}>
                       {formatPct(pct)}
@@ -898,9 +898,9 @@ function AnalyticsScreen() {
                     {/* Cost -> value, because a P/L figure alone is unreadable
                         without what it was measured against. */}
                     <Text style={[styles.posBasis, { color: colors.muted }]} numberOfLines={1}>
-                      {formatPrice(basis, settings.currency ?? 'EUR')}
+                      {fmtCurrency(basis, settings)}
                       {'  →  '}
-                      {formatPrice(it.currentValue, settings.currency ?? 'EUR')}
+                      {fmtCurrency(it.currentValue, settings)}
                     </Text>
                     {/* The BAND. A point estimate and a range support opposite
                         decisions, and this is the only place the app shows it
@@ -908,13 +908,13 @@ function AnalyticsScreen() {
                         faked when the model produced none. */}
                     {it.q10 != null && it.q90 != null ? (
                       <Text style={[styles.posBand, { color: colors.muted }]} numberOfLines={1}>
-                        {`range ${formatPrice(it.q10, settings.currency ?? 'EUR')}–${formatPrice(it.q90, settings.currency ?? 'EUR')}`}
+                        {`range ${fmtCurrency(it.q10, settings)}–${fmtCurrency(it.q90, settings)}`}
                       </Text>
                     ) : null}
                   </View>
                   <View style={styles.posRight}>
                     <Text style={[styles.posPl, { color: up ? colors.success : colors.danger }]}>
-                      {`${up ? '+' : ''}${formatPrice(pl, settings.currency ?? 'EUR')}`}
+                      {`${up ? '+' : ''}${fmtCurrency(pl, settings)}`}
                     </Text>
                     <Text style={[styles.posPlPct, { color: up ? colors.success : colors.danger }]}>
                       {formatPct(pct)}

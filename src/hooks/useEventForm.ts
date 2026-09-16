@@ -5,6 +5,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { parseMoney } from '@/lib/format';
 import { useFormField, validateAll, type FormField } from '@/hooks/useFormField';
 import { compose, required, maxLength, dateYMD, url } from '@/lib/validate';
 import { useToast } from '@/components/Toast';
@@ -255,7 +256,10 @@ export function buildEventInput(
     ...(form.latitude !== undefined ? { latitude: form.latitude } : {}),
     ...(form.longitude !== undefined ? { longitude: form.longitude } : {}),
     ...(form.ticketPriceCents.trim()
-      ? { ticketPriceCents: Math.round(parseFloat(form.ticketPriceCents) * 100) }
+      // parseMoney: "12,50" typed on a nl/de keyboard parsed as 12, so the
+      // organiser charged EUR 12,00 and the 5% fee was computed on the wrong
+      // base (class sweep, 2026-09-16).
+      ? { ticketPriceCents: Math.round((parseMoney(form.ticketPriceCents) ?? 0) * 100) }
       : {}),
     ...extras,
   };

@@ -53,6 +53,8 @@ import { useAsync } from '@/hooks/useAsync';
 import { useToast } from '@/components/Toast';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { formatPrice } from '@/lib/format';
+import { convertCurrency } from '@/lib/fx';
+import type { CurrencyCode } from '@/data/types';
 import { timeAgo } from '@/lib/timeAgo';
 import { collectorsApi } from '@/api/collectorsApi';
 import type { P2POffer } from '@/api/p2pApi';
@@ -82,6 +84,23 @@ function TradeScreen() {
   const { data: offer, loading, error, retry } = useAsync(
     async () => (offerId ? await collectorsApi.p2pGetOffer(String(offerId)) : null),
     [offerId],
+  );
+
+  /**
+   * `offer.amount` is in the LISTING's currency (`P2POffer.currency`,
+   * p2pApi.ts:311) — the seller chose it, not the viewer. Convert before
+   * rendering, the same way the marketplace tile does (`listings.tsx:169`),
+   * or a ¥8000 bid reads "€8000" to a European viewer.
+   */
+  const viewerPrice = useCallback(
+    (amount: number) =>
+      // currency-ok: convertCurrency has already moved this into settings.currency.
+      formatPrice(
+        convertCurrency(amount, (offer?.currency as CurrencyCode) || 'EUR', settings.currency, settings.fxRates),
+        settings.currency,
+        settings.numberLocale,
+      ),
+    [offer?.currency, settings.currency, settings.fxRates, settings.numberLocale],
   );
 
   /**
@@ -289,7 +308,7 @@ function TradeScreen() {
                 {offer.listing_title || 'Listing'}
               </Text>
               <Text style={[styles.amount, { color: colors.text }]}>
-                {formatPrice(offer.amount, settings.currency, settings.numberLocale)}
+                {viewerPrice(offer.amount)}
                 {/* Only against a stated asking price — a bare percentage off
                     an unstated basis is a number nobody can check. */}
                 {pct !== null ? (
@@ -564,7 +583,7 @@ function TradeScreen() {
         onClose={() => setSettleOpen(false)}
         mode={offer.i_am_buyer ? 'pay' : 'ship'}
         isBuyer={offer.i_am_buyer}
-        amountLabel={formatPrice(offer.amount, settings.currency, settings.numberLocale)}
+        amountLabel={viewerPrice(offer.amount)}
         offerId={offer.id}
         colors={colors}
       />

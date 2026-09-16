@@ -131,8 +131,11 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
       }
 
       const topOffset = (startHour - START_HOUR) * HOUR_HEIGHT;
+      // parseEventDate (LOCAL midnight), not new Date (UTC midnight): `start`
+      // is local, so mixing the two made a multi-day block's height wrong by
+      // the UTC offset — 2h in NL, 9h in Tokyo (class sweep, 2026-09-16).
       const durationHrs = evt.endDate
-        ? (new Date(evt.endDate).getTime() - start.getTime()) / (1000 * 60 * 60)
+        ? (parseEventDate(evt.endDate).getTime() - start.getTime()) / (1000 * 60 * 60)
         : 1;
       const height = Math.max(Math.min(durationHrs, TOTAL_HOURS) * HOUR_HEIGHT, 26);
       const startTime = start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });

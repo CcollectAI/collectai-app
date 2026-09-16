@@ -11,7 +11,7 @@ import { getCategoryById } from '@/data/categories';
 import { AnimatedPressable, useEnterReveal, useStaggerReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings, type NumberLocale } from '@/lib/settings';
-import { formatPrice, formatNumber } from '@/lib/format';
+import { formatNumber, fmtCurrency } from '@/lib/format';
 import logger from '@/utils/logger';
 import { MEDAL_COLORS, TWITCH_PURPLE } from '@/constants/colors';
 import { BETA_MODE, COMMUNITY_GATED } from '@/config/featureFlags';
@@ -208,7 +208,7 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
           const documentedLabel = `${r.documented_pct ?? 0}% complete`;
           const stat =
             effectiveMetric === 'value'
-              ? formatPrice(r.value_eur, settings.currency, settings.numberLocale)
+              ? fmtCurrency(r.value_eur, settings)
               : effectiveMetric === 'documented'
                 ? documentedLabel
                 : itemsLabel;
@@ -221,7 +221,7 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
               : effectiveMetric === 'documented'
                 ? `${formatNumber(r.documented_count ?? 0, settings.numberLocale)} of ${itemsLabel} fully documented`
                 : valueRankingAvailable
-                  ? formatPrice(r.value_eur, settings.currency, settings.numberLocale)
+                  ? fmtCurrency(r.value_eur, settings)
                   : documentedLabel;
           return (
             <Animated.View key={r.user_id} style={getCatItemStyle(index)}>

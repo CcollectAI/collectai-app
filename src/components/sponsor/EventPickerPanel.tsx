@@ -1,4 +1,5 @@
 import React from 'react';
+import { isEventPast } from '@/lib/calendar';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -15,7 +16,9 @@ const SHADOW_MD = Platform.select({
 function getEventStatus(event: CollectorsEvent, colors: { danger: string; warning: string; muted: string; success: string }): { label: string; color: string } {
   if (event.status === 'cancelled') return { label: 'Cancelled', color: colors.danger };
   if (event.status === 'draft') return { label: 'Draft', color: colors.warning };
-  if (new Date(event.date) < new Date()) return { label: 'Past', color: colors.muted };
+  // isEventPast: a bare date is UTC midnight — this said "Past" hours before
+  // the event (found by check:bare-date, 2026-09-16).
+  if (isEventPast(event.date, event.time, event.endDate)) return { label: 'Past', color: colors.muted };
   return { label: 'Upcoming', color: colors.success };
 }
 

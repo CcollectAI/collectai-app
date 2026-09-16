@@ -19,7 +19,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useEnterReveal } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
-import { convertCurrency } from "@/lib/fx";
+import { memberAmountToEUR } from "@/lib/fx";
 import { useTranslation } from "react-i18next";
 import { useFormField, validateAll } from "@/hooks/useFormField";
 import { compose, required, maxLength, numeric } from "@/lib/validate";
@@ -390,12 +390,7 @@ const ManualAddScreen: React.FC = () => {
       // Purchase price, written to BOTH columns (see the note above).
       // `purchase` is whatever the user typed, in settings.currency.
       const purchaseRaw = Number.isNaN(purchase as number) ? null : (purchase as number);
-      const purchaseEur =
-        purchaseRaw === null
-          ? null
-          : Math.round(
-              convertCurrency(purchaseRaw, settings.currency, 'EUR', settings.fxRates) * 100,
-            ) / 100;
+      const purchaseEur = purchaseRaw === null ? null : memberAmountToEUR(purchaseRaw, settings);
       // Field is entered as DD-MM-YYYY; both date columns want ISO YYYY-MM-DD.
       const purchasedIso = dmyToIso(acquisitionDate) || null;
 
@@ -449,7 +444,14 @@ const ManualAddScreen: React.FC = () => {
           // user-estimate columns at different ranks meant a later correction
           // could be outranked by the original typed number and never show.
           // One column, one rank; `value_source` reads it as `user_estimate`.
-          estimated_value: Number.isNaN(estimated as number) ? null : estimated,
+          // EUR, like purchase_price_eur above. The member types in THEIR
+          // currency and the server sums this column as EUR (item_value_v1's
+          // `value_choice = 'mine'` rung), so a raw write filed $100 as EUR 100
+          // (class sweep, 2026-09-16).
+          estimated_value:
+            Number.isNaN(estimated as number) || estimated === null
+              ? null
+              : memberAmountToEUR(estimated as number, settings),
           purchase_currency: settings.currency,
           // Field is entered as DD-MM-YYYY; the backend expects ISO YYYY-MM-DD.
           purchased_at: purchasedIso,

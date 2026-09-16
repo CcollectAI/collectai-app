@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { isEventPast } from '@/lib/calendar';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { SponsorProfileCard } from '@/components/SponsorProfileCard';
@@ -86,8 +87,10 @@ const SponsorDashboardScreen: React.FC = () => {
   const stats = useMemo(() => {
     const total = sponsoredEvents.length;
     const attendees = sponsoredEvents.reduce((sum, e) => sum + (e.attendeeCount ?? e.attendeeIds?.length ?? 0), 0);
-    const now = new Date();
-    const active = sponsoredEvents.filter((e) => new Date(e.date) >= now && e.status !== 'cancelled').length;
+    // isEventPast, not `new Date(e.date)`: a bare YYYY-MM-DD parses as UTC
+    // midnight, so a live campaign stopped counting at 02:00 CEST on its own
+    // day — 17:00 the day BEFORE in Los Angeles (class sweep, 2026-09-16).
+    const active = sponsoredEvents.filter((e) => !isEventPast(e.date, e.time, e.endDate) && e.status !== 'cancelled').length;
     return { total, attendees, active, sent: announcements.length };
   }, [sponsoredEvents, announcements]);
 

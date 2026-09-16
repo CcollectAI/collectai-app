@@ -46,6 +46,7 @@ export const ItemForSaleBar = React.memo(function ItemForSaleBar({ askingPriceVa
       <View
         style={[styles.forSaleBadge, { backgroundColor: theme.successBg }]}
         accessibilityRole="text"
+        // currency-ok: askingPriceValue is the number the MEMBER typed (items.asking_price); it is not a EUR backend amount.
         accessibilityLabel={`Item listed for sale${askingPriceValue ? ` at ${formatPrice(parseMoney(askingPriceValue) ?? 0, settings.currency)}` : ''}`}
       >
         <RNAnimated.View style={[styles.activeDot, { backgroundColor: theme.success, opacity: pulseAnim }]} />
@@ -58,6 +59,7 @@ export const ItemForSaleBar = React.memo(function ItemForSaleBar({ askingPriceVa
             the visible label now matches it, which is the same label/a11y
             divergence the tab-title rule covers. */}
         <Text style={[styles.forSaleBadgeText, { color: theme.success }]}>
+          {/* currency-ok: the member's own typed asking price (items.asking_price), not a EUR backend amount. */}
           Listed for sale{askingPriceValue ? ` ${formatPrice(parseMoney(askingPriceValue) ?? 0, settings.currency)}` : ''}
         </Text>
       </View>

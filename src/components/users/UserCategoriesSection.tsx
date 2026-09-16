@@ -34,7 +34,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
-import { formatPrice, formatNumber } from '@/lib/format';
+import { formatNumber, fmtCurrency } from '@/lib/format';
 import { getCollectorCategories, type CollectorCategoryStanding } from '@/api/socialApi';
 import { getCategoryById } from '@/data/categories';
 import logger from '@/utils/logger';
@@ -134,7 +134,7 @@ export const UserCategoriesSection = React.memo(function UserCategoriesSection({
                 {formatNumber(r.item_count, settings.numberLocale)}{' '}
                 {r.item_count === 1 ? 'item' : 'items'}
                 {valueVisible
-                  ? ` · ${formatPrice(r.value_eur, settings.currency, settings.numberLocale)}`
+                  ? ` · ${fmtCurrency(r.value_eur, settings)}`
                   : ' · value hidden'}
               </Text>
               {/* Rank on its own line INSIDE the tile. In a half-width tile a

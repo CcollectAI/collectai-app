@@ -41,6 +41,8 @@ import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import { showActionSheet } from '@/hooks/useActionSheetPicker';
 import { formatPrice } from '@/lib/format';
+import { convertCurrency } from '@/lib/fx';
+import type { CurrencyCode } from '@/data/types';
 import { collectorsApi } from '@/api/collectorsApi';
 import { offerNeedsMyAction, type P2POffer, type P2PCarrier } from '@/api/p2pApi';
 import { timeAgo } from '@/lib/timeAgo';
@@ -130,6 +132,30 @@ function OffersScreen() {
   const { settings } = useSettings();
   const { showToast } = useToast();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
+
+  /**
+   * Every amount on this screen is denominated in its LISTING's currency, not
+   * the viewer's: `P2POffer.currency` (p2pApi.ts:311) and, per
+   * docs/P2P_MARKETPLACE_SPEC.md, "all bids on one listing share its currency".
+   * Passing the viewer's `settings.currency` to the non-converting formatter
+   * therefore printed the seller's NUMBER under the viewer's SYMBOL — a ¥8000 bid read "€8000" to a
+   * European, off by ~160x.
+   *
+   * Convert first, exactly as the marketplace tile already does
+   * (`listings.tsx:169`, whose comment calls the unconverted form "the exact
+   * bug ListingCard converts to avoid"), so one bid reads the same in the grid,
+   * on the listing and here.
+   */
+  const viewerPrice = useCallback(
+    (amount: number, from: string | null | undefined) =>
+      // currency-ok: convertCurrency has already moved this into settings.currency.
+      formatPrice(
+        convertCurrency(amount, (from as CurrencyCode) || 'EUR', settings.currency, settings.fxRates),
+        settings.currency,
+        settings.numberLocale,
+      ),
+    [settings.currency, settings.fxRates, settings.numberLocale],
+  );
 
   /**
    * The offer a push was about.
@@ -385,9 +411,13 @@ function OffersScreen() {
           logger.error('[offers] committed total skipped an offer with no numeric amount', o.id);
           return sum;
         }
-        return sum + amt;
+        // Each offer is in ITS listing's currency, so the raw numbers are not
+        // addable: one accepted $100 bid plus one accepted ¥8000 bid summed to
+        // 8100 and was labelled with the viewer's symbol. Convert every leg
+        // into the viewer's currency first — then the total means something.
+        return sum + convertCurrency(amt, (o.currency as CurrencyCode) || 'EUR', settings.currency, settings.fxRates);
       }, 0),
-    [offers],
+    [offers, settings.currency, settings.fxRates],
   );
 
   const handleRefresh = useCallback(async () => {
@@ -774,7 +804,7 @@ function OffersScreen() {
           accessibilityRole="button"
           accessibilityLabel={[
             o.listing_title || 'Listing',
-            formatPrice(o.amount, settings.currency, settings.numberLocale),
+            viewerPrice(o.amount, o.currency),
             statusLabel(o.status, o.i_am_buyer, o.i_withdrew),
             'Opens the listing',
           ].join('. ')}
@@ -815,7 +845,7 @@ function OffersScreen() {
             </Text>
           </View>
           <Text style={[styles.historyAmount, { color: colors.muted }]}>
-            {formatPrice(o.amount, settings.currency, settings.numberLocale)}
+            {viewerPrice(o.amount, o.currency)}
           </Text>
         </AnimatedPressable>
       );
@@ -862,8 +892,8 @@ function OffersScreen() {
         accessibilityState={{ expanded: groupOpen }}
         accessibilityLabel={
           `${o.listing_title || 'Listing'}. ${group?.size ?? inSection} bids, ` +
-          `${formatPrice(group?.low ?? o.amount, settings.currency, settings.numberLocale)} to ` +
-          `${formatPrice(group?.high ?? o.amount, settings.currency, settings.numberLocale)}.`
+          `${viewerPrice(group?.low ?? o.amount, o.currency)} to ` +
+          `${viewerPrice(group?.high ?? o.amount, o.currency)}.`
         }
         accessibilityHint={groupOpen ? 'Double tap to collapse these bids' : 'Double tap to see these bids'}
       >
@@ -876,10 +906,10 @@ function OffersScreen() {
               this section's. `inSection` is only the fallback for a listing
               whose meta is missing, which cannot happen while grouping runs. */}
           <Text style={[styles.groupRowMeta, { color: colors.muted }]} numberOfLines={1}>
-            {group?.size ?? inSection} bids · {formatPrice(group?.low ?? o.amount, settings.currency, settings.numberLocale)}
+            {group?.size ?? inSection} bids · {viewerPrice(group?.low ?? o.amount, o.currency)}
             {(group?.low ?? o.amount) === (group?.high ?? o.amount)
               ? ''
-              : ` – ${formatPrice(group?.high ?? o.amount, settings.currency, settings.numberLocale)}`}
+              : ` – ${viewerPrice(group?.high ?? o.amount, o.currency)}`}
           </Text>
         </View>
         <Ionicons name={groupOpen ? 'chevron-up' : 'chevron-down'} size={18} color={colors.muted} />
@@ -912,10 +942,10 @@ function OffersScreen() {
         <View style={styles.groupHeader}>
           <Ionicons name="layers-outline" size={13} color={colors.accent} />
           <Text style={[styles.groupHeaderText, { color: colors.accent }]}>
-            {group.size} bids on this listing · {formatPrice(group.low, settings.currency, settings.numberLocale)}
+            {group.size} bids on this listing · {viewerPrice(group.low, o.currency)}
             {group.low === group.high
               ? ''
-              : ` – ${formatPrice(group.high, settings.currency, settings.numberLocale)}`}
+              : ` – ${viewerPrice(group.high, o.currency)}`}
           </Text>
         </View>
       ) : null}
@@ -946,7 +976,7 @@ function OffersScreen() {
           label: 'Accept',
           icon: 'checkmark-circle-outline',
           color: colors.success,
-          onPress: () => confirmAccept(o, formatPrice(o.amount, settings.currency, settings.numberLocale)),
+          onPress: () => confirmAccept(o, viewerPrice(o.amount, o.currency)),
         }] : []}
         // RIGHT swipe -> Decline (seller, open) and Delete (either side, while
         // the offer is still on the table). Both confirm; Delete is the
@@ -993,7 +1023,7 @@ function OffersScreen() {
           onHold ? 'On hold, another bid was accepted.' : null,
           stale ? 'Still waiting.' : null,
           o.listing_title || 'Listing',
-          formatPrice(o.amount, settings.currency, settings.numberLocale),
+          viewerPrice(o.amount, o.currency),
           statusLabel(o.status, o.i_am_buyer, o.i_withdrew),
           group && group.size > 1 ? `One of ${group.size} bids on this listing.` : null,
           // The card has pushed `/offer/[offerId]` since 2026-08-19 — the
@@ -1068,7 +1098,7 @@ function OffersScreen() {
               side and lets the title have two full lines. */}
           <View style={styles.amountCol}>
           <Text style={[styles.amount, { color: colors.text }]}>
-            {formatPrice(o.amount, settings.currency, settings.numberLocale)}
+            {viewerPrice(o.amount, o.currency)}
           </Text>
           {/* The offer ALONE does not decide anything — "EUR 380" is only good
               or bad against what you asked. The percentage is the number a
@@ -1082,7 +1112,7 @@ function OffersScreen() {
               {(() => {
                 const pct = Math.round(((o.amount - o.listing_price) / o.listing_price) * 100);
                 const sign = pct > 0 ? '+' : '';
-                return `${sign}${pct}% of ${formatPrice(o.listing_price, settings.currency, settings.numberLocale)} asking`;
+                return `${sign}${pct}% of ${viewerPrice(o.listing_price, o.currency)} asking`;
               })()}
             </Text>
           ) : null}
@@ -1522,6 +1552,7 @@ function OffersScreen() {
           ) : null}
           {committed > 0 ? (
             <Text style={[styles.summaryText, { color: colors.muted }]}>
+              {/* currency-ok: `committed` is summed in settings.currency (each leg converted above). */}
               {formatPrice(committed, settings.currency, settings.numberLocale)} committed
             </Text>
           ) : null}

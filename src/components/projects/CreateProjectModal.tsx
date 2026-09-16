@@ -27,7 +27,7 @@ import { CATEGORIES, CATEGORY_VISUAL } from '@/data/categories';
 import { BUILDABLE_CATEGORIES, getStepTemplateForCategory } from '@/constants/buildStepTemplates';
 import { dataProvider, type Item } from '@/data';
 import { useSettings } from '@/lib/settings';
-import { formatPrice } from '@/lib/format';
+import { fmtCurrency } from '@/lib/format';
 import logger from '@/utils/logger';
 
 interface CreateProjectModalProps {
@@ -215,7 +215,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
                         </Text>
                         {selectedItem.price > 0 && (
                           <Text style={[styles.linkedItemPrice, { color: colors.muted }]}>
-                            ~{formatPrice(selectedItem.price, settings.currency)}
+                            ~{fmtCurrency(selectedItem.price, settings)}
                           </Text>
                         )}
                       </View>
@@ -435,7 +435,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
                     </Text>
                     {item.price > 0 && (
                       <Text style={[styles.itemPickerPrice, { color: colors.muted }]}>
-                        ~{formatPrice(item.price, settings.currency)}
+                        ~{fmtCurrency(item.price, settings)}
                       </Text>
                     )}
                   </View>

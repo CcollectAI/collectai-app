@@ -67,6 +67,12 @@ import {
   ItemsSectionFooter,
 } from '@/components/items';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+// Re-added 2026-09-16: the header's "Portfolio value" now reads the SERVER's
+// total (collectorsApi) instead of summing the loaded pages, and converts it to
+// the member's currency (fmtCurrency) instead of printing EUR under their symbol.
+import { collectorsApi } from '@/api/collectorsApi';
+import { useAsync } from '@/hooks/useAsync';
+import { portfolioTotalLabel } from '@/lib/portfolioTotalLabel';
 
 // Screen row shape + the provider→screen mapper live in @/data/screenItem so
 // the mapping is unit-testable (see screenItem.test.ts). Aliased to `Item`
@@ -643,9 +649,28 @@ const ItemsScreen: React.FC = () => {
     [filteredAndSortedByCategory]
   );
 
-  const portfolioTotal = useMemo(
+  // The SERVER's total, not a sum of the rows on screen.
+  //
+  // This summed `dataSource`, which is the pages loaded so far
+  // (ITEMS_PAGE_SIZE = 20). Over 20 items it printed LESS than Home's hero —
+  // under Home's own label (`home.portfolio_value`) — and grew as the member
+  // scrolled: the €1.288-vs-€1.348 bug of 2026-09-12 re-created client-side
+  // (class sweep, 2026-09-16). `/portfolio/overview` is the same source Home
+  // uses, so the two screens now answer with one number.
+  const { data: overview } = useAsync(() => collectorsApi.getPortfolioOverview(), []);
+  const serverTotalEur = useMemo(() => {
+    const v = (overview as { total_value?: unknown } | null)?.total_value;
+    return typeof v === 'number' && Number.isFinite(v) ? v : null;
+  }, [overview]);
+  const loadedTotalEur = useMemo(
     () => dataSource.reduce((sum, item) => sum + item.value, 0),
     [dataSource]
+  );
+  // The rule (server total wins; otherwise the loaded rows marked "+") lives in
+  // src/lib/portfolioTotalLabel.ts so it can be tested — see its test.
+  const totalLabel = useMemo(
+    () => portfolioTotalLabel(serverTotalEur, loadedTotalEur, hasMore, settings),
+    [serverTotalEur, loadedTotalEur, hasMore, settings],
   );
 
   // SectionList sections derived from grouped data
@@ -698,7 +723,7 @@ const ItemsScreen: React.FC = () => {
           {/* Header (chat + settings) stays put even on the first-frame hero so
               it never disappears between cold-start states. */}
           <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-            <ItemsGridHeader portfolioTotal={portfolioTotal} />
+            <ItemsGridHeader portfolioTotalLabel={totalLabel} />
           </View>
           <View style={{ flex: 1, justifyContent: 'center' }}>
             <ItemsEmptyState />
@@ -744,7 +769,7 @@ const ItemsScreen: React.FC = () => {
         {/* Keep the top-right chat + settings icons here too so the empty state
             matches every other screen (the grid path renders the same header). */}
         <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-          <ItemsGridHeader portfolioTotal={portfolioTotal} />
+          <ItemsGridHeader portfolioTotalLabel={totalLabel} />
         </View>
         {/* Centred inside the space the user can actually SEE: without the
             inset the empty state centres against the full height and sits
@@ -808,7 +833,7 @@ const ItemsScreen: React.FC = () => {
           }}
         />
       ) : (
-        <ItemsGridHeader portfolioTotal={portfolioTotal} />
+        <ItemsGridHeader portfolioTotalLabel={totalLabel} />
       )}
 
       <ItemsListHeader

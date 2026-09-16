@@ -6,7 +6,7 @@
  * user's profile row from the `profiles` table.
  */
 
-import React, { createContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useEffect, useState, useCallback, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import * as Linking from 'expo-linking';
 import { router, type Href } from 'expo-router';
@@ -103,11 +103,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // One read per cold start, not two. BOTH entry points fire on a cold start —
+  // the getSession path and onAuthStateChange — and the second one contends on
+  // `processLock` and then times out at PROFILE_READ_TIMEOUT_MS (measured 6011ms
+  // on device; the same query answers in ~90-125ms). Same shape as the header
+  // badge fan-out fixed 2026-09-14: one in-flight read, shared.
+  const profileInFlight = useRef<{ userId: string; promise: Promise<void> } | null>(null);
+
   const loadProfile = useCallback(async (u: User | null, source: string = 'unknown') => {
     if (!u) {
+      profileInFlight.current = null;
       setProfile(null);
       return;
     }
+    const existing = profileInFlight.current;
+    if (existing && existing.userId === u.id) return existing.promise;
+    const run = (async () => {
 
     let referredCode: string | null = null;
     const startedAt = Date.now();
@@ -130,7 +141,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         `[silent-fallback] auth: profile hydrate failed after ${Date.now() - startedAt}ms via ${source}:`,
         e,
       );
-      setProfile(null);
+      // A FAILED read is not "this member has no profile". PGRST116 means the
+      // row really is absent (0 rows) — that is the only case that clears it.
+      // Anything else (timeout, network, 5xx) keeps whatever is already loaded:
+      // wiping it made a signed-in member's own profile screen say "Your public
+      // profile isn't set up yet" (the 2026-09-15 empty-on-failure class).
+      const code = (e as { code?: unknown } | null)?.code;
+      if (code === 'PGRST116') setProfile(null);
     }
 
     // Deliberately OUTSIDE the try above. Inside it, anything this threw —
@@ -145,6 +162,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logger.error('[AuthProvider] referral attribution failed:', e);
       }
     }
+    })();
+    // Clear by ENTRY identity. Storing `run.finally(...)` here and comparing
+    // against `run` never matches (different promises), which would pin the
+    // first read forever and make refreshProfile() a no-op.
+    const entry = { userId: u.id, promise: run };
+    profileInFlight.current = entry;
+    void run.finally(() => {
+      if (profileInFlight.current === entry) profileInFlight.current = null;
+    });
+    return run;
   }, []);
 
   // Auth deep-link handler. When the app is opened via the email confirmation
@@ -250,7 +277,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           identifyUser(data.session.user.id);
           void identifyPurchasesUser(data.session.user.id);
         }
-        await loadProfile(data.session?.user ?? null, 'getSession');
+        // NOT awaited: `setLoading(false)` runs in the finally below, so every
+        // screen's first fetch used to wait for this profile row — up to
+        // PROFILE_READ_TIMEOUT_MS (6s) of the cold start, for a row NOTHING on
+        // Home reads (its only consumers are subscription.tsx and
+        // ProfileEditSection, both `profile?.x ?? fallback` and both re-render
+        // when it lands). Measured 2026-09-16: Portfolio took ~25s to settle
+        // while every endpoint answered in 97-180ms.
+        // This is a plain PostgREST select, not an auth op: it neither refreshes
+        // nor retries a token, so the refresh-token reuse hazard behind the
+        // 2026-07-11 401 saga does not apply (same reasoning as the
+        // onAuthStateChange copy below).
+        void loadProfile(data.session?.user ?? null, 'getSession');
       } catch (e) {
         logger.error('[AuthProvider] getSession error:', e);
       } finally {

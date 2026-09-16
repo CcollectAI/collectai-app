@@ -72,8 +72,38 @@ const ALLOWLIST = new Map([
 // `total` is deliberately NOT bare: totalVols, totalCount and totalItems are
 // counts, and flagging them would train the reader to ignore this check. Only
 // totalPrice/totalCost/totalValue qualify.
-const MONEY_RE =
-  /\b(price|amount|cost|budget|shipping|fee|paid|payout|subtotal|targetPrice|askingPrice|offerAmount|total(Price|Cost|Value|Amount))[A-Za-z]*\b/i;
+const MONEY_WORDS = new Set([
+  'price', 'prices', 'amount', 'cost', 'budget', 'shipping', 'fee', 'fees', 'paid',
+  'payout', 'subtotal', 'value', 'money', 'salary', 'balance', 'proceeds', 'net',
+]);
+// Words that make an identifier a COUNT or an ID, whatever else it contains:
+// totalCount, itemsCount, priceId, valueIndex.
+const NOT_MONEY_WORDS = new Set(['count', 'qty', 'quantity', 'index', 'id', 'ids', 'len', 'length', 'pct', 'percent', 'source', 'type', 'label', 'key']);
+
+/** Split an identifier into words: camelCase, snake_case, dotted paths. */
+function identifierWords(name) {
+  return name
+    .replace(/[_.\-]/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+/** Does this identifier hold money a MEMBER typed?
+ *  `\b(price|…)` missed every camelCase name — maxPriceField, salePrice,
+ *  ticketPriceCents and editableValue all read as "not money", which is why the
+ *  four worst sites of the 2026-09-16 class sweep were invisible to this gate. */
+function isMoneyIdentifier(name) {
+  const words = identifierWords(name);
+  if (words.some((w) => NOT_MONEY_WORDS.has(w))) return false;
+  // A BARE `value` is the generic name of every validator, filter callback and
+  // numeric param in the codebase — flagging it trains the reader to ignore
+  // this gate. A compound (`editableValue`, `salePrice`, `maxPriceField`) is
+  // the money shape.
+  if (words.length === 1 && (words[0] === 'value' || words[0] === 'net')) return false;
+  return words.some((w) => MONEY_WORDS.has(w));
+}
 
 /**
  * Strip comments and string literals so a pattern quoted in a docstring is not
@@ -174,10 +204,13 @@ for (const root of ROOTS) {
       }
 
       // --- 3: a bare parse of an obviously-money identifier ----------------
+      // A written reason on the line, or in the comment block just above it
+      // (which is where a reason long enough to be worth reading has to go).
+      if (/numeric-ok:/.test(line) || rawLines.slice(Math.max(0, idx - 4), idx).some((l) => /numeric-ok:/.test(l))) return;
       const bare = line.match(/\b(parseFloat|parseInt|Number)\s*\(\s*([A-Za-z_$][\w$.]*)\s*[),]/);
       if (bare) {
         const arg = bare[2];
-        if (!MONEY_RE.test(arg)) return;
+        if (!isMoneyIdentifier(arg)) return;
         // Already normalised somewhere on the line, or reading a NUMBER back
         // out of a typed object rather than off an input.
         if (/replace|toFixed|Number\(\s*\w+\.\w+\s*\)/.test(line)) return;
@@ -202,5 +235,8 @@ for (const f of findings) {
   console.log(`      ${f.why}`);
   console.log(`      ${f.line}\n`);
 }
-console.log("  Safe form: value.replace(/[^0-9.,]/g, '').replace(',', '.') then parseFloat");
+// The old advice here WAS the bug in miniature: `.replace(',', '.')` turns a
+// typed "1.250,00" into 1.25 (it strips nothing and swaps only the first
+// separator). parseMoney treats the LAST separator as the decimal point.
+console.log("  Safe form: parseMoney(value) from src/lib/format.ts — it handles 12,50 AND 1.250,00");
 process.exit(1);
