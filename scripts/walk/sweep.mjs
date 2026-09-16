@@ -81,7 +81,7 @@ const OUT = arg('out', join(ROOT, 'builds', 'walk', `${stamp}-${LABEL}`));
 
 // ── adb helpers ──────────────────────────────────────────────────────────────
 const adb = (args, opts = {}) => {
-  const r = spawnSync(ADB, ['-s', SERIAL, ...args], { encoding: opts.binary ? 'buffer' : 'utf8', timeout: Math.max(1000, Math.round((opts.timeout ?? 60) * 1000)), maxBuffer: 64 * 1024 * 1024 });
+  const r = spawnSync(ADB, ['-s', SERIAL, ...args], { encoding: opts.binary ? 'buffer' : 'utf8', timeout: Math.max(1000, Math.round((opts.timeout ?? 60) * 1000)), killSignal: 'SIGKILL', maxBuffer: 64 * 1024 * 1024 });
   if (r.error && !opts.allowFail) throw new Error(`adb ${args.join(' ')}: ${r.error.message}`);
   return r.stdout;
 };
@@ -155,12 +155,17 @@ const RAW_PATTERNS = [
 ];
 
 // ── the checks ───────────────────────────────────────────────────────────────
-function check(nodes, expect, W, H, focusLine, logs) {
+function check(nodes, expect, W, H, focusLine, logs, DP) {
   const flags = [];
   const app = nodes.filter((n) => n.pkg === PKG);
   const visible = (n) => n.x2 > n.x1 && n.y2 > n.y1;
-  const header = app.filter((n) => visible(n) && n.y2 <= H * 0.19);
-  const bottom = app.filter((n) => visible(n) && n.y1 >= H * 0.86);
+  // Bands in DP, not a fraction of the screen: 19% of a 2400px screen is a
+  // header, 19% of a 1520px one cuts above the title — which flagged 7 screens
+  // NO_TITLE on the 360dp round while their titles were plainly visible.
+  const headerPx = 210 * DP;   // status bar + native header + a body title row
+  const bottomPx = 110 * DP;   // the tab bar
+  const header = app.filter((n) => visible(n) && n.y2 <= headerPx);
+  const bottom = app.filter((n) => visible(n) && n.y1 >= H - bottomPx);
   const isGlyph = (s) => /^[\uE000-\uF8FF\s]*$/.test(s);
   const isClock = (s) => /^\d{1,2}:\d{2}$/.test(s);
 
@@ -270,6 +275,9 @@ if (SMALL) { sh('wm size 720x1520'); sh('wm density 320'); restore.push(() => { 
 const cleanup = () => { for (const f of restore.reverse()) f(); };  // SIGINT path (sync steps only)
 // Read AFTER --small is applied. `wm size` prints "Physical size" and, when
 // overridden, "Override size" — the override is what the app lays out against.
+// px per dp, so the header/tab bands mean the same thing on any screen.
+const densityOut = sh('wm density');
+const DP = (Number((densityOut.match(/Override density: (\d+)/) || densityOut.match(/Physical density: (\d+)/) || [0, 420])[1]) || 420) / 160;
 const wmSize = sh('wm size');
 const [W, H] = ((wmSize.match(/Override size: (\d+)x(\d+)/) || wmSize.match(/Physical size: (\d+)x(\d+)/)) || [0, 1080, 2400]).slice(1).map(Number);
 process.on('SIGINT', () => { cleanup(); process.exit(130); });
@@ -413,7 +421,7 @@ try {
       ? { title: null, flags: [['NO_DUMP', `uiautomator never saw the UI idle (${DUMP_CAP_S}s cap, twice) — something keeps animating; see the screenshot`]] }
       : r.redirect
       ? { title: null, flags: focus().includes(PKG) ? [] : [['FOCUS', 'not in the app after redirect']] }
-      : check(nodes, expect, W, H, focus(), logs);
+      : check(nodes, expect, W, H, focus(), logs, DP);
     // A chrome flag can be a CAPTURE artefact: the loop's last dump can land
     // mid-render (2026-09-16: `listings` was flagged NO_NAVBAR from a 15-node
     // tree while the screenshot, taken later, showed the bar). Re-dump once and
@@ -422,7 +430,7 @@ try {
     if (!wrongScreen && xml && res.flags.some(([k]) => CHROME.includes(k))) {
       const xml2 = dumpXml();
       if (xml2) {
-        const res2 = check(parseNodes(xml2), expect, W, H, focus(), logs);
+        const res2 = check(parseNodes(xml2), expect, W, H, focus(), logs, DP);
         if (res2.flags.filter(([k]) => CHROME.includes(k)).length < res.flags.filter(([k]) => CHROME.includes(k)).length) {
           writeFileSync(join(OUT, 'dumps', `${slug}.xml`), xml2);
           res.title = res2.title; res.flags = res2.flags;

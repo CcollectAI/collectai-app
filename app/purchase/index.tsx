@@ -280,7 +280,11 @@ function AgentHubScreen() {
   if (loading) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["left", "right"]}>
-        <View style={[styles.container, { paddingTop: 12 }]}>
+        {/* A ScrollView, not a padding-only View: the skeletons are taller than
+            a 360dp screen, so they pushed QuickNavBar below the fold (screen
+            sweep --small, 2026-09-16). The bar must follow a sibling that FILLS
+            — docs/ui-playbook.md "A nav bar below a margin-only sibling floats". */}
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={[styles.container, { paddingTop: 12 }]} showsVerticalScrollIndicator={false}>
           {/* The real header, not a grey bar: the title and subtitle are fixed
               strings, so there is nothing to wait for — and a skeleton bar in
               their place left the loading screen with no title at all (screen
@@ -328,7 +332,7 @@ function AgentHubScreen() {
               </View>
             ))}
           </View>
-        </View>
+        </ScrollView>
         <QuickNavBar />
       </SafeAreaView>
     );

@@ -58,7 +58,12 @@ HEAD since May, unchanged by this diff.
   `docs/I18N_BACKLOG.md`. Three flags were the TOOL, not the app — a mid-render
   capture, an English-only tab-label check, and a deep link swallowed during
   boot; all three fixed and written up, because a checker that cries wolf stops
-  being read.
+  being read. **Round 4 (`--small`, 360dp): one real defect** — Deal Agent's
+  loading skeletons pushed the nav bar off a short screen (a padding-only view;
+  now a filling scroller) — plus two more tool fixes (the header band is now
+  measured in DP, and a hung `adb` is SIGKILLed: one route had run 985 s). The
+  Watchlist cluster and barcode placeholder, both recorded as unmeasured, are
+  clean at 360dp.
 - **The same walk found the nav-bar rule's gap**: "cover every return branch"
   (playbook, since 08-16) had no checker; 19 loading/not-found/failed branches in
   10 screens dropped the QuickNavBar. Fixed; `npm run check:navbar` (AST, in

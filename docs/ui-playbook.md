@@ -2577,6 +2577,18 @@ because a checker that cries wolf stops being read:
 | `catalog-item` "landed on Home" | a deep link sent while the app was still booting is swallowed — the 12 s wait was a guess | cold start waits for the tab bar (≤45 s), and a route that unexpectedly shows Home re-sends its link once, then reports WRONG_SCREEN rather than judging the wrong screen |
 | one route took 102 s | `uiautomator dump` waits for the UI to go IDLE, so a spinning screen holds a dump; only the gaps between dumps were budgeted | each dump capped at 10 s and counted against the route budget; a screen that never idles is NOT_IDLE, with one long dump so it still gets its checks |
 
+### Round 4, at 360dp: a skeleton with no ceiling pushes the bar off (2026-09-16)
+
+`purchase/index`'s loading branch put its skeletons in a padding-only `View`.
+At 411dp they fit; at 360dp they are taller than the screen, so `QuickNavBar`
+— correctly placed after them — went below the fold. **Content above the bar
+must FILL, not just fit on your device**: a `ScrollView style={{flex:1}}` with
+the padding on `contentContainerStyle`. The gate cannot see this (the bar IS
+rendered in that branch), which is why the small-screen round exists.
+
+Also clean at 360dp, both previously recorded as unmeasured: the Watchlist
+header cluster (~387dp estimated) and the barcode manual-entry placeholder.
+
 ## A backend field is a value, not a label (2026-09-09)
 
 Every row on the Events tab read **`Convention • 2026-09-11 — 20:00:00`** — an
