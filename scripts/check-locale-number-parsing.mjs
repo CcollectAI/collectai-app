@@ -26,11 +26,19 @@
  *   3. `parseFloat(x)` on raw input  "12,50" -> 12         silently truncated
  *   4. keeps BOTH `.` and `,` but                          parseFloat stops at
  *      never normalises                "1,5" -> 1           the first comma
+ *   5. keeps both and SWAPS the comma  "1.250,00" -> 1.25   the thousands dot
+ *      for a dot                                            is read as decimal
  *
- * THE SAFE FORM — strip everything except digits and BOTH separators, then
- * normalise the comma to a dot before parsing:
+ * Shape 5 is the one this file itself used to recommend, and it is why the class
+ * kept coming back: `.replace(',', '.')` reads as a fix, passes review, and is
+ * only wrong once a member types a thousands separator — i.e. exactly on the
+ * biggest amounts. A `/,/g` variant is no better. `useItemDetail.onSubmitSalePrice`
+ * recorded a €1.250,00 sale as 1.25 through this shape, with this gate green
+ * (2026-09-16).
  *
- *     parseFloat(value.replace(/[^0-9.,]/g, '').replace(',', '.'))
+ * THE SAFE FORM — there is one, and it is not an idiom you retype:
+ *
+ *     parseMoney(value)   // src/lib/format.ts — LAST separator is the decimal
  *
  * WHY A CHECKER AND NOT A LINT RULE
  *
@@ -190,13 +198,20 @@ for (const root of ROOTS) {
           });
           return;
         }
-        // --- 4: keeps both but never normalises --------------------------
-        const normalises = /replace\s*\(\s*(['"]),\1\s*,\s*(['"])\.\2\s*\)/.test(rawLine)
-          || /replace\s*\(\s*\/,\/g?\s*,\s*(['"])\.\1\s*\)/.test(rawLine);
-        if (dot && comma && !normalises) {
+        // --- 4 & 5: keeps both separators ---------------------------------
+        // The ONLY safe consumer is parseMoney. A comma→dot swap used to be
+        // accepted here and is shape 5: it is wrong the moment a thousands
+        // separator is present, which is why this rule was green while a
+        // €1.250,00 sale was recorded as 1.25.
+        if (dot && comma) {
+          if (/\bparseMoney\s*\(/.test(rawLine)) return;
+          const swaps = /replace\s*\(\s*(['"]),\1\s*,\s*(['"])\.\2\s*\)/.test(rawLine)
+            || /replace\s*\(\s*\/,\/g?\s*,\s*(['"])\.\1\s*\)/.test(rawLine);
           findings.push({
             at,
-            why: `character class ${c} keeps BOTH separators but the line does not normalise "," to "." — parseFloat stops at the comma, so "1,5" parses as 1`,
+            why: swaps
+              ? `character class ${c} keeps both separators and the line swaps "," for "." — "1.250,00" becomes "1.250.00", which parseFloat reads as 1.25`
+              : `character class ${c} keeps BOTH separators but the line does not normalise "," to "." — parseFloat stops at the comma, so "1,5" parses as 1`,
             line: line.trim().slice(0, 110),
           });
           return;
@@ -211,9 +226,16 @@ for (const root of ROOTS) {
       if (bare) {
         const arg = bare[2];
         if (!isMoneyIdentifier(arg)) return;
-        // Already normalised somewhere on the line, or reading a NUMBER back
-        // out of a typed object rather than off an input.
-        if (/replace|toFixed|Number\(\s*\w+\.\w+\s*\)/.test(line)) return;
+        // Already going through the safe parser, or reading a number back out.
+        //
+        // `Number(x.y)` used to be exempt here as "reading a NUMBER back out of
+        // a typed object" — but `purchasePriceField.value` has exactly that
+        // shape and is a STRING the member typed, so the exemption hid
+        // `Number(purchasePriceField.value)` in add-manual: the field validated
+        // "12,50" and then saved NaN (2026-09-16). An object field is only
+        // exempt when its name says it is not money, which isMoneyIdentifier
+        // has already decided by the time we get here.
+        if (/parseMoney|toFixed/.test(line)) return;
         findings.push({
           at,
           why: `${bare[1]}(${arg}) parses a money value straight — a typed "12,50" truncates to 12`,

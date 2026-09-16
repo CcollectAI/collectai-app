@@ -27,7 +27,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { radius, text, fontWeight, gap, shadow } from '@/theme/tokens';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, parseMoney } from '@/lib/format';
 import { EmptyState } from '@/components/EmptyState';
 import { SkeletonList } from '@/components/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
@@ -433,7 +433,13 @@ function SellerDashboardScreen() {
     if (!validateAll(createTitleField, createPriceField)) return;
 
     const title = createTitleField.value.trim();
-    const price = parseFloat(createPriceField.value.replace(/[^0-9.,]/g, '').replace(',', '.'));
+    // Never fall back to 0 here: 0 is a VALID price, so an unparseable field
+    // would list the item as free rather than fail.
+    const price = parseMoney(createPriceField.value);
+    if (price === null || price <= 0) {
+      showToast({ message: 'Enter a price above zero, e.g. 45 or 45,50', type: 'error' });
+      return;
+    }
 
     setCreating(true);
     try {

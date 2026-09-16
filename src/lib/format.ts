@@ -258,10 +258,21 @@ export function parseMoney(value: string | null | undefined): number | null {
   if (!cleaned) return null;
   // The last separator is the decimal point; anything before it is grouping.
   const lastSep = Math.max(cleaned.lastIndexOf('.'), cleaned.lastIndexOf(','));
+  const head = lastSep === -1 ? cleaned : cleaned.slice(0, lastSep);
+  const tail = lastSep === -1 ? '' : cleaned.slice(lastSep + 1);
+  // ONE separator with exactly three digits behind it is grouping, not a
+  // decimal point. "1.250" is how a Dutch member types 1250 and "1,250" is how
+  // an American does; reading either as a decimal is a 1000x error on the
+  // amounts that matter most. No currency this app supports is priced to three
+  // decimals, so there is nothing real on the other side of the trade — except
+  // a leading "0", where "0,999" can only be a fraction.
+  const grouped = lastSep !== -1 && !/[.,]/.test(head) && tail.length === 3 && head !== '' && head !== '0';
   const normalised =
     lastSep === -1
       ? cleaned
-      : cleaned.slice(0, lastSep).replace(/[.,]/g, '') + '.' + cleaned.slice(lastSep + 1);
+      : grouped
+        ? head + tail
+        : head.replace(/[.,]/g, '') + '.' + tail;
   const n = parseFloat(normalised);
   return Number.isFinite(n) ? n : null;
 }

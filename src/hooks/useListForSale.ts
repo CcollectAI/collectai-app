@@ -13,6 +13,7 @@ import type {
   MarketplaceFeeSchedule,
   CurrencyCode,
 } from '@/data/types';
+import { parseMoney } from '@/lib/format';
 import { userErrorMessage } from '@/lib/userErrorMessage';
 
 // ---------------------------------------------------------------------------
@@ -169,8 +170,8 @@ export function useListForSale(opts: {
 
   const calculateFee = useCallback(
     (mpId: MarketplaceId, priceStr: string): FeeBreakdown | null => {
-      const price = parseFloat(priceStr.replace(/[^0-9.,]/g, '').replace(',', '.'));
-      if (!Number.isFinite(price) || price <= 0) return null;
+      const price = parseMoney(priceStr);
+      if (price === null || price <= 0) return null;
 
       // Try server schedule first
       const serverSchedule = feeSchedules.find((s) => s.marketplaceId === mpId);
@@ -222,8 +223,8 @@ export function useListForSale(opts: {
   // ── Submission ────────────────────────────────────────────────────────
 
   const canSubmit = selectedIds.length > 0 && selectedIds.every((mpId) => {
-    const price = parseFloat((marketplaces[mpId]?.price ?? '').replace(/[^0-9.,]/g, '').replace(',', '.'));
-    return Number.isFinite(price) && price > 0;
+    const price = parseMoney(marketplaces[mpId]?.price ?? '');
+    return price !== null && price > 0;
   });
 
   const submit = useCallback(async (): Promise<boolean> => {
@@ -235,7 +236,13 @@ export function useListForSale(opts: {
       // Create a listing for each selected marketplace (sequentially to avoid rate limiting)
       for (const mpId of selectedIds) {
         const state = marketplaces[mpId];
-        const price = parseFloat((state?.price ?? '').replace(/[^0-9.,]/g, '').replace(',', '.'));
+        const price = parseMoney(state?.price ?? '');
+        // Never list at 0 because a price failed to parse: 0 is a valid price,
+        // so the listing would go up as free rather than fail.
+        if (price === null || price <= 0) {
+          setError('Enter a price above zero for every selected marketplace.');
+          return false;
+        }
         const fee = calculateFee(mpId, state?.price ?? '');
 
         await dataProvider.createMarketplaceListing({

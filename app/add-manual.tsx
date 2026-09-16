@@ -48,7 +48,7 @@ import { CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 import { CUSTOM_CATEGORY_SENTINEL } from '@/components/add-manual/CategoryPickerModal';
 import { getCategoryFields } from '@/constants/categoryFields';
 import { dmyToIso } from '@/lib/eventDate';
-import { getCurrencySymbol } from '@/lib/format';
+import { getCurrencySymbol, parseMoney } from '@/lib/format';
 import { withTimeout, TimeoutError } from '@/lib/withTimeout';
 import { userErrorMessage } from '@/lib/userErrorMessage';
 
@@ -342,8 +342,11 @@ const ManualAddScreen: React.FC = () => {
         return;
       }
 
-      const purchase = purchasePriceField.value ? Number(purchasePriceField.value) : null;
-      const estimated = estimatedValueField.value ? Number(estimatedValueField.value) : null;
+      // parseMoney, not Number: `numeric()` accepts "12,50" (it is how most of
+      // the seven currencies are written), and Number() turns that into NaN —
+      // the field would validate and then save as nothing.
+      const purchase = parseMoney(purchasePriceField.value);
+      const estimated = parseMoney(estimatedValueField.value);
 
       const attrs: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(categoryAttrs)) {

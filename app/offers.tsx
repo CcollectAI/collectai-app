@@ -406,6 +406,10 @@ function OffersScreen() {
       // explaining the fix re-triggers the finding it fixed — the
       // grep-matches-its-own-comment trap, from the checker's side.
       .reduce((sum, o) => {
+        // numeric-ok: o.amount comes off the P2P API, where it is `amount: float`
+        // (server model, spec §8). It is never a string a member typed, so there
+        // is no decimal separator to lose — the Number() here is a null/undefined
+        // guard, which is why the isFinite check below exists.
         const amt = Number(o.amount);
         if (!Number.isFinite(amt)) {
           logger.error('[offers] committed total skipped an offer with no numeric amount', o.id);

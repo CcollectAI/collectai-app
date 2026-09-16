@@ -778,6 +778,11 @@ Walks used to be one deep link at a time, from memory, one state per screen,
 with a rebuild after each finding — no inventory, so no coverage number and no
 way to tell when we are done. `scripts/walk/` replaces the mechanical half:
 
+> A walk finds an INSTANCE; it cannot find the class. The 60-site currency bug
+> survived five clean rounds because the walk account is EUR. After a walk round,
+> convert each finding into a class and sweep the code for it —
+> method and register in `docs/CLASS_SWEEPS.md`.
+
 ```bash
 WALK_EMAIL=… WALK_PASSWORD=… npm run walk                      # normal
 WALK_EMAIL=… WALK_PASSWORD=… npm run walk -- --locale nl       # Dutch

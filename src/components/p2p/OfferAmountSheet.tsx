@@ -45,7 +45,7 @@ import { View, Text, StyleSheet, TextInput, ActivityIndicator } from 'react-nati
 import { BottomSheetModal } from '@/components/BottomSheetModal';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
-import { formatPrice, getCurrencySymbol } from '@/lib/format';
+import { formatPrice, getCurrencySymbol, parseMoney } from '@/lib/format';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import type { Currency, NumberLocale } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
@@ -115,10 +115,8 @@ export function OfferAmountSheet({
    *  comma decimal separator — most of the app's currencies are written that
    *  way, and rejecting "18,50" as unparseable reads as the field being broken. */
   const parsedCustom = useMemo(() => {
-    const cleaned = custom.replace(/[^0-9.,]/g, '').replace(',', '.');
-    if (!cleaned) return null;
-    const n = parseFloat(cleaned);
-    if (!Number.isFinite(n) || n <= 0 || n > MAX_AMOUNT) return null;
+    const n = parseMoney(custom);
+    if (n === null || n <= 0 || n > MAX_AMOUNT) return null;
     return Math.round(n * 100) / 100;
   }, [custom]);
 
@@ -144,12 +142,11 @@ export function OfferAmountSheet({
 
   const customError = useMemo(() => {
     if (!customTouched || parsedCustom != null) return null;
-    const cleaned = custom.replace(/[^0-9.,]/g, '').replace(',', '.');
-    const n = parseFloat(cleaned);
-    if (Number.isFinite(n) && n > MAX_AMOUNT) {
+    const n = parseMoney(custom);
+    if (n !== null && n > MAX_AMOUNT) {
       return `The most you can offer is ${formatPrice(MAX_AMOUNT, currency, numberLocale)}.`;
     }
-    if (Number.isFinite(n) && n <= 0) return 'Enter an amount above zero.';
+    if (n !== null && n <= 0) return 'Enter an amount above zero.';
     return 'Enter an amount, e.g. 45 or 45,50.';
   }, [custom, customTouched, parsedCustom, currency, numberLocale]);
 

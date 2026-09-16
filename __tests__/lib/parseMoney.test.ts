@@ -32,6 +32,22 @@ describe('parseMoney', () => {
     expect(parseMoney('1 234,56')).toBe(1234.56);
   });
 
+  it('reads a lone three-digit group as thousands, not as a decimal', () => {
+    // "1.250" is how a Dutch member types 1250 and "1,250" how an American
+    // does. Reading either as 1.25 is a 1000x error, and it reached the offer
+    // sheet and the listing composer (2026-09-16). No supported currency is
+    // priced to three decimals, so grouping is the only reading that can be
+    // meant.
+    expect(parseMoney('1.250')).toBe(1250);
+    expect(parseMoney('1,250')).toBe(1250);
+    expect(parseMoney('12.500')).toBe(12500);
+    // …but a leading zero can only be a fraction.
+    expect(parseMoney('0,999')).toBe(0.999);
+    // and two decimals stay decimals, which is the common case.
+    expect(parseMoney('1,25')).toBe(1.25);
+    expect(parseMoney('1.25')).toBe(1.25);
+  });
+
   it('returns null rather than a wrong number for unusable input', () => {
     // null, not NaN and not 0: 0 is a VALID price and would silently list
     // something as free.

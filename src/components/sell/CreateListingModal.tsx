@@ -19,7 +19,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
-import { formatPrice, getCurrencySymbol } from '@/lib/format';
+import { formatPrice, getCurrencySymbol, parseMoney } from '@/lib/format';
 import { radius, text, fontWeight, gap } from '@/theme/tokens';
 import type { useFormField } from '@/hooks/useFormField';
 import type { MarketplaceId, MarketplaceFeeSchedule, CurrencyCode } from '@/data/types';
@@ -60,8 +60,8 @@ export const CreateListingModal = React.memo(function CreateListingModal({
 
   // Local fee preview
   const feePreview = useMemo(() => {
-    const price = parseFloat(priceField.value.replace(/[^0-9.,]/g, '').replace(',', '.'));
-    if (!Number.isFinite(price) || price <= 0) return null;
+    const price = parseMoney(priceField.value);
+    if (price === null || price <= 0) return null;
     const schedule = feeSchedules.find((f) => f.marketplaceId === marketplace);
     if (!schedule) return null;
     const fees = (price * (schedule.baseFeePct + schedule.paymentProcessingPct) / 100) + schedule.fixedFee;
@@ -72,8 +72,8 @@ export const CreateListingModal = React.memo(function CreateListingModal({
   const [backendFeePreview, setBackendFeePreview] = useState<{ fees: number; net: number } | null>(null);
 
   useEffect(() => {
-    const price = parseFloat(priceField.value.replace(/[^0-9.,]/g, '').replace(',', '.'));
-    if (!Number.isFinite(price) || price <= 0 || !visible) {
+    const price = parseMoney(priceField.value);
+    if (price === null || price <= 0 || !visible) {
       setBackendFeePreview(null);
       return;
     }

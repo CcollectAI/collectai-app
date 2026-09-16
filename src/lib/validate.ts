@@ -1,3 +1,4 @@
+import { parseMoney } from '@/lib/format';
 import { logger } from '@/lib/logger';
 /**
  * Form validation utilities.
@@ -44,11 +45,33 @@ export function maxLength(fieldName: string, max: number): Validator {
       : null;
 }
 
-/** Value must be a valid number. */
+/**
+ * A typed amount, or null when the text is not one.
+ *
+ * `Number("12,50")` is NaN, so these validators told a member typing their own
+ * decimal separator that a price "must be a number" — and the Sell flow's price
+ * field uses `positiveNumber`, so listing was impossible in most of the seven
+ * currencies the app ships (found 2026-09-16, class sweep E).
+ *
+ * `parseMoney` alone is NOT the fix: it is a best-effort READER for money that
+ * is already meant to be money, so it strips whatever is not a digit or a
+ * separator — `"12abc"` reads as 12 and `"-5"` as 5, which would let a negative
+ * price through `positiveNumber` as positive. A validator has to reject the
+ * shape first, and keep the sign itself.
+ */
+function readTypedNumber(value: string): number | null {
+  const t = value.trim();
+  if (!/^-?\s*[€$£¥₩]?\s*\d[\d.,\s]*$/.test(t)) return null;
+  const n = parseMoney(t);
+  if (n === null) return null;
+  return t.startsWith('-') ? -n : n;
+}
+
+/** Value must be a valid number. Accepts "12,50" and "1.250,00". */
 export function numeric(fieldName: string): Validator {
   return (value) => {
     if (value.trim().length === 0) return null; // let `required` catch empty
-    return isNaN(Number(value)) ? `${fieldName} must be a number` : null;
+    return readTypedNumber(value) === null ? `${fieldName} must be a number` : null;
   };
 }
 
@@ -56,8 +79,8 @@ export function numeric(fieldName: string): Validator {
 export function positiveNumber(fieldName: string): Validator {
   return (value) => {
     if (value.trim().length === 0) return null;
-    const n = Number(value);
-    if (isNaN(n)) return `${fieldName} must be a number`;
+    const n = readTypedNumber(value);
+    if (n === null) return `${fieldName} must be a number`;
     return n <= 0 ? `${fieldName} must be greater than 0` : null;
   };
 }

@@ -94,6 +94,41 @@ HEAD since May, unchanged by this diff.
   (the `echo`'s) — gotchas 15–16. Its log carried the keystore payload and was
   scrubbed; the keystore is not rotated (Merle's call).
 
+## Every money figure was wrong for non-EUR members — found by class sweep, not by walking (2026-09-16)
+
+Five device rounds missed it because **the walk account is EUR**, where the two
+formatters agree. `fmtCurrency(amountEUR, settings)` converts; `formatPrice(amount,
+currency)` formats as given. 60 sites labelled a backend EUR amount with the
+member's symbol and no conversion — a USD member read "$1.348" for €1.347,68, a
+JPY member was off by ~160×. Write side gained `memberAmountToEUR`. Landed in
+`02ee84b` together with `parseMoney` at the HIGH typed-amount sites, the bare-date
+sites, the Items-tab total (it summed the *loaded pages* under Home's label), and
+`AuthProvider` no longer awaiting the profile before first paint.
+
+Three gates came out of it — `check:currency`, `check:bare-date`, and a REPAIR of
+`check-locale-number-parsing`, whose regex was word-boundary anchored and matched
+no camelCase identifier at all: **it had been passing vacuously**.
+`__tests__/lib/parseMoney.test.ts` existed but was not named in `verify:prebuild`,
+so it gated nothing (a test file is not a gate).
+
+**The second pass on that class found the reason it kept recurring: the gate's
+own header recommended the broken idiom.** `parseFloat(v.replace(/[^0-9.,]/g,'')
+.replace(',','.'))` turns "1.250,00" into 1.25, and the rule accepted it as
+"normalised" — 13 sites wrote it, including the P2P offer sheet, where a
+€1.250,00 offer was sent as €1,25. One rule now: `parseMoney`. The same pass
+found that `positiveNumber()`/`numeric()` used `Number()`, so "12,50" was
+rejected as "must be a number" — Sell, Add Item and purchase mandates were
+unusable for comma-decimal members. Details: `docs/ui-playbook.md` "The gate
+taught the bug".
+
+**The register of every class sweep — method, what landed, what is still open,
+and the four product decisions waiting — is `docs/CLASS_SWEEPS.md`.** Read it
+before opening a new sweep: A–H are done (D needs re-running, its report was lost
+with a session), I–L were launched 09-16 and died on a rate limit without
+reporting. Open, verified, unfixed: 2 stale cache keys, 12 hard-coded date
+locales, ~14 MED parsing sites, the `/collections/user/progress` 500, and a
+half-saving item edit.
+
 ## Five screenshots, eleven defects, and three of my own (2026-08-27)
 
 Build 154 went to TestFlight and came back as five photographs. Every defect in

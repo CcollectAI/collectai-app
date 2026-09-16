@@ -65,7 +65,7 @@ import { useToast } from '@/components/Toast';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { collectorsApi } from '@/api/collectorsApi';
 import { matchCatalog, type CatalogMatchHit } from '@/api/itemsApi';
-import { getCurrencySymbol } from '@/lib/format';
+import { getCurrencySymbol, parseMoney } from '@/lib/format';
 import { CATEGORIES, CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
@@ -161,8 +161,8 @@ function SellNewScreen() {
   const [matchFailed, setMatchFailed] = useState(false);
 
   const parsedPrice = useMemo(() => {
-    const n = parseFloat(price.replace(/[^0-9.,]/g, '').replace(',', '.'));
-    return Number.isFinite(n) && n > 0 ? n : null;
+    const n = parseMoney(price);
+    return n !== null && n > 0 ? n : null;
   }, [price]);
 
   // From the collection the SERVER supplies the name from the item, so a typed

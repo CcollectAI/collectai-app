@@ -2589,10 +2589,62 @@ rendered in that branch), which is why the small-screen round exists.
 Also clean at 360dp, both previously recorded as unmeasured: the Watchlist
 header cluster (~387dp estimated) and the barcode manual-entry placeholder.
 
+## The gate taught the bug: "12,50" could not be typed at all (2026-09-16)
+
+`check-locale-number-parsing` exists so a typed "12,50" never becomes 1250. Its
+own header recommended:
+
+```ts
+parseFloat(value.replace(/[^0-9.,]/g, '').replace(',', '.'))   // WRONG
+```
+
+That swaps the FIRST separator, so "1.250,00" becomes "1.250.00" and parseFloat
+reads **1.25**. The rule accepted it as "normalised", so 13 sites wrote it, the
+gate stayed green, and the class kept coming back. Wrong on exactly the amounts
+that matter most — the four-figure ones.
+
+Where it was: watchlist target price (×3), Sell dashboard, Sell → new listing,
+**the P2P offer sheet** (both the parse and the error message), the create-listing
+modal's fee preview, item detail's recorded sale price, and `useListForSale`
+(fee calc, canSubmit, and the create loop). A Dutch member offering €1.250,00 was
+sending an offer of **€1,25**.
+
+One rule now, everywhere: **`parseMoney(value)`** — last separator is the
+decimal point, `null` (never `NaN`, never `0`) when it cannot read the text.
+
+### Three things the fix found that the sweep had not
+
+1. **`parseMoney` itself was wrong for "1.250"** — a lone three-digit group read
+   as a decimal, so the most ordinary way to type twelve-fifty-oh in NL gave 1.25.
+   A single separator with exactly three digits behind it is grouping (no
+   supported currency has three decimals); a leading `0` still means a fraction.
+2. **`positiveNumber()` / `numeric()` in `src/lib/validate.ts` used `Number()`**,
+   which is `NaN` for "12,50" — so Sell's price field, Add Item's purchase price
+   and estimated value, and the purchase mandate's max price all told a European
+   member their own decimal separator "must be a number". The validators could
+   not simply call `parseMoney`: it is a READER, and strips whatever is not a
+   digit — `"12abc"` reads as 12 and `"-5"` as **5**, which would accept a
+   negative price as positive. Validators check the shape first and keep the sign.
+3. **`Number(purchasePriceField.value)` in add-manual** was exempt from the gate
+   as "reading a number out of a typed object" — but a form field's `.value` is a
+   string. Once the validator accepted "12,50", that line would have saved `NaN`.
+   The exemption is gone; a genuine server number carries `// numeric-ok: <why>`
+   (see `app/offers.tsx`, where `amount` really is a float off the API).
+
+Never fall back to `?? 0` on a price. 0 is a valid price, so an unparseable field
+lists the item **free** instead of failing — `app/sell/dashboard.tsx` and
+`useListForSale.submit` now say so and stop.
+
+Mutation-proven: re-breaking any fixed site turns `check:numbers` red; reverting
+the validator turns five tests red; removing the shape guard turns the "12abc"
+test red.
+
 ## Every money figure was wrong for non-EUR members (2026-09-16)
 
 Found by a CLASS sweep, not by walking: five device rounds missed it because the
-walk account is EUR, where the two formatters agree.
+walk account is EUR, where the two formatters agree. The sweep method, the full
+register of classes A–L and everything still open from them live in
+`docs/CLASS_SWEEPS.md`.
 
 `src/lib/format.ts` has two, and only one converts:
 

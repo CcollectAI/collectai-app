@@ -30,7 +30,7 @@ import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { useAuthContext } from '@/providers/useAuthContext';
 import { GATE_MAX_WAIT_MS } from '@/hooks/usePaginatedList';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, parseMoney } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
@@ -271,10 +271,8 @@ function WatchlistTabScreen() {
     // demonstration of the paid feature — and a user whose first row is inert
     // never sees the feature at all, waits, and concludes the alerts are
     // broken.
-    const parsedTarget = formTargetPrice.trim()
-      ? parseFloat(formTargetPrice.replace(/[^0-9.,]/g, '').replace(',', '.'))
-      : NaN;
-    if (!Number.isFinite(parsedTarget) || parsedTarget <= 0) {
+    const parsedTarget = parseMoney(formTargetPrice);
+    if (parsedTarget === null || parsedTarget <= 0) {
       showToast({
         // Says what the number DOES, not that a field is missing. "Required"
         // reads as bureaucracy; this reads as the reason to type it.
@@ -395,12 +393,10 @@ function WatchlistTabScreen() {
     if (!editTargetItem) return;
     setEditTargetSaving(true);
     try {
-      const newTarget = editTargetValue.trim()
-        ? parseFloat(editTargetValue.replace(/[^0-9.,]/g, '').replace(',', '.'))
-        : null;
+      const newTarget = parseMoney(editTargetValue);
 
       await dataProvider.updateWatchlistItem(editTargetItem.id, {
-        targetPrice: newTarget && !isNaN(newTarget) ? newTarget : null,
+        targetPrice: newTarget !== null && newTarget > 0 ? newTarget : null,
         targetPriceCurrency: settings.currency,
       });
 
@@ -495,13 +491,11 @@ function WatchlistTabScreen() {
 
     setAcquiring(true);
     try {
-      const actualPrice = acquirePrice.trim()
-        ? parseFloat(acquirePrice.replace(/[^0-9.,]/g, '').replace(',', '.'))
-        : undefined;
+      const actualPrice = parseMoney(acquirePrice);
 
       await dataProvider.convertWatchlistToItem(
         acquireItem.id,
-        actualPrice && !isNaN(actualPrice) ? actualPrice : undefined,
+        actualPrice !== null && actualPrice > 0 ? actualPrice : undefined,
         acquireNotes.trim() || undefined
       );
 

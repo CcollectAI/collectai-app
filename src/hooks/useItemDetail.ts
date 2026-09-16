@@ -5,7 +5,7 @@
  * UI toggles, evidence data, scarcity/comps, and associated handlers.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { memberAmountToEUR } from '@/lib/fx';
 import { Platform, Keyboard } from 'react-native';
 import { router } from 'expo-router';
@@ -504,8 +504,8 @@ export function useItemDetail(params: UseItemDetailParams) {
     setFeedbackSource('sale');
     try {
       await dataProvider.submitFeedback(id, 'sale_price', salePrice.trim());
-      const parsedPrice = parseFloat(salePrice.trim().replace(/[^0-9.,]/g, '').replace(',', '.'));
-      if (parsedPrice > 0) {
+      const parsedPrice = parseMoney(salePrice);
+      if (parsedPrice !== null && parsedPrice > 0) {
         collectorsApi.submitVerifiedSale({
           item_id: id,
           sale_price: parsedPrice,
