@@ -38,6 +38,7 @@ import { safeGoBack } from '@/lib/goBack';
 import { splitTextLinks } from '@/lib/linkify';
 import { inAppListingHref } from '@/lib/ids';
 import { useTranslation } from 'react-i18next';
+import { dateLocale } from '@/constants/dateFormats';
 
 // Message with local status for optimistic UI
 type LocalMessage = DmMessage & {
@@ -113,7 +114,7 @@ function formatDateSeparator(dateStr: string): string {
 
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Yesterday';
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString(dateLocale(), { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function shouldShowDateSeparator(current: string, previous: string | null): boolean {
@@ -628,7 +629,7 @@ function ThreadDetailScreen() {
 
 function formatTime(dateStr: string): string {
   const date = new Date(dateStr);
-  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return date.toLocaleTimeString(dateLocale(), { hour: 'numeric', minute: '2-digit' });
 }
 
 const styles = StyleSheet.create({

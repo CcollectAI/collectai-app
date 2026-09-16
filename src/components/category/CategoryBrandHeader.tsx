@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { CATEGORY_FOLLOW_ENABLED } from '@/config/featureFlags';
 import type { AppTheme } from '@/hooks/useAppTheme';
+import { formatNumber } from '@/lib/format';
 
 export type CategorySponsor = {
   name: string;
@@ -40,7 +41,7 @@ function CategoryBrandHeader({ sponsor, colors, onFollow }: Props) {
   const cover = sponsor.coverColors ?? ['#312e81', '#db2777'];
   const followers = fmtCount(sponsor.followers);
   const meta = [
-    sponsor.itemCount != null ? `${sponsor.itemCount.toLocaleString()} items` : null,
+    sponsor.itemCount != null ? `${formatNumber(sponsor.itemCount)} items` : null,
     followers ? `${followers} followers` : null,
   ].filter(Boolean).join(' · ');
 

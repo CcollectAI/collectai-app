@@ -28,6 +28,7 @@ import { formatPrice } from "@/lib/format";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { radius, text as textTokens, fontWeight, gap } from "@/theme/tokens";
+import { dateLocale } from '@/constants/dateFormats';
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -48,7 +49,7 @@ const RANGE_OPTIONS = [
 function formatDateLabel(dateStr: string): string {
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+  return d.toLocaleDateString(dateLocale(), { day: "2-digit", month: "short" });
 }
 
 function buildLinePath(

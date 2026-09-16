@@ -15,6 +15,7 @@ import { MS_PER_DAY } from '@/constants/time';
 import { getStatusDef } from '@/constants/buildStepTemplates';
 import type { BuildPaintProject } from '@/data';
 import { categoryDisplayName } from '@/constants/categories';
+import { dateLocale } from '@/constants/dateFormats';
 
 const MS_PER_MONTH = 30 * MS_PER_DAY;
 
@@ -27,7 +28,7 @@ function formatRelativeDate(dateStr: string): string {
   if (diffDays === 0) return 'today';
   if (diffDays === 1) return 'yesterday';
   if (diff < MS_PER_MONTH) return timeAgo(date);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(dateLocale(), { month: 'short', day: 'numeric' });
 }
 
 function statusColor(

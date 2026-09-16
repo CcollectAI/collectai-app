@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { storeLogger } from "@/lib/logger";
+import { dateLocale } from '@/constants/dateFormats';
 
 export type CollectionItem = {
   id: string;
@@ -70,7 +71,7 @@ export async function fetchCollectionItems(): Promise<CollectionItem[]> {
     // condition/notes can be extended later (e.g. from another table or JSON)
     condition: undefined,
     notes: r.updated_at
-      ? `Last updated: ${new Date(r.updated_at).toLocaleString()}`
+      ? `Last updated: ${new Date(r.updated_at).toLocaleString(dateLocale())}`
       : undefined,
   }));
 }

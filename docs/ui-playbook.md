@@ -2589,6 +2589,43 @@ rendered in that branch), which is why the small-screen round exists.
 Also clean at 360dp, both previously recorded as unmeasured: the Watchlist
 header cluster (~387dp estimated) and the barcode manual-entry placeholder.
 
+## A translated screen with an English date (2026-09-17)
+
+Round 3 of the sweep (`npm run walk -- --locale nl`) reads the app in Dutch and
+found 153 English `accessibilityLabel`s. What it could not see is that the dates
+on those same screens were English too: twelve sites called
+`toLocaleDateString('en-US' | 'en-GB', …)`, so a Dutch member read **"Sep 16"**
+in a sentence that was otherwise Dutch, and the two charts disagreed with every
+other date on the page.
+
+The chokepoint is `dateLocale()` in `src/constants/dateFormats.ts`, kept pointed
+at the resolved UI language by SettingsProvider — the same shape as
+`setActiveNumberLocale`, which exists because 148 of 164 `formatPrice` call sites
+passed no locale.
+
+Three things worth carrying forward:
+
+- **Dates follow the UI LANGUAGE, not `settings.numberLocale`.**
+  `docs/ARCHITECTURE.md` is explicit that these are different sets: the number
+  locale is CHECK-constrained to six values and describes grouping, while the
+  language is what the member is reading. A French reader gets French months
+  without `fr-FR` having to become a legal number locale.
+- **Drive it from `i18n.on('languageChanged')`, not from `settings.language`.**
+  `i18n.changeLanguage` is async, so an effect keyed on the setting reads the
+  OLD language and leaves every date one language behind. It also covers `'auto'`,
+  where the setting stays the literal string and the device detection decides.
+- **`formatNumber` had the same defect one function along**: its default was the
+  literal `'de-DE'` and 8 of its 14 call sites pass no locale, so grading
+  populations, catalogue counts and Twitch hours were grouped German for
+  everybody. It now follows `_activeNumberLocale` exactly as `formatPrice` does.
+
+`npm run check:date-locale` (in prebuild, mutation-proven) flags a hard-coded
+locale AND a bare `toLocale*String()` — the second is the DEVICE locale, which
+is right by accident on a matching phone and wrong for anyone who chose a
+different app language. It found a tenth date site the sweep's list had missed,
+plus five number leaks. That is the third time a gate has beaten the sweep that
+motivated it.
+
 ## Read every amount before the first write (2026-09-17)
 
 `useItemDetail.onSaveEdits` does three writes: `updateItem` (name, category), a

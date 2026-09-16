@@ -35,6 +35,7 @@ import { usePhotoUpload } from '@/hooks/usePhotoUpload';
 import { track } from '@/analytics/track';
 import { useTranslation } from 'react-i18next';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { dateLocale } from '@/constants/dateFormats';
 
 const SponsorDashboardScreen: React.FC = () => {
   const router = useRouter();
@@ -95,7 +96,7 @@ const SponsorDashboardScreen: React.FC = () => {
   }, [sponsoredEvents, announcements]);
 
   const memberSince = company?.createdAt
-    ? new Date(company.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    ? new Date(company.createdAt).toLocaleDateString(dateLocale(), { month: 'long', year: 'numeric' })
     : null;
 
   const eventNameMap = useMemo(() => {

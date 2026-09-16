@@ -7,6 +7,7 @@ import type { EventAnnouncement } from '@/data/events';
 import { timeAgo } from '@/lib/timeAgo';
 import { MS_PER_WEEK } from '@/constants/time';
 import { useTranslation } from 'react-i18next';
+import { dateLocale } from '@/constants/dateFormats';
 
 const SHADOW_SM = Platform.select({
   ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 3 },
@@ -19,7 +20,7 @@ function formatRelativeDate(dateStr?: string): string {
   const date = new Date(dateStr);
   const diff = Date.now() - date.getTime();
   if (diff < MS_PER_WEEK) return timeAgo(date);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(dateLocale(), { month: 'short', day: 'numeric' });
 }
 
 interface Props {

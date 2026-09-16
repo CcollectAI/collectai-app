@@ -9,6 +9,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, TextStyle, StyleProp, Text } from 'react-native';
 import { DURATION } from './tokens';
+import { formatNumber } from '@/lib/format';
 
 export interface AnimatedCounterProps {
   /** Target numeric value */
@@ -27,7 +28,10 @@ export interface AnimatedCounterProps {
 
 export function AnimatedCounter({
   value,
-  format = (v) => Math.round(v).toLocaleString(),
+  // formatNumber, not toLocaleString(): the bare call uses the DEVICE locale,
+  // so a counter grouped 1,234 sat beside prices grouped 1.234 for the same
+  // member (class sweep H, 2026-09-17).
+  format = (v) => formatNumber(Math.round(v)),
   style,
   duration = DURATION.slow,
   enabled = true,

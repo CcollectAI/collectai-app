@@ -42,7 +42,7 @@ import { colors as tokens } from "@/theme/tokens";
 import CategorySortChips, { type CatalogSortKey } from "@/components/category/CategorySortChips";
 import ScreenHeader from "@/components/ScreenHeader";
 import { cleanCatalogItem } from "@/lib/catalogPresentation";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, formatNumber } from "@/lib/format";
 import type { CatalogItemData } from "@/components/CatalogBrowseSection";
 import logger from "@/utils/logger";
 import { EmptyState } from "@/components/EmptyState";
@@ -393,7 +393,7 @@ function CategoryBrowseScreen() {
                     // catalog is still being curated" there is simply false, and
                     // it hides the fix (prices, not catalog entries).
                     ? total
-                      ? `${total.toLocaleString()} items catalogued — market prices are still being collected. Try All or Newest.`
+                      ? `${formatNumber(total)} items catalogued — market prices are still being collected. Try All or Newest.`
                       : "Market prices are still being collected for this category."
                     : "This category's catalog is still being curated"}
               </Text>

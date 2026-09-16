@@ -26,6 +26,7 @@ import type { CurrencyCode } from '@/data/types';
 import { formatPrice } from '@/lib/format';
 import { RangeBar } from './RangeBar';
 import { useTranslation } from 'react-i18next';
+import { dateLocale } from '@/constants/dateFormats';
 
 type AffiliateLink = {
   source: string;
@@ -202,7 +203,7 @@ export function PriceExplanationSheet({
 
           {/* Calculated timestamp */}
           <Text style={[styles.timestamp, { color: colors.muted }]}>
-            Calculated: {new Date(explanation.calculatedAt).toLocaleDateString('en-US', {
+            Calculated: {new Date(explanation.calculatedAt).toLocaleDateString(dateLocale(), {
               month: 'short',
               day: 'numeric',
               year: 'numeric',

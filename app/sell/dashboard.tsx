@@ -53,7 +53,7 @@ import type {
   CurrencyCode,
 } from '@/data/types';
 import { useTranslation } from 'react-i18next';
-import { DATE_LOCALE, DATE_SHORT_YEAR } from '@/constants/dateFormats';
+import { dateLocale, DATE_SHORT_YEAR } from '@/constants/dateFormats';
 
 // ---------------------------------------------------------------------------
 // Marketplace branding
@@ -167,7 +167,7 @@ const ListingCard = React.memo(function ListingCard({
 
       {listing.syncedAt && (
         <Text style={[styles.syncedText, { color: colors.muted }]}>
-          Synced {new Date(listing.syncedAt).toLocaleDateString(DATE_LOCALE, DATE_SHORT_YEAR)}
+          Synced {new Date(listing.syncedAt).toLocaleDateString(dateLocale(), DATE_SHORT_YEAR)}
         </Text>
       )}
     </AnimatedPressable>
@@ -231,7 +231,7 @@ const SaleCard = React.memo(function SaleCard({
       </View>
 
       <Text style={[styles.saleDate, { color: colors.muted }]}>
-        {new Date(sale.soldAt).toLocaleDateString(DATE_LOCALE, DATE_SHORT_YEAR)}
+        {new Date(sale.soldAt).toLocaleDateString(dateLocale(), DATE_SHORT_YEAR)}
       </Text>
     </View>
   );
@@ -263,7 +263,7 @@ const AccountCard = React.memo(function AccountCard({
           </Text>
         )}
         <Text style={[styles.accountDate, { color: colors.muted }]}>
-          Connected {new Date(account.connectedAt).toLocaleDateString(DATE_LOCALE, DATE_SHORT_YEAR)}
+          Connected {new Date(account.connectedAt).toLocaleDateString(dateLocale(), DATE_SHORT_YEAR)}
         </Text>
       </View>
       <View style={[

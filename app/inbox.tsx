@@ -41,6 +41,7 @@ import { trackScreen } from '@/analytics/track';
 import { safeGoBack } from '@/lib/goBack';
 import { useTranslation } from 'react-i18next';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { dateLocale } from '@/constants/dateFormats';
 
 // SWR cache for instant inbox first-paint on revisit (realtime + on-mount
 // revalidate keep it fresh; TTL just bounds offline staleness).
@@ -53,7 +54,7 @@ function formatRelativeTime(dateStr: string | null | undefined): string {
   const date = new Date(dateStr);
   const diff = Date.now() - date.getTime();
   if (diff < MS_PER_WEEK) return timeAgoShort(date);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(dateLocale(), { month: 'short', day: 'numeric' });
 }
 
 const UserAvatar = React.memo(function UserAvatar({

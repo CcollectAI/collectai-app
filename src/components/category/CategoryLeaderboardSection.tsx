@@ -29,6 +29,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import { MEDAL_COLORS } from '@/constants/colors';
 import logger from '@/utils/logger';
 import { GAMIFICATION_UI_ENABLED } from '@/config/featureFlags';
+import { formatNumber } from '@/lib/format';
 
 type LeaderboardEntry = {
   user_id: string;
@@ -102,7 +103,7 @@ export default React.memo(function CategoryLeaderboardSection({ categoryId: _cat
                   {entry.display_name}
                 </Text>
                 <Text style={[styles.meta, { color: colors.muted }]}>
-                  Level {entry.level} · {entry.xp.toLocaleString()} XP
+                  Level {entry.level} · {formatNumber(entry.xp)} XP
                 </Text>
               </View>
             </View>

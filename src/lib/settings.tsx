@@ -5,6 +5,7 @@ import { updateFxCache, getFxRates } from '@/lib/fx';
 import type { CurrencyCode } from '@/data/types';
 import logger from '@/utils/logger';
 import i18n, { SUPPORTED_LOCALES, type SupportedLocale } from '@/i18n';
+import { setActiveDateLocale } from '@/constants/dateFormats';
 import { setActiveNumberLocale } from '@/lib/format';
 
 export type ChartRange = '1D'|'7D'|'30D';
@@ -170,6 +171,22 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setActiveNumberLocale(settings.numberLocale ?? null);
   }, [settings.numberLocale]);
+
+  // DATES follow the UI language, not the number locale — the comment above
+  // says why those are different sets.
+  //
+  // Driven by i18n's own event, NOT by `settings.language`: the two places that
+  // apply a language call `i18n.changeLanguage`, which is ASYNC, so an effect
+  // keyed on the setting would read `i18n.language` before it had changed and
+  // leave every date one language behind. The event also covers the 'auto'
+  // case, where the resolved language comes from device detection and the
+  // setting stays the literal string 'auto'.
+  useEffect(() => {
+    const apply = () => setActiveDateLocale(i18n.language ?? null);
+    apply();
+    i18n.on('languageChanged', apply);
+    return () => { i18n.off('languageChanged', apply); };
+  }, []);
 
   const value = useMemo(() => ({ settings, updateSettings, ready }), [settings, updateSettings, ready]);
   return <SettingsCtx.Provider value={value}>{children}</SettingsCtx.Provider>;

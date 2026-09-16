@@ -108,7 +108,15 @@ re-checked rather than re-believed.
 - `profile:${userId}` (line 375) is never cleared after a profile edit, so a member
   can save a change and keep seeing the old value.
 
-**H — the locale half** (dates are right now; their *formatting* is not)
+**H — the locale half: CLOSED 2026-09-17.** All twelve hard-coded date sites now
+go through `dateLocale()`, kept on the resolved UI language by SettingsProvider
+via `i18n.on('languageChanged')`. `npm run check:date-locale` gates it and found
+a tenth site the sweep had missed plus five number leaks; `formatNumber`'s
+`'de-DE'` default was the same defect one function along. Write-up:
+`docs/ui-playbook.md` "A translated screen with an English date". Still open from
+H: the server defines "today" twice (Python CEST vs Postgres UTC).
+
+<details><summary>The original list, kept for the record</summary>
 - 9 sites hard-code `'en-US'` for a date a member reads:
   `src/components/PriceExplanationSheet.tsx:205`, `src/components/projects/ProjectCard.tsx:30`,
   `src/components/sponsor/AnnouncementsListSection.tsx:22`,
@@ -123,6 +131,8 @@ re-checked rather than re-believed.
   locale, not app locale. (`CategoryLeaderboardSection.tsx:105` has the same bug
   but sits behind `GAMIFICATION_UI_ENABLED`, which is off; its header documents it.)
 - Server "today" is defined twice: Python computes it in CEST, Postgres in UTC.
+
+</details>
 
 **E — closed 2026-09-16 (second pass)**
 The "~14 MED idiom sites" were not a MED backlog: the idiom is shape 5, wrong on

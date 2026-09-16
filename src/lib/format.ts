@@ -185,10 +185,16 @@ export function isUnpriced(value: string | number | undefined | null): boolean {
 
 /**
  * Format a plain number (no currency symbol).
+ *
+ * The default used to be the literal `'de-DE'`, and 8 of the 14 call sites pass
+ * no locale — so grading populations, Twitch hours and every other bare count
+ * were rendered with German grouping for everybody, whatever the member had
+ * chosen. Same defect `formatPrice` had, one function along: follow
+ * `_activeNumberLocale` first, exactly as it does (class sweep H, 2026-09-17).
  */
-export function formatNumber(value: number | null | undefined, locale: NumberLocale = 'de-DE'): string {
+export function formatNumber(value: number | null | undefined, locale?: NumberLocale): string {
   if (value == null || !Number.isFinite(value)) return '—';
-  const fmt = getFormatter(locale, { maximumFractionDigits: 0 });
+  const fmt = getFormatter(locale ?? _activeNumberLocale ?? 'en-US', { maximumFractionDigits: 0 });
   return fmt.format(value);
 }
 

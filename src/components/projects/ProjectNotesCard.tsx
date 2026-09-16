@@ -14,11 +14,12 @@ import {
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable } from "@/motion";
 import type { BuildPaintNote } from "@/data";
+import { dateLocale } from '@/constants/dateFormats';
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return "";
   const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString(dateLocale(), {
     month: "short",
     day: "numeric",
     hour: "2-digit",

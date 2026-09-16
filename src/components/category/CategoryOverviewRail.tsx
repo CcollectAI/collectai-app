@@ -19,7 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { browseCatalogItemsCached } from '@/data/catalogBrowseCache';
 import { cleanCatalogTitle } from '@/lib/catalogPresentation';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, formatNumber } from '@/lib/format';
 import { colors as tokens } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import type { CatalogItemData } from '@/components/CatalogBrowseSection';
@@ -175,7 +175,7 @@ function CategoryOverviewRail({ categoryId, categoryName, label, sort, accentCol
             accessibilityLabel={t('category.a11y_see_all_items', { defaultValue: 'See all items' })}
           >
             <Text style={styles.seeAllTileText}>
-              See all{total ? `\n${total.toLocaleString()}` : ''} →
+              See all{total ? `\n${formatNumber(total)}` : ''} →
             </Text>
           </AnimatedPressable>
         </ScrollView>

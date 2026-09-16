@@ -23,6 +23,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import type { CollectorsEvent } from '@/data/events';
 import { parseEventDate } from '@/lib/calendar';
 import { useTranslation } from 'react-i18next';
+import { dateLocale } from '@/constants/dateFormats';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 // Short hour rows so most of the day fits without scrolling — this is the
@@ -63,7 +64,7 @@ function addDays(date: Date, days: number): Date {
 function formatWeekRange(monday: Date): string {
   const sunday = addDays(monday, 6);
   const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
-  return `${monday.toLocaleDateString('en-US', opts)} – ${sunday.toLocaleDateString('en-US', opts)}`;
+  return `${monday.toLocaleDateString(dateLocale(), opts)} – ${sunday.toLocaleDateString(dateLocale(), opts)}`;
 }
 
 export const WeekViewCalendar = React.memo(function WeekViewCalendar({

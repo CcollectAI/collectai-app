@@ -12,7 +12,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { logger } from '@/lib/logger';
 
 import type { ExpoCalendarEntry } from '@/../types/api';
-import { DATE_LOCALE, DATE_SHORT_YEAR } from '@/constants/dateFormats';
+import { dateLocale, DATE_SHORT_YEAR } from '@/constants/dateFormats';
 
 // Optional dependencies - graceful fallback if not installed
  
@@ -580,7 +580,7 @@ export function formatEventWhen(dateStr?: string | null, timeStr?: string | null
   const hasTime = !!withTime && !isNaN(withTime.getTime());
   const base = hasTime ? (withTime as Date) : parseEventDate(dateStr);
   if (isNaN(base.getTime())) return dateStr;
-  const datePart = base.toLocaleDateString(DATE_LOCALE, DATE_SHORT_YEAR);
+  const datePart = base.toLocaleDateString(dateLocale(), DATE_SHORT_YEAR);
   if (!hasTime) return datePart;
   // Device locale for the clock (matches WeekViewCalendar), so a 12-hour phone
   // reads "8:00 PM" and a 24-hour one "20:00".

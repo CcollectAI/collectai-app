@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, FlatList, RefreshControl, Pressable } from "react-native";
 import { supabase } from "@/lib/supabase";
+import { dateLocale } from '@/constants/dateFormats';
 
 type Session = {
   id: string;
@@ -57,7 +58,7 @@ export default function AdminReview() {
             <Text>Session: {item.id.slice(0,8)}…</Text>
             <Text>Confidence: {item.confidence ?? 0}</Text>
             <Text>€ {item.price_low_eur ?? "—"} / {item.price_mid_eur ?? "—"} / {item.price_high_eur ?? "—"}</Text>
-            <Text style={{ color: "#486" }}>{new Date(item.created_at).toLocaleString()}</Text>
+            <Text style={{ color: "#486" }}>{new Date(item.created_at).toLocaleString(dateLocale())}</Text>
           </View>
         )}
       />

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg";
 import { formatPrice } from "@/lib/format";
+import { dateLocale } from '@/constants/dateFormats';
 
 export type TimeSeriesPoint = {
   t: string; // ISO timestamp
@@ -59,7 +60,7 @@ const VALUE_LABEL_W = 96;
 function formatDateShort(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+  return d.toLocaleDateString(dateLocale(), { day: "2-digit", month: "short" });
 }
 
 /**
