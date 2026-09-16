@@ -231,10 +231,15 @@ a failed listing insert leaves an item the member never added sitting in their
 collection badged "Listed"; `calendar.ts:174/228` writes the OS calendar event
 and its mapping separately, so "Failed to add" can leave an event in the calendar
 the app can no longer remove; `create-event.tsx:131` swallows a failed template
-save and navigates back as if both worked; `useItemDetail.ts:462` omits
-`estimated_value` from the patch when it cannot read it and still says "Changes
-saved" (the sibling of the fixed bug, on the field the fix missed — and there is
-no way to CLEAR an estimated value today).
+save and navigates back as if both worked.
+
+✅ `useItemDetail` `estimated_value` — **fixed 2026-09-17**, and it was worse
+than the sweep reported. Besides being parsed after the first write and dropped
+silently, it was written on EVERY save from a field seeded with the DISPLAYED
+value — which can come from the model chain — so an unrelated rename filed the
+catalogue's number as the member's own estimate. And because only `> 0` was ever
+patched, an estimate could not be withdrawn: `NULL` means "we do not know" and
+hands the value back to the model. Three mutation-proven tests.
 
 The pattern to copy is `account_router._do_account_delete` — transactional, with
 a per-statement SAVEPOINT and a comment explaining why.

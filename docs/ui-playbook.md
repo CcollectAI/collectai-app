@@ -2651,6 +2651,29 @@ Two details worth copying:
   changes" when what they need to know is *which field*.
 - Stay in edit mode on a validation failure. There is a field to fix.
 
+### The field the first fix missed, and what it was doing instead
+
+`estimated_value` was still parsed after the first write — and the sweep that
+found it also showed the write itself was wrong in two ways:
+
+- **It wrote on every save.** The field is seeded with the value the SCREEN
+  shows (`initialValue: toMemberNumber(toNum(value))`), and that number can come
+  from the model chain — q50, then `predicted_price_eur`, then `estimated_value`
+  (`docs/ARCHITECTURE.md`, "A member may override the model"). So renaming an
+  item filed the CATALOGUE's figure as the member's own estimate. Purchase price
+  had been change-gated since it was written; this never was.
+- **An estimate could not be withdrawn.** Only `> 0` was ever patched, so an
+  emptied field was dropped — and `NULL` is not "unset", it means *we do not
+  know*, which hands the value back to the model chain.
+
+Both now go through the same read-before-write path: unchanged → not written,
+emptied → `null`, unreadable → nothing written and the toast names the field.
+
+The three tests are each mutation-proven (drop the change gate → red; restore
+the `> 0` rule → red; stop checking the value read → red), and the mock had to
+change to prove any of it: the old supabase mock only *resolved*, so a test
+could not see which keys reached the patch. A write assertion needs the write.
+
 ### The suite that was red and gated nothing
 
 `__tests__/hooks/useItemDetail.test.ts` had five failures, identical before my

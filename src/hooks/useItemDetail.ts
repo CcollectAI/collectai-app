@@ -440,7 +440,9 @@ export function useItemDetail(params: UseItemDetailParams) {
 
       const purchaseRead = purchaseChanged ? readAmount(trimmedPurchase, 'a purchase price') : null;
       const feesRead = feesChanged ? readAmount(trimmedFees, 'fees') : null;
-      const unreadable = [purchaseRead, feesRead].find((r) => r !== null && !r.ok);
+      const valueChanged = editableValue.trim() !== (initialValue ?? '').trim();
+      const valueRead = valueChanged ? readAmount(editableValue.trim(), 'an estimated value') : null;
+      const unreadable = [purchaseRead, feesRead, valueRead].find((r) => r !== null && !r.ok);
       if (unreadable && !unreadable.ok) {
         showToast({ message: unreadable.message, type: 'error' });
         return; // nothing written yet, and nothing will be
@@ -459,13 +461,33 @@ export function useItemDetail(params: UseItemDetailParams) {
       // the name/category, leaving a partial save behind an error toast.
       if (editableCollection && editableCollection !== 'Not set') extraPatch.collection_name = editableCollection;
       if (editableCondition && editableCondition !== 'Not set') extraPatch.condition = editableCondition;
-      const numericValue = parseMoney(editableValue) ?? NaN;
+      // ESTIMATED VALUE — only when it CHANGED, and read above with the others.
+      //
+      // Two defects here, both from writing it on every save (class sweep K):
+      //
+      //  1. The field is seeded from the value the screen SHOWS
+      //     (`initialValue: toMemberNumber(toNum(value))`), and that number can
+      //     come from the model chain — q50, then predicted_price_eur, then
+      //     estimated_value (docs/ARCHITECTURE.md "A member may override the
+      //     model"). Writing it back on an unrelated rename filed the
+      //     CATALOGUE's figure as the member's own estimate. Purchase price has
+      //     always been change-gated for the same reason; this was not.
+      //  2. An unreadable or emptied field just failed the `> 0` test and was
+      //     dropped from the patch, while the toast still said "Changes saved".
+      //     And because only `> 0` was ever written, an estimate could not be
+      //     CLEARED — yet NULL is meaningful: it means "we do not know", which
+      //     hands the value back to the model chain.
+      //
       // EUR for storage: the member types in their own currency and the server
       // sums `estimated_value` as EUR (item_value_v1, `value_choice = 'mine'`).
-      // Writing it raw filed $100 as EUR 100 (class sweep, 2026-09-16); the
-      // add-manual writer has always normalised its purchase price this way.
-      if (!isNaN(numericValue) && numericValue > 0) {
-        extraPatch.estimated_value = memberAmountToEUR(numericValue, settings);
+      // Writing it raw filed $100 as EUR 100 (class sweep, 2026-09-16).
+      // `valueRead.ok` is guaranteed by the early return above — the narrow is
+      // for the compiler, which cannot see it through `Array.find`.
+      if (valueRead?.ok) {
+        extraPatch.estimated_value =
+          valueRead.value === null || valueRead.value === 0
+            ? null
+            : memberAmountToEUR(valueRead.value, settings);
       }
       if (Object.keys(extraPatch).length > 0) {
         // Check the error: this used to discard the result, so a failed or
@@ -516,7 +538,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     } finally {
       setSavingNotes(false);
     }
-  }, [id, isDraft, editableName, editableCategory, editableCollection, editableCondition, editableValue, editablePurchasePrice, initialPurchasePrice, editableAcquisitionFees, initialAcquisitionFees, initialPurchaseCurrency, settings, showToast]);
+  }, [id, isDraft, editableName, editableCategory, editableCollection, editableCondition, editableValue, initialValue, editablePurchasePrice, initialPurchasePrice, editableAcquisitionFees, initialAcquisitionFees, initialPurchaseCurrency, settings, showToast]);
 
   // ── Feedback handlers ──────────────────────────────────────────────────
   const onSubmitSalePrice = useCallback(async () => {

@@ -64,6 +64,12 @@ jest.mock('../../src/data', () => ({
   },
 }));
 
+// Captures the PostgREST patch so a test can assert what was — and was not —
+// written. The estimated-value bugs (class sweep K) were both invisible to a
+// mock that only resolved: one wrote the model's number on an unrelated save,
+// the other dropped the field and still reported success.
+const mockItemsPatch = jest.fn();
+
 jest.mock('../../src/lib/supabase', () => ({
   supabase: {
     from: () => ({
@@ -72,9 +78,10 @@ jest.mock('../../src/lib/supabase', () => ({
           single: () => Promise.resolve({ data: null, error: null }),
         }),
       }),
-      update: () => ({
-        eq: () => Promise.resolve({ data: null, error: null }),
-      }),
+      update: (patch: Record<string, unknown>) => {
+        mockItemsPatch(patch);
+        return { eq: () => Promise.resolve({ data: null, error: null }) };
+      },
     }),
   },
 }));
@@ -388,6 +395,74 @@ describe('useItemDetail', () => {
       );
       // Still in edit mode: there is a field to fix.
       expect(result.current.isEditing).toBe(true);
+    });
+
+    it('does not write estimated_value when the field was not touched', async () => {
+      // The field is seeded with the value the SCREEN shows, which can come from
+      // the model chain (q50 → predicted_price_eur → estimated_value). Writing
+      // it back on an unrelated rename filed the catalogue's number as the
+      // member's own estimate (class sweep K, 2026-09-17).
+      mockUpdateItem.mockResolvedValue({});
+
+      const { result } = renderHook(() => useItemDetail(defaultParams));
+
+      act(() => {
+        result.current.setIsEditing(true);
+        result.current.setEditableName('Just a rename');
+      });
+
+      await act(async () => {
+        await result.current.onSaveEdits();
+      });
+
+      const patches = mockItemsPatch.mock.calls.map(([p]) => p);
+      for (const p of patches) expect(p).not.toHaveProperty('estimated_value');
+    });
+
+    it('clears estimated_value when the member empties the field', async () => {
+      // NULL is meaningful: docs/ARCHITECTURE.md — "NULL means we do not know",
+      // which hands the value back to the model chain. The old `> 0` test made
+      // an estimate impossible to withdraw.
+      mockUpdateItem.mockResolvedValue({});
+
+      const { result } = renderHook(() => useItemDetail(defaultParams));
+
+      act(() => {
+        result.current.setIsEditing(true);
+        result.current.setEditableValue('');
+      });
+
+      await act(async () => {
+        await result.current.onSaveEdits();
+      });
+
+      const patch = mockItemsPatch.mock.calls.map(([p]) => p).find((p) => 'estimated_value' in p);
+      expect(patch).toBeDefined();
+      expect(patch!.estimated_value).toBeNull();
+    });
+
+    it('refuses to save when the estimated value cannot be read', async () => {
+      mockUpdateItem.mockResolvedValue({});
+
+      const { result } = renderHook(() => useItemDetail(defaultParams));
+
+      act(() => {
+        result.current.setIsEditing(true);
+        result.current.setEditableValue('about three fifty');
+      });
+
+      await act(async () => {
+        await result.current.onSaveEdits();
+      });
+
+      expect(mockUpdateItem).not.toHaveBeenCalled();
+      expect(mockItemsPatch).not.toHaveBeenCalled();
+      expect(mockShowToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Enter an estimated value of 0 or more, or leave it blank',
+          type: 'error',
+        })
+      );
     });
 
     it('accepts a comma decimal in the purchase price', async () => {
