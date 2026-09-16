@@ -6,7 +6,12 @@
  * - Manages keyboard state
  * - Handles save notes/draft/edits
  * - Handles feedback submission
- * - Handles for-sale listing/unlisting
+ * - Reads every amount BEFORE the first write, so a price it cannot read
+ *   leaves nothing half-saved (class sweep K, 2026-09-17)
+ *
+ * `isForSale` is read-only here — the for-sale WRITE chain (forSaleLoading,
+ * handleListForSale, handleUnlist) was deleted in dabfc32 and its tests went
+ * with it. This suite is named in `verify:prebuild`; an unnamed suite rots.
  */
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 
@@ -78,6 +83,7 @@ const mockGetPriceEvidence = jest.fn().mockResolvedValue(null);
 const mockGetScarcityScores = jest.fn().mockResolvedValue({ items: [] });
 const mockMarketplaceComps = jest.fn().mockResolvedValue({ comps: [] });
 const mockSubmitVerifiedSale = jest.fn().mockResolvedValue({});
+const mockUpdateItemPurchase = jest.fn().mockResolvedValue({});
 
 jest.mock('../../src/api/collectorsApi', () => ({
   collectorsApi: {
@@ -85,6 +91,7 @@ jest.mock('../../src/api/collectorsApi', () => ({
     getScarcityScores: (...args: unknown[]) => mockGetScarcityScores(...args),
     marketplaceComps: (...args: unknown[]) => mockMarketplaceComps(...args),
     submitVerifiedSale: (...args: unknown[]) => mockSubmitVerifiedSale(...args),
+    updateItemPurchase: (...args: unknown[]) => mockUpdateItemPurchase(...args),
   },
 }));
 
@@ -127,6 +134,11 @@ const defaultParams = {
   imageUri: 'https://example.com/image.jpg',
   categorySlug: 'pokemon_tcg',
   q50: '300',
+  // Required by the hook (UseItemDetailParams). Omitted until 2026-09-17, which
+  // left editablePurchasePrice undefined and made every onSaveEdits test throw
+  // on .trim() — the suite gates nothing, so it stayed red unnoticed.
+  initialPurchasePrice: '',
+  initialAcquisitionFees: '',
 };
 
 // ---------------------------------------------------------------------------
@@ -177,10 +189,13 @@ describe('useItemDetail', () => {
     });
 
     it('initializes for-sale state as not for sale', () => {
+      // `isForSale` is READ from the item and drives the Listed badge. The app
+      // never writes it: the trg_sync_item_for_sale trigger does, and listing
+      // goes through app/sell/new. forSaleLoading/handleListForSale/handleUnlist
+      // were deleted with that chain in dabfc32.
       const { result } = renderHook(() => useItemDetail(defaultParams));
       expect(result.current.isForSale).toBe(false);
       expect(result.current.askingPriceValue).toBe('');
-      expect(result.current.forSaleLoading).toBe(false);
     });
   });
 
@@ -343,6 +358,58 @@ describe('useItemDetail', () => {
       expect(result.current.isEditing).toBe(false);
     });
 
+    it('writes NOTHING when an amount cannot be read', async () => {
+      // The partial-save class (sweep K). The cost-basis parse used to run after
+      // updateItem and the PostgREST patch had already landed, so an unreadable
+      // price saved the name and then said "Failed to save changes" — with no
+      // way for the member to tell which half had happened. Every amount is now
+      // read BEFORE the first write.
+      mockUpdateItem.mockResolvedValue({});
+
+      const { result } = renderHook(() => useItemDetail(defaultParams));
+
+      act(() => {
+        result.current.setIsEditing(true);
+        result.current.setEditableName('Renamed');
+        result.current.setEditablePurchasePrice('not a price');
+      });
+
+      await act(async () => {
+        await result.current.onSaveEdits();
+      });
+
+      expect(mockUpdateItem).not.toHaveBeenCalled();
+      // …and the toast names the field, rather than the generic save failure.
+      expect(mockShowToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Enter a purchase price of 0 or more, or leave it blank',
+          type: 'error',
+        })
+      );
+      // Still in edit mode: there is a field to fix.
+      expect(result.current.isEditing).toBe(true);
+    });
+
+    it('accepts a comma decimal in the purchase price', async () => {
+      // parseMoney, not parseFloat: "1.250,00" is 1250, not 1.25.
+      mockUpdateItem.mockResolvedValue({});
+
+      const { result } = renderHook(() => useItemDetail(defaultParams));
+
+      act(() => {
+        result.current.setIsEditing(true);
+        result.current.setEditablePurchasePrice('1.250,00');
+      });
+
+      await act(async () => {
+        await result.current.onSaveEdits();
+      });
+
+      expect(mockUpdateItemPurchase).toHaveBeenCalledWith(
+        'item-1', 1250, 'EUR', undefined, undefined,
+      );
+    });
+
     it('does nothing for draft items', async () => {
       const { result } = renderHook(() =>
         useItemDetail({ ...defaultParams, isDraft: true })
@@ -353,64 +420,6 @@ describe('useItemDetail', () => {
       });
 
       expect(mockUpdateItem).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('handleListForSale', () => {
-    it('lists item for sale with valid price', async () => {
-      mockToggleForSale.mockResolvedValue({});
-
-      const { result } = renderHook(() => useItemDetail(defaultParams));
-
-      act(() => {
-        result.current.setAskingPriceValue('250');
-      });
-
-      await act(async () => {
-        await result.current.handleListForSale();
-      });
-
-      expect(mockToggleForSale).toHaveBeenCalledWith('item-1', true, 250);
-      expect(result.current.isForSale).toBe(true);
-    });
-
-    it('shows error toast for invalid price', async () => {
-      const { result } = renderHook(() => useItemDetail(defaultParams));
-
-      act(() => {
-        result.current.setAskingPriceValue('abc');
-      });
-
-      await act(async () => {
-        await result.current.handleListForSale();
-      });
-
-      expect(mockToggleForSale).not.toHaveBeenCalled();
-      expect(mockShowToast).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'Enter a valid asking price', type: 'error' })
-      );
-    });
-  });
-
-  describe('handleUnlist', () => {
-    it('unlists item and clears asking price', async () => {
-      mockToggleForSale.mockResolvedValue({});
-
-      const { result } = renderHook(() => useItemDetail(defaultParams));
-
-      // First mark as for sale
-      act(() => {
-        result.current.setIsForSale(true);
-        result.current.setAskingPriceValue('250');
-      });
-
-      await act(async () => {
-        await result.current.handleUnlist();
-      });
-
-      expect(mockToggleForSale).toHaveBeenCalledWith('item-1', false);
-      expect(result.current.isForSale).toBe(false);
-      expect(result.current.askingPriceValue).toBe('');
     });
   });
 

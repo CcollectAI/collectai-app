@@ -135,14 +135,21 @@ members. Full write-up: `docs/ui-playbook.md` "The gate taught the bug".
 **Listings count** needs the `+` treatment the Items total got (it prints the
 loaded count as if it were the total).
 
-**Suites that are red and gate nothing** — `npx jest` runs 126 suites; 11 fail
-(17 tests), identically at `02ee84b`, and none of the 11 is named in
-`verify:prebuild`. Two look like real defects rather than stale snapshots:
-`__tests__/hooks/useItemDetail.test.ts` has `onSaveEdits` toasting "Failed to
-save changes" and `isForSale` coming back `undefined`. The other nine are
-snapshots and a missing `react-native-purchases` mock. Triage each, then either
-fix it or name it in the gate — an unnamed suite is not a gate
+**Suites that are red and gate nothing** — `npx jest` runs 126 suites; **10 still
+fail (12 tests)** and none of them is named in `verify:prebuild`. Remaining: four
+snapshot suites, `ItemCard` a11y, `analytics`, `marketplace-extracted`,
+`usePortfolioInsights`, `settings` (snapshots stale since May), and
+`marketMoversTitle` (missing `react-native-purchases` mock). Triage each, then
+either fix it or name it in the gate — an unnamed suite is not a gate
 (`learning_a_test_file_is_not_a_gate`).
+
+`__tests__/hooks/useItemDetail.test.ts` was the eleventh and is now green and
+gated. Its 5 failures were **not** an app defect, and it took a captured stack to
+know that rather than a reading: 4 tested `forSaleLoading` / `handleListForSale` /
+`handleUnlist`, deleted with the toggle-for-sale chain in `dabfc32` and never
+removed from the suite; the 5th omitted `initialPurchasePrice`, which the hook
+requires, so `editablePurchasePrice` was `undefined` and `.trim()` threw. The
+screen always passes `''`, so the app was never exposed.
 
 **I — one confirmed instance** (the class was never swept; the agent died first)
 - `app/purchase/deal/[dealId].tsx:120` `handleDecline` has no in-flight guard and
@@ -155,11 +162,16 @@ fix it or name it in the gate — an unnamed suite is not a gate
   (closes the menu, then confirms through an Alert), `OfferAmountSheet.handleSubmit`
   (`busy` guard), the three `AppearanceSection` setters (idempotent settings writes).
 
-**K — confirmed before the agent died**
-- `useItemDetail.onSaveEdits` writes name/category, then a second patch, then the
-  purchase row. `parseMoneyField` throws *after* the first two writes land, so a
-  malformed price string leaves a half-saved item behind a failure toast. The
-  member sees "could not save" next to a name that did save.
+**K — one instance confirmed and FIXED 2026-09-17** (the class itself is still
+unswept: the agent died before enumerating)
+- `useItemDetail.onSaveEdits` writes name/category, then a PostgREST patch, then
+  the purchase row — and the cost-basis parse threw *after* the first two landed,
+  so an unreadable price saved the name and then said "Failed to save changes",
+  with no way to tell which half happened. Every amount is now read BEFORE the
+  first write, and the toast names the field instead of the whole save.
+  Mutation-proven: restoring the old order turns the new test red. What this
+  cannot fix is a network failure between two writes — that needs the server to
+  take both in one transaction, which is the rest of class K.
 
 ## Decisions for Merle (class G)
 

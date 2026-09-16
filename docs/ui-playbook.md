@@ -2589,6 +2589,42 @@ rendered in that branch), which is why the small-screen round exists.
 Also clean at 360dp, both previously recorded as unmeasured: the Watchlist
 header cluster (~387dp estimated) and the barcode manual-entry placeholder.
 
+## Read every amount before the first write (2026-09-17)
+
+`useItemDetail.onSaveEdits` does three writes: `updateItem` (name, category), a
+PostgREST patch (collection, condition, estimated value), then the server route
+for the cost basis. The cost-basis parse sat between the second and third and
+**throws** on an amount it cannot read — so typing a price this app could not
+parse saved the name and the condition, then showed "Failed to save changes".
+The member is told everything failed while half of it is on the server.
+
+The header comment above that patch already described the same shape from
+2026-07-29 (unknown columns `collection`/`user_value` failing the patch after
+`updateItem` had written). The fix that time corrected the column names. It did
+not change the ORDER, so the next throw did it again.
+
+Rule: **parse and validate every field before the first write.** What is left
+after that is a network failure between two writes, which no client-side
+ordering removes — that one needs the server to take both in a transaction.
+
+Two details worth copying:
+
+- The validation reads RETURN a message rather than throwing. A throw lands in
+  the same catch as a network error, and the member gets "Failed to save
+  changes" when what they need to know is *which field*.
+- Stay in edit mode on a validation failure. There is a field to fix.
+
+### The suite that was red and gated nothing
+
+`__tests__/hooks/useItemDetail.test.ts` had five failures, identical before my
+changes. It was tempting to call them "pre-existing" and move on; capturing the
+actual stack instead showed 4 tested `forSaleLoading`/`handleListForSale`/
+`handleUnlist` — deleted with the toggle-for-sale chain in `dabfc32`, tests left
+behind — and the 5th omitted the required `initialPurchasePrice`, so
+`editablePurchasePrice` was `undefined` and `.trim()` threw. No app defect, but
+also no gate: the suite is not named in `verify:prebuild`, which is why a deleted
+feature's tests could sit red for weeks. It is named there now.
+
 ## The gate taught the bug: "12,50" could not be typed at all (2026-09-16)
 
 `check-locale-number-parsing` exists so a typed "12,50" never becomes 1250. Its

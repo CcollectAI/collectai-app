@@ -409,6 +409,43 @@ export function useItemDetail(params: UseItemDetailParams) {
     if (!id || isDraft) return;
     setSavingNotes(true);
     try {
+      // EVERY amount is read BEFORE the first write.
+      //
+      // The cost-basis parse used to run after `updateItem` and the PostgREST
+      // patch had already landed, and it THROWS on a malformed amount — so
+      // typing a price this app could not read saved the name and the condition
+      // and then showed "Failed to save changes". The member had no way to tell
+      // which half happened (class sweep K, 2026-09-16). Reading first makes the
+      // only remaining partial-save cause a network failure between two writes,
+      // which no client-side ordering can remove.
+      const trimmedPurchase = editablePurchasePrice.trim();
+      const trimmedFees = editableAcquisitionFees.trim();
+      const purchaseChanged = trimmedPurchase !== (initialPurchasePrice ?? '').trim();
+      const feesChanged = trimmedFees !== (initialAcquisitionFees ?? '').trim();
+
+      /** `null` CLEARS the amount; a message means the text was not a number.
+       *  Returned rather than thrown: a throw here lands in the catch below,
+       *  which says "Failed to save changes" — and the member needs to be told
+       *  WHICH field, not that everything failed. */
+      const readAmount = (raw: string, label: string):
+        { ok: true; value: number | null } | { ok: false; message: string } => {
+        if (raw === '') return { ok: true, value: null };
+        // The canonical parser. A local copy used to shadow it and only did
+        // `replace(',', '.')`, so a typed "1.250,00" became 1.25 — a cost basis
+        // 1000x low (class sweep, 2026-09-16).
+        const n = parseMoney(raw);
+        if (n === null || n < 0) return { ok: false, message: `Enter ${label} of 0 or more, or leave it blank` };
+        return { ok: true, value: n };
+      };
+
+      const purchaseRead = purchaseChanged ? readAmount(trimmedPurchase, 'a purchase price') : null;
+      const feesRead = feesChanged ? readAmount(trimmedFees, 'fees') : null;
+      const unreadable = [purchaseRead, feesRead].find((r) => r !== null && !r.ok);
+      if (unreadable && !unreadable.ok) {
+        showToast({ message: unreadable.message, type: 'error' });
+        return; // nothing written yet, and nothing will be
+      }
+
       await dataProvider.updateItem(id, {
         name: editableName,
         category: editableCategory,
@@ -451,22 +488,7 @@ export function useItemDetail(params: UseItemDetailParams) {
       //
       // Only sent when it actually CHANGED — an unrelated rename must not
       // rewrite the cost basis, and must not re-convert it at today's rate.
-      const trimmedPurchase = editablePurchasePrice.trim();
-      const trimmedFees = editableAcquisitionFees.trim();
-      const purchaseChanged = trimmedPurchase !== (initialPurchasePrice ?? '').trim();
-      const feesChanged = trimmedFees !== (initialAcquisitionFees ?? '').trim();
-
-      // Validation wrapper around the CANONICAL parser. This used to be a local
-      // `parseMoney` that shadowed the import and only did
-      // `replace(',', '.')`, so a typed "1.250,00" became 1.25 — a cost basis
-      // 1000x low (class sweep, 2026-09-16).
-      const parseMoneyField = (raw: string, label: string): number | null => {
-        if (raw === '') return null;
-        const n = parseMoney(raw);
-        if (n === null || n < 0) throw new Error(`Enter ${label} of 0 or more, or leave it blank`);
-        return n;
-      };
-
+      // Both amounts were already read at the top, before anything was written.
       if (purchaseChanged || feesChanged) {
         // UNDEFINED for a field that did not change, so the server omits it
         // entirely. Resending an unchanged price makes it re-convert through
@@ -476,12 +498,12 @@ export function useItemDetail(params: UseItemDetailParams) {
         // states and the route distinguishes them via model_fields_set.
         await collectorsApi.updateItemPurchase(
           id,
-          purchaseChanged ? parseMoneyField(trimmedPurchase, 'a purchase price') : undefined,
+          purchaseRead?.ok ? purchaseRead.value : undefined,
           // The currency the FIELD is in: the one it was stored in if we have
           // it, else the member's current setting. Never inferred server-side.
           (initialPurchaseCurrency || settings.currency || 'EUR') as string,
           undefined,
-          feesChanged ? parseMoneyField(trimmedFees, 'fees') : undefined,
+          feesRead?.ok ? feesRead.value : undefined,
         );
       }
 
