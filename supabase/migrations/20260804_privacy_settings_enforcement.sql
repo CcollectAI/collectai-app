@@ -102,6 +102,14 @@ $function$;
 -- Adding a JOIN or a target-list aggregate would make the view read-only and
 -- turn account deletion into a 500 (the router only catches UndefinedTableError).
 
+-- rls-ok: this view is PUBLIC on purpose — it is how one collector sees another,
+-- and it must stay owner-executed (definer) so it can read `items` and
+-- `user_privacy_settings` on behalf of a viewer who owns neither. It is not
+-- unfiltered: every per-member column is wrapped in a CASE on that member's own
+-- toggle (show_item_count / show_collection_value), so opting out removes the
+-- value rather than hiding it client-side. `server/scripts/verify_privacy_enforcement.py`
+-- pins that behaviour, and the live view was re-read on 2026-09-17 to confirm the
+-- CASE gates are present in the database and not only here.
 CREATE OR REPLACE VIEW public.user_public_profile_v1 AS
 SELECT
     p.id AS user_id,

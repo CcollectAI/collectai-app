@@ -51,8 +51,8 @@ Two rules the tooling learned the hard way:
 | G | A paid feature a free member can reach, or a free feature a paying member is denied | 2026-09-16 | 4 decisions for Merle |
 | H | The date on screen is not the date that was meant | 2026-09-16 | partly landed; locale half open |
 | I | One tap, two writes (unguarded async handlers) | launched 09-16 | ⛔ agents died on a session rate limit — not run |
-| J | A member can see data that is not theirs (RLS / IDOR / public views) | launched 09-16 | ⛔ not run |
-| K | The save half-happened (multi-step writes without a transaction) | launched 09-16 | ⛔ not run |
+| J | A member can see data that is not theirs (RLS / IDOR / public views) | 2026-09-17 | ✅ prod verified clean; repo drift fixed + gated |
+| K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | 1 fixed; 1 HIGH open (billing webhook) |
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | launched 09-16 | ⛔ not run |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
@@ -100,6 +100,44 @@ re-checked rather than re-believed.
 **A — endpoints**
 - `/collections/user/progress` returns 500 for a real member. Server-side fix,
   needs a deploy.
+
+**J — what was actually true (2026-09-17)**
+
+The sweep reported, at HIGH, that `v_chat_inbox_v1` leaks every DM thread
+including `last_message_body`. **It does not, and the report was retracted.**
+Production was read back before anyone acted on it:
+
+- the live view ends in `WHERE p.user_id = auth.uid()`;
+- `chat_threads_v1` and `chat_messages_v1` both have RLS enabled with
+  member-scoped SELECT policies (`chat_*_select_member`, via
+  `chat_thread_members_v1`);
+- of **231 live views**, exactly **2** are reachable by `authenticated`/`anon`,
+  touch per-member columns, and have neither `security_invoker` nor `auth.uid()`
+  — and both are deliberate (see below).
+
+What IS real is the drift underneath it: the repo's
+`20260430_fix_chat_inbox_view_typing.sql` DROPs and re-creates that view with no
+filter and no `security_invoker`. The database was fixed and the repo never was,
+so **replaying the repo would have created the leak the sweep described.** Fixed
+by `20260917_chat_inbox_view_auth_filter.sql`, whose body is `pg_get_viewdef()`
+of the live view — applying it is a no-op against production.
+
+Gated by `npm run check:view-rls`: every view the client reads whose latest
+definition touches per-member data must filter by `auth.uid()`, set
+`security_invoker = true`, or carry `-- rls-ok: <reason>`. It is mutation-proven
+both ways (strip the filter → red; remove the reason → red).
+`server/scripts/audit_rls_coverage.py` could never have caught this — it scans
+`relkind IN ('r','p')`, tables only, so **every view is invisible to it**.
+
+Decisions, not bugs:
+- `user_public_profile_v1` is definer by design and readable by `anon`. Its
+  per-member columns are each wrapped in a CASE on that member's own toggle
+  (`show_item_count`, `show_collection_value`), verified present in the live
+  body — so opting out removes the value rather than hiding it client-side.
+  Worth confirming you intend logged-out readability.
+- `v_item_best_comp_full` is also `anon`-readable and exposes `market_hits.user_id`
+  alongside title/url/price (5 rows today). The client never reads it, so the gate
+  does not flag it; revoking `anon` SELECT costs nothing if it is not intended.
 
 **F — stale cache** (`src/data/CachedDataProvider.ts`)
 - `CATEGORY_SUMMARIES: 'categories:summaries'` (line 58) is not invalidated by item
@@ -172,8 +210,36 @@ screen always passes `''`, so the app was never exposed.
   (closes the menu, then confirms through an Alert), `OfferAmountSheet.handleSubmit`
   (`busy` guard), the three `AppearanceSection` setters (idempotent settings writes).
 
-**K — one instance confirmed and FIXED 2026-09-17** (the class itself is still
-unswept: the agent died before enumerating)
+**K — swept 2026-09-17. The one to fix first is a paying member left on `free`.**
+
+`billing_router.py` claims the webhook in `processed_webhook_events` BEFORE doing
+any work (`:1201`), then writes `subscription_events` (`:1226`) and upserts
+`subscriptions` (`:1253`). The claim is `INSERT … ON CONFLICT DO NOTHING
+RETURNING` and **nothing ever deletes it** — there is no `DELETE FROM
+processed_webhook_events` anywhere in the repo. So if the `subscriptions` upsert
+fails, the 500-to-force-a-retry at `:1245` is unreachable: RevenueCat's
+redelivery short-circuits at `:1202`. The member is **charged, recorded in the
+revenue ledger, and stays on `free`** — every paid feature locked, permanently,
+with no reconciliation (nothing else reads `subscription_events`). The Stripe
+handler at `:640` has the same claim-before-write ordering. Fix: claim after the
+writes succeed, or release the claim when a write fails. Server-side, needs a
+deploy — your call.
+
+Also open from K, in order: `p2p_listing_router.py:789` creates an `items` row
+then a `marketplace_listings` row with **no transaction** (`pool.acquire()`), so
+a failed listing insert leaves an item the member never added sitting in their
+collection badged "Listed"; `calendar.ts:174/228` writes the OS calendar event
+and its mapping separately, so "Failed to add" can leave an event in the calendar
+the app can no longer remove; `create-event.tsx:131` swallows a failed template
+save and navigates back as if both worked; `useItemDetail.ts:462` omits
+`estimated_value` from the patch when it cannot read it and still says "Changes
+saved" (the sibling of the fixed bug, on the field the fix missed — and there is
+no way to CLEAR an estimated value today).
+
+The pattern to copy is `account_router._do_account_delete` — transactional, with
+a per-statement SAVEPOINT and a comment explaining why.
+
+**The instance already FIXED (2026-09-17)**
 - `useItemDetail.onSaveEdits` writes name/category, then a PostgREST patch, then
   the purchase row — and the cost-basis parse threw *after* the first two landed,
   so an unreadable price saved the name and then said "Failed to save changes",
