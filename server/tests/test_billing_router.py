@@ -320,3 +320,102 @@ class TestPlanLimits:
         assert premium["deal_discovery"] is True
         assert premium["dossier_pdf"] is True
         assert premium["advanced_analytics"] is True
+
+
+# ---------------------------------------------------------------------------
+# The claim must be RELEASED when the work after it fails
+#
+# `_event_already_processed` claims the event id before any work, with an
+# atomic INSERT ... ON CONFLICT DO NOTHING. Nothing ever deleted that row, so a
+# failure after the claim was permanent: the provider's redelivery
+# short-circuits on the claim and the work never happens. For RevenueCat that
+# left a member CHARGED, in the revenue ledger, and on `free` — `get_user_plan`
+# reads `subscriptions`, and nothing reconciles it from `subscription_events`
+# (class sweep K, 2026-09-17).
+# ---------------------------------------------------------------------------
+
+class TestWebhookClaimIsReleasedOnFailure:
+    def test_stripe_handler_failure_releases_the_claim(self, client):
+        event = {
+            "id": "evt_claim_release_1",
+            "type": "customer.subscription.deleted",
+            "data": {"object": {"id": "sub_test_999"}},
+        }
+        mock_stripe = MagicMock()
+        mock_stripe.Webhook.construct_event.return_value = event
+
+        mock_pool = AsyncMock()
+        mock_pool.fetchrow.side_effect = [{"event_id": "evt_claim_release_1"}, None]
+        # The handler's write blows up after the claim was taken.
+        mock_pool.execute.side_effect = RuntimeError("deadlock detected")
+
+        with patch("app.routes.billing_router.STRIPE_WEBHOOK_SECRET", "whsec_test"), \
+             patch("app.routes.billing_router._get_stripe", return_value=mock_stripe), \
+             patch("app.routes.billing_router.get_pool", return_value=mock_pool), \
+             patch("app.routes.billing_router._SEEN_EVENTS", OrderedDict()):
+            resp = client.post(
+                "/billing/webhook",
+                content=json.dumps(event).encode(),
+                headers={"Stripe-Signature": "valid_sig"},
+            )
+
+        # Stripe must be told to retry...
+        assert resp.status_code >= 500
+        # ...and the claim must be gone, or the retry is a no-op.
+        deletes = [
+            c for c in mock_pool.execute.call_args_list
+            if "DELETE FROM processed_webhook_events" in str(c.args[0])
+        ]
+        assert deletes, "the claim was never released — the retry will short-circuit"
+        assert deletes[0].args[1] == "evt_claim_release_1"
+
+    def test_revenuecat_subscriptions_failure_releases_the_claim(self, client):
+        event = {
+            "api_version": "1.0",
+            "event": {
+                "id": "evt_rc_claim_1",
+                "type": "INITIAL_PURCHASE",
+                "app_user_id": "11111111-1111-1111-1111-111111111111",
+                "product_id": "sparrow_pro_monthly",
+                "purchased_at_ms": 1_750_000_000_000,
+                "store": "APP_STORE",
+                "environment": "PRODUCTION",
+                "price_in_purchased_currency": 4.99,
+                "currency": "EUR",
+                "entitlement_ids": ["pro"],
+            },
+        }
+
+        mock_pool = AsyncMock()
+        mock_pool.fetchrow.return_value = {"event_id": "evt_rc_claim_1"}
+        mock_pool.fetchval.return_value = None
+
+        # Ledger insert succeeds; the `subscriptions` upsert is the one that fails.
+        calls: list[str] = []
+
+        async def execute(sql, *args):
+            calls.append(str(sql))
+            if "INSERT INTO subscriptions" in str(sql):
+                raise RuntimeError("unique violation")
+            return "OK"
+
+        mock_pool.execute.side_effect = execute
+
+        async def fake_pool():
+            return mock_pool
+
+        with patch("app.routes.billing_router.DB_ENABLED", True), \
+             patch("app.routes.billing_router.get_pool", fake_pool), \
+             patch("app.routes.billing_router.REVENUECAT_WEBHOOK_AUTH", "test-secret"), \
+             patch("app.routes.billing_router._rc_resolve_user_id",
+                   AsyncMock(return_value="11111111-1111-1111-1111-111111111111")), \
+             patch("app.routes.billing_router._SEEN_EVENTS", OrderedDict()):
+            resp = client.post(
+                "/billing/revenuecat-webhook",
+                content=json.dumps(event).encode(),
+                headers={"Content-Type": "application/json", "Authorization": "test-secret"},
+            )
+
+        assert resp.status_code >= 500
+        assert any("DELETE FROM processed_webhook_events" in c for c in calls), \
+            "the claim was never released — the member stays on free forever"

@@ -528,6 +528,52 @@ Ranking is computed in the SAME statement as the totals, restricted to the
 categories that member holds. Calling the leaderboard endpoint once per category
 would be 12 HTTP round trips to our own API to render one screen.
 
+## Billing & subscription webhooks
+
+Undocumented here until 2026-09-17, which is part of why the bug below lived so
+long. `server/app/routes/billing_router.py`.
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/billing/status` | JWT | Current plan + limits (`PLAN_LIMITS`) |
+| POST | `/billing/webhook` | Stripe signature | Stripe events (sponsorships, tickets, web subscriptions) |
+| POST | `/billing/revenuecat-webhook` | `Authorization: <REVENUECAT_WEBHOOK_AUTH>` | In-app purchases — **the only path from a mobile purchase to `subscriptions`** |
+
+### The idempotency contract, and the way it used to fail
+
+Both handlers claim the provider's event id before doing any work:
+
+```sql
+INSERT INTO processed_webhook_events (event_id, event_type)
+VALUES ($1, $2) ON CONFLICT (event_id) DO NOTHING RETURNING event_id
+```
+
+A returned row means "ours to process"; no row means a duplicate delivery, and
+the handler returns 200 immediately.
+
+**Nothing ever deleted that row.** So a failure *after* the claim was permanent:
+the provider's retry short-circuited on the claim and the work never happened.
+For RevenueCat that meant a member could be **charged, written into the revenue
+ledger (`subscription_events`), and left on `free` forever** — `get_user_plan`
+reads `subscriptions`, and nothing reconciles the two. The code even reasoned
+that "a retry would be a no-op on the ledger anyway", which is true and beside
+the point: the retry exists to write the *other* row. Stripe had the same shape
+across sponsorships, tickets and plan changes.
+
+Rules for anything added to these handlers:
+
+1. **Any failure after the claim must release it** — `_release_webhook_claim()` —
+   and then return 5xx so the provider retries. Never 200 on a failed write.
+2. **Every write must stay idempotent**, because a released claim means the whole
+   handler runs again: `ON CONFLICT DO NOTHING` on the ledger, upserts for state.
+3. A permanently failing event is now retried on the provider's schedule instead
+   of swallowed once. That is deliberate — a retry storm is visible in
+   `bake.log`, an unpaid-for subscription is not.
+
+Verified on prod 2026-09-17: `processed_webhook_events` held 10 rows, and **0
+paid events had no `subscriptions` row** — the bug had not yet bitten a real
+member (the 6 ledger rows are test events with unresolvable users).
+
 ## Error Response Format
 
 All errors use a consistent format via `error_response()`:

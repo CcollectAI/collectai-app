@@ -274,6 +274,41 @@ async def _event_already_processed(event_id: str, event_type: str, pool: Any | N
     return _event_already_processed_mem(event_id)
 
 
+async def _release_webhook_claim(event_id: str, pool: Any | None) -> None:
+    """Give the event_id back so the provider's retry can actually do the work.
+
+    `_event_already_processed` claims the id BEFORE any work, with an atomic
+    INSERT … ON CONFLICT DO NOTHING. Nothing ever deleted it — there was no
+    DELETE FROM processed_webhook_events anywhere in this repo — so a failure
+    AFTER the claim was permanent: the redelivery short-circuits on the claim
+    and the work never happens.
+
+    For RevenueCat that meant a member could be **charged, recorded in the
+    revenue ledger, and left on `free` forever**, because `get_user_plan` reads
+    `subscriptions` and nothing reconciles it from `subscription_events`
+    (class sweep K, 2026-09-17).
+
+    Releasing is safe to retry into: the ledger insert is ON CONFLICT DO
+    NOTHING and every state write is an upsert, so redelivery is idempotent.
+    The trade is that a PERMANENTLY failing event (say an unresolvable user)
+    is retried on the provider's schedule instead of being swallowed once —
+    which is the right way round: a retry storm is visible in the logs, an
+    unpaid-for subscription is not.
+    """
+    _SEEN_EVENTS.pop(event_id, None)
+    if pool is None:
+        return
+    try:
+        await pool.execute(
+            "DELETE FROM processed_webhook_events WHERE event_id = $1", event_id
+        )
+    except Exception as exc:  # noqa: BLE001 - must never mask the original failure
+        _log.exception(
+            "webhook: could not release claim for %s — a retry will be ignored: %s",
+            event_id, exc,
+        )
+
+
 def _safe_timestamp(ts: int | float | None) -> datetime | None:
     """Convert a Unix timestamp to datetime, returning None on failure."""
     if ts is None:
@@ -648,22 +683,32 @@ async def stripe_webhook(
         _log.warning("Stripe webhook received but DB is not available")
         return JSONResponse({"received": True})
 
-    if event_type == "checkout.session.completed":
-        metadata_type = data.get("metadata", {}).get("type", "")
-        if metadata_type == "event_sponsor":
-            await _handle_sponsor_checkout_completed(pool, data)
-        elif metadata_type == "sponsor_subscription":
-            await _handle_sponsor_subscription_completed(pool, data)
-        elif metadata_type == "event_ticket":
-            await _handle_ticket_checkout_completed(pool, data)
-        else:
-            await _handle_checkout_completed(pool, data)
-    elif event_type == "customer.subscription.updated":
-        await _handle_subscription_updated(pool, data)
-    elif event_type == "customer.subscription.deleted":
-        await _handle_subscription_deleted(pool, data)
-    elif event_type == "invoice.payment_failed":
-        await _handle_payment_failed(pool, data)
+    # Every handler below runs AFTER the event id was claimed, and the claim was
+    # never released — so a handler that raised left Stripe's retry to
+    # short-circuit on the claim and the work never happened: a paid sponsorship
+    # or ticket recorded nowhere, or a subscription left at its old plan
+    # (class sweep K, 2026-09-17). Release before the error propagates; the
+    # handlers are upserts, so redelivery is idempotent.
+    try:
+        if event_type == "checkout.session.completed":
+            metadata_type = data.get("metadata", {}).get("type", "")
+            if metadata_type == "event_sponsor":
+                await _handle_sponsor_checkout_completed(pool, data)
+            elif metadata_type == "sponsor_subscription":
+                await _handle_sponsor_subscription_completed(pool, data)
+            elif metadata_type == "event_ticket":
+                await _handle_ticket_checkout_completed(pool, data)
+            else:
+                await _handle_checkout_completed(pool, data)
+        elif event_type == "customer.subscription.updated":
+            await _handle_subscription_updated(pool, data)
+        elif event_type == "customer.subscription.deleted":
+            await _handle_subscription_deleted(pool, data)
+        elif event_type == "invoice.payment_failed":
+            await _handle_payment_failed(pool, data)
+    except Exception:
+        await _release_webhook_claim(event_id, pool)
+        raise
 
     return JSONResponse({"received": True})
 
@@ -1279,12 +1324,23 @@ async def revenuecat_webhook(
             # referencing it here raises NameError — a crash while REPORTING a
             # failure, which converts a diagnosable error into a silent one.
             #
-            # The ledger already landed, so revenue is not lost. Log loudly and
-            # return 200 — a retry would be a no-op on the ledger anyway.
+            # The ledger landed, so revenue is not lost — but `subscriptions` is
+            # the row `get_user_plan` reads, so the member is CHARGED and still
+            # on `free`, with every paid feature locked. The old comment here
+            # reasoned "a retry would be a no-op on the ledger anyway", which is
+            # true and beside the point: the retry exists to write THIS row.
+            #
+            # Releasing the claim is what makes the retry able to do anything —
+            # without it the redelivery short-circuits at _event_already_processed
+            # and the member stays free forever (class sweep K, 2026-09-17).
             _log.exception(
                 "revenuecat: subscriptions upsert failed for user %s — %s",
                 user_id, _rc_exc_detail(sub_exc),
             )
+            await _release_webhook_claim(event_id, pool)
+            raise error_response(
+                500, "Failed to record subscription state"
+            ) from sub_exc
 
     _log.info(
         "revenuecat: %s user=%s plan=%s revenue=%s%s code=%s",
