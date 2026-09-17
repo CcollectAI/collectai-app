@@ -422,7 +422,12 @@ try {
     // took. Re-send once (exactly as the Home case does), then refuse to judge
     // someone else's screen rather than report it `ok` — round 6 reported
     // `analytics` ok on a tree whose title was literally "Add manually".
-    if (!wrongScreen && !homeIsRight && xml && prevRouteSig && signature(nodes) === prevRouteSig) {
+    // `expect.sharedScreen` is a route saying "my screen IS another route's" —
+    // sell/ebay-defaults and sell/dashboard both render <SellingUnavailable/>
+    // while selling is off, so identical trees are the truth there, not a
+    // swallowed link. It carries the reason as its value, like every other
+    // exemption in this inventory.
+    if (!wrongScreen && !homeIsRight && !expect.sharedScreen && xml && prevRouteSig && signature(nodes) === prevRouteSig) {
       sh(`am start -a android.intent.action.VIEW -d '${url}' ${PKG} >/dev/null 2>&1`, { allowFail: true });
       await sleep(SPINNER_BUDGET_S * 1000);
       const xml2 = dumpXml();

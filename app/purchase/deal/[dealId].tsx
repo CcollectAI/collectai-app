@@ -434,7 +434,11 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 16, fontWeight: "600" },
   // UpgradePrompt carries no horizontal margin of its own (see market-movers).
   // flex: 1 so the QuickNavBar after it sits at the bottom, not under the card.
-  gateWrap: { flex: 1, paddingHorizontal: 16, paddingTop: 16 },
+  // Centred, not pinned under the header (2026-09-17): the locked screen was a
+  // banner with the rest of the screen empty below it, which reads as a screen
+  // that failed rather than one that is locked. market-movers had it worse and
+  // was fixed in the same pass.
+  gateWrap: { flex: 1, paddingHorizontal: 16, paddingTop: 16, justifyContent: "center" },
   retryBtn: { marginTop: 4, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, borderWidth: 1, minHeight: 44, justifyContent: "center" },
   retryText: { fontSize: 15, fontWeight: "700" },
 

@@ -843,7 +843,8 @@
     "feature_requires_pro": "{{feature}}はProが必要です",
     "feature_requires_premium": "{{feature}}はPremiumが必要です",
     "feature_requires_plan": "{{feature}}は{{plan}}が必要です",
-    "unlock_feature": "アップグレードしてこの機能をアンロック"
+    "unlock_feature": "アップグレードしてこの機能をアンロック",
+    "unlock_via_plan_feature": "{{plan}}の「{{planFeature}}」に含まれます"
   },
   "set_completion": {
     "title": "セット進捗",

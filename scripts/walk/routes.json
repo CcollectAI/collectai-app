@@ -412,7 +412,8 @@
       "url": "sparrow://sell/ebay-defaults",
       "expect": {
         "title": false,
-        "navbar": false
+        "navbar": false,
+        "sharedScreen": "sell/dashboard — both render <SellingUnavailable/> while SELLING_ENABLED=false, so the two screens are deliberately identical"
       },
       "why": "renders SellingUnavailable while SELLING_ENABLED=false"
     },

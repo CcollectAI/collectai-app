@@ -15,16 +15,23 @@
 
 import React from 'react';
 import { View } from 'react-native';
-import { Stack } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { EmptyState } from '@/components/EmptyState';
 import { QuickNavBar } from '@/components/QuickNavBar';
 
-export function SellingUnavailable({ title = 'Selling' }: { title?: string }) {
+/**
+ * No `title` prop (2026-09-17). It used to take one and feed it to
+ * `Stack.Screen options={{ title }}`, and `app/_layout.tsx`'s icon-only header
+ * sets `headerTitle: ''` for these routes — so the string was never drawn
+ * anywhere. Two routes passed two different titles ("eBay Defaults", the
+ * dashboard's) and rendered byte-identical screens; the screen sweep caught it
+ * as SAME_AS_PREVIOUS, which is exactly what a member sees: no way to tell the
+ * two apart. The shared message is deliberate, the dead prop was not.
+ */
+export function SellingUnavailable() {
   const { colors } = useAppTheme();
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <Stack.Screen options={{ title }} />
       <EmptyState
         icon="construct-outline"
         title="Selling is coming soon"

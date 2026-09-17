@@ -98,7 +98,7 @@ type FormState = {
 };
 
 export default function EbayDefaultsScreenWithBoundary() {
-  if (!SELLING_ENABLED) return <SellingUnavailable title="eBay Defaults" />;
+  if (!SELLING_ENABLED) return <SellingUnavailable />;
   return (
     <ScreenErrorBoundary screenName="eBay Defaults">
       <EbayDefaultsScreen />

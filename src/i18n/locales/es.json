@@ -843,7 +843,8 @@
     "feature_requires_pro": "{{feature}} requiere Pro",
     "feature_requires_premium": "{{feature}} requiere Premium",
     "feature_requires_plan": "{{feature}} requiere {{plan}}",
-    "unlock_feature": "Mejora para desbloquear esta función"
+    "unlock_feature": "Mejora para desbloquear esta función",
+    "unlock_via_plan_feature": "Incluido en {{plan}} como «{{planFeature}}»"
   },
   "set_completion": {
     "title": "Progreso de la colección",

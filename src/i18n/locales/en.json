@@ -843,7 +843,8 @@
     "feature_requires_pro": "{{feature}} requires Pro",
     "feature_requires_premium": "{{feature}} requires Premium",
     "feature_requires_plan": "{{feature}} requires {{plan}}",
-    "unlock_feature": "Upgrade to unlock this feature"
+    "unlock_feature": "Upgrade to unlock this feature",
+    "unlock_via_plan_feature": "Included in {{plan}} as “{{planFeature}}”"
   },
   "set_completion": {
     "title": "Set progress",

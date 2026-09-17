@@ -2533,6 +2533,34 @@ rule. Found, not fixed: the sponsor dashboard finds sponsored events only among
 `listEvents({limit: 50})` (a capped read); `userProvider.getMyProfile` caches
 `null` for the session on a cold-start auth miss.
 
+## A locked screen still has to say where you are (2026-09-17)
+
+`market-movers` for a free member: a "Market Movers requires Pro" banner pinned
+under the header, then ~1400px of white. It reads as a screen that failed, not
+one that is locked. Two rules out of it:
+
+1. **Centre the gate in the space it owns.** `flex: 1` + `justifyContent:
+   'center'` on the wrapper, where the wrapper is a plain View (in a ScrollView
+   it does nothing — `sets-to-complete` keeps its top-aligned card and explains
+   the feature in its own subtitle instead).
+2. **Name the bullet the member would be buying.** The screen said "Market
+   Movers requires Pro" while the Pro card sells "Advanced analytics", and the
+   gate reads `limits.advanced_analytics` — so the feature IS backed, but nothing
+   on screen connected the two. `UpgradePrompt` takes an optional `planFeature`
+   and renders "Included in Pro as “Advanced analytics”". It names an existing
+   bullet; it does not invent a claim.
+
+**And every return branch keeps the screen's name.** `sponsor/dashboard` had its
+title in one branch of four — loading, the failed read and the no-company empty
+state all rendered nothing in the header band. This is the same rule
+`check:navbar` enforces for the tab bar, and the screen sweep only found it once
+a separate bug (the bell's badge counting as a title) stopped hiding it.
+
+**The dead-prop tell:** `SellingUnavailable` accepted a `title`, handed it to
+`Stack.Screen`, and the icon-only header sets `headerTitle: ''` — so two routes
+passed two different titles and drew the same untitled screen. A prop whose
+effect you cannot point at on a device is not configuration, it is decoration.
+
 ## A 30-cent card is not worthless (2026-09-17)
 
 Found by looking at a catalogue screenshot — "~€1" under "Median of 213 recent

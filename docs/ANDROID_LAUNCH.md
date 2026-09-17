@@ -846,6 +846,9 @@ rather than judging an empty tree. Most settled screens take ~12 s.
 | 6 · 2026-09-17 19:06 | jsswap 19:03 (HEAD) | API live | 65/79 | 4 | 1 / 1 / 0 / 0 | ran BEFORE the two migrations, so `blocked-users` 42P01 again (class M). **one-off**: a non-attendee opening Announcements got "Couldn't load" + a Try again that can never work — the server answers 403 "Only attendees can view announcements" (reproduced with curl) while the event page shows the card to everyone; now an attendees-only state. Timeouts on Home/archived/notifications/public profile (listItems 8 s, inbox view 15 s, profile hydrate 6-7 s) are NOT triaged: tsc, jest and prebuild were running on the same laptop, so they need a recheck on an idle machine before they are called app defects |
 | 7 · 2026-09-17 20:40 | jsswap 20:36 (HEAD) | API live, **idle machine** | 65/79 | 6 | 0 / 0 / 0 / 2 | the idle recheck round 6 needed: **no new app defect**. The 6 SLOW_LOADs are the EMULATOR's network — TCP connect to Supabase from inside it measures 391-1084 ms against 40-58 ms for the same three queries from the laptop, so a 6 s profile-hydrate bound and a 15 s read bound are hit here and not on a phone. `rpc_go_offline_v1` timing out is log noise: presence is `.catch(() => {})`, nothing waits on it. **tool**: this round is what exposed the two sweep defects below |
 | 8 · 2026-09-17 21:04 | same | `--only` the 5 mis-captured routes | 6/6 | 0 | — | proof of the tool fix: `analytics` now reports its own title ("Analytics") instead of "Add manually", `add-manual` reports "Add manually" instead of "Listing", and `settings` reports "Settings" instead of "2" |
+| 9 · 2026-09-17 21:10 | same | full, tool fix #1 | — | — | — | **DIED at route 12 of 79** on a hung `adb screencap`, no report written. That is the round that produced tool fix #2 (a screenshot is evidence, not the round) |
+| 10 · 2026-09-17 21:37 | same | 4 routes, fault injected | 4/4 | 1 | — | proof of the per-route guard: the faulted route reported TOOL_ERROR, the other three walked, the report was written |
+| 11 · 2026-09-17 21:39 | jsswap 21:36 | full, both tool fixes | 65/79 | 11 | 0 / 3 / 0 / 1 | **badge-as-title: 0** (was 21 of 65). **SAME_AS_PREVIOUS caught `sell/ebay-defaults`** — the route my dump audit had seen "pass" in rounds 2, 5, 6 and 7. **NO_TITLE caught `sponsor/dashboard`**, a real missing title the badge bug had masked. Three one-offs fixed from this round (below); 7 SLOW_LOAD + 3 NOT_IDLE are the two-emulator machine, not the app |
 
 Not covered by the machine checks (review the screenshots for these): layout,
 overlap and truncation, wrong numbers, copy that is grammatical but false, and
@@ -900,6 +903,32 @@ fault into one route: it reported TOOL_ERROR, the other three walked, the report
 was written. **Every `ok` in rounds 1-7 for a route walked immediately after
 another is only as good as this, which is why the round log keeps the tool
 column.**
+
+### What round 11 found once the tool stopped lying (2026-09-17)
+
+Three one-offs, all invisible while `ok` did not mean "reached" and a badge
+counted as a title:
+
+- **`sell/ebay-defaults` and `sell/dashboard` render byte-identical screens.**
+  Both show `<SellingUnavailable/>` while `SELLING_ENABLED=false`, which is
+  deliberate — but the component took a `title` prop, passed it to
+  `Stack.Screen`, and `app/_layout.tsx`'s icon-only header sets
+  `headerTitle: ''`, so the string was never drawn. Two routes passed two
+  different titles and a member saw the same untitled screen twice. Dead prop
+  removed; the route now declares `expect.sharedScreen` with its reason, so the
+  new check knows the sameness is the truth there.
+- **`sponsor/dashboard` had a title in exactly one of its four return
+  branches.** Loaded showed "Campaign Manager"; loading, the failed read and the
+  no-company empty state showed nothing in the header band at all. Same rule as
+  `check:navbar`'s "cover every return branch" — every branch renders it now.
+- **`market-movers`' locked screen was a banner over ~1400px of white**, and it
+  said "Market Movers requires Pro" while the Pro card sells "Advanced
+  analytics" — the member could not tell which line they were buying. The card
+  is centred now and reads "Included in Pro as “Advanced analytics”" (a new
+  `planFeature` prop on `UpgradePrompt`; it names an existing bullet and claims
+  nothing new). `purchase/deal`'s locked state was centred in the same pass.
+  `analytics` renders its prompt inline among other content and `sets-to-complete`
+  sits in a ScrollView with its own explanatory subtitle, so neither was touched.
 
 ### A false trail, recorded so it is not re-walked
 

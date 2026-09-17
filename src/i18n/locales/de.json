@@ -843,7 +843,8 @@
     "feature_requires_pro": "{{feature}} erfordert Pro",
     "feature_requires_premium": "{{feature}} erfordert Premium",
     "feature_requires_plan": "{{feature}} erfordert {{plan}}",
-    "unlock_feature": "Upgrade, um diese Funktion freizuschalten"
+    "unlock_feature": "Upgrade, um diese Funktion freizuschalten",
+    "unlock_via_plan_feature": "In {{plan}} enthalten als „{{planFeature}}“"
   },
   "set_completion": {
     "title": "Set-Fortschritt",

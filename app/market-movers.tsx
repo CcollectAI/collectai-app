@@ -252,7 +252,10 @@ function MarketMoversScreen() {
         {/* A growing box, so QuickNavBar sits at the bottom rather than
             directly under the prompt card. */}
         <View style={[styles.stateArea, styles.gateArea]}>
-          <UpgradePrompt feature="Market Movers" requiredPlan="Pro" />
+          {/* planFeature: this screen gates on `limits.advanced_analytics`, and
+              the Pro card sells that as "Advanced analytics" — without naming it
+              the member could not tell which line they were buying. */}
+          <UpgradePrompt feature="Market Movers" requiredPlan="Pro" planFeature="Advanced analytics" />
         </View>
         <QuickNavBar />
       </View>
@@ -446,6 +449,12 @@ const styles = StyleSheet.create({
   gateArea: {
     paddingHorizontal: 16,
     paddingTop: 16,
+    // CENTRED, not pinned to the top (2026-09-17). The locked screen was a
+    // banner followed by ~1400px of white: the card sat under the header with
+    // the whole screen empty beneath it, which reads as a screen that failed to
+    // load rather than one that is locked.
+    flex: 1,
+    justifyContent: 'center',
   },
   empty: {
     alignItems: 'center',

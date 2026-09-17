@@ -843,7 +843,8 @@
     "feature_requires_pro": "{{feature}} nécessite Pro",
     "feature_requires_premium": "{{feature}} nécessite Premium",
     "feature_requires_plan": "{{feature}} nécessite {{plan}}",
-    "unlock_feature": "Mettez à niveau pour débloquer cette fonctionnalité"
+    "unlock_feature": "Mettez à niveau pour débloquer cette fonctionnalité",
+    "unlock_via_plan_feature": "Inclus dans {{plan}} sous « {{planFeature}} »"
   },
   "set_completion": {
     "title": "Progression des séries",

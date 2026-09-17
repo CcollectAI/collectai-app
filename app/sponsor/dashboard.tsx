@@ -273,9 +273,24 @@ const SponsorDashboardScreen: React.FC = () => {
     } finally { setComposeSending(false); }
   };
 
+  // EVERY return branch gets the screen's name (2026-09-17). Only the loaded
+  // branch had it, so a sponsor with no company — or one deep-linked here —
+  // landed on a screen with nothing in the header band at all. Same rule as
+  // check:navbar's "cover every return branch"; the screen sweep caught this one
+  // once the badge-as-title bug stopped hiding it.
+  const titleRow = (subtitle?: string) => (
+    <View style={[styles.titleRow, { backgroundColor: colors.background }]}>
+      <Text style={[styles.headerTitle, { color: colors.text }]}>{t('sponsor.campaign_manager', { defaultValue: 'Campaign Manager' })}</Text>
+      {subtitle ? (
+        <Text style={[styles.headerSubtitle, { color: colors.muted }]} numberOfLines={1}>{subtitle}</Text>
+      ) : null}
+    </View>
+  );
+
   if (loading) {
     return (
       <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        {titleRow()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
           <Text style={[styles.loadingText, { color: colors.muted }]}>{t('sponsor.dashboard_loading', { defaultValue: 'Loading dashboard...' })}</Text>
@@ -288,6 +303,7 @@ const SponsorDashboardScreen: React.FC = () => {
   if (!company && companyLoadFailed) {
     return (
       <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        {titleRow()}
         <EmptyState
           icon="cloud-offline-outline"
           title={t('sponsor.dashboard_load_failed', { defaultValue: "Couldn't load your dashboard" })}
@@ -311,6 +327,7 @@ const SponsorDashboardScreen: React.FC = () => {
   if (!company) {
     return (
       <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        {titleRow()}
         <EmptyState
           icon="megaphone-outline"
           title={t('sponsor.dashboard_empty_title', { defaultValue: 'Start Sponsoring Events' })}
@@ -344,10 +361,7 @@ const SponsorDashboardScreen: React.FC = () => {
 
   return (
     <View style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={[styles.titleRow, { backgroundColor: colors.background }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>{t('sponsor.campaign_manager', { defaultValue: 'Campaign Manager' })}</Text>
-        <Text style={[styles.headerSubtitle, { color: colors.muted }]} numberOfLines={1}>{company.name}</Text>
-      </View>
+      {titleRow(company.name)}
 
       <ScrollView
         style={styles.scroll}

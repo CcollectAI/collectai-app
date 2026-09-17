@@ -17,9 +17,19 @@ import { recordPaywallEvent, recordFeatureAttempt } from '@/api/intelligenceApi'
 type Props = {
   feature: string;
   requiredPlan?: string;
+  /**
+   * The name of the PLAN BULLET that covers this feature, when it differs from
+   * the feature's own name (2026-09-17).
+   *
+   * `market-movers` gates on `limits.advanced_analytics` and said "Market
+   * Movers requires Pro", while the Pro card sells "Advanced analytics" — the
+   * member hitting the gate had no way to tell which line they were buying.
+   * This changes no pricing claim; it names the bullet that already exists.
+   */
+  planFeature?: string;
 };
 
-export const UpgradePrompt = React.memo(function UpgradePrompt({ feature, requiredPlan = 'Pro' }: Props) {
+export const UpgradePrompt = React.memo(function UpgradePrompt({ feature, requiredPlan = 'Pro', planFeature }: Props) {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { t } = useTranslation();
@@ -44,7 +54,11 @@ export const UpgradePrompt = React.memo(function UpgradePrompt({ feature, requir
           <Text style={[styles.title, { color: colors.text }]}>
             {t('billing.feature_requires_plan', { feature, plan: requiredPlan })}
           </Text>
-          <Text style={[styles.subtitle, { color: colors.muted }]}>{t('billing.unlock_feature')}</Text>
+          <Text style={[styles.subtitle, { color: colors.muted }]}>
+            {planFeature
+              ? t('billing.unlock_via_plan_feature', { plan: requiredPlan, planFeature })
+              : t('billing.unlock_feature')}
+          </Text>
         </View>
       </View>
       <AnimatedPressable

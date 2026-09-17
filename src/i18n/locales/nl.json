@@ -843,7 +843,8 @@
     "feature_requires_pro": "{{feature}} vereist Pro",
     "feature_requires_premium": "{{feature}} vereist Premium",
     "feature_requires_plan": "{{feature}} vereist {{plan}}",
-    "unlock_feature": "Upgrade om deze functie te ontgrendelen"
+    "unlock_feature": "Upgrade om deze functie te ontgrendelen",
+    "unlock_via_plan_feature": "Zit in {{plan}} onder “{{planFeature}}”"
   },
   "set_completion": {
     "title": "Setvoortgang",

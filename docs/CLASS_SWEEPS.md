@@ -356,6 +356,13 @@ migrates data); it is not urgent, and it should not be replayed blind.
 
 ## O — a number rounded into a different fact (2026-09-17)
 
+**Measured properly for the docs:** the screen reads `mv_catalog_item_price`, and
+**89,314 of its 184,220 rows (48%)** are between €0 and €1 — so nearly half the
+browsable catalogue rendered as €0. Verified fixed on the device: an MTG card
+priced €0.07 now shows "~€0,07 · Median of 100 recent market prices" where it
+used to show "~€0".
+
+
 Not found by any checker: by opening a screenshot from the round the machine had
 called `ok`. The catalogue item read **"~€1"** under "Median of 213 recent market
 prices", which sent me to `money()` — `maximumFractionDigits: 0` for every
