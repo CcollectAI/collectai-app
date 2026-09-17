@@ -83,6 +83,9 @@ function AppearanceSectionInner() {
    * their home screen with no way to say they had moved on. Same local-first,
    * fire-and-forget shape as region.
    */
+  // double-tap-ok: PUT /settings is an idempotent write of the value the member
+  // picked, the picker closes before the await, and updateSettings() has already
+  // applied it locally — a second identical PUT changes nothing.
   const handleSkillChange = async (level: SkillLevel) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     updateSettings({ skillLevel: level });
@@ -97,6 +100,9 @@ function AppearanceSectionInner() {
     }
   };
 
+  // double-tap-ok: PUT /settings is an idempotent write of the value the member
+  // picked, the picker closes before the await, and updateSettings() has already
+  // applied it locally — a second identical PUT changes nothing.
   const handleRegionChange = async (region: Region) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     const defaults = REGION_DEFAULTS[region];
@@ -124,6 +130,9 @@ function AppearanceSectionInner() {
     setLanguagePickerVisible(false);
   };
 
+  // double-tap-ok: PUT /settings is an idempotent write of the value the member
+  // picked, the picker closes before the await, and updateSettings() has already
+  // applied it locally — a second identical PUT changes nothing.
   const handleCurrencyChange = async (currency: Currency) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     updateSettings({ currency });

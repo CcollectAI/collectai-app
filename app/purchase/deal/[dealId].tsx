@@ -57,6 +57,7 @@ function DealDetailScreen() {
   const [missReason, setMissReason] = useState<'not_found' | 'plan' | 'failed'>('not_found');
   const [reloadKey, setReloadKey] = useState(0);
   const [confirming, setConfirming] = useState(false);
+  const [declining, setDeclining] = useState(false);
 
   useEffect(() => {
     if (!dealId) return;
@@ -117,18 +118,26 @@ function DealDetailScreen() {
     }
   }, [deal, settings.hapticsEnabled]);
 
+  // Guarded like its sibling handleConfirm (2026-09-17, class sweep I). The
+  // server's decline is `UPDATE … WHERE status = ANY(_DECLINABLE_STATUSES)`
+  // (server/app/agents/purchase_router.py), so a second tap updates 0 rows and
+  // returns 404 — and the member was told "Failed to dismiss" about a deal that
+  // WAS dismissed. The lie was the bug, not the duplicate write.
   const handleDecline = useCallback(async () => {
-    if (!deal) return;
+    if (!deal || declining) return;
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
 
+    setDeclining(true);
     try {
       await collectorsApi.declineDeal(deal.id);
       setDeal((prev) => prev ? { ...prev, status: "declined" } : prev);
       showToast({ message: "Deal dismissed", type: "success" });
     } catch {
       showToast({ message: "Failed to dismiss", type: "error" });
+    } finally {
+      setDeclining(false);
     }
-  }, [deal, settings.hapticsEnabled]);
+  }, [deal, declining, settings.hapticsEnabled]);
 
   // Guard: invalid or missing dealId
   if (!dealId) {
@@ -364,6 +373,7 @@ function DealDetailScreen() {
             <AnimatedPressable
               style={[styles.declineBtn, { borderColor: colors.border }]}
               onPress={handleDecline}
+              disabled={declining}
               accessibilityRole="button"
               accessibilityLabel={t('purchase.a11y_not_interested', { defaultValue: 'Not interested' })}
             >

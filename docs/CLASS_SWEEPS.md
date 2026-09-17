@@ -50,7 +50,7 @@ Two rules the tooling learned the hard way:
 | F | The write succeeded and the screen still shows the old value | 2026-09-16 | ✅ closed 2026-09-17 (item-change chokepoint + both profile caches, tested) |
 | G | A paid feature a free member can reach, or a free feature a paying member is denied | 2026-09-16 | 4 decisions for Merle |
 | H | The date on screen is not the date that was meant | 2026-09-16 | partly landed; locale half open |
-| I | One tap, two writes (unguarded async handlers) | launched 09-16 | ⛔ agents died on a session rate limit — not run |
+| I | One tap, two writes (unguarded async handlers) | 2026-09-17 | ✅ swept by checker, 6 fixed + 5 reasoned, `check:double-submit` in prebuild |
 | J | A member can see data that is not theirs (RLS / IDOR / public views) | 2026-09-17 | ✅ prod verified clean; repo drift fixed + gated |
 | M | The database fails, and the app reads the failure as "no" | 2026-09-17 | app half fixed + gated; `20260917b` **applied**; `20260917c` (block→dm_requests + block checks) written, NOT applied |
 | N | The client compares a status the database never writes | 2026-09-17 | `getDmStatus` fixed + tested; a per-column enumeration still owed |
@@ -154,6 +154,44 @@ Not fixed by it: `rpc_enqueue_push_v1` calls `digest()`, which lives in the
 is fully qualified and simply gone; `rpc_anonymize_my_account_v1/v2` update a
 column of a view — but nothing in `src`/`app`/`server` calls either; account
 deletion is `account_router._do_account_delete`) — dead, not urgent.
+
+## I — one tap, two writes: swept by a checker, not by reading (2026-09-17)
+
+The class had never been swept (the agents died on a rate limit on 09-16); the
+register carried ONE confirmed instance. A 120-line checker
+(`scripts/check-double-submit.mjs`) found **13** after its own false positives
+were removed, out of ~40 writing tap handlers.
+
+**Fixed — a second run does real damage:**
+
+| site | what the second tap did |
+|---|---|
+| `events/[eventId]` RSVP × 3 | **money**: Going on a PAID event opens a Stripe ticket checkout, so two taps started two checkouts for the same ticket. The other two write the same `event_attendees` row while optimistic counters move. One shared `rsvpWritingRef` |
+| `sponsor/dashboard.handleConfirmTier` | **money**: a second sponsor SUBSCRIPTION checkout, and both `track()` events fired again, so the funnel counted taps as intents |
+| `purchase/deal/[dealId].handleDecline` | the known instance: the server declines `WHERE status = ANY(_DECLINABLE_STATUSES)`, so tap 2 updated 0 rows → 404 → **"Failed to dismiss" about a deal that was dismissed**. Its sibling `handleConfirm` had been guarded all along |
+| `categories/[categoryId].handleToggleFollow` | a follow and an unfollow for the same row, ordered by the server, so the pill could disagree with what was written |
+| `useItemGallery.handleGalleryDelete` | the row only leaves after the call returns, so the same photo could be deleted twice → 404 → "Failed to remove photo" about a photo that is gone. Latch is per IMAGE ID: deleting two photos at once is legitimate |
+
+**Reasoned, not fixed** (`// double-tap-ok:` with a checkable sentence): chat's
+Retry (the control is rendered only for an id in `failedMessageIds`, and the
+first line removes it), Favourites' unsave (optimistic removal takes the control
+away), `ListForSaleModal` (the guard is `useListForSale.submit`'s own
+`if (!canSubmit || submitting)`), and AppearanceSection ×3 (an idempotent
+`PUT /settings` of the value just picked, picker closed before the await).
+
+**The checker was wrong four times before it was right, and each way matters:**
+
+| wrong | fix |
+|---|---|
+| a fixed VERB list for latch names missed `setCreating`, `setMarkingAllRead`, `togglingComplete` — 3 false positives, which is how a gate becomes ignorable | judge the flag's NAME (a regex over `ing`, `busy`, `pending`, `loading`, …), not a list I thought of |
+| testing the END of the name re-flagged `if (restoringId) return` | CONTAINS, plus "a single bare identifier guarding a writing handler is a latch by position" |
+| `[^)]*` for the condition stopped at the first `)`, so `if (ref.current.has(id)) return` could not see its own guard | balanced-paren scan |
+| a ONE-LINE lookback for `double-tap-ok:` ignored every reason I had written (they are 3 lines) — the same bug `check-view-rls` had with a 4-line window | read the whole contiguous comment block |
+
+And one real weakness the mutations exposed: `ref.current = true` was accepted
+on its own. **An assignment nothing reads stops nothing** — a ref latch now
+counts only when some `if (…ref.current…)` reads it. Five mutations red,
+including "drop only the READ and leave the assignment".
 
 ## N — the client compares a status the database never writes (2026-09-17)
 

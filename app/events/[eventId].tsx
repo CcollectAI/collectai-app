@@ -10,7 +10,7 @@
  *  - Past event "Attended" badge
  */
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   View,
@@ -76,6 +76,12 @@ function EventDetailScreen() {
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [followingStream, setFollowingStream] = useState(false);
   const [rsvpStatus, setRsvpStatus] = useState<string | undefined>(undefined);
+  // One tap, one RSVP write (2026-09-17, class sweep I). All three RSVP
+  // handlers share this: they write to the same row, and Going on a PAID event
+  // opens a Stripe checkout, so a second tap could start a second checkout for
+  // the same ticket. A ref, not state — the guard must be set before the first
+  // await, and re-rendering for it would fight the optimistic count updates.
+  const rsvpWritingRef = useRef(false);
   const [showMenu, setShowMenu] = useState(false);
   const [unreadAnnouncementCount, setUnreadAnnouncementCount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -195,10 +201,12 @@ function EventDetailScreen() {
   /* ---- RSVP handlers ---- */
   const handleRsvpGoing = useCallback(async () => {
     if (!event || !eventId) return;
+    if (rsvpWritingRef.current) return;
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
 
     // Paid event — redirect to ticket checkout
     if (event.ticketPriceCents && event.ticketPriceCents > 0 && rsvpStatus !== 'going') {
+      rsvpWritingRef.current = true;
       try {
         const { url } = await dataProvider.createTicketCheckout(eventId as string);
         if (url) {
@@ -207,10 +215,13 @@ function EventDetailScreen() {
       } catch (err) {
         logger.error('[EventDetail] ticket checkout error:', err);
         showToast({ message: userErrorMessage(err, 'Failed to start ticket checkout.'), type: 'error' });
+      } finally {
+        rsvpWritingRef.current = false;
       }
       return;
     }
 
+    rsvpWritingRef.current = true;
     try {
       if (rsvpStatus === 'going') {
         setRsvpStatus(undefined);
@@ -241,12 +252,16 @@ function EventDetailScreen() {
     } catch (err) {
       logger.error('[EventDetail] rsvp going error:', err);
       loadEvent(); // rollback
+    } finally {
+      rsvpWritingRef.current = false;
     }
   }, [event, eventId, rsvpStatus, settings.hapticsEnabled, showToast, loadEvent]);
 
   const handleRsvpInterested = useCallback(async () => {
     if (!event || !eventId) return;
+    if (rsvpWritingRef.current) return;
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    rsvpWritingRef.current = true;
     try {
       if (rsvpStatus === 'interested') {
         setRsvpStatus(undefined);
@@ -277,6 +292,8 @@ function EventDetailScreen() {
     } catch (err) {
       logger.error('[EventDetail] rsvp interested error:', err);
       loadEvent(); // rollback
+    } finally {
+      rsvpWritingRef.current = false;
     }
   }, [event, eventId, rsvpStatus, settings.hapticsEnabled, loadEvent]);
 
@@ -294,8 +311,10 @@ function EventDetailScreen() {
   // going/interested counters filter on it), for no behavioural gain.
   const handleJoinWaitlist = useCallback(async () => {
     if (!event || !eventId) return;
+    if (rsvpWritingRef.current) return;
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
     const prevStatus = rsvpStatus;
+    rsvpWritingRef.current = true;
     try {
       const res = await dataProvider.rsvpEvent(eventId, 'going');
       setRsvpStatus(res.status);
@@ -315,6 +334,8 @@ function EventDetailScreen() {
         type: 'error',
       });
       loadEvent();
+    } finally {
+      rsvpWritingRef.current = false;
     }
   }, [event, eventId, rsvpStatus, settings.hapticsEnabled, showToast, loadEvent]);
 

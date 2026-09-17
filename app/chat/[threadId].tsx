@@ -378,6 +378,10 @@ function ThreadDetailScreen() {
     }
   };
 
+  // double-tap-ok: Retry is rendered only for an id in failedMessageIds
+  // (MessageBubble's onRetry prop), and the first line of this function removes
+  // it from that set — so the control is gone before the await starts. A
+  // duplicate send would need two taps inside one frame.
   const handleRetryMessage = async (tempId: string, text: string) => {
     // Remove from failed set and mark as sending again
     setFailedMessageIds((prev) => { const next = new Set(prev); next.delete(tempId); return next; });

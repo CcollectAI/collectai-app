@@ -2533,6 +2533,31 @@ rule. Found, not fixed: the sponsor dashboard finds sponsored events only among
 `listEvents({limit: 50})` (a capped read); `userProvider.getMyProfile` caches
 `null` for the session on a cold-start auth miss.
 
+## One tap is one write (2026-09-17)
+
+Any tap handler that `await`s a write can run twice — a double tap, or a slow
+network and an impatient member. **The damage is usually a LIE, not a
+duplicate**: the second call hits a server that has already moved on, gets a 404,
+and the member is told the thing failed. `purchase/deal`'s decline said "Failed
+to dismiss" about a deal it had just dismissed; the photo gallery said "Failed to
+remove photo" about a photo that was gone. Where money is involved it IS a
+duplicate: Going on a paid event opens a Stripe checkout, and two taps opened two.
+
+`npm run check:double-submit` (in prebuild) flags a writing handler with no
+in-flight guard. Three ways to satisfy it:
+
+1. a state flag set **before** the first await (`setDeclining(true)`), with
+   `disabled` on the control;
+2. a ref latch that is both written and **read** (`if (ref.current) return`) —
+   use a ref when a re-render would fight optimistic UI, and per-ID when two
+   different rows may legitimately be in flight at once;
+3. `// double-tap-ok: <why a second run is harmless>` — and the sentence has to
+   be checkable: "the control is removed from the list before the await", not
+   "this is probably fine".
+
+A confirmation dialog counts as a guard: nothing is written until the member
+answers. An assignment nothing reads does not.
+
 ## What a mutation makes wrong, it must forget (2026-09-17)
 
 `CachedDataProvider` is stale-while-revalidate, so an un-invalidated key is a

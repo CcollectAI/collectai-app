@@ -3,7 +3,7 @@
  * Route: /sponsor/dashboard
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { isEventPast } from '@/lib/calendar';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
@@ -47,6 +47,7 @@ const SponsorDashboardScreen: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [company, setCompany] = useState<SponsorCompany | null>(null);
+  const checkoutStartingRef = useRef(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [sponsoredEvents, setSponsoredEvents] = useState<CollectorsEvent[]>([]);
@@ -214,6 +215,11 @@ const SponsorDashboardScreen: React.FC = () => {
 
   const handleConfirmTier = async () => {
     if (!company) return;
+    // One tap, one checkout (2026-09-17, class sweep I). A second tap started a
+    // second Stripe subscription checkout for the same tier — and fired both
+    // analytics events again, so the funnel counted taps as intents.
+    if (checkoutStartingRef.current) return;
+    checkoutStartingRef.current = true;
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
     track({ name: 'sponsor_tier_selected', properties: { tier: selectedTier } });
     track({ name: 'sponsor_checkout_initiated', properties: { tier: selectedTier, company_id: company.id } });
@@ -225,9 +231,12 @@ const SponsorDashboardScreen: React.FC = () => {
       } catch (err: unknown) {
         logger.error('[SponsorDashboard] subscription checkout error:', err);
         showToast({ message: userErrorMessage(err, 'Failed to start subscription checkout.'), type: 'error' });
+      } finally {
+        checkoutStartingRef.current = false;
       }
     } else {
       setShowTierPicker(false);
+      checkoutStartingRef.current = false;
       router.push(`/create-event?sponsorCompanyId=${company.id}&tier=${selectedTier}`);
     }
   };

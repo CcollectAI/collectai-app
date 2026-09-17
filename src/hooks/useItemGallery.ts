@@ -86,8 +86,17 @@ export function useItemGallery(itemId: string | undefined, isDraft: boolean, ima
     }
   }, [itemId, isDraft, pickAndUpload, settings.hapticsEnabled]);
 
+  // Per IMAGE, not per hook (2026-09-17, class sweep I): deleting two photos at
+  // once is legitimate, deleting the SAME one twice is not — the second call
+  // 404s and the member is told "Failed to remove photo" about a photo that is
+  // gone. The row only disappears after the first call returns, so the tap
+  // target is still there while it is in flight.
+  const deletingImageIdsRef = useRef<Set<string>>(new Set());
+
   const handleGalleryDelete = useCallback(async (imageId: string) => {
     if (!itemId) return;
+    if (deletingImageIdsRef.current.has(imageId)) return;
+    deletingImageIdsRef.current.add(imageId);
     try {
       await collectorsApi.deleteItemImage(itemId, imageId);
       setGalleryImages((prev) => prev.filter((img) => img.id !== imageId));
@@ -97,6 +106,8 @@ export function useItemGallery(itemId: string | undefined, isDraft: boolean, ima
       logger.error('[useItemGallery] delete error:', err);
       fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Failed to remove photo', type: 'error' });
+    } finally {
+      deletingImageIdsRef.current.delete(imageId);
     }
   }, [itemId, settings.hapticsEnabled]);
 

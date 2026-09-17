@@ -29,7 +29,7 @@
  * blocking fetch. The rail and events each load their own data and stream in as
  * they arrive.
  */
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -85,6 +85,7 @@ function CategoryStoreScreen() {
   const accentColor = colors.accent;
 
   const [following, setFollowing] = useState(false);
+  const followWritingRef = useRef(false);
   const [events, setEvents] = useState<CategoryStoreData['upcomingEvents']>([]);
 
   // Catalog sort — owned here so CategorySortChips (mockup: page-level, under
@@ -153,7 +154,12 @@ function CategoryStoreScreen() {
     router.push(`/events/${encodeURIComponent(eventId)}`);
   }, [router]);
 
+  // One tap, one write (2026-09-17, class sweep I). Two quick taps sent a
+  // follow and an unfollow for the same category and the server decided the
+  // order, so the pill could end up disagreeing with the row it wrote.
   const handleToggleFollow = useCallback(async () => {
+    if (followWritingRef.current) return;
+    followWritingRef.current = true;
     const newFollowing = !following;
     setFollowing(newFollowing);
 
@@ -171,6 +177,8 @@ function CategoryStoreScreen() {
       // server's own sentence when it wrote one (err.message is for the log).
       const reason = userErrorMessage(err, '');
       showToast({ message: `Could not update follow status. Please try again.${reason ? ` (${reason})` : ''}`, type: 'error' });
+    } finally {
+      followWritingRef.current = false;
     }
   }, [following, categoryId, showToast]);
 

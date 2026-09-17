@@ -101,6 +101,8 @@ function FavoritesScreen() {
     load();
   }, [load]);
 
+  // double-tap-ok: the row is removed from `rows` before the await, so the
+  // control the member tapped no longer exists; a failure puts it back.
   const onUnsave = useCallback(async (f: Favorite) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     const target = f.listing_id

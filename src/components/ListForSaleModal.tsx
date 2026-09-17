@@ -77,6 +77,9 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
     calculateFee,
   } = hook;
 
+  // double-tap-ok: the guard is one level down — useListForSale.submit() opens
+  // with `if (!canSubmit || submitting) return false`, and it owns the state
+  // this modal renders. A second latch here could only disagree with it.
   const handleSubmit = useCallback(async () => {
     fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
     const ok = await submit();
