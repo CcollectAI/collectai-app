@@ -2,6 +2,30 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-26
 
+## HARD RULE — audit every addition, the moment it is added (2026-09-17)
+
+Merle, after asking three times in one session: *"everytime you add code i want
+you to check it for mistakes because there is always an error in your work. make
+this a hard rule."*
+
+Per edit, before the next one:
+
+1. **Read the DIFF** of what you just wrote, not the file.
+2. **Run the narrowest thing that can fail**: `node --check` / `ast.parse`,
+   `tsc`, that one gate, that one test.
+3. **Mutate a new gate or test** — break the code it guards and watch it go red.
+   A green gate proves nothing until it has failed once.
+4. **For a scripted or bulk edit, read every hunk** — not the count of hunks.
+   (19 of 20 `hitSlop` insertions were right; the 20th landed inside a
+   `style={[...]}` array.)
+5. **Quote evidence, not claims**: `tsc=0` from the transcript, not "tsc clean".
+
+Errors this caught in its first session, all mine: a new lint rule matching its
+own comment; one nested `empty-ok:` exempting a whole block; a reason marker that
+is a syntax error in JSX, so it could never be written; `False in (None, 0)`
+folding booleans in silently; a `//` comment inside Python; and a `package.json`
+edit whose anchor appeared twice, so it silently did not apply.
+
 ## The server told the app "you own nothing, worth 0" (2026-09-17)
 
 Ten route handlers caught their own DB errors and answered **200 with an empty
