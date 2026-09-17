@@ -13,7 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
-import { clearProfileCache } from '@/data/providers/userProvider';
+import { clearProfileCaches } from '@/data/CachedDataProvider';
 import { AnimatedPressable } from '@/motion';
 import { useTranslation } from 'react-i18next';
 
@@ -143,7 +143,7 @@ function PrivacySettingsSectionInner() {
         // Profiles are cached for the session and now carry privacy-gated
         // stats, so without this the user would toggle "Show collection value"
         // off and still see the number on their own profile.
-        clearProfileCache();
+        await clearProfileCaches();
       }
     } catch (err) {
       logger.error('[Settings] Privacy update error:', err);

@@ -2533,6 +2533,23 @@ rule. Found, not fixed: the sponsor dashboard finds sponsored events only among
 `listEvents({limit: 50})` (a capped read); `userProvider.getMyProfile` caches
 `null` for the session on a cold-start auth miss.
 
+## What a mutation makes wrong, it must forget (2026-09-17)
+
+`CachedDataProvider` is stale-while-revalidate, so an un-invalidated key is a
+screen showing the value from before the write. Five item mutations each cleared
+`items:list` + `portfolio:summary` — a hand-copied list — so after adding or
+deleting an item the **category counts stayed wrong for 15 minutes** and the
+analytics totals for 2, while creating a build-paint project DID clear analytics.
+The keys now live in one `invalidateForItemChange()`.
+
+**A profile lives in two caches**, which is the part that bit twice: an
+in-process `Map` in `userProvider`, and this file's SQLite `profile:<id>`.
+Privacy settings cleared the Map only; Edit profile cleared neither and relied on
+`refreshProfile()`, which refreshes AuthProvider's copy and not the entry the
+public profile screen reads. So a member saved a new username, saw it in
+Settings, and found the old one on "View public profile". `clearProfileCaches()`
+clears both. **Count the caches before trusting a refresh.**
+
 ## The provider that answered "not blocked" (2026-09-17)
 
 Rule F reads `catch` blocks. **supabase-js does not throw** — it resolves

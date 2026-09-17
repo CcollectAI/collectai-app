@@ -47,7 +47,7 @@ Two rules the tooling learned the hard way:
 | C | The screen shows nothing useful for many seconds although the data is fast | 2026-09-16 | ✅ landed `02ee84b` |
 | D | One business rule, implemented twice, drifting | 2026-09-16 | ⚠️ report not retained — re-run |
 | E | What the member typed is not what we stored | 2026-09-16 | ✅ closed — gate rule was wrong, 13 sites + validators fixed |
-| F | The write succeeded and the screen still shows the old value | 2026-09-16 | 2 open |
+| F | The write succeeded and the screen still shows the old value | 2026-09-16 | ✅ closed 2026-09-17 (item-change chokepoint + both profile caches, tested) |
 | G | A paid feature a free member can reach, or a free feature a paying member is denied | 2026-09-16 | 4 decisions for Merle |
 | H | The date on screen is not the date that was meant | 2026-09-16 | partly landed; locale half open |
 | I | One tap, two writes (unguarded async handlers) | launched 09-16 | ⛔ agents died on a session rate limit — not run |
@@ -257,12 +257,23 @@ Decisions, not bugs:
   alongside title/url/price (5 rows today). The client never reads it, so the gate
   does not flag it; revoking `anon` SELECT costs nothing if it is not intended.
 
-**F — stale cache** (`src/data/CachedDataProvider.ts`)
-- `CATEGORY_SUMMARIES: 'categories:summaries'` (line 58) is not invalidated by item
-  mutations, so adding or deleting an item leaves the category counts stale for
-  the TTL.
-- `profile:${userId}` (line 375) is never cleared after a profile edit, so a member
-  can save a change and keep seeing the old value.
+**F — stale cache: CLOSED 2026-09-17** (`src/data/CachedDataProvider.ts`)
+- The five item mutations each cleared items + portfolio and nothing else, so
+  `categories:summaries` (TTL **15 min**) kept the old per-category counts and
+  values after an add or delete — and `analytics:metrics` the old totals, while
+  `createBuildPaintProject` DID clear analytics. All five now call one
+  `invalidateForItemChange()`; five copies of a key list is how one stays wrong.
+- A profile lives in **two** caches: userProvider's in-process Map and the SQLite
+  `profile:<id>` entry. Privacy settings cleared only the first (so "Show
+  collection value" off still showed the number on your own public profile), and
+  Edit profile cleared **neither** — `refreshProfile()` fixes AuthProvider's copy,
+  not the entry the public profile screen reads, so a new username was invisible
+  exactly where other members see it, for the TTL. One `clearProfileCaches()`
+  clears both, called from both settings sections.
+- Pinned by `__tests__/data/cacheInvalidation.test.ts` (6 tests, both mutations
+  proven: dropping the three new keys → 5 red; dropping the SQLite clear → 1 red).
+  The key list is written out again in the test ON PURPOSE — importing it from the
+  source would make the test follow a removal instead of catching it.
 
 **H — the locale half: CLOSED 2026-09-17.** All twelve hard-coded date sites now
 go through `dateLocale()`, kept on the resolved UI language by SettingsProvider

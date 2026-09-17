@@ -18,6 +18,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { clearProfileCaches } from '@/data/CachedDataProvider';
 // Android: `presentationStyle="pageSheet"` is an iOS-only Modal API. On Android
 // the Modal is full-screen, so a header with only `paddingVertical` renders
 // UNDER the status bar — the close ✕ lands on the clock and the confirm action
@@ -187,6 +188,11 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
         // that lands and is not shown is indistinguishable from one that
         // didn't. Awaited, so the modal closes onto fresh values rather than
         // flashing the stale ones.
+        // Both cache layers too: refreshProfile fixes AuthProvider's copy, not
+        // the `profile:<id>` entry that the public profile screen reads (2 min
+        // TTL), so a new username stayed invisible exactly where other members
+        // will see it.
+        await clearProfileCaches();
         await refreshProfile();
       }
       setEditProfileVisible(false);

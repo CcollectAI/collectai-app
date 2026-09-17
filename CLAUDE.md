@@ -151,10 +151,11 @@ before opening a new sweep: A–H are done (D needs re-running, its report was l
 with a session), I never ran, J and K ran 09-17, L only its contrast half, M
 (database failure read as "no") was found 09-17. *(Re-verified 2026-09-17: the
 date locales, the parsing sites and the half-saving item edit are FIXED — that
-sentence used to list them as open.)* Open: 2 stale cache keys (still true in
-`CachedDataProvider.ts`: item mutations never clear `CATEGORY_SUMMARIES`), the
-`/collections/user/progress` 500, the billing-webhook fix not deployed, and the
-class-M migration not applied.
+sentence used to list them as open.)* Open: the
+`/collections/user/progress` 500, the billing-webhook fix not deployed, and
+`20260917c` not applied. *(The 2 stale cache keys were fixed 2026-09-17:
+one `invalidateForItemChange()` for the five item mutations, and
+`clearProfileCaches()` for both profile cache layers.)*
 
 ## Five screenshots, eleven defects, and three of my own (2026-08-27)
 

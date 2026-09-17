@@ -43,6 +43,7 @@ import type {
 } from './types';
 import type { CollectorsEvent, CreateEventInput, EventTemplate, EventAnnouncement, SponsorCompany } from './events';
 import { cacheGet, cacheSet, cacheClear } from './offlineCache';
+import { clearProfileCache } from './providers/userProvider';
 import { followedCategoriesStore } from './followedCategoriesStore';
 import logger from '../utils/logger';
 
@@ -98,6 +99,22 @@ async function swr<T>(
   const fresh = await fetcher();
   await cacheSet(cacheKey, fresh, ttlMs);
   return fresh;
+}
+
+/**
+ * Forget every cached copy of a member's public profile — BOTH layers (2026-09-17).
+ *
+ * There are two: userProvider's in-process Map, and this file's SQLite
+ * `profile:<id>` entry (TTL 2 min). Privacy settings cleared only the first, so
+ * turning "Show collection value" off and opening your own public profile still
+ * showed the number; Edit profile cleared neither, so a new username was
+ * invisible there for the TTL while AuthProvider's copy was already correct —
+ * "it didn't save", again. A prefix clear covers every member, which is what a
+ * privacy change needs anyway (others' rows carry YOUR gated columns).
+ */
+export async function clearProfileCaches(): Promise<void> {
+  clearProfileCache();
+  await cacheClear('profile:');
 }
 
 // ---------------------------------------------------------------------------
@@ -187,47 +204,52 @@ export class CachedDataProvider implements DataProvider {
 
   // ── Mutations with cache invalidation ───────────────────────────────────
 
-  async createItem(input: CreateItemInput): Promise<Item> {
-    const result = await this.inner.createItem(input);
-    // Invalidate items list and portfolio (counts/values change)
+  /**
+   * Every key an ITEM change makes wrong — in one place (2026-09-17).
+   *
+   * The five item mutations each cleared items + portfolio and nothing else, so
+   * adding or deleting an item left `categories:summaries` (TTL 15 min) claiming
+   * the old per-category counts and values, and `analytics:metrics` the old
+   * totals — while creating a build-paint project DID clear analytics. Five
+   * copies of a list is how one of them stays wrong (class F, CLASS_SWEEPS.md).
+   *
+   * CATEGORY_MISSING is a prefix, so one clear covers every category's entry.
+   */
+  private async invalidateForItemChange(): Promise<void> {
     await Promise.all([
       cacheClear(CK.ITEMS_LIST),
       cacheClear(CK.PORTFOLIO_SUMMARY),
+      cacheClear(CK.CATEGORY_SUMMARIES),
+      cacheClear(CK.CATEGORY_MISSING),
+      cacheClear(CK.ANALYTICS),
     ]);
+  }
+
+  async createItem(input: CreateItemInput): Promise<Item> {
+    const result = await this.inner.createItem(input);
+    await this.invalidateForItemChange();
     return result;
   }
 
   async deleteItem(itemId: string): Promise<void> {
     await this.inner.deleteItem(itemId);
-    await Promise.all([
-      cacheClear(CK.ITEMS_LIST),
-      cacheClear(CK.PORTFOLIO_SUMMARY),
-    ]);
+    await this.invalidateForItemChange();
   }
 
   async updateItem(itemId: string, patch: Partial<Pick<Item, 'name' | 'category' | 'price' | 'imageUrl'>>): Promise<Item> {
     const result = await this.inner.updateItem(itemId, patch);
-    await Promise.all([
-      cacheClear(CK.ITEMS_LIST),
-      cacheClear(CK.PORTFOLIO_SUMMARY),
-    ]);
+    await this.invalidateForItemChange();
     return result;
   }
 
   async archiveItem(itemId: string): Promise<void> {
     await this.inner.archiveItem(itemId);
-    await Promise.all([
-      cacheClear(CK.ITEMS_LIST),
-      cacheClear(CK.PORTFOLIO_SUMMARY),
-    ]);
+    await this.invalidateForItemChange();
   }
 
   async unarchiveItem(itemId: string): Promise<void> {
     await this.inner.unarchiveItem(itemId);
-    await Promise.all([
-      cacheClear(CK.ITEMS_LIST),
-      cacheClear(CK.PORTFOLIO_SUMMARY),
-    ]);
+    await this.invalidateForItemChange();
   }
 
   async addWatchlistItem(input: CreateWatchlistInput): Promise<WatchlistItem> {
