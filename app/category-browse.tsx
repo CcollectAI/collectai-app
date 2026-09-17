@@ -236,13 +236,13 @@ function CategoryBrowseScreen() {
             accessibilityRole="button"
             accessibilityLabel={`View full details for ${item.title}`}
           >
-            <Text style={[s.viewerCtaText, { color: colors.accent }]}>View full details</Text>
+            <Text style={[s.viewerCtaText, { color: colors.accent }]}>{t('catalog.set_view_full_details')}</Text>
             <Ionicons name="chevron-forward" size={16} color={colors.accent} />
           </AnimatedPressable>
         </ScrollView>
       );
     },
-    [screenW, insets.top, insets.bottom, colors, closeViewer, openMuseum],
+    [screenW, insets.top, insets.bottom, colors, closeViewer, openMuseum, t],
   );
 
   // Square image tile — identical structure to the set-detail grid so "See all"

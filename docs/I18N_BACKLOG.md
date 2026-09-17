@@ -6,9 +6,24 @@ different failures — CLAUDE.md §gates spells that out. A string that never
 reaches a locale file cannot be missing from one, so parity is green while six
 locales render English.
 
-**Backlog: 410 strings across 159 files** (653 at the start). 234 translated
-across 19 files, and 9 more removed by deleting a dead component rather than
-localising it.
+**Backlog: 172 strings across 102 files** (653 at the start; the "410 across 159"
+this line used to claim was stale by two work sessions — `npm run i18n:check`
+prints the live number, so re-run it before quoting one).
+
+**2026-09-17: the lint now says which findings are FREE.** It reads the locale
+files and marks any finding whose exact English text is already a value in
+`en.json` with a different value in another locale — those need `t('<key>')` and
+nothing else: no translator, no new key, no review. The Dutch screen sweep is
+what made the distinction obvious: it showed English buttons on Dutch screens
+(**"Try again"** on the watchlist's failed state, "Save to Collection",
+"Look Up", "Go Back", "Send Announcement", "All categories",
+"View full details") and every one of them already had a Dutch translation
+sitting in the file. All 9 were wired the same day, so that count is **0** now;
+`node scripts/check-i18n-strings.mjs --wiring` lists them if it ever isn't.
+
+⚠️ Do not trust the per-screen table below without re-measuring. It claimed the
+five `(tabs)` screens were at **0** while `(tabs)/wishlist.tsx` had three
+findings, one of them a visible English button.
 `i18n:check` is deliberately **not** a blocking gate; making it one would wedge
 every deploy until the backlog is zero — same reasoning as `check:reachable`
 and `audit_orphan_tables.py`.

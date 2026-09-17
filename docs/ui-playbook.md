@@ -2774,6 +2774,7 @@ because a checker that cries wolf stops being read:
 | flag | why it was wrong | fix |
 |---|---|---|
 | NO_NAVBAR on all 7 tab routes (Dutch) | the check looked for the ENGLISH tab words; the real tab bar uses `t('nav.*')` ("Markt", "Toevoegen", "Ontdek") while QuickNavBar keeps English literals by design | each slot accepts either spelling |
+| NO_CLUSTER on every screen of the Dutch round (2026-09-17) | **the same mistake one round later**: the cluster check matched the English `Notifications` / `Settings`, and those a11y labels were translated on 09-16 — the dump held "Meldingen, 2 ongelezen" and "Instellingen" | both sets built from every locale (`screen_titles.notifications`, `nav.settings`), bell matched by prefix because its label is "<Notifications>, N unread" |
 | `catalog-item` "landed on Home" | a deep link sent while the app was still booting is swallowed — the 12 s wait was a guess | cold start waits for the tab bar (≤45 s), and a route that unexpectedly shows Home re-sends its link once, then reports WRONG_SCREEN rather than judging the wrong screen |
 | one route took 102 s | `uiautomator dump` waits for the UI to go IDLE, so a spinning screen holds a dump; only the gaps between dumps were budgeted | each dump capped at 10 s and counted against the route budget; a screen that never idles is NOT_IDLE, with one long dump so it still gets its checks |
 

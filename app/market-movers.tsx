@@ -346,7 +346,7 @@ function MarketMoversScreen() {
             accessibilityRole="button"
             accessibilityLabel="Try loading market movers again"
           >
-            <Text style={[styles.retryText, { color: colors.accentText }]}>Try again</Text>
+            <Text style={[styles.retryText, { color: colors.accentText }]}>{t('common.try_again')}</Text>
           </AnimatedPressable>
         </View>
       ) : movers.length === 0 ? (

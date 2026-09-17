@@ -26,6 +26,44 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
+// ── Which of these need a TRANSLATOR, and which only need wiring? ───────────
+//
+// 2026-09-17: the Dutch screen sweep showed English buttons on Dutch screens —
+// "Try again" on the watchlist's failed state, "Cancel", "Delete", "Category" —
+// and every one of those strings ALREADY had a Dutch value in the locale files.
+// This lint counted them the same as a string nobody has ever translated, so a
+// 181-finding list gave no way to see the free half. A finding whose exact
+// English text is a value in en.json with a different value in another locale
+// needs `t('<key>')` and nothing else: no translator, no new key, no review.
+const LOCALES_DIR = join(ROOT, 'src', 'i18n', 'locales');
+const flatten = (o, p = '') =>
+  Object.entries(o).flatMap(([k, v]) =>
+    v && typeof v === 'object' ? flatten(v, `${p}${k}.`) : [[`${p}${k}`, String(v)]],
+  );
+const readLocale = (name) =>
+  Object.fromEntries(flatten(JSON.parse(readFileSync(join(LOCALES_DIR, name), 'utf8'))));
+let EN_BY_VALUE = new Map();
+let OTHER_LOCALES = [];
+try {
+  const EN = readLocale('en.json');
+  for (const [k, v] of Object.entries(EN)) {
+    if (!EN_BY_VALUE.has(v)) EN_BY_VALUE.set(v, []);
+    EN_BY_VALUE.get(v).push(k);
+  }
+  OTHER_LOCALES = readdirSync(LOCALES_DIR)
+    .filter((f) => f.endsWith('.json') && f !== 'en.json')
+    .map(readLocale);
+} catch {
+  // No locale files (a fresh checkout of the scripts alone) — the lint still
+  // works, it just cannot say which findings are free.
+}
+/** The key that already carries this exact string in another language, if any. */
+function existingKey(text) {
+  const keys = EN_BY_VALUE.get(text.trim());
+  if (!keys) return null;
+  return keys.find((k) => OTHER_LOCALES.some((L) => L[k] && L[k] !== text.trim())) ?? null;
+}
+
 const SCAN_DIRS = ['app', 'src'];
 
 // Files/directories to skip entirely. These are known-good (tests, legal copy,
@@ -188,7 +226,8 @@ function main() {
       console.log(`\n${file}  (${findings.length})`);
       const displayLimit = process.argv.includes('--all') ? findings.length : 20;
       for (const f of findings.slice(0, displayLimit)) {
-        console.log(`  ${file}:${f.line}  [${f.kind}]  ${f.text}`);
+        const key = existingKey(f.text);
+        console.log(`  ${file}:${f.line}  [${f.kind}]  ${f.text}${key ? `  → already translated: t('${key}')` : ''}`);
       }
       if (findings.length > displayLimit) {
         console.log(`  … and ${findings.length - displayLimit} more`);
@@ -196,9 +235,19 @@ function main() {
     }
   }
 
+  const wiringOnly = perFile.flatMap(({ file, findings }) =>
+    findings.filter((f) => existingKey(f.text)).map((f) => `${file}:${f.line}  ${f.text}`),
+  );
   console.log(
     `\ni18n lint: ${totalFindings} untranslated string(s) across ${perFile.length} file(s) (${files.length} scanned)`,
   );
+  if (wiringOnly.length) {
+    console.log(
+      `  of those, ${wiringOnly.length} ALREADY have a translation in the locale files —\n` +
+      `  they need t('<key>') and nothing else (no translator, no new key).` +
+      (process.argv.includes('--wiring') ? '\n\n  ' + wiringOnly.join('\n  ') : "  Run with --wiring to list them."),
+    );
+  }
 
   if (totalFindings > 0) {
     console.log(

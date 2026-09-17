@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useScannerTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { useTranslation } from 'react-i18next';
 
 interface BarcodeModeSelectorProps {
   manualIsbn: string;
@@ -31,6 +32,7 @@ export const BarcodeModeSelector = React.memo(function BarcodeModeSelector({
   isSubmitting,
   hapticsEnabled,
 }: BarcodeModeSelectorProps) {
+  const { t } = useTranslation();
   const { colors } = useScannerTheme();
 
   return (
@@ -85,7 +87,7 @@ export const BarcodeModeSelector = React.memo(function BarcodeModeSelector({
             ) : (
               <>
                 <Ionicons name="search" size={18} color={colors.card} />
-                <Text style={[styles.primaryButtonText, { color: colors.card }]}>Look Up</Text>
+                <Text style={[styles.primaryButtonText, { color: colors.card }]}>{t('grading.look_up')}</Text>
               </>
             )}
           </AnimatedPressable>

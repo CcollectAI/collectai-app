@@ -284,7 +284,7 @@ function ProjectDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <Text style={[styles.backBtnText, { color: colors.text }]}>Go back</Text>
+              <Text style={[styles.backBtnText, { color: colors.text }]}>{t('common.go_back')}</Text>
             </AnimatedPressable>
           </View>
           <QuickNavBar />

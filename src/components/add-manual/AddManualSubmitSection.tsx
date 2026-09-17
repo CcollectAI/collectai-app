@@ -7,6 +7,7 @@ import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 interface AddManualSubmitSectionProps {
   canSubmit: boolean;
@@ -19,6 +20,7 @@ export const AddManualSubmitSection = React.memo(function AddManualSubmitSection
   isSaving,
   onSubmit,
 }: AddManualSubmitSectionProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
@@ -37,7 +39,7 @@ export const AddManualSubmitSection = React.memo(function AddManualSubmitSection
         ) : (
           <>
             <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
-            <Text style={styles.submitButtonText}>Save to Collection</Text>
+            <Text style={styles.submitButtonText}>{t('item_detail.save')}</Text>
           </>
         )}
       </AnimatedPressable>

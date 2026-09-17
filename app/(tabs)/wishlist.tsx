@@ -809,7 +809,7 @@ function WatchlistTabScreen() {
           accessibilityLabel="Try loading your watchlist again"
         >
           <Ionicons name="refresh" size={18} color={colors.accentText} />
-          <Text style={[styles.emptyBtnText, { color: colors.accentText }]}>Try again</Text>
+          <Text style={[styles.emptyBtnText, { color: colors.accentText }]}>{t('common.try_again')}</Text>
         </AnimatedPressable>
       </View>
     ) : (

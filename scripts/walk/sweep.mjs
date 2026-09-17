@@ -124,6 +124,13 @@ const EN = Object.fromEntries(flat(localeFile('en')));
 const LOCALES = readdirSync(join(ROOT, 'src/i18n/locales')).filter((f) => f.endsWith('.json')).map((f) => f.replace('.json', ''));
 const TRY_AGAIN = new Set(LOCALES.flatMap((l) => { const f = Object.fromEntries(flat(localeFile(l))); return [f['common.try_again'], f['common.retry']]; }).filter(Boolean).concat(['Try again', 'Retry']));
 const GO_BACK = new Set(LOCALES.map((l) => Object.fromEntries(flat(localeFile(l)))['common.go_back_a11y']).filter(Boolean));
+// The header cluster's labels come from `screen_titles.notifications` and
+// `nav.settings`, so they are TRANSLATED (since 2026-09-16). Matching the
+// English literals reported NO_CLUSTER on every screen of the Dutch round while
+// the dump plainly held "Meldingen, 2 ongelezen" and "Instellingen" — the same
+// bug the tab-label check had, one round later.
+const CLUSTER_BELL = new Set(LOCALES.map((l) => Object.fromEntries(flat(localeFile(l)))['screen_titles.notifications']).filter(Boolean).concat(['Notifications']));
+const CLUSTER_GEAR = new Set(LOCALES.map((l) => Object.fromEntries(flat(localeFile(l)))['nav.settings']).filter(Boolean).concat(['Settings']));
 const LOC = LOCALE !== 'en' && LOCALES.includes(LOCALE) ? Object.fromEntries(flat(localeFile(LOCALE))) : null;
 const LOC_VALUES = new Set(LOC ? Object.values(LOC) : []);
 const EN_FUNCTION_WORDS = new Set(['the', 'your', 'you', 'to', 'and', 'of', 'this', 'that', 'is', 'are', 'for', 'with', 'from', 'when', 'what', 'will', 'can', "can't", "couldn't", "don't", "we", "our", 'it', 'on', 'in', 'a', 'an', 'or', 'not', 'no', 'yet', 'have', 'has', 'be', 'here', 'there', 'try', 'again']);
@@ -183,7 +190,13 @@ function check(nodes, expect, W, H, focusLine, logs, DP) {
   const failureState = app.some((n) => TRY_AGAIN.has(n.text) || TRY_AGAIN.has(n.desc));
   if (expect.title && !titleNode && !failureState) flags.push(['NO_TITLE', 'no text in the header band']);
   if (expect.back && !app.some((n) => GO_BACK.has(n.desc) || GO_BACK.has(n.text))) flags.push(['NO_BACK', 'no "Go back" control']);
-  if (expect.cluster && !(header.some((n) => /^Notifications/.test(n.desc)) && header.some((n) => n.desc === 'Settings'))) flags.push(['NO_CLUSTER', 'bell/gear cluster missing']);
+  // The bell's label is "<Notifications>, N unread" in every locale, so match the
+  // PREFIX against each locale's word rather than the English one.
+  const clusterHas = (set) => header.some((n) => {
+    const d = (n.desc || '').trim();
+    return [...set].some((label) => d === label || d.startsWith(`${label},`));
+  });
+  if (expect.cluster && !(clusterHas(CLUSTER_BELL) && clusterHas(CLUSTER_GEAR))) flags.push(['NO_CLUSTER', 'bell/gear cluster missing']);
   if (expect.navbar) {
     const labels = new Set(bottom.flatMap((n) => [n.text, n.desc]).filter(Boolean));
     const missing = TAB_ALTS.filter((alts) => !alts.some((a) => labels.has(a))).map((alts) => alts[0]);

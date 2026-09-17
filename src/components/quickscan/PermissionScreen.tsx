@@ -19,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { BRAND_COLORS } from '@/constants/colors';
+import { useTranslation } from 'react-i18next';
 
 const TIFFANY = BRAND_COLORS.tiffany;
 
@@ -49,6 +50,7 @@ function PermissionScreenInner({
   message = 'We need camera access to scan your collectibles with AI.',
   colors,
 }: PermissionScreenProps) {
+  const { t } = useTranslation();
   const blocked = !canAskAgain;
 
   return (
@@ -92,7 +94,7 @@ function PermissionScreenInner({
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Text style={[styles.backBtnText, { color: colors.muted }]}>Go Back</Text>
+          <Text style={[styles.backBtnText, { color: colors.muted }]}>{t('common.go_back')}</Text>
         </AnimatedPressable>
       </View>
     </View>

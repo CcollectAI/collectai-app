@@ -620,6 +620,28 @@ a per-statement SAVEPOINT and a comment explaining why.
   cannot fix is a network failure between two writes — that needs the server to
   take both in one transaction, which is the rest of class K.
 
+## Decisions for Merle — the XP leaderboard (2026-09-17)
+
+`GAMIFICATION_UI_ENABLED = false`, and `UserStatsSection` hides XP and level on a
+profile with the comment "XP is not a shipped feature" (2026-08-10). But
+`app/leaderboard.tsx` with NO `categoryId` renders an **XP/Level board**, behind
+no flag — and `PortfolioTierBadge` (analytics) links straight to it. The screen
+sweep shows it as one stranger's row ("Merle · 50 XP · Level 1 · 1 day streak")
+followed by an empty screen, because only one account in production has any XP.
+
+The two consistent ways out, both yours:
+
+1. **Gate it like the rest of gamification.** Then `/leaderboard` with no param
+   needs something to show — the category board requires a `categoryId`, so this
+   also means deciding where `PortfolioTierBadge` should point.
+2. **Ship XP properly**, and un-gate `UserStatsSection` with it.
+
+What is NOT in question: today one screen presents XP as a feature while another
+deliberately hides it, and the same flag file states the rule ("anything here has
+to be a feature the app actually ships"). Also note the XP board has no "you are
+#N of M" line, which the CATEGORY board does have — so a member outside the top
+ranks learns nothing about themselves from it.
+
 ## Decisions for Merle (class G)
 
 Not bugs with an obvious fix — each is a product call.

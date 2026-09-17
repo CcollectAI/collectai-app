@@ -6,6 +6,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import type { CollectorsEvent } from '@/data/events';
+import { useTranslation } from 'react-i18next';
 
 const SHADOW_MD = Platform.select({
   ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 },
@@ -32,6 +33,7 @@ interface Props {
 export const EventPickerPanel = React.memo(function EventPickerPanel({
   events, onSelect, onCancel, hapticsEnabled,
 }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
@@ -41,7 +43,7 @@ export const EventPickerPanel = React.memo(function EventPickerPanel({
           <Ionicons name="megaphone-outline" size={16} color={colors.accent} />
         </View>
         <View>
-          <Text style={[styles.title, { color: colors.text }]}>Send Announcement</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('announce.send_announcement')}</Text>
           <Text style={[styles.subtitle, { color: colors.muted }]}>Select which event to notify</Text>
         </View>
       </View>

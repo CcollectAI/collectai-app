@@ -508,7 +508,7 @@ function FilterSheetInner({
                       accessibilityRole="button"
                       accessibilityLabel={`All categories${config.categories.length === 0 ? ', selected' : ''}`}
                     >
-                      <Text style={[styles.menuRowText, { color: colors.text }]}>All categories</Text>
+                      <Text style={[styles.menuRowText, { color: colors.text }]}>{t('category_picker.all_categories')}</Text>
                       {config.categories.length === 0 && (
                         <Ionicons name="checkmark" size={18} color={colors.accent} />
                       )}
