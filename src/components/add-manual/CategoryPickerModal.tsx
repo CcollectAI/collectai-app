@@ -71,7 +71,7 @@ export const CategoryPickerModal = React.memo(function CategoryPickerModal({
         <View style={[styles.sheet, { backgroundColor: colors.card }]}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
             <Text style={[styles.title, { color: colors.text }]}>{t('category_picker.title')}</Text>
-            <TouchableOpacity onPress={handleClose} hitSlop={12}>
+            <TouchableOpacity onPress={handleClose} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('common.close')}>
               <Ionicons name="close" size={22} color={colors.muted} />
             </TouchableOpacity>
           </View>
@@ -87,7 +87,7 @@ export const CategoryPickerModal = React.memo(function CategoryPickerModal({
               accessibilityLabel={t('category_picker.search_a11y')}
             />
             {search.length > 0 && (
-              <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
+              <TouchableOpacity onPress={() => setSearch('')} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('common.clear_search_a11y', { defaultValue: 'Clear search' })}>
                 <Ionicons name="close-circle" size={16} color={colors.muted} />
               </TouchableOpacity>
             )}

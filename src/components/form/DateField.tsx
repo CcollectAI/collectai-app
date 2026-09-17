@@ -154,6 +154,7 @@ export const DateField = React.memo(function DateField({
               <Pressable
                 onPress={() => adjustDay(-1)}
                 style={[styles.arrowBtn, { backgroundColor: colors.background }]}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityLabel={t('common.a11y_prev_day', { defaultValue: 'Previous day' })}
               >
                 <Ionicons name="chevron-back" size={20} color={colors.text} />
@@ -164,6 +165,7 @@ export const DateField = React.memo(function DateField({
               <Pressable
                 onPress={() => adjustDay(1)}
                 style={[styles.arrowBtn, { backgroundColor: colors.background }]}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityLabel={t('common.a11y_next_day', { defaultValue: 'Next day' })}
               >
                 <Ionicons name="chevron-forward" size={20} color={colors.text} />

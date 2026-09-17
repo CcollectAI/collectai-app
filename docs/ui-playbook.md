@@ -2533,6 +2533,32 @@ rule. Found, not fixed: the sponsor dashboard finds sponsored events only among
 `listEvents({limit: 50})` (a capped read); `userProvider.getMyProfile` caches
 `null` for the session on a cold-start auth miss.
 
+## A 28pt button needs hitSlop, and the slop needs a direction (2026-09-17)
+
+Apple asks for 44×44pt, Android for 48dp, and this app draws 28-40pt icon
+buttons that look right at that size. Do not inflate the box — that re-lays out
+the row. Add `hitSlop`, which grows the touchable area and leaves the drawing
+alone (`npm run check:touch-target`, 20 sites fixed on 09-17).
+
+**The direction matters more than the amount.** Neighbouring hit rects overlap,
+and the topmost one wins, so two arrows 6pt apart with `hitSlop={8}` each make
+the boundary between them ambiguous — you have traded a small target for a
+mis-tap, which is worse. Measure the container's `gap`, give the free sides 8,
+and give a shared side at most half the gap:
+
+```tsx
+// heroActions has gap: 8 → 4 inward, 8 vertically (nothing above or below)
+<AnimatedPressable style={styles.heroActionBtn}
+  hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }} />
+```
+
+**A missing `accessibilityLabel` is only a defect on an icon-only control** — a
+button with a `Text` child is announced by its text. The first sweep counted 53
+"unlabelled" pressables; 6 were real (five close buttons and a clear-search
+button, all icon-only). And the opposite case exists: `AuthTextInput` wraps its
+`TextInput` in a `Pressable` purely to forward taps, so it is `accessible={false}`
+— labelling it would put a second, nameless control in front of every field.
+
 ## One tap is one write (2026-09-17)
 
 Any tap handler that `await`s a write can run twice — a double tap, or a slow

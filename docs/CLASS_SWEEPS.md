@@ -55,7 +55,7 @@ Two rules the tooling learned the hard way:
 | M | The database fails, and the app reads the failure as "no" | 2026-09-17 | app half fixed + gated; `20260917b` **applied**; `20260917c` (block→dm_requests + block checks) written, NOT applied |
 | N | The client compares a status the database never writes | 2026-09-17 | `getDmStatus` fixed + tested; a per-column enumeration still owed |
 | K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | billing webhook fixed `8439f97` (**not deployed**); item edit, calendar, template fixed; P2P listing insert open |
-| L | The control is there but a person cannot use it (touch targets, labels, contrast) | partly, 2026-09-17 | contrast half: 43 icon sites + gate `19a8fdc`, accent 2.02:1 is a brand decision; touch targets + labels ⛔ not run |
+| L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -192,6 +192,54 @@ And one real weakness the mutations exposed: `ref.current = true` was accepted
 on its own. **An assignment nothing reads stops nothing** — a ref latch now
 counts only when some `if (…ref.current…)` reads it. Five mutations red,
 including "drop only the READ and leave the assignment".
+
+## L — the control is there but a person cannot use it (2026-09-17)
+
+The contrast half landed in `19a8fdc`. The other two halves had never been run.
+Both were measured before anything was touched, and the FIRST measurement was
+useless — it reported 53 unlabelled pressables and 295 "small" sizes, which is a
+list nobody can act on. Neither number was a defect count:
+
+- a button with a `Text` child is announced by its text, so a missing
+  `accessibilityLabel` is only a defect when the control is **icon-only**;
+- most "small" numbers were progress-bar heights, dots and spacers, not touch
+  targets — a size is only a touch target if it is the pressable's OWN style.
+
+Re-measured on those two shapes: **6** and **20**.
+
+**6 icon-only controls announced nothing** — five close buttons (region picker,
+two category pickers, the condition sheet, the suggestion modal) and the search
+field's clear button. All now carry `accessibilityRole="button"` and
+`t('common.close')` / a new `common.clear_search_a11y`, in 7 locales.
+`AuthTextInput`'s wrapper got the opposite treatment: it is a `Pressable` that
+only forwards a tap to the `TextInput` it wraps, so it is now
+`accessible={false}` — announcing it would have put a second, nameless control
+in front of every field on the auth screens.
+
+**20 controls under 44pt** (Apple asks 44, Android 48) now carry `hitSlop`,
+which grows the touchable area without re-laying out the row —
+`app/chat`'s 36pt send arrow, two 28pt quickscan buttons, the calendar arrows,
+the campaign row's ⋯, the 28pt quick-buy. **The slop is directional, and that is
+the whole subtlety**: neighbouring hit rects overlap and the topmost one wins, so
+a pair 6pt apart with 8pt of slop each makes the boundary between them
+ambiguous — a worse bug than the small target. Free sides get 8; a shared side
+gets at most half the measured gap (`heroActions` gap 8 → 4, the quickscan row
+gap 6 → 3). Gated by `npm run check:touch-target`.
+
+Two things the gate got wrong, both found by proving it rather than running it:
+- a scripted edit put `hitSlop` INSIDE a multi-line `style={[…]}` array in
+  `app/chat/[threadId].tsx` — a syntax error, caught by reading the diff (and
+  tsc would have caught it too). 19 of 20 edits were right; the 20th is why you
+  read the diff of a scripted change.
+- the reason marker could not be written where it was needed: in JSX child
+  position a `//` comment is a syntax error, and the scanner only accepted
+  `//`, `*`, `/*`. **A gate must accept the spelling its own error message
+  demands** — `{/* touch-ok: … */}` now counts. Proven: drop the slop → red; a
+  reason inside the style object → still red; the JSX comment → green.
+
+Still open in this class: ~145 hard-coded (English) `accessibilityLabel`s ranked
+in `docs/I18N_BACKLOG.md`, and the 28pt controls reach 44 vertically but only
+~36 horizontally — closing that needs a layout change, which is a design call.
 
 ## N — the client compares a status the database never writes (2026-09-17)
 

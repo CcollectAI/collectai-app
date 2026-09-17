@@ -611,6 +611,7 @@ function ThreadDetailScreen() {
           <AnimatedPressable
             onPress={handleSend}
             disabled={!inputText.trim() || sending}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
             style={[
               styles.sendBtn,
               { backgroundColor: inputText.trim() ? colors.accent : colors.border },

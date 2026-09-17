@@ -255,6 +255,7 @@ function CatalogSuggestionModalInner({
 
             <AnimatedPressable
               style={styles.skipButton}
+              hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
               onPress={handleSkip}
               accessibilityRole="button"
               accessibilityLabel="Skip"
@@ -275,7 +276,7 @@ function CatalogSuggestionModalInner({
             <View style={[styles.pickerSheet, { backgroundColor: colors.card }]}>
               <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('category_picker.title', { defaultValue: 'Select Category' })}</Text>
-                <TouchableOpacity onPress={() => setCategoryPickerOpen(false)} hitSlop={12}>
+                <TouchableOpacity onPress={() => setCategoryPickerOpen(false)} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('common.close')}>
                   <Ionicons name="close" size={22} color={colors.muted} />
                 </TouchableOpacity>
               </View>

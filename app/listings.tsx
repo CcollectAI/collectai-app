@@ -826,6 +826,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
               router.push('/favorites' as Href);
             }}
             style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
             accessibilityRole="button"
             accessibilityLabel="Favourites"
           >

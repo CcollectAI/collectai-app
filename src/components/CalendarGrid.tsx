@@ -157,6 +157,7 @@ function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridP
         <AnimatedPressable
           onPress={goToPrev}
           style={[styles.navBtn, { backgroundColor: colors.border + '40' }]}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel={t('calendar.a11y_prev_month', { defaultValue: 'Previous month' })}
         >
@@ -177,6 +178,7 @@ function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridP
         <AnimatedPressable
           onPress={goToNext}
           style={[styles.navBtn, { backgroundColor: colors.border + '40' }]}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel={t('calendar.a11y_next_month', { defaultValue: 'Next month' })}
         >

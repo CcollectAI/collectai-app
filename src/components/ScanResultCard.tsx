@@ -225,6 +225,7 @@ function ScanResultCardInner({
           <View style={styles.heroActions}>
             <AnimatedPressable
               style={styles.heroActionBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               onPress={handleShare}
               accessibilityRole="button"
               accessibilityLabel={t('scan.share_a11y')}
@@ -233,6 +234,7 @@ function ScanResultCardInner({
             </AnimatedPressable>
             <AnimatedPressable
               style={styles.heroActionBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               onPress={onRetake}
               accessibilityRole="button"
               accessibilityLabel={t('scan.retake_photo_a11y')}

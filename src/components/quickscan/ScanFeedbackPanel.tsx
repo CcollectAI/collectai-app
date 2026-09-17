@@ -97,6 +97,7 @@ function ScanFeedbackPanelInner({
       <AnimatedPressable
         onPress={handleSubmitFeedback}
         style={[styles.feedbackSubmitBtn, { backgroundColor: colors.brand.base }]}
+        hitSlop={{ top: 8, bottom: 8, left: 3, right: 3 }}
         accessibilityRole="button"
         accessibilityLabel={`Submit ${labelPrefix} correction`}
       >
@@ -105,6 +106,7 @@ function ScanFeedbackPanelInner({
       <AnimatedPressable
         onPress={() => setEditingField(null)}
         style={styles.feedbackCancelBtn}
+        hitSlop={{ top: 8, bottom: 8, left: 3, right: 8 }}
         accessibilityRole="button"
         accessibilityLabel="Cancel editing"
       >

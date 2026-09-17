@@ -90,6 +90,12 @@ export const AuthTextInput = forwardRef<TextInput, AuthTextInputProps>(
     return (
       <Pressable
         onPress={focusInput}
+        // Not a button to a screen reader (2026-09-17): this Pressable only
+        // forwards a tap to the TextInput it wraps, and that input carries the
+        // label. Announcing the row as an unlabelled button would put a second,
+        // nameless control in front of every field on the auth screens.
+        accessible={false}
+        importantForAccessibility="no"
         // Disable the default pressable visual feedback so the row keeps
         // looking like a static text field.
         android_disableSound

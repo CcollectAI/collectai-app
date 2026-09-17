@@ -79,6 +79,7 @@ const MissingItemsChecklist: React.FC<Props> = ({
             {!isOwned && (
               <AnimatedPressable
                 style={[styles.missingFindBtn, { borderColor: accentColor }]}
+                hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
                 onPress={() => onShopItem(item.title)}
                 accessibilityRole="button"
                 accessibilityLabel={`Shop for ${item.title} on marketplaces`}

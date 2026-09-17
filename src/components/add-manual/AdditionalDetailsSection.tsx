@@ -201,6 +201,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
               <TouchableOpacity
                 onPress={() => Keyboard.dismiss()}
                 style={[styles.notesDoneBtn, { backgroundColor: colors.accent }]}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"
                 accessibilityLabel={t('add_manual.done_notes_a11y')}
               >

@@ -125,6 +125,7 @@ function ChatDemoScreen() {
             onPress={send}
             disabled={!draft.trim()}
             style={[styles.sendBtn, { backgroundColor: draft.trim() ? colors.accent : colors.border }]}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Send test message"
           >

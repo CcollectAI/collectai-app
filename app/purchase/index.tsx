@@ -672,6 +672,7 @@ function AgentHubScreen() {
                             if (url) Linking.openURL(url).catch(() => {});
                           }}
                           style={[styles.quickBuyBtn, { backgroundColor: colors.accent }]}
+                          hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                           accessibilityRole="link"
                           accessibilityLabel={`Open ${deal.listingTitle} listing`}
                         >

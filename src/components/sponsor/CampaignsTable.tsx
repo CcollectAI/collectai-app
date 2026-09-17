@@ -98,6 +98,7 @@ export const CampaignsTable = React.memo(function CampaignsTable({
                   <AnimatedPressable
                     onPress={(e) => { e.stopPropagation?.(); fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled }); onAnnouncePress(event.id); }}
                     style={[styles.iconBtn, { backgroundColor: colors.accent + '10' }]}
+                    hitSlop={{ top: 8, bottom: 8, left: 3, right: 3 }}
                     accessibilityRole="button"
                     accessibilityLabel={`Announce to ${event.title}`}
                   >

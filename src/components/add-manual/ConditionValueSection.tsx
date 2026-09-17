@@ -72,7 +72,7 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
             <View style={[styles.sheet, { backgroundColor: colors.card }]}>
               <View style={[styles.header, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.title, { color: colors.text }]}>{t('add_manual.select_condition')}</Text>
-                <TouchableOpacity onPress={() => setPickerOpen(false)} hitSlop={12}>
+                <TouchableOpacity onPress={() => setPickerOpen(false)} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('common.close')}>
                   <Ionicons name="close" size={22} color={colors.muted} />
                 </TouchableOpacity>
               </View>

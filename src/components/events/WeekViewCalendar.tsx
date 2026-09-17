@@ -219,6 +219,7 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
         <AnimatedPressable
           onPress={() => navigateWeek(-1)}
           style={[styles.navBtn, { backgroundColor: colors.border + '40' }]}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityLabel={t('events.a11y_prev_week', { defaultValue: 'Previous week' })}
           accessibilityRole="button"
         >
@@ -238,6 +239,7 @@ export const WeekViewCalendar = React.memo(function WeekViewCalendar({
         <AnimatedPressable
           onPress={() => navigateWeek(1)}
           style={[styles.navBtn, { backgroundColor: colors.border + '40' }]}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityLabel={t('events.a11y_next_week', { defaultValue: 'Next week' })}
           accessibilityRole="button"
         >

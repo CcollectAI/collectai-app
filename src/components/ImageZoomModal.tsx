@@ -42,6 +42,7 @@ export function ImageZoomModal({ visible, imageUri, onClose }: ImageZoomModalPro
         <AnimatedPressable
           onPress={() => { lightTap(); onClose(); }}
           style={styles.closeBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel="Close image viewer"
         >

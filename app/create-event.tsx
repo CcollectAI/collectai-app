@@ -388,6 +388,7 @@ const CreateEventScreen: React.FC = () => {
                       setDetailDraft('');
                     }}
                     style={[styles.detailSendBtn, { backgroundColor: colors.accent }]}
+                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
                     accessibilityRole="button"
                     accessibilityLabel={t('create_event.a11y_add_detail_desc', { defaultValue: 'Add detail to description' })}
                   >

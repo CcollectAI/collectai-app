@@ -705,7 +705,12 @@ function OnboardingScreen() {
         >
           <SafeAreaView style={[styles.regionPickerModal, { backgroundColor: colors.background }]}>
             <View style={[styles.regionPickerHeader, { borderBottomColor: colors.border }]}>
-              <TouchableOpacity onPress={() => setRegionPickerVisible(false)}>
+              <TouchableOpacity
+                onPress={() => setRegionPickerVisible(false)}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.close')}
+              >
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
               <Text style={[styles.regionPickerTitle, { color: colors.text }]}>{t('onboarding.select_region')}</Text>
