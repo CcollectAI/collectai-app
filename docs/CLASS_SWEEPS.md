@@ -60,7 +60,7 @@ Two rules the tooling learned the hard way:
 | N | The client compares a status the database never writes | 2026-09-17 | ✅ `getDmStatus` fixed + tested; all 8 status columns enumerated; NO gate (measured: 83 findings, nearly all homonyms) |
 | K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | ✅ all fixed: billing webhook `8439f97`, item edit, calendar, template, P2P listing transaction — **two server fixes not deployed** |
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
-| S | The server answered `ok` and wrote nothing | 2026-09-17/18 | ✅ 6 fixed (2 items writes, mark-trigger-read, block/unblock/blocked-list) + the announcement DM that had written to an empty legacy table for five months; 7 tests that PINNED the lie rewritten |
+| S | The server answered `ok` and wrote nothing | 2026-09-17/18 | 8 of 34 read: 6 `ok`-without-a-write fixed + the announcement DM dead five months + **both P2P money handlers made atomic and row-locked** (completion could never fire, or fire twice). 8 tests that PINNED the lie rewritten. **26 unread** |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -844,13 +844,57 @@ dev identity happened not to match the row it had just created, because
 `created_by = None` (556 quarantined rows on prod, 0 with a creator) and has a
 mirror test for the creator's own view, so neither half can drift alone.
 
-**Still open:** of the 34 mechanical hits, 6 were triaged into the table above
-and **the remaining 28 have not been read one by one.** The money-carrying ones
-to do next: `p2p_offers_router.respond_to_offer` (six UPDATEs across accept /
-decline / counter / withdraw, plus the listing reservation),
-`confirm_exchange`, `marketplace_listing_router.record_sale`,
+### The two money handlers, and what the row count was hiding
+
+`p2p_offers_router` was the first of the 34 to be read properly, and the
+discarded row count turned out to be the *symptom*. Both handlers read a row,
+decided in Python, and wrote — **with no transaction and no row lock**:
+
+**`respond_to_offer`.** `accept` writes `p2p_offers` and THEN
+`marketplace_listings`; a failure between them left an accepted offer whose
+listing was never reserved, and `withdraw` had the mirror — the offer cancelled
+while the listing stayed reserved to it, invisible to the seller and unreachable
+by any other buyer's accept. Concurrently, two responses both read `pending` and
+both wrote: a `decline` racing an `accept` left the listing reserved for a
+declined offer, and `counter_count` could pass `MAX_COUNTERS` because the cap
+was checked against a stale read. Now one transaction with `FOR UPDATE OF o` —
+**not** a bare `FOR UPDATE`, which Postgres rejects on this query ("cannot be
+applied to the nullable side of an outer join"; reproduced on prod before the
+comment claiming it was written). The notification stays outside, so the row
+lock is not held across a notification write.
+
+**`confirm_exchange` — the completion path, and the worse one.** "Both sides
+confirmed" was decided by reading the row back after an unlocked write, so two
+confirms in flight each saw only their own: `both` was false for both callers,
+**completion never fired**, and the trade sat at `accepted` with two
+confirmation timestamps and no way forward, because `ALREADY_CONFIRMED` blocks
+the retry that would fix it. No settlement, no sold comp, no DAC7 accrual. The
+mirror interleaving ran the completion body TWICE, and `_dac7_accrue` reports
+consideration **for tax**.
+
+Now: `FOR UPDATE` on the offer, the confirm write, the re-read, the completion
+writes and `_settle_completed_trade` (which takes the same `conn`) all inside
+one transaction, with a `completed_now` flag. The four external hooks
+(`_stale_supply_hook`, `_sold_comp_hook`, `_ground_truth_hook`, `_dac7_accrue`)
+run **after the commit and only for the caller that completed the trade** —
+each opens its OWN pool connection, and `_sold_comp_hook` SELECTs
+`marketplace_listings`, so inside the transaction it would read the pre-commit
+status and skip.
+
+13 tests, and the mutations are the point: **two of them passed against a
+broken build until the tests were strengthened.** Moving `_settle_completed_trade`
+past the commit stayed green because the test only counted the call, and
+indenting the hooks INTO the transaction stayed green because the hook fakes
+recorded into a different list from the `COMMIT`. A fake has to observe ORDER in
+one stream, or "inside the transaction" is not what is being tested.
+
+**Still open:** of the 34 mechanical hits, 8 have now been read (6 fixed above,
+plus these two). **The remaining 26 have not been read one by one.** Next, by
+money: `marketplace_listing_router.record_sale`,
 `purchase_router.confirm_deal` (mandate counters), `item_images_router`
-delete/reorder.
+delete/reorder, `favorites_router.remove_favorite`,
+`sponsor_company_router.create_event_checkout` (a `DELETE FROM events` with no
+owner in the WHERE — read it before assuming it is a rollback path).
 
 **No gate yet, and not because the class is closed.** A gate on "discarded row
 count" would fire on all 34, most of which need a written reason rather than a

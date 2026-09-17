@@ -1209,160 +1209,181 @@ async def respond_to_offer(
         raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
 
     async with pool.acquire() as conn:
-        o = await conn.fetchrow(
-            """
-            SELECT o.*, l.listing_title,
-                   a.postcode AS delivery_postcode, a.country AS delivery_country
-            FROM public.p2p_offers o
-            LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
-            LEFT JOIN public.p2p_offer_addresses a ON a.offer_id = o.id
-            WHERE o.id = $1::uuid
-            """,
-            offer_id,
-        )
-        if o is None:
-            raise error_response(404, "Offer not found", code="OFFER_NOT_FOUND")
-
-        is_seller = str(o["seller_id"]) == user_id
-        is_buyer = str(o["buyer_id"]) == user_id
-        if not (is_seller or is_buyer):
-            raise error_response(403, "Not your offer", code="NOT_YOUR_OFFER")
-
-        status = o["status"]
-
-        if action in ("accept", "decline", "counter"):
-            if status not in (_PENDING, _COUNTERED):
-                raise error_response(409, f"Offer is already {status}",
-                                     code="OFFER_NOT_OPEN")
-
-            # WHOEVER DID NOT SET THE CURRENT NUMBER IS THE ONE WHO ANSWERS IT.
-            #
-            # `counter` overwrites `amount` with the seller's figure (see the
-            # counter branch below), so a countered offer is the SELLER's offer
-            # sitting in front of the BUYER. Until 2026-08-15 all three actions
-            # were seller-only, which meant a buyer looking at a counter had no
-            # accept and no decline — only `withdraw`. The app knew better and
-            # said so: `offerNeedsMyAction` returns true for a buyer on a
-            # countered offer, so the card was stamped YOUR MOVE and the badge
-            # counted it, while the only control rendered was Delete. Reported
-            # as *"where is the accept button for example / or reject"*.
-            #
-            # `counter` itself stays seller-only: a buyer raising their own bid
-            # is just a new offer, and letting both sides write `amount` makes
-            # "whose number is this?" unanswerable.
-            #
-            # The rule lives in `who_may_respond` rather than in this branch so
-            # it can be tested as a rule. The tests around this router inspect
-            # SOURCE, which is why the seller-only bug survived 30 green tests:
-            # nothing could call the decision, so nothing checked it.
-            side = who_may_respond(action, status)
-            if side == "buyer" and not is_buyer:
-                raise error_response(
-                    403,
-                    "The counter is yours to answer — the buyer accepts or declines it",
-                    code="BUYER_ONLY",
-                )
-            if side == "seller" and not is_seller:
-                raise error_response(
-                    403,
-                    "Only the seller can counter an offer" if action == "counter"
-                    else "Only the seller can respond to an offer",
-                    code="SELLER_ONLY",
-                )
-
-        if action == "counter" and amount is None:
-            raise error_response(400, "A counter needs an amount", code="AMOUNT_REQUIRED")
-
-        # A haggle has to end somewhere. `counter` was uncapped, so two people
-        # could ping-pong an offer forever — and every round rewrites `amount`,
-        # so there is no history to look back on, just a number that keeps
-        # moving. eBay stops at five counters per side for the same reason.
+        # ONE TRANSACTION, AND THE OFFER ROW IS LOCKED (2026-09-17).
         #
-        # Only the seller may counter (`who_may_respond`), so `counter_count`
-        # counts seller counters and MAX_COUNTERS is the whole ladder. Checked
-        # before the write, not after, so the cap is the last legal counter
-        # rather than the first illegal one.
-        if action == "counter" and int(o["counter_count"] or 0) >= MAX_COUNTERS:
-            raise error_response(
-                409,
-                f"This offer has been countered {MAX_COUNTERS} times — accept it, "
-                "decline it, or let the buyer make a fresh offer",
-                code="COUNTER_LIMIT",
+        # Two bugs, both structural. (1) The status guard below read the offer
+        # and the writes happened outside any transaction, so two responses in
+        # flight at once both saw `pending` and both wrote: a `decline` racing
+        # an `accept` left the listing RESERVED for a declined offer, and
+        # `counter_count` could pass MAX_COUNTERS because the cap was checked
+        # against a stale read. (2) `accept` writes p2p_offers and THEN
+        # marketplace_listings; a failure between them left an accepted offer
+        # whose listing was never reserved, and `withdraw` had the mirror — the
+        # offer cancelled while the listing stayed reserved to it, invisible to
+        # the seller and unreachable by any other buyer's accept.
+        #
+        # `FOR UPDATE OF o` — not a bare FOR UPDATE: Postgres refuses to lock
+        # the nullable side of an outer join, and this query LEFT JOINs the
+        # listing and the address.
+        #
+        # The notification and the re-read stay OUTSIDE, so the row lock is not
+        # held across a notification write (class K, docs/CLASS_SWEEPS.md).
+        async with conn.transaction():
+            o = await conn.fetchrow(
+                """
+                SELECT o.*, l.listing_title,
+                       a.postcode AS delivery_postcode, a.country AS delivery_country
+                FROM public.p2p_offers o
+                LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
+                LEFT JOIN public.p2p_offer_addresses a ON a.offer_id = o.id
+                WHERE o.id = $1::uuid
+                FOR UPDATE OF o
+                """,
+                offer_id,
             )
+            if o is None:
+                raise error_response(404, "Offer not found", code="OFFER_NOT_FOUND")
 
-        if action == "accept":
-            new_status = _ACCEPTED
-            await conn.execute(
-                """
-                UPDATE public.p2p_offers
-                   SET status = $2, updated_at = now()
-                 WHERE id = $1::uuid
-                """,
-                offer_id, new_status,
-            )
-            # Soft reserve: a marker, not a delist. Browse still shows it.
-            await conn.execute(
-                """
-                UPDATE public.marketplace_listings
-                   SET reserved_offer_id = $2::uuid, reserved_at = now(),
-                       updated_at = now()
-                 WHERE id = $1::uuid
-                """,
-                str(o["listing_id"]), offer_id,
-            )
-        elif action == "decline":
-            new_status = _DECLINED
-            await conn.execute(
-                "UPDATE public.p2p_offers SET status = $2, updated_at = now() WHERE id = $1::uuid",
-                offer_id, new_status,
-            )
-        elif action == "counter":
-            new_status = _COUNTERED
-            await conn.execute(
-                """
-                UPDATE public.p2p_offers
-                   SET status = $2, amount = $3,
-                       counter_count = counter_count + 1, updated_at = now()
-                 WHERE id = $1::uuid
-                """,
-                offer_id, new_status, amount,
-            )
-        else:  # withdraw
-            # PENDING and COUNTERED included since 2026-08-15. Before that a
-            # buyer could not retract an offer the seller had not answered:
-            # `withdraw` required accepted/shipped, `decline` and `accept` are
-            # the seller's, and `counter` raises your own bid. A five-day-old
-            # "Awaiting seller" was a resting bid with no cancel — money
-            # notionally committed with no way out but for the other side to
-            # act. That is the one thing every order book lets you do.
+            is_seller = str(o["seller_id"]) == user_id
+            is_buyer = str(o["buyer_id"]) == user_id
+            if not (is_seller or is_buyer):
+                raise error_response(403, "Not your offer", code="NOT_YOUR_OFFER")
+
+            status = o["status"]
+
+            if action in ("accept", "decline", "counter"):
+                if status not in (_PENDING, _COUNTERED):
+                    raise error_response(409, f"Offer is already {status}",
+                                         code="OFFER_NOT_OPEN")
+
+                # WHOEVER DID NOT SET THE CURRENT NUMBER IS THE ONE WHO ANSWERS IT.
+                #
+                # `counter` overwrites `amount` with the seller's figure (see the
+                # counter branch below), so a countered offer is the SELLER's offer
+                # sitting in front of the BUYER. Until 2026-08-15 all three actions
+                # were seller-only, which meant a buyer looking at a counter had no
+                # accept and no decline — only `withdraw`. The app knew better and
+                # said so: `offerNeedsMyAction` returns true for a buyer on a
+                # countered offer, so the card was stamped YOUR MOVE and the badge
+                # counted it, while the only control rendered was Delete. Reported
+                # as *"where is the accept button for example / or reject"*.
+                #
+                # `counter` itself stays seller-only: a buyer raising their own bid
+                # is just a new offer, and letting both sides write `amount` makes
+                # "whose number is this?" unanswerable.
+                #
+                # The rule lives in `who_may_respond` rather than in this branch so
+                # it can be tested as a rule. The tests around this router inspect
+                # SOURCE, which is why the seller-only bug survived 30 green tests:
+                # nothing could call the decision, so nothing checked it.
+                side = who_may_respond(action, status)
+                if side == "buyer" and not is_buyer:
+                    raise error_response(
+                        403,
+                        "The counter is yours to answer — the buyer accepts or declines it",
+                        code="BUYER_ONLY",
+                    )
+                if side == "seller" and not is_seller:
+                    raise error_response(
+                        403,
+                        "Only the seller can counter an offer" if action == "counter"
+                        else "Only the seller can respond to an offer",
+                        code="SELLER_ONLY",
+                    )
+
+            if action == "counter" and amount is None:
+                raise error_response(400, "A counter needs an amount", code="AMOUNT_REQUIRED")
+
+            # A haggle has to end somewhere. `counter` was uncapped, so two people
+            # could ping-pong an offer forever — and every round rewrites `amount`,
+            # so there is no history to look back on, just a number that keeps
+            # moving. eBay stops at five counters per side for the same reason.
             #
-            # Either party, deliberately: a seller who countered may want to
-            # retract that counter for the same reason. `withdrawn_by` already
-            # records WHO walked, which is the only honest sanction we apply,
-            # and it works the same from any of these states.
-            if status not in (_PENDING, _COUNTERED, _ACCEPTED, _SHIPPED):
-                raise error_response(409, "Nothing to withdraw from",
-                                     code="NOT_WITHDRAWABLE")
-            # 'withdrawn' is NOT a legal status (p2p_offers_status_check). Record the
-            # walk-away in withdrawn_by and set the legal 'cancelled'.
-            new_status = _CANCELLED
-            await conn.execute(
-                """
-                UPDATE public.p2p_offers
-                   SET status = $2, withdrawn_by = $3::uuid,
-                       withdrawn_at = now(), updated_at = now()
-                 WHERE id = $1::uuid
-                """,
-                offer_id, new_status, user_id,
-            )
-            await conn.execute(
-                """
-                UPDATE public.marketplace_listings
-                   SET reserved_offer_id = NULL, reserved_at = NULL, updated_at = now()
-                 WHERE id = $1::uuid AND reserved_offer_id = $2::uuid
-                """,
-                str(o["listing_id"]), offer_id,
-            )
+            # Only the seller may counter (`who_may_respond`), so `counter_count`
+            # counts seller counters and MAX_COUNTERS is the whole ladder. Checked
+            # before the write, not after, so the cap is the last legal counter
+            # rather than the first illegal one.
+            if action == "counter" and int(o["counter_count"] or 0) >= MAX_COUNTERS:
+                raise error_response(
+                    409,
+                    f"This offer has been countered {MAX_COUNTERS} times — accept it, "
+                    "decline it, or let the buyer make a fresh offer",
+                    code="COUNTER_LIMIT",
+                )
+
+            if action == "accept":
+                new_status = _ACCEPTED
+                await conn.execute(
+                    """
+                    UPDATE public.p2p_offers
+                       SET status = $2, updated_at = now()
+                     WHERE id = $1::uuid
+                    """,
+                    offer_id, new_status,
+                )
+                # Soft reserve: a marker, not a delist. Browse still shows it.
+                await conn.execute(
+                    """
+                    UPDATE public.marketplace_listings
+                       SET reserved_offer_id = $2::uuid, reserved_at = now(),
+                           updated_at = now()
+                     WHERE id = $1::uuid
+                    """,
+                    str(o["listing_id"]), offer_id,
+                )
+            elif action == "decline":
+                new_status = _DECLINED
+                await conn.execute(
+                    "UPDATE public.p2p_offers SET status = $2, updated_at = now() WHERE id = $1::uuid",
+                    offer_id, new_status,
+                )
+            elif action == "counter":
+                new_status = _COUNTERED
+                await conn.execute(
+                    """
+                    UPDATE public.p2p_offers
+                       SET status = $2, amount = $3,
+                           counter_count = counter_count + 1, updated_at = now()
+                     WHERE id = $1::uuid
+                    """,
+                    offer_id, new_status, amount,
+                )
+            else:  # withdraw
+                # PENDING and COUNTERED included since 2026-08-15. Before that a
+                # buyer could not retract an offer the seller had not answered:
+                # `withdraw` required accepted/shipped, `decline` and `accept` are
+                # the seller's, and `counter` raises your own bid. A five-day-old
+                # "Awaiting seller" was a resting bid with no cancel — money
+                # notionally committed with no way out but for the other side to
+                # act. That is the one thing every order book lets you do.
+                #
+                # Either party, deliberately: a seller who countered may want to
+                # retract that counter for the same reason. `withdrawn_by` already
+                # records WHO walked, which is the only honest sanction we apply,
+                # and it works the same from any of these states.
+                if status not in (_PENDING, _COUNTERED, _ACCEPTED, _SHIPPED):
+                    raise error_response(409, "Nothing to withdraw from",
+                                         code="NOT_WITHDRAWABLE")
+                # 'withdrawn' is NOT a legal status (p2p_offers_status_check). Record the
+                # walk-away in withdrawn_by and set the legal 'cancelled'.
+                new_status = _CANCELLED
+                await conn.execute(
+                    """
+                    UPDATE public.p2p_offers
+                       SET status = $2, withdrawn_by = $3::uuid,
+                           withdrawn_at = now(), updated_at = now()
+                     WHERE id = $1::uuid
+                    """,
+                    offer_id, new_status, user_id,
+                )
+                await conn.execute(
+                    """
+                    UPDATE public.marketplace_listings
+                       SET reserved_offer_id = NULL, reserved_at = NULL, updated_at = now()
+                     WHERE id = $1::uuid AND reserved_offer_id = $2::uuid
+                    """,
+                    str(o["listing_id"]), offer_id,
+                )
 
         fresh = await conn.fetchrow(
             f"""
@@ -2046,56 +2067,99 @@ async def confirm_exchange(
         raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
 
     async with pool.acquire() as conn:
-        o = await conn.fetchrow("SELECT * FROM public.p2p_offers WHERE id = $1::uuid", offer_id)
-        if o is None:
-            raise error_response(404, "Offer not found", code="OFFER_NOT_FOUND")
-
-        is_seller = str(o["seller_id"]) == user_id
-        is_buyer = str(o["buyer_id"]) == user_id
-        if not (is_seller or is_buyer):
-            raise error_response(403, "Not your offer", code="NOT_YOUR_OFFER")
-        if o["status"] not in (_ACCEPTED, _SHIPPED):
-            raise error_response(409, "This offer isn't in an exchangeable state",
-                                 code="NOT_EXCHANGEABLE")
-
-        col = "seller_confirmed_at" if is_seller else "buyer_confirmed_at"
-        if o[col] is not None:
-            raise error_response(409, "You've already confirmed", code="ALREADY_CONFIRMED")
-
-        # Column name is from a fixed 2-value branch above, never user input.
-        await conn.execute(
-            f"UPDATE public.p2p_offers SET {col} = now(), updated_at = now() "
-            f"WHERE id = $1::uuid",
-            offer_id,
-        )
-
-        fresh = await conn.fetchrow(
-            f"""
-            SELECT {_OFFER_COLUMNS}
-            FROM public.p2p_offers o
-            LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
-            LEFT JOIN public.p2p_offer_addresses a ON a.offer_id = o.id
-            WHERE o.id = $1::uuid
-            """,
-            offer_id,
-        )
-        both = fresh["seller_confirmed_at"] and fresh["buyer_confirmed_at"]
-        if both and fresh["status"] != _COMPLETED:
-            await conn.execute(
-                "UPDATE public.p2p_offers SET status = $2, updated_at = now() WHERE id = $1::uuid",
-                offer_id, _COMPLETED,
+        # ONE TRANSACTION, WITH THE OFFER ROW LOCKED (2026-09-17).
+        #
+        # "Both sides confirmed" was decided by reading the row back AFTER an
+        # unlocked write, so two confirms in flight at once each saw only their
+        # own: `both` was false for both callers, completion never fired, and the
+        # trade sat at `accepted` with two confirmation timestamps and no way
+        # forward — ALREADY_CONFIRMED blocks the retry that would fix it. No
+        # settlement, no sold comp, no DAC7 accrual. The mirror ordering was
+        # worse: both callers see `both`, and the completion body runs TWICE —
+        # `_dac7_accrue` would report the same consideration twice, which is a
+        # tax-reporting number.
+        #
+        # A bare `FOR UPDATE` is correct here (unlike `respond_to_offer`, which
+        # LEFT JOINs and therefore needs `FOR UPDATE OF o`).
+        #
+        # The hooks below the commit are NOT in here on purpose: each opens its
+        # OWN pool connection, and `_sold_comp_hook` SELECTs
+        # `marketplace_listings` — inside this transaction it would read the
+        # pre-commit status and skip. `_settle_completed_trade` takes `conn` and
+        # so stays inside, which is what makes the object move atomically with
+        # the completion.
+        completed_now = False
+        async with conn.transaction():
+            o = await conn.fetchrow(
+                "SELECT * FROM public.p2p_offers WHERE id = $1::uuid FOR UPDATE",
+                offer_id,
             )
-            # The listing is genuinely gone now — mark it sold and let the
-            # Stage 1 stale-hook remove the buyable market_hits row, otherwise
-            # a Target Hit would still point at a completed trade.
+            if o is None:
+                raise error_response(404, "Offer not found", code="OFFER_NOT_FOUND")
+
+            is_seller = str(o["seller_id"]) == user_id
+            is_buyer = str(o["buyer_id"]) == user_id
+            if not (is_seller or is_buyer):
+                raise error_response(403, "Not your offer", code="NOT_YOUR_OFFER")
+            if o["status"] not in (_ACCEPTED, _SHIPPED):
+                raise error_response(409, "This offer isn't in an exchangeable state",
+                                     code="NOT_EXCHANGEABLE")
+
+            col = "seller_confirmed_at" if is_seller else "buyer_confirmed_at"
+            if o[col] is not None:
+                raise error_response(409, "You've already confirmed", code="ALREADY_CONFIRMED")
+
+            # Column name is from a fixed 2-value branch above, never user input.
             await conn.execute(
-                """
-                UPDATE public.marketplace_listings
-                   SET status = 'sold', delisted_at = now(), updated_at = now()
-                 WHERE id = $1::uuid AND delisted_at IS NULL
+                f"UPDATE public.p2p_offers SET {col} = now(), updated_at = now() "
+                f"WHERE id = $1::uuid",
+                offer_id,
+            )
+
+            fresh = await conn.fetchrow(
+                f"""
+                SELECT {_OFFER_COLUMNS}
+                FROM public.p2p_offers o
+                LEFT JOIN public.marketplace_listings l ON l.id = o.listing_id
+                LEFT JOIN public.p2p_offer_addresses a ON a.offer_id = o.id
+                WHERE o.id = $1::uuid
                 """,
-                str(fresh["listing_id"]),
+                offer_id,
             )
+            both = fresh["seller_confirmed_at"] and fresh["buyer_confirmed_at"]
+            completed_now = bool(both and fresh["status"] != _COMPLETED)
+            if completed_now:
+                await conn.execute(
+                    "UPDATE public.p2p_offers SET status = $2, updated_at = now() WHERE id = $1::uuid",
+                    offer_id, _COMPLETED,
+                )
+                # The listing is genuinely gone now — mark it sold and let the
+                # Stage 1 stale-hook remove the buyable market_hits row,
+                # otherwise a Target Hit would still point at a completed trade.
+                await conn.execute(
+                    """
+                    UPDATE public.marketplace_listings
+                       SET status = 'sold', delisted_at = now(), updated_at = now()
+                     WHERE id = $1::uuid AND delisted_at IS NULL
+                    """,
+                    str(fresh["listing_id"]),
+                )
+                fresh = dict(fresh)
+                fresh["status"] = _COMPLETED
+
+                # Move the OBJECT, release the reservation, and close out the
+                # other buyers — inside the transaction, on this `conn`, so a
+                # completed trade can never exist with the item still in the
+                # seller's collection.
+                await _settle_completed_trade(
+                    conn, offer_id, str(fresh["listing_id"]),
+                    str(fresh["buyer_id"]), str(fresh["seller_id"]),
+                    float(fresh["amount"]), fresh["currency"] or "EUR",
+                )
+
+        # ---- committed. Everything below runs ONCE, for the caller whose
+        # ---- confirmation actually completed the trade.
+        if completed_now:
             from app.features.p2p_listing_router import (
                 _sold_comp_hook, _stale_supply_hook, _ground_truth_hook,
             )
@@ -2129,18 +2193,6 @@ async def confirm_exchange(
                 float(fresh["amount"]),
                 fresh["currency"] or "EUR",
             )
-            fresh = dict(fresh)
-            fresh["status"] = _COMPLETED
-
-            # Move the OBJECT, release the reservation, and close out the other
-            # buyers. Before the notifications below, so a completed trade never
-            # announces itself while the item is still in the seller's collection.
-            await _settle_completed_trade(
-                conn, offer_id, str(fresh["listing_id"]),
-                str(fresh["buyer_id"]), str(fresh["seller_id"]),
-                float(fresh["amount"]), fresh["currency"] or "EUR",
-            )
-
             # BOTH sides, because completion unlocks grading for both and each
             # needs to know the other confirmed.
             #
@@ -2173,8 +2225,9 @@ async def confirm_exchange(
             # on a step nobody knows is waiting for them — the most common way a
             # two-sided flow dies.
             #
-            # `elif not both` rather than a bare `else`: the guarded condition is
-            # `both and status != completed`, so a plain else would ALSO catch
+            # `elif not both` rather than a bare `else`: the guard above is
+            # `completed_now` (= both and status != completed), so a plain else
+            # would ALSO catch
             # "both confirmed and already completed" and tell someone their
             # counterparty just confirmed when nothing changed. Double-confirm is
             # rejected upstream with ALREADY_CONFIRMED so that state is currently

@@ -286,6 +286,27 @@ It is read with `_row_opt`, because `create_offer`'s `INSERT ... RETURNING`
 cannot join and does not select it — reading it directly would be a 500 on the
 primary Stage 2 entry point only.
 
+### Neither write path was atomic (fixed 2026-09-17)
+
+Stage 2 shipped with `respond` and `confirm` reading the offer, deciding in
+Python, and writing — outside any transaction and without a row lock. The E2E
+(40/40) could not see it: it drives one action at a time and never kills a
+connection between two statements.
+
+What that cost, in the spec's own terms:
+
+| | |
+|---|---|
+| "Accept = agreement, not a lock" | `accept` sets `reserved_offer_id` in a SECOND statement. A failure between the two left an accepted offer with an unreserved listing, and `withdraw` the mirror: a cancelled offer still holding the reservation, which no other accept could clear |
+| "Completion is two-sided" | decided by re-reading the row after an unlocked write, so two confirms in flight each saw only their own — `both` false for both callers, **completion never fired**, and `ALREADY_CONFIRMED` blocks the retry that would fix it. Stuck at `accepted` with two confirmations |
+| Settlement + the closed loop | the other interleaving ran the completion body twice: two sold comps, two ground truths, and `_dac7_accrue` twice — **consideration double-reported for tax** |
+
+Both now hold the offer row (`FOR UPDATE`; `FOR UPDATE OF o` in `respond`,
+which LEFT JOINs) for the read-decide-write, with `_settle_completed_trade` on
+the same connection inside the transaction. The four hooks that open their own
+connection run after the commit, once, for the caller that completed the trade.
+`docs/API.md` states the rule for anything added to these handlers.
+
 ### Two gaps, stated rather than left to be discovered
 
 **Offers never expire.** `p2p_offers.expires_at` exists, is `NULL` on every row,

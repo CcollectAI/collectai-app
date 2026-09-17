@@ -482,12 +482,43 @@ matching how `p2p_listing_router` / `p2p_offers_router` are registered in
 |--------|------|------|-------------|
 | POST | `/p2p/offers` | JWT + Rate Limit | Make an offer. 403 `USER_BLOCKED` if either party blocked the other |
 | GET | `/p2p/offers` | JWT | Offers made or received (`role=all\|buying\|selling`) |
-| POST | `/p2p/offers/{offer_id}/respond` | JWT + Rate Limit | `action=accept\|decline\|counter\|withdraw`. Accept reserves softly; it does not delist |
-| POST | `/p2p/offers/{offer_id}/confirm` | JWT + Rate Limit | Seller marks sent, buyer marks received. **Both ⇒ completed** — the only completion writer |
+| POST | `/p2p/offers/{offer_id}/respond` | JWT + Rate Limit | `action=accept\|decline\|counter\|withdraw`. Accept reserves softly; it does not delist. **One transaction, offer row locked** |
+| POST | `/p2p/offers/{offer_id}/confirm` | JWT + Rate Limit | Seller marks sent, buyer marks received. **Both ⇒ completed** — the only completion writer. **One transaction, offer row locked**; see below |
 | POST | `/p2p/offers/{offer_id}/tracking` | JWT + Rate Limit | Attach carrier + consignment code. **Seller only**, while `accepted`/`shipped`. DISPLAY ONLY — never advances the trade |
 | GET | `/p2p/carriers` | No | Carrier picker options. `linkable=false` ⇒ no code-only tracking URL exists (PostNL/DPD need the recipient's postcode), so render a copyable code, not a link |
 | POST | `/p2p/offers/{offer_id}/grade` | JWT + Rate Limit | Grade the counterparty. Only after two-sided completion |
 | GET | `/p2p/members/{member_id}/reputation` | JWT | Trade count + positive %; % hidden below 3 grades |
+
+### Both write paths take the offer row's lock (2026-09-17)
+
+`respond` and `confirm` each read the offer, decided in Python, and then wrote —
+with no transaction and no `FOR UPDATE`. Two consequences, both live:
+
+* **Partial writes.** `accept` updates `p2p_offers` and then
+  `marketplace_listings`; a failure between them left an accepted offer whose
+  listing was never reserved. `withdraw` left the mirror — a cancelled offer
+  still holding the reservation, invisible to the seller.
+* **Concurrent responses.** Two confirms in flight each saw only their own
+  timestamp, so `both` was false for both callers and **completion never
+  fired**: the trade stuck at `accepted` with two confirmations and no way
+  forward, since `ALREADY_CONFIRMED` rejects the retry. The other interleaving
+  ran the completion body twice — including `_dac7_accrue`, which is a tax
+  number.
+
+Anything added to these handlers must keep the shape:
+
+1. **Decide under the lock.** `FOR UPDATE` on `p2p_offers` — and `FOR UPDATE OF o`
+   in `respond`, whose query LEFT JOINs the listing and the address (Postgres
+   refuses to lock the nullable side of an outer join).
+2. **Writes that must agree go in the same transaction**, `_settle_completed_trade`
+   included: it takes the caller's `conn`, which is what makes the object move
+   atomically with the completion.
+3. **Hooks that open their own connection go after the commit** —
+   `_stale_supply_hook`, `_sold_comp_hook`, `_ground_truth_hook`,
+   `_dac7_accrue`. `_sold_comp_hook` reads `marketplace_listings`, so inside the
+   transaction it sees the pre-commit status and skips.
+4. **Notifications outside the lock.** They are writes too, and nothing should
+   hold a row lock across them.
 
 ### Moderation (DSA Art 16/17)
 
