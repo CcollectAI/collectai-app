@@ -60,7 +60,17 @@ export type TaxonomyClassification = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type PortfolioSummary = {
-  total: number;
+  /**
+   * `null` = we could not read it. NOT 0 (2026-09-17).
+   *
+   * PortfolioValueHeader has rendered "—" for an unknown total since the
+   * 2026-09-15 empty-on-failure work, but this type could not express one, so
+   * the provider's fallback path returned `total: 0` with a real `itemCount` —
+   * "your 8 items are worth €0". The server made the same claim one layer down
+   * (`/portfolio/overview` answered 200 with zeros on a DB failure; it now
+   * raises 503), so both ends of that chain used to assert a value nobody had.
+   */
+  total: number | null;
   deltaPct: number;
   itemCount: number;
 };

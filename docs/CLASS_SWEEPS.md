@@ -53,6 +53,7 @@ Two rules the tooling learned the hard way:
 | I | One tap, two writes (unguarded async handlers) | 2026-09-17 | ✅ swept by checker, 6 fixed + 5 reasoned, `check:double-submit` in prebuild |
 | J | A member can see data that is not theirs (RLS / IDOR / public views) | 2026-09-17 | ✅ prod verified clean; repo drift fixed + gated |
 | M | The database fails, and the app reads the failure as "no" | 2026-09-17 | app half fixed + gated; `20260917b` **applied**; `20260917c` (block→dm_requests + block checks) written, NOT applied |
+| P | The SERVER answers a failure with an empty 200 | 2026-09-17 | ✅ 10 handlers raise 503 + `check_empty_on_failure.py`; client type can say "unknown" |
 | O | A number rounded into a different fact | 2026-09-17 | ✅ sub-euro prices + sign; found by reviewing a screenshot, not by a checker |
 | N | The client compares a status the database never writes | 2026-09-17 | ✅ `getDmStatus` fixed + tested; all 8 status columns enumerated; NO gate (measured: 83 findings, nearly all homonyms) |
 | K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | ✅ all fixed: billing webhook `8439f97`, item edit, calendar, template, P2P listing transaction — **two server fixes not deployed** |
@@ -353,6 +354,55 @@ right group. What is actually missing is the GUARD — nothing stops a bad value
 being written, and the RPC and the client now write two different vocabularies
 into one column. Applying that migration is Merle's call (it rewrites RPCs and
 migrates data); it is not urgent, and it should not be replayed blind.
+
+## P — the SERVER answers a failure with an empty 200 (2026-09-17)
+
+Rule F has policed "a failed read is not 'none'" on the client since 09-15. It
+can only see code it can read. A handler that catches its own exception and
+answers **200 with an empty payload** is invisible to it — the client receives a
+well-formed answer and renders it as fact.
+
+Swept `server/app/**` mechanically. 270 `except: return <empty>` sites is not a
+finding list (most are helpers where `None` legitimately means "no value"), so
+the scan was narrowed to **route handlers**: 19, of which these mattered.
+
+| handler | what it told the app |
+|---|---|
+| `portfolio_overview` ×2 paths | `{"total_value": 0, "item_count": 0, "items": []}` — the sentence Home puts in its hero, on a DB failure |
+| `portfolio_timeseries` ×2 | `{"points": []}` — "your portfolio has never moved" |
+| `portfolio_items` ×2 | `{"items": []}` — "you own nothing" |
+| `category-stats` / `category-health` / `category-correlation` | empty lists |
+| `alerts/trigger-history` | `{"triggers": [], "unread_count": 0}` — **and that zero clears the badge** |
+
+All now `raise error_response(503, …, code="DB_UNAVAILABLE"/"DB_ERROR")` when the
+query AND the Signals proxy fallback both fail. Documented in `docs/API.md`.
+
+**The client half was already built and unreachable.** Home's `valueUnknown`
+renders "—" and hides the estimate line when `seriesFailed` is set — and
+`seriesFailed` is only set when the fetch THROWS. A 200 with `{"points": []}`
+therefore drove Home straight past its own failure state, which is why the
+2026-09-15 work could not fix this from the client side.
+
+**And the client's fallback made the same claim one layer up:**
+`getPortfolioSummary`'s catch returned `{ total: 0, …, itemCount: <real count> }`
+— "your 8 items are worth €0" — because `PortfolioSummary.total` was typed
+`number`, so the provider could not say "unknown" even though
+`PortfolioValueHeader` has rendered "—" for `null` since 09-15. The type is
+`number | null` now.
+
+Gated by `server/scripts/check_empty_on_failure.py` (in `verify:prebuild`),
+mutation-proven four ways: zeros back in the overview → red; `{"health": []}`
+back → red; a written reason removed → red; and a payload that SAYS it failed
+(`{"status": "error", …}`, the pipeline diagnostics) stays **green**, which is
+the distinction the gate exists to make.
+
+Two things the sweep got wrong first, both fixed in the gate: it reported
+`import_router`'s nested `_num()` helper (a blank spreadsheet cell legitimately
+has no number — `continue` inside `ast.walk` skips one node, never its subtree),
+and `False in (None, 0)` is True in Python, so booleans folded in silently.
+
+Also removed here: `data_moat`'s failure payload carried `str(e)` — the raw DB
+exception text — to any caller holding a token. The client never read it.
 
 ## O — a number rounded into a different fact (2026-09-17)
 

@@ -329,8 +329,12 @@ async def get_trigger_history(
                 user_id,
             )
     except asyncpg.PostgresError:
-        logger.warning("trigger-history query failed for user=%s", user_id, exc_info=True)
-        return {"triggers": [], "unread_count": 0}
+        # NOT zeros (2026-09-17). `unread_count: 0` clears the member's badge and
+        # an empty `triggers` list reads as "nothing has ever triggered" — both
+        # are claims about their alerts, and this is a failed read. 503 so the
+        # screen's failure state runs instead of a confident empty feed.
+        logger.error("trigger-history query failed for user=%s", user_id, exc_info=True)
+        raise error_response(503, "Your alert history is unavailable", code="DB_ERROR")
 
     return {
         "triggers": [

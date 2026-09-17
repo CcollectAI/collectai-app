@@ -813,4 +813,10 @@ async def demand_heat_by_region(
             }
     except Exception as e:
         logger.error("[data_moat/demand-heat/by-region] DB error: %s", e)
-        return {"regions": [], "error": str(e)}
+        # empty-ok: RegionalInsightsSection renders NOTHING for an empty list
+        # (`if (items.length === 0) return null`), so this makes the section
+        # absent rather than making a false claim, and the log above is the
+        # operator's signal. The `str(e)` that used to ride along was dropped
+        # (2026-09-17): the client never read it, and a raw DB error in a
+        # response body is internals leaking to anyone holding a token.
+        return {"regions": []}

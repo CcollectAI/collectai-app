@@ -91,8 +91,12 @@ async def portfolio_timeseries(
         try:
             return await _proxy_signals(f"/portfolio/timeseries?range={range}")
         except Exception as exc:
-            _logger.debug("portfolio fallback failed: %s", exc)
-            return {"points": []}
+            # A 200 with no points is "your portfolio has never moved", which is
+            # not what happened: the DB was unavailable AND the proxy failed
+            # (2026-09-17). The client's own failure state can only run if this
+            # says so — a plausible-looking empty payload is invisible to it.
+            _logger.error("[portfolio/timeseries] DB down and proxy failed: %s", exc)
+            raise error_response(503, "Portfolio history is unavailable", code="DB_UNAVAILABLE")
 
     days = RANGE_DAYS.get(range, 30)
     since = datetime.now(timezone.utc) - timedelta(days=days)
@@ -307,8 +311,12 @@ async def portfolio_timeseries(
         try:
             return await _proxy_signals(f"/portfolio/timeseries?range={range}")
         except Exception as exc:
-            _logger.debug("portfolio fallback failed: %s", exc)
-            return {"points": []}
+            # A 200 with no points is "your portfolio has never moved", which is
+            # not what happened: the DB was unavailable AND the proxy failed
+            # (2026-09-17). The client's own failure state can only run if this
+            # says so — a plausible-looking empty payload is invisible to it.
+            _logger.error("[portfolio/timeseries] DB down and proxy failed: %s", exc)
+            raise error_response(503, "Portfolio history is unavailable", code="DB_UNAVAILABLE")
 
 
 @router.get(
@@ -326,8 +334,11 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
         try:
             return await _proxy_signals("/portfolio/overview")
         except Exception as exc:
-            _logger.debug("portfolio fallback failed: %s", exc)
-            return {"total_value": 0, "item_count": 0, "items": []}
+            # NEVER zeros. "total_value: 0, item_count: 0" is a sentence about
+            # the member's collection — the one Home puts in its hero — and here
+            # it means "we could not read it" (2026-09-17).
+            _logger.error("[portfolio/overview] DB down and proxy failed: %s", exc)
+            raise error_response(503, "Portfolio is unavailable", code="DB_UNAVAILABLE")
 
     try:
         async with pool.acquire() as conn:
@@ -413,8 +424,11 @@ async def portfolio_overview(user_id: str = Depends(get_current_user_id)) -> dic
         try:
             return await _proxy_signals("/portfolio/overview")
         except Exception as exc:
-            _logger.debug("portfolio fallback failed: %s", exc)
-            return {"total_value": 0, "item_count": 0, "items": []}
+            # NEVER zeros. "total_value: 0, item_count: 0" is a sentence about
+            # the member's collection — the one Home puts in its hero — and here
+            # it means "we could not read it" (2026-09-17).
+            _logger.error("[portfolio/overview] DB down and proxy failed: %s", exc)
+            raise error_response(503, "Portfolio is unavailable", code="DB_UNAVAILABLE")
 
 
 @router.get(
@@ -429,8 +443,8 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
         try:
             return await _proxy_signals("/portfolio/items")
         except Exception as exc:
-            _logger.debug("portfolio fallback failed: %s", exc)
-            return {"items": []}
+            _logger.error("[portfolio/items] DB down and proxy failed: %s", exc)
+            raise error_response(503, "Your items are unavailable", code="DB_UNAVAILABLE")
 
     try:
         async with pool.acquire() as conn:
@@ -646,8 +660,8 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
         try:
             return await _proxy_signals("/portfolio/items")
         except Exception as exc:
-            _logger.debug("portfolio fallback failed: %s", exc)
-            return {"items": []}
+            _logger.error("[portfolio/items] DB down and proxy failed: %s", exc)
+            raise error_response(503, "Your items are unavailable", code="DB_UNAVAILABLE")
 
 
 @router.get("/portfolio/summary", summary="Get portfolio summary")
@@ -842,7 +856,7 @@ async def portfolio_category_stats(
             return {"categories": categories}
     except Exception as e:
         _logger.error("[portfolio/category-stats] DB error: %s", e)
-        return {"categories": []}
+        raise error_response(503, "Category stats are unavailable", code="DB_ERROR")
 
 
 # ── M4: Category Health Indicators ──────────────────────────────────────
@@ -950,7 +964,7 @@ async def category_health(
             return {"health": health}
     except Exception as e:
         _logger.error("[portfolio/category-health] DB error: %s", e)
-        return {"health": []}
+        raise error_response(503, "Category health is unavailable", code="DB_ERROR")
 
 
 # ── L2: Cross-Category Correlation ──────────────────────────────────────
@@ -1018,7 +1032,7 @@ async def category_correlation(
             return {"correlations": correlations}
     except Exception as e:
         _logger.error("[portfolio/category-correlation] DB error: %s", e)
-        return {"correlations": []}
+        raise error_response(503, "Category correlation is unavailable", code="DB_ERROR")
 
 
 @router.get(

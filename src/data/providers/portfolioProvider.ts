@@ -45,6 +45,8 @@ export async function getPortfolioSummary(): Promise<PortfolioSummary> {
       .select('id', { count: 'exact', head: true })
       .eq('archived', false);
 
-    return { total: 0, deltaPct: 0, itemCount: count ?? 0 };
+    // total: null, not 0 — the count is real, the value is unknown. The header
+    // renders "—" for null (PortfolioValueHeader), which is the truth here.
+    return { total: null, deltaPct: 0, itemCount: count ?? 0 };
   }
 }

@@ -2,6 +2,20 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-26
 
+## The server told the app "you own nothing, worth 0" (2026-09-17)
+
+Ten route handlers caught their own DB errors and answered **200 with an empty
+payload** — `/portfolio/overview` with `{"total_value": 0, "item_count": 0,
+"items": []}`, `/alerts/trigger-history` with `unread_count: 0` (which clears the
+badge). The client cannot question a well-formed answer, which is why the
+2026-09-15 rule-F work could not reach this: Home's "—" state only runs when the
+fetch THROWS. They now raise 503; `docs/API.md` documents the contract, and
+`server/scripts/check_empty_on_failure.py` (in `verify:prebuild`) keeps it — a
+payload that SAYS it failed is fine, an empty one needs `# empty-ok: <why>`.
+
+**Rule F has a server half.** When a class is "the UI shows a plausible lie",
+sweep both sides: the client gate cannot see a 200.
+
 ## A rounding rule displayed most of the cheap catalogue as worthless (2026-09-17)
 
 `money()` in `src/lib/format.ts` used `maximumFractionDigits: 0` for every

@@ -39,6 +39,27 @@ In `DEV_MODE=true`, JWT auth falls back to `DEV_USER_ID` without a token.
 | GET | `/portfolio/items` | API Key | Portfolio items (Signals proxy) — see the value fields below |
 | GET | `/portfolio/timeseries` | API Key | Portfolio timeseries (Signals proxy) |
 
+### A failed read answers 503, never zeros (2026-09-17)
+
+`/portfolio/overview`, `/portfolio/items`, `/portfolio/timeseries`,
+`/portfolio/category-stats`, `/portfolio/category-health`,
+`/portfolio/category-correlation` and `/alerts/trigger-history` used to catch
+their own database errors and answer **200** with an empty payload — the
+overview with `{"total_value": 0, "item_count": 0, "items": []}`, which is the
+sentence Home puts in its hero. A caller cannot tell that from an empty
+collection, so the app showed €0 to a member whose database read had failed.
+
+They now `raise error_response(503, …, code="DB_UNAVAILABLE" | "DB_ERROR")` when
+the query fails AND the Signals proxy fallback fails. **Clients must treat 503
+on these paths as "unknown", not as "empty"** — the app does: `ApiError` reaches
+Home's `seriesFailed`, which renders "—" and hides the estimate line rather
+than printing a number nobody has.
+
+Gated by `python3 server/scripts/check_empty_on_failure.py` (in
+`verify:prebuild`): a route handler may not return an empty payload from an
+`except` block without a written `# empty-ok: <why>`. A payload that SAYS it
+failed (`{"status": "error", …}`) is not a finding.
+
 ### `/portfolio/items` — the value fields tell you what they are worth trusting
 
 Three fields on each row exist so a caller cannot mistake one kind of number

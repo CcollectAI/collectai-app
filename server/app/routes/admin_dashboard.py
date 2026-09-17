@@ -72,6 +72,9 @@ async def dashboard_stats(_: bool = Depends(require_ops_key)):
             return int(v) if v and v > 0 else 0
         except Exception as exc:  # noqa: BLE001
             _log.warning("estimate for %s failed: %s", relname, exc)
+            # empty-ok: an ADMIN tile, and a row-count estimate that cannot be
+            # taken is shown as 0 beside the others rather than failing the whole
+            # dashboard. No member reads this, and the warning above is the signal.
             return 0
 
     async def _sub_breakdown() -> dict[str, int]:
@@ -81,6 +84,8 @@ async def dashboard_stats(_: bool = Depends(require_ops_key)):
             )
             return {r["plan"]: r["cnt"] for r in rows}
         except Exception:
+            # empty-ok: same tile, same reasoning — the subscription breakdown is
+            # one panel of an operator dashboard, not a claim to a member.
             return {}
 
     (

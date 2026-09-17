@@ -291,6 +291,9 @@ async def marketplace_health() -> dict:
         return {"adapters": statuses}
     except (ConnectionError, TimeoutError, OSError):
         logger.exception("Marketplace health check failed")
+        # empty-ok: a health endpoint whose payload SAYS it failed — the `error`
+        # field is the answer, and an empty adapter list beside it cannot be read
+        # as "all adapters are fine". Operator-facing.
         return {"adapters": [], "error": "Health check failed"}
     finally:
         await agent.close()

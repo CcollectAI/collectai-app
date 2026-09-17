@@ -74,6 +74,13 @@ async def pipeline_status() -> dict:
 
     except Exception as e:
         logger.error("[pipeline/status] DB query failed: %s", e)
+        # empty-ok: `status: "error"` IS the answer — the empty lists beside it
+        # cannot be read as "no training runs", because the status says the read
+        # failed. Operator-facing pipeline diagnostics.
+        #
+        # `message` keeps the exception text deliberately here (unlike
+        # data-moat's, which was removed): this endpoint exists for whoever is
+        # debugging the pipeline, and the text is the useful half.
         return {
             "status": "error",
             "message": str(e),
