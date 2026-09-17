@@ -53,7 +53,7 @@ Two rules the tooling learned the hard way:
 | I | One tap, two writes (unguarded async handlers) | 2026-09-17 | ✅ swept by checker, 6 fixed + 5 reasoned, `check:double-submit` in prebuild |
 | J | A member can see data that is not theirs (RLS / IDOR / public views) | 2026-09-17 | ✅ prod verified clean; repo drift fixed + gated |
 | M | The database fails, and the app reads the failure as "no" | 2026-09-17 | app half fixed + gated; `20260917b` **applied**; `20260917c` (block→dm_requests + block checks) written, NOT applied |
-| N | The client compares a status the database never writes | 2026-09-17 | `getDmStatus` fixed + tested; a per-column enumeration still owed |
+| N | The client compares a status the database never writes | 2026-09-17 | ✅ `getDmStatus` fixed + tested; all 8 status columns enumerated; NO gate (measured: 83 findings, nearly all homonyms) |
 | K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | billing webhook fixed `8439f97` (**not deployed**); item edit, calendar, template fixed; P2P listing insert open |
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
 
@@ -310,10 +310,48 @@ reopen it), with 6 tests, 3 mutation-proven. The same function did
 is exactly what that screen's failed state exists to prevent. Rule F3 now counts
 a sentinel STRING from an error branch; proven by re-breaking this line.
 
-**Not gated, worth a sweep:** every other place the client compares a status
-literal to one the DB writes. A regex gate would have to know each column's
-vocabulary; the honest move is to enumerate the pairs (client literal ↔ writer)
-once, per column, rather than pretend a checker can.
+### The enumeration, and why this class gets NO gate (2026-09-17)
+
+Done properly rather than left as a to-do: 40 status literals the client
+compares, against the live vocabulary of all 8 client-read tables that have a
+`status` column (CHECK constraints where they exist — the constraint is the
+vocabulary; the observed rows are a sample, and a 1-row table tells you nothing).
+
+| checked | verdict |
+|---|---|
+| `catalog_suggestions` `mapped` | ✅ in the CHECK |
+| `marketplace_listings` `draft` (what the sell dashboard creates) | ✅ in the CHECK |
+| `marketplace_sales` `pending`/`shipped`/`completed` | ✅ in the CHECK |
+| `subscriptions` allows `canceled` (one L) while the client says `cancelled` | **not a bug** — every `'cancelled'` in the client is the EVENT status (`EventStatus = draft \| published \| cancelled`), a different column. Checked before reporting |
+| `events` has 558 `rejected` rows and the client's `EventStatus` has no such value | **not reachable** — the server filters rejected events out of every read (`9fa8336`), which is why the client never needed the word |
+| `chat_dm_requests_v1` `approved`/`denied` | ❌ the real bug, fixed above |
+| `build_paint_projects` | latent drift, below |
+
+**A gate for this was measured and rejected.** `schema.lock.json` already
+carries each CHECK's literal set, so the read-side mirror of
+`check:constraint-drift` looks easy: flag a comparison literal no CHECK allows.
+It produces **83 findings, almost all false** — `.status === 'fulfilled'` is
+`Promise.allSettled`, `.type === 'header'` is a list row, `.kind === 'meetup'` is
+an app-level union. Keying on a column NAME keys on a homonym
+(`feedback_same_name_is_not_the_same_thing`), and a checker that cries wolf
+stops being read. The enumeration above is the deliverable; the gate is not
+worth having until something can tell which table an object came from.
+
+**`build_paint_projects`: a migration that never reached production.**
+`20260322_build_paint_status_pipeline.sql` migrates `Active → in_progress`,
+`Backlog → wishlist`, `Completed → finished`, adds a 25-value CHECK and rewrites
+three RPCs. On prod today: the column DEFAULT is still `'Active'`, there is **no
+status CHECK**, `rpc_create_build_paint_project_v1` does not mention
+`in_progress`, and the single existing project reads `active`. The client has
+spoken the new vocabulary since March.
+
+**No member sees a defect today, and that is a finding, not luck**: the screen's
+groups are "completed", "wishlist", and *everything else* → in progress, and
+`isCompleted` lowercases before comparing, so a legacy `Active` row lands in the
+right group. What is actually missing is the GUARD — nothing stops a bad value
+being written, and the RPC and the client now write two different vocabularies
+into one column. Applying that migration is Merle's call (it rewrites RPCs and
+migrates data); it is not urgent, and it should not be replayed blind.
 
 ## What landed
 
