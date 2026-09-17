@@ -204,7 +204,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="events"
         options={{
-          title: "Events",
+          title: t("nav.events"),
           // t(), like the other four: this label was the one English literal in a
           // translated bar (Dutch round, 2026-09-16).
           tabBarLabel: t("nav.events"),

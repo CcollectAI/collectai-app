@@ -16,7 +16,8 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 
 type TabDef = {
   route: string;
-  label: string;
+  /** i18n key, resolved at render — the SAME keys app/(tabs)/_layout.tsx uses. */
+  labelKey: string;
   icon: keyof typeof Ionicons.glyphMap;
   iconFocused: keyof typeof Ionicons.glyphMap;
   matchPrefix?: string;
@@ -32,14 +33,19 @@ const TABS: TabDef[] = [
   // action. Search took the fifth slot, restored to the unified search it was
   // built for.
   //
-  // These labels are the one nav surface that is NOT translated (the whole
-  // TABS array is plain English); left as-is rather than half-translating.
-  { route: '/(tabs)', label: 'Portfolio', icon: 'pie-chart-outline', iconFocused: 'pie-chart', matchPrefix: '/(tabs)' },
-  { route: '/(tabs)/marketplace', label: 'Market', icon: 'storefront-outline', iconFocused: 'storefront', matchPrefix: '/marketplace' },
-  { route: '/(tabs)/add', label: 'Add', icon: 'add-circle-outline', iconFocused: 'add-circle', matchPrefix: '/add' },
-  { route: '/(tabs)/events', label: 'Events', icon: 'calendar-outline', iconFocused: 'calendar', matchPrefix: '/events' },
+  // TRANSLATED since 2026-09-17, with the same keys as the real tab bar, so the
+  // two bars cannot disagree. The comment here used to say these were "left
+  // as-is rather than half-translating" — that reason was not true: every one of
+  // the five keys was already translated into all seven locales. Measured cost
+  // of believing it: the Dutch screen sweep counted 184 English label renders
+  // across 65 screens (Events 53, Add 45, Market 43, Explore 43), each sitting
+  // beside a tab bar that DID say "Evenementen" and "Ontdek".
+  { route: '/(tabs)', labelKey: 'nav.portfolio', icon: 'pie-chart-outline', iconFocused: 'pie-chart', matchPrefix: '/(tabs)' },
+  { route: '/(tabs)/marketplace', labelKey: 'nav.market', icon: 'storefront-outline', iconFocused: 'storefront', matchPrefix: '/marketplace' },
+  { route: '/(tabs)/add', labelKey: 'nav.add', icon: 'add-circle-outline', iconFocused: 'add-circle', matchPrefix: '/add' },
+  { route: '/(tabs)/events', labelKey: 'nav.events', icon: 'calendar-outline', iconFocused: 'calendar', matchPrefix: '/events' },
   // Labelled "Explore" since 2026-08-18; the route stays `search`.
-  { route: '/(tabs)/search', label: 'Explore', icon: 'search-outline', iconFocused: 'search', matchPrefix: '/search' },
+  { route: '/(tabs)/search', labelKey: 'nav.explore', icon: 'search-outline', iconFocused: 'search', matchPrefix: '/search' },
 ];
 
 export function QuickNavBar() {
@@ -84,7 +90,7 @@ export function QuickNavBar() {
               router.replace(tab.route as Href);
             }}
             accessibilityRole="tab"
-            accessibilityLabel={tab.label}
+            accessibilityLabel={t(tab.labelKey)}
             accessibilityState={{ selected: isActive }}
           >
             <Ionicons
@@ -92,7 +98,7 @@ export function QuickNavBar() {
               size={22}
               color={color}
             />
-            <Text style={[styles.label, { color }]}>{tab.label}</Text>
+            <Text style={[styles.label, { color }]}>{t(tab.labelKey)}</Text>
           </Pressable>
         );
       })}

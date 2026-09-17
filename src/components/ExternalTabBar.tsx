@@ -72,7 +72,7 @@ export function ExternalTabBar() {
       : [
           {
             key: "events",
-            label: "Events",
+            label: t("nav.events"),
             icon: "calendar-outline" as const,
             iconFocused: "calendar" as const,
             href: "/(tabs)/events" as Href,
