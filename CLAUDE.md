@@ -26,6 +26,61 @@ is a syntax error in JSX, so it could never be written; `False in (None, 0)`
 folding booleans in silently; a `//` comment inside Python; and a `package.json`
 edit whose anchor appeared twice, so it silently did not apply.
 
+## `{"ok": true}` with nothing behind it — and one DM path dead for five months (2026-09-17/18)
+
+The mirror of the section below: that was a failed READ answering 200 with an
+empty payload; this is a failed **WRITE** answering `{"ok": true}`. Worse,
+because every one of them sits behind an optimistic screen — the app shows the
+member what they asked for, and the truth only reappears on the next fetch.
+
+Six fixed: both member-facing item writes (`PATCH /items/{id}/attributes` and
+`/purchase`, the second one the cost basis), `mark_trigger_read` (three separate
+exits all answering `ok`), and block / unblock / blocked-list, which claimed
+`"User blocked (offline mode)"` with no database.
+
+**The worst one had been dead since 2026-04-30.** Event announcements DM every
+attendee; the code found-or-created a thread in `dm_threads` and inserted into
+`chat_messages_v1`, whose `thread_id` FK was repointed to `chat_threads_v1` five
+months ago. Production `dm_threads`: **0 rows**. So every send violated the FK,
+the per-attendee `except` logged a warning, and the summary line said `sent=0`
+**at INFO**. `social_router.block_user` had the same bug in miniature (it
+declined pending DMs in `dm_threads`, so blocking never declined anything).
+
+Three rules out of it:
+
+1. **A DM has ONE writer** — `rpc_send_message_v1`, threads in
+   `chat_threads_v1`, both `chat_thread_members_v1` rows. A second private copy
+   is how one surface gets a schema fix and another silently does not.
+2. **`sent=0, failed=N` is an ERROR, not a statistic.** A total failure logged
+   at INFO is invisible; that is the entire reason this lasted five months.
+3. **Verify a rewritten write against production before believing it** — these
+   statements were run there inside a transaction that ROLLED BACK (thread
+   upsert → 2 members → message → bump; 0 messages after rollback). The
+   migration files had drifted: `rpc_send_message_v1`'s committed body is the
+   2-arg February version, the live one takes 3 args and writes different
+   tables.
+
+**Eight tests asserted the lie.** `test_block_user_offline_mode` ("Block
+succeeds in offline mode"), `test_mark_trigger_read_offline`,
+`test_update_attributes_offline_noop`, `test_overview_no_db_falls_back` and four
+more each named the behaviour and pinned it, so the class was not
+unnoticed — it was **protected**. When a sweep finds a lie, grep the tests for
+it: a green suite is evidence only about what it asserts. Two of those tests
+were also hiding a second defect (an "idempotency" test that ran with no pool
+and never reached `ON CONFLICT`; a quarantine test that passed only under a
+particular dev-identity mismatch).
+
+Full write-up: `docs/CLASS_SWEEPS.md` class S. Contracts: `docs/API.md` (Items,
+Alerts, Events announcements, Social).
+
+**`npm run verify:prebuild` does NOT run the server test suite** — it runs the
+Python GATES (`check_empty_on_failure`, `check_error_copy`, …) and a named list
+of jest suites, and nothing else. That is how commit `eb70152` shipped the
+portfolio 503 change with four of its own tests still asserting the old zeros;
+CI (`ci-min.yml`) runs `pytest` and would have caught it. **Before committing a
+server change, run `npm run test:server`** (added 2026-09-17 for exactly this:
+4064 tests, ~70 s).
+
 ## The server told the app "you own nothing, worth 0" (2026-09-17)
 
 Ten route handlers caught their own DB errors and answered **200 with an empty

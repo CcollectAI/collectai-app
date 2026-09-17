@@ -60,6 +60,7 @@ Two rules the tooling learned the hard way:
 | N | The client compares a status the database never writes | 2026-09-17 | ✅ `getDmStatus` fixed + tested; all 8 status columns enumerated; NO gate (measured: 83 findings, nearly all homonyms) |
 | K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | ✅ all fixed: billing webhook `8439f97`, item edit, calendar, template, P2P listing transaction — **two server fixes not deployed** |
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
+| S | The server answered `ok` and wrote nothing | 2026-09-17/18 | ✅ 6 fixed (2 items writes, mark-trigger-read, block/unblock/blocked-list) + the announcement DM that had written to an empty legacy table for five months; 7 tests that PINNED the lie rewritten |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -742,6 +743,121 @@ a per-statement SAVEPOINT and a comment explaining why.
   Mutation-proven: restoring the old order turns the new test red. What this
   cannot fix is a network failure between two writes — that needs the server to
   take both in one transaction, which is the rest of class K.
+
+## S — the server answered `ok` and wrote nothing (2026-09-17/18)
+
+The mirror of class P. P was "a failed READ answered 200 with an empty payload";
+this is **a failed WRITE answering 200 with `{"ok": true}`**. The client cannot
+question either one, and a write is worse: every one of these sits behind an
+OPTIMISTIC screen, so the app shows the member what they asked for and the
+truth only reappears on the next fetch — minutes later, with nothing anywhere
+saying why.
+
+**Enumerated mechanically** (`ast`, route handlers only): 34 handlers `await
+conn.execute("UPDATE …"/"DELETE …")` as a bare statement, discarding asyncpg's
+status string. A discarded row count is not by itself the finding — several are
+fine because a preceding SELECT already proved the row exists and is the
+caller's (`chat_router.delete_message`). The finding is **an `ok` that no write
+stands behind**, and these are the ones triaged so far:
+
+| site | what it claimed |
+|---|---|
+| `items_router.update_item_attributes` | `if pool is None: return {"ok": True}` — and the UPDATE's row count discarded, so patching an id that is not yours answered `ok`. The app closes edit mode and toasts success on `ok` |
+| `items_router.update_item_purchase` | same no-pool claim, on the **cost basis** (the row count here was already checked with `RETURNING`) |
+| `alerts_feature_router.mark_trigger_read` | THREE exits all answering `{"ok": true}`: no database, a swallowed `PostgresError`, and a row count nobody read |
+| `social_router.block_user` / `unblock_user` | `success: true, "User blocked (offline mode)"` with no pool. Blocking is the one action that must never be optimistic |
+| `social_router.get_blocked` | `blocked: []` with no pool — "you have blocked nobody", on the screen where a member checks a safety decision |
+
+**Three bugs stacked on one action.** Mark-as-read was the worst case, and no
+single fix would have been visible:
+
+1. the server lied on failure (above);
+2. `useAlertsFeed` hardcoded `isRead: false` while the server had been
+   returning `read` all along — so even a SUCCESSFUL write was invisible, the
+   alert came back as new, and `unreadOnly` could never filter anything;
+3. the feed is cached `TTL_MEDIUM` and nothing cleared it after the write.
+
+And the optimistic flip had no rollback, so (1) looked like success until the
+cache expired. `AlertFeedItem.read` is now REQUIRED so a future mapping cannot
+leave it out, `markAsRead`/`markAllAsRead` roll back per row, and a derived
+alert (`derived-drop-<itemId>`, no trigger-history row, not a uuid — the
+endpoint answered 400 for every one) is never posted at all. Seven tests, four
+mutations.
+
+### The one that had been dead for five months
+
+`_send_announcement_dms` — "DM every attendee when the host posts an
+announcement" — found or created a thread in **`dm_threads`** and then inserted
+the message into `chat_messages_v1`, whose `thread_id` FK was repointed to
+`chat_threads_v1` on **2026-04-30** ("every sendMessage and markThreadRead 409'd
+with FK violation"). Read back on production: `dm_threads` holds **0 rows**. So
+every announcement created a fresh legacy row and every message insert violated
+the FK. The per-attendee `except` logged a warning and moved on; the summary
+line said `sent=0` at INFO; the host was told nothing.
+
+It now upserts `chat_threads_v1` on `ux_chat_threads_v1_dm_pair` (pair
+canonicalised least/greatest), inserts both `chat_thread_members_v1` rows, and
+sends through `rpc_send_message_v1` — **the same writer `chat_router.send_message`
+uses**, so a schema change cannot fix chat and leave announcements behind again,
+which is this bug's whole shape. Plus three things the old code could not do:
+it honours `user_blocks` through `app/lib/blocks.py`, it respects a `denied` DM
+request (the successor to the `dm_threads.status='declined'` check it used to
+make), and it skips attendees whose account no longer exists — 3 of production's
+distinct attendee ids, and `event_attendees` has no FK to `auth.users` while
+`chat_threads_v1.dm_user_a/b` do, so each would otherwise count as a failure.
+
+**A total failure now logs at ERROR.** `sent=0, failed=N` reported at INFO is
+how this survived five months of log-reading.
+
+Verified by running the new statements against production inside a transaction
+that ROLLED BACK: thread upsert → 2 members → message → bump, then 0 messages
+after rollback. Eight tests, seven mutations.
+
+**`social_router.block_user` had the same bug** — it declined pending DMs in
+`dm_threads` too, so blocking never declined anything. Now
+`chat_dm_requests_v1` (`status='denied'`, `decided_at`, `decided_by`), both
+directions, and both statements in ONE transaction: a block that landed while
+the decline failed used to leave the member blocked AND told "Failed to block
+user". Same fix as `20260917c` for the RPC the app actually calls.
+
+### Eight tests asserted the lie
+
+This class had TEST COVERAGE — of the bug. `test_block_user_offline_mode`
+("Block succeeds in offline mode"), `test_mark_trigger_read_offline`,
+`test_update_attributes_offline_noop`, `test_list_blocked_offline_mode`,
+`test_unblock_user_offline_mode`, `test_overview_no_db_falls_back`,
+`test_items_no_db` and `test_timeseries_no_db_no_signals_returns_empty`. Each
+one named the behaviour it pinned and asserted it, so the class was not just
+unnoticed — it was **protected**. All eight now assert the honest answer and say
+in the docstring what they used to require and why that was wrong. (Three more
+came from the class-Q/P work earlier in the session: one required `str(e)` in a
+PUBLIC endpoint's response body, two required PIL's "cannot identify image
+file <_io.BytesIO object at 0x…>" as the message a member reads.)
+
+Two of them were hiding a second defect behind the first:
+`test_block_same_user_twice_offline` claimed to prove idempotency but ran with
+NO pool, so it never reached `ON CONFLICT (blocker_id, blocked_id) DO NOTHING`
+— the actual guarantee. It runs against a mock pool now.
+`test_a_quarantined_event_is_not_found_by_link` passed only when the caller's
+dev identity happened not to match the row it had just created, because
+`_hidden_from_detail` deliberately exempts the CREATOR; it now sets
+`created_by = None` (556 quarantined rows on prod, 0 with a creator) and has a
+mirror test for the creator's own view, so neither half can drift alone.
+
+**Still open:** of the 34 mechanical hits, 6 were triaged into the table above
+and **the remaining 28 have not been read one by one.** The money-carrying ones
+to do next: `p2p_offers_router.respond_to_offer` (six UPDATEs across accept /
+decline / counter / withdraw, plus the listing reservation),
+`confirm_exchange`, `marketplace_listing_router.record_sale`,
+`purchase_router.confirm_deal` (mandate counters), `item_images_router`
+delete/reorder.
+
+**No gate yet, and not because the class is closed.** A gate on "discarded row
+count" would fire on all 34, most of which need a written reason rather than a
+fix — noise that stops being read, the same measurement that killed the class N
+gate. What a gate CAN catch is narrower and
+worth writing next: a route handler that returns `{"ok": True}` (or
+`success=True`) from a branch in which no write statement appears at all.
 
 ## Decisions for Merle — the XP leaderboard (2026-09-17)
 

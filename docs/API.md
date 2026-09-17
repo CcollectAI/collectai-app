@@ -62,6 +62,26 @@ names, reports both as open.
 |--------|------|------|-------------|
 | POST | `/items` | No | Create demo item (in-memory) |
 | GET | `/items` | No | List demo items |
+| PATCH | `/items/{item_id}/attributes` | JWT | Merge keys into `items.attrs` (jsonb). `item_size`/`size_system` fold into the SAME jsonb — the table has no columns for them |
+| PATCH | `/items/{item_id}/purchase` | JWT + Rate Limit | Set or clear the cost basis. Writes `purchase_price`, `purchase_price_eur` and `purchase_currency` **together** — see the router's own header for why a client-side patch is a ~170x currency bug |
+
+### `{"ok": true}` means a row was written (2026-09-17)
+
+Both PATCHes answer:
+
+| | |
+|---|---|
+| **404 `NOT_FOUND`** | the id is not this member's, or does not exist. The `WHERE` carries `user_id`, so those are the same case and get the same sentence — the endpoint cannot be used to probe which item ids exist |
+| **503 `DB_UNAVAILABLE`** | no database. Both used to answer `200 {"ok": true, "item_id": …}` here, and the app takes `ok` as "saved": it closes edit mode and toasts success, so the edit vanished silently. One of the two carries the purchase price |
+
+An **empty** attributes patch still answers `200 {"ok": true}`, and that is
+honest — nothing was going to be written, so the answer does not depend on the
+database. The handler checks it BEFORE `get_db_pool()` for exactly that reason.
+
+`PATCH /items/{id}/purchase` sends `purchase_price: null` to CLEAR (both halves,
+plus the fees). **Omitting** a field means "leave it alone" — a distinct third
+state, detected with `model_fields_set`, so a member can edit fees without the
+client resending a price that would be re-converted at today's FX rate.
 
 ## Portfolio
 
@@ -186,8 +206,26 @@ entry point. Until then, leave all three alone.
 | GET | `/alerts/mine` | JWT | List price alerts (paginated) |
 | POST | `/alerts/mine` | JWT | Create/update price alert |
 | DELETE | `/alerts/mine/{alert_id}` | JWT | Delete/disable alert |
-| GET | `/alerts/trigger-history` | JWT | Alert trigger history |
-| POST | `/alerts/trigger-history/{trigger_id}/read` | JWT | Mark trigger as read |
+| GET | `/alerts/trigger-history` | JWT | Alert trigger history. **`read` is part of the contract** — see below |
+| POST | `/alerts/trigger-history/{trigger_id}/read` | JWT | Mark trigger as read. 404 `NOT_FOUND` if it is not yours or does not exist; 503 `DB_ERROR` if the write failed |
+
+### Marking an alert read — three ways it used to do nothing (2026-09-17)
+
+`POST /alerts/trigger-history/{id}/read` answered `{"ok": true}` from THREE
+exits where nothing had been written: no database configured, a swallowed
+`asyncpg.PostgresError`, and a row count nobody read (so another member's
+trigger id answered `ok`). It now answers 404 / 503 / 404 respectively.
+
+`GET /alerts/trigger-history` has always returned each row's **`read`** flag,
+and the client dropped it on mapping — `useAlertsFeed` hardcoded
+`isRead: false`. So even a successful write was invisible: the alert came back
+as new on the next fetch and `unreadOnly` could never filter anything. Clients
+must read `read`; `AlertFeedItem.read` is now a REQUIRED field so a mapping
+cannot omit it silently.
+
+**A `derived-…` id is not a trigger id.** The app builds client-side alerts from
+an item's price band (`derived-drop-<itemId>`); they have no row here, are not
+uuids, and this endpoint answered 400 for every one. Do not post them.
 
 
 ## Provenance
@@ -253,6 +291,35 @@ product decision rather than a bug.
 | POST | `/events/categories/{category_id}/follow` | JWT | Follow category |
 | DELETE | `/events/categories/{category_id}/follow` | JWT | Unfollow category |
 | GET | `/events/categories/{category_id}/following` | JWT | Check if following |
+| POST | `/events/{event_id}/announcements` | JWT + Rate Limit | Post an announcement. **403 unless host or sponsor admin.** Also DMs every going/interested attendee, in a background task. Returns 201 |
+| GET | `/events/{event_id}/announcements` | JWT | List announcements, with `is_read`. **403 for a non-attendee**, which the app renders as its own state |
+| POST | `/events/{event_id}/announcements/{announcement_id}/read` | JWT | Mark one announcement read |
+| POST | `/events/{event_id}/announcements/batch-read` | JWT | Mark a batch read |
+| GET | `/events/my-announcements/unread-count` | JWT | Unread count across every event the member attends |
+
+### The announcement DM had not delivered a single message since 2026-04-30
+
+`_send_announcement_dms` found-or-created a thread in **`dm_threads`** and then
+inserted into `chat_messages_v1`, whose `thread_id` FK was repointed to
+`chat_threads_v1` on 2026-04-30. `dm_threads` holds **0 rows** on production
+(read back 2026-09-17), so every send violated the FK, the per-attendee `except`
+logged a warning, and the summary line said `sent=0` **at INFO**. Five months.
+
+Rules for anything that writes a DM from now on:
+
+1. **Go through `rpc_send_message_v1(thread_id, user_id, body)`** — the same
+   writer `chat_router.send_message` uses. A second private copy is how one
+   surface gets a schema fix and another silently does not.
+2. **Threads live in `chat_threads_v1`** (upsert on `ux_chat_threads_v1_dm_pair`,
+   pair canonicalised least/greatest) with both `chat_thread_members_v1` rows —
+   the inbox reads membership.
+3. **`dm_user_a/b` REFERENCE `auth.users`** and `event_attendees` does not, so
+   filter attendees on `EXISTS (SELECT 1 FROM auth.users …)`: 3 of production's
+   distinct attendee ids are deleted accounts.
+4. **Honour blocks (`app/lib/blocks.py`) and a `denied` `chat_dm_requests_v1`
+   row.** An announcement is still a DM.
+5. **A total failure logs at ERROR**, not INFO. `sent=0` in an INFO line is
+   invisible.
 
 ## Storage (S3)
 
@@ -490,9 +557,9 @@ All endpoints are available at both unversioned paths (`/items`, `/alerts/mine`,
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/social/users/search?q=&limit=` | JWT | Search public profiles by name/handle |
-| POST | `/social/block/{user_id}` | JWT | Block a user |
-| DELETE | `/social/block/{user_id}` | JWT | Unblock a user |
-| GET | `/social/blocked` | JWT | List blocked users |
+| POST | `/social/block/{user_id}` | JWT | Block a user + deny any pending DM request between the pair. 503 `DB_UNAVAILABLE` with no database — **never a success claim** |
+| DELETE | `/social/block/{user_id}` | JWT | Unblock a user. Same 503 |
+| GET | `/social/blocked` | JWT | List blocked users. 503 rather than `[]` when the read cannot run |
 | GET | `/social/leaderboard/category/{category_id}?metric=&limit=` | JWT | Top collectors in ONE category |
 | GET | `/social/users/{user_id}/categories?limit=` | JWT | What a collector collects + their rank in each |
 

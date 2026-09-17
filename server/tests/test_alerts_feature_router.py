@@ -163,8 +163,13 @@ class TestTriggerHistory:
 # ---------------------------------------------------------------------------
 
 class TestMarkTriggerRead:
-    def test_mark_trigger_read_offline(self):
-        """Mark trigger read returns 200 in offline mode."""
+    def test_mark_trigger_read_offline_is_404_not_ok(self):
+        """No database means no trigger history at all — so no row to mark.
+
+        This asserted `200 {"ok": true}`. `useAlertsFeed.markAsRead` flips the
+        row optimistically and `ok` is what stops it rolling back, so the alert
+        reappeared unread on the next fetch with nothing saying why.
+        """
         resp = client.post("/alerts/trigger-history/00000000-0000-0000-0000-000000000099/read")
-        assert resp.status_code == 200
-        assert resp.json()["ok"] is True
+        assert resp.status_code == 404
+        assert resp.json()["detail"]["code"] == "NOT_FOUND"

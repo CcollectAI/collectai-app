@@ -117,6 +117,18 @@ export async function clearProfileCaches(): Promise<void> {
   await cacheClear('profile:');
 }
 
+/**
+ * Forget the cached alerts feed (2026-09-17).
+ *
+ * The feed is cached `TTL_MEDIUM`, so marking an alert read persisted a row and
+ * then re-read the stale list for minutes afterwards — the third of three
+ * reasons mark-as-read did not stick (the other two: the server dropped the
+ * write silently, and this client dropped the `read` flag on mapping).
+ */
+export async function clearAlertsFeedCache(): Promise<void> {
+  await cacheClear(CK.ALERTS_FEED);
+}
+
 // ---------------------------------------------------------------------------
 // CachedDataProvider
 // ---------------------------------------------------------------------------

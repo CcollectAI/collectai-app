@@ -204,7 +204,8 @@ async def block_user(
     _rl: None = Depends(_social_write_limit),
 ):
     """
-    Block a user. Also auto-declines any pending DM threads between the pair.
+    Block a user. Also denies any pending DM REQUEST between the pair
+    (`chat_dm_requests_v1`), in both directions.
     """
     # Validate UUID
     try:
@@ -217,36 +218,56 @@ async def block_user(
 
     pool = get_db_pool()
     if pool is None:
-        logger.info("[social/block] Offline mode: blocked user=%s", user_id)
-        return BlockResponse(success=True, message="User blocked (offline mode)")
+        # NOT success (2026-09-17). Nothing was written, and "blocked (offline
+        # mode)" is a safety claim: the app closes the sheet and stops showing
+        # the other member's content locally while the block does not exist, so
+        # they are back the moment the screen reloads. Blocking is the one action
+        # that must never be optimistic.
+        logger.error("[social/block] No DB pool — cannot block user=%s", user_id)
+        raise error_response(503, "Could not block this user", code="DB_UNAVAILABLE")
 
     try:
         async with pool.acquire() as conn:
-            # Insert block (ignore if already exists)
-            await conn.execute(
-                """
-                INSERT INTO user_blocks (blocker_id, blocked_id)
-                VALUES ($1::uuid, $2::uuid)
-                ON CONFLICT (blocker_id, blocked_id) DO NOTHING
-                """,
-                current_user_id,
-                str(target_uuid),
-            )
+            # ONE transaction (2026-09-17). These two statements are one act: a
+            # block that lands while the DM decline fails used to leave the
+            # member blocked AND told "Failed to block user", so they retried
+            # something that had already happened.
+            async with conn.transaction():
+                # Insert block (ignore if already exists)
+                await conn.execute(
+                    """
+                    INSERT INTO user_blocks (blocker_id, blocked_id)
+                    VALUES ($1::uuid, $2::uuid)
+                    ON CONFLICT (blocker_id, blocked_id) DO NOTHING
+                    """,
+                    current_user_id,
+                    str(target_uuid),
+                )
 
-            # Auto-decline pending DM threads between these users
-            await conn.execute(
-                """
-                UPDATE dm_threads
-                SET status = 'declined'
-                WHERE status = 'pending'
-                  AND (
-                    (requester_id = $1::uuid AND responder_id = $2::uuid) OR
-                    (requester_id = $2::uuid AND responder_id = $1::uuid)
-                  )
-                """,
-                current_user_id,
-                str(target_uuid),
-            )
+                # Auto-decline pending DM REQUESTS between these users.
+                #
+                # This used to `UPDATE dm_threads` — the pre-rewrite table. It
+                # still exists, and it holds 0 rows on production (read back
+                # 2026-09-17); the chat the app reads is `chat_threads_v1` plus
+                # `chat_dm_requests_v1`. So the decline matched nothing, every
+                # time, and a pending request survived being blocked.
+                # Pending requests live in `chat_dm_requests_v1`; a decline there
+                # is status='denied' + decided_at + decided_by, exactly as
+                # rpc_decide_dm_request_v1 writes it. Both directions, because
+                # blocking is symmetric (app/lib/blocks.py). Same fix as
+                # supabase/migrations/20260917c_blocking_uses_dm_requests.sql,
+                # which repairs the RPC the app actually calls.
+                await conn.execute(
+                    """
+                    UPDATE public.chat_dm_requests_v1
+                       SET status = 'denied', decided_at = now(), decided_by = $1::uuid
+                     WHERE status = 'pending'
+                       AND ((requester_id = $1::uuid AND target_user_id = $2::uuid)
+                         OR (requester_id = $2::uuid AND target_user_id = $1::uuid))
+                    """,
+                    current_user_id,
+                    str(target_uuid),
+                )
 
         logger.info("[social/block] User %s blocked %s", current_user_id, user_id)
         return BlockResponse(success=True, message="User blocked")
@@ -270,8 +291,11 @@ async def unblock_user(
 
     pool = get_db_pool()
     if pool is None:
-        logger.info("[social/unblock] Offline mode: unblocked user=%s", user_id)
-        return BlockResponse(success=True, message="User unblocked (offline mode)")
+        # Mirror of block above: nothing was written, so do not say it was. An
+        # unblock that did not happen is the gentler direction of the same lie,
+        # and the member would find the other person still hidden.
+        logger.error("[social/unblock] No DB pool — cannot unblock user=%s", user_id)
+        raise error_response(503, "Could not unblock this user", code="DB_UNAVAILABLE")
 
     try:
         async with pool.acquire() as conn:
@@ -299,7 +323,10 @@ async def list_blocked(
     """List all users blocked by the current user."""
     pool = get_db_pool()
     if pool is None:
-        return BlockedListResponse(blocked=[])
+        # An empty list here reads as "you have blocked nobody" — the exact
+        # shape rule F exists for, and on the one screen where the member is
+        # checking a safety decision they already made.
+        raise error_response(503, "Could not load your blocked list", code="DB_UNAVAILABLE")
 
     try:
         async with pool.acquire() as conn:

@@ -533,6 +533,18 @@ export type AlertFeedItem = {
   price?: number | null;
   /** The user's target, for the same reason. */
   targetPrice?: number | null;
+  /**
+   * `alert_trigger_history.read` — REQUIRED on purpose (2026-09-17).
+   *
+   * The server has always returned it and the API type has always declared it
+   * (`src/api/alertsApi.ts`), but this type omitted it, so the mapping dropped
+   * it and `useAlertsFeed` hardcoded `isRead: false`. Marking an alert read
+   * therefore wrote a row nobody read back: every refetch showed it unread
+   * again, `unreadOnly` could never filter anything, and Home's card kept
+   * presenting handled alerts as new. Required so a future mapping cannot
+   * quietly leave it out again.
+   */
+  read: boolean;
 };
 
 /**

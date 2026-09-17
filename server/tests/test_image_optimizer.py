@@ -122,15 +122,23 @@ class TestOptimizeImage:
         assert len(high_q) > len(low_q)
 
     def test_invalid_image_raises_value_error(self):
+        """The message is MEMBER COPY (2026-09-17).
+
+        It used to be `f"Cannot decode image: {exc}"`, and PIL's text is
+        "cannot identify image file <_io.BytesIO object at 0x…>" — which the
+        upload path showed to whoever picked the file. `detail` is UI
+        (docs/API.md), so the exception stays in the log and the sentence is
+        written for a person.
+        """
         from app.lib.image_optimizer import optimize_image
 
-        with pytest.raises(ValueError, match="Cannot decode image"):
+        with pytest.raises(ValueError, match="could not be read"):
             optimize_image(b"not an image at all")
 
     def test_empty_bytes_raises_value_error(self):
         from app.lib.image_optimizer import optimize_image
 
-        with pytest.raises(ValueError, match="Cannot decode image"):
+        with pytest.raises(ValueError, match="could not be read"):
             optimize_image(b"")
 
     def test_palette_mode_conversion(self):

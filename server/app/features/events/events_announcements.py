@@ -11,6 +11,7 @@ from fastapi import BackgroundTasks, Depends, HTTPException
 from app.auth import get_current_user_id
 from app.errors import error_response
 from app.features.pagination import pagination_params
+from app.lib.blocks import is_blocked
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 
@@ -56,6 +57,13 @@ async def _send_announcement_dms(
                 WHERE event_id = $1
                   AND status IN ('going', 'interested')
                   AND user_id != $2::uuid
+                  -- Only accounts that still exist. `chat_threads_v1.dm_user_a/b`
+                  -- REFERENCE auth.users, and `event_attendees` has no such FK:
+                  -- 3 of production's distinct attendee ids belong to deleted
+                  -- accounts (checked 2026-09-17). Without this they each raise
+                  -- a foreign-key violation and count as a FAILED send, which
+                  -- would keep this task's summary line at warning forever.
+                  AND EXISTS (SELECT 1 FROM auth.users u WHERE u.id = event_attendees.user_id)
                 """,
                 event_id,
                 author_user_id,
@@ -77,64 +85,100 @@ async def _send_announcement_dms(
 
             sent_count = 0
             skip_count = 0
+            fail_count = 0
 
             for att_row in attendee_rows:
                 attendee_id = str(att_row["user_id"])
                 try:
-                    # Check if a DM thread already exists between host and attendee
-                    thread_row = await conn.fetchrow(
+                    # Blocking is symmetric and one chokepoint decides it
+                    # (app/lib/blocks.py). An announcement is still a DM.
+                    if await is_blocked(conn, author_user_id, attendee_id):
+                        skip_count += 1
+                        continue
+
+                    # The attendee turned this host down before. The old code
+                    # read `dm_threads.status = 'declined'` for the same reason;
+                    # a decision lives in chat_dm_requests_v1 as 'denied' now
+                    # (rpc_decide_dm_request_v1).
+                    denied = await conn.fetchval(
                         """
-                        SELECT id, status
-                        FROM dm_threads
-                        WHERE (requester_id = $1::uuid AND responder_id = $2::uuid)
-                           OR (requester_id = $2::uuid AND responder_id = $1::uuid)
-                        LIMIT 1
+                        SELECT 1 FROM public.chat_dm_requests_v1
+                         WHERE status = 'denied'
+                           AND ((requester_id = $1::uuid AND target_user_id = $2::uuid)
+                             OR (requester_id = $2::uuid AND target_user_id = $1::uuid))
+                         LIMIT 1
                         """,
                         author_user_id,
                         attendee_id,
                     )
+                    if denied:
+                        skip_count += 1
+                        continue
 
-                    if thread_row is not None:
-                        # Skip declined threads — respect the user's choice
-                        if thread_row["status"] == "declined":
-                            skip_count += 1
-                            continue
-                        thread_id = str(thread_row["id"])
-                    else:
-                        # Create a new thread (auto-accepted since it's a host announcement)
-                        new_thread = await conn.fetchrow(
-                            """
-                            INSERT INTO dm_threads (requester_id, responder_id, status)
-                            VALUES ($1::uuid, $2::uuid, 'accepted')
-                            RETURNING id
-                            """,
-                            author_user_id,
-                            attendee_id,
-                        )
-                        thread_id = str(new_thread["id"])
-
-                    # Insert the announcement message into chat_messages_v1
-                    # (legacy `chat_messages` is room-based with columns
-                    # room_id/user_id/text — wrong shape for DMs). 2026-04-22.
-                    await conn.execute(
+                    # THE LIVE THREAD TABLE (2026-09-17). This used to find or
+                    # create a row in `dm_threads` and then insert the message
+                    # into `chat_messages_v1` — whose thread_id FK was repointed
+                    # to `chat_threads_v1` on 2026-04-30 ("every sendMessage and
+                    # markThreadRead 409'd with FK violation"). Read back on
+                    # production: dm_threads holds 0 rows, so every announcement
+                    # created a fresh legacy row and every message insert then
+                    # violated that FK. The per-user `except` below logged a
+                    # warning and moved on, so the host was told nothing and the
+                    # summary line said "sent=0" — for five months.
+                    #
+                    # The pair is canonicalised least/greatest to match
+                    # `ux_chat_threads_v1_dm_pair`, exactly as
+                    # rpc_decide_dm_request_v1 does it.
+                    user_a, user_b = sorted((author_user_id, attendee_id))
+                    thread_id = await conn.fetchval(
                         """
-                        INSERT INTO chat_messages_v1 (thread_id, user_id, body)
-                        VALUES ($1::uuid, $2::uuid, $3)
+                        INSERT INTO public.chat_threads_v1 (kind, created_by, dm_user_a, dm_user_b)
+                        VALUES ('dm', $1::uuid, $2::uuid, $3::uuid)
+                        ON CONFLICT (kind, dm_user_a, dm_user_b)
+                          DO UPDATE SET updated_at = now()
+                        RETURNING id
                         """,
+                        author_user_id,
+                        user_a,
+                        user_b,
+                    )
+
+                    # Both members, or the thread is invisible to whoever is
+                    # missing — chat_thread_members_v1 is what the inbox reads.
+                    for member_id in (author_user_id, attendee_id):
+                        await conn.execute(
+                            """
+                            INSERT INTO public.chat_thread_members_v1 (thread_id, user_id, role)
+                            VALUES ($1::uuid, $2::uuid, 'member')
+                            ON CONFLICT (thread_id, user_id) DO NOTHING
+                            """,
+                            thread_id,
+                            member_id,
+                        )
+
+                    # The same RPC chat_router.send_message uses — one writer for
+                    # a DM message, so a schema change cannot fix chat and leave
+                    # announcements behind, which is this bug's whole shape.
+                    row = await conn.fetchrow(
+                        "SELECT id FROM rpc_send_message_v1($1::uuid, $2::uuid, $3::text)",
                         thread_id,
                         author_user_id,
                         dm_text,
                     )
+                    if row is None:
+                        raise RuntimeError("rpc_send_message_v1 returned no row")
 
-                    # Update thread timestamp so it surfaces in the inbox
+                    # Nothing on chat_messages_v1 bumps the thread (read back on
+                    # production: no triggers) and the inbox orders by updated_at.
                     await conn.execute(
-                        "UPDATE dm_threads SET updated_at = now() WHERE id = $1::uuid",
+                        "UPDATE public.chat_threads_v1 SET updated_at = now() WHERE id = $1::uuid",
                         thread_id,
                     )
 
                     sent_count += 1
 
                 except Exception as per_user_err:
+                    fail_count += 1
                     logger.warning(
                         "[events/dm] Failed to send announcement DM to user %s for event %s: %s",
                         attendee_id,
@@ -142,11 +186,20 @@ async def _send_announcement_dms(
                         per_user_err,
                     )
 
-            logger.info(
-                "[events/dm] Announcement DMs for event %s: sent=%d, skipped=%d, total_attendees=%d",
+            log = logger.info
+            if fail_count and sent_count == 0:
+                # Every one failed — the shape this function was in for five
+                # months while reporting it at INFO. A total failure is an error,
+                # not a statistic.
+                log = logger.error
+            elif fail_count:
+                log = logger.warning
+            log(
+                "[events/dm] Announcement DMs for event %s: sent=%d, skipped=%d, failed=%d, total_attendees=%d",
                 event_id,
                 sent_count,
                 skip_count,
+                fail_count,
                 len(attendee_rows),
             )
 

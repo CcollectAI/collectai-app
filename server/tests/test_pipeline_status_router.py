@@ -89,7 +89,14 @@ def test_pipeline_status_no_auth_required():
 
 
 def test_pipeline_status_db_error():
-    """When a DB query fails, returns status=error with message."""
+    """A failed read says so — and does NOT quote the exception (2026-09-17).
+
+    This asserted `"connection lost" in data["message"]`, i.e. it required the
+    caught exception's text in the response. `/pipeline/status` declares no auth
+    and `main.py` mounts it bare, so that text went to anyone who asked;
+    asyncpg names tables in it. `status: "error"` is the answer, the detail is
+    in the log (docs/API.md, "`detail` is UI").
+    """
     conn, ctx = _mock_conn_ctx()
     conn.fetch = AsyncMock(side_effect=RuntimeError("connection lost"))
 
@@ -100,7 +107,8 @@ def test_pipeline_status_db_error():
     assert r.status_code == 200
     data = r.json()
     assert data["status"] == "error"
-    assert "connection lost" in data["message"]
+    assert "message" not in data
+    assert "connection lost" not in r.text
     assert data["training"] == []
     assert data["ingest"] == {}
 

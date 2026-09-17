@@ -565,23 +565,35 @@ async def update_item_attributes(
     """Merge into items.attrs (jsonb). The items table has no dedicated
     item_size / size_system columns — they live in the attrs jsonb so
     callers can read them back with attrs->>'item_size' etc."""
-    pool = get_db_pool()
-
-    if pool is None:
-        return {"ok": True, "item_id": item_id}
-
     merged: Dict[str, Any] = dict(payload.attributes or {})
     if payload.item_size is not None:
         merged["item_size"] = payload.item_size
     if payload.size_system is not None:
         merged["size_system"] = payload.size_system
 
+    # Answered BEFORE the pool is looked at, on purpose: there is nothing to
+    # write, so `ok` claims nothing and the answer does not depend on the
+    # database being reachable.
     if not merged:
         return {"ok": True, "item_id": item_id}
 
+    pool = get_db_pool()
+    if pool is None:
+        # NOT `{"ok": True}` (2026-09-17). With no pool the attributes were not
+        # written, and the app takes `ok` as "saved" — it closes edit mode and
+        # shows a success toast. 84 no-pool branches in this server raise 503
+        # (counted 2026-09-17); these two — attributes and purchase price — were
+        # among the handful claiming success, and the purchase one carries the
+        # member's cost basis.
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+
     try:
         async with pool.acquire() as conn:
-            await conn.execute(
+            # The row count is READ (2026-09-17): the WHERE clause carries
+            # `user_id`, so an id that is not the member's matches nothing — and
+            # this used to answer `{"ok": true}` for it, which the app takes as
+            # saved. asyncpg returns "UPDATE <n>".
+            status = await conn.execute(
                 """
                 UPDATE items
                 SET attrs = COALESCE(attrs, '{}'::jsonb) || $3::jsonb,
@@ -599,8 +611,18 @@ async def update_item_attributes(
                 # be right — see `_jsonb_encoder` for the full writeup.
                 user_id, item_id, merged,
             )
+            if status.split()[-1] == "0":
+                # Not found OR not theirs — one message for both, so the
+                # endpoint cannot be used to probe which item ids exist. Same
+                # wording as `update_item_purchase` below.
+                raise error_response(404, "Item not found", code="NOT_FOUND")
             logger.info("[items] Updated attributes for item=%s, user=%s", item_id, user_id)
             return {"ok": True, "item_id": item_id}
+    except HTTPException:
+        # The 404 above is raised INSIDE this try. Without this clause
+        # `except Exception` swallows it and answers 500 DB_ERROR — which is
+        # exactly the mistake this edit was fixing, one layer up.
+        raise
     except Exception as e:
         logger.error("[items] DB error updating attributes: %s", e)
         raise error_response(500, "Failed to update attributes", code="DB_ERROR")
@@ -672,7 +694,9 @@ async def update_item_purchase(
 ):
     pool = get_db_pool()
     if pool is None:
-        return {"ok": True, "item_id": item_id}
+        # See update_item_attributes above: a claimed save with no write, and
+        # this one is the cost basis.
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
 
     currency = payload.purchase_currency.upper()
     price = payload.purchase_price

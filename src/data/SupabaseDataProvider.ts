@@ -124,6 +124,9 @@ export class SupabaseDataProvider implements DataProvider {
           ? t.trigger_value.listing_price : null,
         targetPrice: typeof t.trigger_value?.target_price === 'number'
           ? t.trigger_value.target_price : null,
+        // The flag, not `false`. Dropping it made mark-as-read a no-op that
+        // looked like it worked until the next fetch.
+        read: t.read === true,
       }));
     } catch (err) {
       logger.error('[SupabaseDataProvider] listAlertsFeed error:', err);

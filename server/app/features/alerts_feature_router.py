@@ -302,6 +302,10 @@ async def get_trigger_history(
     limit, offset = pagination
 
     if not db_configured():
+        # empty-ok: with no database this router keeps alerts in
+        # `_IN_MEMORY_ALERTS` (dev only) and keeps no trigger HISTORY at all, so
+        # "nothing has fired" is the truth here, not a swallowed failure. The
+        # DB-error path below raises 503; only this dev branch answers empty.
         return {"triggers": [], "unread_count": 0}
 
     try:
@@ -361,11 +365,23 @@ async def mark_trigger_read(trigger_id: str, user_id: str = Depends(get_current_
         raise error_response(400, "Invalid trigger_id format", code=ErrorCode.INVALID_UUID)
 
     if not db_configured():
-        return {"ok": True}
+        # NOT `{"ok": True}` (2026-09-17). There is no trigger history without a
+        # database (see get_trigger_history above), so there is no row with this
+        # id to mark — claiming success for it is the "success without a write"
+        # class.
+        raise error_response(404, "Trigger not found", code=ErrorCode.NOT_FOUND)
 
     try:
         async with get_conn() as conn:
-            await conn.execute(
+            # The row count is READ, and a failure RAISES (2026-09-17). All
+            # three exits used to answer `{"ok": True}`:
+            #   * the query could fail and the warning went only to the log;
+            #   * a trigger id belonging to someone else matched no row;
+            #   * and `useAlertsFeed.markAsRead` flips the row to read
+            #     OPTIMISTICALLY, so `ok` is what stops it rolling back. The
+            #     alert then reappeared unread on the next fetch with nothing
+            #     anywhere saying why.
+            status = await conn.execute(
                 """
                 UPDATE public.alert_trigger_history
                 SET read = true
@@ -378,4 +394,10 @@ async def mark_trigger_read(trigger_id: str, user_id: str = Depends(get_current_
         logger.warning(
             "mark_trigger_read failed trigger=%s user=%s", trigger_id, user_id, exc_info=True
         )
+        raise error_response(503, "Could not mark this alert as read", code="DB_ERROR")
+
+    if status.split()[-1] == "0":
+        # Not found OR not theirs — one message for both, so the endpoint
+        # cannot be used to probe which trigger ids exist.
+        raise error_response(404, "Trigger not found", code=ErrorCode.NOT_FOUND)
     return {"ok": True}

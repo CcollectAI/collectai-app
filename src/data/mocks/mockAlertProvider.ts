@@ -9,6 +9,7 @@ export async function listAlertsFeed(pagination?: PaginationParams): Promise<Ale
   const mockAlerts: AlertFeedItem[] = [
     {
       id: 'alert-1',
+      read: false,
       type: 'price_drop',
       title: 'Price drop on Charizard VMAX',
       body: 'Down 15% from your target price. Now €297 on Cardmarket.',
@@ -17,6 +18,7 @@ export async function listAlertsFeed(pagination?: PaginationParams): Promise<Ale
     },
     {
       id: 'alert-2',
+      read: false,
       type: 'restock',
       title: 'LEGO UCS Millennium Falcon back in stock',
       body: 'Available at LEGO.com for €849. Limited quantities.',
@@ -25,6 +27,7 @@ export async function listAlertsFeed(pagination?: PaginationParams): Promise<Ale
     },
     {
       id: 'alert-3',
+      read: false,
       type: 'drop_detected',
       title: 'New Pokémon 151 reprint wave',
       body: 'Booster boxes spotted at distributor. Expected retail arrival: 2 weeks.',
@@ -32,6 +35,7 @@ export async function listAlertsFeed(pagination?: PaginationParams): Promise<Ale
     },
     {
       id: 'alert-4',
+      read: false,
       type: 'price_spike',
       title: 'MTG Mox Diamond spiking',
       body: 'Up 22% in the last 48 hours. Current mid: €485.',
@@ -40,6 +44,7 @@ export async function listAlertsFeed(pagination?: PaginationParams): Promise<Ale
     },
     {
       id: 'alert-5',
+      read: false,
       type: 'price_drop',
       title: 'Funko Pop Darth Maul below €200',
       body: 'Holographic variant now at €189 on eBay.',
@@ -47,6 +52,7 @@ export async function listAlertsFeed(pagination?: PaginationParams): Promise<Ale
     },
     {
       id: 'alert-6',
+      read: true,
       type: 'completeness',
       title: 'Base Set collection at 85%',
       body: 'You\'re 6 cards away from completing your Base Set 1st Edition collection.',
@@ -54,6 +60,7 @@ export async function listAlertsFeed(pagination?: PaginationParams): Promise<Ale
     },
     {
       id: 'alert-7',
+      read: false,
       type: 'restock',
       title: 'Gunpla PG Unicorn restocked',
       body: 'HLJ has stock. Ships internationally.',
@@ -61,6 +68,7 @@ export async function listAlertsFeed(pagination?: PaginationParams): Promise<Ale
     },
     {
       id: 'alert-8',
+      read: false,
       type: 'price_drop',
       title: 'Warhammer Knight Castellan -18%',
       body: 'Games Workshop sale. Now €135 (was €165).',
@@ -68,6 +76,7 @@ export async function listAlertsFeed(pagination?: PaginationParams): Promise<Ale
     },
     {
       id: 'alert-9',
+      read: true,
       type: 'rarity',
       title: 'Rare listing detected',
       body: 'PSA 10 Gold Star Umbreon listed on eBay. Only 3rd copy this year.',
@@ -75,6 +84,7 @@ export async function listAlertsFeed(pagination?: PaginationParams): Promise<Ale
     },
     {
       id: 'alert-10',
+      read: false,
       type: 'drop_detected',
       title: 'KAWS Companion drop announced',
       body: 'New colorway dropping March 15 on kawsone.com.',
@@ -82,6 +92,7 @@ export async function listAlertsFeed(pagination?: PaginationParams): Promise<Ale
     },
     {
       id: 'alert-11',
+      read: false,
       type: 'price_spike',
       title: 'Disney Lorcana Elsa surging',
       body: 'Enchanted foil up 45% this week. Now €89.',
@@ -89,6 +100,7 @@ export async function listAlertsFeed(pagination?: PaginationParams): Promise<Ale
     },
     {
       id: 'alert-12',
+      read: false,
       type: 'restock',
       title: 'Hot Wheels RLC membership open',
       body: 'Annual membership now available. Includes exclusive Skyline.',

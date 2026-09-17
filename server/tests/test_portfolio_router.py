@@ -54,7 +54,11 @@ def _demo_item(**overrides):
 
 class TestPortfolioTimeseries:
 
-    def test_timeseries_no_db_no_signals_returns_empty(self):
+    def test_timeseries_no_db_no_signals_is_503_not_empty(self):
+        """No database AND no proxy is UNKNOWN, not an empty chart.
+
+        Was `200 {"points": []}` — which Home drew as a flat line at zero.
+        """
         mock_client = AsyncMock()
         mock_client.get = AsyncMock(side_effect=httpx.ConnectError("refused"))
         mock_client.is_closed = False
@@ -62,8 +66,8 @@ class TestPortfolioTimeseries:
         with _override_no_pool(), \
              patch("app.routes.portfolio_router._get_http_client", return_value=mock_client):
             r = client.get("/portfolio/timeseries?range=30d", headers=_AUTH_HEADERS)
-        assert r.status_code == 200
-        assert r.json() == {"points": []}
+        assert r.status_code == 503
+        assert r.json()["detail"]["code"] in ("DB_UNAVAILABLE", "DB_ERROR")
 
     def test_timeseries_no_db_falls_back_to_proxy(self):
         mock_response = httpx.Response(
@@ -109,7 +113,9 @@ class TestPortfolioTimeseries:
 
 class TestPortfolioOverview:
 
-    def test_overview_no_db_falls_back(self):
+    def test_overview_no_db_and_no_proxy_is_503(self):
+        """`{"total_value": 0, "item_count": 0}` is the sentence Home puts in
+        its hero. A member with a EUR 1.348 collection read EUR 0."""
         mock_client = AsyncMock()
         mock_client.get = AsyncMock(side_effect=httpx.ConnectError("refused"))
         mock_client.is_closed = False
@@ -117,8 +123,8 @@ class TestPortfolioOverview:
         with _override_no_pool(), \
              patch("app.routes.portfolio_router._get_http_client", return_value=mock_client):
             r = client.get("/portfolio/overview", headers=_AUTH_HEADERS)
-        assert r.status_code == 200
-        assert r.json() == {"total_value": 0, "item_count": 0, "items": []}
+        assert r.status_code == 503
+        assert r.json()["detail"]["code"] in ("DB_UNAVAILABLE", "DB_ERROR")
 
     def test_overview_with_db(self):
         mock_rows = [
@@ -144,7 +150,7 @@ class TestPortfolioOverview:
 
 class TestPortfolioItems:
 
-    def test_items_no_db(self):
+    def test_items_no_db_is_503_not_an_empty_collection(self):
         mock_client = AsyncMock()
         mock_client.get = AsyncMock(side_effect=httpx.ConnectError("refused"))
         mock_client.is_closed = False
@@ -152,8 +158,8 @@ class TestPortfolioItems:
         with _override_no_pool(), \
              patch("app.routes.portfolio_router._get_http_client", return_value=mock_client):
             r = client.get("/portfolio/items", headers=_AUTH_HEADERS)
-        assert r.status_code == 200
-        assert r.json() == {"items": []}
+        assert r.status_code == 503
+        assert r.json()["detail"]["code"] in ("DB_UNAVAILABLE", "DB_ERROR")
 
 
 # ---- Summary endpoint ----

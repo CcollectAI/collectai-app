@@ -4,7 +4,13 @@ All tests use the in-memory fallback (DB_ENABLED=false) so no real database is n
 The social_router endpoints require a DB pool, so these tests verify:
 - Input validation (UUID format, self-block)
 - Auth dependency (dev mode bypass)
-- Offline mode responses when pool is None
+- That a missing pool is reported, NOT reported as success (2026-09-17)
+
+Five tests in here used to assert `200 {"success": true}` for block, unblock and
+the blocked list with no database — they pinned a safety claim the server could
+not keep. Blocking is the one action that must never be optimistic, so those now
+assert 503, and the idempotency case is exercised against a mock pool where it
+actually means something (ON CONFLICT DO NOTHING).
 """
 import os
 import sys
@@ -44,18 +50,42 @@ DEV_USER_ID = _CONFIGURED_DEV_USER_ID or "dev-user-local"
 TARGET_USER_ID = "00000000-0000-0000-0000-000000000099"
 
 
+def _mock_pool():
+    """A pool whose connection accepts every statement, transaction included."""
+    conn = MagicMock()
+    conn.execute = AsyncMock(return_value="UPDATE 1")
+    conn.fetch = AsyncMock(return_value=[])
+    conn.fetchrow = AsyncMock(return_value=None)
+    conn.fetchval = AsyncMock(return_value=None)
+
+    tx = MagicMock()
+    tx.__aenter__ = AsyncMock(return_value=None)
+    tx.__aexit__ = AsyncMock(return_value=False)
+    conn.transaction = MagicMock(return_value=tx)
+
+    acquire = MagicMock()
+    acquire.__aenter__ = AsyncMock(return_value=conn)
+    acquire.__aexit__ = AsyncMock(return_value=False)
+
+    pool = MagicMock()
+    pool.acquire = MagicMock(return_value=acquire)
+    return pool
+
+
 # ---------------------------------------------------------------------------
 # Block endpoint tests
 # ---------------------------------------------------------------------------
 
 class TestBlockUser:
-    def test_block_user_offline_mode(self):
-        """Block succeeds in offline mode (no DB pool)."""
+    def test_block_without_a_db_is_503_not_success(self):
+        """No pool means nobody was blocked — so do not answer `success`.
+
+        The member closes the sheet believing they are protected; the other
+        account is back on the next reload.
+        """
         resp = client.post(f"/social/block/{TARGET_USER_ID}")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["success"] is True
-        assert "offline" in data["message"].lower() or "blocked" in data["message"].lower()
+        assert resp.status_code == 503
+        assert resp.json()["detail"]["code"] == "DB_UNAVAILABLE"
 
     def test_block_invalid_uuid(self):
         """Block rejects invalid UUID."""
@@ -73,12 +103,11 @@ class TestBlockUser:
 # ---------------------------------------------------------------------------
 
 class TestUnblockUser:
-    def test_unblock_user_offline_mode(self):
-        """Unblock succeeds in offline mode."""
+    def test_unblock_without_a_db_is_503_not_success(self):
+        """The gentler direction of the same lie, and still a lie."""
         resp = client.delete(f"/social/block/{TARGET_USER_ID}")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["success"] is True
+        assert resp.status_code == 503
+        assert resp.json()["detail"]["code"] == "DB_UNAVAILABLE"
 
     def test_unblock_invalid_uuid(self):
         """Unblock rejects invalid UUID."""
@@ -91,12 +120,15 @@ class TestUnblockUser:
 # ---------------------------------------------------------------------------
 
 class TestListBlocked:
-    def test_list_blocked_offline_mode(self):
-        """List blocked returns empty list in offline mode."""
+    def test_list_blocked_without_a_db_is_503_not_empty(self):
+        """`blocked: []` reads as "you have blocked nobody" (rule F).
+
+        On the one screen where a member is checking a safety decision they
+        already made, an empty list is the worst possible wrong answer.
+        """
         resp = client.get("/social/blocked")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["blocked"] == []
+        assert resp.status_code == 503
+        assert resp.json()["detail"]["code"] == "DB_UNAVAILABLE"
 
 
 # ---------------------------------------------------------------------------
@@ -104,15 +136,25 @@ class TestListBlocked:
 # ---------------------------------------------------------------------------
 
 class TestEdgeCases:
-    def test_block_same_user_twice_offline(self):
-        """Blocking the same user twice should not error (idempotent)."""
-        resp1 = client.post(f"/social/block/{TARGET_USER_ID}")
-        assert resp1.status_code == 200
-        resp2 = client.post(f"/social/block/{TARGET_USER_ID}")
-        assert resp2.status_code == 200
+    @patch("app.features.social_router.get_db_pool")
+    def test_block_same_user_twice_is_idempotent(self, mock_get_pool):
+        """Tested against a pool, because that is where idempotency lives.
 
-    def test_unblock_without_prior_block(self):
-        """Unblocking a user not blocked should succeed gracefully."""
+        The old version of this test ran with NO pool, so it proved only that
+        the offline branch returned 200 twice — it never reached
+        `ON CONFLICT (blocker_id, blocked_id) DO NOTHING`, which is the actual
+        guarantee.
+        """
+        mock_get_pool.return_value = _mock_pool()
+        for _ in range(2):
+            resp = client.post(f"/social/block/{TARGET_USER_ID}")
+            assert resp.status_code == 200, resp.text
+            assert resp.json()["success"] is True
+
+    @patch("app.features.social_router.get_db_pool")
+    def test_unblock_without_prior_block_succeeds(self, mock_get_pool):
+        """A DELETE that matches no row is still a completed unblock."""
+        mock_get_pool.return_value = _mock_pool()
         resp = client.delete(f"/social/block/{TARGET_USER_ID}")
         assert resp.status_code == 200
 

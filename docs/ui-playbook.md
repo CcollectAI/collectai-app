@@ -2683,6 +2683,42 @@ public profile screen reads. So a member saved a new username, saw it in
 Settings, and found the old one on "View public profile". `clearProfileCaches()`
 clears both. **Count the caches before trusting a refresh.**
 
+## An optimistic flip needs somewhere to fall back to (2026-09-17)
+
+`useAlertsFeed.markAsRead` flipped the row to read, posted to the server, and on
+failure logged and left the flip standing:
+
+```ts
+// before
+setAlerts(prev => prev.map(a => a.id === id ? { ...a, isRead: true } : a));
+try { await collectorsApi.markTriggerRead(id); }
+catch (e) { logger.error(...); /* Best-effort — UI already updated optimistically */ }
+```
+
+"Best-effort" is the wrong frame for a write the screen has already reported as
+done. The member sees the alert handled; minutes later the cache expires and it
+is back, unread, with nothing anywhere explaining it. **An optimistic update is
+a PREDICTION — when the prediction is wrong, undo it.** Per row, not per batch:
+`markAllAsRead` cleared the whole list and let the failed half reappear later,
+so it now rolls back exactly the ids whose promise rejected.
+
+Three things to check on any optimistic action:
+
+1. **Does the failure path restore the previous value?** Not the initial value —
+   the one it replaced.
+2. **Is the thing being flipped actually persisted anywhere?** A `derived-…`
+   alert is computed client-side from a price band, has no row, and its id is
+   not even a uuid — the endpoint answered 400 for every one. Do not post it,
+   and do not roll it back either.
+3. **Is the cache cleared on success?** The feed is cached `TTL_MEDIUM`; a
+   persisted write that leaves a stale list behind looks exactly like a write
+   that did not happen.
+
+And the reason this was invisible for so long: the hook hardcoded
+`isRead: false` while the server had been returning `read` all along. **A write
+whose result the reader ignores cannot be told from a write that failed** —
+check the read path before concluding the write is broken.
+
 ## The provider that answered "not blocked" (2026-09-17)
 
 Rule F reads `catch` blocks. **supabase-js does not throw** — it resolves

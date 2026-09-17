@@ -331,8 +331,24 @@ class TestGetEvent:
         resp = client.post("/events", json=_valid_event_payload())
         event_id = resp.json()["id"]
         _IN_MEMORY_EVENTS[event_id]["status"] = "rejected"
+        # created_by=None is the production shape: 556 quarantined rows, 0 with
+        # a creator. It matters because `_hidden_from_detail` deliberately
+        # exempts the CREATOR — without this the test passed only when the
+        # caller's dev identity happened not to match the row it had just
+        # created, which is how it came to depend on test collection order.
+        _IN_MEMORY_EVENTS[event_id]["created_by"] = None
         r = client.get(f"/events/{event_id}")
         assert r.status_code == 404
+
+    def test_the_creator_still_opens_their_own_hidden_event(self):
+        """The other half of the same rule, so neither can drift alone."""
+        resp = client.post("/events", json=_valid_event_payload())
+        event_id = resp.json()["id"]
+        creator = _IN_MEMORY_EVENTS[event_id]["created_by"]
+        _IN_MEMORY_EVENTS[event_id]["status"] = "rejected"
+        assert creator is not None
+        r = client.get(f"/events/{event_id}")
+        assert r.status_code == 200
 
 
 # ===========================================================================

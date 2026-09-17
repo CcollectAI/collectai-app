@@ -9,6 +9,7 @@ import { featureFlags } from '@/config/featureFlags';
 import { dataProvider } from '@/data';
 import { collectorsApi } from '@/api/collectorsApi';
 import { logger } from '@/lib/logger';
+import { clearAlertsFeedCache } from '@/data/CachedDataProvider';
 
 export type UseAlertsFeedOptions = {
   limit?: number;
@@ -25,6 +26,14 @@ export type UseAlertsFeedReturn = {
   markAllAsRead: () => Promise<void>;
   refetch: () => Promise<void>;
 };
+
+/**
+ * A client-side alert with no row behind it. Built below as
+ * `derived-drop-<itemId>` / `derived-spike-<itemId>` from an item's price
+ * band, so its id is not a trigger-history uuid and must never be sent to
+ * POST /alerts/trigger-history/{id}/read.
+ */
+const isDerived = (id: string) => id.startsWith('derived-');
 
 export function useAlertsFeed(
   options: UseAlertsFeedOptions = {}
@@ -83,7 +92,11 @@ export function useAlertsFeed(
           // The real price the alert fired on. Was hardcoded 0.
           value: fi.price ?? 0,
           triggeredAt: fi.createdAt,
-          isRead: false,
+          // The SERVER's flag (2026-09-17). This was hardcoded `false`, so every
+          // alert the member had already handled came back as new on the next
+          // fetch, `unreadOnly` filtered nothing, and the mark-read write was
+          // invisible — the row was written and then ignored.
+          isRead: fi.read,
         };
       });
 
@@ -152,22 +165,50 @@ export function useAlertsFeed(
     setAlerts((prev) =>
       prev.map((a) => (a.id === alertId ? { ...a, isRead: true } : a))
     );
-    // Persist to backend (fire-and-forget)
+    // A DERIVED alert (`derived-drop-<itemId>`) has no trigger-history row, so
+    // there is nothing to persist: the id is not a uuid and the endpoint
+    // answered 400 for every one of them. It is recomputed unread on the next
+    // fetch either way — that is a known limit of derived alerts, not a write
+    // to retry.
+    if (isDerived(alertId)) return;
     try {
       await collectorsApi.markTriggerRead(alertId);
+      // The feed is cached TTL_MEDIUM; without this the next read returns the
+      // list that still says unread.
+      await clearAlertsFeedCache();
     } catch (e) {
-      logger.error('[silent-fallback] alertsFeed: optimistic action failed to persist:', e);
-      // Best-effort — UI already updated optimistically
+      // ROLL BACK (2026-09-17). The optimistic flip used to stand whatever
+      // happened, so a failed write showed the alert as handled until the cache
+      // expired and it silently came back. The screen now keeps saying what the
+      // server actually holds.
+      logger.error('[alertsFeed] markTriggerRead failed; rolling the row back:', e);
+      setAlerts((prev) =>
+        prev.map((a) => (a.id === alertId ? { ...a, isRead: false } : a))
+      );
     }
   }, []);
 
   const markAllAsRead = useCallback(async () => {
     const unread = alerts.filter((a) => !a.isRead);
+    const persistable = unread.filter((a) => !isDerived(a.id));
     setAlerts((prev) => prev.map((a) => ({ ...a, isRead: true })));
-    // Persist each to backend (fire-and-forget, don't block on failures)
-    await Promise.allSettled(
-      unread.map((a) => collectorsApi.markTriggerRead(a.id))
+    const results = await Promise.allSettled(
+      persistable.map((a) => collectorsApi.markTriggerRead(a.id))
     );
+    // Same rollback, per row: "mark all read" that half-failed used to clear the
+    // whole list and let the failed half reappear later with no explanation.
+    const failed = persistable
+      .filter((_, i) => results[i].status === 'rejected')
+      .map((a) => a.id);
+    if (failed.length) {
+      logger.error(
+        `[alertsFeed] markAllAsRead: ${failed.length}/${persistable.length} did not persist`
+      );
+      setAlerts((prev) =>
+        prev.map((a) => (failed.includes(a.id) ? { ...a, isRead: false } : a))
+      );
+    }
+    if (failed.length < persistable.length) await clearAlertsFeedCache();
   }, [alerts]);
 
   const unreadCount = useMemo(() => alerts.filter((a) => !a.isRead).length, [alerts]);

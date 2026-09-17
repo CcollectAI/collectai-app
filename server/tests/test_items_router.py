@@ -279,16 +279,26 @@ class TestUpdateItemAttributes:
     def teardown_method(self):
         _clear_overrides()
 
-    def test_update_attributes_offline_noop(self):
-        """When pool is None, returns ok without error."""
+    def test_update_attributes_offline_is_503_not_ok(self):
+        """No pool means the attributes were NOT written (2026-09-17).
+
+        This test asserted `200 {"ok": true}` — it pinned the bug. The app takes
+        `ok` as "saved": it closes edit mode and toasts success, so a member's
+        edit vanished silently. 68 other handlers raise 503 for a missing pool.
+        """
         resp = client.patch("/items/some-item-id/attributes", json={
             "attributes": {"color": "blue"},
         })
-        assert resp.status_code == 200
-        assert resp.json()["ok"] is True
+        assert resp.status_code == 503
+        assert resp.json()["detail"]["code"] == "DB_UNAVAILABLE"
 
     def test_update_attributes_empty_payload(self):
-        """Empty attributes + no size fields returns ok immediately."""
+        """Empty attributes + no size fields returns ok immediately.
+
+        Still 200 with no pool, and that is honest: nothing was going to be
+        written either way, so the answer does not depend on the database. The
+        handler checks this BEFORE `get_db_pool()` for exactly that reason.
+        """
         resp = client.patch("/items/some-item-id/attributes", json={
             "attributes": {},
         })
