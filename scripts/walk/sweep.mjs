@@ -368,6 +368,12 @@ try {
     const slug = r.route.replace(/[()[\]]/g, '').replace(/\//g, '__') || 'root';
     process.stdout.write(`${r.route.padEnd(36)} `);
 
+    // ONE ROUTE MUST NOT KILL THE ROUND (2026-09-17). A hung `adb` at route 12
+    // of 79 threw out of the loop and the process exited with no report at all:
+    // eleven routes walked, nothing written, nothing to review. Whatever one
+    // route does to adb, the round continues and says so in its own row.
+    try {
+
     sh('logcat -c', { allowFail: true });
     // single-quote the URL on the device: `&` is a shell separator there (ANDROID_LAUNCH gotcha 11)
     sh(`am start -a android.intent.action.VIEW -d '${url}' ${PKG} >/dev/null 2>&1`, { allowFail: true });
@@ -427,8 +433,14 @@ try {
       } else staleScreen = true;
     }
     const settleS = Math.round(elapsed());
-    const png = adb(['exec-out', 'screencap', '-p'], { binary: true });
-    writeFileSync(join(OUT, 'shots', `${slug}.png`), png);
+    // A screenshot is EVIDENCE, not the round. `adb exec-out screencap` hung on
+    // 2026-09-17 with a second emulator running on the same machine, the 60 s
+    // default timeout threw, and the whole round died at route 12 of 79 with no
+    // report written — 11 routes' work lost to a picture. Capped, non-fatal, and
+    // recorded as missing if it fails.
+    const png = adb(['exec-out', 'screencap', '-p'], { binary: true, allowFail: true, timeout: 25 });
+    let shotOk = false;
+    if (png && png.length > 1000) { writeFileSync(join(OUT, 'shots', `${slug}.png`), png); shotOk = true; }
     // The loop's last dump IS the settled screen — no third slow dump, unless
     // it capped out, in which case one more try before judging an empty tree.
     // Capped dumps all came back empty: the UI never went idle within 10 s. One
@@ -475,7 +487,18 @@ try {
     if (logs.fatal) { res.flags.push(['CRASH', logs.fatal]); await coldStart(); sinceRestart = 0; }
     const real = res.flags.filter(([k]) => k !== 'JS_ERRORS');
     console.log(`${real.length ? real.map(([k]) => k).join(' ') : 'ok'}  (${settleS}s)`);
-    results.push({ route: r.route, url, redirect: !!r.redirect, why: r.why, settleS, shot: `shots/${slug}.png`, ...res });
+    if (!shotOk) res.flags.push(['NO_SHOT', 'screencap timed out — the checks below ran on the dump, but there is no picture to review']);
+    results.push({ route: r.route, url, redirect: !!r.redirect, why: r.why, settleS, shot: shotOk ? `shots/${slug}.png` : null, ...res });
+    } catch (e) {
+      // Recorded as a finding, not swallowed: a route nobody could walk is not
+      // a route that passed.
+      console.log(`TOOL_ERROR  (${e.message.slice(0, 80)})`);
+      results.push({ route: r.route, url, redirect: !!r.redirect, why: r.why, settleS: null, shot: null, title: null,
+        flags: [['TOOL_ERROR', `the sweep itself failed on this route: ${e.message.slice(0, 160)}`]] });
+      // The device may be wedged; a cold start is the cheapest way back to a
+      // known state before the next route.
+      try { await coldStart(); sinceRestart = 0; } catch { /* the finally block reports the round either way */ }
+    }
   }
 } finally {
   for (const f of restore.reverse()) await f();

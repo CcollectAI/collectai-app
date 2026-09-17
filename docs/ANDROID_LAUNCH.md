@@ -797,7 +797,8 @@ npm run walk -- --only 'settings,notifications' --timeout 20   # a subset
   uiautomator XML, JS error log → checks: FOCUS, CRASH, **SLOW_LOAD** (a
   spinner or skeleton still up at `--spinner-budget`, default 5 s), STILL_LOADING,
   **SAME_AS_PREVIOUS** (the screen never changed from the route before it — not
-  reached, not judged), NO_TITLE, NO_BACK, NO_CLUSTER, NO_NAVBAR, RAW_TEXT (ms counts, HTTP plumbing,
+  reached, not judged), **TOOL_ERROR** / **NO_SHOT** (the sweep itself failed on
+  that route, or its screenshot did), NO_TITLE, NO_BACK, NO_CLUSTER, NO_NAVBAR, RAW_TEXT (ms counts, HTTP plumbing,
   undefined/NaN, raw i18n keys, `€-10`), UNTRANSLATED / LIKELY_ENGLISH (non-en).
 - **Output:** `builds/walk/<local time>-<label>/index.html` — a contact sheet,
   flagged screens first, plus a "repeated across screens" list (a flag on ≥40%
@@ -884,7 +885,19 @@ routes** recorded a badge count as their title, i.e. a third of the app's titles
 were never really checked. A count is never a title — `^\d+$` is excluded now.
 
 Both proven by re-walking the five affected routes (round 8): every one reports
-its own title. **Every `ok` in rounds 1-7 for a route walked immediately after
+its own title.
+
+**And the round that proved it died at route 12 of 79.** `adb exec-out
+screencap` hung (a second emulator was running on the same machine), the 60 s
+default timeout threw, and the process exited with NO report: eleven routes
+walked, nothing written, nothing to review — a picture killed the round. Two
+fixes, both about the same rule: **a screenshot is evidence, not the round.**
+The screencap is capped at 25 s, non-fatal, and a missing one is reported as
+`NO_SHOT` with the dump-based checks still run; and every route now runs inside
+its own try/catch, so whatever one route does to adb, the round continues and
+that route says `TOOL_ERROR` instead of passing silently. Proven by injecting a
+fault into one route: it reported TOOL_ERROR, the other three walked, the report
+was written. **Every `ok` in rounds 1-7 for a route walked immediately after
 another is only as good as this, which is why the round log keeps the tool
 column.**
 
