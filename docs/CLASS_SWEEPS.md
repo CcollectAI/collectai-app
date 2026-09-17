@@ -53,6 +53,7 @@ Two rules the tooling learned the hard way:
 | I | One tap, two writes (unguarded async handlers) | 2026-09-17 | ✅ swept by checker, 6 fixed + 5 reasoned, `check:double-submit` in prebuild |
 | J | A member can see data that is not theirs (RLS / IDOR / public views) | 2026-09-17 | ✅ prod verified clean; repo drift fixed + gated |
 | M | The database fails, and the app reads the failure as "no" | 2026-09-17 | app half fixed + gated; `20260917b` **applied**; `20260917c` (block→dm_requests + block checks) written, NOT applied |
+| R | Which endpoints answer without a token | 2026-09-17 | ✅ 21 enumerated, all deliberate; documented in API.md; the one real leak fixed in Q |
 | Q | The server's error text is member copy | 2026-09-17 | ✅ 13 fixed to sentences, 10 reasoned + `check_error_copy.py`; one PUBLIC endpoint was leaking DB text |
 | P | The SERVER answers a failure with an empty 200 | 2026-09-17 | ✅ 10 handlers raise 503 + `check_empty_on_failure.py`; client type can say "unknown" |
 | O | A number rounded into a different fact | 2026-09-17 | ✅ sub-euro prices + sign; found by reviewing a screenshot, not by a checker |
@@ -355,6 +356,36 @@ right group. What is actually missing is the GUARD — nothing stops a bad value
 being written, and the RPC and the client now write two different vocabularies
 into one column. Applying that migration is Merle's call (it rewrites RPCs and
 migrates data); it is not urgent, and it should not be replayed blind.
+
+## R — which endpoints answer without a token (2026-09-17)
+
+Prompted by finding `/pipeline/status` public while annotating it as
+"operator-facing". If one endpoint's audience was an assumption, the rest were
+too, so the whole surface was enumerated: **21 handlers** with no auth in the
+signature or decorator, no router-level dependency and no in-body key check.
+
+**Outcome: no hole.** All 21 are deliberate — catalogue and taxonomy reference
+data, set data, fee schedules (the handler's docstring says "public, no auth
+required"), a sponsor's public profile, the two provider webhooks (each verifies
+its own signature), the beta-signup form, the CSV template, health endpoints, and
+the photo capability URL whose boundary is `_PHOTO_KEY_RE` and whose docstring
+says so. The one real defect — the public endpoint returning `str(e)` — is fixed
+in class Q. The full list now lives in `docs/API.md` so "public by design" can be
+told apart from "public by accident" without re-deriving it.
+
+**The sweep took three iterations, and each wrong version was wrong the same
+way.** A hand-written list of dependency names missed
+`require_seller_age_verified` (it returns the user id). Reading only the
+signature missed `dependencies=[Depends(get_current_user_id)]` in the DECORATOR
+(`/vision-predict/classify`). Ignoring `APIRouter(dependencies=…)` would miss a
+whole file at once. **44 → 24 → 21**, and the first number would have been
+reported as 44 unauthenticated endpoints including `PUT …/accounts/defaults/ebay`
+— a false alarm about writing another member's eBay settings.
+
+No gate written: the honest check is "documented Auth matches the code", which
+needs path resolution through router prefixes and mounts (`main.py` mounts each
+router twice, bare and under `_v1`). The enumeration is in API.md and cheap to
+re-run — `/tmp` probe in the commit, three ways of being wrong written down.
 
 ## Q — the server's error text is member copy (2026-09-17)
 

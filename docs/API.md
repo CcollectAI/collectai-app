@@ -15,6 +15,39 @@ In `DEV_MODE=true`, JWT auth falls back to `DEV_USER_ID` without a token.
 
 ---
 
+## Every endpoint that answers WITHOUT a token (enumerated 2026-09-17)
+
+Read out of the code, not out of this file: 21 handlers have no `Depends(...)`
+auth in the signature or the decorator, no router-level dependency, and no
+in-body key check. All 21 are deliberate; the list exists so the next person can
+tell "public by design" from "public by accident" without re-deriving it.
+
+| Method | Path | Why it is open |
+|---|---|---|
+| GET | `/catalog/{category_id}/items`, `/catalog/{category_id}/items/{item_key}/price`, `/catalog/{category_id}/collections`, `/catalog/top-movers` | catalogue reference data, IP rate limited |
+| GET | `/sets`, `/sets/{set_id}` | set reference data |
+| GET | `/taxonomy/categories`, `/taxonomy/{version}` | category vocabulary |
+| GET | `/marketplace/listings/fees`, POST `/marketplace/listings/fees/calculate` | fee schedules; the handler's own docstring says "public, no auth required" |
+| GET | `/sponsor-companies/{company_id}` | a sponsor's public profile |
+| GET | `/photos/view/{photo_key:path}` | **capability URL**: React Native's `<Image>` cannot send an Authorization header. `_PHOTO_KEY_RE` is the security boundary — see the handler's docstring |
+| POST | `/webhook`, `/revenuecat-webhook` | provider webhooks; each verifies its own signature/secret in the body |
+| POST | `/api/beta-signup` | the landing page's form |
+| GET | `/api/imports/template` | the CSV import template |
+| GET | `/marketplace/health`, `/marketplace/adapter-health`, `/vision-predict/health`, `/vision-predict/categories`, `/pipeline/status` | health and reference |
+
+**`/pipeline/status` used to return `str(e)` on a DB failure** — internal error
+text from a public endpoint. Fixed 2026-09-17; the text stays in the log.
+
+Two things that look like findings and are not, recorded so the next sweep does
+not re-open them: `POST /vision-predict/classify` declares its auth in the
+DECORATOR (`dependencies=[Depends(get_current_user_id), …]`), and
+`PUT /marketplace/listings/accounts/defaults/ebay` uses
+`Depends(require_seller_age_verified)`, which returns the user id. A scan that
+only reads the signature, or that matches a hand-written list of dependency
+names, reports both as open.
+
+---
+
 ## Health & System
 
 | Method | Path | Auth | Description |
