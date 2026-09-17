@@ -726,6 +726,29 @@ Verified on prod 2026-09-17: `processed_webhook_events` held 10 rows, and **0
 paid events had no `subscriptions` row** — the bug had not yet bitten a real
 member (the 6 ledger rows are test events with unresolvable users).
 
+## No database means no success (2026-09-17)
+
+Every **write** endpoint (`POST`/`PATCH`/`PUT`/`DELETE`) answers **503
+`DB_UNAVAILABLE`** when the server has no database pool. It never answers 200
+with `ok`/`success`, because the app treats those as saved: it closes edit mode,
+shows a toast, and stops rolling its optimistic update back.
+
+Seven used to. The ones a client may need to re-handle:
+
+| endpoint | used to answer |
+|---|---|
+| `PATCH /items/{id}/attributes`, `PATCH /items/{id}/purchase` | `{"ok": true, "item_id": …}` |
+| `POST /alerts/trigger-history/{id}/read` | `{"ok": true}` (now 404 — with no database there is no trigger history at all) |
+| `POST`/`DELETE /social/block/{user_id}` | `{"success": true, "message": "User blocked (offline mode)"}` |
+| `POST /feedback/submit`, `/feedback/correction`, `/feedback/verified-sale` | `{"success": true, "message": "… recorded (offline mode)"}` |
+| `PUT /settings` | `success: true` **with the submitted values echoed back**, so Settings showed a currency the server had never stored |
+
+A payload that SAYS nothing was written is fine and is not a claim —
+`POST /notifications/feedback/impression` answers `{"ok": true, "stored":
+false}`. So is a branch that really performs the action without a database (the
+dev-only in-memory alert store). Gated by
+`python3 server/scripts/check_unwritten_ok.py` in `verify:prebuild`.
+
 ## Error Response Format
 
 All errors use a consistent format via `error_response()`:

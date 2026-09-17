@@ -360,13 +360,19 @@ class TestCorrectionWithOwnership:
         # No taxonomy_corrections insert since corrected_category is not set
         assert mock_conn.execute.call_count == 1
 
-    def test_correction_offline_mode(self):
-        """When pool is None, return offline success without DB interaction."""
+    def test_no_pool_is_503_without_touching_the_database(self):
+        """Was `test_correction_offline_mode`, which required
+        `"Correction recorded (offline mode)"` — a message that told the member
+        their correction was kept when nothing was written (2026-09-17).
+
+        The "without DB interaction" half of the original intent still holds and
+        is what this file is about: no pool means no query is attempted.
+        """
         with patch("app.features.feedback_router.get_db_pool", return_value=None):
             resp = client.post("/feedback/correction", json={
                 "item_id": VALID_ITEM_ID,
                 "corrected_price": 42.00,
             })
 
-        assert resp.status_code == 200
-        assert resp.json()["message"] == "Correction recorded (offline mode)"
+        assert resp.status_code == 503
+        assert resp.json()["detail"]["code"] == "DB_UNAVAILABLE"

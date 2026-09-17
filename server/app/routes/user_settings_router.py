@@ -185,15 +185,15 @@ async def update_user_settings(
     pool = get_db_pool()
 
     if pool is None:
-        # Offline mode: return the submitted values merged with defaults
-        return UserSettingsUpdateResponse(
-            success=True,
-            settings=UserSettingsResponse(
-                currency=request.currency or DEFAULT_CURRENCY,
-                region=request.region or DEFAULT_REGION,
-                locale=request.locale or DEFAULT_LOCALE,
-                skill_level=request.skill_level,
-            ),
+        # NOT success (2026-09-17). This echoed the SUBMITTED values back as
+        # though they had been stored, so Settings showed the new currency,
+        # region and locale — and the next load showed the old ones. Currency is
+        # every money figure in the app; "it didn't save" with no error is the
+        # exact complaint this codebase keeps rediscovering.
+        logger.error("[settings] No DB pool — settings NOT saved for user=%s", user_id)
+        raise error_response(
+            503, "Your settings could not be saved — please try again",
+            code="DB_UNAVAILABLE",
         )
 
     try:

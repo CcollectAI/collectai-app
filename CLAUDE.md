@@ -84,6 +84,15 @@ fixed by adding a row-count check:
 | `record_sale` | banked `net_proceeds`, then marked the listing sold; the "already recorded" guard reads that status, so a retry wrote a SECOND sale row |
 | `confirm_deal` | deal marked purchased while `spent_total` never moved, and `max_total_budget` is checked against `spent_total` — the agent could spend past the member's own cap |
 
+**The gate is `npm run check:unwritten-ok`** (in `verify:prebuild`), and it is
+deliberately narrow: a WRITE route returning a success payload from a
+database-availability branch whose body does no work. It immediately found four
+more in files the manual pass never opened — three in `feedback_router`
+("Verified sale recorded (offline mode)" for the one price a human confirms with
+money) and `PUT /settings`, which echoed the submitted currency, region and
+locale back as though stored. **Seventeen more tests asserted those four**,
+including three test classes named `*Offline`.
+
 **The mechanical enumeration is closed: all 34 sites read.** Twelve belonged to
 the five handlers fixed; **22 discard their row count correctly**, for four
 reasons worth knowing before writing any gate here — ownership proven by a

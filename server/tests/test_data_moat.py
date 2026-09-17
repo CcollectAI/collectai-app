@@ -116,7 +116,15 @@ class TestVerifiedSalesLoading:
 class TestVerifiedSaleEndpoint:
     """Tests for POST /feedback/verified-sale."""
 
-    def test_verified_sale_offline_mode(self):
+    def test_no_database_is_503_not_a_recorded_sale(self):
+        """Was `test_verified_sale_offline_mode`, which required
+        `200 {"success": true, "message": "...(offline mode)"}`.
+
+        A verified sale is the one price in this app a human has confirmed with
+        money — it feeds `verified_sales` and the model's calibration, and it
+        cannot be reconstructed once the screen has said "recorded" and moved
+        on. The test asserted the loss (2026-09-17).
+        """
         from starlette.testclient import TestClient
         from main import app
         client = TestClient(app)
@@ -127,10 +135,8 @@ class TestVerifiedSaleEndpoint:
             "currency": "EUR",
             "platform": "eBay",
         })
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["success"] is True
-        assert "offline" in data["message"].lower()
+        assert resp.status_code == 503
+        assert resp.json()["detail"]["code"] == "DB_UNAVAILABLE"
 
     def test_verified_sale_negative_price_rejected(self):
         from starlette.testclient import TestClient
@@ -168,8 +174,10 @@ class TestVerifiedSaleEndpoint:
             "sold_at": "2026-02-15T10:00:00Z",
             "notes": "Sold at local convention",
         })
-        assert resp.status_code == 200
-        assert resp.json()["success"] is True
+        # Every optional field is accepted (not a 422) and the answer is still
+        # honest with no database: 503, not "recorded (offline mode)".
+        assert resp.status_code == 503
+        assert resp.json()["detail"]["code"] == "DB_UNAVAILABLE"
 
     def test_verified_sale_invalid_currency_rejected(self):
         from starlette.testclient import TestClient

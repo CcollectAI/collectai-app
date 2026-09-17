@@ -271,12 +271,16 @@ async def submit_feedback(
         label = f"{feedback_type}:{request.value or request.notes or 'unspecified'}"
 
     if pool is None:
-        # Offline mode - log and return success
-        logger.info(f"[feedback/submit] Offline mode - feedback logged: item={request.item_id}, label={label}")
-        return FeedbackSubmitResponse(
-            success=True,
-            feedback_id=None,
-            message="Feedback recorded (offline mode)",
+        # NOT success (2026-09-17). The screen says "Feedback submitted" on
+        # `success`, and with no pool the label above was built and thrown away —
+        # the member's correction never reached the model that asked for it.
+        logger.error(
+            "[feedback/submit] No DB pool — feedback DISCARDED: item=%s label=%s",
+            request.item_id, label,
+        )
+        raise error_response(
+            503, "Your feedback could not be saved — please try again",
+            code="DB_UNAVAILABLE",
         )
 
     try:
@@ -400,13 +404,17 @@ async def submit_verified_sale(
     pool = get_db_pool()
 
     if pool is None:
-        logger.info(
-            "[feedback/verified-sale] Offline mode: item=%s, price=%s %s",
+        # NOT success (2026-09-17). A verified sale is the one price in this app
+        # that a human has confirmed with money — it feeds `verified_sales` and
+        # the model's calibration, and it is unreconstructable once the screen
+        # has said "recorded" and moved on.
+        logger.error(
+            "[feedback/verified-sale] No DB pool — sale DISCARDED: item=%s price=%s %s",
             request.item_id, request.sale_price, request.currency,
         )
-        return VerifiedSaleResponse(
-            success=True, sale_id=None,
-            message="Verified sale recorded (offline mode)",
+        raise error_response(
+            503, "That sale could not be saved — please try again",
+            code="DB_UNAVAILABLE",
         )
 
     try:
@@ -529,11 +537,15 @@ async def submit_correction(
     pool = get_db_pool()
 
     if pool is None:
-        # Offline mode
-        logger.info(f"[feedback/correction] Offline mode - correction logged for item={request.item_id}")
-        return CorrectionResponse(
-            success=True,
-            message="Correction recorded (offline mode)",
+        # NOT success (2026-09-17). Same class as the two above: the member is
+        # told their correction is recorded and nothing was written.
+        logger.error(
+            "[feedback/correction] No DB pool — correction DISCARDED for item=%s",
+            request.item_id,
+        )
+        raise error_response(
+            503, "Your correction could not be saved — please try again",
+            code="DB_UNAVAILABLE",
         )
 
     try:

@@ -191,32 +191,30 @@ class TestPutSettingsValidation:
 # PUT /settings — offline mode (no DB pool)
 # ===========================================================================
 
-class TestPutSettingsOffline:
-    """PUT /settings when get_db_pool() returns None (offline mode)."""
+class TestPutSettingsWithoutADatabase:
+    """PUT /settings when get_db_pool() returns None.
 
-    def test_offline_returns_merged_defaults(self):
-        """Submitted values merged with defaults, success=True."""
+    These two asserted `200 {"success": true}` with the SUBMITTED values echoed
+    back merged with defaults — so Settings showed the new currency, region and
+    locale, and the next load showed the old ones. Currency is every money
+    figure in the app, and "it didn't save" with no error is the complaint this
+    codebase keeps rediscovering. Rewritten 2026-09-17.
+    """
+
+    def test_no_database_is_503_not_an_echo_of_what_was_sent(self):
         r = client.put("/settings", json={"currency": "GBP"})
-        assert r.status_code == 200
-        data = r.json()
-        assert data["success"] is True
-        settings = data["settings"]
-        assert settings["currency"] == "GBP"
-        assert settings["region"] == "europe"   # default
-        assert settings["locale"] == "de-DE"    # default
+        assert r.status_code == 503
+        assert r.json()["detail"]["code"] == "DB_UNAVAILABLE"
+        # And nothing that could be mistaken for the saved settings.
+        assert "settings" not in r.json()
 
-    def test_offline_all_fields_provided(self):
+    def test_a_full_payload_is_not_saved_either(self):
         r = client.put("/settings", json={
             "currency": "JPY",
             "region": "japan",
             "locale": "ja-JP",
         })
-        assert r.status_code == 200
-        data = r.json()
-        assert data["success"] is True
-        assert data["settings"]["currency"] == "JPY"
-        assert data["settings"]["region"] == "japan"
-        assert data["settings"]["locale"] == "ja-JP"
+        assert r.status_code == 503
 
 
 # ===========================================================================

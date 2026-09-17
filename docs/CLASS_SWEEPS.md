@@ -944,11 +944,57 @@ that handler's six, counted as fixed.
 id = $1` looks alarming and is not: it is the rollback of a draft event the same
 handler created two statements earlier, so the id is its own.
 
-**The gate worth writing is the narrow one:** a handler returning `{"ok": True}`
-/ `success=True` from a branch containing **no write statement at all**. A gate
-on "discarded row count" would have produced 34 findings of which 22 are
-correct, and a checker that is wrong about two thirds of what it reports stops
-being read — the same measurement that killed the class N gate.
+### The gate, and the four findings it added (`check:unwritten-ok`)
+
+`server/scripts/check_unwritten_ok.py`, in `verify:prebuild`. Not "discarded row
+count" — that would have produced 34 findings of which 22 are correct, and a
+checker wrong about two thirds of what it reports stops being read (the
+measurement that killed the class N gate). The narrow rule instead:
+
+> inside a **write** route (`post`/`patch`/`put`/`delete` — GETs belong to
+> `check_empty_on_failure.py`), a `return` of a payload claiming success
+> (`ok`/`success`/`succeeded` truthy, or `status: "ok"`), lexically inside a
+> branch testing **database availability**, whose body **does no work at all**.
+
+It found **four more, in files the manual pass never opened** — because these
+are not row-count sites, they are handlers that never reach a query:
+
+| handler | what the member was told |
+|---|---|
+| `feedback_router.submit_feedback` | "Feedback recorded (offline mode)" — the screen says *Feedback submitted*; the correction never reached the model that asked for it |
+| `feedback_router.submit_verified_sale` | "Verified sale recorded (offline mode)" — **the one price in this app a human has confirmed with money**, feeding `verified_sales` and model calibration, unreconstructable once the screen moves on |
+| `feedback_router.submit_correction` | "Correction recorded (offline mode)" |
+| `user_settings_router.update_user_settings` | `success: true` **with the submitted values echoed back as if stored** — Settings showed the new currency, region and locale, and the next load showed the old ones. Currency is every money figure in the app |
+
+All four now raise 503 with a sentence a member can act on, and log at ERROR
+with what was discarded.
+
+**Seventeen more tests asserted these** — three whole classes named for it:
+`TestFeedbackSubmitOffline` (6), `TestCorrectionSubmitOffline` (5),
+`TestPutSettingsOffline` (2), plus `TestVerifiedSaleEndpoint` (2) and two
+"response shape" tests that pinned the shape of the offline SUCCESS body. The
+six submit tests differed only in the `feedback_type` they sent while the
+message was a constant, so they were six copies of one assertion; they are two
+now. The shape tests were repointed at the FAILURE body, which is the more
+load-bearing contract (`src/lib/userErrorMessage.ts` renders `detail.message`).
+
+**Seven mutations.** The five original findings restored one at a time (the gate
+caught 3 of 5 on its first version — `touches_database()` walked the `return`
+statement, so `BlockResponse(success=True, …)` counted as "maybe it does the
+work elsewhere" and the two `social_router` lies, the whole reason for the gate,
+were skipped); the `notification_feedback_router` payload that answers
+`{"ok": True, "stored": False}`, which is a report and not a claim (the gate
+accepts an explicit falsey `stored`/`saved`/`persisted`); and — the one that
+matters for trust — **removing the work from `delete_alert`'s in-memory
+fallback**, to prove that branch is exempt because it PERFORMS the delete, not
+because the gate never looked.
+
+Left alone deliberately: the settings CALL SITES
+(`AppearanceSection.handleRegionChange` / `handleSkillChange`) swallow the new
+503, and that is consistent — they are local-first by design, the local store is
+what the screen renders, and it persists. What the 503 buys there is a real
+error in the log instead of a silent divergence between the device and the
+server's copy of the member's currency.
 
 ### Found on the way: `marketplace_listings.reports_count` is written and read nowhere
 

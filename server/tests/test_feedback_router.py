@@ -29,61 +29,37 @@ VALID_ITEM_ID = str(uuid4())
 # POST /feedback/submit — offline mode (no DB pool)
 # ===========================================================================
 
-class TestFeedbackSubmitOffline:
-    def test_submit_sale_price_success(self):
+class TestFeedbackSubmitWithoutADatabase:
+    """Six tests here used to assert `200 {"success": true}` with no database.
+
+    They pinned the bug (2026-09-17): the screen says "Feedback submitted" on
+    `success`, so a member's price correction was thrown away behind a
+    confirmation. The six differed only in the feedback_type they sent, and the
+    response message was a constant, so they were six copies of one assertion
+    about one branch — collapsed to two: the answer, and the fact that the
+    payload's shape no longer matters because there is no payload.
+    """
+
+    def test_no_database_is_503_not_success(self):
         r = client.post("/feedback/submit", json={
             "item_id": VALID_ITEM_ID,
             "feedback_type": "sale_price",
             "value": "49.99",
         })
-        assert r.status_code == 200
-        data = r.json()
-        assert data["success"] is True
-        assert data["message"] == "Feedback recorded (offline mode)"
-        assert data["feedback_id"] is None
+        assert r.status_code == 503
+        assert r.json()["detail"]["code"] == "DB_UNAVAILABLE"
 
-    def test_submit_disagree(self):
-        r = client.post("/feedback/submit", json={
-            "item_id": VALID_ITEM_ID,
-            "feedback_type": "disagree",
-        })
-        assert r.status_code == 200
-        assert r.json()["success"] is True
-
-    def test_submit_accurate(self):
-        r = client.post("/feedback/submit", json={
-            "item_id": VALID_ITEM_ID,
-            "feedback_type": "accurate",
-        })
-        assert r.status_code == 200
-        assert r.json()["success"] is True
-
-    def test_submit_custom_with_notes(self):
-        r = client.post("/feedback/submit", json={
-            "item_id": VALID_ITEM_ID,
-            "feedback_type": "custom",
-            "value": "wrong_edition",
-            "notes": "This is a 1st edition, not unlimited",
-        })
-        assert r.status_code == 200
-        assert r.json()["success"] is True
-
-    def test_submit_disagree_with_value(self):
-        r = client.post("/feedback/submit", json={
-            "item_id": VALID_ITEM_ID,
-            "feedback_type": "disagree",
-            "value": "too_high",
-        })
-        assert r.status_code == 200
-        assert r.json()["success"] is True
-
-    def test_submit_accurate_with_value(self):
-        r = client.post("/feedback/submit", json={
-            "item_id": VALID_ITEM_ID,
-            "feedback_type": "accurate",
-            "value": "spot_on",
-        })
-        assert r.status_code == 200
+    def test_every_feedback_type_gets_the_same_honest_answer(self):
+        for payload in (
+            {"feedback_type": "disagree"},
+            {"feedback_type": "accurate"},
+            {"feedback_type": "custom", "value": "wrong_edition",
+             "notes": "This is a 1st edition, not unlimited"},
+            {"feedback_type": "disagree", "value": "too_high"},
+            {"feedback_type": "accurate", "value": "spot_on"},
+        ):
+            r = client.post("/feedback/submit", json={"item_id": VALID_ITEM_ID, **payload})
+            assert r.status_code == 503, payload
 
     # ---- Validation / error cases ----
 
@@ -133,15 +109,21 @@ class TestFeedbackSubmitOffline:
         })
         assert r.status_code == 422
 
-    def test_submit_response_shape(self):
+    def test_the_failure_body_is_the_one_the_app_renders(self):
+        """Was `test_submit_response_shape`, asserting the offline SUCCESS body.
+
+        There is no success body on this path any more, so it pins the failure
+        body instead — and that is the more load-bearing contract:
+        `src/lib/userErrorMessage.ts` shows `detail.message` to the member.
+        """
         r = client.post("/feedback/submit", json={
             "item_id": VALID_ITEM_ID,
             "feedback_type": "accurate",
         })
-        data = r.json()
-        assert "success" in data
-        assert "feedback_id" in data
-        assert "message" in data
+        detail = r.json()["detail"]
+        assert detail["code"] == "DB_UNAVAILABLE"
+        assert detail["message"] and detail["message"][0].isupper()
+        assert "request_id" in detail
 
 
 # ===========================================================================
@@ -205,42 +187,32 @@ class TestFeedbackSubmitWithDB:
 # POST /feedback/correction — offline mode (no DB pool)
 # ===========================================================================
 
-class TestCorrectionSubmitOffline:
-    def test_correction_offline_success(self):
+class TestCorrectionSubmitWithoutADatabase:
+    """Four tests that asserted `200 {"success": true}` with no database.
+
+    Same class as the submit tests above, and the same collapse: they differed
+    only in which corrected_* fields they sent, and the message was a constant.
+    """
+
+    def test_no_database_is_503_not_success(self):
         r = client.post("/feedback/correction", json={
             "item_id": VALID_ITEM_ID,
             "corrected_price": 99.99,
         })
-        assert r.status_code == 200
-        data = r.json()
-        assert data["success"] is True
-        assert data["message"] == "Correction recorded (offline mode)"
+        assert r.status_code == 503
+        assert r.json()["detail"]["code"] == "DB_UNAVAILABLE"
 
-    def test_correction_offline_with_all_fields(self):
-        r = client.post("/feedback/correction", json={
-            "item_id": VALID_ITEM_ID,
-            "corrected_price": 150.00,
-            "corrected_condition": "Near Mint",
-            "corrected_category": "pokemon",
-            "corrected_attributes": {"edition": "1st Edition", "foil": True},
-            "notes": "This is a first edition card",
-        })
-        assert r.status_code == 200
-        assert r.json()["success"] is True
-
-    def test_correction_offline_condition_only(self):
-        r = client.post("/feedback/correction", json={
-            "item_id": VALID_ITEM_ID,
-            "corrected_condition": "Good",
-        })
-        assert r.status_code == 200
-
-    def test_correction_offline_category_only(self):
-        r = client.post("/feedback/correction", json={
-            "item_id": VALID_ITEM_ID,
-            "corrected_category": "mtg",
-        })
-        assert r.status_code == 200
+    def test_every_field_combination_gets_the_same_honest_answer(self):
+        for payload in (
+            {"corrected_price": 150.00, "corrected_condition": "Near Mint",
+             "corrected_category": "pokemon",
+             "corrected_attributes": {"edition": "1st Edition", "foil": True},
+             "notes": "This is a first edition card"},
+            {"corrected_condition": "Good"},
+            {"corrected_category": "mtg"},
+        ):
+            r = client.post("/feedback/correction", json={"item_id": VALID_ITEM_ID, **payload})
+            assert r.status_code == 503, payload
 
     # ---- Validation / error cases ----
 
@@ -283,14 +255,15 @@ class TestCorrectionSubmitOffline:
         })
         assert r.status_code == 422
 
-    def test_correction_response_shape(self):
+    def test_the_failure_body_is_the_one_the_app_renders(self):
+        """Was `test_correction_response_shape` — see the submit twin above."""
         r = client.post("/feedback/correction", json={
             "item_id": VALID_ITEM_ID,
             "corrected_price": 42.00,
         })
-        data = r.json()
-        assert "success" in data
-        assert "message" in data
+        detail = r.json()["detail"]
+        assert detail["code"] == "DB_UNAVAILABLE"
+        assert detail["message"] and detail["message"][0].isupper()
 
 
 # ===========================================================================
