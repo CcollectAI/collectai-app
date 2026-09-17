@@ -60,7 +60,7 @@ Two rules the tooling learned the hard way:
 | N | The client compares a status the database never writes | 2026-09-17 | ✅ `getDmStatus` fixed + tested; all 8 status columns enumerated; NO gate (measured: 83 findings, nearly all homonyms) |
 | K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | ✅ all fixed: billing webhook `8439f97`, item edit, calendar, template, P2P listing transaction — **two server fixes not deployed** |
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
-| S | The server answered `ok` and wrote nothing | 2026-09-17/18 | 8 of 34 read: 6 `ok`-without-a-write fixed + the announcement DM dead five months + **both P2P money handlers made atomic and row-locked** (completion could never fire, or fire twice). 8 tests that PINNED the lie rewritten. **26 unread** |
+| S | The server answered `ok` and wrote nothing | 2026-09-17/18 | 10 of 34 read: 6 `ok`-without-a-write fixed + the announcement DM dead five months + **4 money handlers made atomic and row-locked** (a trade could complete twice or never; a sale could be banked twice; a mandate could overspend its cap). 8 tests that PINNED the lie rewritten. **24 unread** |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -888,11 +888,40 @@ indenting the hooks INTO the transaction stayed green because the hook fakes
 recorded into a different list from the `COMMIT`. A fake has to observe ORDER in
 one stream, or "inside the transaction" is not what is being tested.
 
-**Still open:** of the 34 mechanical hits, 8 have now been read (6 fixed above,
-plus these two). **The remaining 26 have not been read one by one.** Next, by
-money: `marketplace_listing_router.record_sale`,
-`purchase_router.confirm_deal` (mandate counters), `item_images_router`
-delete/reorder, `favorites_router.remove_favorite`,
+### The other two money handlers
+
+**`marketplace_listing_router.record_sale`** INSERTs a `marketplace_sales` row
+carrying `net_proceeds` and THEN marks the listing sold. A failure between them
+left a banked sale for a listing still advertised as available — and the
+"already recorded" guard reads `status = 'sold'`, so the retry did not catch it
+and wrote a **second** sale row. Two taps did the same thing with no failure
+involved. Now one transaction, guard row `FOR UPDATE`.
+
+**`purchase_router.confirm_deal`** was half right already, and the half that was
+right is worth copying: the deal's own write is a compare-and-set
+(`WHERE status = ANY(...)` + `if result == "UPDATE 0": 409`). But the mandate
+counters ran afterwards as separate statements, so a failure between them marked
+the deal **purchased** while `spent_total` never moved — and `max_total_budget`
+is checked against `spent_total`, so the agent could keep spending past the cap
+the member set. The counter's row count is now read too (a `mandate_id` that is
+not the member's matched nothing and the spend vanished silently), and a miss
+rolls the whole confirm back with 409 `MANDATE_MISMATCH` rather than leaving the
+two halves disagreeing.
+
+Its tests needed fixing before they could pass, and the reason generalises: on a
+bare `AsyncMock`, `conn.transaction()` returns a **coroutine**, and `async with`
+on a coroutine raises *"'coroutine' object does not support the asynchronous
+context manager protocol"* — which arrives as a 500 and reads like a router bug.
+Three of them also stubbed `conn.execute` as returning `None`; asyncpg always
+returns a status string, so those stubs described a database that does not
+exist. `_attach_transaction()` in `server/tests/test_purchase_router.py` is the
+one place to fix it.
+
+**Still open:** of the 34 mechanical hits, 10 have now been read (6 `ok`-without-
+a-write, plus the four handlers made atomic). **The remaining 24 have not been
+read one by one.** Next: `item_images_router` delete/reorder,
+`favorites_router.remove_favorite`, `catalog_learning_router` (ops-key, 7 sites),
+`gamification_router.award_xp`, `notification_router.unregister_push_token`,
 `sponsor_company_router.create_event_checkout` (a `DELETE FROM events` with no
 owner in the WHERE — read it before assuming it is a rollback path).
 

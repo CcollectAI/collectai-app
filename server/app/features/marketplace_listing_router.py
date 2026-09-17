@@ -986,74 +986,91 @@ async def record_sale(
 
     try:
         async with pool.acquire() as conn:
-            # Verify listing exists and belongs to user
-            listing_row = await conn.fetchrow(
-                "SELECT id, status FROM marketplace_listings WHERE id = $1 AND user_id = $2",
-                listing_id, user_id,
-            )
-            if not listing_row:
-                raise error_response(404, "Listing not found", code=ErrorCode.NOT_FOUND)
-            if listing_row["status"] == "sold":
-                raise error_response(409, "Sale already recorded for this listing", code=ErrorCode.CONFLICT)
+            # ONE TRANSACTION, LISTING ROW LOCKED (2026-09-17).
+            #
+            # This records MONEY (`net_proceeds`) and then marks the listing
+            # sold, in two statements with nothing tying them together:
+            #   * a failure between them left a `marketplace_sales` row for a
+            #     listing still advertised as available — and the "already
+            #     recorded" guard reads `status = 'sold'`, so the retry did not
+            #     catch it and wrote a SECOND sale row;
+            #   * two requests in flight both passed that guard for the same
+            #     reason, so one sale could be banked twice on two taps.
+            #
+            # `FOR UPDATE` above makes that guard mean what it says.
+            async with conn.transaction():
+                # Verify listing exists and belongs to user
+                listing_row = await conn.fetchrow(
+                    """
+                    SELECT id, status FROM marketplace_listings
+                     WHERE id = $1 AND user_id = $2
+                       FOR UPDATE
+                    """,
+                    listing_id, user_id,
+                )
+                if not listing_row:
+                    raise error_response(404, "Listing not found", code=ErrorCode.NOT_FOUND)
+                if listing_row["status"] == "sold":
+                    raise error_response(409, "Sale already recorded for this listing", code=ErrorCode.CONFLICT)
 
-            # Insert sale record
-            sale_row = await conn.fetchrow(
-                """
-                INSERT INTO marketplace_sales
-                    (listing_id, user_id, buyer_name, buyer_marketplace_id,
-                     buyer_rating, sale_price, currency,
-                     shipping_cost_actual, platform_fee, payment_processing_fee,
-                     net_proceeds, tracking_number, carrier,
-                     status, sold_at, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-                        'pending', $14, $14, $14)
-                RETURNING *
-                """,
-                listing_id, user_id, payload.buyer_name,
-                payload.buyer_marketplace_id, payload.buyer_rating,
-                payload.sale_price, payload.currency,
-                payload.shipping_cost_actual or 0, payload.platform_fee or 0,
-                payload.payment_processing_fee or 0,
-                net_proceeds, payload.tracking_number, payload.carrier,
-                now,
-            )
+                # Insert sale record
+                sale_row = await conn.fetchrow(
+                    """
+                    INSERT INTO marketplace_sales
+                        (listing_id, user_id, buyer_name, buyer_marketplace_id,
+                         buyer_rating, sale_price, currency,
+                         shipping_cost_actual, platform_fee, payment_processing_fee,
+                         net_proceeds, tracking_number, carrier,
+                         status, sold_at, created_at, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+                            'pending', $14, $14, $14)
+                    RETURNING *
+                    """,
+                    listing_id, user_id, payload.buyer_name,
+                    payload.buyer_marketplace_id, payload.buyer_rating,
+                    payload.sale_price, payload.currency,
+                    payload.shipping_cost_actual or 0, payload.platform_fee or 0,
+                    payload.payment_processing_fee or 0,
+                    net_proceeds, payload.tracking_number, payload.carrier,
+                    now,
+                )
 
-            # Mark listing as sold
-            await conn.execute(
-                """
-                UPDATE marketplace_listings
-                SET status = 'sold', sold_at = $3, updated_at = $3
-                WHERE id = $1 AND user_id = $2
-                """,
-                listing_id, user_id, now,
-            )
+                # Mark listing as sold
+                await conn.execute(
+                    """
+                    UPDATE marketplace_listings
+                    SET status = 'sold', sold_at = $3, updated_at = $3
+                    WHERE id = $1 AND user_id = $2
+                    """,
+                    listing_id, user_id, now,
+                )
 
-            logger.info(
-                "[marketplace-listings] Sale recorded: listing=%s user=%s net=%.2f",
-                listing_id, user_id, net_proceeds,
-            )
-            return SaleResponse(
-                id=str(sale_row["id"]),
-                listing_id=str(sale_row["listing_id"]),
-                user_id=str(sale_row["user_id"]),
-                buyer_name=sale_row.get("buyer_name"),
-                buyer_marketplace_id=sale_row.get("buyer_marketplace_id"),
-                buyer_rating=float(sale_row["buyer_rating"]) if sale_row.get("buyer_rating") is not None else None,
-                sale_price=float(sale_row["sale_price"]),
-                currency=sale_row.get("currency", "EUR"),
-                shipping_cost_actual=float(sale_row["shipping_cost_actual"]) if sale_row.get("shipping_cost_actual") is not None else 0,
-                platform_fee=float(sale_row["platform_fee"]) if sale_row.get("platform_fee") is not None else 0,
-                payment_processing_fee=float(sale_row["payment_processing_fee"]) if sale_row.get("payment_processing_fee") is not None else 0,
-                net_proceeds=float(sale_row["net_proceeds"]),
-                tracking_number=sale_row.get("tracking_number"),
-                carrier=sale_row.get("carrier"),
-                shipped_at=sale_row.get("shipped_at"),
-                delivered_at=sale_row.get("delivered_at"),
-                status=sale_row.get("status", "pending"),
-                sold_at=sale_row.get("sold_at"),
-                created_at=sale_row.get("created_at"),
-                updated_at=sale_row.get("updated_at"),
-            )
+                logger.info(
+                    "[marketplace-listings] Sale recorded: listing=%s user=%s net=%.2f",
+                    listing_id, user_id, net_proceeds,
+                )
+                return SaleResponse(
+                    id=str(sale_row["id"]),
+                    listing_id=str(sale_row["listing_id"]),
+                    user_id=str(sale_row["user_id"]),
+                    buyer_name=sale_row.get("buyer_name"),
+                    buyer_marketplace_id=sale_row.get("buyer_marketplace_id"),
+                    buyer_rating=float(sale_row["buyer_rating"]) if sale_row.get("buyer_rating") is not None else None,
+                    sale_price=float(sale_row["sale_price"]),
+                    currency=sale_row.get("currency", "EUR"),
+                    shipping_cost_actual=float(sale_row["shipping_cost_actual"]) if sale_row.get("shipping_cost_actual") is not None else 0,
+                    platform_fee=float(sale_row["platform_fee"]) if sale_row.get("platform_fee") is not None else 0,
+                    payment_processing_fee=float(sale_row["payment_processing_fee"]) if sale_row.get("payment_processing_fee") is not None else 0,
+                    net_proceeds=float(sale_row["net_proceeds"]),
+                    tracking_number=sale_row.get("tracking_number"),
+                    carrier=sale_row.get("carrier"),
+                    shipped_at=sale_row.get("shipped_at"),
+                    delivered_at=sale_row.get("delivered_at"),
+                    status=sale_row.get("status", "pending"),
+                    sold_at=sale_row.get("sold_at"),
+                    created_at=sale_row.get("created_at"),
+                    updated_at=sale_row.get("updated_at"),
+                )
     except HTTPException:
         raise
     except Exception as e:

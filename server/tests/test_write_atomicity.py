@@ -1,4 +1,8 @@
-"""Responding to an offer is ONE act, and the offer row is locked while it happens.
+"""A read-decide-write is ONE act, and the row is locked while it happens.
+
+Three handlers, one class (`docs/CLASS_SWEEPS.md` class S / K): responding to an
+offer, confirming an exchange, and recording a marketplace sale. Each read a
+row, decided in Python, and wrote — with no transaction and no row lock.
 
 2026-09-17, class S / class K. `respond_to_offer` read the offer, checked its
 status in Python, and then wrote — with no transaction and no row lock:
@@ -366,3 +370,152 @@ class TestConfirmExchange:
         await _confirm(conn, monkeypatch, BUYER)
         assert confirm_env["hooks"].count("dac7") == 0
         assert confirm_env["settle"] == 0
+
+
+# ---------------------------------------------------------------------------
+# marketplace_listing_router.record_sale — money, then a status, in two writes
+# ---------------------------------------------------------------------------
+#
+# Not P2P, but the same class and the same fake: `record_sale` INSERTs a
+# `marketplace_sales` row carrying `net_proceeds` and THEN marks the listing
+# sold. With no transaction, a failure between them left a banked sale for a
+# listing still advertised as available — and the "already recorded" guard reads
+# `status = 'sold'`, so the retry did not catch it and wrote a SECOND sale row.
+# Two taps did the same thing without any failure at all.
+
+from app.features import marketplace_listing_router as mkt  # noqa: E402
+
+SALE_LISTING = "00000000-0000-0000-0000-0000000eeeee"
+
+
+class _SaleConn(_Conn):
+    def __init__(self, status="active", events=None):
+        super().__init__(_Row(id=SALE_LISTING, status=status), events=events)
+
+    async def fetchrow(self, q, *a):
+        flat = self._log(q)
+        if "INSERT INTO marketplace_sales" in flat:
+            return _Row(
+                id="sale-1", listing_id=SALE_LISTING, user_id=SELLER,
+                sale_price=100.0, net_proceeds=90.0, currency="EUR", status="pending",
+            )
+        return self.row
+
+
+def _sale_payload():
+    return mkt.SaleRecord(sale_price=100.0, currency="EUR", platform_fee=5.0)
+
+
+class TestRecordSaleIsAtomic:
+    @pytest.mark.asyncio
+    async def test_the_insert_and_the_status_commit_together(self, monkeypatch):
+        conn = _SaleConn()
+        monkeypatch.setattr(mkt, "get_db_pool", lambda: _Pool(conn))
+        await mkt.record_sale(SALE_LISTING, _sale_payload(), user_id=SELLER)
+        ev = conn.events
+        begin, commit = ev.index("BEGIN"), ev.index("COMMIT")
+        writes = [i for i, e in enumerate(ev)
+                  if e.startswith("INSERT INTO marketplace_sales") or e.startswith("UPDATE marketplace_listings")]
+        assert len(writes) == 2, ev
+        assert all(begin < i < commit for i in writes), ev
+
+    @pytest.mark.asyncio
+    async def test_the_listing_row_is_locked_before_the_guard_is_trusted(self, monkeypatch):
+        conn = _SaleConn()
+        monkeypatch.setattr(mkt, "get_db_pool", lambda: _Pool(conn))
+        await mkt.record_sale(SALE_LISTING, _sale_payload(), user_id=SELLER)
+        guard = next(e for e in conn.events if e.startswith("SELECT id, status"))
+        assert "FOR UPDATE" in guard, conn.events
+        assert conn.events.index("BEGIN") < conn.events.index(guard)
+
+    @pytest.mark.asyncio
+    async def test_an_already_sold_listing_banks_nothing(self, monkeypatch):
+        conn = _SaleConn(status="sold")
+        monkeypatch.setattr(mkt, "get_db_pool", lambda: _Pool(conn))
+        with pytest.raises(Exception):
+            await mkt.record_sale(SALE_LISTING, _sale_payload(), user_id=SELLER)
+        assert not [e for e in conn.events if e.startswith("INSERT INTO marketplace_sales")]
+        assert conn.events[-1] == "ROLLBACK", conn.events
+
+
+# ---------------------------------------------------------------------------
+# purchase_router.confirm_deal — the deal and the mandate's spend move together
+# ---------------------------------------------------------------------------
+#
+# The deal's own write is a correct compare-and-set. What was not guarded is the
+# MANDATE: `spent_total = spent_total + price` ran as a separate statement
+# afterwards, so a failure between them marked the deal purchased while the
+# spend never moved — and `max_total_budget` is checked against `spent_total`,
+# so the agent could keep spending past the cap the member set. The row count
+# was discarded too: a mandate_id that is not the member's matched nothing and
+# the spend vanished silently.
+
+from app.agents import purchase_router as purch  # noqa: E402
+
+DEAL = "00000000-0000-0000-0000-00000000dea1"
+MANDATE = "00000000-0000-0000-0000-00000000ma01"
+
+
+class _DealConn(_Conn):
+    def __init__(self, counter_status="UPDATE 1", events=None):
+        super().__init__(events=events)
+        self.counter_status = counter_status
+
+    async def fetchrow(self, q, *a):
+        flat = self._log(q)
+        if "FROM public.mandate_deals" in flat:
+            return _Row(id=DEAL, mandate_id=MANDATE, listing_price=40.0, user_id=SELLER)
+        if "max_total_budget" in flat:
+            return _Row(max_total_budget=None, spent_total=40.0)
+        return None
+
+    async def execute(self, q, *a):
+        flat = self._log(q)
+        if "UPDATE public.purchase_mandates" in flat and "spent_total" in flat:
+            return self.counter_status
+        return "UPDATE 1"
+
+
+class _GetConn:
+    def __init__(self, conn):
+        self._c = conn
+
+    async def __aenter__(self):
+        return self._c
+
+    async def __aexit__(self, *e):
+        return False
+
+
+@pytest.fixture
+def deal_env(monkeypatch):
+    monkeypatch.setattr(purch, "_require_db", lambda: None)
+    monkeypatch.setattr(purch, "_parse_uuid", lambda v, label="id": v)
+    monkeypatch.setattr(purch, "_is_uuid", lambda v: False)
+
+
+async def _confirm_deal(conn, monkeypatch, price=None):
+    monkeypatch.setattr(purch, "get_conn", lambda: _GetConn(conn))
+    body = purch.DealConfirmBody(confirmed_price=price) if price is not None else purch.DealConfirmBody()
+    return await purch.confirm_deal(DEAL, body, user_id=SELLER)
+
+
+class TestConfirmDealIsAtomic:
+    @pytest.mark.asyncio
+    async def test_the_deal_and_the_spend_commit_together(self, monkeypatch, deal_env):
+        conn = _DealConn()
+        out = await _confirm_deal(conn, monkeypatch)
+        assert out["status"] == "purchased"
+        ev = conn.events
+        begin, commit = ev.index("BEGIN"), ev.index("COMMIT")
+        writes = [i for i, e in enumerate(ev) if e.startswith("UPDATE public.")]
+        assert len(writes) >= 2, ev
+        assert all(begin < i < commit for i in writes), ev
+
+    @pytest.mark.asyncio
+    async def test_a_spend_that_lands_nowhere_rolls_the_purchase_back(self, monkeypatch, deal_env):
+        conn = _DealConn(counter_status="UPDATE 0")
+        with pytest.raises(Exception) as e:
+            await _confirm_deal(conn, monkeypatch)
+        assert getattr(e.value, "status_code", None) == 409, e.value
+        assert conn.events[-1] == "ROLLBACK", conn.events

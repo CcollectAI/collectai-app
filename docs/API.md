@@ -370,7 +370,7 @@ mutation-proven — with the skip removed, the unchanged template imports 3 rows
 | GET | `/purchase/deals` | JWT | List deals (paginated, filterable) |
 | GET | `/purchase/deals/{deal_id}` | JWT | Get deal details |
 | POST | `/purchase/deals/{deal_id}/click` | JWT | Track affiliate click |
-| POST | `/purchase/deals/{deal_id}/confirm` | JWT | Confirm purchase |
+| POST | `/purchase/deals/{deal_id}/confirm` | JWT | Confirm purchase. 409 `MANDATE_MISMATCH` if the mandate's spend could not be recorded — **nothing is kept in that case** |
 | POST | `/purchase/deals/{deal_id}/decline` | JWT | Dismiss deal |
 | GET | `/purchase/stats` | JWT | Agent stats |
 

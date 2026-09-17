@@ -107,8 +107,27 @@ async def _mock_conn_ctx(conn):
     yield conn
 
 
+def _attach_transaction(conn):
+    """Give an AsyncMock connection a usable `conn.transaction()`.
+
+    Needed from 2026-09-17, when `confirm_deal` became one transaction (the deal
+    was marked purchased in one statement and the mandate's `spent_total` moved
+    in another, so a failure between them let the agent spend past the member's
+    own budget cap). On a bare AsyncMock `conn.transaction()` returns a
+    COROUTINE, and `async with` on a coroutine raises
+    "'coroutine' object does not support the asynchronous context manager
+    protocol" — which surfaces as a 500 and looks like a router bug.
+    """
+    tx = MagicMock()
+    tx.__aenter__ = AsyncMock(return_value=None)
+    tx.__aexit__ = AsyncMock(return_value=False)
+    conn.transaction = MagicMock(return_value=tx)
+    return conn
+
+
 def _patch_db(conn):
     """Return a list of two context-manager patches: db_configured + get_conn."""
+    _attach_transaction(conn)
     return [
         patch("app.agents.purchase_router.db_configured", return_value=True),
         patch("app.agents.purchase_router.get_conn", return_value=_mock_conn_ctx(conn)),
@@ -372,7 +391,10 @@ class TestConfirmDeal:
         ])
         conn.execute = AsyncMock(side_effect=[
             "UPDATE 1",  # 1st execute: deal status update
-            None,        # 2nd execute: mandate counter update
+            # asyncpg returns a status string, never None, and confirm_deal now
+            # READS this one: a mandate counter that matched no row means the
+            # spend landed nowhere, so the purchase must not stand.
+            "UPDATE 1",  # 2nd execute: mandate counter update
         ])
 
         with _patch_db(conn)[0], _patch_db(conn)[1]:
@@ -425,8 +447,10 @@ class TestConfirmDeal:
         ])
         conn.execute = AsyncMock(side_effect=[
             "UPDATE 1",  # 1st execute: deal status -> purchased
-            None,        # 2nd execute: mandate counter update
-            None,        # 3rd execute: mandate -> exhausted
+            # Status strings, not None: asyncpg always returns one, and
+            # confirm_deal READS the counter's row count since 2026-09-17.
+            "UPDATE 1",  # 2nd execute: mandate counter update
+            "UPDATE 1",  # 3rd execute: mandate -> exhausted
         ])
 
         with _patch_db(conn)[0], _patch_db(conn)[1]:

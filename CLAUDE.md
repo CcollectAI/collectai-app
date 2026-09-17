@@ -73,6 +73,30 @@ particular dev-identity mismatch).
 Full write-up: `docs/CLASS_SWEEPS.md` class S. Contracts: `docs/API.md` (Items,
 Alerts, Events announcements, Social).
 
+**The row count was the symptom; the missing transaction was the bug.** Reading
+the money handlers properly turned four of them up, and none of the four was
+fixed by adding a row-count check:
+
+| handler | what could happen |
+|---|---|
+| `respond_to_offer` | accept wrote the offer then the reservation — a failure between left an accepted offer on an unreserved listing, and withdraw left a cancelled offer still holding the reservation |
+| `confirm_exchange` | "both sides confirmed" was decided off an unlocked re-read: two confirms in flight each saw only their own, so **completion never fired** and `ALREADY_CONFIRMED` blocked the retry. The other interleaving ran completion TWICE — `_dac7_accrue` reports consideration for tax |
+| `record_sale` | banked `net_proceeds`, then marked the listing sold; the "already recorded" guard reads that status, so a retry wrote a SECOND sale row |
+| `confirm_deal` | deal marked purchased while `spent_total` never moved, and `max_total_budget` is checked against `spent_total` — the agent could spend past the member's own cap |
+
+The shape to reach for: **decide under the lock** (`FOR UPDATE`, or
+`FOR UPDATE OF <alias>` when the query outer-joins — Postgres refuses to lock
+the nullable side), keep writes that must agree in one transaction, and leave
+anything that opens its own connection until after the commit (one hook read
+`marketplace_listings` and would have seen the pre-commit status).
+
+**Two of those tests passed against a deliberately broken build.** Moving
+`_settle_completed_trade` past the commit stayed green because the test only
+counted the call; indenting the hooks into the transaction stayed green because
+the hook fakes recorded into a different list from the `COMMIT`. A fake has to
+observe ORDER in ONE stream, or "inside the transaction" is not what is being
+tested. Mutating each fix is what found this.
+
 **`npm run verify:prebuild` does NOT run the server test suite** — it runs the
 Python GATES (`check_empty_on_failure`, `check_error_copy`, …) and a named list
 of jest suites, and nothing else. That is how commit `eb70152` shipped the

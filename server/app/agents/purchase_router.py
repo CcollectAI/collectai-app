@@ -737,75 +737,100 @@ async def confirm_deal(
     uid = uuid.UUID(user_id) if _is_uuid(user_id) else user_id
 
     async with get_conn() as conn:
-        # Status gate + idempotency: only confirm deals in confirmable states
-        row = await conn.fetchrow(
-            f"""
-            SELECT {_DEAL_COLUMNS} FROM public.mandate_deals
-            WHERE id = $1 AND user_id = $2 AND status = ANY($3::text[])
-            """,
-            _parse_uuid(deal_id, "deal_id"),
-            uid,
-            list(_CONFIRMABLE_STATUSES),
-        )
+        # ONE TRANSACTION (2026-09-17). The deal's compare-and-set is already
+        # atomic and correct, but the mandate counters were three separate
+        # statements after it: a failure between them marked the deal PURCHASED
+        # while `spent_total` never moved, so the mandate's own
+        # `max_total_budget` cap under-counted and the agent could keep
+        # spending past it. Money, and silent — nothing reads the two back
+        # against each other.
+        async with conn.transaction():
+            # Status gate + idempotency: only confirm deals in confirmable states
+            row = await conn.fetchrow(
+                f"""
+                SELECT {_DEAL_COLUMNS} FROM public.mandate_deals
+                WHERE id = $1 AND user_id = $2 AND status = ANY($3::text[])
+                """,
+                _parse_uuid(deal_id, "deal_id"),
+                uid,
+                list(_CONFIRMABLE_STATUSES),
+            )
 
-        if not row:
-            raise error_response(404, "Deal not found or already purchased/declined")
+            if not row:
+                raise error_response(404, "Deal not found or already purchased/declined")
 
-        # D3: a price of 0 (allowed by the ge=0 model bound) would inflate the
-        # "saved vs market" stat by the full predicted q50. Reject explicitly —
-        # a real purchase has a positive price; omit the field to default to the
-        # listing price instead.
-        if body.confirmed_price is not None and body.confirmed_price <= 0:
-            raise error_response(400, "confirmed_price must be greater than 0")
+            # D3: a price of 0 (allowed by the ge=0 model bound) would inflate the
+            # "saved vs market" stat by the full predicted q50. Reject explicitly —
+            # a real purchase has a positive price; omit the field to default to the
+            # listing price instead.
+            if body.confirmed_price is not None and body.confirmed_price <= 0:
+                raise error_response(400, "confirmed_price must be greater than 0")
 
-        confirmed_price = body.confirmed_price if body.confirmed_price is not None else float(row["listing_price"])
+            confirmed_price = body.confirmed_price if body.confirmed_price is not None else float(row["listing_price"])
 
-        # Atomically set deal as purchased (idempotent via status gate above)
-        result = await conn.execute(
-            """
-            UPDATE public.mandate_deals
-            SET status = 'purchased',
-                purchased_at = now(),
-                confirmed_price = $3
-            WHERE id = $1 AND user_id = $2
-              AND status = ANY($4::text[])
-            """,
-            _parse_uuid(deal_id, "deal_id"),
-            uid,
-            confirmed_price,
-            list(_CONFIRMABLE_STATUSES),
-        )
+            # Atomically set deal as purchased (idempotent via status gate above)
+            result = await conn.execute(
+                """
+                UPDATE public.mandate_deals
+                SET status = 'purchased',
+                    purchased_at = now(),
+                    confirmed_price = $3
+                WHERE id = $1 AND user_id = $2
+                  AND status = ANY($4::text[])
+                """,
+                _parse_uuid(deal_id, "deal_id"),
+                uid,
+                confirmed_price,
+                list(_CONFIRMABLE_STATUSES),
+            )
 
-        if result == "UPDATE 0":
-            raise error_response(409, "Deal state changed concurrently")
+            if result == "UPDATE 0":
+                raise error_response(409, "Deal state changed concurrently")
 
-        # Update mandate counters — IDOR fix: verify user_id owns the mandate
-        await conn.execute(
-            """
-            UPDATE public.purchase_mandates
-            SET deals_purchased = deals_purchased + 1,
-                spent_total = spent_total + $3,
-                updated_at = now()
-            WHERE id = $1 AND user_id = $2
-            """,
-            row["mandate_id"],
-            uid,
-            confirmed_price,
-        )
+            # Update mandate counters — IDOR fix: verify user_id owns the mandate.
+            # The row count is READ (2026-09-17): the WHERE carries user_id, so a
+            # mandate that is not this member's matches nothing and the spend
+            # would vanish while the deal still said purchased. Inside the
+            # transaction, so the confirm rolls back as one and can be retried
+            # rather than leaving the two halves disagreeing.
+            counter_status = await conn.execute(
+                """
+                UPDATE public.purchase_mandates
+                SET deals_purchased = deals_purchased + 1,
+                    spent_total = spent_total + $3,
+                    updated_at = now()
+                WHERE id = $1 AND user_id = $2
+                """,
+                row["mandate_id"],
+                uid,
+                confirmed_price,
+            )
 
-        # Check if mandate budget is exhausted (scoped to user_id)
-        mandate = await conn.fetchrow(
-            "SELECT max_total_budget, spent_total FROM public.purchase_mandates WHERE id = $1 AND user_id = $2",
-            row["mandate_id"],
-            uid,
-        )
-        if mandate and mandate["max_total_budget"] is not None:
-            if float(mandate["spent_total"]) >= float(mandate["max_total_budget"]):
-                await conn.execute(
-                    "UPDATE public.purchase_mandates SET status = 'exhausted', updated_at = now() WHERE id = $1 AND user_id = $2",
-                    row["mandate_id"],
-                    uid,
+            if counter_status.split()[-1] == "0":
+                logger.error(
+                    "[purchase] confirm_deal: mandate %s not found for user %s — "
+                    "spend of %.2f not counted, rolling the confirm back",
+                    row["mandate_id"], uid, confirmed_price,
                 )
+                raise error_response(
+                    409,
+                    "That deal's mandate could not be updated — nothing was recorded",
+                    code="MANDATE_MISMATCH",
+                )
+
+            # Check if mandate budget is exhausted (scoped to user_id)
+            mandate = await conn.fetchrow(
+                "SELECT max_total_budget, spent_total FROM public.purchase_mandates WHERE id = $1 AND user_id = $2",
+                row["mandate_id"],
+                uid,
+            )
+            if mandate and mandate["max_total_budget"] is not None:
+                if float(mandate["spent_total"]) >= float(mandate["max_total_budget"]):
+                    await conn.execute(
+                        "UPDATE public.purchase_mandates SET status = 'exhausted', updated_at = now() WHERE id = $1 AND user_id = $2",
+                        row["mandate_id"],
+                        uid,
+                    )
 
     return {
         "ok": True,
