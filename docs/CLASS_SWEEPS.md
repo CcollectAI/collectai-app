@@ -53,6 +53,7 @@ Two rules the tooling learned the hard way:
 | I | One tap, two writes (unguarded async handlers) | 2026-09-17 | ✅ swept by checker, 6 fixed + 5 reasoned, `check:double-submit` in prebuild |
 | J | A member can see data that is not theirs (RLS / IDOR / public views) | 2026-09-17 | ✅ prod verified clean; repo drift fixed + gated |
 | M | The database fails, and the app reads the failure as "no" | 2026-09-17 | app half fixed + gated; `20260917b` **applied**; `20260917c` (block→dm_requests + block checks) written, NOT applied |
+| O | A number rounded into a different fact | 2026-09-17 | ✅ sub-euro prices + sign; found by reviewing a screenshot, not by a checker |
 | N | The client compares a status the database never writes | 2026-09-17 | ✅ `getDmStatus` fixed + tested; all 8 status columns enumerated; NO gate (measured: 83 findings, nearly all homonyms) |
 | K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | ✅ all fixed: billing webhook `8439f97`, item edit, calendar, template, P2P listing transaction — **two server fixes not deployed** |
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
@@ -352,6 +353,28 @@ right group. What is actually missing is the GUARD — nothing stops a bad value
 being written, and the RPC and the client now write two different vocabularies
 into one column. Applying that migration is Merle's call (it rewrites RPCs and
 migrates data); it is not urgent, and it should not be replayed blind.
+
+## O — a number rounded into a different fact (2026-09-17)
+
+Not found by any checker: by opening a screenshot from the round the machine had
+called `ok`. The catalogue item read **"~€1"** under "Median of 213 recent market
+prices", which sent me to `money()` — `maximumFractionDigits: 0` for every
+amount, so **anything under €1 printed as `€0`**, the app's own string for "we do
+not know what this is worth".
+
+**885,445** production catalogue prices are between 0 and 1. The rounding rule
+was displaying the majority of the cheap catalogue as worthless. Fixed at the
+chokepoint (cents below one unit, `<€0,01` below half a cent, `<¥1` where there
+is no minor unit) with the sign moved outside the symbol, 7 tests, 4 mutations
+proven. Write-up: `docs/ui-playbook.md` "A 30-cent card is not worthless".
+
+**Why no gate:** the defect is in ONE function, and the tests pin its table of
+cases. A checker would have to know which numbers a member reads as money, which
+is the homonym problem from class N.
+
+**The transferable part** — the machine checks cannot see a number that is
+merely WRONG, only one that is missing or raw. Reviewing screenshots is not
+optional decoration after a walk: rounds 1-11 all passed this screen.
 
 ## What landed
 

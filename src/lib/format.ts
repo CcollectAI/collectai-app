@@ -76,7 +76,10 @@ function getFormatter(
   locale: string,
   opts: Intl.NumberFormatOptions,
 ): Intl.NumberFormat {
-  const key = `${locale}|${opts.style ?? 'decimal'}|${opts.currency ?? '-'}|${opts.maximumFractionDigits ?? ''}`;
+  // minimumFractionDigits is part of the identity too: without it, a
+  // {min:2,max:2} formatter and a {min:0,max:2} one share a cache entry and the
+  // second caller silently gets the first one's decimals.
+  const key = `${locale}|${opts.style ?? 'decimal'}|${opts.currency ?? '-'}|${opts.minimumFractionDigits ?? ''}|${opts.maximumFractionDigits ?? ''}`;
   let fmt = _fmtCache.get(key);
   if (!fmt) {
     fmt = new Intl.NumberFormat(locale, opts);
@@ -101,13 +104,36 @@ function getFormatter(
  * a Dutch user should keep "1.234"), and the symbol is prefixed here.
  */
 function money(amount: number, currency: Currency, locale: string): string {
-  const num = getFormatter(locale, {
+  // 0 decimals is deliberate for every figure in this app EXCEPT one that would
+  // round to ZERO (2026-09-17). On production **885,445** catalogue prices sit
+  // between 0 and 1, and `€0` is the string this app uses for "we do not know
+  // what this is worth" (see the unpriced rule below) — so a real 30-cent card
+  // was displayed as worthless, on the majority of the cheap catalogue.
+  //
+  // JPY and KRW have no minor unit, so there are no cents to show: an amount
+  // under one unit is reported as "under one" rather than as zero.
+  const sym = getCurrencySymbol(currency);
+  const hasMinorUnits = currency !== 'JPY' && currency !== 'KRW';
+  const abs = Math.abs(amount);
+  const subUnit = abs > 0 && abs < 1;
+  const fmt = (value: number, digits: number) => getFormatter(locale, {
     style: 'decimal',
-    minimumFractionDigits: 0,
-    // All currencies display 0 decimals in this app (intentional).
-    maximumFractionDigits: 0,
-  }).format(amount);
-  return `${getCurrencySymbol(currency)}${num}`;
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value);
+
+  // The SIGN goes outside the symbol: `-€10`, never `€-10` (2026-09-17).
+  // `€-10` is a shape the screen sweep flags as raw output, and every screen
+  // that shows a loss writes `-{formatPrice(...)}` by hand — so a negative
+  // reaching this function was the one spelling nothing agreed with.
+  const neg = amount < 0 ? '-' : '';
+  if (subUnit && !hasMinorUnits) return `<${neg}${sym}${fmt(1, 0)}`;
+  if (subUnit) {
+    // Below half a cent even two decimals print "0,00" — the same lie, longer.
+    if (Number(abs.toFixed(2)) === 0) return `<${neg}${sym}${fmt(0.01, 2)}`;
+    return `${neg}${sym}${fmt(abs, 2)}`;
+  }
+  return `${neg}${sym}${fmt(abs, 0)}`;
 }
 
 /**

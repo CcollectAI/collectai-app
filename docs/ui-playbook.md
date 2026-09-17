@@ -2533,6 +2533,43 @@ rule. Found, not fixed: the sponsor dashboard finds sponsored events only among
 `listEvents({limit: 50})` (a capped read); `userProvider.getMyProfile` caches
 `null` for the session on a cold-start auth miss.
 
+## A 30-cent card is not worthless (2026-09-17)
+
+Found by looking at a catalogue screenshot — "~€1" under "Median of 213 recent
+market prices" — and then reading the formatter. `money()` used
+`maximumFractionDigits: 0` for **every** amount, so anything under €1 printed as
+`€0`. And `€0` is the string this app uses for *we do not know what this is
+worth*: `format.ts`'s own comment says "Showing €0 reads as **worthless** when it
+means **unknown**".
+
+Measured on production before changing anything: **885,445** catalogue prices sit
+between 0 and 1 (of 1,024,771 under €10). The majority of the cheap catalogue was
+displayed as worthless by a rounding rule.
+
+The rule now, all in `money()`:
+
+| amount | renders |
+|---|---|
+| ≥ 1 unit | `€1`, `€1.348` — 0 decimals, unchanged and deliberate |
+| 0 < x < 1 | `€0,30` — two decimals, because the cents ARE the value |
+| below half a cent | `<€0,01` — "€0,00" is the same lie with more characters |
+| sub-unit in JPY/KRW | `<¥1` — those currencies have no minor unit to show |
+| negative | `-€10`, never `€-10` |
+
+The sign moved outside the symbol in the same pass. `€-10` is a shape the screen
+sweep flags as raw output, and `PortfolioValueHeader` had already hit it and
+worked around it locally (`${sign}${fp(Math.abs(n))}`, with a comment). **A
+workaround in one component is the tell that the chokepoint is wrong** — the
+other callers were one negative away from the same output.
+
+Also fixed alongside: the `Intl.NumberFormat` cache keyed on
+`maximumFractionDigits` but not `minimum`, so a `{min:2,max:2}` formatter and a
+`{min:0,max:2}` one would have shared an entry and the second caller would have
+silently got the first one's decimals.
+
+Seven tests, four mutations proven (0 decimals everywhere → 5 red; `€0.00` below
+half a cent → red; drop the sign → red; JPY falling through → red).
+
 ## A guessed number must not be printed like a known one (2026-09-17)
 
 `useListForSale` shows a fee breakdown while the seller types a price. When the

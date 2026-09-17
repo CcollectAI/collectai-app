@@ -2,6 +2,20 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-26
 
+## A rounding rule displayed most of the cheap catalogue as worthless (2026-09-17)
+
+`money()` in `src/lib/format.ts` used `maximumFractionDigits: 0` for every
+amount, so anything under €1 printed as **€0** — and €0 is this app's own string
+for "we do not know what this is worth". **885,445** production catalogue prices
+sit between 0 and 1. Now: cents below one unit, `<€0,01` below half a cent, `<¥1`
+where the currency has no minor unit, and the sign OUTSIDE the symbol (`-€10`,
+never `€-10`, which the sweep flags as raw output).
+
+**Found by opening a screenshot from a round the machine had called `ok`.** The
+machine checks see a missing or raw number, never a wrong one — so reviewing the
+contact sheet is part of a round, not decoration after it.
+`docs/ui-playbook.md` "A 30-cent card is not worthless".
+
 ## Blocking a member does not work in production — and the app said "not blocked" (2026-09-17)
 
 `rpc_block_user_v1`, `rpc_list_blocked_v1` and `rpc_is_blocked_v1` fail with
