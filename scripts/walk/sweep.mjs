@@ -174,7 +174,10 @@ function check(nodes, expect, W, H, focusLine, logs, DP) {
   if (isLoading(nodes)) flags.push(['STILL_LOADING', `a spinner/skeleton is still on screen after ${TIMEOUT_S}s`]);
   if (logs.slowAt) flags.push(['SLOW_LOAD', `loading indicator still up at ${logs.slowAt}s (budget ${SPINNER_BUDGET_S}s)`]);
 
-  const titleNode = header.find((n) => n.text && !isGlyph(n.text) && !isClock(n.text) && !/^Search\b|\.\.\.$|…$/.test(n.text));
+  // `!/^\d+$/`: the bell's unread BADGE ("2") sits in the header band, so it was
+  // being reported as the screen's title — `settings` came back titled "2" and
+  // NO_TITLE passed on a badge (2026-09-17). A count is never a title.
+  const titleNode = header.find((n) => n.text && !isGlyph(n.text) && !isClock(n.text) && !/^\d+$/.test(n.text.trim()) && !/^Search\b|\.\.\.$|…$/.test(n.text));
   // A centred failure message with Try again IS the screen's heading (event
   // detail, offer, sponsor dashboard on 2026-09-15) — not a missing title.
   const failureState = app.some((n) => TRY_AGAIN.has(n.text) || TRY_AGAIN.has(n.desc));
@@ -341,6 +344,9 @@ const looksLikeHome = (xml) => xml.includes('COLLECTION VALUE');
 
 const results = [];
 let sinceRestart = 0;
+// The settled signature of the route walked BEFORE this one. A route whose
+// screen is identical to it was never reached (2026-09-17).
+let prevRouteSig = null;
 try {
   await coldStart();
   if (LOC) {
@@ -376,6 +382,7 @@ try {
     let xml = dumpXml();
     let nodes = parseNodes(xml);
     let wrongScreen = false;
+    let staleScreen = false;
     if (!homeIsRight && looksLikeHome(xml)) {
       // The deep link was swallowed — send it once more before judging anything.
       sh(`am start -a android.intent.action.VIEW -d '${url}' ${PKG} >/dev/null 2>&1`, { allowFail: true });
@@ -394,8 +401,30 @@ try {
       xml = dumpXml(Math.min(DUMP_CAP_S, TIMEOUT_S - elapsed()));
       nodes = parseNodes(xml);
       const sig = signature(nodes);
-      if (sig && sig === prev && !isLoading(nodes)) break;
+      // "Stable" is not "arrived". The old condition was two matching dumps,
+      // and a screen that has NOT STARTED navigating is perfectly stable — so
+      // this loop used to exit on the PREVIOUS route's screen and judge that
+      // (2026-09-17: `add-manual` was judged on `l/[id]`'s tree while its own
+      // screenshot, taken later, showed the right screen). A settled screen
+      // that is still byte-identical to the one the last route left behind is
+      // not this route's screen yet; keep waiting for it to change.
+      const arrived = !prevRouteSig || sig !== prevRouteSig || homeIsRight;
+      if (sig && sig === prev && !isLoading(nodes) && arrived) break;
       prev = sig;
+    }
+    // Still the previous route's screen after the whole budget: the link never
+    // took. Re-send once (exactly as the Home case does), then refuse to judge
+    // someone else's screen rather than report it `ok` — round 6 reported
+    // `analytics` ok on a tree whose title was literally "Add manually".
+    if (!wrongScreen && !homeIsRight && xml && prevRouteSig && signature(nodes) === prevRouteSig) {
+      sh(`am start -a android.intent.action.VIEW -d '${url}' ${PKG} >/dev/null 2>&1`, { allowFail: true });
+      await sleep(SPINNER_BUDGET_S * 1000);
+      const xml2 = dumpXml();
+      if (xml2) {
+        const nodes2 = parseNodes(xml2);
+        if (signature(nodes2) === prevRouteSig) staleScreen = true;
+        else { xml = xml2; nodes = nodes2; }
+      } else staleScreen = true;
     }
     const settleS = Math.round(elapsed());
     const png = adb(['exec-out', 'screencap', '-p'], { binary: true });
@@ -416,6 +445,8 @@ try {
 
     const res = wrongScreen
       ? { title: null, flags: [['WRONG_SCREEN', 'still on Home after re-sending the deep link — route not reached, not judged']] }
+      : staleScreen
+      ? { title: null, flags: [['SAME_AS_PREVIOUS', 'screen is identical to the previous route after re-sending the deep link — route not reached, not judged']] }
       : !xml
       // No tree to check: say THAT, instead of reporting NO_TITLE/NO_NAVBAR on nothing.
       ? { title: null, flags: [['NO_DUMP', `uiautomator never saw the UI idle (${DUMP_CAP_S}s cap, twice) — something keeps animating; see the screenshot`]] }
@@ -438,6 +469,9 @@ try {
       }
     }
     if (notIdle && xml) res.flags.push(['NOT_IDLE', `UI never idle within ${DUMP_CAP_S}s — something keeps animating`]);
+    // Only a screen we actually reached becomes the baseline for the next route;
+    // otherwise one swallowed link would excuse the next route as well.
+    if (xml && !wrongScreen && !staleScreen) prevRouteSig = signature(nodes);
     if (logs.fatal) { res.flags.push(['CRASH', logs.fatal]); await coldStart(); sinceRestart = 0; }
     const real = res.flags.filter(([k]) => k !== 'JS_ERRORS');
     console.log(`${real.length ? real.map(([k]) => k).join(' ') : 'ok'}  (${settleS}s)`);

@@ -796,7 +796,8 @@ npm run walk -- --only 'settings,notifications' --timeout 20   # a subset
 - **Per route:** deep link → wait until the UI dump stops changing → screenshot,
   uiautomator XML, JS error log → checks: FOCUS, CRASH, **SLOW_LOAD** (a
   spinner or skeleton still up at `--spinner-budget`, default 5 s), STILL_LOADING,
-  NO_TITLE, NO_BACK, NO_CLUSTER, NO_NAVBAR, RAW_TEXT (ms counts, HTTP plumbing,
+  **SAME_AS_PREVIOUS** (the screen never changed from the route before it — not
+  reached, not judged), NO_TITLE, NO_BACK, NO_CLUSTER, NO_NAVBAR, RAW_TEXT (ms counts, HTTP plumbing,
   undefined/NaN, raw i18n keys, `€-10`), UNTRANSLATED / LIKELY_ENGLISH (non-en).
 - **Output:** `builds/walk/<local time>-<label>/index.html` — a contact sheet,
   flagged screens first, plus a "repeated across screens" list (a flag on ≥40%
@@ -842,6 +843,8 @@ rather than judging an empty tree. Most settled screens take ~12 s.
 | 3 · 2026-09-16 07:56 | same | API down, `--locale nl` | 65/79 | 56 | 1 / 1 / 1 / 1 | **class**: 153 hard-coded `accessibilityLabel`s — 4 of them on 45-59 screens (fixed at `ScreenHeader`/`TabBackButton`/`HeaderActions`/`InboxHeaderButton`/`QuickNavBar`); **one-off**: the tab bar hard-coded "Events"; **decision**: ~145 remaining + QuickNavBar's deliberate English tab labels; **tool**: NO_NAVBAR on all 7 tab routes (the check now accepts each locale's labels) |
 | 5 · 2026-09-16 20:48 | jsswap 19:42 | **API live** (first live round) | 79 | 6 | 1 / 0 / 0 / 0 | logged 09-17, after a crash lost the session that ran it. **class (DB)**: Blocked users logged Postgres `42P01` — blocking is broken in production for everyone, a quoted `search_path` on 203 functions (`CLASS_SWEEPS.md` class M; migration written, not applied). Others: Home `listWatchlist timed out`, item + public profile SLOW_LOAD at 14-15 s, announcements' event read erroring, subscription `no RevenueCat key` (expected on a local APK) |
 | 6 · 2026-09-17 19:06 | jsswap 19:03 (HEAD) | API live | 65/79 | 4 | 1 / 1 / 0 / 0 | ran BEFORE the two migrations, so `blocked-users` 42P01 again (class M). **one-off**: a non-attendee opening Announcements got "Couldn't load" + a Try again that can never work — the server answers 403 "Only attendees can view announcements" (reproduced with curl) while the event page shows the card to everyone; now an attendees-only state. Timeouts on Home/archived/notifications/public profile (listItems 8 s, inbox view 15 s, profile hydrate 6-7 s) are NOT triaged: tsc, jest and prebuild were running on the same laptop, so they need a recheck on an idle machine before they are called app defects |
+| 7 · 2026-09-17 20:40 | jsswap 20:36 (HEAD) | API live, **idle machine** | 65/79 | 6 | 0 / 0 / 0 / 2 | the idle recheck round 6 needed: **no new app defect**. The 6 SLOW_LOADs are the EMULATOR's network — TCP connect to Supabase from inside it measures 391-1084 ms against 40-58 ms for the same three queries from the laptop, so a 6 s profile-hydrate bound and a 15 s read bound are hit here and not on a phone. `rpc_go_offline_v1` timing out is log noise: presence is `.catch(() => {})`, nothing waits on it. **tool**: this round is what exposed the two sweep defects below |
+| 8 · 2026-09-17 21:04 | same | `--only` the 5 mis-captured routes | 6/6 | 0 | — | proof of the tool fix: `analytics` now reports its own title ("Analytics") instead of "Add manually", `add-manual` reports "Add manually" instead of "Listing", and `settings` reports "Settings" instead of "2" |
 
 Not covered by the machine checks (review the screenshots for these): layout,
 overlap and truncation, wrong numbers, copy that is grammatical but false, and
@@ -849,6 +852,41 @@ anything behind a tap (the sweep never taps). Data-dependent screens need a
 walk account that HAS the data (chat threads, deals, projects, an organised
 event) — simcheck has none, so those routes are SKIPPED until a second seeded
 account exists.
+
+### The sweep judged the PREVIOUS route's screen and called it ok (2026-09-17)
+
+Found by looking at a screenshot, not by a check: `analytics.png` from round 6
+showed **Add manually**, and the report had `analytics` as `ok` with its title
+recorded as — literally — `"Add manually"`. The evidence was in the report all
+along; nothing compared it to the route.
+
+**Mechanism: "stable" is not "arrived".** The settle loop exited when two
+consecutive dumps matched, and a screen that has not STARTED navigating is
+perfectly stable. So the loop could exit on the screen the previous route left
+behind and judge that, while the screenshot — taken after the loop — showed the
+right screen. `add-manual` is the clearest case: its dump says "Listing", its
+screenshot says "Add manually". The only identity guard was `looksLikeHome`,
+which cannot see this at all.
+
+Fixed in `scripts/walk/sweep.mjs`:
+- the loop now also requires the settled signature to DIFFER from the previous
+  route's settled signature before it accepts the screen;
+- if it never differs within the budget, the link is re-sent once (as the Home
+  case does) and then the route is flagged **SAME_AS_PREVIOUS** and NOT judged,
+  instead of being reported `ok`;
+- only a screen that was actually reached becomes the baseline for the next
+  route, so one swallowed link cannot excuse the next one as well.
+
+**And the title was the bell's badge.** `settings` came back titled `"2"`: the
+unread count sits in the header band, so the title finder took it, which means
+`NO_TITLE` was passing on a badge. Measured across rounds 6 and 7: **21 of 65
+routes** recorded a badge count as their title, i.e. a third of the app's titles
+were never really checked. A count is never a title — `^\d+$` is excluded now.
+
+Both proven by re-walking the five affected routes (round 8): every one reports
+its own title. **Every `ok` in rounds 1-7 for a route walked immediately after
+another is only as good as this, which is why the round log keeps the tool
+column.**
 
 ### A false trail, recorded so it is not re-walked
 
