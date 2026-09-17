@@ -61,6 +61,7 @@ Two rules the tooling learned the hard way:
 | K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | ✅ all fixed: billing webhook `8439f97`, item edit, calendar, template, P2P listing transaction — **two server fixes not deployed** |
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
 | S | The server answered `ok` and wrote nothing | 2026-09-17/18 | ✅ **all 34 read**: 6 `ok`-without-a-write fixed, the announcement DM dead five months fixed, 4 money handlers made atomic + row-locked (a trade could complete twice or never; a sale banked twice; a mandate past its cap), 22 of the 34 sites cleared with the reason written down. 8 tests that PINNED the lie rewritten. One decision left: `reports_count` is written, read nowhere |
+| T | The server sends it and the app never reads it | 2026-09-18 | measured: **74 of 461** fields declared in `src/api` are referenced nowhere else. Three confirmed, all DECISIONS not bug fixes (realised P/L unreachable, the demand differentiator unshown, subscription dates unshown); the rest is mostly request params and deliberately-removed UI |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -1008,6 +1009,68 @@ Two honest ends, and it is a decision rather than a bug: surface it in
 increment with it. Until then the increment is a write that costs a statement
 and buys nothing — the "capture ≠ consume" shape.
 
+
+## T — the server sends it and the app never reads it (2026-09-18)
+
+`AlertFeedItem.read` (class S) was an instance: the server had always returned
+the flag, the mapping dropped it, and the hook hardcoded `isRead: false`, so
+marking an alert read was invisible. **A write whose result the reader ignores
+cannot be told from a write that failed** — so the class is worth enumerating.
+
+**The probe** (`scratchpad/probe_dropped_fields.mjs`): every field declared in a
+type inside `src/api/*.ts`, then grep for that identifier across `src/` and
+`app/` excluding `src/api`. Zero hits outside = the server sends it and nobody
+looks. **74 of 461 distinct fields.**
+
+Most of the 74 are not defects, and the taxonomy matters more than the count:
+
+- **request parameters** (`unread_only`, `notify_before_hours`, `source_hint`) —
+  the app SENDS them, so "nothing reads them" is expected;
+- **deliberately removed UI**, with the removal written down at the site: the
+  seven `/settings/alert-preferences` fields went when the AlertSettings panel
+  did, because it "hit GET/PATCH on every Settings open to populate a UI whose
+  values nothing consumed" (`src/screens/Settings.tsx`);
+- **flag-off features** — the gamification block (`weekly_xp`, `xp_to_next`,
+  `longest_streak`, …) behind `GAMIFICATION_UI_ENABLED = false`;
+- **redundant siblings** — `seller_total_grades` / `seller_positive_grades` sit
+  next to `seller_positive_pct`, which IS rendered.
+
+### The three that are real, and all three are decisions
+
+**1. Realised profit is computed twice and shown nowhere.**
+`getRealisedPL()` → `GET /portfolio/realised-pl` (per-sale fees, cost basis,
+`total_profit`, `total_net_proceeds`, `sales_without_cost_basis`) has **zero
+callers**. Separately, `/portfolio/items` returns per-item `realized_pl`, which
+`portfolioAnalyticsStore` maps to `realizedPL` — and `app/analytics.tsx` renders
+only `unrealizedPL`, which the store's own comment says is **model drift, not
+profit**, for every item without a purchase price (~93% of production). So the
+screen that exists to answer an investment question shows the number nobody
+earned and hides the one they did.
+
+**2. The demand differentiator is fetched and not shown.** The listing detail
+renders `watchers` ("3 other members watching this item") and never
+`watchers_above_price` — which the spec calls *"the number that actually
+predicts a sale"*, and its own example line is
+`4 members are watching this · highest target €40`. `top_target` is unread too.
+**Not obviously a bug:** `/p2p/demand/{item_id}` is ownership-enforced precisely
+because "demand is competitive information", and the listing detail is readable
+by any member, so showing a buyer how many rivals would be alerted at this price
+is a product call, not an oversight to fix quietly.
+
+**3. A member cannot see when their subscription ends.** `BillingStatus` carries
+`current_period_end` and `cancel_at_period_end`; `app/subscription.tsx` renders
+neither, saying only "Subscriptions auto-renew until cancelled". Someone who has
+cancelled sees no "Pro until 14 October". The data is already fetched.
+
+### What this class teaches about the probe
+
+A grep for the identifier cannot tell a dropped field from a request parameter,
+and it cannot see a field consumed under a different name (`total_profit` →
+`totalProfit`). So this enumeration is a **starting list, not a finding list** —
+which is the same shape as class N: the measurement is the deliverable, and the
+gate is not worth writing until something narrows it. The narrowing that would
+work here: only fields on a type that a `get<…>` RESPONSE uses, and only where
+the mapping function for that type exists and omits the key.
 
 ## Decisions for Merle — the XP leaderboard (2026-09-17)
 
