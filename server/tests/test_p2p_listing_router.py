@@ -142,6 +142,37 @@ class TestSupplyHookSemantics:
         assert "spawn_bg(_publish_supply_hook" in src
 
 
+class TestListingCreationIsAtomic:
+    """Both writes, or neither (class sweep K, 2026-09-17)."""
+
+    def test_item_and_listing_share_one_transaction(self):
+        """A marketplace-only listing INSERTs the item, then the listing.
+
+        Without a transaction, a failure on the second write left an item the
+        member never added in their collection, created `for_sale = TRUE` — a
+        phantom in the Items tab badged "Listed" with no listing behind it.
+        Asserts ORDER, not just presence: the transaction has to open before
+        both inserts, or it wraps nothing.
+        """
+        import inspect
+        src = inspect.getsource(p2p.create_listing)
+        txn = src.find("async with conn.transaction():")
+        item_insert = src.find("INSERT INTO public.items")
+        listing_insert = src.find("INSERT INTO public.marketplace_listings")
+        assert txn != -1, "create_listing no longer opens a transaction"
+        assert item_insert != -1 and listing_insert != -1
+        assert txn < item_insert, "the item INSERT is outside the transaction"
+        assert txn < listing_insert, "the listing INSERT is outside the transaction"
+
+    def test_the_supply_hook_stays_outside_it(self):
+        """A background hook must not hold the write transaction open."""
+        import inspect
+        src = inspect.getsource(p2p.create_listing)
+        txn_block_end = src.find("# Off the critical path")
+        assert txn_block_end != -1
+        assert src.find("spawn_bg(_publish_supply_hook") > txn_block_end
+
+
 class TestReportCounter:
     def test_counter_only_moves_on_a_new_report(self):
         """Re-reporting must not inflate reports_count and poison triage."""

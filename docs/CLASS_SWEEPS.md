@@ -54,7 +54,7 @@ Two rules the tooling learned the hard way:
 | J | A member can see data that is not theirs (RLS / IDOR / public views) | 2026-09-17 | ✅ prod verified clean; repo drift fixed + gated |
 | M | The database fails, and the app reads the failure as "no" | 2026-09-17 | app half fixed + gated; `20260917b` **applied**; `20260917c` (block→dm_requests + block checks) written, NOT applied |
 | N | The client compares a status the database never writes | 2026-09-17 | ✅ `getDmStatus` fixed + tested; all 8 status columns enumerated; NO gate (measured: 83 findings, nearly all homonyms) |
-| K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | billing webhook fixed `8439f97` (**not deployed**); item edit, calendar, template fixed; P2P listing insert open |
+| K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | ✅ all fixed: billing webhook `8439f97`, item edit, calendar, template, P2P listing transaction — **two server fixes not deployed** |
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
@@ -529,10 +529,21 @@ handler at `:640` has the same claim-before-write ordering. Fix: claim after the
 writes succeed, or release the claim when a write fails. Server-side, needs a
 deploy — your call.
 
-Also open from K, in order: `p2p_listing_router.py:789` creates an `items` row
-then a `marketplace_listings` row with **no transaction** (`pool.acquire()`), so
-a failed listing insert leaves an item the member never added sitting in their
-collection badged "Listed"; ✅ `create-event.tsx` save-as-template — **fixed 2026-09-17.** The template save
+✅ **`p2p_listing_router.create_listing` — fixed 2026-09-17.** It created an
+`items` row (with `for_sale = TRUE`) and then the `marketplace_listings` row on
+a bare `pool.acquire()`, so a failure on the second write left a phantom in the
+member's collection badged "Listed" with no listing behind it. Both writes now
+share one `conn.transaction()` — the pattern
+`account_router._do_account_delete` already uses — and the 404/409 raises roll
+back with it, which is correct: nothing was meant to exist yet. Audited: the only
+awaits inside the transaction are `conn.*` (no HTTP call holds it open) and both
+`spawn_bg` hooks stay outside. Two tests in
+`server/tests/test_p2p_listing_router.py` assert the ORDER (the transaction opens
+before BOTH inserts — presence alone would pass a transaction that wraps
+nothing) and that the supply hook stays outside; the same assertions were run
+locally against the source and go red when the transaction line is removed.
+**NOT DEPLOYED** — server change, Merle's call.
+Also open from K: ✅ `create-event.tsx` save-as-template — **fixed 2026-09-17.** The template save
 was wrapped in its own try/catch that logged and continued, so a member who
 ticked "save as template" navigated back believing they had one. The event is
 deliberately NOT rolled back — it is what they came to do and it succeeded — but

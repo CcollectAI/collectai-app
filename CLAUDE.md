@@ -152,8 +152,11 @@ with a session), I never ran, J and K ran 09-17, L only its contrast half, M
 (database failure read as "no") was found 09-17. *(Re-verified 2026-09-17: the
 date locales, the parsing sites and the half-saving item edit are FIXED — that
 sentence used to list them as open.)* Open: the
-`/collections/user/progress` 500, the billing-webhook fix not deployed, and
-`20260917c` not applied. *(The 2 stale cache keys were fixed 2026-09-17:
+`/collections/user/progress` 500; three things needing Merle — `20260917c`
+(blocking still throws in prod), the billing-webhook fix and the P2P listing
+transaction, both undeployed; and `20260322_build_paint_status_pipeline.sql`,
+which never reached prod at all (default still `'Active'`, no status CHECK).
+Classes A-N are otherwise swept; D, F, I, L and N closed on 2026-09-17. *(The 2 stale cache keys were fixed 2026-09-17:
 one `invalidateForItemChange()` for the five item mutations, and
 `clearProfileCaches()` for both profile cache layers.)*
 

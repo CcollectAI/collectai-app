@@ -816,105 +816,115 @@ async def create_listing(
         )
 
     async with pool.acquire() as conn:
-        if payload.item_id:
-            # Ownership is enforced HERE, server-side. The client sending an
-            # item_id it does not own must not be able to list it.
-            # An item in the collection IS the product being sold, so the listing
-            # inherits everything the seller already recorded about it — not just
-            # its identity. Before 2026-08-09 this SELECT stopped at
-            # (name, category, canonical_key) and `condition_label`,
-            # `condition_notes` and `listing_description` were taken from the
-            # request only, so listing something you own asked you to retype
-            # facts you had already entered once ("double work and not useful").
-            #
-            # Copied field-for-field, never composed: a description assembled
-            # out of brand/year/series would be us writing sales copy in the
-            # seller's name. Those columns exist and are deliberately left out.
-            item = await conn.fetchrow(
-                """
-                SELECT id, name, category, canonical_key, image_url,
-                       condition, condition_grade, condition_notes, description
-                FROM public.items
-                WHERE id = $1::uuid AND user_id = $2::uuid
-                """,
-                payload.item_id, user_id,
-            )
-            if item is None:
-                raise error_response(
-                    404, "Item not found in your collection", code="ITEM_NOT_FOUND",
+        # ONE TRANSACTION for both writes (2026-09-17, class sweep K).
+        # A marketplace-only listing INSERTs the item, then the listing. With
+        # only `pool.acquire()`, a failure on the second write (a constraint, a
+        # dropped connection) left an item the member never added sitting in
+        # their collection, created with for_sale = TRUE — so the Items tab
+        # showed a phantom badged "Listed" that no listing backs. The 404/409
+        # raises below roll back with it, which is what we want: nothing was
+        # meant to exist yet. Pattern copied from
+        # account_router._do_account_delete.
+        async with conn.transaction():
+            if payload.item_id:
+                # Ownership is enforced HERE, server-side. The client sending an
+                # item_id it does not own must not be able to list it.
+                # An item in the collection IS the product being sold, so the listing
+                # inherits everything the seller already recorded about it — not just
+                # its identity. Before 2026-08-09 this SELECT stopped at
+                # (name, category, canonical_key) and `condition_label`,
+                # `condition_notes` and `listing_description` were taken from the
+                # request only, so listing something you own asked you to retype
+                # facts you had already entered once ("double work and not useful").
+                #
+                # Copied field-for-field, never composed: a description assembled
+                # out of brand/year/series would be us writing sales copy in the
+                # seller's name. Those columns exist and are deliberately left out.
+                item = await conn.fetchrow(
+                    """
+                    SELECT id, name, category, canonical_key, image_url,
+                           condition, condition_grade, condition_notes, description
+                    FROM public.items
+                    WHERE id = $1::uuid AND user_id = $2::uuid
+                    """,
+                    payload.item_id, user_id,
                 )
-        else:
-            # Marketplace-only seller: create the item they are selling. They
-            # do own it — that is the premise of listing it — so this is not a
-            # fiction, it is the record catching up with reality.
-            #
-            # `canonical_ref` is left to trg_items_canonical_ref rather than set
-            # here; that trigger owns the bare -> namespaced resolution and the
-            # crosswalk fallback (learning_canonical_key_vs_item_ref_namespace).
-            item = await conn.fetchrow(
+                if item is None:
+                    raise error_response(
+                        404, "Item not found in your collection", code="ITEM_NOT_FOUND",
+                    )
+            else:
+                # Marketplace-only seller: create the item they are selling. They
+                # do own it — that is the premise of listing it — so this is not a
+                # fiction, it is the record catching up with reality.
+                #
+                # `canonical_ref` is left to trg_items_canonical_ref rather than set
+                # here; that trigger owns the bare -> namespaced resolution and the
+                # crosswalk fallback (learning_canonical_key_vs_item_ref_namespace).
+                item = await conn.fetchrow(
+                    """
+                    INSERT INTO public.items
+                        (user_id, name, category, canonical_key, source, for_sale,
+                         created_at, updated_at)
+                    VALUES ($1::uuid, $2, $3, $4, 'marketplace', TRUE, now(), now())
+                    RETURNING id, name, category, canonical_key, image_url,
+                              condition, condition_grade, condition_notes, description
+                    """,
+                    user_id, payload.title.strip(), payload.category,
+                    payload.canonical_key,
+                )
+                logger.info(
+                    "[p2p] created marketplace-only item %s for %s (canonical_key=%r)",
+                    item["id"], user_id, payload.canonical_key,
+                )
+
+            # One active listing per item — otherwise a member can publish the same
+            # item repeatedly and flood Target Hit with duplicates of one object.
+            dup = await conn.fetchval(
                 """
-                INSERT INTO public.items
-                    (user_id, name, category, canonical_key, source, for_sale,
-                     created_at, updated_at)
-                VALUES ($1::uuid, $2, $3, $4, 'marketplace', TRUE, now(), now())
-                RETURNING id, name, category, canonical_key, image_url,
-                          condition, condition_grade, condition_notes, description
+                SELECT 1 FROM public.marketplace_listings
+                WHERE item_id = $1::uuid AND user_id = $2::uuid
+                  AND status = $3 AND delisted_at IS NULL
+                LIMIT 1
                 """,
-                user_id, payload.title.strip(), payload.category,
-                payload.canonical_key,
+                str(item["id"]), user_id, _STATUS_ACTIVE,
             )
-            logger.info(
-                "[p2p] created marketplace-only item %s for %s (canonical_key=%r)",
-                item["id"], user_id, payload.canonical_key,
+            if dup:
+                raise error_response(
+                    409, "This item is already listed", code="ALREADY_LISTED",
+                )
+
+            # condition_grade is the second source because add-manual writes the
+            # graded value there ("PSA 9") while `condition` holds the plain label.
+            condition_label = _inherit_from_item(
+                payload.condition_label, item["condition"], item["condition_grade"],
             )
+            condition_notes = _inherit_from_item(payload.condition_notes, item["condition_notes"])
+            listing_description = _inherit_from_item(payload.description, item["description"])
 
-        # One active listing per item — otherwise a member can publish the same
-        # item repeatedly and flood Target Hit with duplicates of one object.
-        dup = await conn.fetchval(
-            """
-            SELECT 1 FROM public.marketplace_listings
-            WHERE item_id = $1::uuid AND user_id = $2::uuid
-              AND status = $3 AND delisted_at IS NULL
-            LIMIT 1
-            """,
-            str(item["id"]), user_id, _STATUS_ACTIVE,
-        )
-        if dup:
-            raise error_response(
-                409, "This item is already listed", code="ALREADY_LISTED",
+            listing_id = str(uuid4())
+            await conn.execute(
+                """
+                INSERT INTO public.marketplace_listings
+                    (id, user_id, item_id, marketplace_id, listing_title,
+                     listing_description, price, currency, condition_label,
+                     condition_notes, shipping_cost, ships_from, canonical_key,
+                     category, format, quantity, status, listed_at,
+                     created_at, updated_at, photo_catalogue_consent)
+                VALUES ($1::uuid, $2::uuid, $3::uuid, $4, $5,
+                        $6, $7, $8, $9,
+                        $10, $11, $12, $13,
+                        $14, $16, 1, $15, now(),
+                        now(), now(), $17)
+                """,
+                listing_id, user_id, str(item["id"]), SPARROW_MARKETPLACE_KEY,
+                item["name"] or "Untitled",
+                listing_description, payload.price, payload.currency,
+                condition_label, condition_notes,
+                payload.shipping_cost, payload.ships_from,
+                item["canonical_key"], item["category"], _STATUS_ACTIVE,
+                _FORMAT_FIXED, payload.photo_catalogue_consent,
             )
-
-        # condition_grade is the second source because add-manual writes the
-        # graded value there ("PSA 9") while `condition` holds the plain label.
-        condition_label = _inherit_from_item(
-            payload.condition_label, item["condition"], item["condition_grade"],
-        )
-        condition_notes = _inherit_from_item(payload.condition_notes, item["condition_notes"])
-        listing_description = _inherit_from_item(payload.description, item["description"])
-
-        listing_id = str(uuid4())
-        await conn.execute(
-            """
-            INSERT INTO public.marketplace_listings
-                (id, user_id, item_id, marketplace_id, listing_title,
-                 listing_description, price, currency, condition_label,
-                 condition_notes, shipping_cost, ships_from, canonical_key,
-                 category, format, quantity, status, listed_at,
-                 created_at, updated_at, photo_catalogue_consent)
-            VALUES ($1::uuid, $2::uuid, $3::uuid, $4, $5,
-                    $6, $7, $8, $9,
-                    $10, $11, $12, $13,
-                    $14, $16, 1, $15, now(),
-                    now(), now(), $17)
-            """,
-            listing_id, user_id, str(item["id"]), SPARROW_MARKETPLACE_KEY,
-            item["name"] or "Untitled",
-            listing_description, payload.price, payload.currency,
-            condition_label, condition_notes,
-            payload.shipping_cost, payload.ships_from,
-            item["canonical_key"], item["category"], _STATUS_ACTIVE,
-            _FORMAT_FIXED, payload.photo_catalogue_consent,
-        )
 
     # Off the critical path — the seller's request returns immediately.
     spawn_bg(_publish_supply_hook(listing_id), "p2p_supply_hook")
