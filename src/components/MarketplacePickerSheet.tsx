@@ -76,6 +76,7 @@ export default function MarketplacePickerSheet({
         maxPriceCurrency ?? settings.currency,
       )
       .then((res: { links: AffiliateLink[] }) => setLinks(res.links ?? []))
+      // empty-ok: no links renders the "Search on eBay" fallback row (displayLinks below), a working action — never a "no marketplaces" claim.
       .catch(() => setLinks([]))
       .finally(() => setLoading(false));
   }, [visible, itemTitle, categoryId, maxPrice, maxPriceCurrency, settings.region, settings.currency]);

@@ -49,7 +49,8 @@ export async function fetchCollectionItems(): Promise<CollectionItem[]> {
 
   if (error) {
     storeLogger.error("fetchCollectionItems error", error);
-    return [];
+    // Throw, not [] — an empty collection is a claim. (No importers 2026-09-17.)
+    throw new Error(error.message || "Could not load collection");
   }
 
   const rows =

@@ -22,6 +22,9 @@ import {
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider } from '@/data';
+import { ApiError } from '@/api/httpClient';
+import { safeGoBack } from '@/lib/goBack';
+import { useAuthContext } from '@/providers/useAuthContext';
 import type { EventAnnouncement, CollectorsEvent } from '@/data/events';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
@@ -30,6 +33,7 @@ import { useSettings } from '@/lib/settings';
 import logger from '@/utils/logger';
 import { timeAgo } from '@/lib/timeAgo';
 import { MS_PER_WEEK } from '@/constants/time';
+import { dateLocale } from '@/constants/dateFormats';
 import { useTranslation } from 'react-i18next';
 
 /* -------------------------------------------------------------------------- */
@@ -42,7 +46,7 @@ function formatTimestamp(iso?: string): string {
     const d = new Date(iso);
     const diff = Date.now() - d.getTime();
     if (diff < MS_PER_WEEK) return timeAgo(d);
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    return d.toLocaleDateString(dateLocale(), { month: 'short', day: 'numeric', year: 'numeric' });
   } catch (e) {
     logger.error('[silent-catch] announcements.tsx:45:', e);
     return '';
@@ -68,6 +72,11 @@ const EventAnnouncementsScreen: React.FC = () => {
   // A failed announcements read rendered "No announcements yet" — the logging
   // catch left the list at []. Only the LIST decides this state.
   const [loadFailed, setLoadFailed] = useState(false);
+  // 403 is an ANSWER, not a failure (2026-09-17): the server shows announcements
+  // only to attendees (going/interested) and the host, while the event page shows
+  // the Announcements card to everyone. A non-attendee got "Couldn't load" and a
+  // Try again that can never succeed.
+  const [attendeesOnly, setAttendeesOnly] = useState(false);
   const markedReadRef = useRef<Set<string>>(new Set());
 
   /* ---- load data ---- */
@@ -75,6 +84,7 @@ const EventAnnouncementsScreen: React.FC = () => {
     if (!eventId) return;
     setLoading(true);
     setLoadFailed(false);
+    setAttendeesOnly(false);
     // Settled separately: the event is read only to decide whether you are the
     // host (the compose button). getEventById now throws on a failed load, and
     // inside one Promise.all that would have hidden announcements that loaded.
@@ -85,8 +95,12 @@ const EventAnnouncementsScreen: React.FC = () => {
     if (announcementsResult.status === 'fulfilled') {
       setAnnouncements(announcementsResult.value);
     } else {
-      logger.error('[EventAnnouncements] announcements load error:', announcementsResult.reason);
-      setLoadFailed(true);
+      if (announcementsResult.reason instanceof ApiError && announcementsResult.reason.status === 403) {
+        setAttendeesOnly(true);
+      } else {
+        logger.error('[EventAnnouncements] announcements load error:', announcementsResult.reason);
+        setLoadFailed(true);
+      }
     }
     if (eventResult.status === 'fulfilled') {
       setEvent(eventResult.value);
@@ -101,17 +115,15 @@ const EventAnnouncementsScreen: React.FC = () => {
   }, [loadData]);
 
   /* ---- determine if current user is host ---- */
-  const [myProfile, setMyProfile] = useState<{ id: string } | null>(null);
-
-  useEffect(() => {
-    dataProvider.getMyProfile()
-      .then((p) => setMyProfile(p ? { id: p.id } : null))
-      .catch(() => setMyProfile(null));
-  }, []);
-
+  // The member's id comes from the SESSION, not getMyProfile() (2026-09-17).
+  // A failed profile read did `.catch(() => setMyProfile(null))`, so the HOST
+  // was shown the attendee view — no compose button, "the host hasn't posted
+  // yet" — on their own event. A member with no display name has no profile row
+  // at all, so it happened without any failure too. Same fix as chat/[threadId].
+  const { user } = useAuthContext();
   const isHost = useMemo(
-    () => !!(myProfile && event?.hostUserId && myProfile.id === event.hostUserId),
-    [myProfile, event?.hostUserId],
+    () => !!(user?.id && event?.hostUserId && user.id === event.hostUserId),
+    [user?.id, event?.hostUserId],
   );
 
   /* ---- auto-mark as read on viewable items change ---- */
@@ -183,14 +195,14 @@ const EventAnnouncementsScreen: React.FC = () => {
             <View style={styles.authorRow}>
               <Ionicons name="person-outline" size={12} color={colors.muted} />
               <Text style={[styles.footerText, { color: colors.muted }]}>
-                {item.authorUserId === myProfile?.id ? 'You' : 'Host'}
+                {item.authorUserId === user?.id ? 'You' : 'Host'}
               </Text>
             </View>
           )}
         </View>
       </View>
     ),
-    [colors, myProfile],
+    [colors, user?.id],
   );
 
   const keyExtractor = useCallback((item: EventAnnouncement) => item.id, []);
@@ -207,6 +219,22 @@ const EventAnnouncementsScreen: React.FC = () => {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      ) : attendeesOnly ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="lock-closed-outline" size={48} color={colors.muted} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('announcement.attendees_only_title', { defaultValue: 'Announcements are for attendees' })}</Text>
+          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+            {t('announcement.attendees_only_hint', { defaultValue: 'Mark yourself Going or Interested on the event to see what the host posts.' })}
+          </Text>
+          <AnimatedPressable
+            onPress={() => safeGoBack(router)}
+            style={[styles.retryBtn, { borderColor: colors.border }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('announcement.attendees_only_cta', { defaultValue: 'Back to the event' })}
+          >
+            <Text style={[styles.retryText, { color: colors.accent }]}>{t('announcement.attendees_only_cta', { defaultValue: 'Back to the event' })}</Text>
+          </AnimatedPressable>
         </View>
       ) : loadFailed && announcements.length === 0 ? (
         <View style={styles.emptyContainer}>

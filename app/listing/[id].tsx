@@ -52,6 +52,7 @@ import logger from "@/utils/logger";
 import { userErrorMessage } from "@/lib/userErrorMessage";
 import { useTranslation } from 'react-i18next';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { dateLocale } from '@/constants/dateFormats';
 
 /**
  * The seller row: a plain View, or an AnimatedPressable when the seller's
@@ -784,7 +785,7 @@ function ListingDetailScreen() {
               <Text style={[styles.sellerMeta, { color: colors.muted }]}>
                 {[
                   listing.seller_since
-                    ? `Member since ${new Date(listing.seller_since).toLocaleDateString(undefined, { month: "short", year: "numeric" })}`
+                    ? `Member since ${new Date(listing.seller_since).toLocaleDateString(dateLocale(), { month: "short", year: "numeric" })}`
                     : null,
                   listing.seller_collection_size > 0
                     ? `${listing.seller_collection_size} item${listing.seller_collection_size === 1 ? "" : "s"} tracked`

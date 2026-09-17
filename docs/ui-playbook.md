@@ -2520,15 +2520,65 @@ skip `useBillingLimits`' server fallback and pin a paying member at free
 (`docs/MONETIZATION.md`). `secureStoreAdapter` is Supabase's auth storage and is
 unchanged.
 
-**Not covered — say so:** a failure written as a BOOLEAN — event detail's
-`listMyDropAlerts().catch(() => setAlertsOn(false))` shows the alert toggle OFF
-after a failed read (rule F matches `[]`/`null`/`0` only; `set…(false)` is also
-every `setLoading(false)`, so it needs a narrower rule); a read with no catch at all (an unhandled rejection is
+**Not covered — say so:** a failure written as a BOOLEAN *into render state* —
+event detail's `listMyDropAlerts().catch(() => setAlertsOn(false))` shows the
+alert toggle OFF after a failed read (`set…(false)` is also every
+`setLoading(false)`, so it needs a narrower rule). *(2026-09-17: a boolean
+RETURNED from a provider's error branch, and `.catch(() => false)`, ARE now
+covered — rules F3/F4, see "The provider that answered 'not blocked'" below.)*
+A read with no catch at all (an unhandled rejection is
 a different gate); a toast-only read whose list still says "none" underneath;
 reads that feed a section which hides itself are allowed by reason, not by
 rule. Found, not fixed: the sponsor dashboard finds sponsored events only among
 `listEvents({limit: 50})` (a capped read); `userProvider.getMyProfile` caches
 `null` for the session on a cold-start auth miss.
+
+## The provider that answered "not blocked" (2026-09-17)
+
+Rule F reads `catch` blocks. **supabase-js does not throw** — it resolves
+`{ data, error }` — so the provider spelling of "a failure answered as none" is
+
+```ts
+if (error) {
+  logger.warn('isBlocked error:', error);   // stripped in release
+  return false;                             // "not blocked"
+}
+```
+
+and no catch ever sees it. `isBlocked` did exactly this, and `app/chat/new.tsx`
+had been fixed on 09-15 to show a failed state when the block check REJECTS —
+which it never could. In production the RPC was failing for every member (a
+`search_path` bug, `docs/CLASS_SWEEPS.md` class M), so every member read as not
+blocked. **A fix at the screen is only as good as the contract of the provider
+under it.** Before relying on a rejection, open the function and check it can
+reject.
+
+Rules added to `check-silent-failures`:
+
+| rule | shape |
+|---|---|
+| F3 | in `src/{data,lib,store,api,services}`: `if (…error…) { … return []/null/0/false }`, braced or one line |
+| F4 | `.catch(() => setX(null))` without braces; `.catch(() => false)` |
+
+In a provider, `false` from an error branch IS an answer ("not blocked", "not
+enabled") — unlike `setLoading(false)` in a screen, which is why booleans are
+counted there and not in render state.
+
+**Two mistakes the first version of the rule made, both caught before commit:**
+it matched a COMMENT quoting the old code (the explanation written above the
+fix), and it exempted a whole `if (error) {…}` block when ONE nested branch
+carried `// empty-ok:` — `getPublicUserProfile`'s legitimate "no row" `null`
+silenced the real `return null` below it. Only a mutation showed that; the
+gate was green. Each empty return is now judged by the reason written above
+IT. Same lesson as `CLASS_SWEEPS.md`: resolve per block, never per file — and
+per return, never per block.
+
+**The failure has to have somewhere to go.** Making `getPublicUserProfile` throw
+sends a timeout to `users/[userId]`'s error branch, which said "Collector not
+found / doesn't exist or couldn't be loaded" and had no retry — it had rarely
+been reached on a failure. It now says which one happened
+(`user_profile.load_failed_*` vs `not_found_*`) and offers Try again. Changing a
+provider's contract means reading every branch its callers render.
 
 ## Screen sweep round 1: what the machine found (2026-09-15)
 

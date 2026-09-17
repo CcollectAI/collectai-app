@@ -44,9 +44,12 @@ const walk = (dir, out = []) => {
   return out;
 };
 
-// A literal locale string, or NO argument at all (device locale).
+// A literal locale string, or NO locale (device locale). `undefined` is the
+// same as no argument — it is how you pass options without a locale — and the
+// first version matched only `()`, so `toLocaleDateString(undefined, {…})` on
+// announcements and the listing's "Member since" got through (2026-09-17).
 const HARDCODED = /\.toLocale(?:Date|Time)?String\(\s*['"][a-z]{2}(?:-[A-Z]{2})?['"]/;
-const DEVICE = /\.toLocale(?:Date|Time)?String\(\s*\)/;
+const DEVICE = /\.toLocale(?:Date|Time)?String\(\s*(?:\)|undefined\b)/;
 
 const findings = [];
 for (const abs of SCAN.flatMap((d) => walk(join(ROOT, d)))) {

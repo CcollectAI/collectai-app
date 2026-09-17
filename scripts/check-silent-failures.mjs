@@ -238,6 +238,58 @@ for (const abs of files) {
       if (/empty-ok:|best-effort:/.test(lines)) continue;
       add('empty-on-failure', rel, lineOf(src, m.index), `${m[0]} — a failure resolves as an empty value`);
     }
+    // F3 (2026-09-17). supabase-js does not THROW — it returns `{ error }` — so
+    // the provider spelling of this class is `if (error) { log; return false }`
+    // and has no catch for the rules above to see. `isBlocked` did exactly that:
+    // chat/new's failed state for a failed block check could never run, and when
+    // the RPC broke in production every member read as "not blocked". BOOLEANS
+    // count here: in a provider, `false` from an error branch is an answer
+    // ("not blocked", "not enabled"), unlike `setLoading(false)` in render code.
+    //
+    // readReason: a written reason within 3 lines above, OR the match sits in a
+    // comment — a comment QUOTING the old bug is not the bug (the first run of
+    // F4 flagged the explanation written above the fix).
+    const readReason = (idx) => {
+      const ln = lineOf(src, idx);
+      const before = src.slice(src.lastIndexOf('\n', idx) + 1, idx);
+      if (before.includes('//') || /^\s*\*/.test(before)) return true;
+      return /empty-ok:|best-effort:/.test(src.split('\n').slice(Math.max(0, ln - 4), ln).join('\n'));
+    };
+    for (const m of providerCode ? src.matchAll(/\bif\s*\(\s*!?\s*\w*[eE]rr(?:or)?\w*\b[^)]*\)\s*(\{|return\b)/g) : []) {
+      if (/\bif\s*\(\s*!/.test(m[0])) continue; // `if (!err)` is the success branch
+      if (readReason(m.index)) continue;
+      let bodyStart, body;
+      if (m[1] === '{') {
+        const open = m.index + m[0].length - 1;
+        const close = braceFwd(open);
+        if (close < 0) continue;
+        bodyStart = open;
+        body = src.slice(open, close);
+      } else {
+        bodyStart = m.index + m[0].length - 6;
+        body = src.slice(bodyStart, src.indexOf(';', m.index) + 1);
+      }
+      // Judge EACH empty return by the reason written above IT — never by a
+      // reason or a throw anywhere in the block. The first version did the
+      // latter, and the `empty-ok:` on getPublicUserProfile's nested "no row"
+      // branch silenced the real `return null` below it (caught by mutation).
+      // A sentinel STRING counts too: getDmStatus did `if (error || !data) return 'none'`,
+      // and 'none' opens the request composer (2026-09-17).
+      for (const r of body.matchAll(/\breturn\s+(\[\]|null|0|false|'[a-z_]+'|"[a-z_]+"|\{[^}]*:\s*\[\]\s*\})\s*;/g)) {
+        if (readReason(bodyStart + r.index)) continue;
+        add('empty-on-failure', rel, lineOf(src, bodyStart + r.index), `error branch returns ${r[1]} — callers cannot tell failed from ${r[1] === 'false' ? '"no"' : 'none'}`);
+      }
+    }
+    // F4: the expression-bodied `.catch(() => setX(null))` — announcements'
+    // host check hid the compose button from the host this way.
+    for (const m of renderCode ? src.matchAll(/\.catch\(\s*(?:\([^)]*\)|\w+)?\s*=>\s*set[A-Z]\w*\(\s*(\[\]|null|0|\{\})\s*\)\s*\)/g) : []) {
+      if (readReason(m.index)) continue;
+      add('empty-on-failure', rel, lineOf(src, m.index), `${m[0]} — a failed load renders as empty`);
+    }
+    for (const m of (renderCode || providerCode) ? src.matchAll(/\.catch\(\s*(?:\([^)]*\)|\w+)?\s*=>\s*false\s*\)/g) : []) {
+      if (readReason(m.index)) continue;
+      add('empty-on-failure', rel, lineOf(src, m.index), `${m[0]} — a failure resolves as "no"`);
+    }
     for (const m of renderCode ? src.matchAll(/\.catch\(\s*(?:\([^)]*\)|\w+)?\s*=>\s*\{/g) : []) {
       const open = src.indexOf('{', m.index);
       const close = braceFwd(open);

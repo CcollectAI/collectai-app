@@ -442,12 +442,31 @@ function UserProfileScreen() {
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['left', 'right']}>
         <View style={styles.centerContainer}>
           <Ionicons name="person-outline" size={48} color={colors.muted} />
+          {/* FAILED and NOT FOUND are different sentences (2026-09-17). This
+              branch was rarely reached on a failure, because
+              getPublicUserProfile turned a failed read into null ("not found").
+              It now throws, so the branch has to say which one happened and
+              offer the retry it never had. */}
           <Text style={[styles.errorTitle, { color: colors.text }]}>
-            {error || 'Collector not found'}
+            {error
+              ? t('user_profile.load_failed_title', { defaultValue: "Couldn't load this profile" })
+              : t('user_profile.not_found_title', { defaultValue: 'Collector not found' })}
           </Text>
           <Text style={[styles.errorSubtitle, { color: colors.muted }]}>
-            This profile doesn&apos;t exist or couldn&apos;t be loaded.
+            {error
+              ? t('user_profile.load_failed_hint', { defaultValue: 'Check your connection and try again.' })
+              : t('user_profile.not_found_hint', { defaultValue: "This profile doesn't exist or is no longer public." })}
           </Text>
+          {error ? (
+            <AnimatedPressable
+              style={[styles.retryBtn, { borderColor: colors.accent, backgroundColor: colors.accent }]}
+              onPress={retry}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.try_again')}
+            >
+              <Text style={[styles.retryBtnText, { color: colors.accentText }]}>{t('common.try_again')}</Text>
+            </AnimatedPressable>
+          ) : null}
           <AnimatedPressable
             style={[styles.retryBtn, { borderColor: colors.border }]}
             onPress={() => safeGoBack(router)}

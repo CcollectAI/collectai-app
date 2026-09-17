@@ -628,7 +628,10 @@
     "message_placeholder": "Rédigez votre annonce...",
     "message_a11y": "Message de l'annonce",
     "send_a11y": "Envoyer l'annonce",
-    "load_failed": "Impossible de charger les annonces"
+    "load_failed": "Impossible de charger les annonces",
+    "attendees_only_title": "Les annonces sont réservées aux participants",
+    "attendees_only_hint": "Indiquez sur l'événement que vous y allez ou que vous êtes intéressé pour voir ce que publie l'organisateur.",
+    "attendees_only_cta": "Retour à l'événement"
   },
   "project_header": {
     "mark_complete_a11y": "Marquer le projet comme terminé",
@@ -765,7 +768,11 @@
     "not_set_up_title": "Votre profil public n’est pas encore configuré",
     "not_set_up_hint": "Choisissez un nom d'utilisateur pour que les autres collectionneurs puissent vous trouver et voir ce que vous collectionnez.",
     "not_set_up_cta": "Choisir un nom d'utilisateur",
-    "not_set_up_cta_a11y": "Ouvrir les réglages pour choisir un nom d'utilisateur"
+    "not_set_up_cta_a11y": "Ouvrir les réglages pour choisir un nom d'utilisateur",
+    "load_failed_title": "Impossible de charger ce profil",
+    "load_failed_hint": "Vérifiez votre connexion et réessayez.",
+    "not_found_title": "Collectionneur introuvable",
+    "not_found_hint": "Ce profil n'existe pas ou n'est plus public."
   },
   "items_detail": {
     "thin_cat_help": "Cette catégorie a besoin de vos données : indiquez ci-dessous le prix payé pour améliorer les estimations.",

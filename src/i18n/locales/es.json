@@ -628,7 +628,10 @@
     "message_placeholder": "Escribe tu anuncio...",
     "message_a11y": "Mensaje del anuncio",
     "send_a11y": "Enviar el anuncio",
-    "load_failed": "No se pudieron cargar los anuncios"
+    "load_failed": "No se pudieron cargar los anuncios",
+    "attendees_only_title": "Los anuncios son para asistentes",
+    "attendees_only_hint": "Marca en el evento que vas o que te interesa para ver lo que publica el organizador.",
+    "attendees_only_cta": "Volver al evento"
   },
   "project_header": {
     "mark_complete_a11y": "Marcar el proyecto como completado",
@@ -765,7 +768,11 @@
     "not_set_up_title": "Tu perfil público aún no está configurado",
     "not_set_up_hint": "Elige un nombre de usuario para que otros coleccionistas puedan encontrarte y ver lo que coleccionas.",
     "not_set_up_cta": "Elegir un nombre de usuario",
-    "not_set_up_cta_a11y": "Abrir ajustes para elegir un nombre de usuario"
+    "not_set_up_cta_a11y": "Abrir ajustes para elegir un nombre de usuario",
+    "load_failed_title": "No se pudo cargar este perfil",
+    "load_failed_hint": "Comprueba tu conexión e inténtalo de nuevo.",
+    "not_found_title": "Coleccionista no encontrado",
+    "not_found_hint": "Este perfil no existe o ya no es público."
   },
   "items_detail": {
     "thin_cat_help": "Esta categoría necesita tus datos: indica abajo cuánto pagaste para mejorar las estimaciones.",

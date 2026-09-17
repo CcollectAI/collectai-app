@@ -2,6 +2,30 @@
 
 > Renamed from CollectAI 2026-05-04 · Last refreshed 2026-08-26
 
+## Blocking a member does not work in production — and the app said "not blocked" (2026-09-17)
+
+`rpc_block_user_v1`, `rpc_list_blocked_v1` and `rpc_is_blocked_v1` fail with
+`relation "user_blocks" does not exist` (read back on prod, read-only). Cause:
+the 2026-04-24 security-advisor migration pinned `search_path` through
+`format('… = %L', 'public, pg_temp')`, and `%L` made it ONE schema named
+`"public, pg_temp"`. 203 functions carry it; only those using bare names break.
+`20260917b_fix_quoted_search_path.sql` **was applied to production 2026-09-17**
+(203 → 0; both lock preflights still pass, no bake restart needed). Gate:
+`check:sql-search-path`. **It then revealed a second bug**: `rpc_block_user_v1`
+declines pending DMs in the pre-rewrite `chat_threads` table, which no longer
+exists — so Block still throws. `20260917c_blocking_uses_dm_requests.sql`
+fixes that (and makes the DM-request RPCs respect blocks) and is **NOT applied**.
+After a mechanical fix, re-run the user action end to end: the first error hides
+the next one.
+
+The app hid it: `isBlocked()` returned `false` on error, so `chat/new`'s
+failed-block-check state (added 09-15) could never run. Rule F only read
+`catch` blocks and supabase-js does not throw — now rules F3/F4. **Never write a
+multi-schema path as one quoted string, and never trust a screen's failure
+branch without checking the provider under it can reject.** Full write-up:
+`docs/CLASS_SWEEPS.md` class M; `docs/ui-playbook.md` "The provider that
+answered 'not blocked'".
+
 ## A failed read said "you have none" on 74 sites — and the gate that checks catches approved all of them (2026-09-15)
 
 The 09-15 Android walk opened Home on **"Add items to your collection"** under
@@ -124,10 +148,13 @@ taught the bug".
 **The register of every class sweep — method, what landed, what is still open,
 and the four product decisions waiting — is `docs/CLASS_SWEEPS.md`.** Read it
 before opening a new sweep: A–H are done (D needs re-running, its report was lost
-with a session), I–L were launched 09-16 and died on a rate limit without
-reporting. Open, verified, unfixed: 2 stale cache keys, 12 hard-coded date
-locales, ~14 MED parsing sites, the `/collections/user/progress` 500, and a
-half-saving item edit.
+with a session), I never ran, J and K ran 09-17, L only its contrast half, M
+(database failure read as "no") was found 09-17. *(Re-verified 2026-09-17: the
+date locales, the parsing sites and the half-saving item edit are FIXED — that
+sentence used to list them as open.)* Open: 2 stale cache keys (still true in
+`CachedDataProvider.ts`: item mutations never clear `CATEGORY_SUMMARIES`), the
+`/collections/user/progress` 500, the billing-webhook fix not deployed, and the
+class-M migration not applied.
 
 ## Five screenshots, eleven defects, and three of my own (2026-08-27)
 

@@ -843,7 +843,10 @@ export async function searchItems(query: string): Promise<Item[]> {
     // where it matters. Returning [] renders as "no results", which is
     // indistinguishable from a genuinely empty search unless this is logged.
     logger.error('[SupabaseDataProvider] searchItems error:', error);
-    return [];
+    // Throw: logging it did not make [] distinguishable from "no results" to
+    // the member. No screen calls this today (2026-09-17) — so the first one
+    // that does gets a failure it can render.
+    throw new Error(error.message || 'Search failed');
   }
 
   return mapRowsWithValues(data);

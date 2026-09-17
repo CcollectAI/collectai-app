@@ -628,7 +628,10 @@
     "message_placeholder": "Schreibe deine Ankündigung ...",
     "message_a11y": "Text der Ankündigung",
     "send_a11y": "Ankündigung senden",
-    "load_failed": "Ankündigungen konnten nicht geladen werden"
+    "load_failed": "Ankündigungen konnten nicht geladen werden",
+    "attendees_only_title": "Ankündigungen sind für Teilnehmende",
+    "attendees_only_hint": "Markiere dich beim Event als „Dabei“ oder „Interessiert“, um die Beiträge des Veranstalters zu sehen.",
+    "attendees_only_cta": "Zurück zum Event"
   },
   "project_header": {
     "mark_complete_a11y": "Projekt als abgeschlossen markieren",
@@ -765,7 +768,11 @@
     "not_set_up_title": "Dein öffentliches Profil ist noch nicht eingerichtet",
     "not_set_up_hint": "Wähle einen Benutzernamen, damit andere Sammler dich finden und sehen können, was du sammelst.",
     "not_set_up_cta": "Benutzernamen wählen",
-    "not_set_up_cta_a11y": "Einstellungen öffnen, um einen Benutzernamen zu wählen"
+    "not_set_up_cta_a11y": "Einstellungen öffnen, um einen Benutzernamen zu wählen",
+    "load_failed_title": "Profil konnte nicht geladen werden",
+    "load_failed_hint": "Prüfe deine Verbindung und versuche es erneut.",
+    "not_found_title": "Sammler nicht gefunden",
+    "not_found_hint": "Dieses Profil existiert nicht oder ist nicht mehr öffentlich."
   },
   "items_detail": {
     "thin_cat_help": "Diese Kategorie braucht deine Daten — gib unten an, was du bezahlt hast, um die Schätzungen zu verbessern.",

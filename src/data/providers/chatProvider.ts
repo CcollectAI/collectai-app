@@ -272,6 +272,7 @@ export async function isOtherUserTyping(threadId: string): Promise<boolean> {
   const { data, error } = await supabase.rpc('rpc_get_typing_v1', {
     p_thread_id: threadId,
   });
+  // empty-ok: a typing indicator is polled and ephemeral — a failed poll hides "typing…" until the next one, it claims nothing about stored data.
   if (error || !data) return false;
   const rows = data as { user_id: string; is_typing: boolean }[];
   return rows.some((r) => r.is_typing);
@@ -291,11 +292,25 @@ export async function getDmStatus(otherUserId: string): Promise<'none' | 'pendin
     .limit(1)
     .maybeSingle();
 
-  if (error || !data) return 'none';
+  // THROW on a failed read (2026-09-17). 'none' opens the request composer —
+  // chat/new sets a FAILED state when this rejects, and it never could.
+  if (error) {
+    logger.error('[SupabaseDataProvider] getDmStatus error:', error);
+    throw new Error(error.message || 'Could not check the conversation status');
+  }
+  // empty-ok: no request row in either direction genuinely means no conversation yet.
+  if (!data) return 'none';
 
+  // The DATABASE's words are 'approved' / 'denied' (rpc_decide_dm_request_v1).
+  // This compared against 'accepted' / 'declined' only, so every connected
+  // pair — 41 of 46 requests on production, 2026-09-17, and none of them
+  // 'accepted' — read as 'none': "Message" opened the request composer again
+  // and each send filed another pending request, and a decline could be
+  // re-requested forever. Both spellings are accepted so an older row or a
+  // future rename cannot reopen it.
   const row = data as { status: string; requester_id: string; target_user_id: string };
-  if (row.status === 'accepted') return 'accepted';
-  if (row.status === 'declined') return 'declined';
+  if (row.status === 'approved' || row.status === 'accepted') return 'accepted';
+  if (row.status === 'denied' || row.status === 'declined') return 'declined';
   if (row.status === 'pending') {
     return row.target_user_id === user.id ? 'pending_incoming' : 'pending_outgoing';
   }

@@ -52,12 +52,19 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
     .maybeSingle();
 
   if (error) {
+    // empty-ok: PGRST116 is PostgREST's "no row" — the member genuinely has no public profile, which is what null means.
     if (error.code === 'PGRST116') {
       profileCache.set(userId, null);
       return null;
     }
-    logger.warn('[SupabaseDataProvider] getPublicUserProfile error:', error);
-    return null;
+    // THROW (2026-09-17). null means "this member has no public profile", and
+    // users/[userId] renders it as exactly that — "doesn't exist", or on your
+    // OWN profile "set a display name". A timeout is not that. The warn was
+    // also stripped in release builds. Callers: users/[userId] (useAsync →
+    // its error branch), events/[eventId] (.catch, hides the host card),
+    // listBlockedUsers (allSettled), getMyProfile (its callers catch).
+    logger.error('[SupabaseDataProvider] getPublicUserProfile error:', error);
+    throw new Error(error.message || 'Could not load profile');
   }
 
   if (!data) {
@@ -110,11 +117,16 @@ export async function getMyProfile(): Promise<PublicUserProfile | null> {
   }
 
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    logger.warn('[SupabaseDataProvider] getMyProfile: not authenticated');
-    myProfileCache = null;
-    return null;
+  // Nothing is cached here (2026-09-17): this used to store null for the whole
+  // session, so an auth read that missed on a cold start — before the session
+  // had hydrated — answered "no profile" until the app was killed. And an auth
+  // ERROR is not "signed out"; only a clean answer with no user is.
+  if (authError) {
+    logger.error('[SupabaseDataProvider] getMyProfile: auth read failed', authError);
+    throw new Error(authError.message || 'Could not read the session');
   }
+  // empty-ok: no error and no user is a signed-out caller, who has no profile — and it is not cached, so the next call after sign-in reads again.
+  if (!user) return null;
 
   const profile = await getPublicUserProfile(user.id);
   myProfileCache = profile;
@@ -233,8 +245,14 @@ export async function isBlocked(userId: string): Promise<boolean> {
     p_other_id: userId,
   });
   if (error) {
-    logger.warn('[SupabaseDataProvider] isBlocked error:', error);
-    return false;
+    // THROW, not `return false` (2026-09-17). chat/new sets a FAILED state when
+    // this rejects, precisely so a failed block check never reads as "you may
+    // message this collector" — but this returned false, so that catch could
+    // never run. It mattered: on 2026-09-17 every call failed in production
+    // (the RPC's search_path is pinned to ONE schema named "public, pg_temp",
+    // so `user_blocks` does not resolve) and every member read as not blocked.
+    logger.error('[SupabaseDataProvider] isBlocked error:', error);
+    throw new Error(error.message || 'Could not check block status');
   }
   return data === true;
 }

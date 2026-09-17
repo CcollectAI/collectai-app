@@ -628,7 +628,10 @@
     "message_placeholder": "お知らせを入力…",
     "message_a11y": "お知らせの本文",
     "send_a11y": "お知らせを送信",
-    "load_failed": "お知らせを読み込めませんでした"
+    "load_failed": "お知らせを読み込めませんでした",
+    "attendees_only_title": "お知らせは参加者向けです",
+    "attendees_only_hint": "イベントで「参加」または「興味あり」を選ぶと、主催者の投稿を見られます。",
+    "attendees_only_cta": "イベントに戻る"
   },
   "project_header": {
     "mark_complete_a11y": "プロジェクトを完了にする",
@@ -765,7 +768,11 @@
     "not_set_up_title": "公開プロフィールはまだ設定されていません",
     "not_set_up_hint": "ユーザー名を設定すると、他のコレクターがあなたを見つけて、コレクションを見られるようになります。",
     "not_set_up_cta": "ユーザー名を設定",
-    "not_set_up_cta_a11y": "設定を開いてユーザー名を設定"
+    "not_set_up_cta_a11y": "設定を開いてユーザー名を設定",
+    "load_failed_title": "プロフィールを読み込めませんでした",
+    "load_failed_hint": "接続を確認して、もう一度お試しください。",
+    "not_found_title": "コレクターが見つかりません",
+    "not_found_hint": "このプロフィールは存在しないか、公開されていません。"
   },
   "items_detail": {
     "thin_cat_help": "このカテゴリーはデータが不足しています。購入価格を下に入力すると推定精度が上がります。",

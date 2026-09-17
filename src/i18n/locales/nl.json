@@ -628,7 +628,10 @@
     "message_placeholder": "Schrijf je aankondiging...",
     "message_a11y": "Bericht van aankondiging",
     "send_a11y": "Aankondiging verzenden",
-    "load_failed": "Aankondigingen konden niet worden geladen"
+    "load_failed": "Aankondigingen konden niet worden geladen",
+    "attendees_only_title": "Aankondigingen zijn voor deelnemers",
+    "attendees_only_hint": "Geef op het evenement aan dat je gaat of geïnteresseerd bent om te zien wat de organisator plaatst.",
+    "attendees_only_cta": "Terug naar het evenement"
   },
   "project_header": {
     "mark_complete_a11y": "Project markeren als voltooid",
@@ -765,7 +768,11 @@
     "not_set_up_title": "Je openbare profiel is nog niet ingesteld",
     "not_set_up_hint": "Kies een gebruikersnaam zodat andere verzamelaars je kunnen vinden en zien wat je verzamelt.",
     "not_set_up_cta": "Kies een gebruikersnaam",
-    "not_set_up_cta_a11y": "Open instellingen om een gebruikersnaam te kiezen"
+    "not_set_up_cta_a11y": "Open instellingen om een gebruikersnaam te kiezen",
+    "load_failed_title": "Kon dit profiel niet laden",
+    "load_failed_hint": "Controleer je verbinding en probeer het opnieuw.",
+    "not_found_title": "Verzamelaar niet gevonden",
+    "not_found_hint": "Dit profiel bestaat niet of is niet meer openbaar."
   },
   "items_detail": {
     "thin_cat_help": "Deze categorie heeft je gegevens nodig — geef hieronder aan wat je hebt betaald om de schattingen te verbeteren.",

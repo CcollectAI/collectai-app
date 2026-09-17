@@ -52,13 +52,131 @@ Two rules the tooling learned the hard way:
 | H | The date on screen is not the date that was meant | 2026-09-16 | partly landed; locale half open |
 | I | One tap, two writes (unguarded async handlers) | launched 09-16 | ⛔ agents died on a session rate limit — not run |
 | J | A member can see data that is not theirs (RLS / IDOR / public views) | 2026-09-17 | ✅ prod verified clean; repo drift fixed + gated |
-| K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | 1 fixed; 1 HIGH open (billing webhook) |
-| L | The control is there but a person cannot use it (touch targets, labels, contrast) | launched 09-16 | ⛔ not run |
+| M | The database fails, and the app reads the failure as "no" | 2026-09-17 | app half fixed + gated; `20260917b` **applied**; `20260917c` (block→dm_requests + block checks) written, NOT applied |
+| N | The client compares a status the database never writes | 2026-09-17 | `getDmStatus` fixed + tested; a per-column enumeration still owed |
+| K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | billing webhook fixed `8439f97` (**not deployed**); item edit, calendar, template fixed; P2P listing insert open |
+| L | The control is there but a person cannot use it (touch targets, labels, contrast) | partly, 2026-09-17 | contrast half: 43 icon sites + gate `19a8fdc`, accent 2.02:1 is a brand decision; touch targets + labels ⛔ not run |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
 worth re-running verbatim; K got far enough to confirm one sharper variant of the
 partial-write class before it died (see K below).
+
+## M — blocking is broken in production (2026-09-17)
+
+**Found by walk round 5** (live API, 09-16 20:48, never logged until now):
+Settings → Blocked users logged Postgres `42P01`. Read back on production
+(read-only), `rpc_list_blocked_v1` and `rpc_is_blocked_v1` both fail with
+`relation "user_blocks" does not exist`, and `plpgsql_check` reports the same
+for `rpc_block_user_v1` (`user_blocks`, `chat_threads`). So: **a member cannot
+block anyone, cannot see who they blocked, and the pre-message block check
+fails.**
+
+**Root cause — one character class.** `20260424_security_advisor_bulk_C_and_A.sql`
+pinned `search_path` with `format('… SET search_path = %L', 'public, pg_temp')`.
+`%L` quotes the whole list as ONE literal, so Postgres stored
+`search_path="public, pg_temp"`: a single schema whose name contains a comma.
+Inside those functions nothing but `pg_catalog` resolves. Fully qualified
+functions (`public.x`) kept working, which is why nothing looked broken; every
+bare name fails. **203 functions in `public`** carry it (124 plpgsql, 55 SQL,
+24 trigger). Three later migrations copied the quoted spelling by hand. The
+security advisor stayed green, because a pinned path of any value satisfies it.
+
+**And the app hid it.** `isBlocked()` logged a `warn` (stripped in release) and
+returned `false`. `app/chat/new.tsx` already sets a FAILED state when the check
+rejects — its comment says a failed block check must never read as "you may
+message this collector" — but the provider never rejected, so that branch could
+not run. The 09-15 rule-F fix was defeated one layer down.
+
+**Why rule F missed it:** it only reads `catch` blocks, and supabase-js does not
+throw — it returns `{ error }`. The `if (error) { log; return false }` spelling
+was invisible, and `false` was not counted as an empty value at all
+(ui-playbook "A failed read is not 'none'" listed booleans as not covered).
+
+| landed | |
+|---|---|
+| `isBlocked` | throws; `chat/new`'s failed state can now run |
+| `getPublicUserProfile` | throws on a failed read; `null` only for "no row". `users/[userId]` now says "Couldn't load this profile" + Try again vs "Collector not found" (7 locales). A failed read had also been CACHED as null by swr for the TTL |
+| `getMyProfile` | no longer caches `null` for the session on an auth miss (open since 09-15); an auth ERROR rejects |
+| announcements | host check + "You"/"Host" label from the session id, not a profile fetch that hid the compose button from the host on failure |
+| `searchItems`, `collectionStore` | throw (no callers today) |
+| rule F3/F4 in `check-silent-failures` | provider `if (error) … return []/null/0/false`, braced or not; `.catch(() => setX(null))`; `.catch(() => false)`. Each empty return is judged by the reason above IT — the first version let one nested `empty-ok:` exempt the whole block (caught by mutation). 5 mutations red |
+| `check:date-locale` | `toLocaleDateString(undefined, …)` is the device locale too; the gate matched only `()`. 2 sites fixed |
+| `check:sql-search-path` (new, prebuild) | quoted multi-schema path, literal or via `%L`; 4 historical files allowlisted with a stale-entry check. Proven 4 ways |
+| `__tests__/data/userProviderFailures.test.ts` (prebuild) | 7 tests, 3 mutations proven |
+
+**✅ APPLIED 2026-09-17 19:32** — `20260917b` ran on production: 203 → 0 quoted
+paths, `rpc_is_blocked_v1` now `search_path=public, pg_temp`. Verified as the
+member in a rolled-back transaction: `rpc_list_blocked_v1()` returns 0 rows and
+`rpc_is_blocked_v1()` returns false where both used to raise 42P01.
+`preflight_rpc_lock` and `preflight_schema_lock` both PASS afterwards (the rpc
+lock holds names + params, which an ALTER … SET does not touch), so **no bake
+restart was needed** and no restart-time bomb was left.
+
+**…and the search_path bug was hiding a second one.** With the path fixed, a
+rolled-back `rpc_block_user_v1` call failed with `relation "chat_threads" does
+not exist`: the function still auto-declines pending DMs in the PRE-REWRITE
+chat table. Pending requests live in `chat_dm_requests_v1`. So blocking was
+broken twice over, and fixing only the path would have looked like a fix while
+`Block` still threw. **After a mechanical fix, re-run the user action end to
+end — the first error can hide the next one.**
+
+`20260917c_blocking_uses_dm_requests.sql` (written, **NOT APPLIED** — needs
+Merle) fixes three things, bodies taken from the live definitions:
+1. `rpc_block_user_v1` declines pending `chat_dm_requests_v1` rows in both
+   directions (`status='denied'`, `decided_at`, `decided_by`);
+2. `rpc_request_dm_v1` refuses when either party has blocked the other — it
+   never looked at `user_blocks`, and the app was the only check, so a blocked
+   member could still request through the API;
+3. `rpc_decide_dm_request_v1` refuses to APPROVE across a block (declining
+   stays allowed).
+Server-side enforcement elsewhere is fine: `server/app/lib/blocks.py` queries
+`user_blocks` directly, so EC2's send-message route and the P2P surfaces have
+been honouring blocks all along.
+Still open after it: a blocked member with an EXISTING thread can insert into
+`chat_messages_v1` straight through PostgREST — the RLS insert policy checks
+thread membership, not blocks. EC2's route checks; the direct path does not.
+
+**The original note (superseded):** apply `20260917b_fix_quoted_search_path.sql`.
+It re-pins the path UNQUOTED on exactly the functions carrying the broken value
+(metadata only; a no-op for qualified functions) and refuses to commit if a
+quoted multi-schema path survives in `public`. Before applying, know that it
+makes previously FAILING functions start working — for blocking that is the
+point, but any worker function that has been silently failing will run.
+Could not be verified in a rolled-back transaction here: that DDL (and then
+further prod reads) was denied by the session's permission classifier, correctly.
+After applying: `select * from rpc_list_blocked_v1()` as a member returns rows
+not an error, and the Blocked users screen loads on a device.
+
+Not fixed by it: `rpc_enqueue_push_v1` calls `digest()`, which lives in the
+`extensions` schema — still unresolvable on `public, pg_temp`. Other
+`plpgsql_check` errors in the same run were NOT this class (e.g. `public.alerts_outbox`
+is fully qualified and simply gone; `rpc_anonymize_my_account_v1/v2` update a
+column of a view — but nothing in `src`/`app`/`server` calls either; account
+deletion is `account_router._do_account_delete`) — dead, not urgent.
+
+## N — the client compares a status the database never writes (2026-09-17)
+
+`getDmStatus` mapped `'accepted'` / `'declined'`. `rpc_decide_dm_request_v1`
+writes **`'approved'` / `'denied'`**. Production, read 2026-09-17:
+**41 requests `approved`, 5 `pending`, zero `accepted`.**
+
+So for every connected pair the status read as `'none'`, and `'none'` is the
+composer: "Message" asked them to send a request they had already had approved,
+and each send filed ANOTHER pending row. A decline read as `'none'` too, so it
+could be re-requested forever — the decline meant nothing. `chat/new`'s
+`'declined'` branch has never been reachable.
+
+Fixed at the mapper (both spellings accepted, so an old row or a rename cannot
+reopen it), with 6 tests, 3 mutation-proven. The same function did
+`if (error || !data) return 'none'` — a failed read opened the composer, which
+is exactly what that screen's failed state exists to prevent. Rule F3 now counts
+a sentinel STRING from an error branch; proven by re-breaking this line.
+
+**Not gated, worth a sweep:** every other place the client compares a status
+literal to one the DB writes. A regex gate would have to know each column's
+vocabulary; the honest move is to enumerate the pairs (client literal ↔ writer)
+once, per column, rather than pretend a checker can.
 
 ## What landed
 

@@ -628,7 +628,10 @@
     "message_placeholder": "Write your announcement...",
     "message_a11y": "Announcement message",
     "send_a11y": "Send announcement",
-    "load_failed": "Couldn't load announcements"
+    "load_failed": "Couldn't load announcements",
+    "attendees_only_title": "Announcements are for attendees",
+    "attendees_only_hint": "Mark yourself Going or Interested on the event to see what the host posts.",
+    "attendees_only_cta": "Back to the event"
   },
   "project_header": {
     "mark_complete_a11y": "Mark project as complete",
@@ -765,7 +768,11 @@
     "not_set_up_title": "Your public profile isn't set up yet",
     "not_set_up_hint": "Choose a username so other collectors can find you and see what you collect.",
     "not_set_up_cta": "Choose a username",
-    "not_set_up_cta_a11y": "Open settings to choose a username"
+    "not_set_up_cta_a11y": "Open settings to choose a username",
+    "load_failed_title": "Couldn't load this profile",
+    "load_failed_hint": "Check your connection and try again.",
+    "not_found_title": "Collector not found",
+    "not_found_hint": "This profile doesn't exist or is no longer public."
   },
   "items_detail": {
     "thin_cat_help": "This category needs your data — share what you paid below to help improve estimates.",
