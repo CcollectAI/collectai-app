@@ -60,7 +60,7 @@ Two rules the tooling learned the hard way:
 | N | The client compares a status the database never writes | 2026-09-17 | ✅ `getDmStatus` fixed + tested; all 8 status columns enumerated; NO gate (measured: 83 findings, nearly all homonyms) |
 | K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | ✅ all fixed: billing webhook `8439f97`, item edit, calendar, template, P2P listing transaction — **two server fixes not deployed** |
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
-| S | The server answered `ok` and wrote nothing | 2026-09-17/18 | 10 of 34 read: 6 `ok`-without-a-write fixed + the announcement DM dead five months + **4 money handlers made atomic and row-locked** (a trade could complete twice or never; a sale could be banked twice; a mandate could overspend its cap). 8 tests that PINNED the lie rewritten. **24 unread** |
+| S | The server answered `ok` and wrote nothing | 2026-09-17/18 | ✅ **all 34 read**: 6 `ok`-without-a-write fixed, the announcement DM dead five months fixed, 4 money handlers made atomic + row-locked (a trade could complete twice or never; a sale banked twice; a mandate past its cap), 22 of the 34 sites cleared with the reason written down. 8 tests that PINNED the lie rewritten. One decision left: `reports_count` is written, read nowhere |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -917,20 +917,51 @@ returns a status string, so those stubs described a database that does not
 exist. `_attach_transaction()` in `server/tests/test_purchase_router.py` is the
 one place to fix it.
 
-**Still open:** of the 34 mechanical hits, 10 have now been read (6 `ok`-without-
-a-write, plus the four handlers made atomic). **The remaining 24 have not been
-read one by one.** Next: `item_images_router` delete/reorder,
-`favorites_router.remove_favorite`, `catalog_learning_router` (ops-key, 7 sites),
-`gamification_router.award_xp`, `notification_router.unregister_push_token`,
-`sponsor_company_router.create_event_checkout` (a `DELETE FROM events` with no
-owner in the WHERE — read it before assuming it is a rollback path).
+### All 34 read — and 22 of them were fine for a reason worth writing down
 
-**No gate yet, and not because the class is closed.** A gate on "discarded row
-count" would fire on all 34, most of which need a written reason rather than a
-fix — noise that stops being read, the same measurement that killed the class N
-gate. What a gate CAN catch is narrower and
-worth writing next: a route handler that returns `{"ok": True}` (or
-`success=True`) from a branch in which no write statement appears at all.
+The enumeration is closed. The 34 are SITES, not handlers: `respond_to_offer`
+alone holds 6 and `catalog_learning_router` 7. Twelve of the 34 belong to the
+five handlers fixed above (`respond_to_offer` 6, `confirm_exchange` 2,
+`confirm_deal` 2, `record_sale` 1, `block_user` 1). The other **22 discard their
+row count correctly**, and the reasons fall into four shapes — which is the
+useful output, because it is what a gate would have to understand:
+
+| shape | sites | why 0 rows cannot be a lie |
+|---|---|---|
+| **Existence and ownership proven by a preceding SELECT** | `chat_router.delete_message`, `item_images_router.delete_item_image`, `sponsor_company_router.delete_company`, `p2p_offers_router.set_tracking`, `catalog_learning_router` ×7 (ops key), `p2p_listing_router.report_listing` | the row was read in the same handler under the same `WHERE`. A 0 here is a concurrent delete, and the answer ("it is gone") is still true |
+| **Idempotent by intent** | `favorites_router.remove_favorite` ×2, `events_core.unfollow_category`, `notification_router.unregister_push_token` | the member asked for an END STATE, and it holds whether or not a row moved. Contrast `block_user`, where the end state was NOT reached — that one was a real finding |
+| **The row is guaranteed by the statement above it** | `gamification_router.award_xp` — an upsert `RETURNING` the row, then the level write | |
+| **Already correct** | `item_images_router.reorder_item_images`, `p2p_listing_router.action_listing_reports` and `withdraw_my_catalogue_photos` (already transactional), `p2p_offers_router.set_payment_handle` (one statement per branch, and it answers with a RE-READ rather than a claim) | |
+
+Count: 12 + 4 + 1 + 4 sites, plus `create_event_checkout` below = 22.
+`marketplace_listing_router.delete_listing` is **not** one of the 34 — it already
+assigns and reads its status string, which is why the scan never saw it. Nor is
+`respond_to_offer`'s conditional reservation clear
+(`WHERE reserved_offer_id = $2`, where 0 rows is the normal case): it is one of
+that handler's six, counted as fixed.
+
+`sponsor_company_router.create_event_checkout`'s bare `DELETE FROM events WHERE
+id = $1` looks alarming and is not: it is the rollback of a draft event the same
+handler created two statements earlier, so the id is its own.
+
+**The gate worth writing is the narrow one:** a handler returning `{"ok": True}`
+/ `success=True` from a branch containing **no write statement at all**. A gate
+on "discarded row count" would have produced 34 findings of which 22 are
+correct, and a checker that is wrong about two thirds of what it reports stops
+being read — the same measurement that killed the class N gate.
+
+### Found on the way: `marketplace_listings.reports_count` is written and read nowhere
+
+`report_listing` increments it, carefully and only on a genuinely new report,
+with a comment explaining that unconditional increments "would poison moderation
+triage". **Nothing reads the column** — not `server/app`, not the app, not the
+ops queue (which orders by age). It appears only in the schema dumps.
+
+Two honest ends, and it is a decision rather than a bug: surface it in
+`GET /ops/listing-reports` so triage can use it, or drop the column and the
+increment with it. Until then the increment is a write that costs a statement
+and buys nothing — the "capture ≠ consume" shape.
+
 
 ## Decisions for Merle — the XP leaderboard (2026-09-17)
 

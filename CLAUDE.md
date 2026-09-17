@@ -84,6 +84,14 @@ fixed by adding a row-count check:
 | `record_sale` | banked `net_proceeds`, then marked the listing sold; the "already recorded" guard reads that status, so a retry wrote a SECOND sale row |
 | `confirm_deal` | deal marked purchased while `spent_total` never moved, and `max_total_budget` is checked against `spent_total` — the agent could spend past the member's own cap |
 
+**The mechanical enumeration is closed: all 34 sites read.** Twelve belonged to
+the five handlers fixed; **22 discard their row count correctly**, for four
+reasons worth knowing before writing any gate here — ownership proven by a
+preceding SELECT, idempotent by intent (the member asked for an END STATE),
+the row guaranteed by the statement above, or already transactional. A gate on
+"discarded row count" would have been wrong about two thirds of what it
+reported. `docs/CLASS_SWEEPS.md` class S has the table.
+
 The shape to reach for: **decide under the lock** (`FOR UPDATE`, or
 `FOR UPDATE OF <alias>` when the query outer-joins — Postgres refuses to lock
 the nullable side), keep writes that must agree in one transaction, and leave
