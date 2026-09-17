@@ -9,6 +9,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import ScreenHeader from '@/components/ScreenHeader';
 import { useAuthContext } from '@/providers/useAuthContext';
+import { PLATFORM_FEE_PCT } from '@/constants/fees';
 
 const LAST_UPDATED = 'August 7, 2026';
 
@@ -142,7 +143,7 @@ function TermsOfServiceScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>12. Events & Social Features</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          <Text style={styles.bold}>Events:</Text> Users may create, host, and attend collector events. Event hosts are responsible for the accuracy of event information. RSVP attendance may be limited by capacity settings. Events may require paid tickets — ticket purchases are processed through Stripe and are non-refundable unless the event is cancelled by the host. A platform fee of 5% is applied to ticket sales. We are not responsible for the conduct of event hosts or attendees, or for events that are cancelled or modified.{'\n\n'}
+          <Text style={styles.bold}>Events:</Text> Users may create, host, and attend collector events. Event hosts are responsible for the accuracy of event information. RSVP attendance may be limited by capacity settings. Events may require paid tickets — ticket purchases are processed through Stripe and are non-refundable unless the event is cancelled by the host. A platform fee of {PLATFORM_FEE_PCT}% is applied to ticket sales. We are not responsible for the conduct of event hosts or attendees, or for events that are cancelled or modified.{'\n\n'}
           <Text style={styles.bold}>Nearby Events:</Text> The Nearby Events feature uses precise GPS location (with your permission) to show events near your current location. Location data is processed in real-time and not stored.{'\n\n'}
           <Text style={styles.bold}>Direct Messaging:</Text> Users may send direct messages to other users via the DM request system. Both parties must consent to a conversation. You agree not to use messaging for spam, harassment, or solicitation. We reserve the right to moderate or restrict messaging for users who violate these Terms.{'\n\n'}
           <Text style={styles.bold}>User Blocking:</Text> You may block other users to prevent them from contacting you. Blocking is mutual — blocked users cannot view your profile or send you messages.{'\n\n'}
@@ -161,7 +162,7 @@ function TermsOfServiceScreenInner() {
         <Text style={[styles.heading, { color: colors.text }]}>14. Subscriptions & Payments</Text>
         <Text style={[styles.body, { color: colors.text }]}>
           Certain features of the Service require a paid subscription. Payments are processed through Stripe. Subscription terms, pricing, and renewal conditions are presented at the time of purchase. You may cancel your subscription at any time through the app settings. Refunds are handled in accordance with applicable laws and Stripe's policies.{'\n\n'}
-          <Text style={styles.bold}>Event Tickets:</Text> Some events require paid tickets. Ticket prices are set by event hosts and include a 5% platform fee. Ticket purchases are one-time payments processed through Stripe. Tickets are non-transferable and tied to your account. If an event is cancelled by the host, refunds will be issued to the original payment method.
+          <Text style={styles.bold}>Event Tickets:</Text> Some events require paid tickets. Ticket prices are set by event hosts and include a {PLATFORM_FEE_PCT}% platform fee. Ticket purchases are one-time payments processed through Stripe. Tickets are non-transferable and tied to your account. If an event is cancelled by the host, refunds will be issued to the original payment method.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>15. Search & Discovery</Text>

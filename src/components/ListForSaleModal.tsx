@@ -254,11 +254,14 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                           <View style={styles.feePreviewRow}>
                             <View style={styles.feeItem}>
                               <Text style={[styles.feeLabel, { color: colors.muted }]}>
-                                Fees
+                                {/* An estimate is labelled as one (2026-09-17): these
+                                    numbers come from a client guess when the server's
+                                    fee schedule has not loaded. */}
+                                {fee.estimated ? 'Fees (estimated)' : 'Fees'}
                               </Text>
                               <Text style={[styles.feeValue, { color: colors.danger }]}>
                                 {/* currency-ok: fees are derived from the price the seller typed into this sheet, whose input is prefixed with their own currency symbol (line ~227). */}
-                                -{formatPrice(fee.totalFees, settings.currency)}
+                                {fee.estimated ? '~' : ''}-{formatPrice(fee.totalFees, settings.currency)}
                               </Text>
                             </View>
                             <View style={[styles.feeDivider, { backgroundColor: colors.border }]} />
@@ -268,7 +271,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                               </Text>
                               <Text style={[styles.feeValue, { color: colors.success }]}>
                                 {/* currency-ok: net = the seller's typed price minus fees, so already in settings.currency. */}
-                                {formatPrice(fee.netProceeds, settings.currency)}
+                                {fee.estimated ? '~' : ''}{formatPrice(fee.netProceeds, settings.currency)}
                               </Text>
                             </View>
                           </View>
@@ -397,11 +400,11 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                         <View style={styles.comparisonRight}>
                           <Text style={[styles.comparisonFees, { color: colors.danger }]}>
                             {/* currency-ok: same typed-price origin as the fee row above. */}
-                            -{formatPrice(fb.totalFees, settings.currency)}
+                            {fb.estimated ? '~' : ''}-{formatPrice(fb.totalFees, settings.currency)}
                           </Text>
                           <Text style={[styles.comparisonNet, { color: colors.success }]}>
                             {/* currency-ok: same typed-price origin as the fee row above. */}
-                            {formatPrice(fb.netProceeds, settings.currency)}
+                            {fb.estimated ? '~' : ''}{formatPrice(fb.netProceeds, settings.currency)}
                           </Text>
                         </View>
                       </View>

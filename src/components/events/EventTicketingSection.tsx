@@ -10,6 +10,7 @@ import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useTranslation } from 'react-i18next';
+import { PLATFORM_FEE_PCT } from '@/constants/fees';
 
 interface EventTicketingSectionProps {
   ticketPriceCents: string;
@@ -46,7 +47,10 @@ export const EventTicketingSection = React.memo(function EventTicketingSection({
           />
         </View>
         <Text style={[styles.fieldHint, { color: colors.muted }]}>
-          A 5% platform fee applies to paid tickets.
+          {t('events.ticket_fee_hint', {
+            defaultValue: 'A {{pct}}% platform fee applies to paid tickets.',
+            pct: PLATFORM_FEE_PCT,
+          })}
         </Text>
       </View>
     </View>

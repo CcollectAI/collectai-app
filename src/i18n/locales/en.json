@@ -105,6 +105,7 @@
     "title": "Watchlist"
   },
   "events": {
+    "ticket_fee_hint": "A {{pct}}% platform fee applies to paid tickets.",
     "reminder_a11y": "Set reminder for event",
     "create_event": "Create Event",
     "create_event_a11y": "Create new event",

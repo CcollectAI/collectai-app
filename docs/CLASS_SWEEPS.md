@@ -45,7 +45,7 @@ Two rules the tooling learned the hard way:
 | A | The client calls an endpoint the server does not serve (or that fails for a real member) | 2026-09-16 | 1 open (server-side) |
 | B | A number on screen that its own source of truth disagrees with | 2026-09-16 | ✅ landed `02ee84b` |
 | C | The screen shows nothing useful for many seconds although the data is fast | 2026-09-16 | ✅ landed `02ee84b` |
-| D | One business rule, implemented twice, drifting | 2026-09-16 | ⚠️ report not retained — re-run |
+| D | One business rule, implemented twice, drifting | re-run 2026-09-17 | platform fee unified (6 copies → 1 per side) + parity test; other rules still to enumerate |
 | E | What the member typed is not what we stored | 2026-09-16 | ✅ closed — gate rule was wrong, 13 sites + validators fixed |
 | F | The write succeeded and the screen still shows the old value | 2026-09-16 | ✅ closed 2026-09-17 (item-change chokepoint + both profile caches, tested) |
 | G | A paid feature a free member can reach, or a free feature a paying member is denied | 2026-09-16 | 4 decisions for Merle |
@@ -240,6 +240,57 @@ Two things the gate got wrong, both found by proving it rather than running it:
 Still open in this class: ~145 hard-coded (English) `accessibilityLabel`s ranked
 in `docs/I18N_BACKLOG.md`, and the 28pt controls reach 44 vertically but only
 ~36 horizontally — closing that needs a layout change, which is a design call.
+
+## D — the platform fee was written six times (re-run 2026-09-17)
+
+The 09-16 report was lost with a crashed session, so the class was re-run from
+scratch. The first rule enumerated: **the 5% ticket fee, in six places.**
+
+| where | what it was |
+|---|---|
+| `events_core.py` ticket checkout | `int(ticket_price * 0.05)` — what we CHARGE |
+| `billing_router.py` webhook | `int(amount * 0.05)` — what we RECORD as charged |
+| `EventTicketingSection` | "A 5% platform fee applies to paid tickets." — what the organiser is promised |
+| `app/legal/terms.tsx` ×2 | "A platform fee of 5% is applied to ticket sales", "include a 5% platform fee" — what a member can hold us to |
+
+All six said 5%, which is what this class looks like right up to the day someone
+changes one of them. Two of the six are legal copy and one is the actual charge;
+a rate that drifts between those is not cosmetic.
+
+Now one constant per side — `app.lib.money.PLATFORM_FEE_PCT` with a
+`platform_fee_cents()` helper (truncating, as both call sites did: the fee never
+rounds up against the organiser) and `PLATFORM_FEE_PCT` in
+`src/constants/fees.ts`, interpolated into the hint (new key
+`events.ticket_fee_hint`, 7 locales) and both Terms sentences.
+
+`server/tests/test_platform_fee_parity.py` reads the TypeScript file so neither
+side can move alone — the same arrangement as `test_currency_symbol_parity.py` —
+and fails on a SEVENTH copy appearing. CI's `pytest tests/` collects the whole
+directory, so unlike a jest suite it needed no wiring to be a gate.
+
+Mutation-proven four ways: client rate → 7% red; `int()` → `round()` red; a bare
+`int(x * 0.05)` back in the checkout red; a hard-coded fee sentence red. **The
+last one only went red after a fix**: the copy scan matched "5% … fee" but not
+"fee of 5%", so re-hard-coding the Terms sentence — the exact line this sweep
+started from — passed. Both orders now.
+
+**The second rule enumerated: the MARKETPLACE fee, and here the two copies did
+not agree.** `CreateListingModal` computes a preview and shows NOTHING until the
+server's fee schedule arrives; `useListForSale.calculateFee` falls back to
+`MARKETPLACE_OPTIONS.defaultFeePct` — a client guess — and the breakdown rows
+printed `-€12,90 / €87,10` with nothing to say the rate was assumed. The picker
+chip beside them already said "~12.9% fee". eBay's real fee is not one flat
+number, so that figure can be wrong by euros on a real listing, in the sheet
+where a member decides what to charge.
+
+`FeeBreakdown` now carries `estimated`, the rows read "Fees (estimated)" with a
+`~`, and three tests pin it (both mutations red: the fallback claiming to be
+exact, and a server schedule marked as a guess). The formulas themselves agree,
+so they were left where they are — the defect was the CONFIDENCE, not the maths.
+
+**Still owed for this class:** plan limits (already parity-gated by
+`check:billing-limits-parity`) and "today", which the server defines twice —
+Python in CEST, Postgres in UTC (class H's leftover).
 
 ## N — the client compares a status the database never writes (2026-09-17)
 

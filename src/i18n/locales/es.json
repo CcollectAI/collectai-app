@@ -105,6 +105,7 @@
     "title": "Lista de seguimiento"
   },
   "events": {
+    "ticket_fee_hint": "Se aplica una comisión de plataforma del {{pct}}% a las entradas de pago.",
     "reminder_a11y": "Fijar recordatorio para evento",
     "create_event": "Crear evento",
     "create_event_a11y": "Crear nuevo evento",

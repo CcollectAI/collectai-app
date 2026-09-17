@@ -67,3 +67,29 @@ def format_money(amount: float | int | None, currency: str | None = "EUR") -> st
     # A symbol abuts the number ("€42.75"); a bare CODE needs the space
     # ("CHF 42.75"), or it reads as one token.
     return f"{sym}{text}" if sym != code else f"{sym} {text}"
+
+
+# ─── Platform fee ──────────────────────────────────────────────────────────
+#
+# ONE rate, because it was written SIX times (class sweep D, 2026-09-17):
+# `int(ticket_price * 0.05)` in events_core.ticket-checkout, the same literal
+# again in billing_router's webhook (which records what was charged), the
+# organiser's hint in EventTicketingSection, and twice in app/legal/terms.tsx.
+# They all said 5% — and the next person to change the rate had six places to
+# find, two of which are legal copy a member can hold us to.
+#
+# The mirror of this constant is PLATFORM_FEE_PCT in src/constants/fees.ts, and
+# `server/tests/test_platform_fee_parity.py` reads that file and fails if the two
+# ever disagree — the same arrangement as CURRENCY_SYMBOLS above.
+PLATFORM_FEE_PCT = 5
+
+
+def platform_fee_cents(amount_cents: float | int | None) -> int:
+    """The platform's cut of a paid ticket, in cents.
+
+    Truncates, as both call sites did: the fee never rounds UP against the
+    organiser. A missing or zero amount has no fee.
+    """
+    if not amount_cents:
+        return 0
+    return int(amount_cents * PLATFORM_FEE_PCT / 100)

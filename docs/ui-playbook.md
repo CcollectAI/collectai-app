@@ -2533,6 +2533,23 @@ rule. Found, not fixed: the sponsor dashboard finds sponsored events only among
 `listEvents({limit: 50})` (a capped read); `userProvider.getMyProfile` caches
 `null` for the session on a cold-start auth miss.
 
+## A guessed number must not be printed like a known one (2026-09-17)
+
+`useListForSale` shows a fee breakdown while the seller types a price. When the
+server's fee schedule has not arrived it falls back to a per-marketplace
+`defaultFeePct` — a guess — and printed `-€12,90 / €87,10`, which reads as the
+fee. The picker chip one row up already said "~12.9% fee"; the numbers did not.
+eBay's real fee is not one flat number, so that figure can be out by euros in
+the sheet where the seller decides what to charge.
+
+`FeeBreakdown.estimated` now travels with the numbers, the label reads
+"Fees (estimated)", and the amounts carry a `~`. The sibling screen
+(`CreateListingModal`) takes the other valid route: show NO preview until the
+server answers. Either is honest; printing the guess plainly is not.
+
+This is the same rule as `value_source` on an item and the `+` on the Items
+total — **the confidence travels with the number, not in a comment.**
+
 ## A 28pt button needs hitSlop, and the slop needs a direction (2026-09-17)
 
 Apple asks for 44×44pt, Android for 48dp, and this app draws 28-40pt icon

@@ -105,6 +105,7 @@
     "title": "관심 목록"
   },
   "events": {
+    "ticket_fee_hint": "유료 티켓에는 {{pct}}% 플랫폼 수수료가 적용됩니다.",
     "reminder_a11y": "이벤트 알림 설정",
     "create_event": "이벤트 생성",
     "create_event_a11y": "새 이벤트 생성",

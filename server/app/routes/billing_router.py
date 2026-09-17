@@ -26,6 +26,7 @@ from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import JSONResponse
 
 from app.auth import get_current_user_id
+from app.lib.money import platform_fee_cents
 from app.config import (
     DB_ENABLED,
     DEV_MODE,
@@ -1033,7 +1034,7 @@ async def _handle_ticket_checkout_completed(pool: Any, session: dict):
         _log.warning("event_ticket checkout missing event_id/user_id in metadata")
         return
 
-    fee_cents = int(amount * 0.05) if amount else 0
+    fee_cents = platform_fee_cents(amount)
 
     # Ensure event_tickets table exists
     try:

@@ -105,6 +105,7 @@
     "title": "Volglijst"
   },
   "events": {
+    "ticket_fee_hint": "Bij betaalde tickets geldt een platformkosten van {{pct}}%.",
     "reminder_a11y": "Herinnering instellen voor evenement",
     "create_event": "Evenement aanmaken",
     "create_event_a11y": "Nieuw evenement aanmaken",

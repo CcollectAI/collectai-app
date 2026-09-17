@@ -18,6 +18,7 @@ from app.config import STRIPE_SECRET_KEY
 from app.errors import error_response
 from app.features.pagination import pagination_params
 from app.lib.db_helpers import get_db_pool
+from app.lib.money import platform_fee_cents
 from app.lib.error_codes import ErrorCode
 
 from .events_helpers import (
@@ -1349,7 +1350,7 @@ async def ticket_checkout(
 
     stripe.api_key = STRIPE_SECRET_KEY
     event_title = row["title"] or "Event Ticket"
-    fee_amount = int(ticket_price * 0.05)  # 5% platform fee
+    fee_amount = platform_fee_cents(ticket_price)
 
     try:
         session = await asyncio.to_thread(

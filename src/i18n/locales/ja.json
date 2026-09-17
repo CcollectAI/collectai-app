@@ -105,6 +105,7 @@
     "title": "ウォッチリスト"
   },
   "events": {
+    "ticket_fee_hint": "有料チケットには{{pct}}%のプラットフォーム手数料がかかります。",
     "reminder_a11y": "イベントのリマインダーを設定",
     "create_event": "イベントを作成",
     "create_event_a11y": "新しいイベントを作成",

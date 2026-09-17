@@ -43,6 +43,15 @@ export type FeeBreakdown = {
   fixedFee: number;
   totalFees: number;
   netProceeds: number;
+  /**
+   * True when the server's fee schedule was not available and these numbers
+   * come from `MARKETPLACE_OPTIONS.defaultFeePct` — a CLIENT GUESS (2026-09-17,
+   * class sweep D). The picker chip already says "~12.9% fee"; the breakdown
+   * rows printed "-EUR 12,90 / EUR 87,10" with no hint that the rate was
+   * assumed, and eBay's real rate is not one number. CreateListingModal shows
+   * NO preview in this case and waits for the backend.
+   */
+  estimated: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -183,6 +192,7 @@ export function useListForSale(opts: {
         return {
           marketplaceId: mpId,
           price,
+          estimated: false,
           baseFee: Math.round(baseFee * 100) / 100,
           processingFee: Math.round(processingFee * 100) / 100,
           fixedFee,
@@ -198,6 +208,7 @@ export function useListForSale(opts: {
       return {
         marketplaceId: mpId,
         price,
+        estimated: true,
         baseFee: totalFees,
         processingFee: 0,
         fixedFee: 0,
