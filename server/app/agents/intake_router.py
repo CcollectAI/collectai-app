@@ -637,6 +637,10 @@ async def intake_url(
     try:
         validate_url(url)
     except ValueError as e:
+        # raw-error-ok: app/ssrf.validate_url raises sentences written for the
+        # sender — "URL scheme 'ftp' not allowed; use http or https", "URL points
+        # to a private/internal IP address" — and the member needs to know WHICH
+        # rule the link broke.
         raise error_response(400, str(e))
 
     user_hints: dict[str, Any] = {}

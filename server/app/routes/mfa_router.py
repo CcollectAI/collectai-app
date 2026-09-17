@@ -95,4 +95,6 @@ async def mfa_unenroll(
         return JSONResponse({"success": True, "message": "MFA factor removed"})
     except Exception as exc:
         _log.warning("MFA unenroll failed for user %s: %s", user_id, exc)
-        raise error_response(500, f"Failed to remove MFA factor: {exc}")
+        # GoTrue's wording is not member copy, and this one is security UX: the
+        # member needs to know it did not happen, not why the provider said so.
+        raise error_response(500, "Could not remove two-factor authentication. Please try again.", code="MFA_UNENROLL_FAILED")

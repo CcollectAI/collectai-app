@@ -467,7 +467,9 @@ async def data_moat_health(
             }
     except Exception as e:
         logger.error("[data_moat/health] DB error: %s", e)
-        raise HTTPException(status_code=500, detail=f"db_error: {e}")
+        # A sentence, not the DB text (2026-09-17): `detail` is what the app
+        # shows, and asyncpg's wording names tables and columns.
+        raise HTTPException(status_code=500, detail="Data health is unavailable right now.")
 
 
 # ---------------------------------------------------------------------------
@@ -631,7 +633,7 @@ async def prediction_accuracy(
             }
     except Exception as e:
         logger.error("[data_moat/prediction-accuracy] DB error: %s", e)
-        raise HTTPException(status_code=500, detail=f"db_error: {e}")
+        raise HTTPException(status_code=500, detail="Prediction accuracy is unavailable right now.")
 
 
 # ---------------------------------------------------------------------------

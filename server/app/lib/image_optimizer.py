@@ -55,7 +55,12 @@ def optimize_image(
     try:
         img = Image.open(io.BytesIO(image_bytes))
     except Exception as exc:
-        raise ValueError(f"Cannot decode image: {exc}") from exc
+        # The message is MEMBER COPY (2026-09-17): photo_upload_router passes a
+        # ValueError from here straight into `error_response(400, str(e))`, and
+        # the app shows the server's own sentence. PIL's text is
+        # "cannot identify image file <_io.BytesIO object at 0x…>" — plumbing.
+        # `from exc` keeps the real cause for the log and the traceback.
+        raise ValueError("That image could not be read. Try a JPG or PNG.") from exc
 
     # Apply EXIF orientation before stripping metadata
     try:

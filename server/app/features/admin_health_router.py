@@ -227,6 +227,8 @@ async def spend_budget(request: Request) -> JSONResponse:
         spend_tracker.set_budget(budget)
         return JSONResponse({"ok": True, "budget_eur": budget})
     except Exception as exc:
+        # raw-error-ok: an OPS endpoint (_check_ops_key in the body); whoever
+        # holds that key is debugging, and no member path reaches this.
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
@@ -246,6 +248,8 @@ async def spend_pause(request: Request) -> JSONResponse:
             spend_tracker.resume_provider(provider)
         return JSONResponse({"ok": True, "provider": provider, "paused": paused})
     except Exception as exc:
+        # raw-error-ok: an OPS endpoint (_check_ops_key in the body); whoever
+        # holds that key is debugging, and no member path reaches this.
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
@@ -404,6 +408,8 @@ async def admin_models(request: Request):
         )
     except Exception as exc:
         _log.exception("admin/models query failed")
+        # raw-error-ok: an OPS endpoint (_check_ops_key in the body); whoever
+        # holds that key is debugging, and no member path reaches this.
         return JSONResponse(status_code=500, content={"detail": f"Query failed: {exc}"})
 
     latest = registry[0]["version"] if registry else None
@@ -619,6 +625,8 @@ async def admin_kpi_summary(request: Request, days: int = 30):
         )
     except Exception as exc:
         _log.exception("admin/kpi-summary query failed")
+        # raw-error-ok: an OPS endpoint (_check_ops_key in the body); whoever
+        # holds that key is debugging, and no member path reaches this.
         return JSONResponse(status_code=500, content={"detail": f"Query failed: {exc}"})
 
     total = signups["total"] or 0

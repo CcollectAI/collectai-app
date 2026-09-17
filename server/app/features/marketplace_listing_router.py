@@ -1471,8 +1471,11 @@ async def publish_listing(
                     ebay_listing_id = publish_result.get("ebay_listing_id")
                 except Exception as e:
                     logger.exception("eBay publish failed: %s", e)
+                    # A stable sentence, not the upstream text (2026-09-17):
+                    # `{e!s}` here is eBay's or httpx's wording, shown to the
+                    # member by the app. The exception is in the log line above.
                     raise error_response(
-                        502, f"eBay publish failed: {e!s}",
+                        502, "eBay could not publish this listing. Try again shortly.",
                         code=ErrorCode.EXTERNAL_SERVICE_ERROR,
                     )
 

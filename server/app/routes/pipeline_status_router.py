@@ -76,14 +76,15 @@ async def pipeline_status() -> dict:
         logger.error("[pipeline/status] DB query failed: %s", e)
         # empty-ok: `status: "error"` IS the answer — the empty lists beside it
         # cannot be read as "no training runs", because the status says the read
-        # failed. Operator-facing pipeline diagnostics.
+        # failed.
         #
-        # `message` keeps the exception text deliberately here (unlike
-        # data-moat's, which was removed): this endpoint exists for whoever is
-        # debugging the pipeline, and the text is the useful half.
+        # The exception text is NOT returned. An earlier version of this comment
+        # called the endpoint "operator-facing" and kept `str(e)` for debugging —
+        # that was an assumption, and reading the code contradicted it: this
+        # router declares no auth dependency and main.py mounts it bare, so
+        # /pipeline/status answers anyone. The detail stays in the log line above.
         return {
             "status": "error",
-            "message": str(e),
             "training": [],
             "ingest": {},
         }

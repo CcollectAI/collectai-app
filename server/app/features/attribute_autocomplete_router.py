@@ -58,7 +58,8 @@ async def autocomplete(
     try:
         from app.ml.attribute_normalizer import _load_vocab
     except ImportError as e:
-        raise error_response(500, f"Vocab unavailable: {e}", code="VOCAB_UNAVAILABLE")
+        # The ImportError text carries a module path; the caller needs the fact.
+        raise error_response(500, "Suggestions are unavailable right now.", code="VOCAB_UNAVAILABLE")
 
     vocab = _load_vocab()
     if not vocab:

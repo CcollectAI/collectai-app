@@ -164,4 +164,6 @@ async def list_beta_signups(
         })
     except Exception as exc:
         _log.warning("Beta signups list query failed: %s", exc)
+        # raw-error-ok: an OPS endpoint (Depends(require_ops_key)); whoever
+        # holds that key is debugging, and no member path reaches this.
         return JSONResponse({"signups": [], "total": 0, "error": str(exc)})

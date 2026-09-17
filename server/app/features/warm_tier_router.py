@@ -53,10 +53,14 @@ async def query(payload: WarmTierQuery, user_id: str = Depends(get_current_user_
             where=payload.where, select=payload.select, limit=payload.limit,
         )
     except ValueError as e:
+        # raw-error-ok: warm_tier's own ValueErrors ("unknown warm-tier table: x",
+        # "limit too high — split into chunks") tell the caller what to change.
         raise HTTPException(400, str(e))
     except Exception as e:
         logger.exception("warm-tier query failed: %s", e)
-        raise HTTPException(502, f"Warm-tier query failed: {e!s}")
+        # A sentence: this endpoint takes `Depends(get_current_user_id)`, so ANY
+        # signed-in member can reach it, and `{e!s}` is asyncpg's wording.
+        raise HTTPException(502, "That query could not be run. Try again shortly.")
 
 
 @router.post("/count", response_model=WarmTierCount,
@@ -74,4 +78,4 @@ async def count(payload: WarmTierQuery, user_id: str = Depends(get_current_user_
         return WarmTierCount(n=n)
     except Exception as e:
         logger.exception("warm-tier count failed: %s", e)
-        raise HTTPException(502, f"Warm-tier count failed: {e!s}")
+        raise HTTPException(502, "That count could not be run. Try again shortly.")

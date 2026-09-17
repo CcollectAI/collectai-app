@@ -196,6 +196,8 @@ async def dashboard_users(
         return JSONResponse({"users": users, "total": total, "page": page, "per_page": per_page})
     except Exception as exc:
         _log.warning("Dashboard users query failed: %s", exc)
+        # raw-error-ok: an OPS endpoint (Depends(require_ops_key)); whoever
+        # holds that key is debugging, and no member path reaches this.
         return JSONResponse({"users": [], "total": 0, "error": str(exc)})
 
 
@@ -242,6 +244,8 @@ async def sponsor_analytics(_: bool = Depends(require_ops_key)):
         return JSONResponse({"sponsored_events": events, "total": len(events)})
     except Exception as exc:
         _log.error("Failed to fetch sponsor analytics: %s", exc)
+        # raw-error-ok: an OPS endpoint (Depends(require_ops_key)); whoever
+        # holds that key is debugging, and no member path reaches this.
         return JSONResponse({"sponsored_events": [], "error": str(exc)})
 
 

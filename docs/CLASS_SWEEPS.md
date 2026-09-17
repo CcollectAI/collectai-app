@@ -53,6 +53,7 @@ Two rules the tooling learned the hard way:
 | I | One tap, two writes (unguarded async handlers) | 2026-09-17 | ✅ swept by checker, 6 fixed + 5 reasoned, `check:double-submit` in prebuild |
 | J | A member can see data that is not theirs (RLS / IDOR / public views) | 2026-09-17 | ✅ prod verified clean; repo drift fixed + gated |
 | M | The database fails, and the app reads the failure as "no" | 2026-09-17 | app half fixed + gated; `20260917b` **applied**; `20260917c` (block→dm_requests + block checks) written, NOT applied |
+| Q | The server's error text is member copy | 2026-09-17 | ✅ 13 fixed to sentences, 10 reasoned + `check_error_copy.py`; one PUBLIC endpoint was leaking DB text |
 | P | The SERVER answers a failure with an empty 200 | 2026-09-17 | ✅ 10 handlers raise 503 + `check_empty_on_failure.py`; client type can say "unknown" |
 | O | A number rounded into a different fact | 2026-09-17 | ✅ sub-euro prices + sign; found by reviewing a screenshot, not by a checker |
 | N | The client compares a status the database never writes | 2026-09-17 | ✅ `getDmStatus` fixed + tested; all 8 status columns enumerated; NO gate (measured: 83 findings, nearly all homonyms) |
@@ -354,6 +355,47 @@ right group. What is actually missing is the GUARD — nothing stops a bad value
 being written, and the RPC and the client now write two different vocabularies
 into one column. Applying that migration is Merle's call (it rewrites RPCs and
 migrates data); it is not urgent, and it should not be replayed blind.
+
+## Q — the server's error text is member copy (2026-09-17)
+
+`src/lib/userErrorMessage.ts` shows **the server's own sentence** when the server
+wrote one. That is deliberate — and it makes `detail` a UI string, so a handler
+answering with `str(e)` ships a library's wording, and sometimes internals, to a
+member. The client's `check:raw-error-copy` polices its own side; this is the
+half it cannot see.
+
+Swept `server/app/**` for route handlers that put a caught exception into the
+response: **24**. Triaged by AUDIENCE, which is the only way to tell a leak from
+a deliberate message — and that meant reading each endpoint's auth:
+
+| fixed to a sentence | what it used to ship |
+|---|---|
+| `marketplace_listing_router.publish_listing` | `f"eBay publish failed: {e!s}"` — eBay's or httpx's wording, on a money path |
+| `mfa_router.mfa_unenroll` | `f"Failed to remove MFA factor: {exc}"` — GoTrue internals, in security UX |
+| `data_moat` health + prediction-accuracy | `f"db_error: {e}"` — asyncpg names tables and columns |
+| `uploads_router` presign + signed-get | botocore's text |
+| `warm_tier_router` query + count | asyncpg's text — and this router takes `Depends(get_current_user_id)`, so **any signed-in member** could reach it |
+| `attribute_autocomplete_router` | an ImportError carrying a module path |
+| `notification_feedback_router` ×3 | `{"ok": false, "error": str(e)[:120]}` to a client that fires `.catch(noop)` and never reads the body |
+| `image_optimizer` (a lib, not a handler) | `ValueError(f"Cannot decode image: {exc}")` → "cannot identify image file <_io.BytesIO object at 0x…>", passed straight through by `photo_upload_router` into a 400 the member reads |
+
+**Kept, with a written reason** (`# raw-error-ok:`): the three validator
+pass-throughs whose text is OURS and written for a person — `app/ssrf`'s "URL
+points to a private/internal IP address", `s3_storage`'s "content_type not
+allowed: image/tiff", `warm_tier`'s "limit too high — split into chunks" — and
+seven ops endpoints, each verified to be behind an ops key (`require_ops_key`, or
+`_check_ops_key` in the body — two different styles, both real).
+
+**The correction worth keeping.** I annotated `/pipeline/status` as
+"operator-facing, the exception text is the useful half". Then I read the code:
+that router declares no auth dependency and `main.py` mounts it bare, so it
+answers **anyone**. The text is gone from the response and the annotation now
+says why. An audience is a fact about the code, not an impression about the name.
+
+Gated by `server/scripts/check_error_copy.py` (in `verify:prebuild`),
+mutation-proven: eBay's text back → red; the DB text back in a member-reachable
+handler → red; a written reason removed → red; and a reworded sentence with no
+exception in it stays green.
 
 ## P — the SERVER answers a failure with an empty 200 (2026-09-17)
 

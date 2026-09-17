@@ -82,7 +82,10 @@ async def record_impression(
         return {"ok": True, "stored": True}
     except Exception as e:
         logger.warning("[notif_feedback] impression insert failed: %s", e)
-        return {"ok": False, "error": str(e)[:120]}
+        # best-effort: telemetry the app fires and does not read. `ok: False`
+        # is the whole answer; the exception text used to ride along to the
+        # client for no reader (2026-09-17).
+        return {"ok": False}
 
 
 @router.post("/interaction", summary="Record that a user interacted with a push")
@@ -108,7 +111,10 @@ async def record_interaction(
         return {"ok": True, "stored": True}
     except Exception as e:
         logger.warning("[notif_feedback] interaction insert failed: %s", e)
-        return {"ok": False, "error": str(e)[:120]}
+        # best-effort: telemetry the app fires and does not read. `ok: False`
+        # is the whole answer; the exception text used to ride along to the
+        # client for no reader (2026-09-17).
+        return {"ok": False}
 
 
 @router.post("/outcome", summary="Record the downstream outcome of a push")
@@ -136,4 +142,7 @@ async def record_outcome(
         return {"ok": True, "stored": True}
     except Exception as e:
         logger.warning("[notif_feedback] outcome insert failed: %s", e)
-        return {"ok": False, "error": str(e)[:120]}
+        # best-effort: telemetry the app fires and does not read. `ok: False`
+        # is the whole answer; the exception text used to ride along to the
+        # client for no reader (2026-09-17).
+        return {"ok": False}

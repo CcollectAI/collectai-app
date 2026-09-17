@@ -54,10 +54,14 @@ async def presign(payload: PresignRequest, user_id: str = Depends(get_current_us
         )
         return PresignResponse(**result)
     except ValueError as e:
+        # raw-error-ok: this is s3_storage's own ValueError ("content_type not
+        # allowed: image/tiff", "unknown kind: x") — written for whoever sent
+        # the request, not a library's wording. It names the input, not internals.
         raise HTTPException(400, str(e))
     except Exception as e:
         logger.exception("presign failed: %s", e)
-        raise HTTPException(502, f"Presign failed: {e!s}")
+        # A sentence: `{e!s}` here is botocore's, and the app shows `detail`.
+        raise HTTPException(502, "Upload could not be prepared. Try again shortly.")
 
 
 class SignedGetRequest(BaseModel):
@@ -79,4 +83,4 @@ async def signed_get(payload: SignedGetRequest, user_id: str = Depends(get_curre
         return {"url": url, "expires_in": payload.expires_in or 600}
     except Exception as e:
         logger.exception("signed_get failed: %s", e)
-        raise HTTPException(502, f"Signed-get failed: {e!s}")
+        raise HTTPException(502, "That file could not be opened. Try again shortly.")

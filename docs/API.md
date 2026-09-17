@@ -607,3 +607,20 @@ All errors use a consistent format via `error_response()`:
 ```
 
 Common codes: `VALIDATION_ERROR`, `DB_ERROR`, `NOT_FOUND`, `UNAUTHORIZED`, `RATE_LIMITED`.
+
+**`detail` is UI.** `src/lib/userErrorMessage.ts` shows the server's own sentence
+when the server wrote one, so `detail` must BE a sentence — never `str(e)`. A
+caught exception's text belongs in the log; the response gets wording a member
+can act on. 13 handlers were shipping a library's words (asyncpg naming tables,
+GoTrue, botocore, eBay, a PIL "cannot identify image file <_io.BytesIO object at
+0x…>") before 2026-09-17.
+
+Two exceptions, both written down at the line:
+* our OWN validators' messages, which are composed for the sender —
+  `app/ssrf.validate_url` ("URL points to a private/internal IP address"),
+  `s3_storage` ("content_type not allowed: image/tiff"), `warm_tier`
+  ("limit too high — split into chunks");
+* ops endpoints behind an ops key, where the reader is debugging.
+
+Both carry `# raw-error-ok: <why>` above the line, and
+`server/scripts/check_error_copy.py` (in `verify:prebuild`) fails anything else.

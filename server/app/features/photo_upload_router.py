@@ -339,6 +339,9 @@ async def upload_photo(
     try:
         optimized_bytes, width, height = optimize_image(raw_bytes, max_edge=_MAX_IMAGE_EDGE)
     except ValueError as e:
+        # raw-error-ok: optimize_image raises a member sentence ("That image could
+        # not be read. Try a JPG or PNG.") — it stopped embedding PIL's text on
+        # 2026-09-17 precisely because this line shows it to the member.
         raise error_response(400, str(e), code="VALIDATION_ERROR")
     except (OSError, IOError) as e:
         logger.error("[photo_upload] Image optimization failed: %s", e)
