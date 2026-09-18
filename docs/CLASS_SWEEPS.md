@@ -62,7 +62,7 @@ Two rules the tooling learned the hard way:
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
 | S | The server answered `ok` and wrote nothing | 2026-09-17/18 **deployed** | ✅ **all 34 read**: 6 `ok`-without-a-write fixed, the announcement DM dead five months fixed, 4 money handlers made atomic + row-locked (a trade could complete twice or never; a sale banked twice; a mandate past its cap), 22 of the 34 sites cleared with the reason written down. 8 tests that PINNED the lie rewritten. One decision left: `reports_count` is written, read nowhere |
 | T | The server sends it and the app never reads it | 2026-09-18 | measured: **74 of 461** fields declared in `src/api` are referenced nowhere else. Three confirmed: subscription dates ✅ **fixed** (the copy was already translated in 7 locales and rendered by nothing), realised P/L unreachable and the demand differentiator unshown — both product calls. The rest is mostly request params and deliberately-removed UI |
-| U | A provider CASTS a snake_case payload to a camelCase type | 2026-09-18 | ✅ all 4 found and mapped (sales, fee schedules, listings, accounts) — two of them live: blank listing titles and a 5% fee quoted on a marketplace that takes 0%. `tsc` cannot see this class |
+| U | A provider CASTS a snake_case payload to a camelCase type | 2026-09-18 | ✅ all 4 found and mapped (sales, fee schedules, listings, accounts). **All behind `SELLING_ENABLED=false`** — I first called two of them live and the device disproved it. Real, and they ship the day selling is switched on. `tsc` cannot see this class |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -1202,22 +1202,66 @@ snake_case (`listing_title`, `marketplace_id`, `base_fee_pct`) and the types are
 camelCase, so every mapped field was `undefined` at runtime while `tsc` stayed
 silent. **TypeScript cannot catch this class** — that is the whole point of it.
 
-| cast | what it did |
-|---|---|
-| `listMarketplaceListings` | **LIVE and visible.** `listing.listingTitle` was undefined → blank row titles, a blank accessibility label, and a "Remove "" from marketplace?" confirm. `marketplaceId` undefined → `MARKETPLACE_CONFIG[undefined] ?? MARKETPLACE_CONFIG.collectai` badged **every** listing as Sparrow P2P whatever marketplace it was on |
-| `listMarketplaceAccounts` | same, on the Accounts tab: every connected account mislabelled, and "Disconnect Account?" named the wrong one |
-| `getMarketplaceFeeSchedules` | `find(s => s.marketplaceId === mpId)` never matched, so the fee estimate always fell back to the client's `defaultFeePct` with `estimated: true`. The app quoted **5% on Sparrow's own marketplace, which takes 0%**, and under-quoted eBay (12.9% vs 12.9 + 2.9% + €0.30) and StockX (9.5% vs 9.5 + 3.0%) |
-| `listMarketplaceSales` | dormant only because the table was empty: `salePrice`/`netProceeds` undefined, and the Revenue Summary SUMS them → **NaN** on the first real sale |
+⚠️ **CORRECTED, same day.** I first wrote that two of these were "live right
+now". They are not: **all four sit behind `SELLING_ENABLED = false`** —
+`app/sell/dashboard.tsx` returns `<SellingUnavailable/>`, and the only control
+that opens the List-for-sale modal (`ItemQuickActionsRow`) is inside
+`{!SELLING_ENABLED ? null : …}`. Caught by installing the build and deep-linking
+to `sell/dashboard`, which answered **"Selling is coming soon"**. The claim came
+from reading the render path and not the flag above it; the device disproved it
+in one screen. The live P2P marketplace (7 listings) goes through
+`sell/new` → `collectorsApi.createListing` and touches none of these four.
 
-**Why it survived.** `price`, `currency`, `status` and `quantity` are spelled
-identically on both sides, so the Listings tab looked broadly right — prices and
-status chips correct, titles missing. The screen sweep walked
-`sell/dashboard` and reported `ok`: its machine checks look for a missing screen
-title, raw output and untranslated text, not for a row whose own title is blank.
+They are still four real defects — they would ship the day that flag flips,
+which its own comment says is "once a real eBay account can be connected end to
+end" — but **member impact today is zero**.
+
+| cast | what it does, when selling is switched on |
+|---|---|
+| `listMarketplaceListings` | `listing.listingTitle` undefined → blank row titles, a blank accessibility label, and a `Remove "" from marketplace?` confirm. `marketplaceId` undefined → `MARKETPLACE_CONFIG[undefined] ?? MARKETPLACE_CONFIG.collectai` badges **every** listing as Sparrow P2P whatever marketplace it is on |
+| `listMarketplaceAccounts` | same on the Accounts tab: every connected account mislabelled, and "Disconnect Account?" naming the wrong one |
+| `getMarketplaceFeeSchedules` | `find(s => s.marketplaceId === mpId)` never matches, so the fee estimate always falls back to the client's `defaultFeePct` with `estimated: true` — quoting **5% on Sparrow's own marketplace, which takes 0%**, and under-quoting eBay (12.9% vs 12.9 + 2.9% + €0.30) and StockX (9.5% vs 9.5 + 3.0%) |
+| `listMarketplaceSales` | `salePrice`/`netProceeds` undefined and the Revenue Summary SUMS them → **NaN**. Doubly hidden: behind the flag AND behind an empty table until completion started recording sales |
+
+**Why it survived.** Three layers, and the first is the one that matters:
+the whole surface is **flagged off**, so nobody has looked at it since the flag
+went up. Under that, `price`, `currency`, `status` and `quantity` are spelled
+identically on both sides, so the Listings tab would look broadly right — prices
+and status chips correct, titles missing. And the screen sweep walked
+`sell/dashboard` and reported `ok`, which is honest: it saw the coming-soon
+screen.
+
+**The lesson for me, not for the code: check the FLAG before calling something
+live.** I read the render path, found the bug, and described a member seeing it
+— without checking the four lines above that render path. One install and one
+deep link settled it.
 
 **And a gate had already seen the symptom.** `estimated: true` was added by
 class sweep D on 2026-09-17 precisely because the fee numbers were the client's
 guess — the flag was right, and nobody asked why it never turned off.
+
+### Found beside it: `marketplace_id = 'sparrow'` is in nobody's vocabulary
+
+All **7** listings on production carry `marketplace_id = 'sparrow'`, written by
+`p2p_listing_router`. That value does not appear in:
+
+* `VALID_MARKETPLACES` in `marketplace_listing_router.py` — `{collectai, ebay,
+  mercari, cardmarket, stockx, bricklink, tcgplayer, discogs}`;
+* the client's `MarketplaceId` union, which has the same eight;
+* `marketplace_fee_schedules`, whose Sparrow row is keyed **`collectai`**.
+
+So the P2P writer uses the post-rename name and every validator and vocabulary
+still uses the pre-rename one (CollectAI → Sparrow Collect, 2026-05-04). It is
+invisible today only by luck: `MARKETPLACE_CONFIG['sparrow']` is undefined and
+the `?? MARKETPLACE_CONFIG.collectai` fallback happens to render "Sparrow P2P",
+which is the right label for the wrong reason. A `PATCH` that validated
+`marketplace_id` would reject every row the P2P flow has written.
+
+**Left as a decision, not guessed at:** either the stored value becomes
+`collectai` (a data migration over 7 rows, and the fee-schedule key already
+agrees), or `sparrow` becomes canonical everywhere (additive in three places,
+plus a fee-schedule row). Picking one silently is how the two names end up
+meaning different things in different files — which is what this already is.
 
 ### The gate worth writing
 

@@ -31,14 +31,17 @@ edit whose anchor appeared twice, so it silently did not apply.
 `unwrap<MarketplaceSale>(await collectorsApi.get(...))` **asserts** a shape
 instead of checking it. The server answers snake_case, the types are camelCase,
 so every field was `undefined` at runtime in four providers while the build
-stayed green:
+stayed green. When selling is switched on, that is blank listing titles, every
+listing and account badged "Sparrow P2P" whatever marketplace it is on, a fee
+estimate that quotes **5% on Sparrow's own marketplace, which takes 0%**, and a
+Revenue Summary rendering **NaN** on the first real sale.
 
-* the Sell dashboard showed **blank listing titles** and badged every listing
-  and account as "Sparrow P2P" whatever marketplace it was on
-  (`MARKETPLACE_CONFIG[undefined] ?? MARKETPLACE_CONFIG.collectai`);
-* the fee estimate could never use the server's schedule, so it quoted **5% on
-  Sparrow's own marketplace, which takes 0%**, and under-quoted eBay and StockX;
-* the Sales tab would have rendered **NaN** on the first real sale.
+**I called two of them "live" and they are not** — all four sit behind
+`SELLING_ENABLED = false`. I had read the render path and not the flag four
+lines above it. Installing the build and deep-linking to `sell/dashboard`
+answered "Selling is coming soon" and settled it in one screen. **Check the flag
+before you call a defect live**; the live P2P marketplace goes through a
+different provider entirely.
 
 **It survived because the overlapping names made it look right** — `price`,
 `currency`, `status` and `quantity` are spelled the same on both sides. The
