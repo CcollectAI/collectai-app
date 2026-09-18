@@ -772,6 +772,38 @@ installing it: launch, sign-in and onboarding ran with no fatal.
 - ⚠️ Grep the packed APK for a string only the change has (gotcha 10) before
   walking it as verification.
 
+### What the walk is STRUCTURALLY blind to: flagged-off screens (2026-09-18)
+
+Four of the 79 walked routes can only ever render a placeholder in a release
+build, so the sweep reports them `ok` forever — honestly, because a
+coming-soon screen IS what that route renders:
+
+| route | gate | what the walk sees |
+|---|---|---|
+| `sell/dashboard` | `SELLING_ENABLED = false` | `<SellingUnavailable/>` — "Selling is coming soon" |
+| `sell/ebay-defaults` | `SELLING_ENABLED = false` | the same |
+| `franchise/[id]` | `FRANCHISE_PAGES_ENABLED = false` | `<Redirect>` |
+| `chat-demo` | `!__DEV__` | `<Redirect>` |
+
+Plus surfaces that are gated INSIDE a live screen, and therefore never exercised
+either: the List-for-sale modal and its fee breakdown
+(`ItemQuickActionsRow`/`ItemForSaleBar`), Marketplace connections in Settings,
+the XP tiles (`GAMIFICATION_UI_ENABLED`), the "Get fresh comps" prompt
+(`LIVE_PRICE_FETCH_ENABLED`), category follow, comparable sales, and social
+login.
+
+**This is where defects accumulate unseen, and it is not hypothetical.** Class U
+(2026-09-18) found four provider casts that would produce blank listing titles,
+mislabelled marketplace badges and a `NaN` revenue total — *all four* behind
+`SELLING_ENABLED`, in code the walk had been reporting `ok` on for months. They
+were found by writing a new database row, not by walking.
+
+**So: when a flag is about to flip, the code behind it has never been walked.**
+Treat flipping one as shipping an unwalked feature — sweep the classes over that
+code first, and walk those routes with the flag forced on. `BETA_MODE` is the
+same hazard in reverse: it HIDES three live screens, so a beta build walks a
+different app.
+
 ### Screen sweep: walk every route in one run (2026-09-15)
 
 Walks used to be one deep link at a time, from memory, one state per screen,

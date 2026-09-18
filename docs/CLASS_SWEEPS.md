@@ -1231,8 +1231,15 @@ and status chips correct, titles missing. And the screen sweep walked
 `sell/dashboard` and reported `ok`, which is honest: it saw the coming-soon
 screen.
 
-**The lesson for me, not for the code: check the FLAG before calling something
-live.** I read the render path, found the bug, and described a member seeing it
+**The general lesson, swept 2026-09-18:** four of the 79 walked routes can only
+render a placeholder (`sell/dashboard`, `sell/ebay-defaults`, `franchise/[id]`,
+`chat-demo`), plus seven surfaces gated inside live screens. The walk reports
+them `ok` forever and is right to. **Flipping a flag therefore ships code no
+round has ever seen** — sweep it first. Full list: `docs/ANDROID_LAUNCH.md`,
+"What the walk is STRUCTURALLY blind to".
+
+**And the lesson for me, not for the code: check the FLAG before calling
+something live.** I read the render path, found the bug, and described a member seeing it
 — without checking the four lines above that render path. One install and one
 deep link settled it.
 
