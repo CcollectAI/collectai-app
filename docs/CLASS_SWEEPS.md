@@ -61,7 +61,7 @@ Two rules the tooling learned the hard way:
 | K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | ✅ all fixed: billing webhook `8439f97`, item edit, calendar, template, P2P listing transaction — **two server fixes not deployed** |
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
 | S | The server answered `ok` and wrote nothing | 2026-09-17/18 **deployed** | ✅ **all 34 read**: 6 `ok`-without-a-write fixed, the announcement DM dead five months fixed, 4 money handlers made atomic + row-locked (a trade could complete twice or never; a sale banked twice; a mandate past its cap), 22 of the 34 sites cleared with the reason written down. 8 tests that PINNED the lie rewritten. One decision left: `reports_count` is written, read nowhere |
-| T | The server sends it and the app never reads it | 2026-09-18 | measured: **74 of 461** fields declared in `src/api` are referenced nowhere else. Three confirmed, all DECISIONS not bug fixes (realised P/L unreachable, the demand differentiator unshown, subscription dates unshown); the rest is mostly request params and deliberately-removed UI |
+| T | The server sends it and the app never reads it | 2026-09-18 | measured: **74 of 461** fields declared in `src/api` are referenced nowhere else. Three confirmed: subscription dates ✅ **fixed** (the copy was already translated in 7 locales and rendered by nothing), realised P/L unreachable and the demand differentiator unshown — both product calls. The rest is mostly request params and deliberately-removed UI |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -1057,10 +1057,36 @@ because "demand is competitive information", and the listing detail is readable
 by any member, so showing a buyer how many rivals would be alerted at this price
 is a product call, not an oversight to fix quietly.
 
-**3. A member cannot see when their subscription ends.** `BillingStatus` carries
-`current_period_end` and `cancel_at_period_end`; `app/subscription.tsx` renders
-neither, saying only "Subscriptions auto-renew until cancelled". Someone who has
-cancelled sees no "Pro until 14 October". The data is already fetched.
+**3. A member cannot see when their subscription ends.** ✅ **FIXED 2026-09-18**,
+and it was not a product decision after all — it was three pieces of one feature
+that never met:
+
+* `GET /billing/status` has always returned `status`, `current_period_end` and
+  `cancel_at_period_end`;
+* `subscription.past_due` ("Payment past due. Update your payment method…") and
+  `subscription.downgrade_pending` were already written and translated into
+  **all seven locales**;
+* `useBillingLimits` kept `plan` and `limits` and dropped the other three at the
+  setter, and **nothing in the app rendered either string**.
+
+So the copy had been reviewed, translated and shipped, and no member could ever
+see it. The fix is wiring plus one new key pair (`renews_on` / `access_until`):
+the hook keeps what it fetches, and the screen renders one line under the plan
+cards. The branching lives in `src/lib/billingStatusLine.ts` rather than in the
+screen, because the first version of its test copied the decision table — which
+is exactly how a screen and its test drift apart while both stay green.
+
+Four rules it encodes, each with a test and a mutation:
+1. **A payment problem outranks everything** — it can END the plan.
+2. **A cancelling plan says how long access lasts, never "renews on".**
+3. **A null `current_period_end` falls back to the dateless sentence.** The
+   column is nullable, and "Invalid Date" is not a thing to show someone paying.
+4. **An active plan with no date says NOTHING** rather than rendering an empty
+   line, and a FAILED fetch leaves all three `null` — unknown, not "nothing to
+   say" (rule F).
+
+Not shown under a dev `FORCE_PLAN` override or in beta-unlock mode: neither has
+a real subscription behind it, so any date there would be invented.
 
 ### What this class teaches about the probe
 

@@ -746,7 +746,9 @@
     "downgrade_pending": "Je abonnement wordt aan het einde van de huidige periode verlaagd.",
     "coming_soon": "Abonnementen komen binnenkort",
     "manage_a11y": "Abonnement beheren",
-    "manage": "Abonnement beheren"
+    "manage": "Abonnement beheren",
+    "renews_on": "Wordt verlengd op {{date}}",
+    "access_until": "Pro-toegang tot {{date}}"
   },
   "mfa": {
     "title": "Tweestapsverificatie",

@@ -746,7 +746,9 @@
     "downgrade_pending": "현재 기간이 끝나면 플랜이 하향 조정됩니다.",
     "coming_soon": "구독 기능 준비 중",
     "manage_a11y": "구독 관리",
-    "manage": "구독 관리"
+    "manage": "구독 관리",
+    "renews_on": "{{date}}에 갱신됩니다",
+    "access_until": "{{date}}까지 Pro 이용 가능"
   },
   "mfa": {
     "title": "2단계 인증",

@@ -746,7 +746,9 @@
     "downgrade_pending": "Dein Tarif wird zum Ende der aktuellen Periode herabgestuft.",
     "coming_soon": "Abos folgen in Kürze",
     "manage_a11y": "Abo verwalten",
-    "manage": "Abo verwalten"
+    "manage": "Abo verwalten",
+    "renews_on": "Verlängert sich am {{date}}",
+    "access_until": "Pro-Zugang bis {{date}}"
   },
   "mfa": {
     "title": "Zwei-Faktor-Authentifizierung",

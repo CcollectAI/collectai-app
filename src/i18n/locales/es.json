@@ -746,7 +746,9 @@
     "downgrade_pending": "Tu plan bajará de nivel al final del periodo actual.",
     "coming_soon": "Suscripciones muy pronto",
     "manage_a11y": "Gestionar la suscripción",
-    "manage": "Gestionar la suscripción"
+    "manage": "Gestionar la suscripción",
+    "renews_on": "Se renueva el {{date}}",
+    "access_until": "Acceso Pro hasta el {{date}}"
   },
   "mfa": {
     "title": "Autenticación en dos pasos",

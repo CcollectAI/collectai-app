@@ -2,6 +2,32 @@
 
 > Last refreshed 2026-05-19. Renamed from CollectAI 2026-05-04. **iOS IAP via RevenueCat replaced Stripe on 2026-05-09** (commit `652230a`); Stripe code path is preserved for future web/Android billing.
 
+## What the subscription screen tells a paying member (2026-09-18)
+
+`app/subscription.tsx` renders one line under the plan cards, from
+`src/lib/billingStatusLine.ts`:
+
+| state | line | colour |
+|---|---|---|
+| `status` is `past_due` or `unpaid` | `subscription.past_due` | warning |
+| `cancel_at_period_end` + a date | `subscription.access_until` — "Pro access until 14 Oct 2026" | warning |
+| `cancel_at_period_end`, no date | `subscription.downgrade_pending` | warning |
+| otherwise, with a date | `subscription.renews_on` — "Renews on 14 Oct 2026" | muted |
+| active with no date, or an unknown status | **nothing** | — |
+
+**A payment problem outranks a pending cancellation**, which outranks the
+ordinary renewal: the order is what can cost the member their subscription.
+
+Two of those strings (`past_due`, `downgrade_pending`) had existed in all seven
+locales since before 2026-09-18 and were rendered by **nothing** — the server
+sent `status`, `current_period_end` and `cancel_at_period_end`, and
+`useBillingLimits` dropped all three at the setter. Reviewed, translated,
+shipped, invisible. See `docs/CLASS_SWEEPS.md` class T.
+
+**Not shown** under a dev `FORCE_PLAN` override or `EXPO_PUBLIC_BETA_UNLOCK_ALL`:
+neither has a real subscription behind it, so the date would be invented. The
+date follows `dateLocale()` (the UI language), not the number locale.
+
 ## 1. Current System — RevenueCat IAP (PRIMARY, SHIPPED 2026-05-09)
 
 Two-tier model (was three-tier on Stripe; Premium folded into Pro).

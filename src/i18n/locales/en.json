@@ -746,7 +746,9 @@
     "downgrade_pending": "Your plan will be downgraded at the end of the current period.",
     "coming_soon": "Subscriptions Coming Soon",
     "manage_a11y": "Manage subscription",
-    "manage": "Manage Subscription"
+    "manage": "Manage Subscription",
+    "renews_on": "Renews on {{date}}",
+    "access_until": "Pro access until {{date}}"
   },
   "mfa": {
     "title": "Two-Factor Authentication",

@@ -746,7 +746,9 @@
     "downgrade_pending": "Votre offre passera à un niveau inférieur à la fin de la période en cours.",
     "coming_soon": "Abonnements bientôt disponibles",
     "manage_a11y": "Gérer l'abonnement",
-    "manage": "Gérer l'abonnement"
+    "manage": "Gérer l'abonnement",
+    "renews_on": "Renouvellement le {{date}}",
+    "access_until": "Accès Pro jusqu’au {{date}}"
   },
   "mfa": {
     "title": "Authentification à deux facteurs",

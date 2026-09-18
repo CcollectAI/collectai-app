@@ -746,7 +746,9 @@
     "downgrade_pending": "現在の期間の終了時にプランがダウングレードされます。",
     "coming_soon": "サブスクリプションは近日公開",
     "manage_a11y": "サブスクリプションを管理",
-    "manage": "サブスクリプションを管理"
+    "manage": "サブスクリプションを管理",
+    "renews_on": "{{date}}に更新されます",
+    "access_until": "{{date}}までProをご利用いただけます"
   },
   "mfa": {
     "title": "二要素認証",

@@ -31,6 +31,8 @@ import {
   purchasesStatus,
 } from '@/lib/purchases';
 import { useBillingLimits } from '@/hooks/useBillingLimits';
+import { dateLocale, DATE_SHORT_YEAR } from '@/constants/dateFormats';
+import { billingStatusLine, billingLineIsWarning } from '@/lib/billingStatusLine';
 import type { PurchasesPackage } from 'react-native-purchases';
 import { useToast } from '@/components/Toast';
 import { track } from '@/analytics/track';
@@ -120,7 +122,15 @@ function SubscriptionScreen() {
   const { animatedStyle } = useEnterReveal({ delay: 50 });
   const { colors } = useAppTheme();
   const { showToast } = useToast();
-  const { plan: currentPlan, loading: planLoading, isBetaUnlocked } = useBillingLimits();
+  const {
+    plan: currentPlan,
+    loading: planLoading,
+    isBetaUnlocked,
+    status: billingStatus,
+    periodEnd,
+    cancelAtPeriodEnd,
+    isForced,
+  } = useBillingLimits();
 
   const [offerings, setOfferings] = useState<Offerings>(null);
   const [loading, setLoading] = useState(true);
@@ -268,6 +278,27 @@ function SubscriptionScreen() {
 
   const isPaid = currentPlan !== 'free';
   const screenLoading = loading || planLoading;
+
+  // The renewal date, in the UI language — `dateLocale()`, not the number
+  // locale (docs/ARCHITECTURE.md keeps those apart, and class sweep H fixed
+  // twelve sites that hardcoded 'en-US').
+  const periodEndLabel = periodEnd
+    ? new Date(periodEnd).toLocaleDateString(dateLocale(), DATE_SHORT_YEAR)
+    : null;
+  // The branching lives in `src/lib/billingStatusLine.ts` so the screen and its
+  // test share ONE implementation — the first version of that test copied the
+  // decision table, which is how a screen and its test drift apart while both
+  // stay green. `downgrade_pending` and `past_due` were already written and
+  // translated; only `renews_on` / `access_until` are new.
+  const billingLine = billingStatusLine({
+    status: billingStatus,
+    periodEndLabel,
+    cancelAtPeriodEnd,
+  });
+  const statusLine = billingLine
+    ? t(billingLine.key, billingLine.date ? { date: billingLine.date } : undefined)
+    : null;
+  const statusColor = billingLineIsWarning(billingLine) ? colors.warning : colors.muted;
 
   /* Kept in step with FORCED_LIMITS.pro / DEFAULT_LIMITS in
      src/hooks/useBillingLimits.ts — this list is what the customer is paying
@@ -444,6 +475,30 @@ function SubscriptionScreen() {
             />
           </View>
         )}
+
+        {/* WHAT THE SERVER HAS BEEN SAYING ALL ALONG (2026-09-18).
+            `GET /billing/status` returns `status`, `current_period_end` and
+            `cancel_at_period_end`; `useBillingLimits` dropped all three, and
+            `subscription.past_due` / `subscription.downgrade_pending` — copy
+            already translated into seven locales — was rendered by nothing. A
+            member who had cancelled saw no end date anywhere in the app.
+
+            Not shown under a dev FORCE_PLAN override or in beta-unlock mode:
+            neither has a real subscription behind it, so a renewal date there
+            would be invented. A null date renders the sentence without one
+            rather than "Invalid Date" — `current_period_end` is nullable on the
+            server for exactly the plans that have no period.
+
+            The guard is `statusLine`, not `billingStatus`: an active plan whose
+            `current_period_end` is null has a status and nothing to say, and
+            gating on the status would have rendered an empty line there. */}
+        {!isBetaUnlocked && !isForced && isPaid && statusLine ? (
+          <View style={styles.billingState}>
+            <Text style={[styles.billingStateText, { color: statusColor }]}>
+              {statusLine}
+            </Text>
+          </View>
+        ) : null}
 
         {!isBetaUnlocked && (
           <View style={styles.actionsRow}>
@@ -654,6 +709,15 @@ const styles = StyleSheet.create({
     // #FFFFFF (HC light). 43 other files already use this token.
     fontSize: 15,
     fontWeight: '700',
+  },
+  billingState: {
+    marginTop: 16,
+    paddingHorizontal: 4,
+  },
+  billingStateText: {
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
   },
   actionsRow: {
     flexDirection: 'row',

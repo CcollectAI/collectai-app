@@ -133,6 +133,24 @@ export function useBillingLimits() {
   );
   const [loading, setLoading] = useState(BETA_UNLOCK_ALL ? false : !initialForced);
   const [isForced, setIsForced] = useState(Boolean(initialForced));
+  /**
+   * The rest of what the server already sends (2026-09-18).
+   *
+   * `getBillingStatus()` has always returned `status`, `current_period_end` and
+   * `cancel_at_period_end`; this hook kept `plan` and `limits` and dropped the
+   * other three on the floor. So `app/subscription.tsx` could not tell a member
+   * when their Pro ends, and `subscription.past_due` /
+   * `subscription.downgrade_pending` — copy that exists in all seven locales —
+   * was rendered by nothing. Three pieces of one feature that never met.
+   *
+   * `null` means "not known", never "no": a failed or not-yet-finished fetch
+   * must not be read as "there is nothing to say" (rule F).
+   */
+  const [billingState, setBillingState] = useState<{
+    status: BillingStatus['status'] | null;
+    periodEnd: string | null;
+    cancelAtPeriodEnd: boolean | null;
+  }>({ status: null, periodEnd: null, cancelAtPeriodEnd: null });
 
   useEffect(() => {
     if (BETA_UNLOCK_ALL) return; // beta = no RevenueCat / BE listeners
@@ -186,6 +204,14 @@ export function useBillingLimits() {
             if (!mounted) return;
             setPlan(status.plan);
             setLimits(status.limits);
+            setBillingState({
+              status: status.status ?? null,
+              periodEnd: status.current_period_end ?? null,
+              cancelAtPeriodEnd:
+                typeof status.cancel_at_period_end === 'boolean'
+                  ? status.cancel_at_period_end
+                  : null,
+            });
           })
           .catch((err) => {
             logger.warn('[useBillingLimits] Failed to fetch billing status:', err);
@@ -205,5 +231,12 @@ export function useBillingLimits() {
     };
   }, []);
 
-  return { plan, limits, loading, isForced, isBetaUnlocked: BETA_UNLOCK_ALL };
+  return {
+    plan,
+    limits,
+    loading,
+    isForced,
+    isBetaUnlocked: BETA_UNLOCK_ALL,
+    ...billingState,
+  };
 }
