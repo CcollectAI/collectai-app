@@ -677,20 +677,29 @@ async def stripe_webhook(
         _log.info("Stripe webhook duplicate skipped: %s", event_id)
         return JSONResponse({"received": True, "duplicate": True})
 
-    data = event["data"]["object"]
-    _log.info("Stripe webhook: %s (id=%s)", event_type, event_id)
-
-    if pool is None:
-        _log.warning("Stripe webhook received but DB is not available")
-        return JSONResponse({"received": True})
-
-    # Every handler below runs AFTER the event id was claimed, and the claim was
-    # never released — so a handler that raised left Stripe's retry to
-    # short-circuit on the claim and the work never happened: a paid sponsorship
-    # or ticket recorded nowhere, or a subscription left at its old plan
-    # (class sweep K, 2026-09-17). Release before the error propagates; the
-    # handlers are upserts, so redelivery is idempotent.
+    # Everything below runs AFTER the event id was claimed, and the claim was
+    # never released — so a failure left Stripe's retry to short-circuit on the
+    # claim and the work never happened: a paid sponsorship or ticket recorded
+    # nowhere, or a subscription left at its old plan (class sweep K,
+    # 2026-09-17). Release before the error propagates; the handlers are
+    # upserts, so redelivery is idempotent.
+    #
+    # The try opens BEFORE `event["data"]["object"]` on purpose. That line used
+    # to sit between the claim and the try, so a signed event whose shape we did
+    # not expect raised KeyError with the claim held — the same unretryable 500,
+    # one line too early to be covered.
     try:
+        data = event["data"]["object"]
+        _log.info("Stripe webhook: %s (id=%s)", event_type, event_id)
+
+        if pool is None:
+            # 503, not 200: 200 is Stripe's signal to stop retrying, and this
+            # path has written nothing. A paid sponsorship arriving during a
+            # database outage was acknowledged and dropped ("No database means
+            # no success", docs/API.md). The RevenueCat handler already 503s.
+            _log.warning("Stripe webhook received but DB is not available")
+            raise error_response(503, "Database unavailable")
+
         if event_type == "checkout.session.completed":
             metadata_type = data.get("metadata", {}).get("type", "")
             if metadata_type == "event_sponsor":
@@ -1248,103 +1257,121 @@ async def revenuecat_webhook(
         _log.info("revenuecat: duplicate event %s (%s) ignored", event_id, event_type)
         return JSONResponse({"ok": True, "duplicate": True})
 
-    app_user_id = event.get("app_user_id")
-    plan = _rc_plan_from_event(event)
-    revenue_cents = _rc_revenue_cents(event)
-    affiliate_code = _rc_affiliate_code(event)
-    occurred_at = _rc_ms_to_dt(event.get("purchased_at_ms")) or datetime.now(timezone.utc)
-    expires_at = _rc_ms_to_dt(event.get("expiration_at_ms"))
-
-    # app_user_id is our auth.users.id (purchases.ts calls Purchases.logIn).
-    # Anonymous RevenueCat ids ($RCAnonymousID:...) cannot be attributed.
-    user_id = await _rc_resolve_user_id(app_user_id, pool)
-
-    # Fall back to the profile's stored code when the subscriber attribute is
-    # missing — e.g. a user who upgraded from a build predating setAttributes.
-    if affiliate_code is None and user_id:
-        try:
-            affiliate_code = await pool.fetchval(
-                "SELECT referred_by_code FROM profiles WHERE id = $1::uuid", user_id
-            )
-        except Exception as exc:
-            _log.warning("revenuecat: profile lookup failed for %s: %s", user_id, exc)
-
-    # Ledger row first: it is the payout source of truth, and its UNIQUE
-    # event_id is what makes a retry safe.
+    # ONE chokepoint for rule 1 in `docs/API.md`: *any* failure after the
+    # claim must release it and then 5xx. Two paths did not, and both were
+    # worse than the one that was fixed:
+    #   - the `subscription_events` insert, whose own comment says "500 so
+    #     RevenueCat retries — losing a revenue event loses a payout". The
+    #     retry could not run: the redelivery short-circuited on the claim,
+    #     so the payout row was lost AND `subscriptions` — written after it —
+    #     never happened either.
+    #   - `_rc_resolve_user_id`, which queries the database between the claim
+    #     and the first write, caught by nothing.
+    # Wrapping the whole body is deliberate: two more `await _release...`
+    # calls would leave the next write added here uncovered, which is how
+    # these two got missed. Releasing is safe — the ledger is ON CONFLICT DO
+    # NOTHING and every state write is an upsert (rule 2).
     try:
-        await pool.execute(
-            """
-            INSERT INTO subscription_events (
-                event_id, event_type, provider, user_id, app_user_id, product_id,
-                plan, store, environment, revenue_cents, currency,
-                takehome_percentage, affiliate_code, occurred_at, raw
-            )
-            VALUES ($1, $2, 'revenuecat', $3::uuid, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb)
-            ON CONFLICT (event_id) DO NOTHING
-            """,
-            event_id, event_type, user_id, app_user_id, event.get("product_id"),
-            plan, event.get("store"), event.get("environment"), revenue_cents,
-            event.get("currency"), event.get("takehome_percentage"),
-            affiliate_code, occurred_at, json.dumps(event),
-        )
-    except Exception as exc:
-        # 500 so RevenueCat retries — losing a revenue event loses a payout.
-        _log.exception(
-            "revenuecat: ledger insert failed for %s — %s",
-            event_id, _rc_exc_detail(exc),
-        )
-        raise error_response(500, "Failed to record subscription event") from exc
+        app_user_id = event.get("app_user_id")
+        plan = _rc_plan_from_event(event)
+        revenue_cents = _rc_revenue_cents(event)
+        affiliate_code = _rc_affiliate_code(event)
+        occurred_at = _rc_ms_to_dt(event.get("purchased_at_ms")) or datetime.now(timezone.utc)
+        expires_at = _rc_ms_to_dt(event.get("expiration_at_ms"))
 
-    # Current-state row. Only for identified users on entitlement-changing events.
-    if user_id and event_type in (_RC_ACTIVE_EVENTS | _RC_ENDED_EVENTS):
-        is_active = event_type in _RC_ACTIVE_EVENTS
-        status = "active" if is_active else ("paused" if event_type == "SUBSCRIPTION_PAUSED" else "expired")
+        # app_user_id is our auth.users.id (purchases.ts calls Purchases.logIn).
+        # Anonymous RevenueCat ids ($RCAnonymousID:...) cannot be attributed.
+        user_id = await _rc_resolve_user_id(app_user_id, pool)
+
+        # Fall back to the profile's stored code when the subscriber attribute is
+        # missing — e.g. a user who upgraded from a build predating setAttributes.
+        if affiliate_code is None and user_id:
+            try:
+                affiliate_code = await pool.fetchval(
+                    "SELECT referred_by_code FROM profiles WHERE id = $1::uuid", user_id
+                )
+            except Exception as exc:
+                _log.warning("revenuecat: profile lookup failed for %s: %s", user_id, exc)
+
+        # Ledger row first: it is the payout source of truth, and its UNIQUE
+        # event_id is what makes a retry safe.
         try:
             await pool.execute(
                 """
-                INSERT INTO subscriptions (
-                    user_id, provider, revenuecat_app_user_id, revenuecat_product_id,
-                    plan, status, current_period_end
+                INSERT INTO subscription_events (
+                    event_id, event_type, provider, user_id, app_user_id, product_id,
+                    plan, store, environment, revenue_cents, currency,
+                    takehome_percentage, affiliate_code, occurred_at, raw
                 )
-                VALUES ($1::uuid, 'revenuecat', $2, $3, $4, $5, $6)
-                ON CONFLICT (user_id) DO UPDATE SET
-                    provider = 'revenuecat',
-                    revenuecat_app_user_id = EXCLUDED.revenuecat_app_user_id,
-                    revenuecat_product_id = EXCLUDED.revenuecat_product_id,
-                    plan = EXCLUDED.plan,
-                    status = EXCLUDED.status,
-                    current_period_end = EXCLUDED.current_period_end,
-                    updated_at = now()
+                VALUES ($1, $2, 'revenuecat', $3::uuid, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb)
+                ON CONFLICT (event_id) DO NOTHING
                 """,
-                user_id, app_user_id, event.get("product_id"),
-                plan if is_active else "free", status, expires_at,
+                event_id, event_type, user_id, app_user_id, event.get("product_id"),
+                plan, event.get("store"), event.get("environment"), revenue_cents,
+                event.get("currency"), event.get("takehome_percentage"),
+                affiliate_code, occurred_at, json.dumps(event),
             )
-        except Exception as sub_exc:
-            # `as sub_exc`, and NOT reusing `exc` from the ledger block above:
-            # Python deletes an except-clause name when that block ends, so
-            # referencing it here raises NameError — a crash while REPORTING a
-            # failure, which converts a diagnosable error into a silent one.
-            #
-            # The ledger landed, so revenue is not lost — but `subscriptions` is
-            # the row `get_user_plan` reads, so the member is CHARGED and still
-            # on `free`, with every paid feature locked. The old comment here
-            # reasoned "a retry would be a no-op on the ledger anyway", which is
-            # true and beside the point: the retry exists to write THIS row.
-            #
-            # Releasing the claim is what makes the retry able to do anything —
-            # without it the redelivery short-circuits at _event_already_processed
-            # and the member stays free forever (class sweep K, 2026-09-17).
+        except Exception as exc:
+            # 500 so RevenueCat retries — losing a revenue event loses a payout.
             _log.exception(
-                "revenuecat: subscriptions upsert failed for user %s — %s",
-                user_id, _rc_exc_detail(sub_exc),
+                "revenuecat: ledger insert failed for %s — %s",
+                event_id, _rc_exc_detail(exc),
             )
-            await _release_webhook_claim(event_id, pool)
-            raise error_response(
-                500, "Failed to record subscription state"
-            ) from sub_exc
+            raise error_response(500, "Failed to record subscription event") from exc
 
-    _log.info(
-        "revenuecat: %s user=%s plan=%s revenue=%s%s code=%s",
-        event_type, user_id, plan, revenue_cents, event.get("currency") or "", affiliate_code,
-    )
-    return JSONResponse({"ok": True})
+        # Current-state row. Only for identified users on entitlement-changing events.
+        if user_id and event_type in (_RC_ACTIVE_EVENTS | _RC_ENDED_EVENTS):
+            is_active = event_type in _RC_ACTIVE_EVENTS
+            status = "active" if is_active else ("paused" if event_type == "SUBSCRIPTION_PAUSED" else "expired")
+            try:
+                await pool.execute(
+                    """
+                    INSERT INTO subscriptions (
+                        user_id, provider, revenuecat_app_user_id, revenuecat_product_id,
+                        plan, status, current_period_end
+                    )
+                    VALUES ($1::uuid, 'revenuecat', $2, $3, $4, $5, $6)
+                    ON CONFLICT (user_id) DO UPDATE SET
+                        provider = 'revenuecat',
+                        revenuecat_app_user_id = EXCLUDED.revenuecat_app_user_id,
+                        revenuecat_product_id = EXCLUDED.revenuecat_product_id,
+                        plan = EXCLUDED.plan,
+                        status = EXCLUDED.status,
+                        current_period_end = EXCLUDED.current_period_end,
+                        updated_at = now()
+                    """,
+                    user_id, app_user_id, event.get("product_id"),
+                    plan if is_active else "free", status, expires_at,
+                )
+            except Exception as sub_exc:
+                # `as sub_exc`, and NOT reusing `exc` from the ledger block above:
+                # Python deletes an except-clause name when that block ends, so
+                # referencing it here raises NameError — a crash while REPORTING a
+                # failure, which converts a diagnosable error into a silent one.
+                #
+                # The ledger landed, so revenue is not lost — but `subscriptions` is
+                # the row `get_user_plan` reads, so the member is CHARGED and still
+                # on `free`, with every paid feature locked. The old comment here
+                # reasoned "a retry would be a no-op on the ledger anyway", which is
+                # true and beside the point: the retry exists to write THIS row.
+                #
+                # The raise reaches the chokepoint above, which releases the
+                # claim — without that release the redelivery short-circuits at
+                # _event_already_processed and the member stays free forever
+                # (class sweep K, 2026-09-17).
+                _log.exception(
+                    "revenuecat: subscriptions upsert failed for user %s — %s",
+                    user_id, _rc_exc_detail(sub_exc),
+                )
+                raise error_response(
+                    500, "Failed to record subscription state"
+                ) from sub_exc
+
+        _log.info(
+            "revenuecat: %s user=%s plan=%s revenue=%s%s code=%s",
+            event_type, user_id, plan, revenue_cents, event.get("currency") or "", affiliate_code,
+        )
+        return JSONResponse({"ok": True})
+    except Exception:
+        await _release_webhook_claim(event_id, pool)
+        raise

@@ -58,7 +58,7 @@ Two rules the tooling learned the hard way:
 | P | The SERVER answers a failure with an empty 200 | 2026-09-17 | ✅ 10 handlers raise 503 + `check_empty_on_failure.py`; client type can say "unknown" |
 | O | A number rounded into a different fact | 2026-09-17 | ✅ sub-euro prices + sign; found by reviewing a screenshot, not by a checker |
 | N | The client compares a status the database never writes | 2026-09-17 | ✅ `getDmStatus` fixed + tested; all 8 status columns enumerated; NO gate (measured: 83 findings, nearly all homonyms) |
-| K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | ✅ all fixed: billing webhook `8439f97`, item edit, calendar, template, P2P listing transaction — **two server fixes not deployed** |
+| K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | ✅ all fixed and **deployed 2026-09-18**: billing webhook `8439f97` **+ the three paths it missed** (ledger insert, user lookup, Stripe payload shape) now on one chokepoint per handler, item edit, calendar, template, P2P listing transaction |
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
 | S | The server answered `ok` and wrote nothing | 2026-09-17/18 **deployed** | ✅ **all 34 read**: 6 `ok`-without-a-write fixed, the announcement DM dead five months fixed, 4 money handlers made atomic + row-locked (a trade could complete twice or never; a sale banked twice; a mandate past its cap), 22 of the 34 sites cleared with the reason written down. 8 tests that PINNED the lie rewritten. One decision left: `reports_count` is written, read nowhere |
 | T | The server sends it and the app never reads it | 2026-09-18 | measured: **74 of 461** fields declared in `src/api` are referenced nowhere else. Three confirmed: subscription dates ✅ **fixed** (the copy was already translated in 7 locales and rendered by nothing), realised P/L unreachable and the demand differentiator unshown — both product calls. The rest is mostly request params and deliberately-removed UI |
@@ -696,20 +696,52 @@ screen always passes `''`, so the app was never exposed.
   (closes the menu, then confirms through an Alert), `OfferAmountSheet.handleSubmit`
   (`busy` guard), the three `AppearanceSection` setters (idempotent settings writes).
 
-**K — swept 2026-09-17. The one to fix first is a paying member left on `free`.**
+**K — the webhook claim: ✅ FIXED `8439f97`, completed and DEPLOYED 2026-09-18.**
 
-`billing_router.py` claims the webhook in `processed_webhook_events` BEFORE doing
-any work (`:1201`), then writes `subscription_events` (`:1226`) and upserts
-`subscriptions` (`:1253`). The claim is `INSERT … ON CONFLICT DO NOTHING
-RETURNING` and **nothing ever deletes it** — there is no `DELETE FROM
-processed_webhook_events` anywhere in the repo. So if the `subscriptions` upsert
-fails, the 500-to-force-a-retry at `:1245` is unreachable: RevenueCat's
-redelivery short-circuits at `:1202`. The member is **charged, recorded in the
-revenue ledger, and stays on `free`** — every paid feature locked, permanently,
-with no reconciliation (nothing else reads `subscription_events`). The Stripe
-handler at `:640` has the same claim-before-write ordering. Fix: claim after the
-writes succeed, or release the claim when a write fails. Server-side, needs a
-deploy — your call.
+Two sentences in this section were stale and are corrected here rather than
+above: "nothing ever deletes it — there is no `DELETE FROM
+processed_webhook_events` anywhere in the repo" stopped being true on 2026-09-17
+(`_release_webhook_claim`, `8439f97`), and "two server fixes not deployed" in the
+register was stale too — a repo-vs-EC2 hash diff of all 263 files under
+`server/{app,workers}` on 2026-09-18 found them identical.
+
+The original finding: `billing_router.py` claims the webhook id BEFORE any work
+with `INSERT … ON CONFLICT DO NOTHING RETURNING`, so a failure after the claim
+made the provider's redelivery short-circuit and the work never happen. For
+RevenueCat that left a member **charged, recorded in the revenue ledger, and on
+`free`** — `get_user_plan` reads `subscriptions`, and nothing reconciles it from
+`subscription_events`.
+
+**`8439f97` fixed two of five paths, and the miss is the interesting part.** It
+released the claim on the `subscriptions` upsert (RevenueCat) and around the
+handler dispatch (Stripe), and `docs/API.md` wrote the rule down as "**any**
+failure after the claim must release it". Three failures after the claim did not:
+
+1. **The `subscription_events` insert** — the FIRST write, whose own comment says
+   *"500 so RevenueCat retries — losing a revenue event loses a payout"*. The
+   retry could not run: the claim was held, so the redelivery answered
+   `{"ok": true, "duplicate": true}`. The payout row was lost for good **and**
+   `subscriptions`, written after it, never happened either. Strictly worse than
+   the case that was fixed, on the write the file calls the source of truth.
+2. **`_rc_resolve_user_id`** — queries the database between the claim and the
+   first write, caught by nothing.
+3. **`event["data"]["object"]` (Stripe)** — sat one line above the `try`, so a
+   signed event with an unexpected shape raised KeyError with the claim held.
+
+Found beside them: the Stripe handler answered **200 `{"received": true}`** when
+there was no database pool, with the claim taken and nothing written. 200 is
+Stripe's signal to stop retrying, so a paid sponsorship, ticket or plan change
+arriving during an outage was acknowledged and dropped — the same endpoint class
+as the seven fixed under "No database means no success". It now 503s, as the
+RevenueCat handler already did.
+
+**The fix is one chokepoint per handler, not five release calls.** Both handlers
+now wrap everything after the claim in `try: … except Exception: await
+_release_webhook_claim(...); raise`. Five call sites would leave the next write
+added to either handler uncovered — which is exactly how these three were
+missed. Five tests: the three gaps (red before, green after), plus one asserting
+a SUCCESSFUL event **keeps** its claim, because a chokepoint that over-releases
+would silently undo the dedup and nothing would look broken.
 
 ✅ **`p2p_listing_router.create_listing` — fixed 2026-09-17.** It created an
 `items` row (with `for_sale = TRUE`) and then the `marketplace_listings` row on

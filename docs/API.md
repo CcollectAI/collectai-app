@@ -777,6 +777,19 @@ Verified on prod 2026-09-17: `processed_webhook_events` held 10 rows, and **0
 paid events had no `subscriptions` row** — the bug had not yet bitten a real
 member (the 6 ledger rows are test events with unresolvable users).
 
+**Rule 1 was written here and broken three lines away (fixed 2026-09-18).** The
+first pass released the claim on the RevenueCat `subscriptions` upsert and around
+the Stripe dispatch, and left three failures after the claim uncovered: the
+`subscription_events` insert (the *first* write, the payout source of truth),
+`_rc_resolve_user_id` (a query between the claim and that write), and Stripe's
+`event["data"]["object"]`, which sat one line above the `try`. Both handlers now
+wrap **everything** after the claim in a single
+`try: … except Exception: await _release_webhook_claim(...); raise`. Add writes
+inside that block, not after it — a per-site release is what let these three
+through. The Stripe handler also answered 200 with no database pool, which told
+Stripe to stop retrying an event it had not processed; it now 503s like the
+RevenueCat one.
+
 ## No database means no success (2026-09-17)
 
 Every **write** endpoint (`POST`/`PATCH`/`PUT`/`DELETE`) answers **503

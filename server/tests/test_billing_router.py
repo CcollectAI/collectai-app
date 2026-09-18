@@ -419,3 +419,241 @@ class TestWebhookClaimIsReleasedOnFailure:
         assert resp.status_code >= 500
         assert any("DELETE FROM processed_webhook_events" in c for c in calls), \
             "the claim was never released — the member stays on free forever"
+
+    # The two paths 8439f97 missed. `docs/API.md` states the rule as "**any**
+    # failure after the claim must release it", and these are failures after the
+    # claim that did not.
+
+    def test_revenuecat_ledger_failure_releases_the_claim(self, client):
+        """The ledger insert is the FIRST write, and its 500 was unretryable.
+
+        The handler's own comment says "500 so RevenueCat retries — losing a
+        revenue event loses a payout". The retry could not run: the claim was
+        still held, so the redelivery short-circuits at
+        `_event_already_processed` and answers `{"ok": true, "duplicate": true}`.
+        The payout row is lost for good, and `subscriptions` — which comes after
+        the ledger — is never written either, so the member is charged and left
+        on `free`. Worse than the case that was fixed, on the write the comment
+        calls the source of truth.
+        """
+        event = {
+            "api_version": "1.0",
+            "event": {
+                "id": "evt_rc_ledger_1",
+                "type": "INITIAL_PURCHASE",
+                "app_user_id": "22222222-2222-2222-2222-222222222222",
+                "product_id": "sparrow_pro_monthly",
+                "purchased_at_ms": 1_750_000_000_000,
+                "store": "APP_STORE",
+                "environment": "PRODUCTION",
+                "price_in_purchased_currency": 4.99,
+                "currency": "EUR",
+                "entitlement_ids": ["pro"],
+            },
+        }
+
+        mock_pool = AsyncMock()
+        mock_pool.fetchrow.return_value = {"event_id": "evt_rc_ledger_1"}
+        mock_pool.fetchval.return_value = None
+
+        calls: list[str] = []
+
+        async def execute(sql, *args):
+            calls.append(str(sql))
+            if "INSERT INTO subscription_events" in str(sql):
+                raise RuntimeError("connection reset by peer")
+            return "OK"
+
+        mock_pool.execute.side_effect = execute
+
+        async def fake_pool():
+            return mock_pool
+
+        with patch("app.routes.billing_router.DB_ENABLED", True), \
+             patch("app.routes.billing_router.get_pool", fake_pool), \
+             patch("app.routes.billing_router.REVENUECAT_WEBHOOK_AUTH", "test-secret"), \
+             patch("app.routes.billing_router._rc_resolve_user_id",
+                   AsyncMock(return_value="22222222-2222-2222-2222-222222222222")), \
+             patch("app.routes.billing_router._SEEN_EVENTS", OrderedDict()):
+            resp = client.post(
+                "/billing/revenuecat-webhook",
+                content=json.dumps(event).encode(),
+                headers={"Content-Type": "application/json", "Authorization": "test-secret"},
+            )
+
+        assert resp.status_code >= 500
+        assert any("DELETE FROM processed_webhook_events" in c for c in calls), \
+            "the claim was never released — the revenue event is lost for good"
+
+    def test_revenuecat_user_lookup_failure_releases_the_claim(self, client):
+        """A failure BETWEEN the claim and the first write also has to release.
+
+        `_rc_resolve_user_id` runs after the claim and touches the database, so
+        it can raise for the same reasons any query can. Nothing caught it, so
+        the 500 went back to RevenueCat with the claim held: the event is
+        swallowed on redelivery with neither row written.
+        """
+        event = {
+            "api_version": "1.0",
+            "event": {
+                "id": "evt_rc_lookup_1",
+                "type": "INITIAL_PURCHASE",
+                "app_user_id": "33333333-3333-3333-3333-333333333333",
+                "product_id": "sparrow_pro_monthly",
+                "purchased_at_ms": 1_750_000_000_000,
+                "store": "APP_STORE",
+                "environment": "PRODUCTION",
+                "price_in_purchased_currency": 4.99,
+                "currency": "EUR",
+                "entitlement_ids": ["pro"],
+            },
+        }
+
+        mock_pool = AsyncMock()
+        mock_pool.fetchrow.return_value = {"event_id": "evt_rc_lookup_1"}
+
+        calls: list[str] = []
+
+        async def execute(sql, *args):
+            calls.append(str(sql))
+            return "OK"
+
+        mock_pool.execute.side_effect = execute
+
+        async def fake_pool():
+            return mock_pool
+
+        with patch("app.routes.billing_router.DB_ENABLED", True), \
+             patch("app.routes.billing_router.get_pool", fake_pool), \
+             patch("app.routes.billing_router.REVENUECAT_WEBHOOK_AUTH", "test-secret"), \
+             patch("app.routes.billing_router._rc_resolve_user_id",
+                   AsyncMock(side_effect=RuntimeError("pool timeout"))), \
+             patch("app.routes.billing_router._SEEN_EVENTS", OrderedDict()):
+            resp = client.post(
+                "/billing/revenuecat-webhook",
+                content=json.dumps(event).encode(),
+                headers={"Content-Type": "application/json", "Authorization": "test-secret"},
+            )
+
+        assert resp.status_code >= 500
+        assert any("DELETE FROM processed_webhook_events" in c for c in calls), \
+            "the claim was never released — the event is swallowed on redelivery"
+
+    def test_a_successful_revenuecat_event_keeps_its_claim(self, client):
+        """The chokepoint must not release on the way OUT.
+
+        A release on success would undo the dedup it exists to protect: the next
+        redelivery of the same event would run the whole handler again. The
+        writes are idempotent, so this would not corrupt anything — which is
+        exactly why a test has to say it, since nothing would look broken.
+        """
+        event = {
+            "api_version": "1.0",
+            "event": {
+                "id": "evt_rc_ok_1",
+                "type": "INITIAL_PURCHASE",
+                "app_user_id": "44444444-4444-4444-4444-444444444444",
+                "product_id": "sparrow_pro_monthly",
+                "purchased_at_ms": 1_750_000_000_000,
+                "store": "APP_STORE",
+                "environment": "PRODUCTION",
+                "price_in_purchased_currency": 4.99,
+                "currency": "EUR",
+                "entitlement_ids": ["pro"],
+            },
+        }
+
+        mock_pool = AsyncMock()
+        mock_pool.fetchrow.return_value = {"event_id": "evt_rc_ok_1"}
+        mock_pool.fetchval.return_value = None
+
+        calls: list[str] = []
+
+        async def execute(sql, *args):
+            calls.append(str(sql))
+            return "OK"
+
+        mock_pool.execute.side_effect = execute
+
+        async def fake_pool():
+            return mock_pool
+
+        with patch("app.routes.billing_router.DB_ENABLED", True), \
+             patch("app.routes.billing_router.get_pool", fake_pool), \
+             patch("app.routes.billing_router.REVENUECAT_WEBHOOK_AUTH", "test-secret"), \
+             patch("app.routes.billing_router._rc_resolve_user_id",
+                   AsyncMock(return_value="44444444-4444-4444-4444-444444444444")), \
+             patch("app.routes.billing_router._SEEN_EVENTS", OrderedDict()):
+            resp = client.post(
+                "/billing/revenuecat-webhook",
+                content=json.dumps(event).encode(),
+                headers={"Content-Type": "application/json", "Authorization": "test-secret"},
+            )
+
+        assert resp.status_code == 200
+        assert any("INSERT INTO subscription_events" in c for c in calls)
+        assert any("INSERT INTO subscriptions" in c for c in calls)
+        assert not any("DELETE FROM processed_webhook_events" in c for c in calls), \
+            "the claim was released on SUCCESS — the next redelivery reprocesses it"
+
+    def test_stripe_malformed_payload_after_the_claim_releases_it(self, client):
+        """`event["data"]["object"]` sat between the claim and the try block.
+
+        A signed event whose shape we did not expect raised KeyError there, which
+        is a failure after the claim like any other: 500 to Stripe, claim held,
+        redelivery swallowed. The signature was valid, so this is Stripe's own
+        payload changing shape, not an attack.
+        """
+        event = {"id": "evt_stripe_malformed_1", "type": "customer.subscription.deleted"}
+        mock_stripe = MagicMock()
+        mock_stripe.Webhook.construct_event.return_value = event
+
+        mock_pool = AsyncMock()
+        mock_pool.fetchrow.side_effect = [{"event_id": "evt_stripe_malformed_1"}, None]
+
+        with patch("app.routes.billing_router.STRIPE_WEBHOOK_SECRET", "whsec_test"), \
+             patch("app.routes.billing_router._get_stripe", return_value=mock_stripe), \
+             patch("app.routes.billing_router.get_pool", return_value=mock_pool), \
+             patch("app.routes.billing_router._SEEN_EVENTS", OrderedDict()):
+            resp = client.post(
+                "/billing/webhook",
+                content=json.dumps(event).encode(),
+                headers={"Stripe-Signature": "valid_sig"},
+            )
+
+        assert resp.status_code >= 500
+        deletes = [
+            c for c in mock_pool.execute.call_args_list
+            if "DELETE FROM processed_webhook_events" in str(c.args[0])
+        ]
+        assert deletes, "the claim was never released — the retry will short-circuit"
+
+    def test_stripe_without_a_database_does_not_answer_received(self, client):
+        """No database means no success — `docs/API.md`, and Stripe is a write.
+
+        The handler answered 200 `{"received": true}` with the claim taken and
+        nothing written. 200 is Stripe's signal to stop retrying, so a paid
+        sponsorship, ticket or plan change arriving during a database outage was
+        acknowledged and dropped. The RevenueCat handler already 503s here.
+        """
+        event = {
+            "id": "evt_stripe_nodb_1",
+            "type": "customer.subscription.deleted",
+            "data": {"object": {"id": "sub_test_nodb"}},
+        }
+        mock_stripe = MagicMock()
+        mock_stripe.Webhook.construct_event.return_value = event
+
+        with patch("app.routes.billing_router.STRIPE_WEBHOOK_SECRET", "whsec_test"), \
+             patch("app.routes.billing_router._get_stripe", return_value=mock_stripe), \
+             patch("app.routes.billing_router.get_pool", return_value=None), \
+             patch("app.routes.billing_router._SEEN_EVENTS", OrderedDict()) as seen:
+            resp = client.post(
+                "/billing/webhook",
+                content=json.dumps(event).encode(),
+                headers={"Stripe-Signature": "valid_sig"},
+            )
+
+        assert resp.status_code == 503, "200 tells Stripe to stop retrying"
+        assert "evt_stripe_nodb_1" not in seen, \
+            "the in-memory claim outlived the failure — the retry is swallowed"
