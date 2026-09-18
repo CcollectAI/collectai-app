@@ -177,6 +177,28 @@ true, and the realised P/L is then a join and a screen rather than a data model.
 Doing either alone ships half an equation — a true cost with no outcome, or an
 outcome measured against a wrong cost.
 
+### Re-measured 2026-09-18: the join shipped, the SALE still never happens
+
+The acquisition-fee half landed 2026-08-31 (`acquisition_fees`,
+`acquisition_fees_eur`, written through `PATCH /items/{id}/purchase`), and the
+join shipped as `GET /portfolio/realised-pl` — cost basis, per-sale fees,
+`total_profit`, and `cost_basis_known` per row so an unknown basis is never
+subtracted as zero. It is a careful endpoint.
+
+**It returns nothing, for everyone, and always has.** `marketplace_sales` still
+holds **0 rows**. Its only writer is `POST /marketplace/listings/sales/{id}/
+record`, whose client wrapper `recordMarketplaceSale()` has **no caller in the
+app**, and the P2P completion path writes no sale either. Production today: 3
+listings sold, 1 completed P2P trade, 0 sales recorded. `acquisition_fees_eur`
+is set on **0 of 17** items.
+
+`app/sell/dashboard.tsx` already renders a Sales tab with a revenue summary, so
+the *screen* half of "a join and a screen" is not what is missing. **The
+unwritten row is.** What it needs, and the decision in it, is in
+`docs/CLASS_SWEEPS.md` class T — chiefly: a Sparrow P2P trade charges no fee and
+we never learn the seller's postage, so recording `net_proceeds = sale_price`
+would reintroduce this section's own error on the sell side.
+
 ## 6. Grading: narrow support, and a feature that half-works
 
 Collectr **supports PSA only** — no BGS, CGC or Beckett — and its *"Grading Price

@@ -1037,15 +1037,53 @@ Most of the 74 are not defects, and the taxonomy matters more than the count:
 
 ### The three that are real, and all three are decisions
 
-**1. Realised profit is computed twice and shown nowhere.**
-`getRealisedPL()` → `GET /portfolio/realised-pl` (per-sale fees, cost basis,
-`total_profit`, `total_net_proceeds`, `sales_without_cost_basis`) has **zero
-callers**. Separately, `/portfolio/items` returns per-item `realized_pl`, which
-`portfolioAnalyticsStore` maps to `realizedPL` — and `app/analytics.tsx` renders
-only `unrealizedPL`, which the store's own comment says is **model drift, not
-profit**, for every item without a purchase price (~93% of production). So the
-screen that exists to answer an investment question shows the number nobody
-earned and hides the one they did.
+**1. Realised profit is computed twice and shown nowhere — and the missing piece
+is not a screen.** `getRealisedPL()` → `GET /portfolio/realised-pl` (per-sale
+fees, cost basis, `total_profit`, `total_net_proceeds`,
+`sales_without_cost_basis`) has **zero callers**. Separately, `/portfolio/items`
+returns per-item `realized_pl`, which `portfolioAnalyticsStore` maps to
+`realizedPL` — and `app/analytics.tsx` renders only `unrealizedPL`, which the
+store's own comment says is **model drift, not profit**, for every item without
+a purchase price (~93% of production).
+
+**Measured on production before building anything (2026-09-18), which changed
+the answer:**
+
+| | |
+|---|---|
+| `marketplace_sales` rows | **0** — unchanged since the 2026-08-31 measurement in `docs/COLLECTOR_DEMAND.md` §5 |
+| listings at `status='sold'` | 3 |
+| completed P2P offers | 1 |
+| items with `purchase_price_eur` | 7 of 17 |
+| items with `acquisition_fees_eur` | **0** |
+
+`marketplace_sales` has exactly one writer — `POST /marketplace/listings/sales/
+{listing_id}/record` — and its client wrapper `recordMarketplaceSale()` **has no
+caller anywhere in the app**. The P2P completion path does not write one either:
+`_settle_completed_trade` retires the seller's item, mints the buyer's, clears
+the reservation and declines rival offers, and records no SALE.
+
+And a surface already exists: `app/sell/dashboard.tsx` has a **Sales tab** with a
+revenue summary (gross, fees, net, count) and an empty state. It has always read
+an empty table.
+
+**So the gap is the WRITER, not the screen** — building the realised-P/L view
+today would add a second window onto a table nothing fills. Fixing that is a
+money-semantics decision, which is why it is written down rather than guessed:
+
+1. **P2P completion writes the sale.** Everything is known at
+   `confirm_exchange` — amount, currency, listing, buyer, seller. But Sparrow
+   charges no fee and never learns the seller's postage, so `net_proceeds` would
+   equal the sale price, which **overstates what they actually made** — the
+   $900-not-$956.25 error of `COLLECTOR_DEMAND.md` §5, moved to the sell side.
+2. **Wire `recordMarketplaceSale`** — a "record a sale" form covering sales made
+   anywhere, eBay included. The numbers are true because the member enters them;
+   the cost is entry friction, which §5 names as exactly why people give up.
+3. **Both, in that order**: completion PREFILLS the form (amount, date, item)
+   and the member confirms or corrects the postage. The prefill is the answer to
+   the friction objection, and nothing is invented — an unconfirmed postage
+   stays null and its row carries no profit, the same way
+   `cost_basis_known: false` already works on the read side.
 
 **2. The demand differentiator is fetched and not shown.** The listing detail
 renders `watchers` ("3 other members watching this item") and never
