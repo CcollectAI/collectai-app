@@ -64,6 +64,7 @@ Two rules the tooling learned the hard way:
 | T | The server sends it and the app never reads it | 2026-09-18 | measured: **74 of 461** fields declared in `src/api` are referenced nowhere else. Three confirmed: subscription dates ✅ **fixed** (the copy was already translated in 7 locales and rendered by nothing), realised P/L unreachable and the demand differentiator unshown — both product calls. The rest is mostly request params and deliberately-removed UI |
 | U | A provider CASTS a snake_case payload to a camelCase type | 2026-09-18 | ✅ all 4 found and mapped (sales, fee schedules, listings, accounts). **All behind `SELLING_ENABLED=false`** — I first called two of them live and the device disproved it. Real, and they ship the day selling is switched on. `tsc` cannot see this class |
 | V | The app SENDS a field the server drops on the floor | 2026-09-18 | ⚠️ **INCONCLUSIVE, and the number is why**: the probe could read only **11 of 87** write calls (13%), found 0 in those, and that says nothing about the other 74. Method for a real run is written up |
+| W | A column the schema carries that no code mentions | 2026-09-18 | measured: **524 across 177 base tables**. Sampled `items` (19 of them): **18 hold no data at all** and the 19th is only its default — schema DEBT, not silent data loss. A cleanup decision, not a bug |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -1362,6 +1363,53 @@ One thing worth stating now, because it bounds the risk: a mismatch here is
 says the field exists, so neither `tsc` nor a test that mocks the API can see
 it. Only a diff of the two declarations can — which is exactly why the class is
 worth a gate rather than a read-through.
+
+## W — a column the schema carries that no code mentions (2026-09-18)
+
+`marketplace_listings.reports_count` was found by accident: written on every
+report, read by nothing. This sweep looked for the rest — and the answer is
+reassuring in a specific, checkable way.
+
+**The probe** (`scripts/probe_dead_columns.py`): every column in
+`scripts/schema.lock.json` whose bare name (and camelCase form) appears NOWHERE
+in `server/app`, `server/workers`, `server/pipelines`, `src/` or `app/`. A
+membership test, not a parse — a name that collides with a common word looks
+"used", so false NEGATIVES are expected and false positives are the finding.
+
+**1164 of 4685 columns**, which drops to **524 across 177 base tables** once
+views are excluded — a view's columns are selected by the view's name, so
+"absent from code" is meaningless for them. That exclusion is most of the noise.
+
+### The measurement that matters: is anything WRITING them?
+
+A column with no reader and NO DATA is schema debt. A column with no reader and
+DATA is the `reports_count` shape — a live write going nowhere. The two need
+opposite responses, and only production can tell them apart.
+
+Sampled the app's core table, `items`, which had 19 unreferenced columns:
+
+| | |
+|---|---|
+| **18 of 19 hold no data at all** — `count(<col>) = 0` across every row | `acquisition_price`, `actual_price_eur`, `ai_estimate_usd`, `authenticity_score`, `build_notes`, `build_state`, `checklist_item_id`, `date_completed`, `date_started`, `fraud_details`, `fraud_flags`, `fts`, `identity_locked_at`, `latest_forecast`, `paint_state`, `prediction_confidence`, `verified_date`, `verified_price` |
+| the 19th, `identity_locked`, is non-null on all 17 rows — **and every one is `false`, its column DEFAULT** | so nothing writes it either |
+
+So on this table the class is **dead weight, not data loss**: fossils of
+abandoned features (build/paint state, fraud flags, verified price, AI
+estimates, checklists). Nothing is being silently discarded.
+
+### What to do with it
+
+**Nothing urgent, and that is the finding.** These cost a little schema noise
+and a lot of misdirection — the next person reading `items` sees
+`acquisition_price` next to `purchase_price` and has to work out which one is
+real (it is `purchase_price`; `acquisition_price` has never held a value).
+Dropping them is a migration per cluster and a schema-lock regen each time,
+which is real work for no behaviour change.
+
+**The rule worth keeping:** when a column turns up unreferenced, the question is
+not "is it used?" but **"does it have DATA?"**. Empty is debt; populated is a
+write that goes nowhere, and that one gets fixed the day it is found — as
+`reports_count` was.
 
 ## Decisions for Merle — the XP leaderboard (2026-09-17)
 
