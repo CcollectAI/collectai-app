@@ -160,9 +160,13 @@ the 2026-04-24 security-advisor migration pinned `search_path` through
 `20260917b_fix_quoted_search_path.sql` **was applied to production 2026-09-17**
 (203 → 0; both lock preflights still pass, no bake restart needed). Gate:
 `check:sql-search-path`. **It then revealed a second bug**: `rpc_block_user_v1`
-declines pending DMs in the pre-rewrite `chat_threads` table, which no longer
-exists — so Block still throws. `20260917c_blocking_uses_dm_requests.sql`
-fixes that (and makes the DM-request RPCs respect blocks) and is **NOT applied**.
+declined pending DMs in the pre-rewrite `chat_threads` table, which no longer
+exists — so Block still threw. `20260917c_blocking_uses_dm_requests.sql`
+**was applied to production 2026-09-18** and blocking now works, verified by
+CALLING it as a member in a rolled-back transaction: the block row is written,
+the pending `chat_dm_requests_v1` row flips to `denied`, `rpc_is_blocked_v1`
+answers true, and a blocked member's `rpc_request_dm_v1` is refused with
+`blocked`. Five months broken.
 After a mechanical fix, re-run the user action end to end: the first error hides
 the next one.
 

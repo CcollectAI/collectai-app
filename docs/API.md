@@ -38,6 +38,12 @@ tell "public by design" from "public by accident" without re-deriving it.
 **`/pipeline/status` used to return `str(e)` on a DB failure** — internal error
 text from a public endpoint. Fixed 2026-09-17; the text stays in the log.
 
+`GET /p2p/carriers` was listed as **No** auth in the P2P table until 2026-09-18
+and is not: it takes `user_id: str = Depends(get_current_user_id)` and answers
+**401**. Found by curling it on the box after a deploy — the enumeration above
+read the code and never listed it, so the table was the thing that was wrong.
+**A doc row is not evidence about auth; the signature is.**
+
 Two things that look like findings and are not, recorded so the next sweep does
 not re-open them: `POST /vision-predict/classify` declares its auth in the
 DECORATOR (`dependencies=[Depends(get_current_user_id), …]`), and
@@ -485,7 +491,7 @@ matching how `p2p_listing_router` / `p2p_offers_router` are registered in
 | POST | `/p2p/offers/{offer_id}/respond` | JWT + Rate Limit | `action=accept\|decline\|counter\|withdraw`. Accept reserves softly; it does not delist. **One transaction, offer row locked** |
 | POST | `/p2p/offers/{offer_id}/confirm` | JWT + Rate Limit | Seller marks sent, buyer marks received. **Both ⇒ completed** — the only completion writer. **One transaction, offer row locked**; see below |
 | POST | `/p2p/offers/{offer_id}/tracking` | JWT + Rate Limit | Attach carrier + consignment code. **Seller only**, while `accepted`/`shipped`. DISPLAY ONLY — never advances the trade |
-| GET | `/p2p/carriers` | No | Carrier picker options. `linkable=false` ⇒ no code-only tracking URL exists (PostNL/DPD need the recipient's postcode), so render a copyable code, not a link |
+| GET | `/p2p/carriers` | JWT | Carrier picker options. `linkable=false` ⇒ no code-only tracking URL exists (PostNL/DPD need the recipient's postcode), so render a copyable code, not a link |
 | POST | `/p2p/offers/{offer_id}/grade` | JWT + Rate Limit | Grade the counterparty. Only after two-sided completion |
 | GET | `/p2p/members/{member_id}/reputation` | JWT | Trade count + positive %; % hidden below 3 grades |
 

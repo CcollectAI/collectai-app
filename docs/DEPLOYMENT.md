@@ -270,6 +270,48 @@ place, so the next deploy carries it without repeating this.
 symptom would have been a dead API with a stack trace about a table nobody had
 touched, hours after the change that caused it.
 
+### 0b-ter. The gates caught MY OWN new SQL (2026-09-18)
+
+Deploying the class-S batch (34 files drifted; 28 app files shipped). The nine
+gates ran against the staged code and `preflight_router_drift` **FAILED** on one
+non-allowlisted entry:
+
+```
+## `app/features/p2p_offers_router.py` (1)
+  - L1232 **TABLE_MISSING**: `of`
+```
+
+There is no table called `of`. The new row lock — `FOR UPDATE OF o`, added that
+morning so two responses to the same offer cannot both pass the status guard —
+matched `TABLE_REF_RE`'s `\b(?:FROM|INTO|JOIN|UPDATE)\s+<name>`. `ALIAS_RE` had
+it worse: it read "table `of` aliased `o`", which would have resolved every
+`o.<column>` in that file against a table that does not exist, so the gate would
+have gone QUIET about real drift in the file it was complaining about.
+
+Fixed in the auditor rather than the allowlist (`scripts/audit_router_sql_drift.py`,
+commit `6ed2135`): row-locking clauses are stripped before both matches, the way
+`EXTRACT(unit FROM expr)` already was — `FOR UPDATE` / `NO KEY UPDATE` / `SHARE`
+/ `KEY SHARE`, an optional `OF <alias list>`, and `NOWAIT` / `SKIP LOCKED`.
+Checked against six strings, including a plain `UPDATE public.p2p_offers SET …`
+which must still resolve as a table reference. **An allowlist entry here would
+have silenced the file, not the false positive.**
+
+Two things worth copying from this deploy:
+
+- **The auditor runs from `/opt/collectors/scripts/`, not the server tree.** The
+  deploy wrapper only syncs `server/` → `/opt/collectors/server/`, so a fix to a
+  GATE has to be copied separately. Its box copy was hash-identical to `HEAD`
+  before the change, which is how you know nothing box-only is being clobbered.
+- **Order held.** Staged → gates → FAIL → fix → gates 9/9 → restart. The restart
+  never ran against the failing gate, so the API and every worker stayed up
+  while it was sorted.
+
+Post-deploy verification, in the order it was done: 28/28 hashes match,
+migration `20260917c` applied and called AS A MEMBER in a rolled-back
+transaction, 9/9 gates PASS, restart, `is-active`, `/healthz` `{"db":"up"}`,
+**all 28 deployed modules imported on the box**, a public endpoint served, and a
+full re-diff of `app/pipelines/workers`: **0**.
+
 ### 0c. A committed query is not a tested query (2026-08-15)
 
 `p2p_offers_router.py` selected `l.image_url`, where `l` is
