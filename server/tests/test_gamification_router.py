@@ -513,7 +513,15 @@ class TestListChallengesMockedDB:
 
         assert resp.status_code == 200
         call_args = conn.fetch.call_args
-        assert call_args[0][3] == "monthly"  # challenge_type param
+        # Index 2, not 3: the window used to bind `date.today()` as $2. It now
+        # compares the DB's own date columns against CURRENT_DATE, because the
+        # box is Europe/Paris and the database UTC — between 00:00 and 02:00
+        # CEST a challenge ending today was already out of window (2026-09-18).
+        assert call_args[0][2] == "monthly"  # challenge_type param
+        # The property, not just the index: no host-side date reaches the query.
+        from datetime import date as _date
+        assert not any(isinstance(a, _date) for a in call_args[0]), call_args[0]
+        assert "CURRENT_DATE" in call_args[0][0]
 
     def test_empty_challenges(self):
         """No active challenges returns empty list."""

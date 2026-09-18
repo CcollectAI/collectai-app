@@ -235,11 +235,12 @@ def build_event_conditions(
     param_idx = 1
 
     if not include_past:
-        # asyncpg binds Python `date` objects to PG date columns; an
-        # ISO string raises "'str' has no attribute 'toordinal'".
-        conditions.append(f"date >= ${param_idx}")
-        params.append(date.today())
-        param_idx += 1
+        # CURRENT_DATE rather than a bound `date.today()`: the box is CEST and
+        # the database UTC, so the two are different days between 00:00 and
+        # 02:00 CEST, and the nearby-events query already writes CURRENT_DATE
+        # for this same predicate (docs/ARCHITECTURE.md: derive it in SQL
+        # pinned to UTC). Nothing is bound, so `param_idx` does not advance.
+        conditions.append("date >= CURRENT_DATE")
 
     if category_id:
         conditions.append(f"category_id = ${param_idx}")

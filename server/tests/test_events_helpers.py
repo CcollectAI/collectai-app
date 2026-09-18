@@ -78,36 +78,52 @@ class TestBuildEventConditionsCategoryFilter:
 
 
 class TestBuildEventConditionsIncludePast:
-    """include_past=False adds a date >= $N condition."""
+    """include_past=False adds `date >= CURRENT_DATE` and binds NOTHING.
+
+    Updated 2026-09-18. These asserted `date >= $1` with `params[0] ==
+    date.today()` — a Python date bound from the SERVER BOX, which is
+    Europe/Paris, while the database is UTC. Between 00:00 and 02:00 CEST the
+    two are different days, and the nearby-events query
+    (`events_core.py:491`) has always written `date >= CURRENT_DATE` for this
+    same predicate, as does the feed's own RPC. So an event happening today was
+    upcoming on one screen and already gone from another, for two hours a night.
+
+    `docs/EVENT_QUALITY_PLAN.md:215` states the canonical gate as
+    `(p_include_past OR e.date >= CURRENT_DATE)` and names this helper as one of
+    the places that must match it; `docs/ARCHITECTURE.md` gives the rule —
+    derive the date in SQL pinned to UTC rather than binding the host's idea of
+    today.
+    """
 
     def test_excludes_past_events(self):
         conditions, params, idx = build_event_conditions(
             category_id=None, include_past=False,
         )
         assert any("date >=" in c for c in conditions)
-        # The param should be today's date string
-        # A `date` object, not an ISO string: build_event_conditions binds
-        # this straight to a PG date column via asyncpg, which rejects a
-        # str with "'str' has no attribute 'toordinal'". The assertion was
-        # left behind when the code was corrected.
-        assert params[0] == date.today()
 
-    def test_date_param_index(self):
+    def test_the_date_gate_binds_no_parameter(self):
+        """The property that makes the three query paths agree.
+
+        A bound date can disagree with a `CURRENT_DATE` elsewhere in the same
+        statement; `CURRENT_DATE` cannot disagree with itself.
+        """
         conditions, params, idx = build_event_conditions(
             category_id=None, include_past=False,
         )
-        assert "date >= $1" in conditions
-        assert idx == 2
+        assert "date >= CURRENT_DATE" in conditions
+        assert not any("date >= $" in c for c in conditions)
+        assert params == []
+        assert idx == 1
 
     def test_date_and_category_param_indices(self):
-        """When both include_past=False and category_id are set, indices are sequential."""
+        """The category is now $1, because the date no longer takes a slot."""
         conditions, params, idx = build_event_conditions(
             category_id="funko", include_past=False,
         )
-        assert "date >= $1" in conditions
-        assert "category_id = $2" in conditions
-        assert params == [date.today(), "funko"]
-        assert idx == 3
+        assert "date >= CURRENT_DATE" in conditions
+        assert "category_id = $1" in conditions
+        assert params == ["funko"]
+        assert idx == 2
 
 
 class TestBuildEventConditionsUserId:
@@ -137,11 +153,12 @@ class TestBuildEventConditionsUserId:
             category_id="manga", include_past=False, user_id="user-abc",
         )
         assert "status = 'published'" in conditions
-        assert "date >= $1" in conditions
-        assert "category_id = $2" in conditions
-        assert "created_by = $3" in conditions[3]  # inside the OR clause
-        assert params == [date.today(), "manga", "user-abc"]
-        assert idx == 4
+        # The date gate binds nothing, so category and user_id shift down one.
+        assert "date >= CURRENT_DATE" in conditions
+        assert "category_id = $1" in conditions
+        assert "created_by = $2" in conditions[3]  # inside the OR clause
+        assert params == ["manga", "user-abc"]
+        assert idx == 3
 
 
 # ---------------------------------------------------------------------------
@@ -206,8 +223,10 @@ class TestDisplayGateIsAlwaysApplied:
         _c, params_without, idx_without = build_event_conditions(None, True)
         _c2, params_with, idx_with = build_event_conditions("manga", False, "u")
         assert len(params_without) == 0
-        assert len(params_with) == 3
-        assert idx_with == 4
+        # 2, not 3: category + user_id. The date gate stopped binding one when
+        # it moved to CURRENT_DATE (2026-09-18).
+        assert len(params_with) == 2
+        assert idx_with == 3
 
     def test_gate_sql_refuses_a_non_identifier_source(self):
         """The only values interpolated into SQL are guarded."""

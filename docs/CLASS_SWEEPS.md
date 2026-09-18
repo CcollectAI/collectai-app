@@ -637,8 +637,55 @@ go through `dateLocale()`, kept on the resolved UI language by SettingsProvider
 via `i18n.on('languageChanged')`. `npm run check:date-locale` gates it and found
 a tenth site the sweep had missed plus five number leaks; `formatNumber`'s
 `'de-DE'` default was the same defect one function along. Write-up:
-`docs/ui-playbook.md` "A translated screen with an English date". Still open from
-H: the server defines "today" twice (Python CEST vs Postgres UTC).
+`docs/ui-playbook.md` "A translated screen with an English date".
+
+**H's server half — ✅ CLOSED 2026-09-18, and it was measured rather than
+assumed.** The EC2 box is **Europe/Paris (CEST, +0200)**; Postgres reports
+**UTC**. So `date.today()` and `CURRENT_DATE` are different dates between
+**00:00 and 02:00 CEST — two hours every night.**
+
+Two places used both definitions for the SAME predicate:
+
+* **Events.** `build_event_conditions` and `list_events` bound `date.today()`
+  into `date >= $N`, while `list_nearby_events` wrote `date >= CURRENT_DATE` —
+  and `docs/EVENT_QUALITY_PLAN.md:215` states the canonical gate as
+  `(p_include_past OR e.date >= CURRENT_DATE)` and names *both* as places that
+  must match it. In that window an event happening today was still upcoming on
+  one screen and already gone from the other.
+* **Challenges.** `start_date <= $2 AND end_date >= $2` against a host-clock
+  date, so a challenge ending today dropped out of its own window early.
+
+All now compare the database's date columns against the database's clock, which
+also removes a bound parameter from each (and shifts every later `$N` down one —
+the five `test_events_helpers` assertions that pinned the numbering were updated
+with it, and the caller threads the returned `param_idx` so nothing else moved).
+
+**Enumerating first is what kept this small: 12 host-clock sites, and only 3
+were wrong.** Reading each one mattered more than sweeping them:
+
+* the **streak** dates (`gamification_router`) are written to AND compared
+  against `last_activity_date` — `$3` on both sides, never `CURRENT_DATE` — so
+  they cannot disagree with the database. Converting them would have shifted
+  every member's streak boundary by two hours and disagreed with every row
+  already stored, and neither UTC nor CEST is the member's own midnight. A
+  blanket "make it all UTC" would have broken working behaviour to fix nothing.
+* a draft's default date, an admin dashboard's 7-day window, an ML year read at
+  import, and a lead-time score are all fine on the host clock.
+* `pricecharting_caller` was wrong and not obvious: it STORES `sold_at` on
+  `market_hits`, so every scraped sale in that window was filed a day ahead —
+  the exact trap `docs/ARCHITECTURE.md` already names.
+
+Gated by `npm run check:server-today`: a bare `date.today()` / `datetime.now()`
+under `server/app` or `server/workers` needs `CURRENT_DATE`, `utc_today()`, or a
+`# tz-ok:` reason. Mutation-proven — reverting the events fix exits 1, removing
+a reason exits 1, a clean tree exits 0.
+
+**The gate was wrong twice first, both times about its own text.** It reported a
+`-- CURRENT_DATE, not a bound date.today()` note inside a triple-quoted SQL
+string, because it stripped only `#` comments and not `--`; and its 4-line
+look-back was shorter than the seven-line streak reason, so the marker could not
+be written where it was needed. Same two failure modes as
+`check:cast-not-mapped` and the `partial-ok:` marker earlier the same day.
 
 <details><summary>The original list, kept for the record</summary>
 - 9 sites hard-code `'en-US'` for a date a member reads:

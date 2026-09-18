@@ -34,6 +34,8 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 # Reference year for set_age computation
+# tz-ok: year granularity, read at import. The host and UTC disagree for two
+# hours on 31 December only, and this feeds an ML feature, not a query.
 _CURRENT_YEAR = datetime.now().year
 
 _LIMITED_KEYWORDS = ("limited", "exclusive", "le ", " le", "chase", "rare")

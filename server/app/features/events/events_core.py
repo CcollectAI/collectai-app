@@ -7,6 +7,8 @@ import asyncio
 import json
 import logging
 from datetime import date, datetime, time as dt_time, timezone
+
+from app.lib.clock import utc_today
 from typing import Any, List, Optional
 from uuid import UUID, uuid4
 
@@ -112,9 +114,13 @@ async def search_events(
 
             if upcoming_only:
                 conditions.append("status != 'cancelled'")
-                conditions.append(f"date >= ${idx}")
-                params.append(date.today())
-                idx += 1
+                # CURRENT_DATE, not a bound `date.today()`: the box is CEST and
+                # the database is UTC, so between 00:00 and 02:00 CEST the two
+                # are different days — and `list_nearby_events` below writes
+                # `date >= CURRENT_DATE` for this same predicate. An event
+                # happening today was upcoming on one screen and gone from the
+                # other. No parameter is bound, so `idx` does not advance.
+                conditions.append("date >= CURRENT_DATE")
 
             where = " AND ".join(conditions) if conditions else "TRUE"
 
@@ -251,7 +257,7 @@ async def list_events(
             raise error_response(500, "Failed to list events", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback
-    today_str = date.today().isoformat()
+    today_str = utc_today().isoformat()
     events = []
     for ev in IN_MEMORY_EVENTS.values():
         if not include_past and ev.get("date", "") < today_str:
@@ -535,7 +541,7 @@ async def list_nearby_events(
             raise error_response(500, "Failed to list nearby events", code=ErrorCode.INTERNAL_ERROR)
 
     # Offline / in-memory fallback with Haversine
-    today_str = date.today().isoformat()
+    today_str = utc_today().isoformat()
     events_with_dist = []
     for ev in IN_MEMORY_EVENTS.values():
         ev_lat = ev.get("latitude")
@@ -1450,6 +1456,8 @@ async def duplicate_event(
 
     new_id = str(uuid4())
     now = datetime.now(timezone.utc).isoformat()
+    # tz-ok: a starting value for a DRAFT the member is about to edit, not a
+    # filter — nothing compares it to CURRENT_DATE.
     dup = {**ev, "id": new_id, "status": "draft", "date": date.today().isoformat(),
            "attendee_count": 0, "created_at": now}
     IN_MEMORY_EVENTS[new_id] = dup

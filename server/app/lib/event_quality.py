@@ -198,6 +198,8 @@ def score_event(event: Any, trust_tier: str = "unverified") -> tuple[int, str]:
     if date_str:
         try:
             d = datetime.strptime(date_str[:10], "%Y-%m-%d").date()
+            # tz-ok: a lead-time score in whole days, computed in Python and
+            # never compared to a database date.
             date_delta = (d - date.today()).days
         except (ValueError, TypeError):
             date_delta = None

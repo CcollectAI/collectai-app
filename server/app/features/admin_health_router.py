@@ -455,6 +455,9 @@ _METRICS_REFRESHING = False
 
 def _seven_day_window_label() -> str:
     from datetime import date, timedelta
+    # tz-ok: an admin dashboard's default 7-day window. Nothing compares it
+    # to a database date, and a two-hour edge on one night is invisible in a
+    # week-wide range.
     return f"{(date.today() - timedelta(days=7)).isoformat()}..{date.today().isoformat()}"
 
 

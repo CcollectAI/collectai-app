@@ -446,7 +446,6 @@ async def list_challenges(
         return {"challenges": []}
 
     try:
-        today = date.today()
         async with get_conn() as conn:
             if challenge_type:
                 rows = await conn.fetch(
@@ -459,13 +458,17 @@ async def list_challenges(
                     LEFT JOIN public.user_challenge_progress ucp
                         ON ucp.challenge_id = c.id AND ucp.user_id = $1
                     WHERE c.active = true
-                      AND c.start_date <= $2
-                      AND c.end_date >= $2
-                      AND c.challenge_type = $3
+                      -- CURRENT_DATE, not a bound `date.today()`: the box is
+                      -- Europe/Paris and the database UTC, so between 00:00 and
+                      -- 02:00 CEST a challenge ending today was already out of
+                      -- window. These are the DB's own date columns; compare
+                      -- them against the DB's own clock.
+                      AND c.start_date <= CURRENT_DATE
+                      AND c.end_date >= CURRENT_DATE
+                      AND c.challenge_type = $2
                     ORDER BY c.end_date ASC
                     """,
                     user_id,
-                    today,
                     challenge_type,
                 )
             else:
@@ -479,12 +482,11 @@ async def list_challenges(
                     LEFT JOIN public.user_challenge_progress ucp
                         ON ucp.challenge_id = c.id AND ucp.user_id = $1
                     WHERE c.active = true
-                      AND c.start_date <= $2
-                      AND c.end_date >= $2
+                      AND c.start_date <= CURRENT_DATE
+                      AND c.end_date >= CURRENT_DATE
                     ORDER BY c.end_date ASC
                     """,
                     user_id,
-                    today,
                 )
 
         challenges = [
@@ -534,6 +536,13 @@ async def award_xp(
 
     try:
         async with get_conn() as conn:
+            # tz-ok: this date is both WRITTEN to last_activity_date and
+            # compared against it ($3 on both sides) — it never meets
+            # CURRENT_DATE, so it cannot disagree with the database. Moving it
+            # to UTC would shift every member's streak boundary two hours and
+            # disagree with every row already stored, and neither UTC nor the
+            # server's CEST is the member's own midnight anyway. Left alone
+            # deliberately; the real fix is a per-member timezone.
             today = date.today()
 
             # Upsert gamification row and award XP atomically
@@ -767,6 +776,8 @@ async def record_activity_xp(
     Returns:
         Dict with new_total, level, streak info
     """
+    # tz-ok: written to AND compared against last_activity_date ($3 on both
+    # sides), never against CURRENT_DATE — see the note in award_xp above.
     today = date.today()
 
     row = await conn.fetchrow(

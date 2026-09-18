@@ -458,7 +458,10 @@ class PriceChartingCaller:
         # there, so sold_at would come back None → is_listing=true (the sold rows
         # would masquerade as listings and the model would ignore them).
         # PriceCharting has no per-sale timestamp anyway; the date is enough.
-        sold_at = datetime.date.today().isoformat()
+        # UTC: this date is STORED on market_hits and read back by UTC
+        # readers, and the box is Europe/Paris — between 00:00 and 02:00 CEST
+        # every scraped sale was filed a day ahead (docs/ARCHITECTURE.md).
+        sold_at = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
         hits: List[Dict[str, Any]] = []
         for console, slug in paths[:_MAX_PRODUCTS_PER_QUERY]:
             url = f"{PRICECHARTING_WEB_BASE}/game/{console}/{slug}"
