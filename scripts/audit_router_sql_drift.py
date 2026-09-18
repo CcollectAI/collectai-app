@@ -65,6 +65,19 @@ TABLE_REF_RE = re.compile(
 # strip these spans before matching.
 EXTRACT_FROM_RE = re.compile(r'\bEXTRACT\s*\(\s*\w+\s+FROM\s+[^)]+\)', re.IGNORECASE)
 
+# Row-locking clauses are the same trap, and worse (2026-09-18). `FOR UPDATE OF o`
+# made TABLE_REF_RE read `UPDATE of` and report **TABLE_MISSING: `of`**, and
+# ALIAS_RE read it as "table `of` aliased `o`" — which would then resolve every
+# `o.<column>` in that file against a table that does not exist. Caught by the
+# gate on the box BEFORE a restart, which is exactly what §0b of
+# docs/DEPLOYMENT.md exists for.
+LOCK_CLAUSE_RE = re.compile(
+    r'\bFOR\s+(?:UPDATE|NO\s+KEY\s+UPDATE|SHARE|KEY\s+SHARE)'
+    r'(?:\s+OF\s+[a-z_][a-z0-9_]*(?:\s*,\s*[a-z_][a-z0-9_]*)*)?'
+    r'(?:\s+(?:NOWAIT|SKIP\s+LOCKED))?',
+    re.IGNORECASE,
+)
+
 # Alias mapping: FROM/JOIN <table> [AS] <alias>
 ALIAS_RE = re.compile(
     r'\b(?:FROM|JOIN|UPDATE)\s+(?:public\.)?([a-z_][a-z0-9_]*)\s+(?:AS\s+)?([a-z_][a-z0-9_]*)\b',
@@ -176,6 +189,8 @@ def iter_sql_blocks(text: str) -> Iterable[tuple[int, str]]:
 def collect_aliases(sql: str) -> dict[str, str]:
     """Return alias→table mapping for FROM/JOIN/UPDATE clauses in this SQL."""
     out: dict[str, str] = {}
+    # `FOR UPDATE OF o` would otherwise bind alias `o` to a table called `of`.
+    sql = LOCK_CLAUSE_RE.sub(" ", sql)
     for m in ALIAS_RE.finditer(sql):
         table = m.group(1).lower()
         alias = m.group(2).lower()
@@ -213,7 +228,7 @@ def audit_file(
 
         # Table refs — strip EXTRACT(unit FROM expr) spans first (they
         # contain a literal FROM that isn't a table reference).
-        sql_for_tables = EXTRACT_FROM_RE.sub("", sql)
+        sql_for_tables = LOCK_CLAUSE_RE.sub(" ", EXTRACT_FROM_RE.sub("", sql))
         for m in TABLE_REF_RE.finditer(sql_for_tables):
             schema = (m.group(1) or "").lower()
             name = m.group(2).lower()
