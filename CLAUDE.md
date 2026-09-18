@@ -19,6 +19,23 @@ Per edit, before the next one:
    (19 of 20 `hitSlop` insertions were right; the 20th landed inside a
    `style={[...]}` array.)
 5. **Quote evidence, not claims**: `tsc=0` from the transcript, not "tsc clean".
+6. **A PROBE, CHECKER or SCRIPT is an addition too — and its OUTPUT is a claim.**
+   Audit the instrument BEFORE quoting a single finding from it: run it against
+   a known-POSITIVE (the pre-fix file, from `git show` or a worktree) and a
+   known-NEGATIVE, and confirm it reports the first and not the second. "It
+   found N things" is not a result until the thing that found them has been
+   read. **Never hand over a finding from a script whose own diff you have not
+   audited** — a wrong fix costs an edit, a wrong finding costs Merle's trust in
+   every number beside it.
+
+   Added 2026-09-19, after rule 1–5 were applied to the fixes in a session and
+   not to the probe: `probe_ignored_fields_v2.py` was wrong FOUR times — suffix
+   route matching, name-keyed models across two routers declaring the same
+   class, a backtick counted as both opener and closer, and a payload lookup
+   that took the last signature anywhere above the call. The last one alone
+   invented five findings, reporting POST keys against a PATCH route. Fixing an
+   earlier defect took the count 3 → 8, and **a probe that starts reporting MORE
+   is not therefore finding more.**
 
 Errors this caught in its first session, all mine: a new lint rule matching its
 own comment; one nested `empty-ok:` exempting a whole block; a reason marker that
