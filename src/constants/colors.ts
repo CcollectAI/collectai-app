@@ -19,7 +19,13 @@ export const MEDAL_COLORS = {
 
 /** Marketplace brand colors for multi-marketplace UI (sell dashboard, etc.). */
 export const MARKETPLACE_BRAND_COLORS: Record<string, { label: string; color: string }> = {
-  collectai: { label: 'Sparrow P2P', color: '#81D8D0' },
+  // RENAMED 2026-09-18: the key is the value the DATABASE stores. Every
+  // listing on production carries marketplace_id='sparrow' (written by
+  // p2p_listing_router), while this map, the server's VALID_MARKETPLACES and
+  // the fee-schedule row all still said 'collectai' — the pre-rename brand
+  // (CollectAI -> Sparrow Collect, 2026-05-04). It looked right only because
+  // an undefined lookup fell back to this same entry.
+  sparrow: { label: 'Sparrow P2P', color: '#81D8D0' },
   ebay: { label: 'eBay', color: '#E53238' },
   mercari: { label: 'Mercari', color: '#4DC8F0' },
   cardmarket: { label: 'Cardmarket', color: '#1A3C7D' },

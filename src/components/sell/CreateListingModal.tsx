@@ -131,7 +131,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
 
           <Text style={[styles.modalLabel, { color: colors.text }]}>Marketplace</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-            {(['collectai', 'ebay', 'mercari', 'cardmarket'] as MarketplaceId[]).map((mp) => {
+            {(['sparrow', 'ebay', 'mercari', 'cardmarket'] as MarketplaceId[]).map((mp) => {
               const cfg = MARKETPLACE_CONFIG[mp];
               const isActive = marketplace === mp;
               return (

@@ -56,7 +56,13 @@ _listing_read_limit = per_user_rate_limit(60, window_seconds=60, scope="marketpl
 # ---------------------------------------------------------------------------
 # Valid marketplace identifiers
 # ---------------------------------------------------------------------------
-VALID_MARKETPLACES = {"collectai", "ebay", "mercari", "cardmarket", "stockx", "bricklink", "tcgplayer", "discogs"}
+# "sparrow", not "collectai" (2026-09-18). Every listing on production carries
+# marketplace_id='sparrow' — p2p_listing_router writes it — and this set did
+# not contain that value, so a PATCH validating marketplace_id would have
+# rejected every row the live P2P flow has ever written. "collectai" is the
+# pre-rename brand (CollectAI -> Sparrow Collect, 2026-05-04) and appears in 0
+# listing rows; the fee-schedule row was renamed with this change.
+VALID_MARKETPLACES = {"sparrow", "ebay", "mercari", "cardmarket", "stockx", "bricklink", "tcgplayer", "discogs"}
 
 VALID_LISTING_STATUSES = {"draft", "active", "sold", "expired", "delisted", "error"}
 VALID_LISTING_FORMATS = {"fixed_price", "auction", "best_offer"}

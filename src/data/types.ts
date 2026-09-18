@@ -870,7 +870,7 @@ export type DealAgentStats = {
 // Multi-Marketplace Selling
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type MarketplaceId = 'collectai' | 'ebay' | 'mercari' | 'cardmarket' | 'stockx' | 'bricklink' | 'tcgplayer' | 'discogs';
+export type MarketplaceId = 'sparrow' | 'ebay' | 'mercari' | 'cardmarket' | 'stockx' | 'bricklink' | 'tcgplayer' | 'discogs';
 
 export type ListingStatus = 'draft' | 'active' | 'sold' | 'expired' | 'delisted' | 'error';
 export type ListingFormat = 'fixed_price' | 'auction' | 'best_offer';

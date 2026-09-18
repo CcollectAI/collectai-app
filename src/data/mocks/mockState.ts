@@ -287,7 +287,7 @@ export const mockSponsorCompanies: SponsorCompany[] = [
 // ─── Multi-Marketplace Selling ──────────────────────────────────────────────
 export let mockListings: import('../types').MarketplaceListing[] = [
   { id: 'ml-1', itemId: 'item-1', marketplaceId: 'ebay', listingTitle: 'PSA 10 Charizard Base Set Holo 1st Edition', price: 12500, currency: 'EUR', format: 'auction', quantity: 1, status: 'active', viewsCount: 342, watchersCount: 28, offersCount: 3, estimatedFees: 1612, estimatedNet: 10888, feePercentage: 12.9, listedAt: '2026-02-20T10:00:00Z', syncedAt: '2026-02-27T08:00:00Z', createdAt: '2026-02-20T10:00:00Z' },
-  { id: 'ml-2', itemId: 'item-2', marketplaceId: 'collectai', listingTitle: 'LEGO Star Wars UCS AT-AT 75313 (Sealed)', price: 899, currency: 'EUR', format: 'fixed_price', quantity: 1, status: 'active', viewsCount: 56, watchersCount: 8, offersCount: 1, estimatedFees: 0, estimatedNet: 899, feePercentage: 0, listedAt: '2026-02-22T14:30:00Z', syncedAt: '2026-02-27T08:00:00Z', createdAt: '2026-02-22T14:30:00Z' },
+  { id: 'ml-2', itemId: 'item-2', marketplaceId: 'sparrow', listingTitle: 'LEGO Star Wars UCS AT-AT 75313 (Sealed)', price: 899, currency: 'EUR', format: 'fixed_price', quantity: 1, status: 'active', viewsCount: 56, watchersCount: 8, offersCount: 1, estimatedFees: 0, estimatedNet: 899, feePercentage: 0, listedAt: '2026-02-22T14:30:00Z', syncedAt: '2026-02-27T08:00:00Z', createdAt: '2026-02-22T14:30:00Z' },
   { id: 'ml-3', itemId: 'item-3', marketplaceId: 'cardmarket', listingTitle: 'MTG Black Lotus Beta (HP)', price: 18000, currency: 'EUR', format: 'fixed_price', quantity: 1, status: 'draft', viewsCount: 0, watchersCount: 0, offersCount: 0, createdAt: '2026-02-25T09:00:00Z' },
   { id: 'ml-4', itemId: 'item-4', marketplaceId: 'mercari', listingTitle: 'Warhammer 40K Leviathan Box Set (NOS)', price: 180, currency: 'EUR', format: 'fixed_price', quantity: 1, status: 'sold', viewsCount: 124, watchersCount: 15, offersCount: 2, soldAt: '2026-02-24T16:45:00Z', syncedAt: '2026-02-25T08:00:00Z', createdAt: '2026-02-18T11:00:00Z' },
   { id: 'ml-5', itemId: 'item-5', marketplaceId: 'ebay', listingTitle: 'Funko Pop Freddy Funko as Batman SDCC 2019', price: 320, currency: 'EUR', format: 'best_offer', quantity: 1, status: 'delisted', viewsCount: 89, watchersCount: 6, offersCount: 0, statusMessage: 'Relisted on CollectAI P2P', createdAt: '2026-02-10T08:00:00Z' },
@@ -304,5 +304,5 @@ export const mockSales: import('../types').MarketplaceSale[] = [
 
 export const mockAccounts: import('../types').MarketplaceAccount[] = [
   { id: 'ma-1', marketplaceId: 'ebay', sellerName: 'CollectAI_Pro', isActive: true, connectedAt: '2025-11-01T10:00:00Z', lastSyncAt: '2026-02-27T08:00:00Z' },
-  { id: 'ma-2', marketplaceId: 'collectai', sellerName: 'demo_seller', isActive: true, connectedAt: '2026-01-15T14:00:00Z', lastSyncAt: '2026-02-27T08:00:00Z' },
+  { id: 'ma-2', marketplaceId: 'sparrow', sellerName: 'demo_seller', isActive: true, connectedAt: '2026-01-15T14:00:00Z', lastSyncAt: '2026-02-27T08:00:00Z' },
 ];

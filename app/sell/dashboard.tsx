@@ -60,7 +60,7 @@ import { dateLocale, DATE_SHORT_YEAR } from '@/constants/dateFormats';
 // ---------------------------------------------------------------------------
 
 const MARKETPLACE_CONFIG: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
-  collectai: { label: 'Sparrow Collect P2P', icon: 'people-outline', color: MARKETPLACE_BRAND_COLORS.collectai.color },
+  sparrow: { label: 'Sparrow Collect P2P', icon: 'people-outline', color: MARKETPLACE_BRAND_COLORS.sparrow.color },
   ebay: { label: 'eBay', icon: 'cart-outline', color: MARKETPLACE_BRAND_COLORS.ebay.color },
   mercari: { label: 'Mercari', icon: 'storefront-outline', color: MARKETPLACE_BRAND_COLORS.mercari.color },
   cardmarket: { label: 'Cardmarket', icon: 'card-outline', color: MARKETPLACE_BRAND_COLORS.cardmarket.color },
@@ -101,7 +101,7 @@ const ListingCard = React.memo(function ListingCard({
   status: ReturnType<typeof useAppTheme>['status'];
   currency: CurrencyCode;
 }) {
-  const mp = MARKETPLACE_CONFIG[listing.marketplaceId] ?? MARKETPLACE_CONFIG.collectai;
+  const mp = MARKETPLACE_CONFIG[listing.marketplaceId] ?? MARKETPLACE_CONFIG.sparrow;
   const statusCfg = statusTokens[listing.status as keyof typeof statusTokens] ?? statusTokens.draft;
 
   return (
@@ -370,7 +370,7 @@ function SellerDashboardScreen() {
   const [showCreateModal, openCreateModal, closeCreateModal] = useModal();
   const createTitleField = useFormField(compose(required('Title'), maxLength('Title', 200)));
   const createPriceField = useFormField(compose(required('Price'), positiveNumber('Price')));
-  const [createMarketplace, setCreateMarketplace] = useState<MarketplaceId>('collectai');
+  const [createMarketplace, setCreateMarketplace] = useState<MarketplaceId>('sparrow');
   const [creating, setCreating] = useState(false);
 
   // Connect marketplace modal state
