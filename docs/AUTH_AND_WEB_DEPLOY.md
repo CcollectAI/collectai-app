@@ -474,6 +474,47 @@ The privacy policy's "If you use social login…" is conditional and stays true.
 > `curl -s https://sparrowcollect.com/terms | grep -i 'social login'`
 > (expect no match).
 
+### ⛔ Why it was still not deployed on 2026-09-19 — three logins, same account
+
+Measured, so nobody re-runs the same loop:
+
+| check | result |
+|---|---|
+| `vercel whoami` | `eusammysam-2709` — **three separate logins, all landing here** |
+| `GET /v2/user` with the CLI token | `eu.sammysam@gmail.com` |
+| `GET /v2/teams` | exactly ONE team: `merles-projects-0c84dcb2` (`team_KLc9e8QoUS3vdjehQc245CiI`) |
+| `web/.vercel/project.json` `orgId` | `team_pNV3OxYiiWRDhC96aN2H3Tm5` — a different team |
+| `GET /v2/teams/team_pNV3OxYi…` | **403** |
+| `vercel project ls` | `sammysam`, `admin`, `collectors-app-7ed1f56b`. **No `sparrowcollect`** |
+| `vercel domains ls` | **0 domains** under this team |
+
+`collectors-app-7ed1f56b` (created ~126 days ago) looks like exactly the
+duplicate this section warns about — a project created by deploying from the
+personal account, which does not own the domain.
+
+**`vercel login` with no argument reuses the remembered method**, i.e. the
+browser's existing Vercel/GitHub session, so it returns to the same identity
+however many times it is run. Passing the email is not always enough either,
+because the browser may still be signed in.
+
+**Ruled out: "it deploys when the branch merges."** There is **no `main` branch
+on the remote** — the GitHub default branch IS
+`feat/marketplace-and-target-hit`, which has carried the corrected
+`web/terms.html` since `6f833a6` (2026-09-14). The fix is on the default branch
+and still not live, so the project is not auto-deploying from it.
+
+**The reliable unblock is a token, not a login.** Signed in as the account that
+owns `collectais-projects`, create one at `vercel.com/account/tokens`, then:
+
+```bash
+cd web
+VERCEL_TOKEN=<token> npx vercel --prod --scope collectais-projects
+```
+
+That skips the browser session entirely. Failing that: log out of Vercel **in
+the browser** (or use a private window) before `vercel login
+ccollect.ai@gmail.com`, or hit Redeploy in the Vercel dashboard as that account.
+
 Apple/Google sign-in is hidden behind **`SOCIAL_LOGIN_ENABLED=false`**
 (`src/config/featureFlags.ts`). Email-only avoids 4.8 (offering Google requires
 also offering Apple) and the broken-button rejection. To enable later: configure
