@@ -42,7 +42,7 @@ Two rules the tooling learned the hard way:
 
 | | Class | Swept | Status |
 |---|---|---|---|
-| A | The client calls an endpoint the server does not serve (or that fails for a real member) | 2026-09-16 | 1 open (server-side) |
+| A | The client calls an endpoint the server does not serve (or that fails for a real member) | 2026-09-16 | ✅ closed 2026-09-18 — the last one open (`/collections/user/progress`) was a **response model**, not a query: a required `collection_key` against an `external_id` that is NULL on every production set, so it 500'd for every member, always |
 | B | A number on screen that its own source of truth disagrees with | 2026-09-16 | ✅ landed `02ee84b` |
 | C | The screen shows nothing useful for many seconds although the data is fast | 2026-09-16 | ✅ landed `02ee84b` |
 | D | One business rule, implemented twice, drifting | re-run 2026-09-17 | platform fee unified (6 copies → 1 per side) + parity test; other rules still to enumerate |
@@ -548,9 +548,33 @@ Three of those gates were mutation-proven (break the code → the gate goes red)
 Verified in the working tree on 2026-09-16; each line names the file so it can be
 re-checked rather than re-believed.
 
-**A — endpoints**
-- `/collections/user/progress` returns 500 for a real member. Server-side fix,
-  needs a deploy.
+**A — endpoints: CLOSED 2026-09-18**
+
+`/collections/user/progress` returned 500 for every member, always — and the
+cause was not the query, which runs fine against production. It was the response
+model. `UserCollectionProgress.collection_key` was a required `str` mapped from
+`sets.external_id`, which is **NULL on every set on production** (3 of 3,
+checked 2026-09-18). Pydantic rejected every row, the handler's
+`except Exception` (`collections_router.py:224`) turned the ValidationError into
+`500 Failed to get collection progress`, and the log line said "Failed to get
+user progress" with no hint that the shape was the problem — which is why a
+sweep that reads the SQL cannot find this one.
+
+The fix is the type, not the data: `collection_key: Optional[str] = None`. These
+sets are NOT omitted instead, because `docs/HELP_AND_GUIDES.md` reserves omission
+for a set whose **size** is unknown ("omitted rather than given an invented
+total"), and all three have real sizes (15, 25, 15) and real names. Only the
+external key is missing, so the honest answer returns the progress and says the
+key is absent; a caller needing a stable key uses `collection_id`, which is what
+`FeaturedCollectionsSection` already does.
+
+Three tests in `server/tests/test_collections_progress.py`, mutation-proven:
+restoring the required `str` turns two of them red with a ValidationError. The
+two sibling models in that file (`CollectionSummary`, `CollectionDetail`) still
+declare a required `collection_key: str` and that is fine — neither is ever
+constructed from production data (`list_collections` returns empty and the detail
+handler 404s, per the 2026-04-30 module note), so there is no second instance
+hiding behind the same field name.
 
 **J — what was actually true (2026-09-17)**
 

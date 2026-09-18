@@ -83,7 +83,24 @@ class CollectionDetail(BaseModel):
 
 class UserCollectionProgress(BaseModel):
     collection_id: str
-    collection_key: str
+    # OPTIONAL since 2026-09-18, and this was a live 500.
+    #
+    # It is mapped from `sets.external_id`, which is NULL on **every set on
+    # production** (3 of 3). A required `str` therefore failed Pydantic
+    # validation for every row, the handler's `except Exception` turned that
+    # into `500 Failed to get collection progress`, and
+    # `/collections/user/progress` answered 500 for every member, always.
+    # (Reported by the class-A sweep on 2026-09-16 as "returns 500 for a real
+    # member"; the cause was the response model, not the query — the SQL runs
+    # fine against production.)
+    #
+    # NOT fixed by omitting those sets: `docs/HELP_AND_GUIDES.md` says a set
+    # with no known SIZE is omitted rather than given an invented total, and
+    # these have real sizes (15, 25, 15) and real names. Only the external key
+    # is missing, so the honest answer is to return the progress and say the key
+    # is absent. A caller that needs a stable key uses `collection_id`, which is
+    # what `FeaturedCollectionsSection` already does (`collection_key: c.id`).
+    collection_key: Optional[str] = None
     display_name: str
     category: str
     total_items: int = 0
