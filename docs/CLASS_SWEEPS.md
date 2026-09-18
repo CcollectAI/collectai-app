@@ -62,6 +62,7 @@ Two rules the tooling learned the hard way:
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
 | S | The server answered `ok` and wrote nothing | 2026-09-17/18 **deployed** | ✅ **all 34 read**: 6 `ok`-without-a-write fixed, the announcement DM dead five months fixed, 4 money handlers made atomic + row-locked (a trade could complete twice or never; a sale banked twice; a mandate past its cap), 22 of the 34 sites cleared with the reason written down. 8 tests that PINNED the lie rewritten. One decision left: `reports_count` is written, read nowhere |
 | T | The server sends it and the app never reads it | 2026-09-18 | measured: **74 of 461** fields declared in `src/api` are referenced nowhere else. Three confirmed: subscription dates ✅ **fixed** (the copy was already translated in 7 locales and rendered by nothing), realised P/L unreachable and the demand differentiator unshown — both product calls. The rest is mostly request params and deliberately-removed UI |
+| U | A provider CASTS a snake_case payload to a camelCase type | 2026-09-18 | ✅ all 4 found and mapped (sales, fee schedules, listings, accounts) — two of them live: blank listing titles and a 5% fee quoted on a marketplace that takes 0%. `tsc` cannot see this class |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -1183,6 +1184,52 @@ which is the same shape as class N: the measurement is the deliverable, and the
 gate is not worth writing until something narrows it. The narrowing that would
 work here: only fields on a type that a `get<…>` RESPONSE uses, and only where
 the mapping function for that type exists and omits the key.
+
+## U — a provider casts a snake_case payload to a camelCase type (2026-09-18)
+
+Found by writing the first `marketplace_sales` row into a table that had always
+been empty: the emptiness was hiding a cast, and looking for its siblings found
+three more in the same file.
+
+`src/data/providers/dealsProvider.ts` had four functions shaped like
+
+```ts
+return unwrap<MarketplaceSale>(await collectorsApi.get('/marketplace/listings/sales'), 'sales');
+```
+
+`unwrap<T>()` **asserts** the shape; it does not check it. The server answers
+snake_case (`listing_title`, `marketplace_id`, `base_fee_pct`) and the types are
+camelCase, so every mapped field was `undefined` at runtime while `tsc` stayed
+silent. **TypeScript cannot catch this class** — that is the whole point of it.
+
+| cast | what it did |
+|---|---|
+| `listMarketplaceListings` | **LIVE and visible.** `listing.listingTitle` was undefined → blank row titles, a blank accessibility label, and a "Remove "" from marketplace?" confirm. `marketplaceId` undefined → `MARKETPLACE_CONFIG[undefined] ?? MARKETPLACE_CONFIG.collectai` badged **every** listing as Sparrow P2P whatever marketplace it was on |
+| `listMarketplaceAccounts` | same, on the Accounts tab: every connected account mislabelled, and "Disconnect Account?" named the wrong one |
+| `getMarketplaceFeeSchedules` | `find(s => s.marketplaceId === mpId)` never matched, so the fee estimate always fell back to the client's `defaultFeePct` with `estimated: true`. The app quoted **5% on Sparrow's own marketplace, which takes 0%**, and under-quoted eBay (12.9% vs 12.9 + 2.9% + €0.30) and StockX (9.5% vs 9.5 + 3.0%) |
+| `listMarketplaceSales` | dormant only because the table was empty: `salePrice`/`netProceeds` undefined, and the Revenue Summary SUMS them → **NaN** on the first real sale |
+
+**Why it survived.** `price`, `currency`, `status` and `quantity` are spelled
+identically on both sides, so the Listings tab looked broadly right — prices and
+status chips correct, titles missing. The screen sweep walked
+`sell/dashboard` and reported `ok`: its machine checks look for a missing screen
+title, raw output and untranslated text, not for a row whose own title is blank.
+
+**And a gate had already seen the symptom.** `estimated: true` was added by
+class sweep D on 2026-09-17 precisely because the fee numbers were the client's
+guess — the flag was right, and nobody asked why it never turned off.
+
+### The gate worth writing
+
+A provider function returning a camelCase-typed value from a `collectorsApi`
+call **without a `.map(`** between them. The probe
+(`scratchpad/probe_cast_not_mapped.mjs`) found all four with that rule and one
+false positive — its own explanatory comment, the first failure mode in
+[[learning_four_ways_a_new_gate_is_wrong]]. Worth promoting to
+`scripts/check-cast-not-mapped.mjs`; not written yet.
+
+Related: the same shape server-side would be a Pydantic model that does not
+match its query's column names, which `check_sql_columns.py` already covers.
 
 ## Decisions for Merle — the XP leaderboard (2026-09-17)
 

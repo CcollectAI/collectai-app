@@ -50,9 +50,64 @@ function unwrap<T>(res: unknown, key: string): T[] {
   return Array.isArray(inner) ? (inner as T[]) : [];
 }
 
+/** `ListingResponse` (marketplace_listing_router.py) — snake_case. */
+type RawListing = Record<string, unknown>;
+
+const str = (v: unknown): string | null => (typeof v === 'string' ? v : null);
+const num = (v: unknown): number | null => (typeof v === 'number' ? v : null);
+
+/**
+ * MAPPED, not cast (2026-09-18) — and this one was visible.
+ *
+ * `unwrap<MarketplaceListing>(...)` asserted the server's snake_case payload to
+ * be the camelCase type, so on the Sell dashboard's Listings tab
+ * `listing.listingTitle` was `undefined` (blank row title, blank in the
+ * accessibility label and in the "Remove ... from marketplace?" confirm), and
+ * `listing.marketplaceId` was too — `MARKETPLACE_CONFIG[undefined] ??
+ * MARKETPLACE_CONFIG.collectai` then badged EVERY listing as Sparrow P2P,
+ * whichever marketplace it was on.
+ *
+ * `price`, `currency`, `status` and `quantity` happen to be spelled the same on
+ * both sides, which is why the screen looked broadly right and only the names
+ * and badges were wrong — the hardest kind of wrong to notice.
+ */
 export async function listMarketplaceListings(status?: MarketplaceListing['status']): Promise<MarketplaceListing[]> {
   const qs = status ? `?status=${encodeURIComponent(status)}` : '';
-  return unwrap<MarketplaceListing>(await collectorsApi.get(`/marketplace/listings${qs}`), 'listings');
+  const raw = unwrap<RawListing>(await collectorsApi.get(`/marketplace/listings${qs}`), 'listings');
+  return raw.map((r) => ({
+    id: String(r.id),
+    itemId: String(r.item_id ?? ''),
+    accountId: str(r.account_id),
+    marketplaceId: r.marketplace_id as MarketplaceListing['marketplaceId'],
+    externalListingId: str(r.external_listing_id),
+    listingUrl: str(r.listing_url),
+    listingTitle: str(r.listing_title) ?? '',
+    listingDescription: str(r.listing_description),
+    price: num(r.price) ?? 0,
+    currency: r.currency as MarketplaceListing['currency'],
+    originalPrice: num(r.original_price),
+    format: r.format as MarketplaceListing['format'],
+    quantity: num(r.quantity) ?? 1,
+    conditionLabel: str(r.condition_label),
+    conditionNotes: str(r.condition_notes),
+    shippingMethod: str(r.shipping_method),
+    shippingCost: num(r.shipping_cost),
+    shipsInternational: r.ships_international === true,
+    returnsAccepted: r.returns_accepted === true,
+    status: r.status as MarketplaceListing['status'],
+    statusMessage: str(r.status_message),
+    viewsCount: num(r.views_count) ?? 0,
+    watchersCount: num(r.watchers_count) ?? 0,
+    offersCount: num(r.offers_count) ?? 0,
+    estimatedFees: num(r.estimated_fees),
+    estimatedNet: num(r.estimated_net),
+    feePercentage: num(r.fee_percentage),
+    listedAt: str(r.listed_at),
+    expiresAt: str(r.expires_at),
+    soldAt: str(r.sold_at),
+    syncedAt: str(r.synced_at),
+    createdAt: str(r.created_at) ?? '',
+  }));
 }
 
 export async function createMarketplaceListing(input: Omit<MarketplaceListing, 'id' | 'viewsCount' | 'watchersCount' | 'offersCount' | 'createdAt'>): Promise<MarketplaceListing> {
@@ -67,10 +122,27 @@ export async function deleteMarketplaceListing(listingId: string): Promise<void>
   await collectorsApi.delete(`/marketplace/listings/${listingId}`);
 }
 
+/**
+ * Same cast, same fix (2026-09-18): the Accounts tab read `account.marketplaceId`
+ * off a payload that spells it `marketplace_id`, so every connected account
+ * rendered as Sparrow P2P and "Disconnect Account?" named the wrong one.
+ */
 export async function listMarketplaceAccounts(): Promise<MarketplaceAccount[]> {
   // Bare array today, but unwrap defensively so an envelope added later cannot
   // reintroduce the crash above.
-  return unwrap<MarketplaceAccount>(await collectorsApi.get('/marketplace/listings/accounts'), 'accounts');
+  const raw = unwrap<Record<string, unknown>>(
+    await collectorsApi.get('/marketplace/listings/accounts'),
+    'accounts',
+  );
+  return raw.map((r) => ({
+    id: String(r.id),
+    marketplaceId: r.marketplace_id as MarketplaceAccount['marketplaceId'],
+    sellerName: str(r.seller_name),
+    sellerId: str(r.seller_id),
+    isActive: r.is_active !== false,
+    connectedAt: str(r.connected_at) ?? '',
+    lastSyncAt: str(r.last_sync_at),
+  }));
 }
 
 /** The server answers in snake_case; `MarketplaceSale` is camelCase. */

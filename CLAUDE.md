@@ -26,6 +26,32 @@ is a syntax error in JSX, so it could never be written; `False in (None, 0)`
 folding booleans in silently; a `//` comment inside Python; and a `package.json`
 edit whose anchor appeared twice, so it silently did not apply.
 
+## A cast is not a mapping, and `tsc` cannot tell you (2026-09-18)
+
+`unwrap<MarketplaceSale>(await collectorsApi.get(...))` **asserts** a shape
+instead of checking it. The server answers snake_case, the types are camelCase,
+so every field was `undefined` at runtime in four providers while the build
+stayed green:
+
+* the Sell dashboard showed **blank listing titles** and badged every listing
+  and account as "Sparrow P2P" whatever marketplace it was on
+  (`MARKETPLACE_CONFIG[undefined] ?? MARKETPLACE_CONFIG.collectai`);
+* the fee estimate could never use the server's schedule, so it quoted **5% on
+  Sparrow's own marketplace, which takes 0%**, and under-quoted eBay and StockX;
+* the Sales tab would have rendered **NaN** on the first real sale.
+
+**It survived because the overlapping names made it look right** — `price`,
+`currency`, `status` and `quantity` are spelled the same on both sides. The
+screen sweep walked that route and reported `ok`: it checks for a missing screen
+title, raw output and untranslated strings, not for a row whose own title is
+blank. And `estimated: true` — a flag added the day before to admit the fee
+numbers were guesses — was stuck on for exactly this reason, with nobody asking
+why it never turned off.
+
+**When a type crosses the wire, map it field by field.** `as T` and `unwrap<T>`
+are both assertions; the one place TypeScript cannot help is the place the data
+comes from outside. Full write-up: `docs/CLASS_SWEEPS.md` class U.
+
 ## `{"ok": true}` with nothing behind it — and one DM path dead for five months (2026-09-17/18)
 
 The mirror of the section below: that was a failed READ answering 200 with an

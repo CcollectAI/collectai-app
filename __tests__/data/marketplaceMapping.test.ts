@@ -15,6 +15,8 @@
 import {
   listMarketplaceSales,
   getMarketplaceFeeSchedules,
+  listMarketplaceListings,
+  listMarketplaceAccounts,
 } from '../../src/data/providers/dealsProvider';
 
 const mockGet = jest.fn();
@@ -144,5 +146,62 @@ describe('getMarketplaceFeeSchedules', () => {
     expect(fee.marketplaceId).toBe('collectai');
     expect(fee.baseFeePct).toBe(0);
     expect(fee.paymentProcessingPct).toBe(0);
+  });
+});
+
+/**
+ * The same cast on the two tabs that DO have rows.
+ *
+ * Unlike sales (0 rows, so invisible), `marketplace_listings` is populated —
+ * so the Sell dashboard has been rendering blank listing titles and badging
+ * every listing and account as "Sparrow P2P" whatever marketplace it is on,
+ * because `MARKETPLACE_CONFIG[undefined] ?? MARKETPLACE_CONFIG.collectai`.
+ * `price`, `currency`, `status` and `quantity` are spelled the same on both
+ * sides, which is why the screen looked broadly right.
+ */
+describe('listMarketplaceListings', () => {
+  it('maps the fields the dashboard renders', async () => {
+    mockGet.mockResolvedValue({
+      listings: [{
+        id: 'l-1', user_id: 'u-1', item_id: 'i-1', marketplace_id: 'ebay',
+        listing_title: 'Charizard Base Set', price: 195, currency: 'EUR',
+        format: 'fixed_price', quantity: 1, status: 'active',
+        views_count: 12, watchers_count: 3, offers_count: 1,
+        created_at: '2026-09-01T00:00:00Z', listing_url: 'https://ebay/x',
+      }],
+    });
+    const [l] = await listMarketplaceListings();
+
+    // The row title, the a11y label and the delist confirm all read this.
+    expect(l.listingTitle).toBe('Charizard Base Set');
+    // Badging: undefined here falls through to collectai and mislabels eBay.
+    expect(l.marketplaceId).toBe('ebay');
+    expect(l.itemId).toBe('i-1');
+    expect(l.listingUrl).toBe('https://ebay/x');
+    expect(l.viewsCount).toBe(12);
+    expect(l.watchersCount).toBe(3);
+    expect(l.offersCount).toBe(1);
+    // The same-name fields that made it look fine
+    expect(l.price).toBe(195);
+    expect(l.status).toBe('active');
+  });
+
+  it('a missing title is an empty string, never undefined', async () => {
+    mockGet.mockResolvedValue({ listings: [{ id: 'l-2', item_id: 'i', marketplace_id: 'ebay', price: 1, currency: 'EUR', format: 'fixed_price', quantity: 1, status: 'draft', created_at: 'x' }] });
+    const [l] = await listMarketplaceListings();
+    expect(l.listingTitle).toBe('');
+  });
+});
+
+describe('listMarketplaceAccounts', () => {
+  it('maps marketplaceId so the account is not mislabelled', async () => {
+    mockGet.mockResolvedValue([
+      { id: 'a-1', marketplace_id: 'cardmarket', seller_name: 'merle', is_active: true, connected_at: '2026-08-01T00:00:00Z', last_sync_at: null },
+    ]);
+    const [a] = await listMarketplaceAccounts();
+    expect(a.marketplaceId).toBe('cardmarket');
+    expect(a.sellerName).toBe('merle');
+    expect(a.isActive).toBe(true);
+    expect(a.lastSyncAt).toBeNull();
   });
 });
