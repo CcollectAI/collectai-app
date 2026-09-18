@@ -76,9 +76,6 @@
     "item_provenance_events.source": [
       "CHECK (((source IS NULL) OR (source = ANY (ARRAY['manual'::text, 'receipt'::text, 'marketplace'::text, 'ocr'::text, 'barcode'::text, 'import'::text, 'admin'::text]))))"
     ],
-    "items.build_state": [
-      "CHECK (((build_state IS NULL) OR (build_state = ANY (ARRAY['unbuilt'::text, 'in_progress'::text, 'snap_built'::text, 'primed'::text, 'basecoated'::text, 'painted_wip'::text, 'finished'::text, 'varnished'::text, 'custom_mod'::text]))))"
-    ],
     "listing_reports.reason": [
       "CHECK (((char_length(reason) >= 3) AND (char_length(reason) <= 120)))"
     ],
@@ -6678,10 +6675,6 @@
       "nullable": true,
       "type": "numeric"
     },
-    "items.acquisition_price": {
-      "nullable": true,
-      "type": "numeric"
-    },
     "items.actual_price_eur": {
       "nullable": true,
       "type": "float8"
@@ -6713,19 +6706,7 @@
       "nullable": true,
       "type": "jsonb"
     },
-    "items.authenticity_score": {
-      "nullable": true,
-      "type": "numeric"
-    },
     "items.brand": {
-      "nullable": true,
-      "type": "text"
-    },
-    "items.build_notes": {
-      "nullable": true,
-      "type": "text"
-    },
-    "items.build_state": {
       "nullable": true,
       "type": "text"
     },
@@ -6740,10 +6721,6 @@
     "items.category": {
       "nullable": true,
       "type": "text"
-    },
-    "items.checklist_item_id": {
-      "nullable": true,
-      "type": "uuid"
     },
     "items.collection_name": {
       "nullable": true,
@@ -6774,14 +6751,6 @@
       "nullable": true,
       "type": "timestamptz"
     },
-    "items.date_completed": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
-    "items.date_started": {
-      "nullable": true,
-      "type": "timestamptz"
-    },
     "items.description": {
       "nullable": true,
       "type": "text"
@@ -6799,14 +6768,6 @@
       "nullable": true,
       "type": "bool"
     },
-    "items.fraud_details": {
-      "nullable": true,
-      "type": "jsonb"
-    },
-    "items.fraud_flags": {
-      "nullable": true,
-      "type": "_text"
-    },
     "items.fts": {
       "nullable": true,
       "type": "tsvector"
@@ -6815,15 +6776,6 @@
       "default": "gen_random_uuid()",
       "nullable": false,
       "type": "uuid"
-    },
-    "items.identity_locked": {
-      "default": "false",
-      "nullable": true,
-      "type": "bool"
-    },
-    "items.identity_locked_at": {
-      "nullable": true,
-      "type": "timestamptz"
     },
     "items.image_path": {
       "nullable": true,
@@ -6874,10 +6826,6 @@
     "items.owner": {
       "nullable": true,
       "type": "uuid"
-    },
-    "items.paint_state": {
-      "nullable": true,
-      "type": "text"
     },
     "items.predicted_price_eur": {
       "nullable": true,
@@ -21987,27 +21935,15 @@
       "year",
       "sku",
       "owner",
-      "acquisition_price",
       "image_path",
       "archived",
       "attrs",
-      "build_state",
-      "paint_state",
-      "build_notes",
-      "date_started",
-      "date_completed",
-      "authenticity_score",
-      "fraud_flags",
-      "fraud_details",
       "cost_basis",
       "purchase_currency",
       "purchase_date",
       "acquired_from",
       "acquired_condition",
       "canonical_key",
-      "checklist_item_id",
-      "identity_locked",
-      "identity_locked_at",
       "purchase_price_eur",
       "purchased_at",
       "purchase_notes",

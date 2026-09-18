@@ -1397,7 +1397,33 @@ So on this table the class is **dead weight, not data loss**: fossils of
 abandoned features (build/paint state, fraud flags, verified price, AI
 estimates, checklists). Nothing is being silently discarded.
 
-### What to do with it
+### ✅ Twelve dropped 2026-09-18 (migration `20260918c`)
+
+`acquisition_price`, `authenticity_score`, `build_notes`, `build_state`,
+`checklist_item_id`, `date_completed`, `date_started`, `fraud_details`,
+`fraud_flags`, `identity_locked`, `identity_locked_at`, `paint_state` — applied
+to production, lock regenerated and diffed (exactly those twelve plus the CHECK
+that rode on `build_state`; nothing else blessed), six schema gates PASS,
+deliberate restart, `/healthz` `db:up`, 4092 tests green.
+
+**Seven of the nineteen were NOT dropped, and finding out why is the whole
+lesson.** The narrow scan said "unreferenced"; four checks said otherwise:
+
+| check | what it caught |
+|---|---|
+| grep the WHOLE repo, not `server/app` + `src/` | `items.fts` has a writer in `services/collectors_merge/workers/build_fts_index.py` — a path the first scan never looked at |
+| `pg_depend` through `pg_rewrite` | seven columns are read by VIEWS: `actual_price_eur` (`items_scored`), `ai_estimate_usd` / `fts` / `latest_forecast` / `verified_date` / `verified_price` (`items_with_latest`), `prediction_confidence` (`api_user_analytics_v1`). Dropping those needs CASCADE and a view rebuild — real risk, no behaviour change |
+| `pg_indexes` | `fts` carries a GIN index |
+| assert emptiness IN the migration | so it refuses rather than trusts a measurement taken minutes earlier |
+
+The one hit for `authenticity_score` was a mock object in a dev shell script,
+not the column — checked rather than assumed.
+
+**The rule: "no code mentions it" is a candidate, never a verdict.** A column is
+safe to drop only when the repo (all of it), the views, the indexes and the data
+all agree.
+
+### What to do with the rest
 
 **Nothing urgent, and that is the finding.** These cost a little schema noise
 and a lot of misdirection — the next person reading `items` sees
