@@ -22,7 +22,12 @@ import sys
 from pathlib import Path
 
 ROOT = Path('/Users/merle/GitHub/CcollectAI')
-API = ROOT / 'src/api'
+# BOTH layers. `src/api` holds the thin wrappers, but for anything routed
+# through `dataProvider` the WIRE payload is built inside the provider —
+# `eventsProvider.createEvent` posts a 19-key snake_case literal, while the
+# wrapper it calls takes `Record<string, unknown>`. Scanning only `src/api`
+# reported those as unreadable when the keys were one directory away.
+API_DIRS = [ROOT / 'src/api', ROOT / 'src/data/providers', ROOT / 'src/data']
 SERVER = ROOT / 'server/app'
 
 
@@ -81,7 +86,13 @@ no_body = 0
 transports = 0
 unreadable = []
 
-for f in sorted(API.glob('*.ts')):
+seen_files = set()
+api_files = []
+for d in API_DIRS:
+    for f in sorted(d.glob('*.ts')):
+        if f.resolve() not in seen_files:
+            seen_files.add(f.resolve()); api_files.append(f)
+for f in api_files:
     src = f.read_text(encoding='utf-8')
     for m in VERB.finditer(src):
         verb = m.group(1)
@@ -175,6 +186,28 @@ for f in sorted(API.glob('*.ts')):
                         calls.append((f.name, verb, path, sorted(set(named_types[tm.group(1)])),
                                       f'named:{tm.group(1)}'))
                         continue
+        # (c) a body built as a LOCAL: `const body = {...}` or `body.x = ...`.
+        # Providers construct the wire payload this way — `updateSponsorCompany`
+        # assigns body.name / body.logo_url / body.contact_email one at a time —
+        # so the keys are in the enclosing function, not at the call.
+        if ident:
+            name = ident.group(1)
+            decl = max(src.rfind('export async function', 0, m.start()),
+                       src.rfind('export function', 0, m.start()),
+                       src.rfind('export const', 0, m.start()))
+            scope = src[decl if decl > 0 else 0:m.start()]
+            keys = set(re.findall(rf'\b{re.escape(name)}\.([A-Za-z_$][\w$]*)\s*=(?!=)', scope))
+            keys |= set(re.findall(rf'\b{re.escape(name)}\[["\']([A-Za-z_$][\w$]*)["\']\]\s*=(?!=)', scope))
+            dm = re.search(rf'(?:const|let|var)\s+{re.escape(name)}\b[^=]*=\s*\{{', scope)
+            if dm:
+                o = scope.index('{', dm.end() - 1)
+                c = balanced(scope, o, '{', '}')
+                if c > o:
+                    keys |= set(re.findall(r'(?:^|,)\s*([A-Za-z_$][\w$]*)\s*(?:[,:}]|$)', scope[o+1:c]))
+            if keys:
+                calls.append((f.name, verb, path, sorted(keys), 'local-body'))
+                continue
+
         unreadable.append((f.name, verb, path, body[:40]))
 
 # ── server: route -> bound Pydantic model fields ─────────────────────────────
@@ -271,6 +304,18 @@ print(f"    path matched no server route            : {unmatched_route}")
 print(f"    route had no Pydantic body model        : {no_model}")
 print(f"\n  COVERAGE: {matched} of ~{total_writes} write calls fully checked "
       f"({100 * matched // total_writes}%)")
+# Per-ENDPOINT, not per-call-site. A thin `src/api` wrapper taking
+# Record<string, unknown> is a pass-through whose body the PROVIDER builds, so
+# the same (verb, path) appears twice — once unreadable at the wrapper, once
+# proven at the provider. Counting call sites double-counts those.
+proven_eps = {(v, pth) for _f, v, pth, _k, _h in calls}
+unread_eps = {(v, pth) for _f, v, pth, _b in unreadable}
+only_unread = sorted(unread_eps - proven_eps)
+print(f"\n  DISTINCT ENDPOINTS with a proven payload  : {len(proven_eps)}")
+print(f"  endpoints unreadable at EVERY layer       : {len(only_unread)}")
+for v, pth in only_unread:
+    print(f"    {v.upper():<6} {pth}")
+
 if unreadable:
     print("\n  Still unreadable (the honest gap):")
     for fname, verb, path, body in unreadable:

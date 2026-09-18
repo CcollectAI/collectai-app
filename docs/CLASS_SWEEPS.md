@@ -63,7 +63,7 @@ Two rules the tooling learned the hard way:
 | S | The server answered `ok` and wrote nothing | 2026-09-17/18 **deployed** | ✅ **all 34 read**: 6 `ok`-without-a-write fixed, the announcement DM dead five months fixed, 4 money handlers made atomic + row-locked (a trade could complete twice or never; a sale banked twice; a mandate past its cap), 22 of the 34 sites cleared with the reason written down. 8 tests that PINNED the lie rewritten. One decision left: `reports_count` is written, read nowhere |
 | T | The server sends it and the app never reads it | 2026-09-18 | measured: **74 of 461** fields declared in `src/api` are referenced nowhere else. Three confirmed: subscription dates ✅ **fixed** (the copy was already translated in 7 locales and rendered by nothing), realised P/L unreachable and the demand differentiator unshown — both product calls. The rest is mostly request params and deliberately-removed UI |
 | U | A provider CASTS a snake_case payload to a camelCase type | 2026-09-18 | ✅ all 4 found and mapped (sales, fee schedules, listings, accounts). **All behind `SELLING_ENABLED=false`** — I first called two of them live and the device disproved it. Real, and they ship the day selling is switched on. `tsc` cannot see this class |
-| V | The app SENDS a field the server drops on the floor | run 2, 2026-09-19 | ✅ **0 findings at 50%**; honest gap **8** calls (was 27 — three accounting errors overstated it). One LIVE finding fixed (every verified sale lost its date); 3 dead fields removed; `PUT /notifications/preferences` verified clean by following its callers |
+| V | The app SENDS a field the server drops on the floor | run 2, 2026-09-19 | ✅ **closed: 57 endpoints proven, 3 unreadable, 0 findings.** One LIVE finding fixed (every verified sale lost its date and venue); 3 dead fields removed; the 3 unreadable are 2 hand-verified clean + 1 behind `SELLING_ENABLED`. The probe was wrong 9 times |
 | W | A column the schema carries that no code mentions | 2026-09-18 | measured: **524 across 177 base tables**. Sampled `items` (19 of them): **18 hold no data at all** and the 19th is only its default — schema DEBT, not silent data loss. A cleanup decision, not a bug |
 | X | Committed to `web/` and never deployed | 2026-09-19 | ✅ swept: **17 of 19** servable files byte-identical to production; **1 real drift** (`terms.html`, two sentences, one of them the App Store 4.8 claim); 1 false positive (`vercel.json` is config, not an asset) |
 | Y | A gate that has never seen its own bug | 2026-09-19 | ✅ swept: **40 of 42 fire** on their own pre-fix commit, **0 blind**. 1 needs `.env` to run, 1 was silent on a clean parent but fires under mutation. The sweep itself was wrong 3 times first |
@@ -1665,17 +1665,40 @@ the same mistake as a green gate whose matcher never fires
 ([[learning_a_test_file_is_not_a_gate]]), and this file's own rule is that a
 checker which cannot fail is the worst kind.
 
-### Run 2 (2026-09-19) — coverage 13% → 47%, and the class is real
+### Run 2 (2026-09-19) — 57 endpoints proven, 3 unreadable, 0 findings
 
-`scripts/probe_ignored_fields_v2.py` does what run 1 said the next run should:
-reads each exported wrapper's payload **TYPE** from its signature (inline object
-type, or a named `type`/`interface` resolved across `src/`) instead of the call
-expression. **41 of 87 write calls fully checked (47%)**, 9 more have no body at
-all, 27 remain unreadable and are listed by name in the output.
+`scripts/probe_ignored_fields_v2.py` does what run 1 said the next run should —
+reads each wrapper's payload **TYPE** from its signature rather than the call
+expression — and then three more layers were added as each measurement showed
+what it was still blind to:
 
-**The probe was wrong FOUR times before its findings could be trusted**, and
-every one would have produced a confident false report. Two of them were only
-found because the numbers were re-read after each fix:
+| measure | run 1 | run 2, final |
+|---|---|---|
+| write calls fully checked | 11 of 87 (13%) | **53 of 87 (60%)** |
+| payloads with proven keys | 11 | **65** |
+| unreadable CALL SITES | 76 | 10 |
+| **distinct ENDPOINTS proven** | — | **57** |
+| **endpoints unreadable at EVERY layer** | — | **3** |
+| findings | 0 (meaningless at 13%) | **0** |
+
+**Per-endpoint is the honest denominator.** A thin `src/api` wrapper taking
+`Record<string, unknown>` is a pass-through whose body the PROVIDER builds, so
+the same `(verb, path)` shows up twice — unreadable at the wrapper, proven at
+the provider. Counting call sites double-counts exactly the cases that are
+covered.
+
+**The three endpoints unreadable at every layer, and what is known about them:**
+
+| endpoint | why unreadable | verified |
+|---|---|---|
+| `PATCH /purchase/mandates/{}` | `Record<string, unknown>` | ✅ **clean by hand** — the caller sends 8 keys, `MandateUpdate` declares all 8 |
+| `PUT /notifications/preferences` | `Record<string, boolean>`, computed key `{ [key]: value }` | ✅ **clean by hand** — all 7 toggle keys in `NotificationPreferencesSection` are declared by `NotificationPreferencesUpdate`. A mismatch here is a settings toggle that silently does nothing |
+| `PATCH /marketplace/listings/{}` | `patch as Record<string, unknown>` erases `Partial<MarketplaceListing>` | behind `SELLING_ENABLED = false` |
+
+**The probe was wrong NINE times**, in three kinds, and only the first kind
+could produce a false finding:
+
+**Corrupted the findings (4):**
 
 1. **It matched routes by suffix**, so `POST /marketplace/listings` was
    attributed to `p2p_listing_router.create_listing` — a different router,
@@ -1703,10 +1726,36 @@ found because the numbers were re-read after each fix:
    the wrapper's field back changed nothing a hand-written call passes through.
    Re-pointed at the CALL SITE, where the bug actually lived.
 
+**Overstated the gap (3) — none invented a finding, all inflated the unknown:**
+
+6. **Six "unreadable" calls were not endpoints.** `post(path, body)` inside
+   `httpClient`, `storageApi` and `collectorsApi` takes the path as a PARAMETER.
+7. **Seven send `{}`.** An empty body cannot lose a field.
+8. **Six were single-key shorthand** — `{ status }`, `{ plan }`, `{ price }` —
+   and the key pattern required a `:` or `,` where shorthand ends with `}`.
+
+**Under-read the coverage (2):**
+
+9. **It scanned only `src/api`.** For anything routed through `dataProvider` the
+   wire payload is built in `src/data/providers` — `eventsProvider.createEvent`
+   posts a 19-key snake_case literal while the wrapper it calls takes
+   `Record<string, unknown>`. Scanning both layers: 50% → 57%.
+10. **It could not read a body built as a LOCAL.** Providers assign
+    `body.contact_email = patch.contactEmail` one line at a time. Reading those
+    assignments: 57% → 60%.
+
 **The sequence is the lesson.** Fixing defect 3 took the findings from 3 to 8,
 and five of those new ones were defect 4 talking. A probe that has just started
 reporting MORE is not therefore finding more — re-verify each new finding
 against both ends before believing the delta.
+
+**And the method error worth more than any of them:** the first caller analysis
+read the keys passed to `dataProvider.*` and flagged `contactEmail` /`logoUrl`
+as camelCase going to a snake_case model. `dataProvider` is a DOMAIN interface;
+`updateSponsorCompany` maps every one of those to `body.contact_email` /
+`body.logo_url` before the wire. **Reading the wrong LAYER produces findings
+that are wrong in the most convincing way** — the names really do differ, just
+not where it matters.
 
 **✅ LIVE and fixed: every verified sale lost its date and its venue.**
 `submitVerifiedSale` declared `sale_date` and `marketplace`; the server's
@@ -1743,48 +1792,21 @@ there is no `api_key` column to map to and inventing one would be worse than the
 gap. Deleting the declaration is what stops the next caller sending a credential
 into a 201 that stores nothing.
 
-**Class V now reports 0 findings at 50% coverage, and the honest gap is 8 calls,
-not 27** (re-measured 2026-09-19 after three ACCOUNTING errors in the probe —
-none of which invented a finding, but all of which overstated the unknown):
-
-1. **Six were not endpoints at all.** `post(path, body)` inside `httpClient`,
-   `storageApi` and `collectorsApi` takes the path as a PARAMETER — there is no
-   route to compare against. Now counted as transports.
-2. **Seven send `{}`.** An empty body cannot lose a field. Now counted as
-   bodyless.
-3. **Six were single-key shorthand** — `{ status }`, `{ plan }`, `{ price }`,
-   `{ category }`, `{ image_ids }`, `{ feature }`. The key regex required a `:`
-   or `,` after the name, and shorthand ends with `}`. Now read.
-
-**The remaining 8 all opt out of typing** — `Record<string, unknown>` or a bare
-`prefs`/`p`/`updates` — so the keys live at the CALLERS, not the wrapper:
-
-```
-dealsApi        PATCH /purchase/mandates/{}
-eventsApi       POST  /events                      PATCH /events/{}
-marketplaceApi  PATCH /marketplace/listings/{}
-miscApi         POST  /watchlist/mine
-notificationsApi PUT  /notifications/preferences   ✅ verified clean by hand
-sponsorApi      PATCH /sponsor-companies/{}        POST .../create-event-checkout
-```
-
-**`PUT /notifications/preferences` — checked by following the callers, clean.**
-The caller passes a COMPUTED key (`{ [key]: value }`), so the real contract is
-the toggle list in `NotificationPreferencesSection`. All seven toggle keys are
-declared by `NotificationPreferencesUpdate`. A mismatch here would have been a
-settings toggle that silently does nothing. (`connection_requests` exists
-server-side and no UI exposes it — class T, benign.)
-
 **This class was already known here, and guarded with a COMMENT.** `miscApi.ts`
 carries: *"DO NOT call this directly from screens — the server contract
 (`WatchlistCreate`) reads `name`, NOT `title`; calling this raw helper with
-`{title}` silently stores a junk row title."* A comment is not a gate, which is
-why the remaining 7 are worth following to their callers rather than trusted.
+`{title}` silently stores a junk row title."* Someone hit this exact bug and left
+a warning instead of a check, which is why the class was worth a probe at all.
+(`connection_requests` exists on the preferences model and no UI exposes it —
+class T, benign.)
 
-**Not yet a gate.** At 47% coverage with three known-and-deferred findings, a
-blocking gate would need three markers on the day it lands. The probe is the
-instrument; making it `check:dropped-fields` is the next step, after the
-`SELLING_ENABLED` three are resolved.
+**Now gate-able, and that is the next step.** 0 findings across 57 proven
+endpoints with only 3 unreadable — two of them hand-verified clean and one behind
+a disabled flag — is a stable enough baseline for `check:dropped-fields` to go
+into `verify:prebuild`. What it needs first: a decision on how to treat the 3
+unreadable endpoints (name them in an allowlist with the reason, the way
+`rls-ok:`/`empty-ok:` work) and a mutation proof that renaming a key in a
+provider body turns it red.
 
 **Why the coverage is low, and the better method.** Most wrappers do not inline
 their body — they take a TYPED PARAMETER and pass it through:
