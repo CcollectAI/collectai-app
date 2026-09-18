@@ -6,12 +6,29 @@
  * On RSVP toggle:
  *  - Immediately flips the local isAttending / myRsvpStatus state
  *  - Calls the server in the background
- *  - On error, reverts the local state
+ *  - On error, reverts the local state AND says so
  *
  * Works with both the events tab (list of events) and the event detail screen.
+ *
+ * The toast is the fix for a silent revert (2026-09-18, found by
+ * `check:half-done-silence`). RSVP is a primary action on the Events tab, and a
+ * failure reached the member as nothing at all: `useOptimisticMutation` catches
+ * its own error and does NOT rethrow, so the screen's own `catch` never ran;
+ * neither screen reads the hook's `error`; and `onRollback` logged with
+ * `logger.warn`, which is STRIPPED in release builds. So the card flipped to
+ * "attending", flipped back a moment later when the reload landed, and nothing
+ * — not even a production log — said why. A member reads that as a mis-tap.
+ *
+ * `common.error` rather than a new key: a specific string would need writing in
+ * seven locales, and docs/I18N_BACKLOG.md is explicit that a new string must
+ * reuse the locale's existing vocabulary rather than be a fresh translation of
+ * the English. Worth upgrading to "Your RSVP didn't save" when that backlog is
+ * next worked.
  */
 
 import { useOptimisticMutation } from './useOptimisticMutation';
+import { useToast } from '@/components/Toast';
+import { useTranslation } from 'react-i18next';
 import { dataProvider } from '@/data';
 import type { CollectorsEvent } from '@/data/events';
 import logger from '@/utils/logger';
@@ -37,6 +54,9 @@ export function useOptimisticRsvpList(
   setEvents: EventListSetter,
   reloadEvents: () => void,
 ) {
+  const { showToast } = useToast();
+  const { t } = useTranslation();
+
   return useOptimisticMutation<RsvpArgs>({
     mutationFn: async ({ eventId, currentlyAttending }) => {
       if (currentlyAttending) {
@@ -62,7 +82,10 @@ export function useOptimisticRsvpList(
     },
 
     onRollback: (_args, error) => {
-      logger.warn('[useOptimisticRsvpList] RSVP failed, reloading events:', error.message);
+      // logger.error, not warn: warn is stripped in release builds, so the one
+      // place this failure was recorded did not exist in production.
+      logger.error('[useOptimisticRsvpList] RSVP failed, reloading events:', error.message);
+      showToast({ message: t('common.error', { defaultValue: 'Something went wrong' }), type: 'error' });
       reloadEvents();
     },
   });
@@ -93,6 +116,9 @@ export function useOptimisticRsvpDetail(
 ) {
   const { setRsvpStatus, setEvent } = setters;
 
+  const { showToast } = useToast();
+  const { t } = useTranslation();
+
   return useOptimisticMutation<RsvpDetailArgs>({
     mutationFn: async ({ eventId, currentlyAttending }) => {
       if (currentlyAttending) {
@@ -117,7 +143,8 @@ export function useOptimisticRsvpDetail(
     },
 
     onRollback: (_args, error) => {
-      logger.warn('[useOptimisticRsvpDetail] RSVP failed, reloading event:', error.message);
+      logger.error('[useOptimisticRsvpDetail] RSVP failed, reloading event:', error.message);
+      showToast({ message: t('common.error', { defaultValue: 'Something went wrong' }), type: 'error' });
       reloadEvent();
     },
   });

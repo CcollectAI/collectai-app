@@ -869,12 +869,71 @@ the toast now says the template was not saved. The copy does not offer to "save
 it as a template later": this screen is the only caller of `createEventTemplate`
 in the app, so there is no later, and promising one would be the second bug.
 
-**A gap worth gating:** `check-silent-failures --strict` passes that code both
-before and after the fix, because the catch *logged*. Rule B asks "was it
-logged?" — the same wrong question that let the 74 empty-on-failure sites
-through until rule F was written. The shape to catch: a catch inside a
-user-initiated action that logs and continues, while the action's PRIMARY write
-already succeeded. Nobody has written that rule yet.
+**A gap worth gating — ✅ WRITTEN 2026-09-18: `npm run check:half-done-silence`.**
+
+`check-silent-failures --strict` passed that code both before and after the fix,
+because the catch *logged*. Rule B asks "was it logged?" — the same wrong
+question that let the 74 empty-on-failure sites through until rule F was
+written. Logging is what the DEVELOPER finds out. The new rule asks what the
+MEMBER finds out.
+
+**The rule:** a catch whose body does NOTHING BUT LOG, inside a function that
+already awaited a WRITE before the try. "Nothing but log" is the discriminator,
+and it is exactly what separates the two versions of the worked instance:
+
+    catch (tplErr) { logger.error(…); }                          ← reported
+    catch (tplErr) { templateSaved = false; logger.error(…); }    ← not
+
+The second is the fix — the flag is read after the try and drives a toast that
+names what did not happen. Any statement other than a log means something
+downstream can still tell, so rule B keeps it.
+
+**It was wrong twice before it was right, and both are worth knowing:**
+
+1. **It reported nothing on the very instance it was written for.** The walk out
+   to the enclosing function accepted any head ending in `)`, so
+   `if (saveAsTemplate && templateName.trim())` was read as a function opener:
+   the walk stopped at the `if` and never saw the `createEvent` above it. Found
+   by running it against `b40e256~1` — the pre-fix file — rather than trusting
+   that a green checker meant a clean tree.
+2. **"A prior await" is not "the primary write succeeded".** The first version
+   reported 19 sites; reading them showed three shapes that were not the class
+   at all — a prior READ that degrades on purpose (`item/[id].tsx`), ENRICHMENT
+   before the write (`add-manual.tsx` matches the catalog, *then* inserts), and
+   a read whose catch already carried an `empty-ok:` reason. Requiring a prior
+   **write** took 19 → 4. A rule reporting 19 where 4 are real is the "wrong
+   about two thirds of what it reported" shape from class S.
+
+Proven on the fixture pair: the pre-fix `create-event.tsx` is caught, the fixed
+one is clean.
+
+**What the 4 were.** One real defect, three reasons written:
+
+✅ **A failed RSVP was invisible — fixed.** RSVP is a primary action on the
+Events tab, and a failure reached the member as nothing at all:
+`useOptimisticMutation` catches its own error and does **not** rethrow, so
+`handleAttend`'s `catch` never ran; neither screen reads the hook's `error`; and
+`onRollback` logged with **`logger.warn`, which is stripped in release builds**
+— so in production there was not even a log. The card flipped to "attending" and
+flipped back when the reload landed, which a member reads as a mis-tap. Both
+variants (list and detail) now toast and log with `logger.error`, plus the
+handler's own last-resort catch. Four tests, mutation-proven three ways
+(drop the toast → 2 red; revert `error` to `warn` → 3 red; clean → green).
+
+`common.error` rather than a new string: a specific message needs writing in
+seven locales, and `docs/I18N_BACKLOG.md` is explicit that a new string must
+reuse the locale's existing vocabulary rather than be a fresh translation of the
+English. Worth upgrading to "Your RSVP didn't save" when that backlog is worked.
+
+Reasons written, not fixes:
+* `events.tsx` calendar add — the member asked to attend, not for a calendar
+  entry; it is offered silently, and `calendar.ts` writes its mapping only on
+  success, so nothing later claims an event is "on your calendar" that is not.
+* `sell/new.tsx` per-photo upload — the member IS told: the loop counts
+  successes and the toast names how many of how many uploaded. The rule reports
+  it because the counting happens outside the catch; the reason is written
+  rather than the rule widened to guess at it.
+* `DevForcePlanSection` — `__DEV__`-only plan override, no member reaches it.
 
 ✅ `calendar.ts` add/remove — **fixed 2026-09-17.** Adding wrote the OS event
 then the mapping; a failed mapping left an event this app could not see, behind

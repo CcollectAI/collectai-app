@@ -26,6 +26,49 @@ is a syntax error in JSX, so it could never be written; `False in (None, 0)`
 folding booleans in silently; a `//` comment inside Python; and a `package.json`
 edit whose anchor appeared twice, so it silently did not apply.
 
+## Two gates written on 2026-09-18, and what each one got wrong first
+
+### `npm run check:half-done-silence`
+
+A catch whose body does **nothing but log**, inside a function that already
+awaited a WRITE. Logging is what the developer finds out; this asks what the
+MEMBER finds out — the question `check-silent-failures` rule B does not ask,
+which is why it passed `create-event.tsx` both before and after its fix.
+
+It was wrong twice before it was right:
+
+1. **It reported nothing on the instance it was written for.** The walk out to
+   the enclosing function accepted any head ending in `)`, so
+   `if (saveAsTemplate && templateName.trim())` looked like a function opener —
+   the walk stopped at the `if` and never saw the `createEvent` above it. Caught
+   by running it against `b40e256~1`, the pre-fix file, instead of trusting a
+   green result. **Keep the pre-fix file as the fixture; a gate that has never
+   seen the bug is not proven.**
+2. **"A prior await" is not "the primary write succeeded".** 19 findings became
+   4 once it required a prior *write*: a read that degrades on purpose,
+   enrichment before the insert, and a catch already carrying `empty-ok:` are
+   not this class.
+
+It found one real defect: **a failed RSVP was invisible.**
+`useOptimisticMutation` catches its own error and does not rethrow, so the
+screen's `catch` never ran; neither screen reads the hook's `error`; and
+`onRollback` used `logger.warn`, **stripped in release builds**. The card
+flipped to attending and flipped back, with no toast and no production log.
+
+### `npm run check:partial-count`
+
+`partialCount(loaded, hasMore)` appends the `+` that stops a first page reading
+as the total. Both helpers take the flag as an ARGUMENT, so `false` puts the bug
+straight back — and mutating all three call sites was caught by **nothing**: 137
+suites green, `tsc` 0. Helper tests pin the helper, not the wiring.
+
+The one legitimate literal sits in JSX children position, where `//` is not a
+comment but rendered TEXT, so the marker is `{/* partial-ok: … */}` — written at
+that exact site and re-verified, not assumed writable.
+
+**The lesson both share:** a fix that lives in an argument can be undone by
+changing the argument, and the tests that prove the helper cannot see it.
+
 ## `npm run check:cast-not-mapped` (2026-09-18)
 
 Class U's gate, in `verify:prebuild`: a provider returning a camelCase-typed
@@ -152,12 +195,22 @@ observe ORDER in ONE stream, or "inside the transaction" is not what is being
 tested. Mutating each fix is what found this.
 
 **`npm run verify:prebuild` does NOT run the server test suite** — it runs the
-Python GATES (`check_empty_on_failure`, `check_error_copy`, …) and a named list
-of jest suites, and nothing else. That is how commit `eb70152` shipped the
+Python GATES (`check_empty_on_failure`, `check_error_copy`, …) and the jest
+suite, and nothing else. That is how commit `eb70152` shipped the
 portfolio 503 change with four of its own tests still asserting the old zeros;
 CI (`ci-min.yml`) runs `pytest` and would have caught it. **Before committing a
 server change, run `npm run test:server`** (added 2026-09-17 for exactly this:
 4064 tests, ~70 s).
+
+**It used to name 67 jest suites by hand, and `jest` collects 137** — so 70
+suites, more than half and most of them green, gated nothing, and every test
+file added since had been ungated by default (2026-09-18). It now runs `jest`
+with no list. The whole suite is ~19 s, so the list never bought anything.
+Mutation-proven: breaking the category-name lookup exits 1 with 8 suites red,
+**6 of them previously ungated**. The trade, stated deliberately: a snapshot
+suite in the gate means an intentional UI change fails prebuild until someone
+regenerates and READS the diff — which is what did not happen while four of them
+sat stale since May.
 
 ## The server told the app "you own nothing, worth 0" (2026-09-17)
 

@@ -290,12 +290,22 @@ function EventsScreen() {
             notes: `Sparrow Collect Event: ${KIND_LABEL[event.kind]}`,
           });
         } catch (calErr) {
-          // Calendar add is non-critical; don't fail the RSVP for this
+          // best-effort: the member asked to attend, not for a calendar entry —
+          // this add is offered silently, so a silent failure claims nothing
+          // that did not happen. `src/lib/calendar.ts` writes the mapping only
+          // on success (fixed 2026-09-17), so nothing later says "on your
+          // calendar" for an event that never got there. The RSVP itself is a
+          // different matter and now toasts (useOptimisticRsvp, 2026-09-18).
           logger.error('[EventsScreen] calendar add error:', calErr);
         }
       }
     } catch (err: unknown) {
+      // The last resort for this handler. `optimisticRsvp.mutate` swallows and
+      // toasts its own failure, so what reaches here is a synchronous throw on
+      // the way — and that used to leave the member with a card that flipped
+      // and flipped back and no explanation at all.
       logger.error('[EventsScreen] RSVP error:', err);
+      showToast({ message: t('common.error', { defaultValue: 'Something went wrong' }), type: 'error' });
     }
   };
 

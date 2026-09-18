@@ -315,8 +315,12 @@ function SellNewScreen() {
             );
             uploaded += 1;
           } catch (e) {
-            // Keep going. One failed frame must not cost the others — the
-            // listing is already live either way.
+            // best-effort: keep going — one failed frame must not cost the
+            // others, and the listing is live either way. The member IS told:
+            // the loop counts successes and the toast below names how many of
+            // how many uploaded. (check:half-done-silence reports this shape
+            // because the counting happens outside the catch; the reason is
+            // written here rather than the rule widened to guess at it.)
             logger.error('[sell/new] photo upload failed (index %s):', i, e);
           }
         }

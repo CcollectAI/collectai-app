@@ -77,8 +77,9 @@ export const DevForcePlanSection: React.FC = () => {
       try {
         window.localStorage.removeItem(WEB_KEY);
       } catch (e) {
+        // best-effort: a developer-only plan override, behind __DEV__, and the
+        // reload below re-reads both stores. No member ever reaches this.
         logger.error('[silent-catch] DevForcePlanSection.tsx:75:', e);
-        // no-op
       }
     }
     if (typeof window !== 'undefined' && window.location) {
