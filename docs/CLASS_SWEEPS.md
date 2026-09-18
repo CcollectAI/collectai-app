@@ -66,6 +66,7 @@ Two rules the tooling learned the hard way:
 | V | The app SENDS a field the server drops on the floor | run 2, 2026-09-19 | ✅ **settled**: coverage 13% → **47%** by reading each wrapper's payload TYPE. **One LIVE finding, fixed** (every verified sale lost its date); three real but behind `SELLING_ENABLED=false`. The probe was wrong 4 times first |
 | W | A column the schema carries that no code mentions | 2026-09-18 | measured: **524 across 177 base tables**. Sampled `items` (19 of them): **18 hold no data at all** and the 19th is only its default — schema DEBT, not silent data loss. A cleanup decision, not a bug |
 | X | Committed to `web/` and never deployed | 2026-09-19 | ✅ swept: **17 of 19** servable files byte-identical to production; **1 real drift** (`terms.html`, two sentences, one of them the App Store 4.8 claim); 1 false positive (`vercel.json` is config, not an asset) |
+| Y | A gate that has never seen its own bug | 2026-09-19 | ✅ swept: **40 of 42 fire** on their own pre-fix commit, **0 blind**. 1 needs `.env` to run, 1 was silent on a clean parent but fires under mutation. The sweep itself was wrong 3 times first |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -1935,8 +1936,30 @@ about to promote it. Untranslated on purpose: the reader is a developer, a
 reviewer or a tester, and it never renders in a store build, where the flag is
 pinned false.
 
-Still open if you want belt and braces: a second app record for internal builds,
-which is the only option that makes promotion structurally impossible.
+**✅ DECIDED AND DONE 2026-09-19 — the default was flipped instead.**
+
+The sharper reading is in `eas.json`'s own comment: the **EAS `production`
+environment** held `EXPO_PUBLIC_BETA_UNLOCK_ALL=true`, so the dangerous value was
+the DEFAULT and safety depended on every submittable profile remembering to pin
+`false`. Three did. A fourth profile added by someone in a hurry would not have.
+
+`EXPO_PUBLIC_BETA_UNLOCK_ALL` is now **`false` on the EAS `production`
+environment**, and `build.internal` pins `true` explicitly — so paid-screen
+review on TestFlight still works, and **forgetting to pin now yields a LOCKED
+build instead of a paywall-less one.** Verified after the change: EAS reports
+`false`; `store`/`production`/`android-apk` pin `false`; `internal` pins `true`;
+`check:submit-profiles` still names `internal` as the one deliberate unlocked
+path.
+
+**A second app record was considered and rejected** (for now): it costs a new
+bundle id, provisioning and a separate TestFlight, and means internal testers
+stop testing the artefact that actually ships — ongoing friction against a
+hazard that requires deliberately promoting an internal build, with a warning
+banner on screen (`src/screens/Settings.tsx:79`). Revisit if anyone other than
+Merle can promote a build.
+
+Build 160 was built AND submitted with `--profile store`, and the build log
+confirms the store profile's `false` overrode the EAS value.
 
 **What could NOT be built, and why it matters.** Class G asked for "a
 submit-time assertion" on the artefact. That cannot work, measured on a real
@@ -2017,6 +2040,47 @@ curl -s https://sparrowcollect.com/terms | grep -i 'social login'   # expect no 
 ```
 
 Not done here because publishing to the public site is Merle's call.
+
+## Y — a gate that has never seen its own bug (2026-09-19)
+
+`check:double-submit` passed an unguarded write for two independent reasons and
+nobody knew until the instance was found by READING. That raised the obvious
+question about the other 49 gates in `verify:prebuild`, and it is answerable
+mechanically: **42 of the 50 were added in the same commit as the code they
+guard, so that commit's PARENT is a known-positive** — the bug is still there.
+Drop today's checker into that tree and it must fire.
+
+`scripts/sweep_gates_against_their_own_bug.py` does it in a detached worktree.
+
+**Result: 40 of 42 fire. Zero blind gates.**
+
+* `verify_items_contract.mjs` — **inconclusive, not silent**: it needs Supabase
+  credentials and prints `SKIP — no Supabase URL / anon key in .env`, which a
+  fresh worktree does not have.
+* `check_i18n_defaults.py` — silent at its parent because that tree was already
+  clean for its rule, **not because it is blind**: mutating a `defaultValue` to
+  disagree with `en.json` makes it exit 1, and restoring makes it exit 0.
+
+**The nuance that matters more than the score.** `check-double-submit` **FIRES**
+on its own parent — it genuinely caught the 2026-09-17 instances — and was
+*still* blind to the `delist` case found by hand on 2026-09-19. **Firing on the
+bug it was born for does not mean it covers the class.** This sweep can only
+retire the question "has it ever failed?"; it cannot answer "what does it miss?"
+
+**The sweep was wrong three times before its own output was trustworthy**, and
+every wrong version produced a confident, uniform table:
+
+1. It cleaned the worktree AFTER checkout, so the checker copied in on one
+   iteration blocked the next checkout — **every gate after the first reported
+   `NO-PARENT`.**
+2. Two runs shared one worktree path and fought over it; the loser's table said
+   **"42 errored"** while the interim log had shown real results.
+3. It ran each checker with no arguments, but `verify:prebuild` passes
+   `--strict` to three of them. Those three PRINTED their failure and exited 0,
+   so they were scored **silent** — 3 of the 5 apparent misses were this.
+
+Each time the tell was the same: a uniform result. **All-42-identical is not a
+finding, it is a broken tool.**
 
 ## Re-running a sweep
 
