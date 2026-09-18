@@ -63,7 +63,7 @@ Two rules the tooling learned the hard way:
 | S | The server answered `ok` and wrote nothing | 2026-09-17/18 **deployed** | ✅ **all 34 read**: 6 `ok`-without-a-write fixed, the announcement DM dead five months fixed, 4 money handlers made atomic + row-locked (a trade could complete twice or never; a sale banked twice; a mandate past its cap), 22 of the 34 sites cleared with the reason written down. 8 tests that PINNED the lie rewritten. One decision left: `reports_count` is written, read nowhere |
 | T | The server sends it and the app never reads it | 2026-09-18 | measured: **74 of 461** fields declared in `src/api` are referenced nowhere else. Three confirmed: subscription dates ✅ **fixed** (the copy was already translated in 7 locales and rendered by nothing), realised P/L unreachable and the demand differentiator unshown — both product calls. The rest is mostly request params and deliberately-removed UI |
 | U | A provider CASTS a snake_case payload to a camelCase type | 2026-09-18 | ✅ all 4 found and mapped (sales, fee schedules, listings, accounts). **All behind `SELLING_ENABLED=false`** — I first called two of them live and the device disproved it. Real, and they ship the day selling is switched on. `tsc` cannot see this class |
-| V | The app SENDS a field the server drops on the floor | run 2, 2026-09-19 | ✅ **settled**: coverage 13% → **47%** by reading each wrapper's payload TYPE. **One LIVE finding, fixed** (every verified sale lost its date); three real but behind `SELLING_ENABLED=false`. The probe was wrong 4 times first |
+| V | The app SENDS a field the server drops on the floor | run 2, 2026-09-19 | ✅ **0 findings at 50%**; honest gap **8** calls (was 27 — three accounting errors overstated it). One LIVE finding fixed (every verified sale lost its date); 3 dead fields removed; `PUT /notifications/preferences` verified clean by following its callers |
 | W | A column the schema carries that no code mentions | 2026-09-18 | measured: **524 across 177 base tables**. Sampled `items` (19 of them): **18 hold no data at all** and the 19th is only its default — schema DEBT, not silent data loss. A cleanup decision, not a bug |
 | X | Committed to `web/` and never deployed | 2026-09-19 | ✅ swept: **17 of 19** servable files byte-identical to production; **1 real drift** (`terms.html`, two sentences, one of them the App Store 4.8 claim); 1 false positive (`vercel.json` is config, not an asset) |
 | Y | A gate that has never seen its own bug | 2026-09-19 | ✅ swept: **40 of 42 fire** on their own pre-fix commit, **0 blind**. 1 needs `.env` to run, 1 was silent on a clean parent but fires under mutation. The sweep itself was wrong 3 times first |
@@ -1743,8 +1743,43 @@ there is no `api_key` column to map to and inventing one would be worse than the
 gap. Deleting the declaration is what stops the next caller sending a credential
 into a 201 that stores nothing.
 
-**Class V now reports 0 findings at 47% coverage.** Which is a real result only
-because the coverage number is stated beside it.
+**Class V now reports 0 findings at 50% coverage, and the honest gap is 8 calls,
+not 27** (re-measured 2026-09-19 after three ACCOUNTING errors in the probe —
+none of which invented a finding, but all of which overstated the unknown):
+
+1. **Six were not endpoints at all.** `post(path, body)` inside `httpClient`,
+   `storageApi` and `collectorsApi` takes the path as a PARAMETER — there is no
+   route to compare against. Now counted as transports.
+2. **Seven send `{}`.** An empty body cannot lose a field. Now counted as
+   bodyless.
+3. **Six were single-key shorthand** — `{ status }`, `{ plan }`, `{ price }`,
+   `{ category }`, `{ image_ids }`, `{ feature }`. The key regex required a `:`
+   or `,` after the name, and shorthand ends with `}`. Now read.
+
+**The remaining 8 all opt out of typing** — `Record<string, unknown>` or a bare
+`prefs`/`p`/`updates` — so the keys live at the CALLERS, not the wrapper:
+
+```
+dealsApi        PATCH /purchase/mandates/{}
+eventsApi       POST  /events                      PATCH /events/{}
+marketplaceApi  PATCH /marketplace/listings/{}
+miscApi         POST  /watchlist/mine
+notificationsApi PUT  /notifications/preferences   ✅ verified clean by hand
+sponsorApi      PATCH /sponsor-companies/{}        POST .../create-event-checkout
+```
+
+**`PUT /notifications/preferences` — checked by following the callers, clean.**
+The caller passes a COMPUTED key (`{ [key]: value }`), so the real contract is
+the toggle list in `NotificationPreferencesSection`. All seven toggle keys are
+declared by `NotificationPreferencesUpdate`. A mismatch here would have been a
+settings toggle that silently does nothing. (`connection_requests` exists
+server-side and no UI exposes it — class T, benign.)
+
+**This class was already known here, and guarded with a COMMENT.** `miscApi.ts`
+carries: *"DO NOT call this directly from screens — the server contract
+(`WatchlistCreate`) reads `name`, NOT `title`; calling this raw helper with
+`{title}` silently stores a junk row title."* A comment is not a gate, which is
+why the remaining 7 are worth following to their callers rather than trusted.
 
 **Not yet a gate.** At 47% coverage with three known-and-deferred findings, a
 blocking gate would need three markers on the day it lands. The probe is the

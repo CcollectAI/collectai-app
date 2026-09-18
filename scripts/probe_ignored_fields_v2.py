@@ -78,6 +78,7 @@ for f in sorted((ROOT / 'src').rglob('*.ts')):
 VERB = re.compile(r'\b(post|patch|put)\s*(?:<[^;]*?>)?\s*\(')
 calls = []          # (file, verb, path, keys, how)
 no_body = 0
+transports = 0
 unreadable = []
 
 for f in sorted(API.glob('*.ts')):
@@ -111,17 +112,32 @@ for f in sorted(API.glob('*.ts')):
         parts.append(cur)
         if not parts or not parts[0].strip():
             continue
-        path_raw = parts[0].strip().strip('`"\'')
+        raw0 = parts[0].strip()
+        # A transport, not an endpoint: `post(path, body)` inside httpClient /
+        # storageApi / collectorsApi takes the path as a PARAMETER. Six of the
+        # 27 "unreadable" calls were these — counted as a gap when there is no
+        # endpoint to compare against.
+        if not (raw0.startswith('`') or raw0.startswith('"') or raw0.startswith("'")):
+            transports += 1
+            continue
+        path_raw = raw0.strip('`"\'')
         path = re.sub(r'\$\{[^}]*\}', '{}', path_raw).split('?')[0].rstrip('/')
         if len(parts) < 2 or not parts[1].strip():
             no_body += 1
             continue
         body = parts[1].strip()
+        # `{}` cannot lose a field. Seven of the 27 were these.
+        if re.fullmatch(r'\{\s*\}', body):
+            no_body += 1
+            continue
 
         # (a) inline object literal at the call site
         if body.startswith('{'):
             inner = body[1:balanced(body, 0, '{', '}')]
-            keys = [k for k in re.findall(r'(?:^|,)\s*([A-Za-z_$][\w$]*)\s*[,:]', inner)]
+            # `[,:}]` — shorthand `{ status }` ends the key with `}`, so a
+            # pattern requiring ':' or ',' read six single-key payloads as
+            # unreadable. `$` too, for a trailing key with no separator.
+            keys = re.findall(r'(?:^|,)\s*([A-Za-z_$][\w$]*)\s*(?:[,:}]|$)', inner)
             if keys:
                 calls.append((f.name, verb, path, sorted(set(keys)), 'inline'))
                 continue
@@ -257,5 +273,5 @@ print(f"\n  COVERAGE: {matched} of ~{total_writes} write calls fully checked "
       f"({100 * matched // total_writes}%)")
 if unreadable:
     print("\n  Still unreadable (the honest gap):")
-    for fname, verb, path, body in unreadable[:12]:
+    for fname, verb, path, body in unreadable:
         print(f"    {fname}: {verb.upper()} {path}  <- {body!r}")
