@@ -1272,5 +1272,9 @@
     "a11y_prev_month": "이전 달",
     "a11y_today": "오늘로 이동",
     "a11y_next_month": "다음 달"
+  },
+  "leaderboard": {
+    "category_only_title": "순위는 카테고리별로 제공됩니다",
+    "category_only_body": "컬렉션에서 카테고리를 열면 보유 수량 또는 가치 기준 순위를 볼 수 있습니다."
   }
 }

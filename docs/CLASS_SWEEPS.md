@@ -1282,6 +1282,31 @@ false positive — its own explanatory comment, the first failure mode in
 Related: the same shape server-side would be a Pydantic model that does not
 match its query's column names, which `check_sql_columns.py` already covers.
 
+## The XP leaderboard — GATED 2026-09-18
+
+Decided: **gate it, do not ship XP.** `GAMIFICATION_UI_ENABLED` stays false, and
+`app/leaderboard.tsx` with no `categoryId` now renders a short state pointing at
+the category boards instead of an XP/Level ranking. `PortfolioTierBadge` opens
+`/leaderboard?categoryId=<the member's biggest category>` — and links nowhere at
+all when they hold nothing, rather than opening a board with nothing to rank.
+
+Why this way round: the category board ranks **real collections** (items owned
+or value held), and it tells a member *"you are #N of M"*, which the XP board
+never did. XP ranked one stranger's row on production — 50 XP, level 1 — because
+only one account has any.
+
+Gated at the SCREEN, not by removing the link: nothing in the app opens the XP
+board any more, but a deep link still can, and that is exactly the mistake
+`SELLING_ENABLED` documents (free-tier purchase mandates were unreachable in the
+UI and reachable by Universal Link).
+
+**Not touched, deliberately:** XP accrual on the server, and the XP wording in
+`terms.tsx` / `privacy-policy.tsx`, which describe XP as a Service feature and
+stay true while the data is still collected. If XP is ever REMOVED rather than
+hidden, those are promises that must change with it.
+
+### The original note
+
 ## Decisions for Merle — the XP leaderboard (2026-09-17)
 
 `GAMIFICATION_UI_ENABLED = false`, and `UserStatsSection` hides XP and level on a

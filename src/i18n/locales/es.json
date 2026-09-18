@@ -1272,5 +1272,9 @@
     "a11y_prev_month": "Mes anterior",
     "a11y_today": "Ir a hoy",
     "a11y_next_month": "Mes siguiente"
+  },
+  "leaderboard": {
+    "category_only_title": "Las clasificaciones son por categoría",
+    "category_only_body": "Abre una categoría de tu colección para ver cómo se clasifica — por objetos que tienes o por valor."
   }
 }

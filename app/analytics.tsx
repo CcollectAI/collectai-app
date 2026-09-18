@@ -686,7 +686,14 @@ function AnalyticsScreen() {
 
         {/* Portfolio Tier Card */}
         {tierSummary && (
-          <PortfolioTierBadge tierSummary={tierSummary} />
+          /* The category the member holds most of, so the badge opens a board
+             that ranks REAL collections rather than the XP board — XP is not a
+             shipped feature (GAMIFICATION_UI_ENABLED is false and
+             UserStatsSection hides it on profiles for the same reason). */
+          <PortfolioTierBadge
+            tierSummary={tierSummary}
+            leaderboardCategoryId={activeCategories[0]?.id}
+          />
         )}
 
         {/* Category Allocations */}

@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
 import { AnimatedPressable } from '@/motion';
@@ -39,9 +39,25 @@ function formatScore(s: number): string {
 
 type Props = {
   tierSummary: PortfolioTierSummary;
+  /**
+   * Which category board to open (2026-09-18).
+   *
+   * This badge used to push `/leaderboard` with no param, which renders the
+   * **XP** board — and XP is not a shipped feature: `GAMIFICATION_UI_ENABLED`
+   * is false and `UserStatsSection` hides XP on a profile for that reason. One
+   * screen presented XP as a feature while another deliberately hid it, and on
+   * production the board was one stranger's row (50 XP, level 1) because only
+   * one account has any XP at all.
+   *
+   * The category board ranks real collections — items owned or value held —
+   * and tells a member "you are #N of M", which the XP board never did.
+   * Undefined when the member holds nothing yet: the badge then does not link
+   * anywhere, rather than opening a board with nothing to rank.
+   */
+  leaderboardCategoryId?: string;
 };
 
-function PortfolioTierBadgeInner({ tierSummary }: Props) {
+function PortfolioTierBadgeInner({ tierSummary, leaderboardCategoryId }: Props) {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const router = useRouter();
@@ -75,7 +91,12 @@ function PortfolioTierBadgeInner({ tierSummary }: Props) {
         ) : (
           <AnimatedPressable
             style={styles.tierBadgeContainer}
-            onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push('/leaderboard'); }}
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              // The CATEGORY board, never the XP one — see `leaderboardCategoryId`.
+              if (!leaderboardCategoryId) return;
+              router.push(`/leaderboard?categoryId=${encodeURIComponent(leaderboardCategoryId)}` as Href);
+            }}
             accessibilityRole="button"
             accessibilityLabel={`${tierSummary.tier} tier — view leaderboard`}
           >

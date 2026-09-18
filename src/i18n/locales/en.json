@@ -1272,5 +1272,9 @@
     "a11y_prev_month": "Previous month",
     "a11y_today": "Go to today",
     "a11y_next_month": "Next month"
+  },
+  "leaderboard": {
+    "category_only_title": "Leaderboards are per category",
+    "category_only_body": "Open a category from your collection to see how your collection ranks there — by items owned or by value held."
   }
 }

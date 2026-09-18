@@ -1272,5 +1272,9 @@
     "a11y_prev_month": "Vorige maand",
     "a11y_today": "Naar vandaag",
     "a11y_next_month": "Volgende maand"
+  },
+  "leaderboard": {
+    "category_only_title": "Ranglijsten zijn per categorie",
+    "category_only_body": "Open een categorie in je collectie om te zien hoe je collectie daar scoort — op aantal items of op waarde."
   }
 }

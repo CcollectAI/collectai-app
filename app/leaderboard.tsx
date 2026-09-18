@@ -14,7 +14,7 @@ import { useSettings, type NumberLocale } from '@/lib/settings';
 import { formatNumber, fmtCurrency } from '@/lib/format';
 import logger from '@/utils/logger';
 import { MEDAL_COLORS, TWITCH_PURPLE } from '@/constants/colors';
-import { BETA_MODE, COMMUNITY_GATED } from '@/config/featureFlags';
+import { BETA_MODE, COMMUNITY_GATED, GAMIFICATION_UI_ENABLED } from '@/config/featureFlags';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -454,6 +454,42 @@ const LeaderboardScreen: React.FC = () => {
     );
   }
 
+  // NO categoryId: this is the XP board, and XP IS NOT A SHIPPED FEATURE.
+  //
+  // `GAMIFICATION_UI_ENABLED` is false and `UserStatsSection` hides XP and
+  // level on a profile with the comment "XP is not a shipped feature"
+  // (2026-08-10) — while this screen rendered an XP/Level board behind no flag
+  // at all. One screen presented XP as a feature while another deliberately
+  // hid it, and the same flag file states the rule: anything here has to be a
+  // feature the app actually ships. On production it showed one stranger's row
+  // (50 XP, level 1, 1 day streak) followed by an empty screen, because only
+  // one account has any XP.
+  //
+  // Gated at the SCREEN rather than by removing the entry point, the same
+  // reasoning as SELLING_ENABLED: nothing links here without a categoryId any
+  // more (PortfolioTierBadge now opens the category board), but a deep link
+  // still can.
+  if (!GAMIFICATION_UI_ENABLED) {
+    return (
+      <View style={[styles.safe, { backgroundColor: colors.background }]}>
+        <Stack.Screen options={{ headerTitle: '' }} />
+        <View style={styles.emptyWrap}>
+          <Ionicons name="trophy-outline" size={44} color={colors.muted} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            {t('leaderboard.category_only_title', { defaultValue: 'Leaderboards are per category' })}
+          </Text>
+          <Text style={[styles.emptyText, { color: colors.muted }]}>
+            {t('leaderboard.category_only_body', {
+              defaultValue:
+                'Open a category from your collection to see how your collection ranks there — by items owned or by value held.',
+            })}
+          </Text>
+        </View>
+        <QuickNavBar />
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerTitle: t('screen_titles.leaderboard') }} />
@@ -561,6 +597,12 @@ const styles = StyleSheet.create({
   catChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
   catChipText: { fontSize: 14, fontWeight: '600' },
   catEmpty: { fontSize: 14, lineHeight: 20, marginTop: 20 },
+  // The XP board's replacement state (2026-09-18). Centred and padded like the
+  // app's other "nothing here, and here is why" screens rather than the list
+  // layout below it, which expects rows.
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 12 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center' },
+  emptyText: { fontSize: 14, lineHeight: 20, textAlign: 'center' },
   catYou: { fontSize: 13, marginBottom: 10 },
   safe: {
     flex: 1,

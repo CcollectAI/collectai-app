@@ -1272,5 +1272,9 @@
     "a11y_prev_month": "前の月",
     "a11y_today": "今日に移動",
     "a11y_next_month": "次の月"
+  },
+  "leaderboard": {
+    "category_only_title": "ランキングはカテゴリごとです",
+    "category_only_body": "コレクションからカテゴリを開くと、所有数または資産価値での順位を確認できます。"
   }
 }
