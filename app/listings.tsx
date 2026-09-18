@@ -1143,9 +1143,8 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
                   </View>
                 ) : !hasMore ? (
                   <Text style={[styles.footerNote, { color: colors.muted }]}>
-                    {/* hasMore is false in this branch, so pass it
-                        literally: this sentence claims completeness and must
-                        never render a `+`. */}
+                    {/* partial-ok: hasMore is false in this branch, so this
+                        sentence claims completeness and must never show `+`. */}
                     That&apos;s all {listingsCountLabel(listings.length, false)}.
                   </Text>
                 ) : null}

@@ -693,6 +693,33 @@ unread prop is class T, not this.)
 digits: with more pages waiting there is certainly more than one listing, so
 "1+ listings" and never "1+ listing".
 
+**The fix was one edit away from being undone, and the tests could not see it
+(gated 2026-09-18).** Both helpers take the flag as an ARGUMENT, so passing
+`false` puts the bug straight back. Mutating all three call sites to `false`
+was caught by **nothing**: 137 suites green, `tsc` 0. The helper tests pin the
+helpers, not the wiring, and no test renders a 1,300-line screen.
+
+`npm run check:partial-count` (in `verify:prebuild`) rejects a boolean LITERAL
+in the flag position unless a `partial-ok:` reason sits within three lines
+above. Mutation-proven both ways: the three-site mutation exits 1 (4 findings,
+including a `true`), a marker pushed out of the window still exits 1, and a
+clean tree exits 0.
+
+Two details it was designed around:
+
+* **The marker had to be writable where it is needed.** The one legitimate
+  literal is the footer's "That's all N listings", inside `!hasMore` — and it is
+  in JSX children position, where `//` is not a comment but rendered TEXT. The
+  checker accepts `{/* partial-ok: … */}`, and the marker was written at that
+  exact site and re-verified (`tsc` 0) rather than assumed writable
+  (`learning_four_ways_a_new_gate_is_wrong`, failure mode 2).
+* **What it does not catch, said out loud:** a NEW screen that renders
+  `list.length` and never adopts either helper. That shape was swept by hand
+  across all six `usePaginatedList` screens; making it decidable means telling a
+  count apart from a `=== 0` guard, and the attempt produced more noise than
+  findings. The checker's header says so, so nobody trusts it further than it
+  goes.
+
 **Suites that are red and gate nothing — ✅ CLOSED 2026-09-18. 137/137 green,
 1173 tests, and the gate no longer keeps a list.**
 
