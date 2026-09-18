@@ -837,7 +837,41 @@ removed from the suite; the 5th omitted `initialPurchasePrice`, which the hook
 requires, so `editablePurchasePrice` was `undefined` and `.trim()` threw. The
 screen always passes `''`, so the app was never exposed.
 
-**I — ✅ this instance was fixed by the 2026-09-17 checker sweep; the text below
+**I — a SECOND instance, and the gate was blind to it for two independent
+reasons (2026-09-19).**
+
+`app/listing/[id].tsx` `handleDelist` awaited `delistListing(id, "sold")` with no
+in-flight guard and no `disabled` on its control — the same shape as the
+purchase-deal decline, so a second tap hits a listing the server has already
+sold and the member is told their sale failed when it succeeded. It also only
+logged on failure, so a failed sale and a successful one looked identical. Both
+halves fixed against the sibling `handleSavePrice` in the same file.
+
+**`npm run check:double-submit` passed it clean**, and there were two separate
+causes — fixing the obvious one left the checker green:
+
+1. **The write-verb list had `unlist` but not `delist`**, and `\b` cannot match
+   `list` inside `delistListing`. The checker's own header says a guard is
+   recognised by the flag's NAME rather than a list of verbs someone thought of
+   — but the WRITE side is still exactly such a list.
+2. **A null check read as a latch.** `isFlag` matches the substring `ing`, so
+   `if (!listing) return` looked like an in-flight guard because the noun
+   `listing` ends in -ing. Any -ing noun does it: rating, setting, drawing,
+   posting. The fix treats a whole condition of `!thing` as a presence check,
+   except for affirmative permission names — `!canSubmit` really is the latch
+   where `canSubmit` folds in `saveState !== 'sending'`.
+
+The first attempt at (2) skipped every `!thing` and reported
+`compose-announcement.tsx` as unguarded, which is genuinely guarded that way —
+a false positive caught by running the checker over the tree before keeping the
+change. Proven both ways: at `HEAD~1` the fixed checker reports
+`handleDelist`; on the current tree it is clean, 138 suites green, `tsc` 0.
+
+This is `learning_four_ways_a_new_gate_is_wrong` failure mode "a name-keyed rule
+matching homonyms", recurring — and the reason to distrust a checker that
+reports nothing about a class you have just found an instance of by reading.
+
+**The 2026-09-17 instance — ✅ fixed by the checker sweep; the text below
 is the original finding, kept for the record.** Re-verified 2026-09-18:
 `handleDecline` opens with `if (!deal || declining) return;` and sets
 `setDeclining(true)`, its `AnimatedPressable` carries `disabled={declining}`,

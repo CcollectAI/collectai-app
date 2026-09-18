@@ -50,7 +50,7 @@ const lineOf = (s, i) => s.slice(0, i).split('\n').length;
 const WRITE_CALL = new RegExp(
   [
     // provider / api verbs
-    String.raw`\bawait\s+[\w.]*\b(create|update|delete|remove|save|submit|confirm|decline|dismiss|send|post|accept|reject|block|unblock|archive|unarchive|mark|claim|cancel|redeem|purchase|list|unlist|follow|unfollow|rsvp|join|leave|invite|report)\w*\s*\(`,
+    String.raw`\bawait\s+[\w.]*\b(create|update|delete|remove|save|submit|confirm|decline|dismiss|send|post|accept|reject|block|unblock|archive|unarchive|mark|claim|cancel|redeem|purchase|list|unlist|delist|follow|unfollow|rsvp|join|leave|invite|report)\w*\s*\(`,
     // raw http
     String.raw`\bawait\s+(?:collectorsApi|api|httpClient)\.(post|patch|put|del|delete)\s*\(`,
     // supabase
@@ -58,6 +58,13 @@ const WRITE_CALL = new RegExp(
   ].join('|'),
   'i',
 );
+// `delist` added 2026-09-19: the list had `unlist` but not `delist`, and `\b`
+// cannot match `list` inside `delistListing`. That was necessary but NOT
+// sufficient — `handleDelist` also had a false guard (see the `!thing` note in
+// hasGuard), so adding the verb alone left the checker green. Two independent
+// reasons for one miss, which is why "I fixed the obvious one" was not enough.
+// The header says a guard is recognised by the flag's NAME rather than a list
+// of verbs; the WRITE side is still exactly such a list.
 // `list`/`mark` are in the verb list because listForSale / markRead are writes,
 // but a plain read like `await listItems()` is not — require a non-read shape.
 const READ_ONLY = /\bawait\s+[\w.]*\b(list|get|fetch|load|search|lookup|read)\w*\s*\(/i;
@@ -99,6 +106,24 @@ function hasGuard(body) {
     // `if (x) return` on its own is a latch by position: a single bare
     // identifier guarding a writing handler is what every guarded site here does.
     if (/^!?\s*[A-Za-z_$][\w$.]*$/.test(cond) && !/^!/.test(cond)) return true;
+    // A whole condition of `!thing` is a PRESENCE check, never a latch — you
+    // guard against re-entry with `if (busy) return`, not `if (!busy) return`.
+    // The branch above already excludes it; this loop did not, and `isFlag`
+    // matches the substring "ing", so `if (!listing) return` on
+    // app/listing/[id].tsx read as an in-flight guard because the noun
+    // `listing` ends in -ing. handleDelist was an unguarded write whose second
+    // tap errors on a listing the server has already sold, and this checker
+    // called it clean (found 2026-09-19). Any -ing noun does it: rating,
+    // setting, drawing, posting.
+    //
+    // The exception is an affirmative PERMISSION name — `!canSubmit` really is
+    // the latch when `canSubmit` folds in `saveState !== 'sending'`, which is
+    // how compose-announcement.tsx guards itself. Skipping every `!thing`
+    // reported it as unguarded; that was a false positive of the first attempt
+    // at this fix, caught by running the checker over the tree before keeping
+    // it.
+    const negated = cond.match(/^!\s*([A-Za-z_$][\w$.]*)$/);
+    if (negated && !/^can[A-Z]|^is[A-Z]\w*(Allowed|Ready|Enabled)$/.test(negated[1])) continue;
     for (const id of cond.matchAll(/[A-Za-z_$][\w$]*/g)) {
       if (isFlag(id[0]) || /^can[A-Z]/.test(id[0])) return true;
     }

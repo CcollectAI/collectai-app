@@ -55,6 +55,35 @@ screen's `catch` never ran; neither screen reads the hook's `error`; and
 `onRollback` used `logger.warn`, **stripped in release builds**. The card
 flipped to attending and flipped back, with no toast and no production log.
 
+### `npm run check:server-today`
+
+The box is **Europe/Paris**, Postgres is **UTC**, so `date.today()` and
+`CURRENT_DATE` are different dates **00:00–02:00 CEST**. Events used both for the
+same predicate; verified live at 00:01 that **8 real events dated today** were
+dropped from `GET /events` while `/events/nearby` still listed them. In SQL write
+`CURRENT_DATE`; in Python call `app.lib.clock.utc_today()`; otherwise a
+`# tz-ok:` reason.
+
+It was wrong twice first, both times about its own text: it reported a
+`-- CURRENT_DATE, not a bound date.today()` note inside a triple-quoted SQL
+string (it stripped `#` but not `--`), and its 4-line look-back was shorter than
+the 7-line reason it asked people to write.
+
+**Enumerating first is what kept the fix small: 12 host-clock sites, 3 wrong.** A
+blanket "make it all UTC" would have shifted every member's streak boundary two
+hours to fix nothing.
+
+### A checker that reports nothing may be blind, not clean (2026-09-19)
+
+`check:double-submit` passed an unguarded write for **two independent reasons**,
+and fixing the obvious one left it green: the verb list had `unlist` but not
+`delist`, AND `isFlag` matches the substring `ing`, so `if (!listing) return`
+read as an in-flight latch because the noun ends in -ing.
+
+**When you find an instance of a class by READING, run that class's checker
+against the pre-fix file in a worktree.** If it stays green, the checker is the
+next bug.
+
 ### `npm run check:partial-count`
 
 `partialCount(loaded, hasMore)` appends the `+` that stops a first page reading
