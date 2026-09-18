@@ -56,8 +56,12 @@ npm run build:android:apk      # -> ./builds/sparrow-android-apk.apk (sideload/t
 
 A local iOS build takes **25–45 minutes**, most of it compiling pods.
 
-**Before building, run the gates:** `npm run verify:prebuild` (20 checks, tsc,
-and the pinned jest suites). A build is the wrong place to discover a red gate.
+**Before building, run the gates:** `npm run verify:prebuild` (40+ checks, tsc,
+and the WHOLE jest suite). A build is the wrong place to discover a red gate.
+
+It ran a hand-written list of 67 jest suites until 2026-09-18; `jest` collects
+137, so 70 gated nothing and every test file added since was ungated by default.
+It now runs `jest` with no list — the whole suite is ~19s.
 
 **The build number is EAS-REMOTE.** `ios.buildNumber` in `app.json` is ignored
 (`appVersionSource: remote`) and EAS prints exactly that warning on every run.
