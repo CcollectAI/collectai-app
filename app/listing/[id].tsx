@@ -160,6 +160,7 @@ function ListingDetailScreen() {
   const [priceOpen, setPriceOpen] = useState(false);
   const [priceDraft, setPriceDraft] = useState("");
   const [savingPrice, setSavingPrice] = useState(false);
+  const [delisting, setDelisting] = useState(false);
   const [offered, setOffered] = useState(false);
   const { showToast } = useToast();
 
@@ -331,17 +332,34 @@ function ListingDetailScreen() {
   ]);
 
   const handleDelist = useCallback(async () => {
-    if (!listing) return;
+    // `delisting` guards re-entry and disables the control. Without it a second
+    // tap hits a listing the server has already marked sold, which comes back
+    // an error — so the member is told their sale failed when it succeeded.
+    // Same shape as the purchase-deal decline (class sweep I).
+    if (!listing || delisting) return;
+    setDelisting(true);
     try {
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, {
         enabled: settings.hapticsEnabled,
       });
       await collectorsApi.delistListing(listing.id, "sold");
+      showToast({ message: "Marked as sold.", type: "success" });
       retry();
     } catch (e) {
+      // This catch only logged, so a failed sale looked exactly like a
+      // successful one: the sheet closed and the listing stayed live, with
+      // nothing said (found 2026-09-18 by check:half-done-silence's sibling
+      // reading). The sibling handleSavePrice above is the shape to match.
       logger.error("[listing] delist failed:", e);
+      const reason = userErrorMessage(e, "");
+      showToast({
+        message: `Couldn't mark it as sold${reason ? ` (${reason})` : ""}`,
+        type: "error",
+      });
+    } finally {
+      setDelisting(false);
     }
-  }, [listing, retry, settings.hapticsEnabled]);
+  }, [listing, delisting, retry, settings.hapticsEnabled, showToast]);
 
   if (loading) {
     return (
@@ -836,6 +854,7 @@ function ListingDetailScreen() {
                 </AnimatedPressable>
                 <AnimatedPressable
                   onPress={handleDelist}
+                  disabled={delisting}
                   style={[
                     styles.primaryBtn,
                     {
