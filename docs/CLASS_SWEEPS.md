@@ -675,6 +675,22 @@ were wrong.** Reading each one mattered more than sweeping them:
   `market_hits`, so every scraped sale in that window was filed a day ahead —
   the exact trap `docs/ARCHITECTURE.md` already names.
 
+**Verified live at 00:01 CEST on 2026-09-19 — inside the window, which is the
+only time it is observable.** On production, with the deploy in place:
+
+```
+host date.today()     : 2026-09-19   (Europe/Paris)
+postgres CURRENT_DATE : 2026-09-18   (UTC)   ← they disagree right now
+gated upcoming, CURRENT_DATE : 247   ← what GET /events answered
+gated upcoming, host date    : 239   ← what it would have answered before
+gated events dated exactly CURRENT_DATE : 8
+```
+
+So **8 real events dated today vanished from the events list for two hours every
+night**, while `GET /events/nearby` — which has always used `CURRENT_DATE` —
+still listed them. The API now returns the `CURRENT_DATE` number, which is how
+the fix is known to be live rather than merely deployed.
+
 Gated by `npm run check:server-today`: a bare `date.today()` / `datetime.now()`
 under `server/app` or `server/workers` needs `CURRENT_DATE`, `utc_today()`, or a
 `# tz-ok:` reason. Mutation-proven — reverting the events fix exits 1, removing
