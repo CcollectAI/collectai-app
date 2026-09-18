@@ -78,7 +78,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
       return;
     }
     const timer = setTimeout(() => {
-      collectorsApi.calculateMarketplaceFees({ price, marketplace_id: marketplace, category: undefined })
+      collectorsApi.calculateMarketplaceFees({ price, marketplace_id: marketplace })
         .then((data: any) => {
           if (data?.total_fees != null) {
             setBackendFeePreview({ fees: data.total_fees, net: price - data.total_fees });

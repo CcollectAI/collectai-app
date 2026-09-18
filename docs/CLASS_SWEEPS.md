@@ -1718,15 +1718,32 @@ with no date cannot be weighted against the market at the time it happened.
 Fixed in `src/api/miscApi.ts` and `useItemDetail.ts:557`; pinned by a call-site
 test, mutation-proven.
 
-**Three more are real but NOT live — all behind `SELLING_ENABLED = false`**
-(the class U lesson: check the flag before calling a defect live). They ship the
-day selling is switched on:
+**Three more — ✅ removed 2026-09-19, and NONE of them was live.** All three sat
+behind `SELLING_ENABLED = false`, and checking the callers downgraded them
+further: **no code passed any of them.**
 
-| call | sends | the model declares |
-|---|---|---|
-| `POST /marketplace/listings` | `condition_description` | `condition_label`, `condition_notes` |
-| `POST /marketplace/listings/fees/calculate` | `category` | nothing of the sort — the fee is computed per marketplace |
-| `POST /marketplace/listings/accounts` | `api_key` | `oauth_token_enc`, `refresh_token_enc` — so a key typed into the connect form is discarded and the account reports connected |
+| call | declared | the model declares | who passed it |
+|---|---|---|---|
+| `POST /marketplace/listings` | `condition_description` | `condition_label`, `condition_notes` | nobody |
+| `POST /marketplace/listings/fees/calculate` | `category` | marketplace_id, price, shipping_cost — the fee is a property of the MARKETPLACE | one call site, as `category: undefined`, which `JSON.stringify` drops |
+| `POST /marketplace/listings/accounts` | `api_key` | `oauth_token_enc`, `refresh_token_enc`, `token_expires_at`, `scopes` | nobody |
+
+⚠️ **A correction worth keeping.** These were first reported — to Merle — as
+live-ish risks, with `api_key` described as "a key typed into the connect form is
+discarded while the account reports connected". **No form collects it.** The only
+`api_key` occurrences in the app are Sentry redaction. The probe proves a TYPE
+mismatch; it says nothing about whether a caller passes the field, and that
+second question is what decides whether a member can lose data. Ask it before
+ranking a finding.
+
+Removed rather than renamed: `docs/P2P_MARKETPLACE_SPEC.md` is explicit that the
+eBay OAuth backend does not exist (which is why `SELLING_ENABLED` is false), so
+there is no `api_key` column to map to and inventing one would be worse than the
+gap. Deleting the declaration is what stops the next caller sending a credential
+into a 201 that stores nothing.
+
+**Class V now reports 0 findings at 47% coverage.** Which is a real result only
+because the coverage number is stated beside it.
 
 **Not yet a gate.** At 47% coverage with three known-and-deferred findings, a
 blocking gate would need three markers on the day it lands. The probe is the

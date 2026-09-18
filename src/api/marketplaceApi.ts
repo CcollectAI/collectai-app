@@ -81,13 +81,19 @@ export const tagAffiliateUrl = (url: string, source: string) =>
   );
 
 // Marketplace Listings (Multi-Marketplace Selling)
+// The keys are the SERVER's (`ListingCreate` in
+// `server/app/features/marketplace_listing_router.py`). Pydantic ignores unknown
+// keys, so anything not declared there is dropped and answered 200 — see
+// docs/CLASS_SWEEPS.md class V. `condition_description` was declared here and
+// exists in no model; the server's fields are `condition_label` and
+// `condition_notes`. Removed rather than renamed: nothing ever passed it, and
+// leaving it would let the next caller send a condition that is silently lost.
 export const createMarketplaceListing = (payload: {
   item_id: string;
   marketplace_id: string;
   price: number;
   currency?: string;
   format?: string;
-  condition_description?: string;
 }) => post("/marketplace/listings", payload as Record<string, unknown>);
 
 export const listMarketplaceListings = (opts?: { status?: string; marketplace_id?: string; limit?: number; offset?: number }) => {
@@ -109,14 +115,23 @@ export const deleteMarketplaceListing = (listingId: string) =>
 export const publishMarketplaceListing = (listingId: string) =>
   post(`/marketplace/listings/${encodeURIComponent(listingId)}/publish`);
 
-export const calculateMarketplaceFees = (payload: { price: number; marketplace_id: string; category?: string }) =>
+// `FeeCalculateRequest` declares marketplace_id, price and shipping_cost only —
+// the fee is a property of the MARKETPLACE, not the category. `category?` was
+// declared here and dropped server-side (class V).
+export const calculateMarketplaceFees = (payload: { price: number; marketplace_id: string }) =>
   post("/marketplace/listings/fees/calculate", payload as Record<string, unknown>);
 
 // Marketplace Listing Accounts
 export const listMarketplaceAccounts = () =>
   get("/marketplace/listings/accounts");
 
-export const connectMarketplaceAccount = (payload: { marketplace_id: string; seller_name?: string; api_key?: string }) =>
+// `AccountCreate` stores OAuth: `oauth_token_enc`, `refresh_token_enc`,
+// `token_expires_at`, `scopes`. There is no `api_key` field and no column behind
+// one, and `docs/P2P_MARKETPLACE_SPEC.md` is explicit that the eBay OAuth
+// backend does not exist yet — which is why SELLING_ENABLED is false. Nothing
+// passed `api_key`; declaring it invited a credential the server would discard
+// while answering 201 (class V).
+export const connectMarketplaceAccount = (payload: { marketplace_id: string; seller_name?: string }) =>
   post("/marketplace/listings/accounts", payload as Record<string, unknown>);
 
 export const disconnectMarketplaceAccount = (accountId: string) =>
