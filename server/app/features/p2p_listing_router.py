@@ -1945,10 +1945,20 @@ async def report_listing(
         if not exists:
             raise error_response(404, "Listing not found", code="LISTING_NOT_FOUND")
 
-        # RETURNING id tells us whether the row was actually inserted. The
-        # counter must only move on a NEW report — incrementing
-        # unconditionally let one user inflate reports_count without limit by
-        # re-reporting, which would poison moderation triage.
+        # RETURNING id tells us whether the row was actually inserted, which is
+        # what stops a re-report paging ops a second time (below). The
+        # `ON CONFLICT ... WHERE status = 'open'` is what stops one member
+        # filing the same report twice.
+        #
+        # `marketplace_listings.reports_count` USED TO BE INCREMENTED HERE and
+        # was dropped on 2026-09-18 (migration 20260918b). It was written and
+        # read by nothing, and it could not have been used as it stood: nothing
+        # ever decremented it, so it counted reports EVER FILED while every
+        # consumer that matters counts reports still OPEN — the alert below and
+        # the ops queue both derive `count(*) FROM listing_reports` with a
+        # status filter, from the table the DSA obligations actually attach to.
+        # A denormalised copy that disagrees with its source by construction is
+        # worse than no copy.
         inserted = await conn.fetchval(
             """
             INSERT INTO public.listing_reports
@@ -1960,12 +1970,6 @@ async def report_listing(
             """,
             listing_id, user_id, payload.reason, payload.detail,
         )
-        if inserted is not None:
-            await conn.execute(
-                "UPDATE public.marketplace_listings "
-                "SET reports_count = reports_count + 1 WHERE id = $1::uuid",
-                listing_id,
-            )
 
     # The 24-hour clock has to start somewhere. Both the Marketplace Terms (§5)
     # and the Acceptable Use Policy (§9) now promise action on objectionable or

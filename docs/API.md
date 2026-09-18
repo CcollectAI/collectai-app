@@ -485,7 +485,7 @@ decision that is open on it.
 | GET | `/p2p/listings` | JWT | Browse. Repeatable `category`, `canonical_key`, `q`, `mine`, `sort`, `price_min/max`, `price_currency`. **Excludes blocked members both ways** |
 | GET | `/p2p/listings/{listing_id}` | JWT | Deep-link target for `sparrowcollect.com/l/<id>`. Returns sold/delisted with real status, not 404. A blocked seller's listing 404s (never 403 — that would confirm it exists) |
 | POST | `/p2p/listings/{listing_id}/delist` | JWT | Mark sold/delisted. Removes the buyable `market_hits` row **synchronously** |
-| POST | `/p2p/listings/{listing_id}/report` | JWT + Rate Limit | DSA Art 16 notice-and-action. Re-reporting is a no-op and does not inflate the counter |
+| POST | `/p2p/listings/{listing_id}/report` | JWT + Rate Limit | DSA Art 16 notice-and-action. Re-reporting is a no-op (`ON CONFLICT … WHERE status = 'open'`) and does not page ops twice. **No counter**: `marketplace_listings.reports_count` was dropped 2026-09-18 — it was never decremented, so it disagreed with every consumer, which derive `count(*) FROM listing_reports` with a status filter |
 | GET | `/p2p/facets/categories` | JWT | Categories that actually have live listings, with counts |
 | GET | `/p2p/demand/{item_id}` | JWT | Pre-listing demand. **Ownership enforced** — demand is competitive information |
 

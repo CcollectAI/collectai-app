@@ -7,6 +7,7 @@ import { useRouter, type Href } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AccessibilitySettings } from '@/components/AccessibilitySettings';
 import { featureFlags, SELLING_ENABLED } from '@/config/featureFlags';
+import { BETA_UNLOCK_ALL as isBetaUnlocked } from '@/hooks/useBillingLimits';
 import { useSettings } from '@/lib/settings';
 import { AnimatedPressable } from '@/motion';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,6 +49,37 @@ export default function Settings({ openProfileEditor = false }: { openProfileEdi
       <Text style={[styles.pageTitle, { color: colors.text }]} accessibilityRole="header">
         {t('settings.title')}
       </Text>
+
+      {/* AN UNLOCKED BUILD SAYS SO (2026-09-18).
+          `EXPO_PUBLIC_BETA_UNLOCK_ALL=true` reports every user as `pro` and
+          skips RevenueCat entirely — the `internal` EAS profile, which exists
+          so paid screens can be reviewed on TestFlight. Its own comment in
+          eas.json says such a build "must never be promoted to the App Store".
+
+          Nothing stopped that happening. `internal` and `store` share an App
+          Store Connect id (they must — TestFlight is attached to the app
+          record), and with `appVersionSource: remote` EAS owns the build
+          numbers, so both profiles draw from ONE increasing sequence: "promote
+          the latest build" can silently pick the paywall-less one. The build
+          number cannot be banded from eas.json, so the build announces itself
+          instead — visible in TestFlight, to a reviewer, and to whoever is
+          about to promote it.
+
+          NOT translated, deliberately: the reader is a developer, a reviewer or
+          a tester, and English is the language all three share. It never
+          renders in a store build, where the flag is pinned false
+          (`npm run check:submit-profiles`). */}
+      {isBetaUnlocked ? (
+        <View
+          style={[styles.betaBanner, { backgroundColor: colors.warning + '22', borderColor: colors.warning }]}
+          accessibilityRole="alert"
+        >
+          <Ionicons name="lock-open-outline" size={16} color={colors.warning} />
+          <Text style={[styles.betaBannerText, { color: colors.text }]}>
+            Beta build — every Pro feature is unlocked and billing is skipped. Not for the store.
+          </Text>
+        </View>
+      ) : null}
 
       {/* Account FIRST. Its own comment calls this "the first row of the first
           settings screen — the Apple-ID-row pattern", and HeaderActions says
@@ -285,6 +317,19 @@ export default function Settings({ openProfileEditor = false }: { openProfileEdi
 }
 
 const styles = StyleSheet.create({
+  // The unlocked-build banner. Warning-toned and full width because its whole
+  // job is to be impossible to scroll past without noticing.
+  betaBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  betaBannerText: { flex: 1, fontSize: 13, lineHeight: 18, fontWeight: '600' },
   container: {
     flex: 1,
   },

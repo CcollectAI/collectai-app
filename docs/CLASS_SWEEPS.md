@@ -999,17 +999,32 @@ what the screen renders, and it persists. What the 503 buys there is a real
 error in the log instead of a silent divergence between the device and the
 server's copy of the member's currency.
 
-### Found on the way: `marketplace_listings.reports_count` is written and read nowhere
+### `marketplace_listings.reports_count` — DROPPED 2026-09-18
 
-`report_listing` increments it, carefully and only on a genuinely new report,
+`report_listing` incremented it, carefully and only on a genuinely new report,
 with a comment explaining that unconditional increments "would poison moderation
-triage". **Nothing reads the column** — not `server/app`, not the app, not the
-ops queue (which orders by age). It appears only in the schema dumps.
+triage". **Nothing read the column** — not `server/app`, not the app, not the
+ops queue. It appeared only in the schema dumps.
 
-Two honest ends, and it is a decision rather than a bug: surface it in
-`GET /ops/listing-reports` so triage can use it, or drop the column and the
-increment with it. Until then the increment is a write that costs a statement
-and buys nothing — the "capture ≠ consume" shape.
+Reading it properly turned "unused" into "unusable": **nothing ever decremented
+it.** So it counted reports EVER FILED while every consumer that matters counts
+reports still OPEN — and both of those consumers already derive the honest
+number from `listing_reports`, the table the DSA obligations attach to:
+
+* the ops alert: `count(*) FROM listing_reports WHERE status = 'open'`;
+* `GET /ops/listing-reports`: reads `listing_reports` directly, oldest first.
+
+A denormalised copy that disagrees with its source **by construction** is worse
+than no copy: the next person to reach for it reads "3" on a listing whose
+reports were all resolved. Dropped rather than fixed, because fixing it means
+maintaining a counter that duplicates a `count(*)` over an indexed table.
+
+Migration `20260918b`, applied to production. The report data is untouched —
+`listing_reports` is the artifact; only the tally beside it is gone. **The
+schema lock was regenerated and DIFFED** (one line: `column_meta.
+marketplace_listings.reports_count`, nothing else blessed) before the restart,
+because `preflight_schema_lock` is a blocking `ExecStartPre` and a stale lock
+means the bake cannot come back up.
 
 
 ## T — the server sends it and the app never reads it (2026-09-18)
@@ -1417,9 +1432,30 @@ real app record.
 
 `npm run check:submit-profiles` reports it. **Deliberately NOT in
 `verify:prebuild`**: it fails on a configuration you may want, and a gate that
-fails on an intentional state teaches people to ignore gates. Two ways to close
-it, both yours: delete `submit.internal` (internal builds are side-loaded, and
-the jsswap flow does not submit), or point it at a separate app record.
+fails on an intentional state teaches people to ignore gates.
+
+**Corrected 2026-09-18 — "delete `submit.internal`" was a bad suggestion of
+mine.** That profile exists *so paid screens can be reviewed on TestFlight*
+(its own comment in `eas.json` says so), and TestFlight is attached to the app
+record — sharing the `ascAppId` is how TestFlight works, not a misconfiguration.
+
+The real hazard is one step later, and sharper: `store` and `internal` are BOTH
+`autoIncrement: true` against one app record, and `cli.appVersionSource` is
+`remote`, so **EAS owns the build numbers and both profiles draw from a single
+increasing sequence**. "Promote the latest build" can therefore pick the
+paywall-less one, and the number itself carries no hint of which profile made
+it. The band cannot be set from `eas.json` for the same reason: EAS owns it.
+
+**What shipped instead: the build announces itself.** When
+`EXPO_PUBLIC_BETA_UNLOCK_ALL` is true, Settings renders a warning-toned banner —
+*"Beta build — every Pro feature is unlocked and billing is skipped. Not for the
+store."* Visible in TestFlight, to an App Store reviewer, and to whoever is
+about to promote it. Untranslated on purpose: the reader is a developer, a
+reviewer or a tester, and it never renders in a store build, where the flag is
+pinned false.
+
+Still open if you want belt and braces: a second app record for internal builds,
+which is the only option that makes promotion structurally impossible.
 
 **What could NOT be built, and why it matters.** Class G asked for "a
 submit-time assertion" on the artefact. That cannot work, measured on a real

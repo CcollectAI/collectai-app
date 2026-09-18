@@ -2,6 +2,26 @@
 
 > Last refreshed 2026-05-19. Renamed from CollectAI 2026-05-04. **iOS IAP via RevenueCat replaced Stripe on 2026-05-09** (commit `652230a`); Stripe code path is preserved for future web/Android billing.
 
+## An unlocked build says so (2026-09-18)
+
+`EXPO_PUBLIC_BETA_UNLOCK_ALL=true` (the `internal` EAS profile) reports every
+user as `pro` and skips RevenueCat. Settings now renders a warning banner in
+that build — *"Beta build — every Pro feature is unlocked and billing is
+skipped. Not for the store."*
+
+**Why a banner and not a build-number rule.** `internal` and `store` share an
+App Store Connect id, and they must: TestFlight is attached to the app record,
+and reviewing paid screens on TestFlight is exactly why `internal` exists. Both
+profiles are `autoIncrement: true` and `cli.appVersionSource` is `remote`, so
+EAS owns one increasing sequence of build numbers across both — "promote the
+latest build" can pick the paywall-less one, and the number carries no hint of
+its profile. The band cannot be set in `eas.json` because EAS owns the number,
+so the build is made to identify itself instead.
+
+`npm run check:submit-profiles` is the config half: every submittable profile
+must pin the flag false. It is not in `verify:prebuild`, because it fails on a
+configuration that may be intentional.
+
 ## What the subscription screen tells a paying member (2026-09-18)
 
 `app/subscription.tsx` renders one line under the plan cards, from

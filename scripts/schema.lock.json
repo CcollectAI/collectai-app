@@ -8252,11 +8252,6 @@
       "nullable": false,
       "type": "int4"
     },
-    "marketplace_listings.reports_count": {
-      "default": "0",
-      "nullable": false,
-      "type": "int4"
-    },
     "marketplace_listings.reserved_at": {
       "nullable": true,
       "type": "timestamptz"
@@ -22396,7 +22391,6 @@
       "category",
       "ships_from",
       "delisted_at",
-      "reports_count",
       "ships_from_country",
       "ships_to",
       "reserved_offer_id",
