@@ -496,6 +496,62 @@ async def _notify_trade(conn, user_id: str, title: str, body: str, offer_id: str
         logger.error("[p2p] trade notification failed for %s: %s", user_id, exc)
 
 
+async def _record_p2p_sale(conn, listing_id: str, seller_id: str,
+                           amount: float, currency: str) -> None:
+    """The seller's own record of what they sold — the row nothing was writing.
+
+    `marketplace_sales` held **0 rows on production** (2026-09-18) against 3 sold
+    listings and a completed trade, because its only writer is
+    `POST /marketplace/listings/sales/{id}/record`, whose client wrapper
+    `recordMarketplaceSale()` has no caller in the app, and completion recorded
+    no sale at all. So `GET /portfolio/realised-pl` — a careful endpoint that
+    joins sale → listing → item → cost basis — returned nothing for everyone,
+    and `app/sell/dashboard.tsx`'s Sales tab has always been empty.
+    `docs/COLLECTOR_DEMAND.md` §5 calls cost basis "the clearest unserved need";
+    the join shipped and the SALE never happened.
+
+    WHAT IS WRITTEN, AND WHY EACH NUMBER IS HONEST
+
+    * `platform_fee` / `payment_processing_fee` = **0**. Sparrow charges nothing
+      on the marketplace and never touches funds (P2P spec §5b). The 5% in
+      `app/legal/terms.tsx:159` is EVENT TICKETS, not this.
+    * `shipping_cost_actual` = **NULL, written explicitly**. The column DEFAULTS
+      to 0, and defaulting here would state "postage cost nothing" — a number we
+      do not have. NULL means the member has not told us yet, and the read side
+      withholds profit for those rows the same way `cost_basis_known` does.
+    * `net_proceeds` = the agreed amount, which is exactly
+      `sale_price - 0 - 0 - (unknown postage)` given what is known. It is a net
+      BEFORE postage, and `shipping_known: false` is what says so.
+    * `buyer_name` = NULL. The trade already links the two parties; copying the
+      buyer's name into the seller's sales ledger is a disclosure nobody asked
+      for. `buyer_marketplace_id = 'sparrow'` records WHERE, not WHO.
+
+    This is "record a payment claim the seller asserts", which §5b's table lists
+    under **We may**. It is not a receipt issued in Sparrow's name, which is
+    listed under We may not — nothing here is sent to the buyer or presented as
+    proof of payment.
+
+    Idempotent by `NOT EXISTS`: `marketplace_sales` has no unique key on
+    `listing_id` (checked on prod), so a second completion path — or a retry —
+    would otherwise double a member's realised proceeds.
+    """
+    await conn.execute(
+        """
+        INSERT INTO public.marketplace_sales
+            (listing_id, user_id, buyer_marketplace_id, sale_price, currency,
+             shipping_cost_actual, platform_fee, payment_processing_fee,
+             net_proceeds, status, sold_at)
+        SELECT $1::uuid, $2::uuid, 'sparrow', $3, $4,
+               NULL, 0, 0,
+               $3, 'completed', now()
+         WHERE NOT EXISTS (
+           SELECT 1 FROM public.marketplace_sales WHERE listing_id = $1::uuid
+         )
+        """,
+        listing_id, seller_id, amount, currency,
+    )
+
+
 async def _settle_completed_trade(conn, offer_id: str, listing_id: str,
                                   buyer_id: str, seller_id: str,
                                   amount: float, currency: str) -> None:
@@ -2154,6 +2210,17 @@ async def confirm_exchange(
                 await _settle_completed_trade(
                     conn, offer_id, str(fresh["listing_id"]),
                     str(fresh["buyer_id"]), str(fresh["seller_id"]),
+                    float(fresh["amount"]), fresh["currency"] or "EUR",
+                )
+
+                # And the SELLER'S RECORD of the sale, in the same transaction:
+                # a completed trade that leaves no sale row is how
+                # `marketplace_sales` stayed empty for the life of the
+                # marketplace while `/portfolio/realised-pl` read it. The buy
+                # side of the same trade is already written — the buyer's new
+                # item carries what THEY paid — so this closes the equation.
+                await _record_p2p_sale(
+                    conn, str(fresh["listing_id"]), str(fresh["seller_id"]),
                     float(fresh["amount"]), fresh["currency"] or "EUR",
                 )
 

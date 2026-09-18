@@ -489,11 +489,39 @@ matching how `p2p_listing_router` / `p2p_offers_router` are registered in
 | POST | `/p2p/offers` | JWT + Rate Limit | Make an offer. 403 `USER_BLOCKED` if either party blocked the other |
 | GET | `/p2p/offers` | JWT | Offers made or received (`role=all\|buying\|selling`) |
 | POST | `/p2p/offers/{offer_id}/respond` | JWT + Rate Limit | `action=accept\|decline\|counter\|withdraw`. Accept reserves softly; it does not delist. **One transaction, offer row locked** |
-| POST | `/p2p/offers/{offer_id}/confirm` | JWT + Rate Limit | Seller marks sent, buyer marks received. **Both ⇒ completed** — the only completion writer. **One transaction, offer row locked**; see below |
+| POST | `/p2p/offers/{offer_id}/confirm` | JWT + Rate Limit | Seller marks sent, buyer marks received. **Both ⇒ completed** — the only completion writer. **One transaction, offer row locked**; also records the seller's `marketplace_sales` row. See below |
 | POST | `/p2p/offers/{offer_id}/tracking` | JWT + Rate Limit | Attach carrier + consignment code. **Seller only**, while `accepted`/`shipped`. DISPLAY ONLY — never advances the trade |
 | GET | `/p2p/carriers` | JWT | Carrier picker options. `linkable=false` ⇒ no code-only tracking URL exists (PostNL/DPD need the recipient's postcode), so render a copyable code, not a link |
 | POST | `/p2p/offers/{offer_id}/grade` | JWT + Rate Limit | Grade the counterparty. Only after two-sided completion |
 | GET | `/p2p/members/{member_id}/reputation` | JWT | Trade count + positive %; % hidden below 3 grades |
+
+### A completed trade records the seller's sale (2026-09-18)
+
+`confirm_exchange` writes a `marketplace_sales` row in the completion
+transaction. Before this, **nothing ever wrote one**: the only other writer is
+`POST /marketplace/listings/sales/{id}/record`, which no client calls, so the
+table held 0 rows for the life of the marketplace while
+`GET /portfolio/realised-pl` and the app's Sales tab both read it.
+
+What a caller can rely on, and what it must NOT assume:
+
+| field | value | |
+|---|---|---|
+| `platform_fee`, `payment_processing_fee` | **0** | Sparrow charges nothing on the marketplace and never touches funds (P2P spec §5b) |
+| `shipping_cost_actual` | **null** | UNKNOWN, not zero. We never learn what the seller paid to post it. The column defaults to 0, so the null is written explicitly |
+| `net_proceeds` | the agreed amount | a net **before postage** — an upper bound on what the seller made |
+| `buyer_name` | null | `buyer_marketplace_id` is `'sparrow'`: where, not who |
+| `status` | `'completed'` | the trade is two-sided complete |
+
+**`GET /portfolio/realised-pl` therefore returns `shipping_known` per sale, and
+`profit` is `null` when it is false** — subtracting a cost basis from an upper
+bound gives an upper bound, and reporting that as profit is the error the
+endpoint exists to prevent (`docs/COLLECTOR_DEMAND.md` §5). Those rows are
+excluded from `total_profit` and counted in **`sales_without_shipping`**, beside
+the existing `sales_without_cost_basis`. `fees.shipping` is `null` rather than
+`0` when unrecorded.
+
+A client showing a profit total must show both counts beside it.
 
 ### Both write paths take the offer row's lock (2026-09-17)
 

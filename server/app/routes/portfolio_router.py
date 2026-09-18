@@ -1126,14 +1126,35 @@ def summarise_realised_sales(rows) -> dict:
     total_profit = 0.0
     total_proceeds = 0.0
     unknown_basis = 0
+    unknown_shipping = 0
     for r in rows:
         basis = float(r["cost_basis"]) if r["cost_basis"] is not None else None
         net = float(r["net_proceeds"]) if r["net_proceeds"] is not None else None
+        # POSTAGE THE MEMBER HAS NOT TOLD US (2026-09-18). `shipping_cost_actual`
+        # defaults to 0, so NULL is the only way to say "unknown" — and a sale
+        # recorded automatically when a P2P trade completes cannot know what the
+        # seller paid to post it (Sparrow never touches funds or labels; P2P
+        # spec §5b). `net_proceeds` on such a row is therefore a net BEFORE
+        # postage: an UPPER BOUND on what they made.
+        #
+        # Which means it must not be turned into a profit. Subtracting a basis
+        # from an upper bound gives an upper bound, and reporting that as
+        # "profit" is this feature's own §5 error — the EUR 956.25 card that
+        # looks like a gain — committed on the sell side instead of the buy
+        # side. Same treatment as an unknown cost basis: state it, exclude it
+        # from the total, count it.
+        shipping_known = r["shipping_cost_actual"] is not None
+        if not shipping_known:
+            unknown_shipping += 1
         # Rounded HERE, not just in the totals: an unrounded per-sale figure
         # reaches the client as -104.04999999999995 and renders that way.
-        profit = round(net - basis, 2) if (basis is not None and net is not None) else None
+        profit = (
+            round(net - basis, 2)
+            if (basis is not None and net is not None and shipping_known)
+            else None
+        )
         if profit is None:
-            unknown_basis += 1
+            unknown_basis += 1 if basis is None else 0
         else:
             total_profit += profit
         if net is not None:
@@ -1149,11 +1170,15 @@ def summarise_realised_sales(rows) -> dict:
             "net_proceeds": net,
             "cost_basis": basis,
             "cost_basis_known": basis is not None,
+            # FALSE ⇒ `net_proceeds` is before postage and `profit` is null.
+            "shipping_known": shipping_known,
             "profit": profit,
             "fees": {
                 "platform": float(r["platform_fee"] or 0),
                 "payment_processing": float(r["payment_processing_fee"] or 0),
-                "shipping": float(r["shipping_cost_actual"] or 0),
+                # None, not 0: `or 0` here said "postage cost nothing" for every
+                # row where nobody had recorded it.
+                "shipping": float(r["shipping_cost_actual"]) if shipping_known else None,
             },
         })
 
@@ -1166,4 +1191,8 @@ def summarise_realised_sales(rows) -> dict:
         "total_profit": round(total_profit, 2),
         "total_net_proceeds": round(total_proceeds, 2),
         "sales_without_cost_basis": unknown_basis,
+        # Sales whose POSTAGE is unrecorded — their net is an upper bound, so
+        # they are excluded from `total_profit` too. A caller that shows a
+        # profit figure has to show this count beside it.
+        "sales_without_shipping": unknown_shipping,
     }

@@ -291,12 +291,21 @@ const RevenueSummary = React.memo(function RevenueSummary({
     let gross = 0;
     let fees = 0;
     let net = 0;
+    // Sales whose POSTAGE nobody recorded (2026-09-18). `shippingCostActual`
+    // is null — not 0 — for a sale written automatically when a Sparrow trade
+    // completes, because we never learn what the seller paid to post it (P2P
+    // spec §5b: no funds, no labels). Their `netProceeds` is therefore a net
+    // BEFORE postage, so this total is an UPPER BOUND and has to say so.
+    // Calling it "Net" flat would be the sell-side version of the
+    // EUR 956.25-card error in docs/COLLECTOR_DEMAND.md §5.
+    let unknownPostage = 0;
     for (const s of sales) {
       gross += s.salePrice;
       fees += (s.platformFee ?? 0) + (s.paymentProcessingFee ?? 0);
       net += s.netProceeds;
+      if (s.shippingCostActual == null) unknownPostage += 1;
     }
-    return { gross, fees, net, count: sales.length };
+    return { gross, fees, net, count: sales.length, unknownPostage };
   }, [sales]);
 
   if (totals.count === 0) return null;
@@ -318,7 +327,9 @@ const RevenueSummary = React.memo(function RevenueSummary({
           </Text>
         </View>
         <View style={styles.summaryItem}>
-          <Text style={[styles.summaryLabel, { color: colors.muted }]}>Net</Text>
+          <Text style={[styles.summaryLabel, { color: colors.muted }]}>
+            {totals.unknownPostage > 0 ? 'Net before postage' : 'Net'}
+          </Text>
           <Text style={[styles.summaryValue, { color: colors.success }]}>
             {formatPrice(totals.net, currency)}
           </Text>
@@ -327,6 +338,16 @@ const RevenueSummary = React.memo(function RevenueSummary({
       <Text style={[styles.summaryCount, { color: colors.muted }]}>
         {totals.count} {totals.count === 1 ? 'sale' : 'sales'} completed
       </Text>
+      {/* Named, not hidden: the member can make this number exact by recording
+          what postage cost them. Silence would leave them reading an upper
+          bound as a result. (English like the rest of this screen — it is on
+          the docs/I18N_BACKLOG.md list, and one translated string among
+          untranslated siblings reads worse than none.) */}
+      {totals.unknownPostage > 0 ? (
+        <Text style={[styles.summaryCount, { color: colors.muted }]}>
+          Postage not recorded on {totals.unknownPostage} of them
+        </Text>
+      ) : null}
     </View>
   );
 });

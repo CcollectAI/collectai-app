@@ -519,3 +519,63 @@ class TestConfirmDealIsAtomic:
             await _confirm_deal(conn, monkeypatch)
         assert getattr(e.value, "status_code", None) == 409, e.value
         assert conn.events[-1] == "ROLLBACK", conn.events
+
+
+# ---------------------------------------------------------------------------
+# A completed trade records the seller's sale
+# ---------------------------------------------------------------------------
+#
+# `marketplace_sales` held 0 rows on production (2026-09-18) against 3 sold
+# listings and a completed trade: its only writer is
+# POST /marketplace/listings/sales/{id}/record, whose client wrapper has no
+# caller, and completion recorded nothing. So GET /portfolio/realised-pl — the
+# endpoint docs/COLLECTOR_DEMAND.md §5 asks for — returned nothing for everyone.
+
+
+class TestCompletionRecordsTheSale:
+    @pytest.mark.asyncio
+    async def test_the_sale_is_written_inside_the_completion_transaction(self, monkeypatch, confirm_env):
+        offer, fresh = _confirm_rows("2026-09-17T10:00:00Z", None)
+        fresh["buyer_confirmed_at"] = "2026-09-17T10:05:00Z"
+        conn = _ConfirmConn(offer, fresh, events=confirm_env["events"])
+        # the real writer, not the patched settlement
+        monkeypatch.setattr(p2p, "get_db_pool", lambda: _Pool(conn))
+        await p2p.confirm_exchange(OFFER, user_id=BUYER)
+        ev = conn.events
+        insert = next((e for e in ev if "INSERT INTO public.marketplace_sales" in e), None)
+        assert insert, ev
+        assert ev.index("BEGIN") < ev.index(insert) < ev.index("COMMIT")
+
+    @pytest.mark.asyncio
+    async def test_postage_is_NULL_and_the_fees_are_zero(self, monkeypatch, confirm_env):
+        offer, fresh = _confirm_rows("2026-09-17T10:00:00Z", None)
+        fresh["buyer_confirmed_at"] = "2026-09-17T10:05:00Z"
+        conn = _ConfirmConn(offer, fresh, events=confirm_env["events"])
+        monkeypatch.setattr(p2p, "get_db_pool", lambda: _Pool(conn))
+        await p2p.confirm_exchange(OFFER, user_id=BUYER)
+        insert = next(e for e in conn.events if "INSERT INTO public.marketplace_sales" in e)
+        # Sparrow charges nothing on the marketplace and never learns the
+        # seller's postage. The NULL is written EXPLICITLY because the column
+        # defaults to 0, and 0 would say "postage cost nothing".
+        assert "NULL, 0, 0," in insert, insert
+        assert "'sparrow'" in insert
+
+    @pytest.mark.asyncio
+    async def test_it_cannot_double_a_members_proceeds(self, monkeypatch, confirm_env):
+        offer, fresh = _confirm_rows("2026-09-17T10:00:00Z", None)
+        fresh["buyer_confirmed_at"] = "2026-09-17T10:05:00Z"
+        conn = _ConfirmConn(offer, fresh, events=confirm_env["events"])
+        monkeypatch.setattr(p2p, "get_db_pool", lambda: _Pool(conn))
+        await p2p.confirm_exchange(OFFER, user_id=BUYER)
+        insert = next(e for e in conn.events if "INSERT INTO public.marketplace_sales" in e)
+        # There is no unique key on listing_id (checked on prod), so the guard
+        # has to be in the statement.
+        assert "WHERE NOT EXISTS" in insert, insert
+
+    @pytest.mark.asyncio
+    async def test_a_trade_that_does_not_complete_records_no_sale(self, monkeypatch, confirm_env):
+        offer, fresh = _confirm_rows(None, None)   # only one side confirms
+        conn = _ConfirmConn(offer, fresh, events=confirm_env["events"])
+        monkeypatch.setattr(p2p, "get_db_pool", lambda: _Pool(conn))
+        await p2p.confirm_exchange(OFFER, user_id=SELLER)
+        assert not [e for e in conn.events if "INSERT INTO public.marketplace_sales" in e]

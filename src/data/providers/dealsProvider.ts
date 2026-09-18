@@ -73,10 +73,115 @@ export async function listMarketplaceAccounts(): Promise<MarketplaceAccount[]> {
   return unwrap<MarketplaceAccount>(await collectorsApi.get('/marketplace/listings/accounts'), 'accounts');
 }
 
+/** The server answers in snake_case; `MarketplaceSale` is camelCase. */
+type RawSale = {
+  id: string;
+  listing_id: string;
+  buyer_name?: string | null;
+  sale_price: number;
+  currency: string;
+  shipping_cost_actual?: number | null;
+  platform_fee?: number | null;
+  payment_processing_fee?: number | null;
+  net_proceeds: number;
+  tracking_number?: string | null;
+  carrier?: string | null;
+  status: MarketplaceSale['status'];
+  sold_at: string;
+};
+
+/**
+ * MAPPED, not cast (2026-09-18).
+ *
+ * This was `unwrap<MarketplaceSale>(...)` — a cast of the server's snake_case
+ * payload to a camelCase type, so at runtime every `salePrice` and
+ * `netProceeds` was `undefined`. The Sales tab's Revenue Summary sums them, so
+ * it would have rendered `NaN` for gross and net.
+ *
+ * Nobody had seen it because `marketplace_sales` held **0 rows** for the life
+ * of the marketplace — nothing wrote one until completion started recording the
+ * sale, which is what turned this from dormant to about-to-ship. A cast is not
+ * a mapping, and TypeScript cannot tell you so: `unwrap<T>` asserts the shape
+ * rather than checking it.
+ */
 export async function listMarketplaceSales(): Promise<MarketplaceSale[]> {
-  return unwrap<MarketplaceSale>(await collectorsApi.get('/marketplace/listings/sales'), 'sales');
+  const raw = unwrap<RawSale>(await collectorsApi.get('/marketplace/listings/sales'), 'sales');
+  return raw.map((r) => ({
+    // No `Number()` and no `parseMoney()`: these arrive as JSON NUMBERS from
+    // FastAPI (`SaleResponse.sale_price: float`), not as anything a member
+    // typed. `parseMoney` is for member input — "12,50" — and `Number()` on a
+    // value that is already a number is noise that reads like a money parse.
+    // `npm run check:numbers` flagged the wrapper, correctly, on that reading.
+    id: String(r.id),
+    listingId: String(r.listing_id),
+    buyerName: r.buyer_name ?? null,
+    salePrice: r.sale_price,
+    currency: r.currency as MarketplaceSale['currency'],
+    // NULL means the postage is UNKNOWN, not zero — a sale recorded when a
+    // Sparrow trade completes cannot know what the seller paid to post it, and
+    // the column defaults to 0 so only null can say so. `?? null` keeps that
+    // distinction; `?? 0` would erase it.
+    shippingCostActual: r.shipping_cost_actual ?? null,
+    platformFee: r.platform_fee ?? null,
+    paymentProcessingFee: r.payment_processing_fee ?? null,
+    netProceeds: r.net_proceeds,
+    trackingNumber: r.tracking_number ?? null,
+    carrier: r.carrier ?? null,
+    status: r.status,
+    soldAt: r.sold_at,
+  }));
 }
 
+/** `FeeScheduleResponse` (marketplace_listing_router.py) — snake_case. */
+type RawFeeSchedule = {
+  marketplace_id: string;
+  display_name: string;
+  base_fee_pct: number;
+  payment_processing_pct: number;
+  fixed_fee: number;
+  currency?: string;
+  notes?: string | null;
+};
+
+/**
+ * MAPPED, not cast (2026-09-18) — and this one was costing members money.
+ *
+ * Same bug as `listMarketplaceSales` above: the server answers snake_case and
+ * `MarketplaceFeeSchedule` is camelCase, so `s.marketplaceId` was `undefined`
+ * for every row. `useListForSale.calculateFee` does
+ * `feeSchedules.find((s) => s.marketplaceId === mpId)`, which therefore NEVER
+ * matched — so the fee estimate always fell through to
+ * `MARKETPLACE_OPTIONS.defaultFeePct`, the client's own guess, and
+ * `estimated: true` was stuck on permanently.
+ *
+ * That flag was added on 2026-09-17 (class sweep D) to be honest that the
+ * numbers were assumed. It was doing its job; nobody found the reason it could
+ * never turn off.
+ *
+ * What the real schedules change, read off production 2026-09-18:
+ *
+ * | marketplace | client guess | server |
+ * |---|---|---|
+ * | **Sparrow P2P** | **5.0%** | **0%** — Sparrow charges nothing on the marketplace (P2P spec §5b); the 5% in the terms is EVENT TICKETS |
+ * | eBay | 12.9% | 12.9% + 2.9% processing + EUR 0.30 |
+ * | StockX | 9.5% | 9.5% + 3.0% |
+ * | Mercari / Cardmarket / BrickLink | 10 / 5 / 3% | the same |
+ *
+ * So the app was quoting a 5% fee on its OWN marketplace, which takes none, and
+ * under-quoting eBay and StockX by leaving out the processing fee.
+ */
 export async function getMarketplaceFeeSchedules(): Promise<MarketplaceFeeSchedule[]> {
-  return unwrap<MarketplaceFeeSchedule>(await collectorsApi.get('/marketplace/listings/fees'), 'fee_schedules');
+  const raw = unwrap<RawFeeSchedule>(
+    await collectorsApi.get('/marketplace/listings/fees'),
+    'fee_schedules',
+  );
+  return raw.map((r) => ({
+    marketplaceId: r.marketplace_id as MarketplaceFeeSchedule['marketplaceId'],
+    displayName: r.display_name,
+    baseFeePct: r.base_fee_pct,
+    paymentProcessingPct: r.payment_processing_pct,
+    fixedFee: r.fixed_fee,
+    currency: r.currency ?? 'EUR',
+    notes: r.notes ?? null,
+  }));
 }

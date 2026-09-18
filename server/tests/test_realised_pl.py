@@ -82,16 +82,29 @@ class TestShape:
     def test_empty_in_empty_out_with_zero_totals(self):
         out = summarise_realised_sales([])
         assert out == {"sales": [], "count": 0, "total_profit": 0.0,
-                       "total_net_proceeds": 0.0, "sales_without_cost_basis": 0}
+                       "total_net_proceeds": 0.0, "sales_without_cost_basis": 0,
+                       "sales_without_shipping": 0}
 
     def test_fees_are_broken_out_so_the_client_can_SHOW_the_deduction(self):
         f = summarise_realised_sales([sale()])["sales"][0]["fees"]
         assert f == {"platform": 132.80, "payment_processing": 0.30, "shipping": 15.0}
 
-    def test_null_fees_render_as_zero_not_crash(self):
+    def test_a_null_platform_fee_is_zero_but_null_POSTAGE_is_unknown(self):
+        """This asserted `f["shipping"] == 0` — it pinned the bug (2026-09-18).
+
+        The two NULLs do not mean the same thing, and the writer is what
+        decides. `record_sale` always supplies a platform fee (`payload.platform_fee
+        or 0`), so a null there is "none was charged". Postage is different:
+        `_record_p2p_sale` leaves `shipping_cost_actual` NULL **on purpose**,
+        because a trade that completes inside Sparrow cannot know what the
+        seller paid to post it — Sparrow never touches funds or labels (P2P
+        spec §5b). Rendering that as 0 states "postage cost nothing", which is
+        the sell-side version of this feature's own §5 error.
+        """
         f = summarise_realised_sales([sale(platform_fee=None, shipping_cost_actual=None)])[
             "sales"][0]["fees"]
-        assert f["platform"] == 0 and f["shipping"] == 0
+        assert f["platform"] == 0
+        assert f["shipping"] is None
 
     def test_an_item_deleted_after_sale_still_reports_the_sale(self):
         # LEFT JOIN: the sale is real even if the item row is gone.
@@ -208,3 +221,47 @@ class TestOmittedIsNotNull:
         p = self._payload(purchase_price=None, purchase_currency="EUR")
         fees_provided = ("acquisition_fees" in p.model_fields_set) or p.purchase_price is None
         assert fees_provided is True
+
+
+class TestPostageNobodyRecorded:
+    """A sale whose postage is unknown has an UPPER BOUND, not a profit.
+
+    `_record_p2p_sale` writes one of these every time a trade completes: the
+    fees are known (Sparrow charges none) and the postage is not. Subtracting a
+    cost basis from an upper bound gives an upper bound, and calling that
+    "profit" is exactly the EUR 956.25-card error in docs/COLLECTOR_DEMAND.md §5
+    — committed on the sell side this time.
+    """
+
+    def test_unknown_postage_yields_no_profit_even_with_a_known_basis(self):
+        out = summarise_realised_sales([sale(shipping_cost_actual=None)])
+        row = out["sales"][0]
+        assert row["cost_basis_known"] is True
+        assert row["shipping_known"] is False
+        assert row["profit"] is None
+
+    def test_it_is_counted_separately_from_a_missing_cost_basis(self):
+        out = summarise_realised_sales([sale(shipping_cost_actual=None)])
+        # The basis IS known here; saying otherwise would send the member to
+        # fix the wrong end of the equation.
+        assert out["sales_without_cost_basis"] == 0
+        assert out["sales_without_shipping"] == 1
+
+    def test_it_is_excluded_from_total_profit_but_not_from_proceeds(self):
+        # The proceeds ARE known (no fees, and the amount was agreed); it is the
+        # profit that is not.
+        out = summarise_realised_sales([
+            sale(),                              # complete: -104.05
+            sale(id="s2", shipping_cost_actual=None),
+        ])
+        assert out["total_profit"] == -104.05
+        assert out["total_net_proceeds"] == round(852.20 + 852.20, 2)
+        assert out["sales_without_shipping"] == 1
+
+    def test_a_recorded_zero_postage_is_NOT_unknown(self):
+        # Someone who really did pay nothing to post it (local pickup) gets a
+        # real profit. 0 and NULL are different answers.
+        out = summarise_realised_sales([sale(shipping_cost_actual=0, net_proceeds=867.20)])
+        assert out["sales"][0]["shipping_known"] is True
+        assert out["sales"][0]["profit"] == round(867.20 - 956.25, 2)
+        assert out["sales_without_shipping"] == 0

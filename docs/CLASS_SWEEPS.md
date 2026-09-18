@@ -1067,7 +1067,55 @@ And a surface already exists: `app/sell/dashboard.tsx` has a **Sales tab** with 
 revenue summary (gross, fees, net, count) and an empty state. It has always read
 an empty table.
 
-**So the gap is the WRITER, not the screen** — building the realised-P/L view
+✅ **The writer landed 2026-09-18.** `_record_p2p_sale`, inside the completion
+transaction beside `_settle_completed_trade`, so a trade cannot complete without
+recording the seller's sale. Option 3 of the three below, minus the form (which
+is the follow-up): the row is written with **postage NULL**, and every reader
+now treats that as unknown rather than zero.
+
+| written | why it is honest |
+|---|---|
+| `platform_fee` / `payment_processing_fee` = 0 | Sparrow charges nothing on the marketplace and never touches funds (P2P spec §5b). The 5% in `terms.tsx:159` is EVENT TICKETS |
+| `shipping_cost_actual` = **NULL, explicitly** | the column DEFAULTS to 0, and defaulting would state "postage cost nothing" — a number we do not have |
+| `net_proceeds` = the agreed amount | exactly `sale_price − 0 − 0 − (unknown postage)` given what is known: a net BEFORE postage, and `shipping_known: false` is what says so |
+| `buyer_name` = NULL | the trade already links the parties; copying the buyer's name into the seller's ledger is a disclosure nobody asked for. `buyer_marketplace_id = 'sparrow'` records WHERE, not WHO |
+| `WHERE NOT EXISTS` | there is no unique key on `listing_id` (checked on prod), so a retry would otherwise double a member's realised proceeds |
+
+§5b lists "record a payment **claim the seller asserts**" under *We may*, and
+"issue a receipt in Sparrow's name" under *We may not*. This is the first.
+
+**The read side had to change with it**, or the first row would have shipped the
+sell-side version of §5's own error: `summarise_realised_sales` treated
+`shipping_cost_actual` as `or 0`, i.e. "postage cost nothing". Now
+`shipping_known` per row, `profit` null without it, `sales_without_shipping`
+counted beside `sales_without_cost_basis`, and `fees.shipping` is `None` rather
+than `0` when unrecorded. `app/sell/dashboard.tsx` labels its total **"Net
+before postage"** and says on how many sales it is unknown.
+
+### Two casts found while wiring it, one of them costing money
+
+Writing the first row into a table that had always been empty exposed what the
+emptiness was hiding — `src/data/providers/dealsProvider.ts` **cast** two
+snake_case server payloads to camelCase types instead of mapping them:
+
+1. **`listMarketplaceSales`** — every `salePrice` and `netProceeds` was
+   `undefined` at runtime, and the Sales tab's Revenue Summary SUMS them, so it
+   would have rendered **NaN** for gross and net the moment a sale existed. The
+   new writer was about to create that row.
+2. **`getMarketplaceFeeSchedules`** — `s.marketplaceId` was `undefined`, so
+   `useListForSale.calculateFee`'s `find()` never matched and the fee estimate
+   always fell back to the client's own `defaultFeePct` with `estimated: true`.
+   That honesty flag was added on 2026-09-17 by class sweep D, which spotted the
+   symptom and not the cause. Against the real schedules on prod: the app quoted
+   **5% on Sparrow's own marketplace, which takes 0%**, and under-quoted eBay
+   (12.9% vs 12.9 + 2.9% + €0.30) and StockX (9.5% vs 9.5 + 3.0%).
+
+**A cast is not a mapping, and TypeScript cannot tell you** — `unwrap<T>()`
+asserts the shape rather than checking it, so both compiled cleanly and both were
+wrong. Worth a gate: a provider that returns a camelCase type from a payload
+whose keys are snake_case.
+
+**So the gap WAS the WRITER, not the screen** — building the realised-P/L view
 today would add a second window onto a table nothing fills. Fixing that is a
 money-semantics decision, which is why it is written down rather than guessed:
 
