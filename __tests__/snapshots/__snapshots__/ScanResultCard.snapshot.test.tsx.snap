@@ -150,6 +150,14 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
             accessible={true}
             collapsable={false}
             focusable={true}
+            hitSlop={
+              {
+                "bottom": 8,
+                "left": 4,
+                "right": 4,
+                "top": 8,
+              }
+            }
             onBlur={[Function]}
             onClick={[Function]}
             onFocus={[Function]}
@@ -215,6 +223,14 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
             accessible={true}
             collapsable={false}
             focusable={true}
+            hitSlop={
+              {
+                "bottom": 8,
+                "left": 4,
+                "right": 4,
+                "top": 8,
+              }
+            }
             onBlur={[Function]}
             onClick={[Function]}
             onFocus={[Function]}
@@ -327,7 +343,7 @@ exports[`ScanResultCard snapshots matches snapshot with catalog alternatives 1`]
                 }
               }
             >
-              Pokemon
+              Pokémon
             </Text>
           </View>
           <Text
@@ -1282,6 +1298,14 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
             accessible={true}
             collapsable={false}
             focusable={true}
+            hitSlop={
+              {
+                "bottom": 8,
+                "left": 4,
+                "right": 4,
+                "top": 8,
+              }
+            }
             onBlur={[Function]}
             onClick={[Function]}
             onFocus={[Function]}
@@ -1327,6 +1351,14 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
             accessible={true}
             collapsable={false}
             focusable={true}
+            hitSlop={
+              {
+                "bottom": 8,
+                "left": 4,
+                "right": 4,
+                "top": 8,
+              }
+            }
             onBlur={[Function]}
             onClick={[Function]}
             onFocus={[Function]}
@@ -1419,7 +1451,7 @@ exports[`ScanResultCard snapshots matches snapshot with full scan result 1`] = `
                 }
               }
             >
-              Pokemon
+              Pokémon
             </Text>
           </View>
           <Text
@@ -2050,6 +2082,14 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
             accessible={true}
             collapsable={false}
             focusable={true}
+            hitSlop={
+              {
+                "bottom": 8,
+                "left": 4,
+                "right": 4,
+                "top": 8,
+              }
+            }
             onBlur={[Function]}
             onClick={[Function]}
             onFocus={[Function]}
@@ -2115,6 +2155,14 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
             accessible={true}
             collapsable={false}
             focusable={true}
+            hitSlop={
+              {
+                "bottom": 8,
+                "left": 4,
+                "right": 4,
+                "top": 8,
+              }
+            }
             onBlur={[Function]}
             onClick={[Function]}
             onFocus={[Function]}
@@ -2227,7 +2275,7 @@ exports[`ScanResultCard snapshots matches snapshot with low confidence 1`] = `
                 }
               }
             >
-              Pokemon
+              Pokémon
             </Text>
           </View>
           <Text

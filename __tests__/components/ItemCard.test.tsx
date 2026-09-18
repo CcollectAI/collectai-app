@@ -87,9 +87,21 @@ describe('ItemCard', () => {
     expect(screen.getByText('Charizard Base Set')).toBeTruthy();
   });
 
-  it('renders the category label', () => {
-    render(<ItemCard item={makeItem({ category: 'Yu-Gi-Oh' })} />);
-    expect(screen.getByText('Yu-Gi-Oh')).toBeTruthy();
+  it('renders the curated name for a SLUG, which is what items.category holds', () => {
+    // Was `category: 'Yu-Gi-Oh'` expecting itself back. That value is in
+    // neither vocabulary — the slug is `yugioh` and the curated name is
+    // `Yu-Gi-Oh!` with the bang — so `categoryDisplayName` correctly fell
+    // through to title-casing and produced "Yu Gi Oh". The test asserted a
+    // fixture the app never stores (all 148 prod rows are slugs).
+    render(<ItemCard item={makeItem({ category: 'yugioh' })} />);
+    expect(screen.getByText('Yu-Gi-Oh!')).toBeTruthy();
+  });
+
+  it('leaves an already-resolved display name alone', () => {
+    // The other half of `categoryDisplayName`: it is handed values from both
+    // vocabularies, and re-formatting a resolved name mangles it.
+    render(<ItemCard item={makeItem({ category: 'Yu-Gi-Oh!' })} />);
+    expect(screen.getByText('Yu-Gi-Oh!')).toBeTruthy();
   });
 
   it('shows "Uncategorized" when category is undefined', () => {

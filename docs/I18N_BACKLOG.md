@@ -145,12 +145,19 @@ screens into one finding, which is how they stood out):
 | `InboxHeaderButton` | `"Inbox, 2 unread"` | `t('common.inbox_a11y')` + the same count key |
 | `QuickNavBar` | `"Main navigation"` | `t('common.main_navigation_a11y')` |
 | `(tabs)/_layout` | `tabBarLabel: "Events"` — the ONE English literal in a bar whose other four labels were `t('nav.*')` | `t('nav.events')` (new key) |
+| `quickscan/PermissionScreen` (2026-09-18) | `accessibilityLabel="Go back"` while the VISIBLE label beside it was already `t('common.go_back')` | `t('common.go_back_a11y')` |
 
 ⚠️ None of those five components imported `useTranslation`; the first pass
 called `t()` without it and only `tsc` caught it. Check the hook exists before
 using `t` in a component that never needed it.
 
-**~145 remain**, one to a few per file — same ranking rule as below: reachable
+The PermissionScreen row was found by a red test, not by the sweep: a stale
+assertion on the visible copy sent someone to read the control, and the a11y
+label one line above it was still an English literal — on the one screen whose
+whole job is to get a blocked member unstuck. It already imported
+`useTranslation`, so the ⚠️ below did not bite.
+
+**~144 remain**, one to a few per file — same ranking rule as below: reachable
 screens first. `QuickNavBar`'s five TAB LABELS stay English literals by
 deliberate decision (ui-playbook 2026-08-19); the real tab bar translates them,
 so the two bars disagree in Dutch — Merle's call, not a bug to fix silently.

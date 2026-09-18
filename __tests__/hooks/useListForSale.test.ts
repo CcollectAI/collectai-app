@@ -104,7 +104,12 @@ describe('useListForSale', () => {
     const { result } = renderHook(() => useListForSale(DEFAULT_OPTS));
 
     act(() => {
-      result.current.toggleMarketplace('collectai');
+      // 'sparrow', not 'collectai'. The id was renamed everywhere in `5e7e7af`
+      // (server `VALID_MARKETPLACES`, the `MarketplaceId` union and
+      // `MARKETPLACE_OPTIONS`), so that key no longer exists in `marketplaces`
+      // and `toggleMarketplace` threw on `prev[mpId].selected` — the suite was
+      // red on the pre-rename brand, not on a broken hook.
+      result.current.toggleMarketplace('sparrow');
     });
 
     // suggestedPrice is 50, so the default price is '50'
@@ -116,7 +121,7 @@ describe('useListForSale', () => {
     const { result } = renderHook(() => useListForSale(DEFAULT_OPTS));
 
     act(() => {
-      result.current.toggleMarketplace('collectai');
+      result.current.toggleMarketplace('sparrow');
       result.current.toggleMarketplace('ebay');
     });
 

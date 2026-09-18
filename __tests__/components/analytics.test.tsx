@@ -1,7 +1,13 @@
 /**
  * Analytics component tests.
  *
- * Covers PortfolioTierBadge, WinnersLosersSection, and PredictionAccuracySection.
+ * Covers PortfolioTierBadge and PredictionAccuracySection.
+ *
+ * The WinnersLosersSection block was removed 2026-09-18: that component was
+ * deleted as an orphan in `65ea3ee` ("delete three orphans, after checking
+ * whether any was worth keeping"), and the import kept the whole suite from
+ * running — so the two components that DO exist were untested for as long as
+ * the file looked like it covered three.
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
@@ -94,7 +100,6 @@ jest.mock('../../src/lib/timeAgo', () => ({
 
 // Now import components after mocks
 import { PortfolioTierBadge } from '../../src/components/analytics/PortfolioTierBadge';
-import { WinnersLosersSection } from '../../src/components/analytics/WinnersLosersSection';
 import { PredictionAccuracySection } from '../../src/components/analytics/PredictionAccuracySection';
 
 // ---------------------------------------------------------------------------
@@ -200,87 +205,6 @@ describe('PortfolioTierBadge', () => {
 });
 
 // ---------------------------------------------------------------------------
-// WinnersLosersSection
-// ---------------------------------------------------------------------------
-
-describe('WinnersLosersSection', () => {
-  it('returns null when both winners and losers are empty', () => {
-    const { toJSON } = render(
-      <WinnersLosersSection winners={[]} losers={[]} />,
-    );
-    expect(toJSON()).toBeNull();
-  });
-
-  it('renders the Movers title', () => {
-    render(
-      <WinnersLosersSection
-        winners={[makeItem({ id: 'w1', name: 'Winner Item', change1dPct: 0.1 })]}
-        losers={[]}
-      />,
-    );
-    expect(screen.getByText('Movers')).toBeTruthy();
-  });
-
-  it('renders winner items', () => {
-    render(
-      <WinnersLosersSection
-        winners={[
-          makeItem({ id: 'w1', name: 'Alpha Card', change1dPct: 0.10 }),
-          makeItem({ id: 'w2', name: 'Beta Card', change1dPct: 0.05 }),
-        ]}
-        losers={[]}
-      />,
-    );
-    expect(screen.getByText('Alpha Card')).toBeTruthy();
-    expect(screen.getByText('Beta Card')).toBeTruthy();
-    expect(screen.getByText('Winners')).toBeTruthy();
-  });
-
-  it('renders loser items', () => {
-    render(
-      <WinnersLosersSection
-        winners={[]}
-        losers={[
-          makeItem({ id: 'l1', name: 'Declining Asset', change1dPct: -0.08 }),
-        ]}
-      />,
-    );
-    expect(screen.getByText('Declining Asset')).toBeTruthy();
-    expect(screen.getByText('Losers')).toBeTruthy();
-  });
-
-  it('displays percentage change text', () => {
-    render(
-      <WinnersLosersSection
-        winners={[makeItem({ id: 'w1', name: 'Gainer', change1dPct: 0.1234 })]}
-        losers={[]}
-      />,
-    );
-    expect(screen.getByText('+12.34%')).toBeTruthy();
-  });
-
-  it('limits display to 3 items per section', () => {
-    const winners = Array.from({ length: 5 }, (_, i) =>
-      makeItem({ id: `w${i}`, name: `Winner ${i}`, change1dPct: 0.1 }),
-    );
-    render(<WinnersLosersSection winners={winners} losers={[]} />);
-    expect(screen.getByText('Winner 0')).toBeTruthy();
-    expect(screen.getByText('Winner 2')).toBeTruthy();
-    expect(screen.queryByText('Winner 3')).toBeNull();
-  });
-
-  it('matches snapshot with winners and losers', () => {
-    const tree = render(
-      <WinnersLosersSection
-        winners={[makeItem({ id: 'w1', name: 'Up Item', change1dPct: 0.05 })]}
-        losers={[makeItem({ id: 'l1', name: 'Down Item', change1dPct: -0.03 })]}
-      />,
-    );
-    expect(tree.toJSON()).toMatchSnapshot();
-  });
-});
-
-// ---------------------------------------------------------------------------
 // PredictionAccuracySection
 // ---------------------------------------------------------------------------
 
@@ -299,13 +223,36 @@ describe('PredictionAccuracySection', () => {
     expect(screen.getByText('Prediction Accuracy')).toBeTruthy();
   });
 
-  it('renders category name with underscores replaced', () => {
+  it('renders the curated category name, not the de-underscored slug', () => {
+    // Renamed and re-pointed 2026-09-18. This asserted `'hot toys'` — the
+    // old behaviour, a bare `replace(/_/g, ' ')`. The section now goes through
+    // `categoryDisplayName`, so a known slug gets its curated name. The test
+    // was pinning lowercase slug text on screen, which is the defect the
+    // category vocabulary exists to prevent.
+    //
+    // `lorcana`, not `hot_toys`: title-casing `hot_toys` produces "Hot Toys",
+    // which is ALSO its curated name, so that fixture passes whether the
+    // vocabulary is consulted or not — a test that cannot fail. Proven by
+    // mutation: with the `CATEGORY_SLUG_TO_NAME` lookup disabled, the
+    // `hot_toys` version stayed green. `lorcana` → "Disney Lorcana" can only
+    // come from the table.
     render(
       <PredictionAccuracySection
-        data={[{ category: 'hot_toys', mae: 3.0, mape: 0.08, r2: 0.90 }]}
+        data={[{ category: 'lorcana', mae: 3.0, mape: 0.08, r2: 0.90 }]}
       />,
     );
-    expect(screen.getByText('hot toys')).toBeTruthy();
+    expect(screen.getByText('Disney Lorcana')).toBeTruthy();
+  });
+
+  it('title-cases an UNKNOWN slug rather than printing it raw', () => {
+    // The other branch of `categoryDisplayName`: no curated name, so it must
+    // still not reach the member underscored or lowercased.
+    render(
+      <PredictionAccuracySection
+        data={[{ category: 'some_new_thing', mae: 1, mape: 0.1, r2: 0.8 }]}
+      />,
+    );
+    expect(screen.getByText('Some New Thing')).toBeTruthy();
   });
 
   it('renders MAPE and R-squared values', () => {
@@ -338,8 +285,10 @@ describe('PredictionAccuracySection', () => {
       r2: 0.8,
     }));
     render(<PredictionAccuracySection data={data} />);
-    expect(screen.getByText('cat 7')).toBeTruthy();
-    expect(screen.queryByText('cat 8')).toBeNull();
+    // 'Cat 7' / 'Cat 8', title-cased by `categoryDisplayName`; the lowercase
+    // spellings this used to assert are the pre-vocabulary output.
+    expect(screen.getByText('Cat 7')).toBeTruthy();
+    expect(screen.queryByText('Cat 8')).toBeNull();
   });
 
   it('matches snapshot with multiple categories', () => {

@@ -59,8 +59,12 @@ describe('ItemCard a11y', () => {
   });
 
   it('renders category text', () => {
+    // `getByText('lego')` — the RAW slug. This test was pinning the defect
+    // `formatCategoryName` exists to prevent: a slug reaching the screen
+    // lowercased. The curated name is "LEGO", and that is what a screen
+    // reader should read out.
     render(<ItemCard item={makeItem({ category: 'lego' })} />);
-    expect(screen.getByText('lego')).toBeTruthy();
+    expect(screen.getByText('LEGO')).toBeTruthy();
   });
 
   it('shows value when present', () => {

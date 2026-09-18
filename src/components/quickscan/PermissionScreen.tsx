@@ -92,7 +92,11 @@ function PermissionScreenInner({
           style={styles.backBtn}
           onPress={onCancel}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          // `t`, not a literal: `common.go_back_a11y` is translated in all
+          // seven locales and four other back buttons already use it, so a
+          // Dutch member heard "Go back" from the screen reader on the one
+          // screen whose whole job is to get them unstuck.
+          accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}
         >
           <Text style={[styles.backBtnText, { color: colors.muted }]}>{t('common.go_back')}</Text>
         </AnimatedPressable>

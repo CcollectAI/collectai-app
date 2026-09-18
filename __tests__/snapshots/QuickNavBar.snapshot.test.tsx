@@ -62,7 +62,12 @@ describe('QuickNavBar snapshots', () => {
     expect(tree).toMatchSnapshot();
   });
 
-  it('matches snapshot with Items tab active', () => {
+  // Renamed 2026-09-18: there is no Items tab. QuickNavBar's five entries are
+  // Portfolio, Market, Add, Events and Explore, so `/items/123` highlights
+  // nothing — the case is still worth a snapshot (the bar overlays item detail
+  // and must not claim a tab), but naming it for a tab that does not exist
+  // made the suite look like it covered one.
+  it('matches snapshot on an item detail route, which highlights no tab', () => {
     mockPathname = '/items/123';
     const tree = render(<QuickNavBar />).toJSON();
     expect(tree).toMatchSnapshot();

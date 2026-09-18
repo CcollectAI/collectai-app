@@ -11,7 +11,15 @@
  * invented ones — the point is that the derivation survives the shapes the
  * backend actually emits.
  */
-import { humaniseMoverKey, moverTitle } from '@/components/marketplace/MarketMoversSection';
+// The PURE module, not the component — the same fix `marketMovers.test.ts`
+// already carries. Importing these from MarketMoversSection executes that
+// component's import graph, which since the Pro gate reads `useBillingLimits`
+// means loading the RevenueCat SDK; jest cannot parse its ESM, so the suite
+// failed to RUN. A suite that does not run looks like config noise rather than
+// a broken test, and this one was red and gating nothing for that reason.
+// `MarketMoversSection` re-exports these from './moverFormat' anyway
+// (line 35), so nothing about what is under test changes.
+import { humaniseMoverKey, moverTitle } from '@/components/marketplace/moverFormat';
 
 describe('humaniseMoverKey', () => {
   it('strips a leading yugioh passcode', () => {

@@ -102,9 +102,15 @@ describe('PermissionScreen', () => {
   });
 
   it('always leaves a way back out', () => {
+    // By accessibility LABEL, not by visible text. This asserted
+    // `getByText('Go Back')` and went red when the copy moved to
+    // `t('common.go_back')`, which renders "Go back" — so the suite was red
+    // over a capital B while the escape hatch was present the whole time.
+    // The guarantee worth asserting is that a labelled control exists and
+    // calls onCancel, which is also what the member who most needs it gets.
     for (const canAskAgain of [true, false]) {
-      const { getByText, onCancel } = setup(canAskAgain);
-      fireEvent.press(getByText('Go Back'));
+      const { getByLabelText, onCancel } = setup(canAskAgain);
+      fireEvent.press(getByLabelText('Go back'));
       expect(onCancel).toHaveBeenCalledTimes(1);
     }
   });

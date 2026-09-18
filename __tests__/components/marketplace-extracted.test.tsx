@@ -1,6 +1,11 @@
 /**
  * Snapshot tests for Marketplace extracted components:
- * DemandHeatBanner, RegionalInsightsSection.
+ * RegionalInsightsSection.
+ *
+ * The DemandHeatBanner half was removed 2026-09-18: that component went with
+ * the market hub in `b15d936` ("Dissolve the market hub"), and its import kept
+ * this whole file from running — so RegionalInsightsSection, which is still on
+ * screen, was untested while the suite looked like it covered both.
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
@@ -68,98 +73,9 @@ jest.mock('../../src/theme/tokens', () => ({
 
 // Import components after mocks
 import {
-  DemandHeatBanner,
-  type DemandHeatItem,
-} from '../../src/components/marketplace/DemandHeatBanner';
-import {
   RegionalInsightsSection,
   type RegionalDemandItem,
 } from '../../src/components/marketplace/RegionalInsightsSection';
-
-// ---------------------------------------------------------------------------
-// DemandHeatBanner
-// ---------------------------------------------------------------------------
-
-describe('DemandHeatBanner', () => {
-  const sampleItems: DemandHeatItem[] = [
-    {
-      item_key: 'charizard-base-set',
-      title: 'Charizard Base Set',
-      category: 'pokemon',
-      demand_score: 95,
-      search_count: 320,
-    },
-    {
-      item_key: 'lego-millennium-falcon',
-      title: 'LEGO Millennium Falcon',
-      category: 'lego',
-      demand_score: 88,
-      search_count: 210,
-    },
-    {
-      item_key: 'rolex-submariner',
-      title: 'Rolex Submariner',
-      category: 'watches',
-      demand_score: 82,
-      search_count: 180,
-    },
-  ];
-
-  it('renders null when items array is empty', () => {
-    const { toJSON } = render(
-      <DemandHeatBanner items={[]} onSearchItem={jest.fn()} />,
-    );
-    expect(toJSON()).toBeNull();
-  });
-
-  it('renders with sample data and matches snapshot', () => {
-    const tree = render(
-      <DemandHeatBanner items={sampleItems} onSearchItem={jest.fn()} />,
-    );
-    expect(tree.toJSON()).toMatchSnapshot();
-  });
-
-  it('renders section title', () => {
-    render(
-      <DemandHeatBanner items={sampleItems} onSearchItem={jest.fn()} />,
-    );
-    expect(screen.getByText(/Hot Right Now/)).toBeTruthy();
-  });
-
-  it('renders item titles', () => {
-    render(
-      <DemandHeatBanner items={sampleItems} onSearchItem={jest.fn()} />,
-    );
-    expect(screen.getByText('Charizard Base Set')).toBeTruthy();
-    expect(screen.getByText('LEGO Millennium Falcon')).toBeTruthy();
-    expect(screen.getByText('Rolex Submariner')).toBeTruthy();
-  });
-
-  it('renders rank badges', () => {
-    render(
-      <DemandHeatBanner items={sampleItems} onSearchItem={jest.fn()} />,
-    );
-    expect(screen.getByText('#1')).toBeTruthy();
-    expect(screen.getByText('#2')).toBeTruthy();
-    expect(screen.getByText('#3')).toBeTruthy();
-  });
-
-  it('renders demand scores', () => {
-    render(
-      <DemandHeatBanner items={sampleItems} onSearchItem={jest.fn()} />,
-    );
-    expect(screen.getByText('95')).toBeTruthy();
-    expect(screen.getByText('88')).toBeTruthy();
-  });
-
-  it('renders search count metadata', () => {
-    render(
-      <DemandHeatBanner items={sampleItems} onSearchItem={jest.fn()} />,
-    );
-    expect(screen.getByText(/320 searches/)).toBeTruthy();
-    expect(screen.getByText(/210 searches/)).toBeTruthy();
-  });
-});
 
 // ---------------------------------------------------------------------------
 // RegionalInsightsSection

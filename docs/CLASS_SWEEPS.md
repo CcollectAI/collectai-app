@@ -693,13 +693,51 @@ unread prop is class T, not this.)
 digits: with more pages waiting there is certainly more than one listing, so
 "1+ listings" and never "1+ listing".
 
-**Suites that are red and gate nothing** — `npx jest` runs 126 suites; **10 still
-fail (12 tests)** and none of them is named in `verify:prebuild`. Remaining: four
-snapshot suites, `ItemCard` a11y, `analytics`, `marketplace-extracted`,
-`usePortfolioInsights`, `settings` (snapshots stale since May), and
-`marketMoversTitle` (missing `react-native-purchases` mock). Triage each, then
-either fix it or name it in the gate — an unnamed suite is not a gate
-(`learning_a_test_file_is_not_a_gate`).
+**Suites that are red and gate nothing — ✅ CLOSED 2026-09-18. 137/137 green,
+1173 tests, and the gate no longer keeps a list.**
+
+It was **13** red suites (17 tests), not 10, and **not one was an app defect** —
+they were stale pins, which is the same finding as the server suite's 31→7 triage
+(CLAUDE.md, 2026-08-19). The doc decided each one, not the test:
+
+| suite | pinned | the truth |
+|---|---|---|
+| `PermissionScreen` | `getByText('Go Back')` | the copy moved to `t('common.go_back')` → "Go back". Red over a capital B while the escape hatch was present all along. Now queried by accessibility LABEL, which is the guarantee worth asserting |
+| `ItemCard` | `category: 'Yu-Gi-Oh'` → itself | a value in NEITHER vocabulary (slug `yugioh`, curated `Yu-Gi-Oh!`), so `categoryDisplayName` correctly title-cased it. The fixture was one the app never stores |
+| `ItemCard.a11y` | `getByText('lego')` | the RAW slug — pinning the defect `formatCategoryName` exists to prevent. The curated name is `LEGO` |
+| `analytics` | imported `WinnersLosersSection` | deleted as an orphan in `65ea3ee`; the import stopped the whole file running, so the two components that DO exist were untested behind a file that looked like it covered three. Revealed 3 more stale pins underneath |
+| `marketplace-extracted` | imported `DemandHeatBanner` | went with the market hub in `b15d936`; same shape — `RegionalInsightsSection` is on screen and was untested |
+| `usePortfolioInsights` | the hook | removed with `<InsightsCard/>` on 2026-08-27, deliberately. Suite deleted |
+| `useListForSale` | `toggleMarketplace('collectai')` | renamed to `sparrow` everywhere in `5e7e7af`, so the key was absent and the hook threw on `prev[mpId].selected` |
+| `marketplaceListingsEnvelope` | rows come back **untouched** | "untouched" WAS the bug: class U replaced four casts with real mappings. The test was pinning the cast |
+| `marketMoversTitle` | imported from the component | which now loads the RevenueCat SDK through the Pro gate; jest cannot parse its ESM. `marketMovers.test.ts` already carried the fix (import the pure `moverFormat`) and this one was never migrated |
+| 4 snapshot suites | `pokemon`, `lego`, `Items`, `Search` | the category vocabulary (`Pokémon`, `LEGO`), the Explore/Market rename (`f51d1a7`, 2026-08-19), `hitSlop` from the touch-target sweep, and a "View public profile" control added in `64a598d`. Every delta dated and deliberate before any `-u` |
+
+Two things the triage found that the report had not:
+
+1. **`QuickNavBar` has no Items tab.** A case named "matches snapshot with Items
+   tab active" set `/items/123`, which highlights nothing — a duplicate of the
+   "no tab active" case, named for a tab that does not exist. Renamed to what it
+   actually asserts (the bar overlays item detail and must not claim a tab).
+2. **A test that could not fail.** The analytics fixture `hot_toys` title-cases
+   to "Hot Toys", which is *also* its curated name, so it passed whether the
+   vocabulary was consulted or not. Proven by mutation — with the
+   `CATEGORY_SLUG_TO_NAME` lookup disabled it stayed green. Now `lorcana` →
+   "Disney Lorcana", which can only come from the table.
+
+**The gate was the bigger finding: it named 67 suites and `jest` collects 137, so
+70 suites — more than half, most of them green — gated nothing.** The reported
+"10 red and ungated" was a symptom of a hand-maintained list, which is the
+`learning_a_test_file_is_not_a_gate` shape one level up: every test file added
+since has been ungated by default, silently. `verify:prebuild` now runs `jest`
+with no list. The whole suite takes ~19s, so there was never a cost reason for
+the list.
+
+Mutation-proven: disabling the category-name lookup exits **1** (8 suites red,
+**6 of them previously ungated**), and a clean tree exits **0**. The trade,
+stated deliberately: a snapshot suite in the gate means an intentional UI change
+now fails prebuild until someone regenerates and reads the diff — which is
+exactly what did not happen while four of them sat stale since May.
 
 `__tests__/hooks/useItemDetail.test.ts` was the eleventh and is now green and
 gated. Its 5 failures were **not** an app defect, and it took a captured stack to
