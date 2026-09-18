@@ -1304,9 +1304,71 @@ to be a feature the app actually ships"). Also note the XP board has no "you are
 #N of M" line, which the CATEGORY board does have — so a member outside the top
 ranks learns nothing about themselves from it.
 
-## Decisions for Merle (class G)
+## Class G — worked 2026-09-18
 
-Not bugs with an obvious fix — each is a product call.
+Three of the four turned out not to be product calls at all; one was, and it is
+sharper than the original note.
+
+**1. Pro analytics were open to free accounts — ✅ FIXED.** Two endpoints took
+any authenticated caller while `docs/MONETIZATION.md` lists both as Pro and the
+app gates them on `limits.advanced_analytics`:
+
+* `/data-moat/demand-heat` — the data behind "Hot Right Now", Pro-gated in the
+  app since 2026-04-18 and sold on the paywall card as "Advanced analytics";
+* `/portfolio/realised-pl` — listed as Free: No / Pro: Yes. It has no client
+  caller yet, which is the point: the surface that eventually reads it now
+  inherits the tier instead of re-deciding it.
+
+Both now `Depends(require_plan("pro"))`. Gated per endpoint, not per router:
+the other data-moat endpoints have not been traced to a Pro-only surface, and
+gating one that a free screen quietly depends on would break it for everyone.
+**A paywall only the client enforces is not a paywall** — same shape as the
+free-tier purchase mandates that were unreachable in the UI and reachable by
+Universal Link.
+
+**2. `max_daily_deal_alerts` enforced nowhere — ❌ THE NOTE WAS WRONG.** It is
+enforced, in `workers/deal_discovery_worker.py:196`, which reads it from
+`PLAN_LIMITS` with a comment explaining that the app must not advertise a
+number the worker does not enforce. It is not on a serving path because the cap
+is on alerts CREATED, which is the worker's job. No action; the register entry
+was stale.
+
+**3. Sell timing requires `premium` — ❌ NOT A PAYWALL DECISION.** The feature
+is not built: `SellTimingBadge` only ever rendered a "Coming soon · Premium"
+teaser and was hidden on 2026-07-22, and nothing in the app calls
+`/sell-timing/*`. The gate is on an endpoint no one reaches, for a feature that
+does not exist. The tier question becomes real when Sell Timing is built, and
+not before.
+
+**4. A paywall-less build could reach the store — ⚠️ WORSE THAN DESCRIBED, and
+it needs YOUR call.** The original note said `submit.production` shares an
+`ascAppId` with `store`. In fact **all three submit profiles — `production`,
+`store` and `internal` — point at the same `ascAppId` (6767359453)**, and
+`internal` is exactly the BUILD profile that sets
+`EXPO_PUBLIC_BETA_UNLOCK_ALL=true`, which reports every user as `pro` and skips
+RevenueCat. So `eas submit -p internal` publishes a paywall-less build to the
+real app record.
+
+`npm run check:submit-profiles` reports it. **Deliberately NOT in
+`verify:prebuild`**: it fails on a configuration you may want, and a gate that
+fails on an intentional state teaches people to ignore gates. Two ways to close
+it, both yours: delete `submit.internal` (internal builds are side-loaded, and
+the jsswap flow does not submit), or point it at a separate app record.
+
+**What could NOT be built, and why it matters.** Class G asked for "a
+submit-time assertion" on the artefact. That cannot work, measured on a real
+store APK: `assets/index.android.bundle` is Hermes bytecode, and while
+`EXPO_PUBLIC_SUPABASE_URL`'s NAME survives in its string table,
+`EXPO_PUBLIC_BETA_UNLOCK_ALL` does **not** — Expo's babel plugin replaces that
+member expression with a literal, so the name is gone whatever the value was,
+and both branches of the flag ship either way. A scan would report "absent" for
+good and bad builds alike: a check that cannot fail. The guard therefore
+inspects the CONFIG, which is decidable, and says plainly that it cannot catch
+a hand-submitted internal artefact.
+
+### The original notes
+
+
 
 1. **Pro analytics endpoints are open to free accounts.** Either gate them or stop
    calling them Pro.

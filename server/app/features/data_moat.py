@@ -22,6 +22,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from app.auth import get_current_user_id
+from app.subscription import require_plan
 from app.errors import error_response
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
@@ -396,9 +397,23 @@ async def demand_heat_endpoint(
     category: Optional[str] = Query(None, max_length=64),
     limit: int = Query(20, ge=1, le=100),
     _user: str = Depends(get_current_user_id),
+    _plan: str = Depends(require_plan("pro")),
     _rl: None = Depends(_data_moat_limit),
 ):
-    """Top trending items by demand signal volume."""
+    """Top trending items by demand signal volume.
+
+    PRO, and now enforced on the SERVER too (2026-09-18, class G). This is the
+    data behind "Hot Right Now", which `app/analytics.tsx` has gated on
+    `limits.advanced_analytics` since 2026-04-18, and the paywall card sells as
+    "Advanced analytics" — while the endpoint itself took any authenticated
+    caller. A paywall the client alone enforces is not a paywall: the same shape
+    as the free-tier purchase mandates that were unreachable in the UI and
+    reachable by Universal Link (docs/MONETIZATION.md).
+
+    Gated here and not across the whole router deliberately: the other
+    data-moat endpoints have not been traced to a Pro-only surface, and gating
+    one a free screen quietly depends on would break it for everyone on free.
+    """
     # R48.5 — same as above, accept any category
     data = await get_demand_heat(category, limit, user_id=_user)
     return {"category": category, "limit": limit, "items": data}

@@ -15,6 +15,7 @@ import httpx
 from fastapi import APIRouter, Depends, Query
 
 from app.auth import get_current_user_id
+from app.subscription import require_plan
 from app.errors import error_response
 from app.config import API_SHARED_SECRET, SIGNALS_BASE_URL
 from app.rate_limit import per_user_rate_limit
@@ -1039,8 +1040,19 @@ async def category_correlation(
     "/portfolio/realised-pl",
     summary="Realised profit and loss on items actually sold",
 )
-async def realised_pl(user_id: str = Depends(get_current_user_id)):
+async def realised_pl(
+    user_id: str = Depends(get_current_user_id),
+    _plan: str = Depends(require_plan("pro")),
+):
     """What a member ACTUALLY made, after every fee on both sides.
+
+    PRO, enforced here as well as in the app (2026-09-18, class G).
+    `docs/MONETIZATION.md` lists "Acquisition fees & realised P/L (item card +
+    /portfolio/realised-pl)" as Free: No / Pro: Yes, gated by
+    `limits.advanced_analytics` — and this endpoint took any authenticated
+    caller. It had no client caller at all, so nothing breaks today; the point
+    is that the surface which eventually reads it inherits the tier instead of
+    re-deciding it. A paywall only the client enforces is not one.
 
     docs/COLLECTOR_DEMAND.md §5 is the whole reason this exists: collectors
     track prices and not their true cost basis, and the worked example is a

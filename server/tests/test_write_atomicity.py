@@ -684,3 +684,25 @@ class TestSetPostage:
         # endpoint must not be a way to rewrite what the item sold for.
         assert "net_proceeds = sale_price" in upd
         assert "COALESCE(platform_fee, 0)" in upd
+
+
+# ---------------------------------------------------------------------------
+# The Pro paywall is enforced on the SERVER, not only in the app
+# ---------------------------------------------------------------------------
+
+
+def test_demand_heat_requires_pro():
+    """`/data-moat/demand-heat` is the data behind "Hot Right Now".
+
+    `app/analytics.tsx` has gated it on `limits.advanced_analytics` since
+    2026-04-18 and the paywall card sells it as "Advanced analytics", while the
+    endpoint took any authenticated caller (class G, 2026-09-16). A paywall the
+    client alone enforces is not a paywall — the same shape as the free-tier
+    purchase mandates that were unreachable in the UI and reachable by Universal
+    Link.
+    """
+    import inspect
+    from app.features import data_moat
+
+    src = inspect.getsource(data_moat.demand_heat_endpoint)
+    assert 'require_plan("pro")' in src, src[:400]
