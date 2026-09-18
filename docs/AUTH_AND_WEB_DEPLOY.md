@@ -451,9 +451,28 @@ would see. Recorded, not fixed: any change here must be reasoned against the
 
 ⚠️ **The Terms said otherwise until 2026-09-13.** `app/legal/terms.tsx` and
 `web/terms.html` read *"You may register using email/password or social login
-(Google, Apple)"* while this flag was false. Corrected to email and password
-(the web copy needs a deploy). The privacy policy's "If you use social login…"
-is conditional and stays true.
+(Google, Apple)"* while this flag was false. Corrected to email and password.
+The privacy policy's "If you use social login…" is conditional and stays true.
+
+> ⛔ **STILL LIVE AND STILL WRONG — measured 2026-09-19.**
+> `https://sparrowcollect.com/terms` returns **200** and still serves
+> *"You may register using email/password or social login (Google, Apple)."*
+> The repo's `web/terms.html` has said *"using an email address and password"*
+> since 09-13; **`web/` is a separate Vercel deploy and was never shipped.**
+>
+> This is the one place the correction matters most: the IN-APP copy is fixed
+> and rides every build, but an App Store reviewer checking guideline 4.8 reads
+> the **public** Terms. So the artefact a reviewer is most likely to open is the
+> only one still making the claim.
+>
+> It sat six days behind a parenthesis that said "the web copy needs a deploy",
+> which is the shape this file already warns about twice — rows 1 and 4 of the
+> deep-link table sat committed-and-undeployed for twelve days for the same
+> reason. **A `web/` change is not done when it is committed.**
+>
+> Fix: deploy the `web/` Vercel project, then re-check with
+> `curl -s https://sparrowcollect.com/terms | grep -i 'social login'`
+> (expect no match).
 
 Apple/Google sign-in is hidden behind **`SOCIAL_LOGIN_ENABLED=false`**
 (`src/config/featureFlags.ts`). Email-only avoids 4.8 (offering Google requires

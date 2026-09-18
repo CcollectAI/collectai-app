@@ -399,7 +399,15 @@ Respond to all reviewer questions within 24 h or the queue resets.
 
 These appear in older launch docs but you can ignore them for the first App Store submission:
 
-- ❌ `/webhook/revenuecat` server endpoint — v1.1 work; FE-only gating via RevenueCat `customerInfo` is sufficient. (Memory: `project_iap_blocker.md`)
+- ✅ **RevenueCat webhook — BUILT AND LIVE** (corrected 2026-09-19). This line
+  said "v1.1 work" long after the endpoint shipped. It is
+  `POST /billing/revenuecat-webhook`, not `/webhook/revenuecat` — present in the
+  live OpenAPI and returning **401** to an unsigned POST. It writes the
+  `subscription_events` ledger and upserts `subscriptions`, which is the row
+  `get_user_plan` reads, so it is not merely cosmetic: FE-only gating via
+  `customerInfo` is what the app falls back on, but the server is what the
+  paywall trusts. Three unretryable failure paths in it were fixed and deployed
+  2026-09-18 (class sweep K).
 - ❌ Stripe live mode — RevenueCat replaced it 2026-05-09 (commit `652230a`). Don't waste time creating Stripe products.
 - ❌ Google OAuth client IDs — launch uses email/password auth only (`SOCIAL_LOGIN_ENABLED=false` in `src/config/featureFlags.ts`; providers not configured in Supabase). Add Google Sign-In post-launch by flipping the flag once configured. See `docs/AUTH_AND_WEB_DEPLOY.md`.
 - ❌ Google Play Console submission — iOS first. Android can ship 1-2 weeks later from the same codebase. Readiness assessed 2026-07-31: the code side is done; the remaining blockers are all console setup. See `docs/ANDROID_LAUNCH.md` and run `npm run preflight:android`.

@@ -65,6 +65,7 @@ Two rules the tooling learned the hard way:
 | U | A provider CASTS a snake_case payload to a camelCase type | 2026-09-18 | ✅ all 4 found and mapped (sales, fee schedules, listings, accounts). **All behind `SELLING_ENABLED=false`** — I first called two of them live and the device disproved it. Real, and they ship the day selling is switched on. `tsc` cannot see this class |
 | V | The app SENDS a field the server drops on the floor | 2026-09-18 | ⚠️ **INCONCLUSIVE, and the number is why**: the probe could read only **11 of 87** write calls (13%), found 0 in those, and that says nothing about the other 74. Method for a real run is written up |
 | W | A column the schema carries that no code mentions | 2026-09-18 | measured: **524 across 177 base tables**. Sampled `items` (19 of them): **18 hold no data at all** and the 19th is only its default — schema DEBT, not silent data loss. A cleanup decision, not a bug |
+| X | Committed to `web/` and never deployed | 2026-09-19 | ✅ swept: **17 of 19** servable files byte-identical to production; **1 real drift** (`terms.html`, two sentences, one of them the App Store 4.8 claim); 1 false positive (`vercel.json` is config, not an asset) |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -957,7 +958,11 @@ awaits inside the transaction are `conn.*` (no HTTP call holds it open) and both
 before BOTH inserts — presence alone would pass a transaction that wraps
 nothing) and that the supply hook stays outside; the same assertions were run
 locally against the source and go red when the transaction line is removed.
-**NOT DEPLOYED** — server change, Merle's call.
+✅ **DEPLOYED** — verified 2026-09-19, not assumed: `p2p_listing_router.py`
+hashes identically in the repo and at `/opt/collectors/server/`, and the live
+file contains `conn.transaction()` three times. This line said **NOT DEPLOYED**
+for a day after it had shipped; see the note at the top of class K about the
+register drifting toward a list of things that *were* true.
 Also open from K: ✅ `create-event.tsx` save-as-template — **fixed 2026-09-17.** The template save
 was wrapped in its own try/catch that logged and continued, so a member who
 ticked "save as template" navigated back believing they had one. The event is
@@ -1880,6 +1885,52 @@ a hand-submitted internal artefact.
    but `submit.production` points at the same `ascAppId` as `store`, so an
    `eas submit -p production` on the wrong artefact would ship a paywall-less
    build. Worth a submit-time assertion rather than a comment.
+
+## X — committed to `web/` and never deployed (2026-09-19)
+
+`web/` is a **separate Vercel project**. It does not ship with an EAS build or an
+EC2 deploy, and nothing reports the gap — so a corrected legal sentence can sit
+in the repo, reviewed and committed, while the public site keeps serving the old
+one. `docs/AUTH_AND_WEB_DEPLOY.md` already carried two instances (the AASA
+`/l/*` path and the `vercel.json` `/l/:id` rewrite, **twelve days**), but nobody
+had swept the directory.
+
+**Method** (read-only, repeatable): for every servable file under `web/`, derive
+its public URL — `cleanUrls: true`, so `terms.html` → `/terms`, `index.html` →
+`/` — fetch it and compare bytes.
+
+**Result: 17 of 19 identical.** The deploy discipline is mostly good, which is
+what makes the exception worth naming rather than a general warning.
+
+**The one drift: `web/terms.html`, last changed `6f833a6` (2026-09-14), never
+deployed — and it is TWO sentences, not one.**
+
+| | repo (correct) | live (still served) |
+|---|---|---|
+| account creation | "You may register using **an email address and password**." | "You may register using **email/password or social login (Google, Apple)**." |
+| price estimates | "…aggregated marketplace data from **public marketplace sources**." | "…aggregated marketplace data from **leading marketplace sources across 54 collectible categories**." |
+
+The first is the one that matters: `SOCIAL_LOGIN_ENABLED=false`, the app offers
+email only, and **an App Store reviewer checking guideline 4.8 reads the public
+Terms.** The in-app copy was fixed and ships in every build — so the artefact a
+reviewer is most likely to open is the only one still making the claim.
+
+The second was found only because the sweep compares BYTES. Grepping for
+"social login" — the known symptom — would have reported the file as fixed after
+one hunk. The live text is also the *stronger* claim: the repo deliberately
+softened "leading marketplace sources across 54 collectible categories" to
+"public marketplace sources", and that softening is not live either.
+
+**Discarded as a false positive:** `web/vercel.json` returns 404. It is consumed
+by Vercel as configuration and is not a servable asset — a 404 there is correct.
+
+**Fix:** deploy the `web/` Vercel project, then re-check:
+
+```bash
+curl -s https://sparrowcollect.com/terms | grep -i 'social login'   # expect no match
+```
+
+Not done here because publishing to the public site is Merle's call.
 
 ## Re-running a sweep
 
