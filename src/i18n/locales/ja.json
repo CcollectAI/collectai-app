@@ -947,7 +947,14 @@
     "view_listing": "出品を見る",
     "custom_offer": "カスタムオファー",
     "any_amount": "任意の金額",
-    "a11y_custom_amount": "カスタムオファーの金額"
+    "a11y_custom_amount": "カスタムオファーの金額",
+    "add_postage": "送料を記録",
+    "postage_saved": "送料を記録しました",
+    "postage_amount": "支払った送料",
+    "postage_placeholder": "例: 750",
+    "a11y_save_postage": "送料を保存",
+    "postage_hint": "発送にいくらかかりましたか？こちらでは確認できないため、入力されるまで利益は送料を差し引く前の金額で表示されます。購入者には共有されません。",
+    "postage_zero_ok": "手渡しの場合は 0 と入力してください。空欄ではなく、ひとつの答えです。"
   },
   "item_attrs": {
     "case_size": "ケースサイズ",

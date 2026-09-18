@@ -40,7 +40,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import { showActionSheet } from '@/hooks/useActionSheetPicker';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, parseMoney } from '@/lib/format';
 import { convertCurrency } from '@/lib/fx';
 import type { CurrencyCode } from '@/data/types';
 import { collectorsApi } from '@/api/collectorsApi';
@@ -180,6 +180,12 @@ function OffersScreen() {
 
   // Tracking capture. The offer being edited drives the sheet; null = closed.
   const [trackingFor, setTrackingFor] = useState<P2POffer | null>(null);
+  // What postage cost the seller — the one number Sparrow cannot know, because
+  // it never touches funds or generates a label (P2P spec §5b). Until it is
+  // answered, realised P/L withholds a profit for that sale rather than
+  // reporting a net-before-postage as a result.
+  const [postageFor, setPostageFor] = useState<P2POffer | null>(null);
+  const [postageAmount, setPostageAmount] = useState('');
   const [carriers, setCarriers] = useState<P2PCarrier[]>([]);
   const [carriersState, setCarriersState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
   const [carrierKey, setCarrierKey] = useState<string | null>(null);
@@ -608,6 +614,27 @@ function OffersScreen() {
       'Tracking added',
     );
   }, [act, canSaveTracking, carrierKey, trackingCode, trackingFor]);
+
+  const openPostage = useCallback((o: P2POffer) => {
+    setPostageAmount('');
+    setPostageFor(o);
+  }, []);
+  const closePostage = useCallback(() => setPostageFor(null), []);
+
+  const savePostage = useCallback(async () => {
+    if (!postageFor) return;
+    // parseMoney, not Number: a Dutch seller types "7,25" and Number() would
+    // read 7 — `npm run check:numbers` enforces this and is right to.
+    const amount = parseMoney(postageAmount);
+    if (amount === null || amount < 0) return;
+    const offerId = postageFor.id;
+    setPostageFor(null);
+    await act(
+      () => collectorsApi.p2pSetPostage(offerId, amount),
+      offerId,
+      t('offers.postage_saved', { defaultValue: 'Postage recorded' }),
+    );
+  }, [act, postageAmount, postageFor, t]);
 
   const onGrade = useCallback((o: P2POffer) => {
     Alert.alert(
@@ -1437,6 +1464,25 @@ function OffersScreen() {
               other side of it — and which person that is depends on which side
               you were on. "Grade" also collides with condition grading, which
               is a different thing this app does to cards. */}
+          {/* "Add postage" — only when there is a sale row AND its postage is
+              unknown (`postage_recorded === false`). NOT on `!o.postage_recorded`:
+              that is also true for `null`, which means no sale row exists at all
+              (every trade completed before completion started recording one) and
+              the submit would 404. The tri-state is carried for this reason. */}
+          {!o.i_am_buyer && o.postage_recorded === false ? (
+            <AnimatedPressable
+              onPress={() => openPostage(o)}
+              disabled={busy}
+              style={[styles.btn, { borderWidth: 1, borderColor: colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('offers.add_postage', { defaultValue: 'Add postage' })}
+            >
+              <Text style={[styles.btnText, { color: colors.text }]}>
+                {t('offers.add_postage', { defaultValue: 'Add postage' })}
+              </Text>
+            </AnimatedPressable>
+          ) : null}
+
           {o.can_grade && !o.already_graded ? (
             <AnimatedPressable
               onPress={() => onGrade(o)}
@@ -1484,7 +1530,7 @@ function OffersScreen() {
     // tapping a group row updates the state, the list re-renders from a stale
     // renderer, and the group appears not to open at all.
   }, [act, busyId, colors, confirmDecline, confirmAccept, confirmWithdraw, deepLinkOfferId, groupMeta, onCounter, onGrade,
-      openTracking, role, router, groupHeadIds, openGroups, sectionCounts, toggleGroup,
+      openPostage, openTracking, role, router, groupHeadIds, openGroups, sectionCounts, toggleGroup,
       settings.currency, settings.numberLocale, settings.hapticsEnabled]);
 
   return (
@@ -1766,6 +1812,77 @@ function OffersScreen() {
           >
             <Text style={[styles.btnText, { color: canSaveTracking ? colors.accentText : colors.muted }]}>
               Save tracking
+            </Text>
+          </AnimatedPressable>
+        </ScrollView>
+      </BottomSheetModal>
+
+      {/* POSTAGE — the one number Sparrow cannot know.
+          A completed trade records the sale with `shipping_cost_actual` NULL,
+          because Sparrow never touches funds and never generates a label (P2P
+          spec §5b). Until this is answered, `GET /portfolio/realised-pl` returns
+          `profit: null` for that sale and counts it in `sales_without_shipping`
+          — it will not subtract a cost basis from a net that is missing a cost.
+          docs/COLLECTOR_DEMAND.md §5 is the whole reason: the EUR 956.25 card
+          that looks like a gain and is a EUR 104 loss once postage lands. */}
+      <BottomSheetModal
+        visible={postageFor !== null}
+        onClose={closePostage}
+        title={t('offers.add_postage', { defaultValue: 'Add postage' })}
+        colors={colors}
+        maxHeight="60%"
+      >
+        <ScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
+          <Text style={[styles.sheetHint, { color: colors.muted }]}>
+            {t('offers.postage_hint', {
+              defaultValue:
+                "What did it cost you to post it? We can't see this, so your profit is shown before postage until you tell us. Nothing is shared with the buyer.",
+            })}
+          </Text>
+
+          <Text style={[styles.sheetLabel, { color: colors.text }]}>
+            {t('offers.postage_amount', { defaultValue: 'Postage you paid' })}
+          </Text>
+          <TextInput
+            value={postageAmount}
+            onChangeText={setPostageAmount}
+            placeholder={t('offers.postage_placeholder', { defaultValue: 'e.g. 7,25' })}
+            placeholderTextColor={colors.muted}
+            keyboardType="decimal-pad"
+            maxLength={10}
+            style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
+            accessibilityLabel={t('offers.postage_amount', { defaultValue: 'Postage you paid' })}
+          />
+          {/* 0 is a real answer and says so, because free postage (local
+              pickup) is NOT the same as "not recorded" — that distinction is
+              the whole reason the column is nullable. */}
+          <Text style={[styles.sheetHint, { color: colors.muted }]}>
+            {t('offers.postage_zero_ok', {
+              defaultValue: 'Handed it over in person? Enter 0 — that is an answer, not a blank.',
+            })}
+          </Text>
+
+          <AnimatedPressable
+            onPress={savePostage}
+            disabled={parseMoney(postageAmount) === null}
+            style={[
+              styles.btn,
+              styles.sheetSave,
+              parseMoney(postageAmount) !== null
+                ? { backgroundColor: colors.accent }
+                : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+            ]}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: parseMoney(postageAmount) === null }}
+            accessibilityLabel={t('offers.a11y_save_postage', { defaultValue: 'Save postage' })}
+          >
+            <Text
+              style={[
+                styles.btnText,
+                { color: parseMoney(postageAmount) !== null ? colors.accentText : colors.muted },
+              ]}
+            >
+              {t('common.save', { defaultValue: 'Save' })}
             </Text>
           </AnimatedPressable>
         </ScrollView>

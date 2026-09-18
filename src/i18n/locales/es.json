@@ -947,7 +947,14 @@
     "view_listing": "Ver anuncio",
     "custom_offer": "Oferta personalizada",
     "any_amount": "Cualquier importe",
-    "a11y_custom_amount": "Importe de la oferta personalizada"
+    "a11y_custom_amount": "Importe de la oferta personalizada",
+    "add_postage": "Añadir gastos de envío",
+    "postage_saved": "Gastos de envío guardados",
+    "postage_amount": "Gastos de envío pagados",
+    "postage_placeholder": "p. ej. 7,25",
+    "a11y_save_postage": "Guardar gastos de envío",
+    "postage_hint": "¿Cuánto te costó enviarlo? No podemos verlo, así que tu beneficio se muestra sin los gastos de envío hasta que lo indiques. No se comparte nada con la persona compradora.",
+    "postage_zero_ok": "¿Lo entregaste en mano? Escribe 0: eso es una respuesta, no un campo vacío."
   },
   "item_attrs": {
     "case_size": "Tamaño de la caja",

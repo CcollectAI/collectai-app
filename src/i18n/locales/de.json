@@ -947,7 +947,14 @@
     "view_listing": "Angebot ansehen",
     "custom_offer": "Eigenes Angebot",
     "any_amount": "Beliebiger Betrag",
-    "a11y_custom_amount": "Betrag des eigenen Angebots"
+    "a11y_custom_amount": "Betrag des eigenen Angebots",
+    "add_postage": "Versandkosten eintragen",
+    "postage_saved": "Versandkosten gespeichert",
+    "postage_amount": "Gezahlte Versandkosten",
+    "postage_placeholder": "z. B. 7,25",
+    "a11y_save_postage": "Versandkosten speichern",
+    "postage_hint": "Was hat dich der Versand gekostet? Wir sehen das nicht, deshalb wird dein Gewinn ohne Versandkosten angezeigt, bis du es einträgst. Die käufende Person sieht davon nichts.",
+    "postage_zero_ok": "Persönlich übergeben? Trage 0 ein — das ist eine Antwort, kein leeres Feld."
   },
   "item_attrs": {
     "case_size": "Gehäusegröße",

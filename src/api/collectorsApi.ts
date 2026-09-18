@@ -166,6 +166,7 @@ export const collectorsApi = {
   p2pGetDeliveryAddress: p2pApi.getDeliveryAddress,
   p2pDac7Status: p2pApi.getDac7Status,
   p2pGradeCounterparty: p2pApi.gradeCounterparty,
+  p2pSetPostage: p2pApi.setPostage,
   p2pMemberReputation: p2pApi.getMemberReputation,
   updateListingPrice: p2pApi.updateListingPrice,
   listWatchlistMatches: p2pApi.listWatchlistMatches,

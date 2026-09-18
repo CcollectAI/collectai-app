@@ -321,6 +321,17 @@ export type P2POffer = {
   /** pending | countered | accepted | declined | cancelled | expired |
    *  shipped | completed. Mirrors p2p_offers_status_check. */
   status: string;
+  /**
+   * Has the seller said what postage cost them? TRI-STATE, and all three matter:
+   *
+   *   true  — answered; realised P/L can report a profit for this sale.
+   *   false — a sale row exists with postage unknown, so its net is a net
+   *           BEFORE postage. The ONLY state that should offer "Add postage".
+   *   null  — no sale row at all (trades completed before completion started
+   *           recording one). Offering the control there opens a form whose
+   *           submit 404s, which is why `!postage_recorded` is the wrong test.
+   */
+  postage_recorded?: boolean | null;
   message: string | null;
   counter_count: number;
   created_at: string | null;
@@ -611,6 +622,25 @@ export const respondToOffer = (
  *  trade completes and grading unlocks. */
 export const confirmExchange = (offerId: string) =>
   post<P2POffer>(`/p2p/offers/${encodeURIComponent(offerId)}/confirm`, {});
+
+/**
+ * What postage cost the seller — the one number Sparrow cannot know.
+ *
+ * A completed trade records `shipping_cost_actual = NULL` because Sparrow never
+ * touches funds or labels (P2P spec §5b), so realised P/L withholds a profit
+ * for that sale rather than reporting a net-before-postage as a result. This is
+ * the seller closing that gap.
+ *
+ * `0` is a real answer (local pickup) and is NOT the same as unrecorded.
+ */
+export const setPostage = (offerId: string, amount: number) =>
+  post<{
+    ok: boolean;
+    sale_price: number;
+    shipping_cost_actual: number;
+    net_proceeds: number;
+    currency: string;
+  }>(`/p2p/offers/${encodeURIComponent(offerId)}/postage`, { amount });
 
 /** Grade the counterparty. Only possible after two-sided completion — the
  *  server enforces it and so does the DB. */

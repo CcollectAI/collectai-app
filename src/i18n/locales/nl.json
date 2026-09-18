@@ -947,7 +947,14 @@
     "view_listing": "Advertentie bekijken",
     "custom_offer": "Aangepast bod",
     "any_amount": "Elk bedrag",
-    "a11y_custom_amount": "Bedrag van aangepast bod"
+    "a11y_custom_amount": "Bedrag van aangepast bod",
+    "add_postage": "Verzendkosten toevoegen",
+    "postage_saved": "Verzendkosten opgeslagen",
+    "postage_amount": "Betaalde verzendkosten",
+    "postage_placeholder": "bijv. 7,25",
+    "a11y_save_postage": "Verzendkosten opslaan",
+    "postage_hint": "Wat kostte het verzenden je? Wij zien dat niet, dus je winst staat er zonder verzendkosten bij tot je het invult. De koper ziet hier niets van.",
+    "postage_zero_ok": "Persoonlijk overhandigd? Vul 0 in — dat is een antwoord, geen leeg veld."
   },
   "item_attrs": {
     "case_size": "Kastmaat",

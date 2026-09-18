@@ -947,7 +947,14 @@
     "view_listing": "View listing",
     "custom_offer": "Custom offer",
     "any_amount": "Any amount",
-    "a11y_custom_amount": "Custom offer amount"
+    "a11y_custom_amount": "Custom offer amount",
+    "add_postage": "Add postage",
+    "postage_saved": "Postage recorded",
+    "postage_amount": "Postage you paid",
+    "postage_placeholder": "e.g. 7,25",
+    "a11y_save_postage": "Save postage",
+    "postage_hint": "What did it cost you to post it? We can't see this, so your profit is shown before postage until you tell us. Nothing is shared with the buyer.",
+    "postage_zero_ok": "Handed it over in person? Enter 0 — that is an answer, not a blank."
   },
   "item_attrs": {
     "case_size": "Case Size",

@@ -497,6 +497,7 @@ decision that is open on it.
 | GET | `/p2p/offers` | JWT | Offers made or received (`role=all\|buying\|selling`) |
 | POST | `/p2p/offers/{offer_id}/respond` | JWT + Rate Limit | `action=accept\|decline\|counter\|withdraw`. Accept reserves softly; it does not delist. **One transaction, offer row locked** |
 | POST | `/p2p/offers/{offer_id}/confirm` | JWT + Rate Limit | Seller marks sent, buyer marks received. **Both ⇒ completed** — the only completion writer. **One transaction, offer row locked**; also records the seller's `marketplace_sales` row. See below |
+| POST | `/p2p/offers/{offer_id}/postage` | JWT + Rate Limit | **Seller only, completed trades only.** Record what postage cost, so realised P/L can report a profit instead of a net-before-postage. `0` is a real answer; 404 `SALE_NOT_FOUND` when the trade predates sale recording |
 | POST | `/p2p/offers/{offer_id}/tracking` | JWT + Rate Limit | Attach carrier + consignment code. **Seller only**, while `accepted`/`shipped`. DISPLAY ONLY — never advances the trade |
 | GET | `/p2p/carriers` | JWT | Carrier picker options. `linkable=false` ⇒ no code-only tracking URL exists (PostNL/DPD need the recipient's postcode), so render a copyable code, not a link |
 | POST | `/p2p/offers/{offer_id}/grade` | JWT + Rate Limit | Grade the counterparty. Only after two-sided completion |
@@ -529,6 +530,15 @@ the existing `sales_without_cost_basis`. `fees.shipping` is `null` rather than
 `0` when unrecorded.
 
 A client showing a profit total must show both counts beside it.
+
+**`POST /p2p/offers/{offer_id}/postage` is how that becomes a profit.** The
+seller answers the one number Sparrow cannot know; `net_proceeds` is then
+recomputed from the STORED sale price and fees (never from the request, so the
+endpoint cannot be used to rewrite what the item sold for). `OfferOut` carries
+**`postage_recorded`** as a **tri-state** so a client can tell the three cases
+apart: `true` answered, `false` a sale row whose postage is unknown (the only
+state that should offer the control), `null` no sale row at all — offering it
+there opens a form whose submit 404s.
 
 ### Both write paths take the offer row's lock (2026-09-17)
 

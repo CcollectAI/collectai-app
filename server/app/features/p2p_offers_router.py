@@ -168,7 +168,25 @@ _OFFER_COLUMNS = """
             -- existed. Every query using this list joins p2p_offer_addresses —
             -- verified, all four — so adding it here cannot orphan a caller.
             a.postcode AS delivery_postcode,
-            a.country AS delivery_country
+            a.country AS delivery_country,
+            -- HAS THE SELLER SAID WHAT POSTAGE COST THEM? (2026-09-18)
+            --
+            -- Three states, and the client needs all three. TRUE: answered, so
+            -- realised P/L can report a profit for this sale. FALSE: a sale row
+            -- exists with `shipping_cost_actual` NULL, so its net is a net
+            -- BEFORE postage and the seller can close that gap —  this is the
+            -- only state that should offer the control. NULL: no sale row at
+            -- all, which is every trade completed before completion started
+            -- recording one; offering "record postage" there would open a form
+            -- whose submit 404s.
+            --
+            -- Correlated subquery, not a JOIN, for the same reason as
+            -- `listing_image_url` above: _OFFER_COLUMNS is shared by five
+            -- queries and one of them would eventually miss the join.
+            (SELECT ms.shipping_cost_actual IS NOT NULL
+               FROM public.marketplace_sales ms
+              WHERE ms.listing_id = o.listing_id AND ms.user_id = o.seller_id
+              LIMIT 1) AS postage_recorded
 """
 
 # Carrier key -> (display label, tracking URL template or None).
@@ -354,6 +372,18 @@ class OfferOut(BaseModel):
     can_confirm: bool = False
     can_grade: bool = False
     already_graded: bool = False
+    # TRI-STATE, and the client needs all three (2026-09-18):
+    #   True  — the seller has said what postage cost them; realised P/L can
+    #           report a profit for this sale.
+    #   False — a sale row exists with postage unknown, so its net is a net
+    #           BEFORE postage. This is the ONLY state that should offer the
+    #           "record postage" control.
+    #   None  — no sale row at all (every trade completed before completion
+    #           started recording one). Offering the control here opens a form
+    #           whose submit 404s.
+    # `Optional[bool]`, never `bool`: defaulting the unknown to False would
+    # invite exactly that dead form — the same reason `i_withdrew` is optional.
+    postage_recorded: Optional[bool] = None
     # Whether the CALLER may attach tracking right now. Server-computed for the
     # same reason as can_confirm — the client never re-derives the state machine.
     can_add_tracking: bool = False
@@ -999,6 +1029,9 @@ def _row_to_offer(r, me: str) -> OfferOut:
         # Grading unlocks ONLY on two-sided completion.
         can_grade=both_confirmed and r["status"] == _COMPLETED,
         already_graded=bool(r["already_graded"]) if "already_graded" in r.keys() else False,
+        # Absent from create_offer's RETURNING (an INSERT cannot correlate), so
+        # read it the tolerant way — same trap the tracking columns document.
+        postage_recorded=_row_opt(r, "postage_recorded"),
         # Only the seller ships, and only while the trade is live. Editing is
         # allowed (a mistyped code is the common case), so this stays true after
         # tracking is already set.
@@ -1740,6 +1773,28 @@ class DeliveryAddressOut(BaseModel):
     country: str
 
 
+class PostageIn(BaseModel):
+    """What the seller actually paid to post the item.
+
+    The ONE number Sparrow cannot know. It never touches funds and never
+    generates a label (P2P spec §5b), so a trade that completes inside the app
+    records `shipping_cost_actual = NULL` — unknown — and the realised-P/L
+    endpoint withholds a profit for that sale rather than reporting an upper
+    bound as a result (docs/COLLECTOR_DEMAND.md §5: the EUR 956.25 card that
+    looks like a gain).
+
+    This is the member closing that gap themselves. `ge=0` because free
+    postage is a real answer (local pickup) and is NOT the same as unknown —
+    which is exactly why the column has to be nullable and the default 0 is
+    never relied on.
+    """
+
+    # 10_000 is a sanity bound, not a business rule: postage costing more than
+    # the most expensive item ever listed here is a typo, and a typo in this
+    # field silently turns a profit into a loss on the analytics screen.
+    amount: float = Field(..., ge=0, le=10_000)
+
+
 class PaymentHandleIn(BaseModel):
     rail_key: str = Field(..., min_length=2, max_length=32)
     #: Empty string deletes. A member removing their PayPal handle should not
@@ -2034,6 +2089,94 @@ async def list_payment_rails(
         rails=rails,
         disclaimer=PAYMENT_DISCLAIMER,
     )
+
+
+
+@router.post("/offers/{offer_id}/postage",
+             summary="Record what postage cost the seller on a completed trade")
+async def set_postage(
+    offer_id: str,
+    payload: PostageIn,
+    user_id: str = Depends(get_current_user_id),
+    _rl=Depends(_offer_limit),
+):
+    """Turn an upper bound into a result.
+
+    A completed trade writes a `marketplace_sales` row with
+    `shipping_cost_actual = NULL`, because Sparrow never learns what the seller
+    paid to post it. Until this is answered, `GET /portfolio/realised-pl`
+    returns `shipping_known: false` and `profit: null` for that sale and counts
+    it in `sales_without_shipping` — it will not subtract a cost basis from a
+    net that is missing a cost.
+
+    SELLER ONLY, and only on a COMPLETED trade: it is the seller's own ledger
+    row, and before completion there is no row to amend.
+
+    `net_proceeds` is recomputed from the stored numbers rather than from
+    anything the client sends, so this endpoint cannot be used to rewrite the
+    sale price. The formula is the one `record_sale` uses
+    (`marketplace_listing_router.py`): sale_price − fees − postage.
+    """
+    # No Python-side uuid check, matching `respond_to_offer`, `set_tracking` and
+    # `confirm_exchange` in this file: the `$1::uuid` cast is the validation. A
+    # different contract for one endpoint is worse than the file's convention.
+    pool = get_db_pool()
+    if pool is None:
+        raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
+
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            o = await conn.fetchrow(
+                "SELECT * FROM public.p2p_offers WHERE id = $1::uuid FOR UPDATE",
+                offer_id,
+            )
+            if o is None:
+                raise error_response(404, "Offer not found", code="OFFER_NOT_FOUND")
+            if str(o["seller_id"]) != user_id:
+                # 404 rather than 403: a buyer asking about someone else's
+                # ledger should not learn that the offer exists.
+                raise error_response(404, "Offer not found", code="OFFER_NOT_FOUND")
+            if o["status"] != _COMPLETED:
+                raise error_response(
+                    409,
+                    "Record postage once the trade is complete",
+                    code="NOT_COMPLETED",
+                )
+
+            row = await conn.fetchrow(
+                """
+                UPDATE public.marketplace_sales
+                   SET shipping_cost_actual = $2,
+                       net_proceeds = sale_price
+                                      - COALESCE(platform_fee, 0)
+                                      - COALESCE(payment_processing_fee, 0)
+                                      - $2,
+                       updated_at = now()
+                 WHERE listing_id = $1::uuid AND user_id = $3::uuid
+             RETURNING sale_price, net_proceeds, shipping_cost_actual, currency
+                """,
+                str(o["listing_id"]), payload.amount, user_id,
+            )
+            if row is None:
+                # The completion writes the sale, so this means an older trade
+                # completed before that existed. Say so instead of answering ok.
+                logger.error(
+                    "[p2p/postage] no marketplace_sales row for listing=%s seller=%s",
+                    o["listing_id"], user_id,
+                )
+                raise error_response(
+                    404,
+                    "There is no sale recorded for this trade",
+                    code="SALE_NOT_FOUND",
+                )
+
+    return {
+        "ok": True,
+        "sale_price": float(row["sale_price"]),
+        "shipping_cost_actual": float(row["shipping_cost_actual"]),
+        "net_proceeds": float(row["net_proceeds"]),
+        "currency": row["currency"],
+    }
 
 
 @router.post("/offers/{offer_id}/tracking", response_model=OfferOut,

@@ -947,7 +947,14 @@
     "view_listing": "리스팅 보기",
     "custom_offer": "직접 입력한 제안",
     "any_amount": "모든 금액",
-    "a11y_custom_amount": "직접 입력한 제안 금액"
+    "a11y_custom_amount": "직접 입력한 제안 금액",
+    "add_postage": "배송비 입력",
+    "postage_saved": "배송비를 기록했습니다",
+    "postage_amount": "지불한 배송비",
+    "postage_placeholder": "예: 7,25",
+    "a11y_save_postage": "배송비 저장",
+    "postage_hint": "발송에 얼마가 들었나요? 저희는 알 수 없어서, 입력하기 전까지 수익은 배송비를 빼기 전 금액으로 표시됩니다. 구매자에게는 공유되지 않습니다.",
+    "postage_zero_ok": "직접 전달했다면 0을 입력하세요. 빈칸이 아니라 하나의 답입니다."
   },
   "item_attrs": {
     "case_size": "케이스 크기",

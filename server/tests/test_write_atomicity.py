@@ -579,3 +579,108 @@ class TestCompletionRecordsTheSale:
         monkeypatch.setattr(p2p, "get_db_pool", lambda: _Pool(conn))
         await p2p.confirm_exchange(OFFER, user_id=SELLER)
         assert not [e for e in conn.events if "INSERT INTO public.marketplace_sales" in e]
+
+
+# ---------------------------------------------------------------------------
+# set_postage — the one number Sparrow cannot know
+# ---------------------------------------------------------------------------
+#
+# A completed trade records `shipping_cost_actual = NULL`, so realised P/L
+# withholds a profit for that sale. This is the seller closing that gap. It must
+# not be usable to rewrite the sale price, and it must refuse rather than answer
+# `ok` when there is nothing to amend.
+
+
+class _PostageConn(_Conn):
+    def __init__(self, offer, sale_row, events=None):
+        super().__init__(offer, events=events)
+        self.sale_row = sale_row
+
+    async def fetchrow(self, q, *a):
+        flat = self._log(q)
+        if flat.startswith("SELECT * FROM public.p2p_offers"):
+            return self.row
+        if "UPDATE public.marketplace_sales" in flat:
+            return self.sale_row
+        return None
+
+
+def _completed_offer(seller=SELLER, status="completed"):
+    return _Row(id=OFFER, listing_id=LISTING, seller_id=seller, buyer_id=BUYER, status=status)
+
+
+def _sale_after(amount):
+    return _Row(sale_price=195.0, net_proceeds=195.0 - amount,
+                shipping_cost_actual=amount, currency="EUR")
+
+
+class TestSetPostage:
+    @pytest.mark.asyncio
+    async def test_the_seller_turns_an_upper_bound_into_a_result(self, monkeypatch):
+        conn = _PostageConn(_completed_offer(), _sale_after(7.25))
+        monkeypatch.setattr(p2p, "get_db_pool", lambda: _Pool(conn))
+        out = await p2p.set_postage(OFFER, p2p.PostageIn(amount=7.25), user_id=SELLER)
+        assert out["net_proceeds"] == 187.75
+        assert out["shipping_cost_actual"] == 7.25
+
+    @pytest.mark.asyncio
+    async def test_zero_postage_is_a_real_answer_not_unknown(self, monkeypatch):
+        # Local pickup. 0 and NULL are different, which is the whole reason the
+        # column is nullable.
+        conn = _PostageConn(_completed_offer(), _sale_after(0))
+        monkeypatch.setattr(p2p, "get_db_pool", lambda: _Pool(conn))
+        out = await p2p.set_postage(OFFER, p2p.PostageIn(amount=0), user_id=SELLER)
+        assert out["net_proceeds"] == 195.0
+        assert out["shipping_cost_actual"] == 0
+
+    @pytest.mark.asyncio
+    async def test_the_buyer_gets_404_not_403(self, monkeypatch):
+        # A 403 would confirm the offer exists to someone who is not party to it.
+        conn = _PostageConn(_completed_offer(), _sale_after(5))
+        monkeypatch.setattr(p2p, "get_db_pool", lambda: _Pool(conn))
+        with pytest.raises(Exception) as e:
+            await p2p.set_postage(OFFER, p2p.PostageIn(amount=5), user_id=BUYER)
+        assert getattr(e.value, "status_code", None) == 404
+        assert not [x for x in conn.events if x.startswith("UPDATE")]
+
+    @pytest.mark.asyncio
+    async def test_an_unfinished_trade_is_refused(self, monkeypatch):
+        conn = _PostageConn(_completed_offer(status="accepted"), _sale_after(5))
+        monkeypatch.setattr(p2p, "get_db_pool", lambda: _Pool(conn))
+        with pytest.raises(Exception) as e:
+            await p2p.set_postage(OFFER, p2p.PostageIn(amount=5), user_id=SELLER)
+        assert getattr(e.value, "status_code", None) == 409
+        assert not [x for x in conn.events if x.startswith("UPDATE")]
+
+    @pytest.mark.asyncio
+    async def test_no_sale_row_is_404_not_ok(self, monkeypatch):
+        # Trades completed before completion recorded sales have no row. Saying
+        # `ok` would be the class-S lie on a money path.
+        conn = _PostageConn(_completed_offer(), None)
+        monkeypatch.setattr(p2p, "get_db_pool", lambda: _Pool(conn))
+        with pytest.raises(Exception) as e:
+            await p2p.set_postage(OFFER, p2p.PostageIn(amount=5), user_id=SELLER)
+        assert getattr(e.value, "status_code", None) == 404
+        assert e.value.detail["code"] == "SALE_NOT_FOUND"
+
+    @pytest.mark.asyncio
+    async def test_the_offer_is_locked_and_the_write_is_in_the_transaction(self, monkeypatch):
+        conn = _PostageConn(_completed_offer(), _sale_after(7.25))
+        monkeypatch.setattr(p2p, "get_db_pool", lambda: _Pool(conn))
+        await p2p.set_postage(OFFER, p2p.PostageIn(amount=7.25), user_id=SELLER)
+        ev = conn.events
+        select = next(e for e in ev if e.startswith("SELECT * FROM public.p2p_offers"))
+        assert "FOR UPDATE" in select
+        upd = next(i for i, e in enumerate(ev) if e.startswith("UPDATE public.marketplace_sales"))
+        assert ev.index("BEGIN") < upd < ev.index("COMMIT")
+
+    @pytest.mark.asyncio
+    async def test_the_net_is_recomputed_from_STORED_numbers(self, monkeypatch):
+        conn = _PostageConn(_completed_offer(), _sale_after(7.25))
+        monkeypatch.setattr(p2p, "get_db_pool", lambda: _Pool(conn))
+        await p2p.set_postage(OFFER, p2p.PostageIn(amount=7.25), user_id=SELLER)
+        upd = next(e for e in conn.events if e.startswith("UPDATE public.marketplace_sales"))
+        # The sale price comes from the row, never from the request — this
+        # endpoint must not be a way to rewrite what the item sold for.
+        assert "net_proceeds = sale_price" in upd
+        assert "COALESCE(platform_fee, 0)" in upd

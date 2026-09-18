@@ -947,7 +947,14 @@
     "view_listing": "Voir l’annonce",
     "custom_offer": "Offre personnalisée",
     "any_amount": "N'importe quel montant",
-    "a11y_custom_amount": "Montant de l'offre personnalisée"
+    "a11y_custom_amount": "Montant de l'offre personnalisée",
+    "add_postage": "Ajouter les frais d’envoi",
+    "postage_saved": "Frais d’envoi enregistrés",
+    "postage_amount": "Frais d’envoi payés",
+    "postage_placeholder": "ex. 7,25",
+    "a11y_save_postage": "Enregistrer les frais d’envoi",
+    "postage_hint": "Combien l'envoi vous a-t-il coûté ? Nous ne le voyons pas : votre bénéfice est affiché hors frais d'envoi tant que vous ne l'indiquez pas. Rien n'est communiqué à l'acheteur.",
+    "postage_zero_ok": "Remis en main propre ? Saisissez 0 — c’est une réponse, pas un champ vide."
   },
   "item_attrs": {
     "case_size": "Taille du boîtier",
