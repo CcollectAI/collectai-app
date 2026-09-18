@@ -666,8 +666,32 @@ lone-three-digit-group bug, plus `numeric()`/`positiveNumber()`, which rejected
 "12,50" outright and so blocked listing, Add Item and mandates for comma-decimal
 members. Full write-up: `docs/ui-playbook.md` "The gate taught the bug".
 
-**Listings count** needs the `+` treatment the Items total got (it prints the
-loaded count as if it were the total).
+**Listings count — ✅ FIXED 2026-09-18, and it was 3 sites, not 1.**
+`app/listings.tsx` pages at 24, so its header printed "24 listings" for a
+result set of 200 and the number grew while the member scrolled. There is no
+server total to prefer — `GET /marketplace/listings` returns
+`ListingListResponse { listings }` and no count — so rule 2 of
+`portfolioTotalLabel` applies: mark the partial number.
+
+**Enumerating the class instead of fixing the reported site found two more, in
+the file that had already been fixed.** Of the six screens using
+`usePaginatedList`, `app/(tabs)/events.tsx` writes the `+` inline four times and
+had got two: `Past Events (N)` and `Events on <date> (N)` are client-side splits
+of the SAME paginated list as `Upcoming (N+)` and `All Events (N+)` directly
+beside them, so they were partial in exactly the same way. All four now go
+through one `partialCount(loaded, hasMore)` (`src/lib/partialCount.ts`), which
+`listingsCountLabel` also uses — the marking is one decision, which is what the
+four inline copies were not.
+
+Discarded as a false positive: `app/(tabs)/items.tsx:802` passes
+`totalCount={providerItems.length}` to `BulkActionsToolbar`, which never renders
+it — only `isAllSelected` reads it. "Select all" selecting the loaded rows is a
+behaviour question, not a number on screen that lies. (`totalCount` being an
+unread prop is class T, not this.)
+
+8 tests across the three helpers. The plural follows what exists rather than the
+digits: with more pages waiting there is certainly more than one listing, so
+"1+ listings" and never "1+ listing".
 
 **Suites that are red and gate nothing** — `npx jest` runs 126 suites; **10 still
 fail (12 tests)** and none of them is named in `verify:prebuild`. Remaining: four
@@ -685,7 +709,12 @@ removed from the suite; the 5th omitted `initialPurchasePrice`, which the hook
 requires, so `editablePurchasePrice` was `undefined` and `.trim()` threw. The
 screen always passes `''`, so the app was never exposed.
 
-**I — one confirmed instance** (the class was never swept; the agent died first)
+**I — ✅ this instance was fixed by the 2026-09-17 checker sweep; the text below
+is the original finding, kept for the record.** Re-verified 2026-09-18:
+`handleDecline` opens with `if (!deal || declining) return;` and sets
+`setDeclining(true)`, its `AnimatedPressable` carries `disabled={declining}`,
+and `npm run check:double-submit` passes clean. The bullet had stayed open in
+this list after the fix landed.
 - `app/purchase/deal/[dealId].tsx:120` `handleDecline` has no in-flight guard and
   its control no `disabled`, while its sibling `handleConfirm` uses `setConfirming`.
   The server's decline is `UPDATE … WHERE status = ANY(_DECLINABLE_STATUSES)`
@@ -734,6 +763,16 @@ Stripe's signal to stop retrying, so a paid sponsorship, ticket or plan change
 arriving during an outage was acknowledged and dropped — the same endpoint class
 as the seven fixed under "No database means no success". It now 503s, as the
 RevenueCat handler already did.
+
+**Measured on prod 2026-09-18, and the path was not theoretical: 5 of the 10
+rows in `processed_webhook_events` hold a claim with NO ledger row.** The ledger
+insert is unconditional and has been in that handler since 2026-07-20, so each of
+those five is the unretryable path firing — claim taken, nothing written,
+redelivery swallowed. All five are `revenuecat.TEST` events from 2026-08-30
+(11:28–12:26), the day `099ef92` was being worked on; the two at 12:34 have
+ledger rows. **No member was stranded:** 0 paid ledger rows lack a `subscriptions`
+row, so the 2026-09-17 finding in `docs/API.md` still holds. The five stale
+claims are left in place — those event ids will never be redelivered.
 
 **The fix is one chokepoint per handler, not five release calls.** Both handlers
 now wrap everything after the claim in `try: … except Exception: await

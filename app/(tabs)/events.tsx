@@ -28,6 +28,7 @@ import { primeEventCache } from '@/data/CachedDataProvider';
 import type { CollectorsEvent } from '@/data/events';
 import { useOptimisticRsvpList } from '@/hooks/useOptimisticRsvp';
 import { usePaginatedList } from '@/hooks/usePaginatedList';
+import { partialCount } from '@/lib/partialCount';
 import { useFollowedCategories } from '@/hooks/useFollowedCategories';
 import { partitionByFollowed } from '@/data/searchRanking';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -243,10 +244,13 @@ function EventsScreen() {
     if (filteredUpcoming.length > 0) {
       // "+" while more pages exist: the count is of what is LOADED, and 94 of 252
       // read as the total.
-      result.push({ title: `Upcoming (${filteredUpcoming.length}${hasMore ? '+' : ''})`, isPast: false, data: filteredUpcoming });
+      result.push({ title: `Upcoming (${partialCount(filteredUpcoming.length, hasMore)})`, isPast: false, data: filteredUpcoming });
     }
     if (filteredPast.length > 0) {
-      result.push({ title: `Past Events (${filteredPast.length})`, isPast: true, data: filteredPast });
+      // `partialCount` here too: `filteredPast` is a client-side split of the
+      // same paginated `events`, so it is exactly as partial as `Upcoming`
+      // above — printing it bare said 12 past events when 12 had loaded.
+      result.push({ title: `Past Events (${partialCount(filteredPast.length, hasMore)})`, isPast: true, data: filteredPast });
     }
     return result;
   }, [filteredUpcoming, filteredPast, hasMore]);
@@ -760,8 +764,8 @@ function EventsScreen() {
       {(selectedCalendarDate || calendarFilteredEvents.length > 0) && (
         <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 4 }]}>
           {selectedCalendarDate
-            ? `Events on ${selectedCalendarDate} (${calendarFilteredEvents.length})`
-            : `All Events (${calendarFilteredEvents.length}${hasMore ? '+' : ''})`}
+            ? `Events on ${selectedCalendarDate} (${partialCount(calendarFilteredEvents.length, hasMore)})`
+            : `All Events (${partialCount(calendarFilteredEvents.length, hasMore)})`}
         </Text>
       )}
     </>

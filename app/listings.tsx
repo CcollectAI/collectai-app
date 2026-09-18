@@ -63,6 +63,7 @@ import { usePaginatedList } from '@/hooks/usePaginatedList';
 import { SlowLoadNotice } from '@/components/SlowLoadNotice';
 import { useSettings, type NumberLocale, type Settings } from '@/lib/settings';
 import { convertCurrency } from '@/lib/fx';
+import { listingsCountLabel } from '@/lib/listingsCountLabel';
 import { formatPrice, getCurrencySymbol } from '@/lib/format';
 import { timeAgoShort } from '@/lib/timeAgo';
 import { collectorsApi } from '@/api/collectorsApi';
@@ -979,9 +980,12 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
           {/* Count + ordering only. WHICH filters are applied is now the chips
               row directly above, so restating it here said the same thing twice
               in two adjacent rows. */}
+          {/* `listingsCountLabel`, not `listings.length`: the list pages at
+              24, so the bare length printed the first page as the total and
+              grew while the member scrolled. */}
           {mineOnly
-            ? `Your ${listings.length} listing${listings.length === 1 ? '' : 's'}`
-            : `${listings.length} listing${listings.length === 1 ? '' : 's'}`}
+            ? `Your ${listingsCountLabel(listings.length, hasMore)}`
+            : listingsCountLabel(listings.length, hasMore)}
           {` · ${sortLabel}`}
         </Text>
       ) : null}
@@ -1139,7 +1143,10 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
                   </View>
                 ) : !hasMore ? (
                   <Text style={[styles.footerNote, { color: colors.muted }]}>
-                    That&apos;s all {listings.length} listing{listings.length === 1 ? '' : 's'}.
+                    {/* hasMore is false in this branch, so pass it
+                        literally: this sentence claims completeness and must
+                        never render a `+`. */}
+                    That&apos;s all {listingsCountLabel(listings.length, false)}.
                   </Text>
                 ) : null}
                 <Text style={[styles.footerNote, { color: colors.muted }]}>
