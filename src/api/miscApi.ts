@@ -99,12 +99,24 @@ export const getTaskStatus = (taskId: string) =>
   get(`/tasks/${encodeURIComponent(taskId)}/status`);
 
 // Verified Sales (Ground Truth)
+//
+// The key names are the SERVER's (`VerifiedSaleRequest` in
+// `server/app/features/feedback_router.py`), and they have to be: Pydantic
+// ignores unknown keys, so a name that does not match is dropped and answered
+// 200. This wrapper said `sale_date` and `marketplace` where the model says
+// `sold_at` and `platform`, so the date and the venue of every verified sale
+// were thrown away in silence — the member read "Sale price recorded — thanks!"
+// either way, `tsc` was happy because the client's own type declared the
+// fields, and production's one verified_sales row has sold_at NULL (class V,
+// 2026-09-19). `condition` and `notes` are the model's other two fields.
 export const submitVerifiedSale = (payload: {
   item_id: string;
   sale_price: number;
   currency?: string;
-  sale_date?: string;
-  marketplace?: string;
+  sold_at?: string;
+  platform?: string;
+  condition?: string;
+  notes?: string;
 }) => post("/feedback/verified-sale", payload as Record<string, unknown>);
 
 export const listVerifiedSales = () =>

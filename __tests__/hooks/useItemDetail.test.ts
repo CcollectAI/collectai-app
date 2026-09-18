@@ -206,6 +206,36 @@ describe('useItemDetail', () => {
     });
   });
 
+  describe('verified sale payload', () => {
+    /**
+     * Pydantic ignores unknown keys, so a client key the model does not declare
+     * is dropped and answered 200. This call sent `sale_date` where
+     * `VerifiedSaleRequest` declares `sold_at`, so the date of every verified
+     * sale was discarded in silence — the member read "Sale price recorded —
+     * thanks!", `tsc` was satisfied because the client's own type declared the
+     * field, and production's only `verified_sales` row has `sold_at` NULL
+     * (class V, 2026-09-19).
+     *
+     * Asserted at the CALL SITE on purpose. A test on the api wrapper cannot
+     * catch this: TypeScript types are erased, so renaming the wrapper's field
+     * back does not change what a hand-written call passes through — the first
+     * attempt at this test passed against both versions.
+     */
+    it('sends the sale date as `sold_at`, the name the server reads', async () => {
+      const { result } = renderHook(() => useItemDetail(defaultParams));
+
+      act(() => { result.current.setSalePrice('20'); });
+      await act(async () => { await result.current.onSubmitSalePrice(); });
+
+      expect(mockSubmitVerifiedSale).toHaveBeenCalledTimes(1);
+      const payload = mockSubmitVerifiedSale.mock.calls[0][0];
+      expect(payload).toHaveProperty('sold_at');
+      expect(payload).not.toHaveProperty('sale_date');
+      expect(typeof payload.sold_at).toBe('string');
+      expect(payload.sale_price).toBe(20);
+    });
+  });
+
   describe('keyboard state', () => {
     it('updates keyboardVisible and keyboardHeight on keyboard show', () => {
       const { result } = renderHook(() => useItemDetail(defaultParams));

@@ -813,6 +813,24 @@ false}`. So is a branch that really performs the action without a database (the
 dev-only in-memory alert store). Gated by
 `python3 server/scripts/check_unwritten_ok.py` in `verify:prebuild`.
 
+## `POST /feedback/verified-sale` — the field names are the server's
+
+`VerifiedSaleRequest` declares exactly: `item_id`, `sale_price`, `currency`,
+`platform`, `condition`, `sold_at`, `notes`.
+
+**Pydantic ignores unknown keys**, so any other name is dropped and answered
+**200**. The client sent `sale_date` and `marketplace` — the date and venue of
+every verified sale were discarded in silence, and production's only
+`verified_sales` row has `sold_at` NULL (class V, 2026-09-19). Nothing could see
+it: the server answered success, and `tsc` was satisfied because the client's
+own type declared the fields.
+
+Verified sales are ground truth for the pricing model. A sale with no date
+cannot be weighted against the market at the time it happened.
+
+Anything added to this payload must match a field above, and
+`scripts/probe_ignored_fields_v2.py` compares the two declarations.
+
 ## Error Response Format
 
 All errors use a consistent format via `error_response()`:

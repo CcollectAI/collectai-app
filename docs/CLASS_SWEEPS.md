@@ -63,7 +63,7 @@ Two rules the tooling learned the hard way:
 | S | The server answered `ok` and wrote nothing | 2026-09-17/18 **deployed** | ✅ **all 34 read**: 6 `ok`-without-a-write fixed, the announcement DM dead five months fixed, 4 money handlers made atomic + row-locked (a trade could complete twice or never; a sale banked twice; a mandate past its cap), 22 of the 34 sites cleared with the reason written down. 8 tests that PINNED the lie rewritten. One decision left: `reports_count` is written, read nowhere |
 | T | The server sends it and the app never reads it | 2026-09-18 | measured: **74 of 461** fields declared in `src/api` are referenced nowhere else. Three confirmed: subscription dates ✅ **fixed** (the copy was already translated in 7 locales and rendered by nothing), realised P/L unreachable and the demand differentiator unshown — both product calls. The rest is mostly request params and deliberately-removed UI |
 | U | A provider CASTS a snake_case payload to a camelCase type | 2026-09-18 | ✅ all 4 found and mapped (sales, fee schedules, listings, accounts). **All behind `SELLING_ENABLED=false`** — I first called two of them live and the device disproved it. Real, and they ship the day selling is switched on. `tsc` cannot see this class |
-| V | The app SENDS a field the server drops on the floor | 2026-09-18 | ⚠️ **INCONCLUSIVE, and the number is why**: the probe could read only **11 of 87** write calls (13%), found 0 in those, and that says nothing about the other 74. Method for a real run is written up |
+| V | The app SENDS a field the server drops on the floor | run 2, 2026-09-19 | ✅ **settled**: coverage 13% → **47%** by reading each wrapper's payload TYPE. **One LIVE finding, fixed** (every verified sale lost its date); three real but behind `SELLING_ENABLED=false`. The probe was wrong 4 times first |
 | W | A column the schema carries that no code mentions | 2026-09-18 | measured: **524 across 177 base tables**. Sampled `items` (19 of them): **18 hold no data at all** and the 19th is only its default — schema DEBT, not silent data loss. A cleanup decision, not a bug |
 | X | Committed to `web/` and never deployed | 2026-09-19 | ✅ swept: **17 of 19** servable files byte-identical to production; **1 real drift** (`terms.html`, two sentences, one of them the App Store 4.8 claim); 1 false positive (`vercel.json` is config, not an asset) |
 
@@ -1663,6 +1663,75 @@ nothing in those eleven.
 the same mistake as a green gate whose matcher never fires
 ([[learning_a_test_file_is_not_a_gate]]), and this file's own rule is that a
 checker which cannot fail is the worst kind.
+
+### Run 2 (2026-09-19) — coverage 13% → 47%, and the class is real
+
+`scripts/probe_ignored_fields_v2.py` does what run 1 said the next run should:
+reads each exported wrapper's payload **TYPE** from its signature (inline object
+type, or a named `type`/`interface` resolved across `src/`) instead of the call
+expression. **41 of 87 write calls fully checked (47%)**, 9 more have no body at
+all, 27 remain unreadable and are listed by name in the output.
+
+**The probe was wrong FOUR times before its findings could be trusted**, and
+every one would have produced a confident false report. Two of them were only
+found because the numbers were re-read after each fix:
+
+1. **It matched routes by suffix**, so `POST /marketplace/listings` was
+   attributed to `p2p_listing_router.create_listing` — a different router,
+   mounted at `/p2p`. Fixed by reading `APIRouter(prefix=…)` and matching the
+   FULL path exactly.
+2. **It keyed Pydantic models by bare class name.** `ListingCreate` is declared
+   in BOTH `marketplace_listing_router.py` and `p2p_listing_router.py`, so the
+   second overwrote the first and the probe reported `marketplace_id` and
+   `format` as undeclared when the bound model declares both. Now keyed by
+   `(file, class)`, resolved in the route's own file first.
+3. **A backtick was listed as both an opener and a closer** in the argument
+   splitter's `if/elif`, so the opener branch always won and depth never
+   returned to zero: **every call with a `/items/${id}` style path was counted
+   as having NO BODY.** Fixing it moved coverage 37% → 49% and "no body" from 32
+   to 9. A template literal is delimited by the same character at both ends and
+   cannot be counted like a bracket.
+4. **The payload-type lookup was not scoped to the enclosing wrapper.** It took
+   the last matching signature anywhere above the call, and its pattern only
+   matched a FIRST parameter — so `updateMandate = (id, payload: Record<…>)`
+   was skipped and the call was credited with **`createMandate`'s** object type.
+   That alone invented **five** findings, reporting POST keys against PATCH
+   routes. Scoped to the enclosing declaration, the count went back to 3.
+5. The first regression test for the fix **could not fail**: it asserted the API
+   wrapper's behaviour, and TypeScript types are erased at runtime, so renaming
+   the wrapper's field back changed nothing a hand-written call passes through.
+   Re-pointed at the CALL SITE, where the bug actually lived.
+
+**The sequence is the lesson.** Fixing defect 3 took the findings from 3 to 8,
+and five of those new ones were defect 4 talking. A probe that has just started
+reporting MORE is not therefore finding more — re-verify each new finding
+against both ends before believing the delta.
+
+**✅ LIVE and fixed: every verified sale lost its date and its venue.**
+`submitVerifiedSale` declared `sale_date` and `marketplace`; the server's
+`VerifiedSaleRequest` declares **`sold_at`** and **`platform`**. Pydantic
+dropped both and answered 200, the member read *"Sale price recorded —
+thanks!"*, and `tsc` was satisfied because the client's own type declared the
+fields. Confirmed on production: the one `verified_sales` row has `sold_at`
+NULL. Verified sales are the ground-truth input to the pricing model, so a sale
+with no date cannot be weighted against the market at the time it happened.
+Fixed in `src/api/miscApi.ts` and `useItemDetail.ts:557`; pinned by a call-site
+test, mutation-proven.
+
+**Three more are real but NOT live — all behind `SELLING_ENABLED = false`**
+(the class U lesson: check the flag before calling a defect live). They ship the
+day selling is switched on:
+
+| call | sends | the model declares |
+|---|---|---|
+| `POST /marketplace/listings` | `condition_description` | `condition_label`, `condition_notes` |
+| `POST /marketplace/listings/fees/calculate` | `category` | nothing of the sort — the fee is computed per marketplace |
+| `POST /marketplace/listings/accounts` | `api_key` | `oauth_token_enc`, `refresh_token_enc` — so a key typed into the connect form is discarded and the account reports connected |
+
+**Not yet a gate.** At 47% coverage with three known-and-deferred findings, a
+blocking gate would need three markers on the day it lands. The probe is the
+instrument; making it `check:dropped-fields` is the next step, after the
+`SELLING_ENABLED` three are resolved.
 
 **Why the coverage is low, and the better method.** Most wrappers do not inline
 their body — they take a TYPED PARAMETER and pass it through:

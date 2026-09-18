@@ -554,7 +554,7 @@ export function useItemDetail(params: UseItemDetailParams) {
           item_id: id,
           sale_price: parsedPrice,
           currency: settings.currency,
-          sale_date: new Date().toISOString(),
+          sold_at: new Date().toISOString(),
         }).catch((err) => { logger.warn('[ItemDetail] verified sale submission failed:', err); });
       }
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
