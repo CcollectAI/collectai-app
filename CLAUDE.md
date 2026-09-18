@@ -26,6 +26,14 @@ is a syntax error in JSX, so it could never be written; `False in (None, 0)`
 folding booleans in silently; a `//` comment inside Python; and a `package.json`
 edit whose anchor appeared twice, so it silently did not apply.
 
+## `npm run check:cast-not-mapped` (2026-09-18)
+
+Class U's gate, in `verify:prebuild`: a provider returning a camelCase-typed
+value from a `collectorsApi` call with no `.map(` between them. 0 on a clean
+tree, 1 when a mapping is reverted. Its first run reported its own explanatory
+comment — failure mode 1 of [[learning_four_ways_a_new_gate_is_wrong]] — so
+comment lines are skipped.
+
 ## A cast is not a mapping, and `tsc` cannot tell you (2026-09-18)
 
 `unwrap<MarketplaceSale>(await collectorsApi.get(...))` **asserts** a shape

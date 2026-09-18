@@ -63,6 +63,7 @@ Two rules the tooling learned the hard way:
 | S | The server answered `ok` and wrote nothing | 2026-09-17/18 **deployed** | ✅ **all 34 read**: 6 `ok`-without-a-write fixed, the announcement DM dead five months fixed, 4 money handlers made atomic + row-locked (a trade could complete twice or never; a sale banked twice; a mandate past its cap), 22 of the 34 sites cleared with the reason written down. 8 tests that PINNED the lie rewritten. One decision left: `reports_count` is written, read nowhere |
 | T | The server sends it and the app never reads it | 2026-09-18 | measured: **74 of 461** fields declared in `src/api` are referenced nowhere else. Three confirmed: subscription dates ✅ **fixed** (the copy was already translated in 7 locales and rendered by nothing), realised P/L unreachable and the demand differentiator unshown — both product calls. The rest is mostly request params and deliberately-removed UI |
 | U | A provider CASTS a snake_case payload to a camelCase type | 2026-09-18 | ✅ all 4 found and mapped (sales, fee schedules, listings, accounts). **All behind `SELLING_ENABLED=false`** — I first called two of them live and the device disproved it. Real, and they ship the day selling is switched on. `tsc` cannot see this class |
+| V | The app SENDS a field the server drops on the floor | 2026-09-18 | ⚠️ **INCONCLUSIVE, and the number is why**: the probe could read only **11 of 87** write calls (13%), found 0 in those, and that says nothing about the other 74. Method for a real run is written up |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -1306,6 +1307,46 @@ stay true while the data is still collected. If XP is ever REMOVED rather than
 hidden, those are promises that must change with it.
 
 ### The original note
+
+## V — the app sends a field the server drops on the floor (2026-09-18)
+
+Class T with the arrow reversed, and worse: **Pydantic ignores unknown keys by
+default**, so a client that posts `{"foo": 1}` to a model without `foo` gets a
+**200** and no `foo`. The member believes they saved something. Same family as
+the `{"ok": true}` class, one layer up.
+
+**The sweep did not settle this, and the honest output is the coverage.**
+`scripts/probe_ignored_fields.py` matches `post`/`patch`/`put` calls whose body
+is an INLINE object literal and whose path is a template literal, maps the path
+to a FastAPI route, and diffs the keys against the bound Pydantic model's
+fields. It read **11 of the 87** write calls in `src/api/` — 13% — and found
+nothing in those eleven.
+
+**0 findings out of 13% coverage is not "clean".** Recording it as clean would be
+the same mistake as a green gate whose matcher never fires
+([[learning_a_test_file_is_not_a_gate]]), and this file's own rule is that a
+checker which cannot fail is the worst kind.
+
+**Why the coverage is low, and the better method.** Most wrappers do not inline
+their body — they take a TYPED PARAMETER and pass it through:
+
+```ts
+export const updateAlertPreferences = (prefs: {
+  price_drop_enabled?: boolean; …
+}) => patch<…>("/settings/alert-preferences", prefs as Record<string, unknown>);
+```
+
+The keys are in the SIGNATURE, not at the call site, and `as Record<string,
+unknown>` erases them for good measure. So the real probe should read each
+exported wrapper's payload TYPE — the same parse `scripts/probe-dropped-fields.mjs`
+already does for response types — rather than the call expression. That is the
+next run; it was not written today.
+
+One thing worth stating now, because it bounds the risk: a mismatch here is
+**invisible on both sides**. The server returns 200 and the client's own type
+says the field exists, so neither `tsc` nor a test that mocks the API can see
+it. Only a diff of the two declarations can — which is exactly why the class is
+worth a gate rather than a read-through.
 
 ## Decisions for Merle — the XP leaderboard (2026-09-17)
 

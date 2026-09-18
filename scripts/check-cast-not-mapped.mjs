@@ -48,4 +48,20 @@ for (const dir of DIRS) {
   }
 }
 for (const f of findings) console.log(f);
-console.log(`\n${findings.length} cast(s) of a snake_case payload to a camelCase type (of ${camelTypes.size} camelCase types)`);
+if (findings.length) {
+  console.error(
+    `[cast-not-mapped] FAIL — ${findings.length} provider(s) CAST a server payload to a camelCase type:\n`,
+  );
+  for (const f of findings) console.error(`  - ${f}`);
+  console.error(
+    '\n  `unwrap<T>()` and `as T[]` ASSERT a shape, they do not check one. The server answers\n' +
+    '  snake_case, so every field is `undefined` at runtime while tsc stays green — blank titles,\n' +
+    '  NaN totals, a fee lookup that can never match (docs/CLASS_SWEEPS.md class U).\n' +
+    '  Map it field by field.',
+  );
+  process.exit(1);
+}
+console.log(
+  `[cast-not-mapped] PASS — no provider casts a snake_case payload to a camelCase type ` +
+  `(${camelTypes.size} camelCase types checked).`,
+);
