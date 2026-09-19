@@ -68,6 +68,7 @@ Two rules the tooling learned the hard way:
 | X | Committed to `web/` and never deployed | 2026-09-19 | ✅ swept and **FIXED**: 1 real drift (`terms.html`, two sentences — one the App Store 4.8 claim), deployed and verified live; 18 of 19 now byte-identical |
 | Y | A gate that has never seen its own bug | 2026-09-19 | ✅ swept: **40 of 42 fire** on their own pre-fix commit, **0 blind**. 1 needs `.env` to run, 1 was silent on a clean parent but fires under mutation. The sweep itself was wrong 3 times first |
 | Y-2 | What does a gate MISS (not: has it fired) | 2026-09-19 | ⚠️ **INCONCLUSIVE** — "files in the commit" ≠ "sites of the class". The two worst scorers each caught **2 of 2** real instances; the low ratios were the denominator. A sounder run needs a per-class signature and is circular |
+| Y-3 | What a gate misses, via its own report vs the human fix | 2026-09-19 | ✅ **works, with 3 exclusions**. Confirmed: `check:half-done-silence` cannot see `useOptimisticRsvp.ts`, a file its OWN commit fixed — the second proven instance after `delist`. **A gate fences one shape, not a class**, and both misses were found by reading |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -2194,7 +2195,55 @@ every wrong version produced a confident, uniform table:
 Each time the tell was the same: a uniform result. **All-42-identical is not a
 finding, it is a broken tool.**
 
-## Y-2 — what does a gate MISS? (2026-09-19) — ⚠️ INCONCLUSIVE, and the denominator is why
+## Y-3 — what a gate misses, asked a way that works (2026-09-19)
+
+Y-2 failed because *I* had to decide which changed files counted as sites. Y-3
+asks the two parties instead, and compares them:
+
+* at the commit BEFORE the gate landed, run the gate and record **which files it
+  reports**;
+* diff that against **the files that commit went on to fix**.
+
+`fixed \ reported` is the miss — the human found it, the checker never saw it.
+Neither set is mine. `scripts/sweep_gate_misses.py`.
+
+**✅ CONFIRMED: `check:half-done-silence` cannot see one of the four files its
+own commit fixed.** It does not flag `src/hooks/useOptimisticRsvp.ts` at
+`e5cb38e~1`, and that file was fixed in the same commit that introduced the
+gate. The reason is worth keeping: the RSVP defect was not the half-done-silence
+shape at all — `useOptimisticMutation` swallows and does not rethrow, neither
+screen reads the hook's `error`, and `onRollback` used `logger.warn`, which is
+stripped in release. It was found by READING the neighbours of a fix.
+
+**That is the second proven instance of one pattern**, after
+`check:double-submit` missing `handleDelist`. In both cases the checker catches
+the shape it was written for, and the SIBLING defect — found in the same hour,
+by a person reading around the fix — is invisible to it. **A gate is a fence
+around one shape, not around a class.** Both misses were found by reading; the
+sweeps never produced one.
+
+**Exclusions, because the method is not clean.** Do not read the raw table
+without them:
+
+* **Four gates report no parseable paths** (`check-category-display`,
+  `check-navbar-branches`, `check-paywall-claims`, `check-sql-search-path`) —
+  measurement failures, not gates that miss everything.
+* **Server-side Python gates print paths relative to `server/`** while git
+  reports `server/app/…`, so `check_server_today` scores 0 overlap while
+  reporting 7 files. A prefix mismatch, not a miss.
+* **Sweep-sized commits** (33–61 files) cannot support a per-file conclusion —
+  most of those files were changed for other reasons. That was Y-2's whole
+  defect and it survives here for the large rows.
+
+**The run before this one reported 510 misses and was one character wrong:**
+`(?:ts|tsx|py)` matches `ts` and stops, so every `.tsx` path was captured as
+`.ts` and never equalled its own filename. Nothing about that run looked
+implausible — 39 gates, varied ratios. It was caught by a CONTROL:
+`check:partial-count`, mutation-proven that morning to fire on
+`app/listings.tsx`, was reported as missing exactly that file. Now rule 6c in
+CLAUDE.md.
+
+## Y-2 — the same question asked a way that does NOT work — ⚠️ INCONCLUSIVE
 
 Class Y answered *has this gate ever fired?* — all 42 had. It could not answer
 the question that actually matters, because `check:double-submit` passes class Y
