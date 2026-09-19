@@ -65,7 +65,7 @@ Two rules the tooling learned the hard way:
 | U | A provider CASTS a snake_case payload to a camelCase type | 2026-09-18 | ✅ all 4 found and mapped (sales, fee schedules, listings, accounts). **All behind `SELLING_ENABLED=false`** — I first called two of them live and the device disproved it. Real, and they ship the day selling is switched on. `tsc` cannot see this class |
 | V | The app SENDS a field the server drops on the floor | run 2, 2026-09-19 | ✅ **closed: 57 endpoints proven, 3 unreadable, 0 findings.** One LIVE finding fixed (every verified sale lost its date and venue); 3 dead fields removed; the 3 unreadable are 2 hand-verified clean + 1 behind `SELLING_ENABLED`. The probe was wrong 9 times |
 | W | A column the schema carries that no code mentions | 2026-09-18 | measured: **524 across 177 base tables**. Sampled `items` (19 of them): **18 hold no data at all** and the 19th is only its default — schema DEBT, not silent data loss. A cleanup decision, not a bug |
-| X | Committed to `web/` and never deployed | 2026-09-19 | ✅ swept: **17 of 19** servable files byte-identical to production; **1 real drift** (`terms.html`, two sentences, one of them the App Store 4.8 claim); 1 false positive (`vercel.json` is config, not an asset) |
+| X | Committed to `web/` and never deployed | 2026-09-19 | ✅ swept and **FIXED**: 1 real drift (`terms.html`, two sentences — one the App Store 4.8 claim), deployed and verified live; 18 of 19 now byte-identical |
 | Y | A gate that has never seen its own bug | 2026-09-19 | ✅ swept: **40 of 42 fire** on their own pre-fix commit, **0 blind**. 1 needs `.env` to run, 1 was silent on a clean parent but fires under mutation. The sweep itself was wrong 3 times first |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
@@ -2090,13 +2090,16 @@ softened "leading marketplace sources across 54 collectible categories" to
 **Discarded as a false positive:** `web/vercel.json` returns 404. It is consumed
 by Vercel as configuration and is not a servable asset — a 404 there is correct.
 
-**Fix:** deploy the `web/` Vercel project, then re-check:
+**✅ FIXED — deployed and verified 2026-09-19.** `grep -c -i 'social login'` on
+the live page returns **0**, `web/terms.html` is byte-identical to production
+(22441/22441), and the softened price-estimates sentence went live with it. The
+sweep now reports **18 of 19 identical**, the 19th being the `vercel.json` false
+positive.
 
-```bash
-curl -s https://sparrowcollect.com/terms | grep -i 'social login'   # expect no match
-```
-
-Not done here because publishing to the public site is Merle's call.
+How it was deployed, after four `vercel login` attempts landed on the wrong
+account every time: a **project-scoped token** with `npx vercel@latest --prod
+--token … ` and **no `--scope`**. Full procedure and the three traps in
+`docs/AUTH_AND_WEB_DEPLOY.md`.
 
 ## Y — a gate that has never seen its own bug (2026-09-19)
 

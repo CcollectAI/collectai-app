@@ -454,10 +454,19 @@ would see. Recorded, not fixed: any change here must be reasoned against the
 (Google, Apple)"* while this flag was false. Corrected to email and password.
 The privacy policy's "If you use social login…" is conditional and stays true.
 
-> ⛔ **STILL LIVE AND STILL WRONG — measured 2026-09-19.**
-> `https://sparrowcollect.com/terms` returns **200** and still serves
+> ✅ **DEPLOYED AND VERIFIED 2026-09-19.** `https://sparrowcollect.com/terms`
+> now serves *"You may register using an email address and password."* —
+> `grep -c -i 'social login'` returns **0**, and `web/terms.html` is
+> byte-identical to production (22441/22441). The second drifted sentence went
+> with it: the live price-estimates text is now the softened *"public
+> marketplace sources"*.
+>
+> It had been wrong since 2026-09-14. The record of why is kept below.
+>
+> ~~STILL LIVE AND STILL WRONG — measured 2026-09-19.~~
+> `https://sparrowcollect.com/terms` returned **200** and served
 > *"You may register using email/password or social login (Google, Apple)."*
-> The repo's `web/terms.html` has said *"using an email address and password"*
+> The repo's `web/terms.html` had said *"using an email address and password"*
 > since 09-13; **`web/` is a separate Vercel deploy and was never shipped.**
 >
 > This is the one place the correction matters most: the IN-APP copy is fixed
@@ -503,17 +512,39 @@ on the remote** — the GitHub default branch IS
 `web/terms.html` since `6f833a6` (2026-09-14). The fix is on the default branch
 and still not live, so the project is not auto-deploying from it.
 
-**The reliable unblock is a token, not a login.** Signed in as the account that
-owns `collectais-projects`, create one at `vercel.com/account/tokens`, then:
+**The reliable unblock is a token, not a login — and here is exactly what
+worked on 2026-09-19**, after four `vercel login` attempts all landed back on
+the personal account:
 
 ```bash
 cd web
-VERCEL_TOKEN=<token> npx vercel --prod --scope collectais-projects
+npx vercel@latest --prod --token "$(cat /path/to/token)"      # NO --scope
 ```
 
-That skips the browser session entirely. Failing that: log out of Vercel **in
-the browser** (or use a private window) before `vercel login
-ccollect.ai@gmail.com`, or hit Redeploy in the Vercel dashboard as that account.
+Three details, each of which cost a failed attempt:
+
+1. **A PROJECT-scoped token (`vcp_…`) is enough, and behaves unlike a personal
+   one.** `/v2/user` answers `not_found` and `/v2/teams` answers **403**, which
+   looks like an invalid token — but `/v9/projects/<id>?teamId=<org>` and
+   `/v6/deployments?teamId=<org>` both answer **200**, which is all a deploy
+   needs. Probe those two endpoints before concluding a token is bad.
+2. **Omit `--scope`.** Resolving a scope by slug lists teams, which a
+   project-scoped token cannot do.
+3. **Use `vercel@latest`.** The installed CLI (54.4.1) failed with *"Could not
+   retrieve Project Settings. To link your Project, remove the `.vercel`
+   directory and deploy again."* — 59.23.2 deployed the same tree, same token,
+   first try.
+
+⚠️ **Do NOT follow that error's advice.** Removing `.vercel/` is the "create a
+NEW project" path this section opens with; `collectors-app-7ed1f56b` under the
+personal account looks like it happened once already.
+
+Result: `target: production`, `Aliased → https://sparrowcollect.com`.
+
+The dashboard is not an alternative here: every deployment's Source reads
+`>_ vercel deploy` (no git integration), and the latest production build was
+**Sep 7** — so a dashboard *Redeploy* rebuilds the Sep 7 artefact, with the old
+Terms still in it.
 
 Apple/Google sign-in is hidden behind **`SOCIAL_LOGIN_ENABLED=false`**
 (`src/config/featureFlags.ts`). Email-only avoids 4.8 (offering Google requires

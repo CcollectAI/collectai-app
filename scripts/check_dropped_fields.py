@@ -1,4 +1,23 @@
-"""Class V, second run: read the wrapper's payload TYPE, not the call expression.
+"""GATE: a key the app sends that the server model does not declare.
+
+Pydantic ignores unknown keys, so a client key the model has no field for is
+dropped and answered **200** — invisible to `tsc` (the client's own type declares
+it) and to any test that mocks the API. `submitVerifiedSale` sent `sale_date`
+and `marketplace` where the model says `sold_at` and `platform`, so the date and
+venue of every verified sale were discarded in silence (class V, 2026-09-19).
+
+Two ways to fail:
+
+1. **A mismatch** — a proven payload carries a key its route's model lacks.
+2. **A NEW unreadable endpoint** — a write whose payload cannot be proven at any
+   layer and is not in ALLOWLIST. Without this the gate is dodged by typing a
+   payload `Record<string, unknown>`, which is what the three grandfathered
+   endpoints do.
+
+`--report` prints the full coverage breakdown instead of the gate verdict.
+Baseline when this landed: 57 endpoints proven, 3 allowlisted, 0 findings.
+
+Class V, second run: read the wrapper's payload TYPE, not the call expression.
 
 The first probe (`probe_ignored_fields.py`) matched only calls whose body is an
 INLINE object literal and reached **11 of 87** write calls — 13% — and found
@@ -281,6 +300,52 @@ for fname, verb, path, keys, how in calls:
     unknown = [k for k in keys if k not in fields]
     if unknown:
         findings.append((fname, verb, path, unknown, fn, sfile, how))
+
+# Endpoints whose payload cannot be proven at ANY layer. Each carries a reason
+# and each was checked BY HAND when added. A new entry is a deliberate opt-out
+# of this gate and should be argued for, not added quietly.
+ALLOWLIST = {
+    ("patch", "/purchase/mandates/{}"):
+        "Record<string, unknown>. Hand-checked 2026-09-19: create-mandate.tsx "
+        "sends 8 keys and MandateUpdate declares all 8.",
+    ("put", "/notifications/preferences"):
+        "Record<string, boolean> with a COMPUTED key ({ [key]: value }), so the "
+        "real contract is the toggle list. Hand-checked 2026-09-19: all 7 toggle "
+        "keys are declared by NotificationPreferencesUpdate.",
+    ("patch", "/marketplace/listings/{}"):
+        "`patch as Record<string, unknown>` erases Partial<MarketplaceListing>. "
+        "Behind SELLING_ENABLED=false; resolve when selling is switched on.",
+}
+
+proven_eps = {(v, pth) for _f, v, pth, _k, _h in calls}
+unread_eps = {(v, pth) for _f, v, pth, _b in unreadable}
+unproven = sorted(unread_eps - proven_eps)
+unallowed = [e for e in unproven if e not in ALLOWLIST]
+stale_allow = [e for e in ALLOWLIST if e not in unproven]
+
+if "--report" not in sys.argv:
+    ok = True
+    if findings:
+        ok = False
+        print(f"FAIL  {len(findings)} payload(s) carry a key the server model does not declare:")
+        for fname, verb, path, unknown, fn, sfile, how in findings:
+            print(f"   {fname}: {verb.upper()} {path}")
+            print(f"      sends {unknown} — {fn}() in {sfile} declares no such field")
+    if unallowed:
+        ok = False
+        print(f"FAIL  {len(unallowed)} write endpoint(s) whose payload cannot be proven at any layer:")
+        for v, pth in unallowed:
+            print(f"   {v.upper()} {pth}")
+        print("   Type the payload, or add it to ALLOWLIST with a reason you checked by hand.")
+    if stale_allow:
+        print(f"note  {len(stale_allow)} ALLOWLIST entr(ies) no longer needed:")
+        for v, pth in stale_allow:
+            print(f"   {v.upper()} {pth}")
+    if ok:
+        print(f"PASS  dropped fields — {len(proven_eps)} endpoint payload(s) agree with their model; "
+              f"{len(ALLOWLIST)} allowlisted.")
+        sys.exit(0)
+    sys.exit(1)
 
 print("=" * 78)
 print("CLASS V, run 2 — the app sends a field the server drops on the floor")
