@@ -139,7 +139,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
                   <AnimatedPressable
                     onPress={() => setShowDatePicker(false)}
                     accessibilityRole="button"
-                    accessibilityLabel="Done"
+                    accessibilityLabel={t('common.done', { defaultValue: 'Done' })}
                   >
                     <Text style={[styles.modalDone, { color: colors.accent }]}>Done</Text>
                   </AnimatedPressable>
@@ -195,7 +195,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
               placeholderTextColor={colors.muted}
               style={[styles.inputMultiline, { color: colors.text }]}
               textAlignVertical="top"
-              accessibilityLabel="Notes"
+              accessibilityLabel={t('wishlist.notes_a11y', { defaultValue: 'Notes' })}
             />
             {notes.trim().length > 0 && (
               <TouchableOpacity

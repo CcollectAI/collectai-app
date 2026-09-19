@@ -23,6 +23,7 @@ import { formatPrice, getCurrencySymbol, parseMoney } from '@/lib/format';
 import { radius, text, fontWeight, gap } from '@/theme/tokens';
 import type { useFormField } from '@/hooks/useFormField';
 import type { MarketplaceId, MarketplaceFeeSchedule, CurrencyCode } from '@/data/types';
+import { useTranslation } from 'react-i18next';
 
 const MARKETPLACE_CONFIG: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
   collectai: { label: 'Sparrow P2P', icon: 'people-outline', color: '#81D8D0' },
@@ -56,6 +57,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
   creating,
   onCreateListing,
 }: CreateListingModalProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   // Local fee preview
@@ -97,7 +99,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
         <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Create Listing</Text>
-            <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+            <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('common.close', { defaultValue: 'Close' })}>
               <Ionicons name="close" size={24} color={colors.muted} />
             </AnimatedPressable>
           </View>

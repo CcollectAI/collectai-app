@@ -312,7 +312,7 @@ function CategoryBrowseScreen() {
           accessibilityLabel={`Search ${catName} items`}
         />
         {search.length > 0 && (
-          <AnimatedPressable onPress={() => setSearch("")} accessibilityLabel="Clear search">
+          <AnimatedPressable onPress={() => setSearch("")} accessibilityLabel={t('common.clear_search', { defaultValue: 'Clear search' })}>
             <Ionicons name="close-circle" size={18} color={colors.muted} />
           </AnimatedPressable>
         )}

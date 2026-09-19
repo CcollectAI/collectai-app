@@ -12,6 +12,7 @@ import { AnimatedPressable } from '@/motion';
 import { featureFlags } from '@/config/featureFlags';
 import { submitScanFeedback } from '@/api/collectorsApi';
 import { logger } from '@/lib/logger';
+import { useTranslation } from 'react-i18next';
 
 type EditableField = 'name' | 'category' | 'condition';
 
@@ -38,6 +39,7 @@ function ScanFeedbackPanelInner({
   feedbackEnabled,
   onPressName,
 }: Props) {
+  const { t } = useTranslation();
   const { colors } = useScannerTheme();
 
   const [editingField, setEditingField] = useState<EditableField | null>(null);
@@ -108,7 +110,7 @@ function ScanFeedbackPanelInner({
         style={styles.feedbackCancelBtn}
         hitSlop={{ top: 8, bottom: 8, left: 3, right: 8 }}
         accessibilityRole="button"
-        accessibilityLabel="Cancel editing"
+        accessibilityLabel={t('common.a11y_cancel_editing', { defaultValue: 'Cancel editing' })}
       >
         <Ionicons name="close" size={iconSize} color={colors.muted} />
       </AnimatedPressable>

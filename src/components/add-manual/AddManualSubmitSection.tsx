@@ -30,7 +30,7 @@ export const AddManualSubmitSection = React.memo(function AddManualSubmitSection
         disabled={!canSubmit}
         style={[styles.submitButton, { backgroundColor: canSubmit ? colors.accent : colors.border }]}
         accessibilityRole="button"
-        accessibilityLabel="Save to collection"
+        accessibilityLabel={t('item_detail.save_a11y', { defaultValue: 'Save to collection' })}
         accessibilityState={{ disabled: !canSubmit }}
         testID="save-button"
       >

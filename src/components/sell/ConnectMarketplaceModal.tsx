@@ -18,6 +18,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { radius, text, fontWeight, gap } from '@/theme/tokens';
 import type { MarketplaceId } from '@/data/types';
+import { useTranslation } from 'react-i18next';
 
 const MARKETPLACE_CONFIG: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
   ebay: { label: 'eBay', icon: 'cart-outline', color: '#E53238' },
@@ -51,6 +52,7 @@ export const ConnectMarketplaceModal = React.memo(function ConnectMarketplaceMod
   connecting,
   onConnect,
 }: ConnectMarketplaceModalProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
@@ -59,7 +61,7 @@ export const ConnectMarketplaceModal = React.memo(function ConnectMarketplaceMod
         <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Connect Marketplace</Text>
-            <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+            <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('common.close', { defaultValue: 'Close' })}>
               <Ionicons name="close" size={24} color={colors.muted} />
             </AnimatedPressable>
           </View>

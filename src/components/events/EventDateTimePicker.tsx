@@ -160,7 +160,7 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
                 <Text style={[styles.modalTitle, { color: colors.text }]}>
                   {picker === 'end' ? t('event_datetime.end_date_optional') : 'Date'}
                 </Text>
-                <AnimatedPressable onPress={() => setPicker(null)} accessibilityRole="button" accessibilityLabel="Done">
+                <AnimatedPressable onPress={() => setPicker(null)} accessibilityRole="button" accessibilityLabel={t('common.done', { defaultValue: 'Done' })}>
                   <Text style={[styles.modalDone, { color: colors.accent }]}>Done</Text>
                 </AnimatedPressable>
               </View>

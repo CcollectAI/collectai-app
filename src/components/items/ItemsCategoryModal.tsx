@@ -9,6 +9,7 @@ import { useSettings } from '@/lib/settings';
 import { AnimatedPressable } from '@/motion';
 import { CategoryPill } from '@/components/CategoryPill';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { useTranslation } from 'react-i18next';
 
 interface ItemsCategoryModalProps {
   visible: boolean;
@@ -25,6 +26,7 @@ export const ItemsCategoryModal = React.memo(function ItemsCategoryModal({
   onChangeCategory,
   onClose,
 }: ItemsCategoryModalProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
 
@@ -42,7 +44,7 @@ export const ItemsCategoryModal = React.memo(function ItemsCategoryModal({
           onClose();
         }}
         accessibilityRole="button"
-        accessibilityLabel="Close category picker"
+        accessibilityLabel={t('wishlist.close_category_picker_a11y', { defaultValue: 'Close category picker' })}
       >
         <View style={[styles.modalContent, { backgroundColor: colors.card }]} accessibilityRole="menu">
           <View style={styles.modalHeader}>

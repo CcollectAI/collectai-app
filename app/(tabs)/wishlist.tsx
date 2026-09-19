@@ -1009,7 +1009,7 @@ function WatchlistTabScreen() {
               multiline
               numberOfLines={3}
               style={[styles.input, styles.textArea, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-              accessibilityLabel="Notes"
+              accessibilityLabel={t('wishlist.notes_a11y', { defaultValue: 'Notes' })}
             />
 
             {/* Save Button */}

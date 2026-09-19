@@ -282,7 +282,7 @@ function ProjectDetailScreen() {
               style={[styles.backBtn, { borderColor: colors.border }]}
               onPress={() => safeGoBack(router)}
               accessibilityRole="button"
-              accessibilityLabel="Go back"
+              accessibilityLabel={t('common.go_back', { defaultValue: 'Go back' })}
             >
               <Text style={[styles.backBtnText, { color: colors.text }]}>{t('common.go_back')}</Text>
             </AnimatedPressable>

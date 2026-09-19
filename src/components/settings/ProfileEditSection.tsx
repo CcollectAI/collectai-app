@@ -509,11 +509,11 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
       >
         <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
           <View style={[styles.pickerHeader, { borderBottomColor: colors.border, paddingTop: 14 + ANDROID_STATUS_BAR_INSET }]}>
-            <TouchableOpacity onPress={() => setEditProfileVisible(false)} accessibilityLabel="Close">
+            <TouchableOpacity onPress={() => setEditProfileVisible(false)} accessibilityLabel={t('common.close', { defaultValue: 'Close' })}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('account.edit_profile')}</Text>
-            <TouchableOpacity onPress={handleSaveProfile} disabled={savingProfile} accessibilityLabel="Save">
+            <TouchableOpacity onPress={handleSaveProfile} disabled={savingProfile} accessibilityLabel={t('common.save', { defaultValue: 'Save' })}>
               {savingProfile ? (
                 <ActivityIndicator size="small" color={colors.accent} />
               ) : (
@@ -561,11 +561,11 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
       >
         <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
           <View style={[styles.pickerHeader, { borderBottomColor: colors.border, paddingTop: 14 + ANDROID_STATUS_BAR_INSET }]}>
-            <TouchableOpacity onPress={() => setChangePasswordVisible(false)} accessibilityLabel="Close">
+            <TouchableOpacity onPress={() => setChangePasswordVisible(false)} accessibilityLabel={t('common.close', { defaultValue: 'Close' })}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('account.change_password')}</Text>
-            <TouchableOpacity onPress={handleChangePassword} disabled={savingPassword} accessibilityLabel="Save">
+            <TouchableOpacity onPress={handleChangePassword} disabled={savingPassword} accessibilityLabel={t('common.save', { defaultValue: 'Save' })}>
               {savingPassword ? (
                 <ActivityIndicator size="small" color={colors.accent} />
               ) : (
@@ -624,7 +624,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
                 setDeleteModalVisible(false);
                 setDeleteConfirmText('');
               }}
-              accessibilityLabel="Close"
+              accessibilityLabel={t('common.close', { defaultValue: 'Close' })}
               disabled={deletingAccount}
             >
               <Ionicons name="close" size={24} color={colors.text} />

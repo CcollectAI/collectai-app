@@ -5,12 +5,14 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { logger } from '@/lib/logger';
+import { useTranslation } from 'react-i18next';
 
 const TIFFANY = '#81D8D0';
 
 type Props = { title?:string; value?:string|null; options:string[]; placeholder?:string; onChange:(v:string)=>void; searchable?:boolean; };
 
 export default function CompactSelect({ title, value, options, placeholder='Select…', onChange, searchable=false }:Props) {
+  const { t } = useTranslation();
   const { colors, isDark } = useAppTheme();
   const tiffanyLight = isDark ? colors.brand.lighter : '#E6F7F5';
   const triggerRef = useRef<View>(null);
@@ -53,7 +55,7 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
         }}>
           {title ? (<View style={{ flexDirection:'row', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
             <Text style={{ color: colors.text, fontWeight:'700', fontSize: 15 }}>{title}</Text>
-            <Pressable onPress={hide} accessibilityRole="button" accessibilityLabel="Close">
+            <Pressable onPress={hide} accessibilityRole="button" accessibilityLabel={t('common.close', { defaultValue: 'Close' })}>
               <Icon name="close" />
             </Pressable>
           </View>) : null}

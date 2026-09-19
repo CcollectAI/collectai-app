@@ -7,6 +7,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 interface ItemsFilterSummaryProps {
   categoryParam?: string;
@@ -25,6 +26,7 @@ export const ItemsFilterSummary = React.memo(function ItemsFilterSummary({
   filteredItemCount,
   onClearFilters,
 }: ItemsFilterSummaryProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   const hasAnyFilter =
@@ -74,7 +76,7 @@ export const ItemsFilterSummary = React.memo(function ItemsFilterSummary({
             onPress={onClearFilters}
             style={styles.filterClearButton}
             accessibilityRole="button"
-            accessibilityLabel="Clear all filters"
+            accessibilityLabel={t('listings.a11y_clear_filters', { defaultValue: 'Clear all filters' })}
           >
             <Text style={[styles.filterClearText, { color: colors.muted }]}>
               Clear

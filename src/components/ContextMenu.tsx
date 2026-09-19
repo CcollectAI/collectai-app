@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import type { SwipeAction } from './SwipeableRow';
+import { useTranslation } from 'react-i18next';
 
 type ContextMenuProps = {
   visible: boolean;
@@ -36,6 +37,7 @@ export function ContextMenu({
   title,
   subtitle,
 }: ContextMenuProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   const handleActionPress = (action: SwipeAction) => {
@@ -54,7 +56,7 @@ export function ContextMenu({
       transparent
       onRequestClose={onClose}
     >
-      <Pressable style={styles.overlay} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close menu">
+      <Pressable style={styles.overlay} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('common.close_menu_a11y', { defaultValue: 'Close menu' })}>
         <Pressable
           style={[styles.menuContainer, { backgroundColor: colors.card }]}
           onPress={(e) => e.stopPropagation()}
@@ -115,7 +117,7 @@ export function ContextMenu({
               style={[styles.cancelButton, { backgroundColor: colors.background }]}
               onPress={onClose}
               accessibilityRole="button"
-              accessibilityLabel="Cancel"
+              accessibilityLabel={t('common.cancel', { defaultValue: 'Cancel' })}
             >
               <Text style={[styles.cancelText, { color: colors.accent }]}>Cancel</Text>
             </Pressable>

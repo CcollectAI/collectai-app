@@ -29,6 +29,7 @@ const ROUTE_TO_HREF: Record<string, string> = {
 const HIDDEN_ROUTES = new Set(["wishlist", "items"]);
 
 function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
   const router = useRouter();
@@ -55,10 +56,10 @@ function CustomTabBar({ state, descriptors }: BottomTabBarProps) {
         },
       ]}
       accessibilityRole="tablist"
-      accessibilityLabel="Main navigation"
+      accessibilityLabel={t('common.main_navigation_a11y', { defaultValue: 'Main navigation' })}
       onTouchStart={(e) => {
-        const t = e.nativeEvent.touches?.[0];
-        console.log("[TAB] outer touchStart x=", t?.locationX, "y=", t?.locationY);
+        const touch = e.nativeEvent.touches?.[0];
+        console.log("[TAB] outer touchStart x=", touch?.locationX, "y=", touch?.locationY);
       }}
     >
       {state.routes.map((route, index) => {

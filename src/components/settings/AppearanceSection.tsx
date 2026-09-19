@@ -291,7 +291,7 @@ function AppearanceSectionInner() {
             }}
             trackColor={{ false: colors.border, true: colors.accent }}
             thumbColor={colors.accentText}
-            accessibilityLabel="Animations"
+            accessibilityLabel={t('settings.animations', { defaultValue: 'Animations' })}
           />
         </View>
       </View>
@@ -307,7 +307,7 @@ function AppearanceSectionInner() {
       >
         <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
           <View style={[styles.pickerHeader, { borderBottomColor: colors.border, paddingTop: 14 + ANDROID_STATUS_BAR_INSET }]}>
-            <TouchableOpacity onPress={() => setSkillPickerVisible(false)} accessibilityLabel="Close">
+            <TouchableOpacity onPress={() => setSkillPickerVisible(false)} accessibilityLabel={t('common.close', { defaultValue: 'Close' })}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('settings.collecting_experience_question', { defaultValue: 'How long have you been collecting?' })}</Text>
@@ -344,7 +344,7 @@ function AppearanceSectionInner() {
       >
         <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
           <View style={[styles.pickerHeader, { borderBottomColor: colors.border, paddingTop: 14 + ANDROID_STATUS_BAR_INSET }]}>
-            <TouchableOpacity onPress={() => setRegionPickerVisible(false)} accessibilityLabel="Close">
+            <TouchableOpacity onPress={() => setRegionPickerVisible(false)} accessibilityLabel={t('common.close', { defaultValue: 'Close' })}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('settings.select_region')}</Text>
@@ -381,7 +381,7 @@ function AppearanceSectionInner() {
       >
         <View style={[styles.pickerModal, { backgroundColor: colors.background }]}>
           <View style={[styles.pickerHeader, { borderBottomColor: colors.border, paddingTop: 14 + ANDROID_STATUS_BAR_INSET }]}>
-            <TouchableOpacity onPress={() => setCurrencyPickerVisible(false)} accessibilityLabel="Close">
+            <TouchableOpacity onPress={() => setCurrencyPickerVisible(false)} accessibilityLabel={t('common.close', { defaultValue: 'Close' })}>
               <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={[styles.pickerTitle, { color: colors.text }]}>{t('settings.select_currency')}</Text>

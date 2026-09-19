@@ -711,7 +711,7 @@ function FilterSheetInner({
                 style={styles.presetModalCancel}
                 onPress={() => setShowPresetModal(false)}
                 accessibilityRole="button"
-                accessibilityLabel="Cancel"
+                accessibilityLabel={t('common.cancel', { defaultValue: 'Cancel' })}
               >
                 <Text style={[styles.presetModalCancelText, { color: colors.muted }]}>
                   Cancel

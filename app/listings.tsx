@@ -829,7 +829,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
             style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
             hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
             accessibilityRole="button"
-            accessibilityLabel="Favourites"
+            accessibilityLabel={t('favorites.title', { defaultValue: 'Favourites' })}
           >
             <Ionicons name="heart-outline" size={18} color={colors.text} />
           </AnimatedPressable>

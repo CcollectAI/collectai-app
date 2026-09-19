@@ -121,7 +121,7 @@ function ImportUrlScreen() {
             }]}
             onPress={handleSubmit}
             disabled={!urlInput.startsWith('http') || isSubmitting}
-            accessibilityLabel="Import from URL"
+            accessibilityLabel={t('add_tab.import_url', { defaultValue: 'Import from URL' })}
             accessibilityRole="button"
           >
             {isSubmitting ? (

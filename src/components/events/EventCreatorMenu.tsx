@@ -82,7 +82,7 @@ export const EventCreatorMenu = React.memo(function EventCreatorMenu({
             style={styles.menuItem}
             onPress={onClose}
             accessibilityRole="button"
-            accessibilityLabel="Cancel"
+            accessibilityLabel={t('common.cancel', { defaultValue: 'Cancel' })}
           >
             <Text style={[styles.menuItemText, { color: colors.muted }]}>Cancel</Text>
           </AnimatedPressable>

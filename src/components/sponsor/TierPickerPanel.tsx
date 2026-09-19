@@ -100,10 +100,10 @@ export const TierPickerPanel = React.memo(function TierPickerPanel({
       <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
       <View style={styles.footer}>
-        <AnimatedPressable onPress={onCancel} style={[styles.outlineBtn, { borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel="Cancel">
+        <AnimatedPressable onPress={onCancel} style={[styles.outlineBtn, { borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('common.cancel', { defaultValue: 'Cancel' })}>
           <Text style={[styles.outlineBtnText, { color: colors.muted }]}>Cancel</Text>
         </AnimatedPressable>
-        <AnimatedPressable onPress={onConfirm} style={[styles.primaryBtn, { backgroundColor: colors.accent }]} accessibilityRole="button" accessibilityLabel="Continue">
+        <AnimatedPressable onPress={onConfirm} style={[styles.primaryBtn, { backgroundColor: colors.accent }]} accessibilityRole="button" accessibilityLabel={t('common.continue', { defaultValue: 'Continue' })}>
           <Text style={styles.primaryBtnText}>{billingMode === 'monthly' ? 'Subscribe' : 'Continue'}</Text>
           <Ionicons name="arrow-forward" size={15} color={colors.accentText}/>
         </AnimatedPressable>

@@ -6,9 +6,20 @@ different failures — CLAUDE.md §gates spells that out. A string that never
 reaches a locale file cannot be missing from one, so parity is green while six
 locales render English.
 
-**Backlog: 172 strings across 102 files** (653 at the start; the "410 across 159"
-this line used to claim was stale by two work sessions — `npm run i18n:check`
-prints the live number, so re-run it before quoting one).
+**Backlog: 159 strings across 94 files** (measured 2026-09-19; 653 at the start.
+Every number in this file goes stale within a session or two — `npm run i18n:check`
+prints the live one, so re-run it before quoting one.)
+
+**2026-09-19: the mechanical `accessibilityLabel` slice is DONE.** Of 149
+hardcoded a11y labels, 47 had an English string that already existed verbatim in
+`en.json` — those needed no translator and were wired in two batches (33, then
+the 14 whose component had no `t` in scope and needed `useTranslation()` added).
+That count is now **0** — re-measure by grepping `accessibility(Label|Hint)="..."`
+across `app/` and `src/` and testing each literal against the flattened values of
+`en.json`; nothing comes back. The **102** that
+remain each need a NEW key in all seven locales, i.e. real translations — they
+are not grindable without a translator and must not be filled with English
+copies (step 5).
 
 **2026-09-17: the lint now says which findings are FREE.** It reads the locale
 files and marks any finding whose exact English text is already a value in
@@ -195,9 +206,16 @@ plural key explicitly in code — see `category.set_item_count_one/_many`.
    reread. ⚠️ Its first version matched only SINGLE-quoted `defaultValue`, so it
    silently skipped every string containing an apostrophe — exactly the ones
    most likely to be mis-transcribed. Fixing it took the checked count from 77
-   to 162. It verifies:
-   every key exists; **every `defaultValue` matches `en.json` exactly** (this is
-   what catches an off-by-one in parallel translation arrays, and nothing else
-   will); `t()` appears only inside the declaring component; and no non-English
-   locale is a copy of the English.
+   to 162. It verifies exactly two things, and no more:
+   every key exists in `en.json`; and **every `defaultValue` matches `en.json`
+   exactly** (this is what catches an off-by-one in parallel translation arrays,
+   and nothing else will).
+   ⚠️ **Corrected 2026-09-19.** This step used to claim the gate also checks that
+   `t()` appears only inside the declaring component, and that no non-English
+   locale is a copy of the English. It checks **neither** — read the script: it
+   matches one regex for `t('key', { defaultValue: ... })` and compares strings.
+   Nothing in the repo enforces hook scope (`react-hooks/rules-of-hooks` is not
+   in `eslint.config.js` either), so step 2 is verified by reading the insertion
+   site, not by a gate. A doc that credits a gate with a check it does not make
+   is worse than no doc: it is why step 2 is easy to skip.
 7. Finish with `npm run i18n:parity`, `audit_fe_i18n_drift.py`, `tsc --noEmit`.

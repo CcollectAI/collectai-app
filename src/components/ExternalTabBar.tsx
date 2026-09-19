@@ -104,7 +104,7 @@ export function ExternalTabBar() {
         },
       ]}
       accessibilityRole="tablist"
-      accessibilityLabel="Main navigation"
+      accessibilityLabel={t('common.main_navigation_a11y', { defaultValue: 'Main navigation' })}
     >
       {tabs.map((tab) => {
         const isFocused = tab.key === activeSegment;

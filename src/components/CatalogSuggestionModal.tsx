@@ -258,7 +258,7 @@ function CatalogSuggestionModalInner({
               hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
               onPress={handleSkip}
               accessibilityRole="button"
-              accessibilityLabel="Skip"
+              accessibilityLabel={t('common.skip', { defaultValue: 'Skip' })}
             >
               <Text style={[styles.skipButtonText, { color: colors.muted }]}>Skip</Text>
             </AnimatedPressable>

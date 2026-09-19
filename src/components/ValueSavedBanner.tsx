@@ -18,6 +18,7 @@ import { track } from '@/analytics/track';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import type { ValueSummaryData } from '@/api/collectorsApi';
 import type { SavingsTrigger } from '@/hooks/useValueSummary';
+import { useTranslation } from 'react-i18next';
 
 const AUTO_DISMISS_MS = 8000;
 
@@ -100,6 +101,7 @@ function getSavingsMessage(
 }
 
 export function ValueSavedBanner({ data, visible, trigger, onDismiss }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const slideAnim = useRef(new Animated.Value(-200)).current;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -193,7 +195,7 @@ export function ValueSavedBanner({ data, visible, trigger, onDismiss }: Props) {
             onPress={handleDismiss}
             hitSlop={12}
             accessibilityRole="button"
-            accessibilityLabel="Close"
+            accessibilityLabel={t('common.close', { defaultValue: 'Close' })}
           >
             <Ionicons name="close" size={18} color={colors.muted} />
           </Pressable>

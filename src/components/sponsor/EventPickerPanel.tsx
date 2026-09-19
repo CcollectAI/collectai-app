@@ -74,7 +74,7 @@ export const EventPickerPanel = React.memo(function EventPickerPanel({
 
       <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-      <AnimatedPressable onPress={onCancel} style={[styles.cancelBtn, { borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel="Cancel">
+      <AnimatedPressable onPress={onCancel} style={[styles.cancelBtn, { borderColor: colors.border }]} accessibilityRole="button" accessibilityLabel={t('common.cancel', { defaultValue: 'Cancel' })}>
         <Text style={[styles.cancelText, { color: colors.muted }]}>Cancel</Text>
       </AnimatedPressable>
     </View>

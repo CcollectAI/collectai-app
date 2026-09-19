@@ -18,12 +18,14 @@ import { verifySellerAge } from '@/api/marketplaceApi';
 import { registerSellerAgeGate } from '@/api/sellerAgeGate';
 import { fonts } from '@/theme/tokens';
 import { logger } from '@/lib/logger';
+import { useTranslation } from 'react-i18next';
 
 type Pending = {
   resolve: (ok: boolean) => void;
 };
 
 export function SellerAgeGateProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const { colors, isDark } = useAppTheme();
   const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -105,7 +107,7 @@ export function SellerAgeGateProvider({ children }: { children: React.ReactNode 
               disabled={busy}
               style={s.secondary}
               accessibilityRole="button"
-              accessibilityLabel="Cancel"
+              accessibilityLabel={t('common.cancel', { defaultValue: 'Cancel' })}
             >
               <Text style={[s.secondaryText, { color: colors.muted }]}>Not now</Text>
             </Pressable>

@@ -25,6 +25,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import { safeGoBack } from '@/lib/goBack';
+import { useTranslation } from 'react-i18next';
 
 type DemoMessage = { id: string; text: string; fromMe: boolean };
 
@@ -35,6 +36,7 @@ const SEED: DemoMessage[] = [
 ];
 
 function ChatDemoScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
@@ -83,7 +85,7 @@ function ChatDemoScreen() {
             onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); safeGoBack(router); }}
             style={styles.backBtn}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+            accessibilityLabel={t('common.go_back', { defaultValue: 'Go back' })}
           >
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>

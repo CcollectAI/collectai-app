@@ -288,7 +288,7 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
               onPress={handleCancelRecipe}
               style={[styles.cancelBtn, { borderColor: colors.border }]}
               accessibilityRole="button"
-              accessibilityLabel="Cancel"
+              accessibilityLabel={t('common.cancel', { defaultValue: 'Cancel' })}
             >
               <Text style={[styles.cancelBtnText, { color: colors.muted }]}>Cancel</Text>
             </AnimatedPressable>

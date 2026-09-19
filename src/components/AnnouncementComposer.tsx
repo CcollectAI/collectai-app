@@ -178,7 +178,7 @@ const AnnouncementComposerInner: React.FC<AnnouncementComposerProps> = ({
           onPress={onCancel}
           style={[styles.outlineBtn, { borderColor: colors.border, flex: 1 }]}
           accessibilityRole="button"
-          accessibilityLabel="Cancel"
+          accessibilityLabel={t('common.cancel', { defaultValue: 'Cancel' })}
         >
           <Text style={[styles.outlineBtnText, { color: colors.muted }]}>Cancel</Text>
         </AnimatedPressable>

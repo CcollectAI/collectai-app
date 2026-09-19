@@ -695,7 +695,7 @@ function UserProfileScreen() {
               style={styles.menuItem}
               onPress={() => setShowMenu(false)}
               accessibilityRole="button"
-              accessibilityLabel="Cancel"
+              accessibilityLabel={t('common.cancel', { defaultValue: 'Cancel' })}
             >
               <Text style={[styles.menuItemText, { color: colors.muted }]}>Cancel</Text>
             </AnimatedPressable>

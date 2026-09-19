@@ -182,7 +182,7 @@ const EventAnnouncementsScreen: React.FC = () => {
           <Image
             source={{ uri: item.imageUrl }}
             style={styles.announcementImage}
-            accessibilityLabel="Announcement image"
+            accessibilityLabel={t('sponsor.a11y_announcement_image', { defaultValue: 'Announcement image' })}
           />
         )}
 

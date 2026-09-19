@@ -38,6 +38,7 @@ import {
 import type { MarketplaceId } from '@/data/types';
 import type { ConditionLabel } from '@/hooks/useListForSale';
 import { radius, text as textToken, fontWeight as fw, shadow } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -55,6 +56,7 @@ type ListForSaleModalProps = {
 // ---------------------------------------------------------------------------
 
 function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
 
@@ -150,7 +152,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                 onPress={close}
                 hitSlop={12}
                 accessibilityRole="button"
-                accessibilityLabel="Close"
+                accessibilityLabel={t('common.close', { defaultValue: 'Close' })}
               >
                 <Ionicons name="close" size={24} color={colors.muted} />
               </Pressable>

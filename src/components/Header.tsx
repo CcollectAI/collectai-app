@@ -6,8 +6,10 @@ import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useTranslation } from 'react-i18next';
 
 export default function Header({ title = "Collectors" }: { title?: string }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const { settings } = useSettings();
   const { colors, spacing, shadow } = useAppTheme();
@@ -31,7 +33,7 @@ export default function Header({ title = "Collectors" }: { title?: string }) {
         }}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="button"
-        accessibilityLabel="Settings"
+        accessibilityLabel={t('nav.settings', { defaultValue: 'Settings' })}
         style={{
           width: 36,
           height: 36,
