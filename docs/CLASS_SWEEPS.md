@@ -67,6 +67,7 @@ Two rules the tooling learned the hard way:
 | W | A column the schema carries that no code mentions | 2026-09-18 | measured: **524 across 177 base tables**. Sampled `items` (19 of them): **18 hold no data at all** and the 19th is only its default — schema DEBT, not silent data loss. A cleanup decision, not a bug |
 | X | Committed to `web/` and never deployed | 2026-09-19 | ✅ swept and **FIXED**: 1 real drift (`terms.html`, two sentences — one the App Store 4.8 claim), deployed and verified live; 18 of 19 now byte-identical |
 | Y | A gate that has never seen its own bug | 2026-09-19 | ✅ swept: **40 of 42 fire** on their own pre-fix commit, **0 blind**. 1 needs `.env` to run, 1 was silent on a clean parent but fires under mutation. The sweep itself was wrong 3 times first |
+| Y-2 | What does a gate MISS (not: has it fired) | 2026-09-19 | ⚠️ **INCONCLUSIVE** — "files in the commit" ≠ "sites of the class". The two worst scorers each caught **2 of 2** real instances; the low ratios were the denominator. A sounder run needs a per-class signature and is circular |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -2192,6 +2193,49 @@ every wrong version produced a confident, uniform table:
 
 Each time the tell was the same: a uniform result. **All-42-identical is not a
 finding, it is a broken tool.**
+
+## Y-2 — what does a gate MISS? (2026-09-19) — ⚠️ INCONCLUSIVE, and the denominator is why
+
+Class Y answered *has this gate ever fired?* — all 42 had. It could not answer
+the question that actually matters, because `check:double-submit` passes class Y
+and was still blind to `handleDelist`. So: revert a gate's own fixed sites **one
+at a time** and see which it catches. A gate that fires on 2 of 8 files its own
+commit fixed does not cover its class.
+
+It produced a clean-looking table — **6 of 15 gates catch every site, 9
+partial** — and the table is wrong.
+
+**"Files changed in the gate's commit" is not "sites of the class."** Checked
+two of the worst scorers file by file:
+
+| gate | scored | files actually containing the class | real coverage |
+|---|---|---|---|
+| `check_empty_on_failure` | 2/8 | **2** (`alerts_feature_router`, `portfolio_router` — the only two adding `raise error_response(503…)`) | **2 of 2** |
+| `check-authed-fetch` | 2/3 | **2** (`import_router.py` has zero matching lines) | **2 of 2** |
+
+Both catch **every real instance**. The other files in those commits changed for
+unrelated reasons — a comment, a refactor, a neighbouring fix — and reverting
+them cannot make a gate fire because there was nothing of the class in them.
+
+**Why this is not cheaply fixable.** The denominator needs "which files contain
+an instance of this class", and the thing that decides that is the gate itself —
+so a sounder run is circular unless a per-class signature is written by hand,
+fifteen times, each one a judgement call that could be wrong in the same
+direction as the gate. That is a bigger job than the question is worth right
+now, and a wrong signature would produce confident false coverage numbers.
+
+**What survives.** Class Y's result stands: every gate fires on its own bug. The
+one PROVEN coverage gap remains `check:double-submit` missing `delist`, and it
+was found by READING the neighbours of a fix — not by any sweep. **For "what
+does a gate miss", reading beats measuring here.**
+
+The harness is kept at `scripts/sweep_gate_coverage_INCONCLUSIVE.py`, named so
+nobody mistakes its output for a finding. It was itself wrong three times before
+producing that table — a staged restore left the index dirty so 14 of 32 gates
+never ran; a single-file revert cannot recreate a fix spanning code and config;
+and the file filter excluded `server/workers/`, scoring one gate 0/2 on the
+wrong two files. Each was caught by the SHAPE of the result, which is now rule
+6b in CLAUDE.md.
 
 ## Re-running a sweep
 
