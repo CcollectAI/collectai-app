@@ -69,7 +69,7 @@ Two rules the tooling learned the hard way:
 | Y | A gate that has never seen its own bug | 2026-09-19 | ✅ swept: **40 of 42 fire** on their own pre-fix commit, **0 blind**. 1 needs `.env` to run, 1 was silent on a clean parent but fires under mutation. The sweep itself was wrong 3 times first |
 | Y-2 | What does a gate MISS (not: has it fired) | 2026-09-19 | ⚠️ **INCONCLUSIVE** — "files in the commit" ≠ "sites of the class". The two worst scorers each caught **2 of 2** real instances; the low ratios were the denominator. A sounder run needs a per-class signature and is circular |
 | Y-3 | What a gate misses, via its own report vs the human fix | 2026-09-19 | ✅ **works, with 3 exclusions**. Confirmed: `check:half-done-silence` cannot see `useOptimisticRsvp.ts`, a file its OWN commit fixed — the second proven instance after `delist`. **A gate fences one shape, not a class**, and both misses were found by reading |
-| Z | The optimistic mutation that told the member it worked | 2026-09-19 | ✅ **fixed**: `useOptimisticMutation` swallowed, so `await mutate()` was followed by a SUCCESS toast on failure — "Archived" in green after a failed archive, 5 call sites. It now rethrows; 7 tests pinned the old behaviour. Found by reading siblings after Y-3, not by any gate |
+| Z | A success message that is not conditional on success | swept 2026-09-19 | ✅ **2 fixed**: `useOptimisticMutation` swallowed so `await mutate()` was followed by a SUCCESS toast on failure ("Archived" in green, 5 call sites); and `setJSON` swallowed so "Following!" showed on a failed write with no server copy. 50 sites enumerated, the rest read and clean |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -2236,6 +2236,45 @@ about are unchanged.
 
 Mutation-proven: removing `throw err` turns 5 tests red across two suites; the
 tree is green with it. 138 suites / 1178 tests, `tsc` 0.
+
+### The sweep (2026-09-19) — 50 sites, 1 new instance
+
+Enumerated every success signal preceded by an `await` in `app/` and `src/`:
+**50 sites**. The awaited callee decides whether the message can lie, so the
+list was read rather than scored, and cross-checked against every exported
+function in `src/` whose catch does not rethrow.
+
+**Clean, and worth recording so nobody re-checks them:**
+
+* **Four `supabase.auth.*` sites** — `reset-password`, `ProfileEditSection`
+  (password), and both `mfa-setup` flows. Each does
+  `const { error } = await …; if (error) throw error;` BEFORE the toast, which
+  is exactly right: supabase-js returns `{ error }` and never throws
+  ([[learning_a_quoted_list_is_one_name]]).
+* **`scheduleReminder`** returns `{ success: false, error }` rather than
+  throwing, and `events.tsx` checks `result.success` — and suppresses the toast
+  entirely for `Permission denied`.
+* **`addWatchlistItem`** looked like a swallower to the detector and is not: it
+  rethrows on the main path, and the swallowing catch is a `best-effort`
+  `emitOutcome` block after the write. **A function is not a swallower because
+  ONE of its catches swallows** — that was a false positive worth naming.
+* **Three `Sharing.shareAsync` sites** say "Exported N items" after a share
+  sheet that resolves whether the member shared or cancelled. Not called a
+  defect: the file really was written before the sheet opened.
+
+**✅ The one real instance: `app/users/[userId].tsx` said "Following!" whether or
+not the follow saved.** `setJSON` swallowed and returned `void`, and
+`followed_users` lives ONLY in AsyncStorage — there is no server copy — so a
+failed write left the member told it worked and the follow gone on next launch.
+The likeliest cause of a failed write is a full device, which is also when a
+member has the most cached and the most to lose.
+
+Fixed at the helper: `setJSON` now returns whether the write landed. It still
+swallows the exception — a caller should not have to try/catch a cache write —
+but a caller making a CLAIM can check. The follow handler reverts the optimistic
+flip and says so, matching `catalog-item/[key].tsx`'s existing note that *a heart
+that silently snaps back reads as a broken button*. Two existing callers ignore
+the new return and are unaffected.
 
 **How it was found, which is the transferable part.** Y-3 proved
 `check:half-done-silence` could not see `useOptimisticRsvp.ts`. Reading that

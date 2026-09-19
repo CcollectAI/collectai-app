@@ -149,8 +149,17 @@ function UserProfileScreen() {
       const idx = ids.indexOf(userId);
       if (idx !== -1) ids.splice(idx, 1);
     }
-    await setJSON('followed_users', ids);
-    showToast({ message: next ? 'Following!' : 'Unfollowed', type: 'success' });
+    // The follow lives ONLY in AsyncStorage — there is no server copy — so if
+    // this write fails the follow is gone on next launch. Saying "Following!"
+    // anyway is the class-Z shape: a success message not conditional on
+    // success (2026-09-19).
+    const stored = await setJSON('followed_users', ids);
+    if (stored) {
+      showToast({ message: next ? 'Following!' : 'Unfollowed', type: 'success' });
+    } else {
+      setIsFollowing(!next);   // put the button back where the data is
+      showToast({ message: "Couldn't save that — try again", type: 'error' });
+    }
   }, [userId, isFollowing, showToast]);
 
   const handleBlockToggle = useCallback(async () => {
