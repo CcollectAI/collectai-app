@@ -37,6 +37,24 @@ Per edit, before the next one:
    earlier defect took the count 3 → 8, and **a probe that starts reporting MORE
    is not therefore finding more.**
 
+   **6b. The tell is the SHAPE of the result, not a failed assertion.** Six
+   instrument bugs in one session and a known-positive/known-negative pair
+   caught only some of them. What caught the rest was a distribution that could
+   not be true:
+
+   * every row identical — "42 errored", "every gate after the first says
+     NO-PARENT";
+   * a result too extreme — three gates catching NONE of their own fixed sites,
+     while a different sweep had just shown all 42 fire;
+   * a silent shortfall — 14 of 32 runs never happened, because
+     `git checkout <sha> -- <file>` stages the restore and the dirty index made
+     the next `checkout --detach` refuse.
+
+   **Before reading the findings, read the denominator and the distribution.**
+   Ask: how many runs were there meant to be, how many happened, and is the
+   spread plausible for code a human wrote? A uniform or extreme answer is the
+   instrument, not the codebase.
+
 Errors this caught in its first session, all mine: a new lint rule matching its
 own comment; one nested `empty-ok:` exempting a whole block; a reason marker that
 is a syntax error in JSX, so it could never be written; `False in (None, 0)`
