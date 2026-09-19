@@ -132,8 +132,11 @@ broken twice over, and fixing only the path would have looked like a fix while
 `Block` still threw. **After a mechanical fix, re-run the user action end to
 end — the first error can hide the next one.**
 
-`20260917c_blocking_uses_dm_requests.sql` (written, **NOT APPLIED** — needs
-Merle) fixes three things, bodies taken from the live definitions:
+`20260917c_blocking_uses_dm_requests.sql` — ✅ **APPLIED** (verified on
+production 2026-09-19: all three RPCs consult `user_blocks` and
+`chat_dm_requests_v1`, and none still references the pre-rewrite `chat_threads`).
+The "NOT APPLIED — needs Merle" this line used to carry was stale. It fixes
+three things, bodies taken from the live definitions:
 1. `rpc_block_user_v1` declines pending `chat_dm_requests_v1` rows in both
    directions (`status='denied'`, `decided_at`, `decided_by`);
 2. `rpc_request_dm_v1` refuses when either party has blocked the other — it
@@ -144,9 +147,32 @@ Merle) fixes three things, bodies taken from the live definitions:
 Server-side enforcement elsewhere is fine: `server/app/lib/blocks.py` queries
 `user_blocks` directly, so EC2's send-message route and the P2P surfaces have
 been honouring blocks all along.
-Still open after it: a blocked member with an EXISTING thread can insert into
-`chat_messages_v1` straight through PostgREST — the RLS insert policy checks
-thread membership, not blocks. EC2's route checks; the direct path does not.
+✅ **CLOSED 2026-09-19 by `20260919a_chat_insert_respects_blocks.sql`
+(applied).** A blocked member with an EXISTING thread could insert into
+`chat_messages_v1` straight through PostgREST — the policy asked only "are you a
+member of this thread?". EC2's route checked; the direct path did not.
+
+**Two traps, and the rolled-back test on production caught both:**
+
+1. **The duplicate policy.** `chat_messages_v1` carried TWO INSERT policies —
+   `..._insert_member` and `..._insert_member_self` — with byte-identical WITH
+   CHECK. Policies for one command are **OR'd**, so adding the block condition
+   to one of them would have changed nothing. The duplicate is dropped; there is
+   one place to be wrong now instead of two.
+2. **The first fix let the blocked party through — the exact person the rule is
+   for.** It joined `user_blocks` inline, and `user_blocks` has its own RLS:
+   `blocks_select USING (blocker_id = auth.uid())`. A policy subquery runs as
+   the INSERTING user, so the blocked party cannot see the row, `NOT EXISTS` is
+   trivially true, and the insert is allowed. Measured, not reasoned: the
+   blocker was REFUSED and the blocked party was INSERTED. **A check that reads
+   a table the caller cannot see is not a check.**
+
+It now calls `rpc_is_blocked_v1` — SECURITY DEFINER, STABLE, already symmetric
+and already `search_path`-pinned by 20260917b. Proven in a rolled-back
+transaction on production: allowed with no block, REFUSED afterwards in **both**
+directions. `preflight_rls_check`, `schema_lock`, `rpc_lock` and `models` all
+PASS after applying, so no restart-time bomb; `service_role` bypasses RLS so the
+app's own send path is untouched.
 
 **The original note (superseded):** apply `20260917b_fix_quoted_search_path.sql`.
 It re-pins the path UNQUOTED on exactly the functions carrying the broken value
