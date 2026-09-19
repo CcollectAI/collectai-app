@@ -1800,13 +1800,38 @@ a warning instead of a check, which is why the class was worth a probe at all.
 (`connection_requests` exists on the preferences model and no UI exposes it —
 class T, benign.)
 
-**Now gate-able, and that is the next step.** 0 findings across 57 proven
-endpoints with only 3 unreadable — two of them hand-verified clean and one behind
-a disabled flag — is a stable enough baseline for `check:dropped-fields` to go
-into `verify:prebuild`. What it needs first: a decision on how to treat the 3
-unreadable endpoints (name them in an allowlist with the reason, the way
-`rls-ok:`/`empty-ok:` work) and a mutation proof that renaming a key in a
-provider body turns it red.
+**✅ `npm run check:dropped-fields` — in `verify:prebuild` since 2026-09-19.**
+It fails two ways: a proven payload carrying a key its route's model lacks, and
+a NEW endpoint whose payload cannot be proven at any layer and is not in
+`ALLOWLIST`. The second matters — without it the gate is dodged by typing a
+payload `Record<string, unknown>`, which is exactly what the three grandfathered
+endpoints do. Each allowlist entry carries the reason it was cleared by hand.
+
+**It passed while blind, and the mutation is what found that.** Renaming
+`category_id` → `categoryId` in a provider body produced **no finding**, because
+`POST /events` was never matched to a route at all:
+
+* `app/features/events/_router.py` declares `router = APIRouter(prefix="/events")`
+  while the routes live in `events_core.py`, so a per-FILE prefix lookup saw none;
+* and those routes decorate **`core_router`**, an ALIAS of that shared router, so
+  a `(directory, variable)` lookup missed it too.
+
+**9 of 62 endpoints were read and never compared, while the PASS line claimed all
+57 agreed with their model.** (The PASS line was overstating in a second way
+too, found by re-reading it afterwards: it counted endpoints whose payload was
+READ, including 3 whose route binds no Pydantic model and so has nothing to
+disagree with. It now reports **54 compared, 3 modelless, 3 allowlisted**.) Resolution is now file → (directory, variable) →
+directory-alone, the last used only where every APIRouter in that package agrees
+on one prefix (1 of 4 packages qualifies — `features/events`, which is what it
+was written for). Matched 53 → **62**, unmatched **9 → 0**.
+
+The intermediate attempt keyed prefixes by DIRECTORY alone and collapsed 58 of
+64 endpoints, because `app/features/` holds dozens of modules that each name
+their router `router` — **the models mistake one level up**, made again in the
+same file within the same hour.
+
+Mutation-proven both ways: the rename exits **1** and names the route and file;
+a clean tree exits **0**; removing an ALLOWLIST entry exits **1**.
 
 **Why the coverage is low, and the better method.** Most wrappers do not inline
 their body — they take a TYPED PARAMETER and pass it through:

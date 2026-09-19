@@ -234,6 +234,49 @@ for f in api_files:
 # marketplace_listing_router.py and p2p_listing_router.py with different fields,
 # so a name-keyed dict let the second overwrite the first and reported
 # `marketplace_id` and `format` as undeclared when the bound model declares both.
+# (directory, router variable) -> prefix.
+#
+# The prefix is NOT always in the file that declares the routes.
+# `app/features/events/_router.py` holds `router = APIRouter(prefix="/events")`
+# and `events_core.py` imports that same object and decorates it — so a
+# per-file lookup saw no prefix, resolved `POST ""` to the empty path, and
+# never matched `POST /events` to a route at all. Nine endpoints were read and
+# never compared while the gate reported them as agreeing with their model.
+# Keyed by FILE first. A directory-keyed map is the models mistake one level
+# up: `app/features/` holds dozens of modules that each name their router
+# `router`, so the last one scanned overwrote the rest and 58 of 64 endpoints
+# stopped matching. The package fallback is used only when a directory agrees
+# with itself — which is the `events/_router.py` case it exists for.
+# `[^)]*` stops at the first `)`, so an `APIRouter(prefix=..., dependencies=[Depends(x)])`
+# would truncate and lose the prefix. Checked 2026-09-19: no APIRouter call in
+# this tree has a nested paren. If one appears, the endpoint silently stops
+# matching a route rather than mis-matching — the report's "path matched no
+# server route" count is where that would show.
+ROUTER_DEF = re.compile(r'(\w+)\s*=\s*APIRouter\(([^)]*)\)', re.S)
+file_prefix: dict[tuple[str, str], str] = {}
+dir_candidates: dict[tuple[str, str], set[str]] = {}
+for f in SERVER.rglob('*.py'):
+    try:
+        text = f.read_text(encoding='utf-8')
+    except OSError:
+        continue
+    for var, args in ROUTER_DEF.findall(text):
+        m = re.search(r'prefix\s*=\s*["\']([^"\']*)["\']', args)
+        pfx = m.group(1) if m else ''
+        file_prefix[(str(f), var)] = pfx
+        dir_candidates.setdefault((str(f.parent), var), set()).add(pfx)
+dir_prefix = {k: next(iter(v)) for k, v in dir_candidates.items() if len(v) == 1}
+# Third fallback, by DIRECTORY alone: the routes in `events/events_core.py`
+# decorate `core_router`, an ALIAS of the shared `router` defined in
+# `events/_router.py`, so neither the file nor the (dir, var) lookup resolves
+# it. Used only when every APIRouter declared in that package agrees on one
+# prefix — otherwise the directory says nothing and the endpoint stays
+# unmatched, which is the honest outcome.
+_by_dir: dict[str, set[str]] = {}
+for (d, _v), pfxs in dir_candidates.items():
+    _by_dir.setdefault(d, set()).update(pfxs)
+dir_any = {d: next(iter(v)) for d, v in _by_dir.items() if len(v) == 1 and next(iter(v))}
+
 models: dict[tuple[str, str], set[str]] = {}
 routes = []
 for f in sorted(SERVER.rglob('*.py')):
@@ -242,12 +285,6 @@ for f in sorted(SERVER.rglob('*.py')):
         tree = ast.parse(text)
     except SyntaxError:
         continue
-    # The router PREFIX, or a route path matches the wrong file entirely:
-    # `p2p_listing_router` is mounted at `/p2p` and declares `/listings`, so an
-    # endswith test on the bare path claimed `POST /marketplace/listings` for
-    # it. Both ends must be the full path before anything is reported.
-    prefixes = re.findall(r'APIRouter\(\s*prefix\s*=\s*["\']([^"\']+)["\']', text)
-    prefix = prefixes[0] if prefixes else ''
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
             fields = {n.target.id for n in node.body
@@ -259,6 +296,12 @@ for f in sorted(SERVER.rglob('*.py')):
                 call = dec.func if isinstance(dec, ast.Call) else dec
                 if not (isinstance(call, ast.Attribute) and call.attr in ('post', 'patch', 'put')):
                     continue
+                rvar = call.value.id if isinstance(call.value, ast.Name) else 'router'
+                prefix = file_prefix.get((str(f), rvar))
+                if prefix is None:
+                    prefix = dir_prefix.get((str(f.parent), rvar))
+                if prefix is None:
+                    prefix = dir_any.get(str(f.parent), '')
                 path = dec.args[0].value if (isinstance(dec, ast.Call) and dec.args
                                              and isinstance(dec.args[0], ast.Constant)) else ''
                 annos = [a.annotation.id for a in node.args.args
@@ -272,6 +315,8 @@ def norm(p: str) -> str:
 
 
 findings, matched, unmatched_route, no_model = [], 0, 0, 0
+compared_eps: set[tuple[str, str]] = set()
+no_model_eps: set[tuple[str, str]] = set()
 for fname, verb, path, keys, how in calls:
     tail = norm(path)
     hit = None
@@ -295,8 +340,10 @@ for fname, verb, path, keys, how in calls:
                     break
     if not fields:
         no_model += 1
+        no_model_eps.add((verb, tail))
         continue
     matched += 1
+    compared_eps.add((verb, tail))
     unknown = [k for k in keys if k not in fields]
     if unknown:
         findings.append((fname, verb, path, unknown, fn, sfile, how))
@@ -342,7 +389,11 @@ if "--report" not in sys.argv:
         for v, pth in stale_allow:
             print(f"   {v.upper()} {pth}")
     if ok:
-        print(f"PASS  dropped fields — {len(proven_eps)} endpoint payload(s) agree with their model; "
+        # COMPARED, not merely read. `proven_eps` includes endpoints whose route
+        # binds no Pydantic model, where there is nothing to disagree with — and
+        # a PASS line that counts those claims more than the gate checked.
+        print(f"PASS  dropped fields — {len(compared_eps)} endpoint payload(s) compared "
+              f"against their model, 0 mismatches; {len(no_model_eps)} route(s) bind no model; "
               f"{len(ALLOWLIST)} allowlisted.")
         sys.exit(0)
     sys.exit(1)
