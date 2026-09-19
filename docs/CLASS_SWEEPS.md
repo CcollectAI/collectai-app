@@ -49,7 +49,7 @@ Two rules the tooling learned the hard way:
 | E | What the member typed is not what we stored | 2026-09-16 | ✅ closed — gate rule was wrong, 13 sites + validators fixed |
 | F | The write succeeded and the screen still shows the old value | 2026-09-16 | ✅ closed 2026-09-17 (item-change chokepoint + both profile caches, tested) |
 | G | A paid feature a free member can reach, or a free feature a paying member is denied | 2026-09-16 | 4 decisions for Merle |
-| H | The date on screen is not the date that was meant | 2026-09-16 | partly landed; locale half open |
+| H | The date on screen is not the date that was meant | 2026-09-16 | ✅ **both halves closed** — locale half 09-17 (12 sites through `dateLocale()`, `check:date-locale` gates it), server half 09-18 (EC2 is CEST, Postgres UTC: `date.today()` and `CURRENT_DATE` disagreed 00:00–02:00 nightly). This row said "locale half open" until 09-19; the detail sections had recorded both closures days earlier |
 | I | One tap, two writes (unguarded async handlers) | 2026-09-17 | ✅ swept by checker, 6 fixed + 5 reasoned, `check:double-submit` in prebuild |
 | J | A member can see data that is not theirs (RLS / IDOR / public views) | 2026-09-17 | ✅ prod verified clean; repo drift fixed + gated |
 | M | The database fails, and the app reads the failure as "no" | 2026-09-17 | ✅ closed 2026-09-18: app half fixed + gated; `20260917b` **and** `20260917c` applied; blocking verified working on prod as a member (block written, pending DM denied, a blocked member's request refused) |
