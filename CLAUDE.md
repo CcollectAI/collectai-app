@@ -55,6 +55,21 @@ Per edit, before the next one:
    spread plausible for code a human wrote? A uniform or extreme answer is the
    instrument, not the codebase.
 
+   **6c. Put a CONTROL in every measurement — a case already proven — and check
+   it first.** A sweep asking "what does each gate miss" reported **510 files
+   fixed-but-never-flagged**. The number was one character:
+   `(?:ts|tsx|py)` matches `ts` and stops, so every `.tsx` path was captured as
+   `.ts`, never equalled its own filename, and every React file scored as a
+   miss. Nothing in the run looked wrong — 39 gates, varied ratios, a plausible
+   spread.
+
+   What exposed it was `check:partial-count`, a gate written the same day and
+   mutation-proven to fire on `app/listings.tsx`. When the analysis said that
+   gate missed that file, the analysis had to be wrong; there was no other
+   possibility. **A control fails loudly and costs one row; an audit costs an
+   hour and only runs when something already looks odd.** Rule 6b catches the
+   implausible — 6c catches the plausible-but-wrong, which is the dangerous one.
+
 Errors this caught in its first session, all mine: a new lint rule matching its
 own comment; one nested `empty-ok:` exempting a whole block; a reason marker that
 is a syntax error in JSX, so it could never be written; `False in (None, 0)`
