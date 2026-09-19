@@ -91,7 +91,7 @@ export const ConnectMarketplaceModal = React.memo(function ConnectMarketplaceMod
             onPress={onConnect}
             disabled={connecting}
             accessibilityRole="button"
-            accessibilityLabel="Connect account"
+            accessibilityLabel={t('marketplace.connect_account_a11y', { defaultValue: 'Connect account' })}
           >
             {connecting ? <ActivityIndicator size="small" color={colors.accentText} /> : <Text style={[styles.createBtnText, { color: colors.accentText }]}>Connect</Text>}
           </AnimatedPressable>

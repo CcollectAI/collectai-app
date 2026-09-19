@@ -81,7 +81,7 @@ export const ItemsCategoryModal = React.memo(function ItemsCategoryModal({
               onClose();
             }}
             accessibilityRole="button"
-            accessibilityLabel="Cancel category change"
+            accessibilityLabel={t('items.cancel_category_change_a11y', { defaultValue: 'Cancel category change' })}
           >
             <Text style={[styles.modalCancelText, { color: colors.muted }]}>Cancel</Text>
           </AnimatedPressable>

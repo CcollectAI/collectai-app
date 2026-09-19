@@ -279,7 +279,7 @@ const EventAnnouncementsScreen: React.FC = () => {
           onPress={handleCompose}
           style={[styles.fab, { backgroundColor: colors.accent }]}
           accessibilityRole="button"
-          accessibilityLabel="Compose announcement"
+          accessibilityLabel={t('announcement.compose_a11y', { defaultValue: 'Compose announcement' })}
         >
           <Ionicons name="create-outline" size={24} color={colors.accentText}/>
         </AnimatedPressable>

@@ -1352,7 +1352,7 @@ function OffersScreen() {
                 disabled={busy}
                 style={[styles.btn, styles.btnQuiet]}
                 accessibilityRole="button"
-                accessibilityLabel="Turn down the seller's counter"
+                accessibilityLabel={t('offers.decline_counter_a11y', { defaultValue: "Turn down the seller's counter" })}
               >
                 <Text style={[styles.btnText, { color: colors.danger }]}>{t('offers.turn_it_down', { defaultValue: 'Turn it down' })}</Text>
               </AnimatedPressable>

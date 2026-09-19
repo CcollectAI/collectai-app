@@ -164,7 +164,7 @@ export function ValueSavedBanner({ data, visible, trigger, onDismiss }: Props) {
         style={[styles.banner, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={handleDismiss}
         accessibilityRole="button"
-        accessibilityLabel="Dismiss savings notification"
+        accessibilityLabel={t('home.dismiss_savings_a11y', { defaultValue: 'Dismiss savings notification' })}
       >
         {/* Tiffany accent bar */}
         <View style={styles.accentBar} />

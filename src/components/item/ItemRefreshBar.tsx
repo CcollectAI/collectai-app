@@ -6,6 +6,7 @@ import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-nati
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { timeAgo } from '@/lib/timeAgo';
+import { useTranslation } from 'react-i18next';
 
 interface ItemRefreshBarProps {
   predictionAt: string | null | undefined;
@@ -19,6 +20,7 @@ const relativeTime = (iso: string | null | undefined): string => {
 };
 
 export const ItemRefreshBar = React.memo(function ItemRefreshBar({ predictionAt, aiRefreshing, onRefresh }: ItemRefreshBarProps) {
+  const { t } = useTranslation();
   const { colors: theme } = useAppTheme();
 
   return (
@@ -48,7 +50,7 @@ export const ItemRefreshBar = React.memo(function ItemRefreshBar({ predictionAt,
           { backgroundColor: theme.accent + '14', opacity: aiRefreshing ? 0.7 : 1 },
         ]}
         accessibilityRole="button"
-        accessibilityLabel="Refresh all intelligence data"
+        accessibilityLabel={t('item_details.refresh_all_a11y', { defaultValue: 'Refresh all intelligence data' })}
       >
         {aiRefreshing ? (
           <ActivityIndicator size="small" color={theme.accent} />

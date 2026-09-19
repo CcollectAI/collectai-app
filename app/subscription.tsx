@@ -425,7 +425,7 @@ function SubscriptionScreen() {
               onPress={fetchOfferings}
               style={[styles.retryBtn, { backgroundColor: colors.accent }]}
               accessibilityRole="button"
-              accessibilityLabel="Try loading the plans again"
+              accessibilityLabel={t('subscription.retry_plans_a11y', { defaultValue: 'Try loading the plans again' })}
             >
               <Text style={[styles.retryBtnText, { color: colors.accentText }]}>
                 Try again
@@ -524,7 +524,7 @@ function SubscriptionScreen() {
               ]}
               onPress={handleRestore}
               accessibilityRole="button"
-              accessibilityLabel="Restore previous purchases"
+              accessibilityLabel={t('subscription.restore_purchases_a11y', { defaultValue: 'Restore previous purchases' })}
             >
               {restoring ? (
                 <ActivityIndicator size="small" color={colors.brand.dark} />

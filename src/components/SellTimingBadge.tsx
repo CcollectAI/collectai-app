@@ -15,12 +15,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
 import { radius, text as textTokens, fontWeight } from "@/theme/tokens";
+import { useTranslation } from 'react-i18next';
 
 interface SellTimingBadgeProps {
   itemId: string;
 }
 
 function SellTimingBadgeInner({ itemId }: SellTimingBadgeProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { plan } = useBillingLimits();
 
@@ -31,7 +33,7 @@ function SellTimingBadgeInner({ itemId }: SellTimingBadgeProps) {
     <View
       style={[styles.container, { backgroundColor: colors.accent + "0D", borderColor: colors.accent + "30" }]}
       accessibilityRole="text"
-      accessibilityLabel="Sell timing coming soon"
+      accessibilityLabel={t('item_details.sell_timing_soon_a11y', { defaultValue: 'Sell timing coming soon' })}
     >
       <View style={[styles.iconWrap, { backgroundColor: colors.accent + "20" }]}>
         <Ionicons name="time-outline" size={16} color={colors.accent} />

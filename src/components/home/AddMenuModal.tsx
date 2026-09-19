@@ -8,6 +8,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { radius, text as textToken, fontWeight as fw, shadow } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 interface AddMenuModalProps {
   visible: boolean;
@@ -21,6 +22,7 @@ const MENU_ITEMS = [
 ] as const;
 
 export const AddMenuModal = React.memo(function AddMenuModal({ visible, onClose }: AddMenuModalProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   useEffect(() => {
@@ -36,13 +38,13 @@ export const AddMenuModal = React.memo(function AddMenuModal({ visible, onClose 
         onPress={onClose}
         style={styles.overlay}
         accessibilityRole="button"
-        accessibilityLabel="Close add item menu"
+        accessibilityLabel={t('home.close_add_menu_a11y', { defaultValue: 'Close add item menu' })}
       >
         <View
           style={[styles.sheet, { backgroundColor: colors.card, borderColor: colors.border }]}
           accessibilityViewIsModal={true}
           accessibilityRole="menu"
-          accessibilityLabel="Add item menu"
+          accessibilityLabel={t('home.add_menu_a11y', { defaultValue: 'Add item menu' })}
         >
           <View style={[styles.handle, { backgroundColor: colors.muted }]} />
           {MENU_ITEMS.map((item, idx) => (

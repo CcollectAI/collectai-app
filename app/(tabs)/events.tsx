@@ -511,7 +511,7 @@ function EventsScreen() {
               }}
               accessibilityRole="button"
               accessibilityLabel={t('events.reminder_a11y')}
-              accessibilityHint="Schedules a notification one hour before the event"
+              accessibilityHint={t('events.reminder_hint', { defaultValue: 'Schedules a notification one hour before the event' })}
             >
               <Ionicons name="notifications-outline" size={16} color={colors.accent} />
               <Text style={[styles.actionBtnText, { color: colors.text }]}>
@@ -606,7 +606,7 @@ function EventsScreen() {
                 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Filter to your followed categories"
+              accessibilityLabel={t('events.filter_followed_a11y', { defaultValue: 'Filter to your followed categories' })}
               accessibilityState={{ selected: myCategoriesOnly }}
             >
               <Ionicons

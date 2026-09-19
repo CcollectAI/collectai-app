@@ -19,6 +19,7 @@ import type { BatchScannedItem } from './BatchSummaryScreen';
 import { BRAND_COLORS } from '@/constants/colors';
 import { formatCategoryName } from '@/constants/categories';
 import { conditionDisplayName } from '@/lib/conditionVocabulary';
+import { useTranslation } from 'react-i18next';
 
 const TIFFANY = BRAND_COLORS.tiffany;
 const TIFFANY_DARK = BRAND_COLORS.tiffanyDark;
@@ -47,6 +48,7 @@ function BatchResultOverlayInner({
   onSave,
   colors,
 }: BatchResultOverlayProps) {
+  const { t } = useTranslation();
   return (
     <Animated.View
       style={[
@@ -96,7 +98,7 @@ function BatchResultOverlayInner({
             onPress={onDiscard}
             style={[styles.batchOverlayBtn, styles.batchDiscardBtn, { borderColor: colors.border }]}
             accessibilityRole="button"
-            accessibilityLabel="Discard this item"
+            accessibilityLabel={t('scan.discard_item_a11y', { defaultValue: 'Discard this item' })}
           >
             <Ionicons name="close-circle-outline" size={20} color={colors.muted} />
             <Text style={[styles.batchOverlayBtnText, { color: colors.muted }]}>
@@ -108,7 +110,7 @@ function BatchResultOverlayInner({
             onPress={onSave}
             style={[styles.batchOverlayBtn, styles.batchSaveBtn, { backgroundColor: TIFFANY }]}
             accessibilityRole="button"
-            accessibilityLabel="Save item and scan next"
+            accessibilityLabel={t('scan.save_and_next_a11y', { defaultValue: 'Save item and scan next' })}
             disabled={savingBatchItem}
           >
             {savingBatchItem ? (

@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import type { DefectAnnotation, SuggestedGrade } from '@/data/types';
+import { useTranslation } from 'react-i18next';
 
 function getSeverityColors(successColor: string, warningColor: string, dangerColor: string): Record<string, string> {
   return {
@@ -25,6 +26,7 @@ type Props = {
 };
 
 export function ConditionGradeSection({ defects, grade }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const SEVERITY_COLORS = getSeverityColors(colors.success, colors.warning, colors.danger);
   const [expanded, setExpanded] = useState(false);
@@ -53,7 +55,7 @@ export function ConditionGradeSection({ defects, grade }: Props) {
             style={styles.reasoningBtn}
             onPress={() => setExpanded(!expanded)}
             accessibilityRole="button"
-            accessibilityLabel="Toggle grade reasoning"
+            accessibilityLabel={t('grading.toggle_reasoning_a11y', { defaultValue: 'Toggle grade reasoning' })}
           >
             <Ionicons
               name={expanded ? 'chevron-up' : 'chevron-down'}

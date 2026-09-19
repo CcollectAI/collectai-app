@@ -2,8 +2,10 @@ import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useTranslation } from 'react-i18next';
 
 export default function NotFoundScreen() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -30,7 +32,7 @@ export default function NotFoundScreen() {
       <Pressable
         onPress={() => router.replace("/(tabs)")}
         accessibilityRole="button"
-        accessibilityLabel="Go to Portfolio"
+        accessibilityLabel={t('common.go_to_portfolio_a11y', { defaultValue: 'Go to Portfolio' })}
         style={{
           paddingHorizontal: 20,
           paddingVertical: 10,

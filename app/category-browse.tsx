@@ -435,7 +435,7 @@ function CategoryBrowseScreen() {
               }]}
               onPress={closeViewer}
               accessibilityRole="button"
-              accessibilityLabel="Back to grid"
+              accessibilityLabel={t('category.back_to_grid_a11y', { defaultValue: 'Back to grid' })}
             >
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </AnimatedPressable>

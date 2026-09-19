@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { radius, text, fontWeight } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 interface WishlistSortControlsProps {
   onAddPress: () => void;
@@ -21,6 +22,7 @@ interface WishlistSortControlsProps {
 export const WishlistSortControls = React.memo(function WishlistSortControls({
   onAddPress,
 }: WishlistSortControlsProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   /* Sits INSIDE the screen's header row (right of the title) rather than on a
@@ -37,7 +39,7 @@ export const WishlistSortControls = React.memo(function WishlistSortControls({
         style={[styles.addPill, { backgroundColor: colors.accent }]}
         onPress={onAddPress}
         accessibilityRole="button"
-        accessibilityLabel="Add item to watchlist"
+        accessibilityLabel={t('wishlist.add_item_a11y', { defaultValue: 'Add item to watchlist' })}
       >
         <Ionicons name="add" size={18} color={colors.accentText} />
         <Text style={[styles.addPillText, { color: colors.accentText }]}>Add</Text>

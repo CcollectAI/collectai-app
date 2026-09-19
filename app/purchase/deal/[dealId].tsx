@@ -357,7 +357,7 @@ function DealDetailScreen() {
                 onPress={handleConfirm}
                 disabled={confirming}
                 accessibilityRole="button"
-                accessibilityLabel="I got it"
+                accessibilityLabel={t('purchase.got_it_a11y', { defaultValue: 'I got it' })}
               >
                 {confirming ? (
                   <ActivityIndicator size="small" color={colors.accentText}/>

@@ -28,6 +28,7 @@ import { useTranslation } from 'react-i18next';
  * board and is never padded.
  */
 function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const router = useRouter();
@@ -237,7 +238,7 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel={`Rank ${r.rank}, ${r.display_name}${r.is_you ? ', you' : ''}, ${stat}, ${secondary}`}
-                accessibilityHint="Double tap to view collector profile"
+                accessibilityHint={t('leaderboard.view_profile_hint', { defaultValue: 'Double tap to view collector profile' })}
               >
                 <View style={styles.rankCol}>
                   <Text style={[styles.rankText, { color: medalColor }]}>#{r.rank}</Text>
@@ -543,7 +544,7 @@ const LeaderboardScreen: React.FC = () => {
               ]}
               accessibilityRole="button"
               accessibilityLabel={`Rank ${index + 1}, ${user.displayName}, ${user.primary}, ${user.secondary}, ${user.meta}`}
-              accessibilityHint="Double tap to view collector profile"
+              accessibilityHint={t('leaderboard.view_profile_hint', { defaultValue: 'Double tap to view collector profile' })}
             >
               {/* Rank */}
               <View style={styles.rankCol}>

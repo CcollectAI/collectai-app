@@ -344,7 +344,7 @@ function MarketMoversScreen() {
             }}
             style={[styles.retryBtn, { backgroundColor: colors.accent }]}
             accessibilityRole="button"
-            accessibilityLabel="Try loading market movers again"
+            accessibilityLabel={t('common.retry_market_movers_a11y', { defaultValue: 'Try loading market movers again' })}
           >
             <Text style={[styles.retryText, { color: colors.accentText }]}>{t('common.try_again')}</Text>
           </AnimatedPressable>

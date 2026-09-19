@@ -222,7 +222,7 @@ function MFASetupScreen() {
               <Image
                 source={{ uri: qrUri }}
                 style={styles.qrImage}
-                accessibilityLabel="QR code for authenticator app"
+                accessibilityLabel={t('mfa.qr_code_a11y', { defaultValue: 'QR code for authenticator app' })}
               />
             </View>
 
@@ -236,7 +236,7 @@ function MFASetupScreen() {
               keyboardType="number-pad"
               maxLength={6}
               autoFocus
-              accessibilityLabel="TOTP verification code"
+              accessibilityLabel={t('mfa.totp_code_a11y', { defaultValue: 'TOTP verification code' })}
             />
 
             {verifying ? (

@@ -12,6 +12,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import type { WatchlistItem } from "@/data/types";
 import { radius, text as textToken, fontWeight as fw, shadow } from "@/theme/tokens";
 import { categoryDisplayName } from '@/constants/categories';
+import { useTranslation } from 'react-i18next';
 
 // ── Props ──────────────────────────────────────────────────────────────
 
@@ -43,6 +44,7 @@ function WatchlistWidgetInner({
   formatPrice,
   hapticsEnabled = true,
 }: WatchlistWidgetProps) {
+  const { t } = useTranslation();
   if (watchlistItems.length === 0) return null;
 
   return (
@@ -58,7 +60,7 @@ function WatchlistWidgetInner({
               }}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel="Refresh watchlist"
+              accessibilityLabel={t('home.refresh_watchlist_a11y', { defaultValue: 'Refresh watchlist' })}
             >
               <Ionicons name="refresh-outline" size={18} color={theme.muted} />
             </AnimatedPressable>
@@ -70,7 +72,7 @@ function WatchlistWidgetInner({
             onViewAll();
           }}
           accessibilityRole="link"
-          accessibilityLabel="See all watchlist items"
+          accessibilityLabel={t('home.see_all_watchlist_a11y', { defaultValue: 'See all watchlist items' })}
         >
           <Text style={[s.seeAllLink, { color: theme.accent }]}>{"See all \u2192"}</Text>
         </AnimatedPressable>

@@ -12,6 +12,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useAds } from '@/ads/useAds';
 import type { BannerSize } from '@/ads/provider';
+import { useTranslation } from 'react-i18next';
 
 interface AdBannerProps {
   /** Ad placement key from AD_PLACEMENTS */
@@ -34,6 +35,7 @@ const BANNER_HEIGHTS: Record<BannerSize, number> = {
  * when AppLovin is integrated.
  */
 export function AdBanner({ placement, size = 'standard', style }: AdBannerProps) {
+  const { t } = useTranslation();
   const { showAds } = useAds();
 
   if (!showAds) return null;
@@ -45,7 +47,7 @@ export function AdBanner({ placement, size = 'standard', style }: AdBannerProps)
   return (
     <View
       style={[styles.container, { height }, style]}
-      accessibilityLabel="Advertisement"
+      accessibilityLabel={t('ads.advertisement_a11y', { defaultValue: 'Advertisement' })}
       accessibilityRole="none"
     />
   );

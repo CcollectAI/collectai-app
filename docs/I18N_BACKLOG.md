@@ -6,20 +6,40 @@ different failures — CLAUDE.md §gates spells that out. A string that never
 reaches a locale file cannot be missing from one, so parity is green while six
 locales render English.
 
-**Backlog: 159 strings across 94 files** (measured 2026-09-19; 653 at the start.
-Every number in this file goes stale within a session or two — `npm run i18n:check`
-prints the live one, so re-run it before quoting one.)
+**Backlog: 93 strings across 62 files** (measured 2026-09-19, after the a11y
+slice below; 653 at the start. Every number in this file goes stale within a
+session or two — `npm run i18n:check` prints the live one, so re-run it before
+quoting one.)
 
 **2026-09-19: the mechanical `accessibilityLabel` slice is DONE.** Of 149
 hardcoded a11y labels, 47 had an English string that already existed verbatim in
 `en.json` — those needed no translator and were wired in two batches (33, then
 the 14 whose component had no `t` in scope and needed `useTranslation()` added).
-That count is now **0** — re-measure by grepping `accessibility(Label|Hint)="..."`
-across `app/` and `src/` and testing each literal against the flattened values of
-`en.json`; nothing comes back. The **102** that
-remain each need a NEW key in all seven locales, i.e. real translations — they
-are not grindable without a translator and must not be filled with English
-copies (step 5).
+That count is now **0**.
+
+**The remaining 102 were then translated the same day** — 90 new keys across all
+seven locales (en/nl/de/fr/es/ja/ko), 95 call sites, 64 files, 36 components that
+needed `useTranslation()` adding. **Nine labels were deliberately NOT translated**,
+and the reachability rule in step 1 is why:
+
+| left in English | why |
+|---|---|
+| `app/sell/dashboard.tsx` (3) | no inbound nav edge (`check:reachable`) |
+| `app/twitch.tsx` (1) | stub, no inbound nav edge |
+| `app/leaderboard.tsx:514` (1) | inside `{!BETA_MODE && !COMMUNITY_GATED && …}` — `COMMUNITY_GATED` is `true`, so the branch never renders |
+| `DevSentryCrashSection` (3), `DevForcePlanSection` (1) | `__DEV__`-gated, absent from production builds |
+
+`app/chat-demo.tsx` WAS translated (4 strings) even though its entry point in
+`inbox.tsx` is `__DEV__`-gated — Merle asked for the gated chat screen
+explicitly. Note the asymmetry with the dev settings sections above: the rule is
+reachability, and the owner's call overrides it.
+
+No new top-level namespaces were created; keys went into the 73 that already
+exist (`ads.`, `price_explanation.`, `add_tab.`, `chat.demo_*`, …), and every
+translation reused the locale's existing noun for the feature rather than a
+fresh rendering of the English — watchlist stayed *volglijst / Beobachtungsliste
+/ liste de suivi / lista de seguimiento*, item stayed *Objekt / objet / artículo*
+per `nav.items`. That is the 2026-09-13 lesson below, applied.
 
 **2026-09-17: the lint now says which findings are FREE.** It reads the locale
 files and marks any finding whose exact English text is already a value in
@@ -214,8 +234,21 @@ plural key explicitly in code — see `category.set_item_count_one/_many`.
    `t()` appears only inside the declaring component, and that no non-English
    locale is a copy of the English. It checks **neither** — read the script: it
    matches one regex for `t('key', { defaultValue: ... })` and compares strings.
-   Nothing in the repo enforces hook scope (`react-hooks/rules-of-hooks` is not
-   in `eslint.config.js` either), so step 2 is verified by reading the insertion
-   site, not by a gate. A doc that credits a gate with a check it does not make
-   is worse than no doc: it is why step 2 is easy to skip.
+   A doc that credits a gate with a check it does not make is worse than no doc:
+   it is why step 2 is easy to skip.
+6b. **`npm run check:i18n-hook-scope`** (added 2026-09-19, in `verify:prebuild`)
+   is the gate step 6 used to be wrongly credited with. It walks every top-level
+   component and fails if one calls `t()` without a `const { t } =
+   useTranslation()` of its own. `react-hooks/rules-of-hooks` is NOT in
+   `eslint.config.js`, and `tsc` only catches the easy half — a file with no `t`
+   at all. The half it misses is a file with TWO components where only one
+   declares `t`, which is precisely what bulk translation produces.
+   ⚠️ Insert the hook as the **first statement** of the component, above any
+   early return. Several components in the 2026-09-19 slice open with
+   `if (!visible) return null;` / `if (!showAds) return null;`, and a hook
+   placed after that is a conditional hook — React will throw once the early
+   branch is taken. The gate does not check this (it only asks whether `t` is
+   declared in the component at all), so it was verified separately: all 67 hook
+   declarations across the 64 changed files were checked to sit above every
+   return in their own component body.
 7. Finish with `npm run i18n:parity`, `audit_fe_i18n_drift.py`, `tsc --noEmit`.

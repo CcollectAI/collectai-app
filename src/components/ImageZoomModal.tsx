@@ -16,6 +16,7 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { lightTap } from '@/lib/haptics';
+import { useTranslation } from 'react-i18next';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -26,6 +27,7 @@ interface ImageZoomModalProps {
 }
 
 export function ImageZoomModal({ visible, imageUri, onClose }: ImageZoomModalProps) {
+  const { t } = useTranslation();
   if (!visible) return null;
 
   return (
@@ -44,7 +46,7 @@ export function ImageZoomModal({ visible, imageUri, onClose }: ImageZoomModalPro
           style={styles.closeBtn}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
-          accessibilityLabel="Close image viewer"
+          accessibilityLabel={t('item_details.close_image_viewer_a11y', { defaultValue: 'Close image viewer' })}
         >
           <Ionicons name="close" size={28} color="#fff" />
         </AnimatedPressable>

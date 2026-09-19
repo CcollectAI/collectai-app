@@ -33,10 +33,12 @@ import { guideFor, GUIDED_CATEGORY_IDS } from '@/data/collectingGuides';
 import { getCategoryById } from '@/data/categories';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import { logger } from '@/lib/logger';
+import { useTranslation } from 'react-i18next';
 
 const DISMISS_KEY = '@sparrowcollect/start_collecting_dismissed';
 
 export function StartCollectingCard() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { followed } = useFollowedCategories();
@@ -110,7 +112,7 @@ export function StartCollectingCard() {
         hitSlop={10}
         style={styles.close}
         accessibilityRole="button"
-        accessibilityLabel="Dismiss this suggestion"
+        accessibilityLabel={t('home.dismiss_suggestion_a11y', { defaultValue: 'Dismiss this suggestion' })}
       >
         <Ionicons name="close" size={18} color={colors.muted} />
       </AnimatedPressable>

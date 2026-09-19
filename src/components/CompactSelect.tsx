@@ -44,7 +44,7 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
       </View>
     </AnimatedPressable></View>
     <Modal visible={open} transparent animationType="fade" onRequestClose={hide}>
-      <Pressable onPress={hide} style={{ flex:1, backgroundColor: colors.overlay }} accessibilityRole="button" accessibilityLabel="Close dropdown">
+      <Pressable onPress={hide} style={{ flex:1, backgroundColor: colors.overlay }} accessibilityRole="button" accessibilityLabel={t('common.close_dropdown_a11y', { defaultValue: 'Close dropdown' })}>
         <Pressable onPress={()=>{}} accessibilityRole="none" style={{
           position:'absolute', top, left, width:POPOVER_W,
           backgroundColor: colors.card,
@@ -65,7 +65,7 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
               onChangeText={setQuery}
               placeholder="Search…"
               placeholderTextColor={colors.muted}
-              accessibilityLabel="Search options"
+              accessibilityLabel={t('common.search_options_a11y', { defaultValue: 'Search options' })}
               style={{
                 borderWidth:1, borderColor: colors.border,
                 borderRadius: 8,

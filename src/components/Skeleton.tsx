@@ -7,6 +7,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { DURATION } from '@/motion/tokens';
+import { useTranslation } from 'react-i18next';
 
 interface SkeletonProps {
   width?: number | string;
@@ -21,6 +22,7 @@ export function Skeleton({
   borderRadius = 4,
   style,
 }: SkeletonProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const shimmerAnim = useRef(new Animated.Value(0)).current;
 
@@ -51,7 +53,7 @@ export function Skeleton({
   return (
     <Animated.View
       accessibilityRole="none"
-      accessibilityLabel="Loading"
+      accessibilityLabel={t('common.loading_a11y', { defaultValue: 'Loading' })}
       style={[
         styles.skeleton,
         {

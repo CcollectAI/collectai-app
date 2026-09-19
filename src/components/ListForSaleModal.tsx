@@ -138,7 +138,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.overlay}>
-          <Pressable style={styles.overlayBackdrop} onPress={close} accessibilityRole="button" accessibilityLabel="Close listing modal" />
+          <Pressable style={styles.overlayBackdrop} onPress={close} accessibilityRole="button" accessibilityLabel={t('listings.close_modal_a11y', { defaultValue: 'Close listing modal' })} />
           <View style={[styles.sheet, { backgroundColor: colors.card }]}>
             {/* ── Header ──────────────────────────────────────────── */}
             <View style={styles.header}>

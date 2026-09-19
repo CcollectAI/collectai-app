@@ -151,7 +151,7 @@ function GradingSectionInner({
           style={s.sectionHeaderRow}
           accessibilityRole="button"
           accessibilityLabel={`Grading information, ${gradingExpanded ? 'expanded' : 'collapsed'}`}
-          accessibilityHint="Double tap to toggle grading details"
+          accessibilityHint={t('grading.toggle_details_hint', { defaultValue: 'Double tap to toggle grading details' })}
         >
           <View style={s.sectionHeaderLeft}>
             <Ionicons name="shield-checkmark-outline" size={20} color={theme.accent} />
@@ -185,7 +185,7 @@ function GradingSectionInner({
                 }}
                 accessibilityRole="link"
                 accessibilityLabel={`View ${gradingLookupResult.service_name} certificate`}
-                accessibilityHint="Double tap to open certificate in browser"
+                accessibilityHint={t('grading.open_certificate_hint', { defaultValue: 'Double tap to open certificate in browser' })}
               >
                 <View style={s.gradingVerifiedHeader}>
                   <Ionicons name="shield-checkmark" size={24} color={theme.success} />
@@ -242,7 +242,7 @@ function GradingSectionInner({
               }}
               accessibilityRole="button"
               accessibilityLabel={t('grading.lookup_a11y')}
-              accessibilityHint="Double tap to open certificate lookup form"
+              accessibilityHint={t('grading.certificate_lookup_hint', { defaultValue: 'Double tap to open certificate lookup form' })}
             >
               <Ionicons name="search-outline" size={16} color={theme.accent} />
               <Text style={[s.gradingActionBtnText, { color: theme.accent }]}>{t('grading.look_up_certificate')}</Text>
@@ -300,7 +300,7 @@ function GradingSectionInner({
                       }}
                       accessibilityRole="link"
                       accessibilityLabel={`Submit to ${svc.short_name}`}
-                      accessibilityHint="Double tap to open submission page in browser"
+                      accessibilityHint={t('grading.submission_page_hint', { defaultValue: 'Double tap to open submission page in browser' })}
                     >
                       <Text style={[s.gradingSubmitBtnName, { color: theme.text }]}>{svc.short_name}</Text>
                       <Text style={[s.gradingSubmitBtnMeta, { color: theme.muted }]}>{svc.price_range}</Text>

@@ -18,12 +18,14 @@ import { formatPrice, parseMoney } from '@/lib/format';
 import { AnimatedPressable } from '@/motion';
 import { radius, text, fontWeight, gap } from '@/theme/tokens';
 import { BETA_MODE, SELLING_ENABLED } from '@/config/featureFlags';
+import { useTranslation } from 'react-i18next';
 
 interface ItemForSaleBarProps {
   askingPriceValue: string;
 }
 
 export const ItemForSaleBar = React.memo(function ItemForSaleBar({ askingPriceValue }: ItemForSaleBarProps) {
+  const { t } = useTranslation();
   const { colors: theme } = useAppTheme();
   const { settings } = useSettings();
   const router = useRouter();
@@ -70,7 +72,7 @@ export const ItemForSaleBar = React.memo(function ItemForSaleBar({ askingPriceVa
           onPress={() => router.push('/offers')}
           style={[styles.editBarBtn, { backgroundColor: theme.accent + '12', borderColor: theme.accent }]}
           accessibilityRole="button"
-          accessibilityLabel="View offers"
+          accessibilityLabel={t('offers.view_offers_a11y', { defaultValue: 'View offers' })}
         >
           <Ionicons name="pricetags-outline" size={14} color={theme.accent} />
           <Text style={[styles.editBarBtnText, { color: theme.accent }]}>Offers</Text>

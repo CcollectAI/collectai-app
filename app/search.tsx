@@ -467,7 +467,7 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
               onPress={() => router.push('/help' as Href)}
               style={[styles.helpBanner, { backgroundColor: colors.accent + '14', borderColor: colors.accent + '33' }]}
               accessibilityRole="button"
-              accessibilityLabel="Help with using the app"
+              accessibilityLabel={t('common.help_a11y', { defaultValue: 'Help with using the app' })}
             >
               <Ionicons name="help-buoy-outline" size={20} color={colors.accent} />
               <View style={styles.helpRowText}>

@@ -336,7 +336,7 @@ function FilterSheetInner({
                       onLongPress={() => handleDeletePreset(preset.id)}
                       accessibilityRole="button"
                       accessibilityLabel={`Load preset: ${preset.name}`}
-                      accessibilityHint="Long press to delete"
+                      accessibilityHint={t('common.long_press_delete_hint', { defaultValue: 'Long press to delete' })}
                     >
                       <Text style={[styles.presetChipText, { color: colors.text }]}>
                         {preset.name}
@@ -475,7 +475,7 @@ function FilterSheetInner({
                 onPress={() => setCategoryMenuOpen(false)}
                 style={styles.menuBackdrop}
                 accessibilityRole="button"
-                accessibilityLabel="Close category menu"
+                accessibilityLabel={t('listings.close_category_menu_a11y', { defaultValue: 'Close category menu' })}
               >
                 {/* Stop the backdrop press from closing when the sheet itself
                     is tapped — without this every row press also dismissed. */}
@@ -537,7 +537,7 @@ function FilterSheetInner({
                     onPress={() => setCategoryMenuOpen(false)}
                     style={[styles.menuDone, { backgroundColor: colors.accent }]}
                     accessibilityRole="button"
-                    accessibilityLabel="Done choosing categories"
+                    accessibilityLabel={t('listings.done_choosing_categories_a11y', { defaultValue: 'Done choosing categories' })}
                   >
                     <Text style={[styles.menuDoneText, { color: colors.background }]}>Done</Text>
                   </Pressable>

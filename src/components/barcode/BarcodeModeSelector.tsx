@@ -69,8 +69,8 @@ export const BarcodeModeSelector = React.memo(function BarcodeModeSelector({
             maxLength={17}
             returnKeyType="search"
             onSubmitEditing={onSubmit}
-            accessibilityLabel="ISBN input field"
-            accessibilityHint="Enter 10 or 13 digit ISBN number"
+            accessibilityLabel={t('barcode.isbn_field_a11y', { defaultValue: 'ISBN input field' })}
+            accessibilityHint={t('barcode.isbn_hint', { defaultValue: 'Enter 10 or 13 digit ISBN number' })}
           />
           <AnimatedPressable
             style={[styles.manualSubmitButton, {
@@ -79,7 +79,7 @@ export const BarcodeModeSelector = React.memo(function BarcodeModeSelector({
             }]}
             onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: hapticsEnabled }); onSubmit(); }}
             disabled={manualIsbn.length < 10 || isSubmitting}
-            accessibilityLabel="Look up ISBN"
+            accessibilityLabel={t('barcode.lookup_isbn_a11y', { defaultValue: 'Look up ISBN' })}
             accessibilityRole="button"
           >
             {isSubmitting ? (

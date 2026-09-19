@@ -12,6 +12,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { BETA_MODE } from "@/config/featureFlags";
+import { useTranslation } from 'react-i18next';
 
 // ── Props interface ─────────────────────────────────────────────────────
 
@@ -42,6 +43,7 @@ export const BuildProjectSection = React.memo(function BuildProjectSection({
   itemId,
   categorySlug,
 }: BuildProjectSectionProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   if (BETA_MODE) return null;
   return (
@@ -88,7 +90,7 @@ export const BuildProjectSection = React.memo(function BuildProjectSection({
           })}
           style={[s.startBuildButton, { backgroundColor: buildAccent ?? theme.accent }]}
           accessibilityRole="button"
-          accessibilityLabel="Start a build project for this item"
+          accessibilityLabel={t('projects.start_for_item_a11y', { defaultValue: 'Start a build project for this item' })}
         >
           <Ionicons name="add-circle-outline" size={18} color={colors.accentText} />
           <Text style={[s.startBuildButtonText, { color: colors.accentText }]}>Start Build Project</Text>

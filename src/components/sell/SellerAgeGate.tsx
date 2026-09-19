@@ -97,7 +97,7 @@ export function SellerAgeGateProvider({ children }: { children: React.ReactNode 
                 { backgroundColor: colors.brand.dark, opacity: busy ? 0.6 : 1 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel="I'm 18 or older"
+              accessibilityLabel={t('sell.age_confirm_a11y', { defaultValue: "I'm 18 or older" })}
             >
               <Text style={s.primaryText}>{busy ? 'Saving…' : "I'm 18 or older"}</Text>
             </Pressable>

@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import logger from '@/utils/logger';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 type Tip = { icon: keyof typeof Ionicons.glyphMap; title: string; body: string };
 
@@ -59,6 +60,7 @@ type Props = {
 };
 
 export default React.memo(function CategoryTipsSection({ categoryId }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [dismissed, setDismissed] = useState(true);
 
@@ -90,7 +92,7 @@ export default React.memo(function CategoryTipsSection({ categoryId }: Props) {
         <AnimatedPressable
           onPress={handleDismiss}
           accessibilityRole="button"
-          accessibilityLabel="Dismiss tips"
+          accessibilityLabel={t('category.dismiss_tips_a11y', { defaultValue: 'Dismiss tips' })}
         >
           <Ionicons name="close" size={18} color={colors.muted} />
         </AnimatedPressable>

@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatPrice } from '@/lib/format';
 import { formatCategoryName } from '@/constants/categories';
 import { CategoryPill } from '@/components/CategoryPill';
+import { useTranslation } from 'react-i18next';
 
 interface GalleryItem {
   id: string;
@@ -54,6 +55,7 @@ export function ItemGalleryGrid({
   numColumns = 2,
   colors,
 }: Props) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
   const [lightboxVisible, setLightboxVisible] = useState(false);
@@ -85,9 +87,9 @@ export function ItemGalleryGrid({
         animationType="fade"
         onRequestClose={closeLightbox}
       >
-        <Pressable style={styles.lightboxOverlay} onPress={closeLightbox} accessibilityRole="button" accessibilityLabel="Close lightbox">
+        <Pressable style={styles.lightboxOverlay} onPress={closeLightbox} accessibilityRole="button" accessibilityLabel={t('item_details.close_lightbox_a11y', { defaultValue: 'Close lightbox' })}>
           <View style={styles.lightboxContent}>
-            <Pressable style={styles.closeButton} onPress={closeLightbox} accessibilityRole="button" accessibilityLabel="Close image viewer">
+            <Pressable style={styles.closeButton} onPress={closeLightbox} accessibilityRole="button" accessibilityLabel={t('item_details.close_image_viewer_a11y', { defaultValue: 'Close image viewer' })}>
               <Ionicons name="close" size={28} color={colors.accentText} />
             </Pressable>
 

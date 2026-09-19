@@ -21,6 +21,7 @@ import { matchCatalog, type CatalogMatchHit } from '@/api/itemsApi';
 import { supabase } from '@/lib/supabase';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   itemId: string;
@@ -85,6 +86,7 @@ function describeChanges(
 export const ItemCatalogRefresh = React.memo(function ItemCatalogRefresh({
   itemId, itemTitle, itemCategory, currentAttrs, currentCanonicalKey, onUpdated,
 }: Props) {
+  const { t } = useTranslation();
   const { colors: theme } = useAppTheme();
   const { showToast } = useToast();
   const [matching, setMatching] = useState(false);
@@ -173,7 +175,7 @@ export const ItemCatalogRefresh = React.memo(function ItemCatalogRefresh({
       disabled={matching}
       style={[styles.btn, { backgroundColor: theme.accent + '14', opacity: matching ? 0.7 : 1 }]}
       accessibilityRole="button"
-      accessibilityLabel="Re-match this item against the catalog and update attributes"
+      accessibilityLabel={t('item_details.rematch_catalog_a11y', { defaultValue: 'Re-match this item against the catalog and update attributes' })}
     >
       {matching ? (
         <ActivityIndicator size="small" color={theme.accent} />

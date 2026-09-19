@@ -51,7 +51,19 @@
     "load_failed_hint": "Es fehlt nichts — wir konnten die Liste nur nicht erreichen.",
     "inbox_a11y": "Posteingang",
     "unread_count_a11y": "{{count}} ungelesen",
-    "main_navigation_a11y": "Hauptnavigation"
+    "main_navigation_a11y": "Hauptnavigation",
+    "dismiss_hint": "Doppeltippen zum Schließen",
+    "open_in_browser_hint": "Doppeltippen, um im Browser zu öffnen",
+    "long_press_delete_hint": "Zum Löschen gedrückt halten",
+    "close_dropdown_a11y": "Auswahlliste schließen",
+    "search_options_a11y": "Optionen durchsuchen",
+    "retry_pending_changes_a11y": "Alle ausstehenden Änderungen erneut versuchen",
+    "clear_pending_changes_a11y": "Alle ausstehenden Änderungen verwerfen",
+    "go_to_portfolio_a11y": "Zum Portfolio",
+    "retry_market_movers_a11y": "Versuche, die Marktbewegungen erneut zu laden",
+    "help_a11y": "Hilfe zur Nutzung der App",
+    "dismiss_tip_a11y": "Tipp ausblenden",
+    "loading_a11y": "Wird geladen"
   },
   "add_tab": {
     "subtitle": "Schneller, kamerazuerst Flow.",
@@ -63,7 +75,9 @@
     "import_url": "Von URL importieren",
     "import_url_a11y": "Objekt von Marktplatz-URL importieren",
     "add_manually": "Manuell hinzufügen",
-    "add_manually_a11y": "Objekt manuell hinzufügen"
+    "add_manually_a11y": "Objekt manuell hinzufügen",
+    "marketplace_url_a11y": "Marktplatz-URL",
+    "download_template_a11y": "Importvorlage herunterladen"
   },
   "wishlist": {
     "add_title": "Zur Merkliste hinzufügen",
@@ -102,7 +116,10 @@
     "target_price_input_a11y": "Zielpreis",
     "save_target_a11y": "Zielpreis speichern",
     "save_target_button": "Zielpreis speichern",
-    "title": "Beobachtungsliste"
+    "title": "Beobachtungsliste",
+    "retry_load_a11y": "Versuche, deine Beobachtungsliste erneut zu laden",
+    "keep_adding_a11y": "Weiter hinzufügen — nach dem Speichern hier bleiben, um mehrere Objekte hinzuzufügen",
+    "add_item_a11y": "Objekt zur Beobachtungsliste hinzufügen"
   },
   "events": {
     "ticket_fee_hint": "Für bezahlte Tickets fällt eine Plattformgebühr von {{pct}}% an.",
@@ -132,7 +149,11 @@
     "a11y_prev_week": "Vorherige Woche",
     "a11y_current_week": "Zur aktuellen Woche",
     "a11y_next_week": "Nächste Woche",
-    "template_not_saved": "Event erstellt — aber es wurde nicht als Vorlage gespeichert."
+    "template_not_saved": "Event erstellt — aber es wurde nicht als Vorlage gespeichert.",
+    "reminder_hint": "Plant eine Benachrichtigung eine Stunde vor dem Event",
+    "filter_followed_a11y": "Nach deinen gefolgten Kategorien filtern",
+    "share_event_a11y": "Dieses Event teilen",
+    "post_announcement_a11y": "Ankündigung veröffentlichen"
   },
   "marketplace": {
     "find_collectors": "Sammler finden",
@@ -140,7 +161,10 @@
     "close_user_search_a11y": "Benutzersuche schließen",
     "search_users_placeholder": "Nach Name oder Handle suchen...",
     "search_users_a11y": "Benutzer nach Name oder Handle suchen",
-    "a11y_upgrade_market_movers": "Auf Pro upgraden, um Market Movers zu sehen"
+    "a11y_upgrade_market_movers": "Auf Pro upgraden, um Market Movers zu sehen",
+    "close_picker_a11y": "Marktplatz-Auswahl schließen",
+    "retry_prices_a11y": "Marktpreise erneut laden",
+    "connect_account_a11y": "Konto verbinden"
   },
   "search": {
     "placeholder": "Objekte, Sammler, Events suchen...",
@@ -191,7 +215,10 @@
     "field_name_placeholder": "Feldname",
     "remove_field_a11y": "Feld entfernen",
     "add_custom_field_a11y": "Benutzerdefiniertes Feld hinzufügen",
-    "add_field": "Feld hinzufügen"
+    "add_field": "Feld hinzufügen",
+    "quantity_a11y": "Anzahl",
+    "acquired_date_hint": "Öffnet einen Kalender, um das Datum zu wählen, an dem du dieses Objekt erhalten hast",
+    "clear_acquired_date_a11y": "Kaufdatum löschen"
   },
   "items_empty": {
     "hero_title": "Starte deine Sammlung",
@@ -221,7 +248,10 @@
     "save": "Speichern",
     "not_found": "Nicht gefunden",
     "a11y_try_scanning_again": "Erneut scannen",
-    "a11y_add_manually": "Artikel manuell hinzufügen"
+    "a11y_add_manually": "Artikel manuell hinzufügen",
+    "isbn_field_a11y": "ISBN-Eingabefeld",
+    "isbn_hint": "Gib eine 10- oder 13-stellige ISBN ein",
+    "lookup_isbn_a11y": "ISBN nachschlagen"
   },
   "filters": {
     "close_a11y": "Filter schließen",
@@ -246,7 +276,12 @@
     "grading_service": "Grading-Service",
     "cert_number": "Zertifikatsnummer",
     "lookup_cert_a11y": "Zertifikat nachschlagen",
-    "look_up": "Nachschlagen"
+    "look_up": "Nachschlagen",
+    "toggle_details_hint": "Doppeltippen, um die Grading-Details ein- oder auszublenden",
+    "open_certificate_hint": "Doppeltippen, um das Zertifikat im Browser zu öffnen",
+    "certificate_lookup_hint": "Doppeltippen, um das Formular zur Zertifikatssuche zu öffnen",
+    "submission_page_hint": "Doppeltippen, um die Einsendeseite im Browser zu öffnen",
+    "toggle_reasoning_a11y": "Begründung der Bewertung ein- oder ausblenden"
   },
   "auth": {
     "sign_in": "Anmelden",
@@ -403,7 +438,15 @@
     "a11y_open_watchlist": "Beobachtungsliste öffnen",
     "breakdown_load_failed": "Deine Aufschlüsselung nach Kategorie konnte nicht geladen werden",
     "estimated_share_one": "{{amount}} davon sind geschätzt — 1 Objekt, für das uns keine Vergleichspreise vorliegen",
-    "estimated_share_many": "{{amount}} davon sind geschätzt — {{count}} Objekte, für die uns keine Vergleichspreise vorliegen"
+    "estimated_share_many": "{{amount}} davon sind geschätzt — {{count}} Objekte, für die uns keine Vergleichspreise vorliegen",
+    "refresh_watchlist_a11y": "Beobachtungsliste aktualisieren",
+    "see_all_watchlist_a11y": "Alle Objekte der Beobachtungsliste ansehen",
+    "close_add_menu_a11y": "Menü zum Hinzufügen schließen",
+    "add_menu_a11y": "Menü zum Hinzufügen von Objekten",
+    "retry_chart_a11y": "Portfolio-Diagramm erneut laden",
+    "dismiss_savings_a11y": "Ersparnis-Hinweis ausblenden",
+    "collection_value_unavailable_a11y": "Wert deiner Sammlung: noch nicht verfügbar",
+    "dismiss_suggestion_a11y": "Diesen Vorschlag ausblenden"
   },
   "items": {
     "title": "Objekte",
@@ -431,7 +474,10 @@
     "a11y_view_archived": "Archivierte Artikel ansehen und wiederherstellen",
     "a11y_open_projects": "Bau- und Malprojekte öffnen",
     "section_total": "Gesamt",
-    "portfolio_value_line": "Portfoliowert: {{value}}"
+    "portfolio_value_line": "Portfoliowert: {{value}}",
+    "cancel_category_change_a11y": "Kategorieänderung abbrechen",
+    "retry_load_a11y": "Objekte erneut laden",
+    "add_new_a11y": "Neues Objekt hinzufügen"
   },
   "scan": {
     "title": "QuickScan",
@@ -492,7 +538,11 @@
     },
     "a11y_cancel": "Abbrechen und zurück",
     "a11y_finish": "Scannen beenden",
-    "a11y_take_photo": "Foto aufnehmen"
+    "a11y_take_photo": "Foto aufnehmen",
+    "discard_item_a11y": "Dieses Objekt verwerfen",
+    "save_and_next_a11y": "Objekt speichern und nächstes scannen",
+    "process_all_a11y": "Alle erkannten Objekte verarbeiten",
+    "done_go_back_a11y": "Fertig, zurück"
   },
   "settings": {
     "title": "Einstellungen",
@@ -601,7 +651,9 @@
     "add_step_placeholder": "Schritt hinzufügen...",
     "a11y_new_step": "Titel des neuen Schritts",
     "a11y_add_step": "Schritt hinzufügen",
-    "load_failed": "Deine Projekte konnten nicht geladen werden"
+    "load_failed": "Deine Projekte konnten nicht geladen werden",
+    "start_for_item_a11y": "Ein Bauprojekt für dieses Objekt starten",
+    "start_new_a11y": "Ein neues Bauprojekt starten"
   },
   "watchlist": {
     "add_title": "Zur Merkliste hinzufügen",
@@ -633,7 +685,8 @@
     "load_failed": "Ankündigungen konnten nicht geladen werden",
     "attendees_only_title": "Ankündigungen sind für Teilnehmende",
     "attendees_only_hint": "Markiere dich beim Event als „Dabei“ oder „Interessiert“, um die Beiträge des Veranstalters zu sehen.",
-    "attendees_only_cta": "Zurück zum Event"
+    "attendees_only_cta": "Zurück zum Event",
+    "compose_a11y": "Ankündigung verfassen"
   },
   "project_header": {
     "mark_complete_a11y": "Projekt als abgeschlossen markieren",
@@ -748,7 +801,9 @@
     "manage_a11y": "Abo verwalten",
     "manage": "Abo verwalten",
     "renews_on": "Verlängert sich am {{date}}",
-    "access_until": "Pro-Zugang bis {{date}}"
+    "access_until": "Pro-Zugang bis {{date}}",
+    "retry_plans_a11y": "Versuche, die Tarife erneut zu laden",
+    "restore_purchases_a11y": "Frühere Käufe wiederherstellen"
   },
   "mfa": {
     "title": "Zwei-Faktor-Authentifizierung",
@@ -758,7 +813,9 @@
     "remove_a11y": "Diesen Faktor entfernen",
     "enable_a11y": "Zwei-Faktor-Authentifizierung aktivieren",
     "enable_2fa": "2FA aktivieren",
-    "load_failed": "Der Status deiner Zwei-Faktor-Authentifizierung konnte nicht geprüft werden"
+    "load_failed": "Der Status deiner Zwei-Faktor-Authentifizierung konnte nicht geprüft werden",
+    "qr_code_a11y": "QR-Code für die Authenticator-App",
+    "totp_code_a11y": "TOTP-Bestätigungscode"
   },
   "event_detail": {
     "not_found": "Veranstaltung nicht gefunden",
@@ -856,7 +913,8 @@
   },
   "ads": {
     "sponsored": "Gesponsert",
-    "ad": "Werbung"
+    "ad": "Werbung",
+    "advertisement_a11y": "Werbung"
   },
   "favorites": {
     "saved": "Zu Favoriten hinzugefügt",
@@ -954,7 +1012,9 @@
     "postage_placeholder": "z. B. 7,25",
     "a11y_save_postage": "Versandkosten speichern",
     "postage_hint": "Was hat dich der Versand gekostet? Wir sehen das nicht, deshalb wird dein Gewinn ohne Versandkosten angezeigt, bis du es einträgst. Die käufende Person sieht davon nichts.",
-    "postage_zero_ok": "Persönlich übergeben? Trage 0 ein — das ist eine Antwort, kein leeres Feld."
+    "postage_zero_ok": "Persönlich übergeben? Trage 0 ein — das ist eine Antwort, kein leeres Feld.",
+    "decline_counter_a11y": "Das Gegenangebot des Verkäufers ablehnen",
+    "view_offers_a11y": "Angebote ansehen"
   },
   "item_attrs": {
     "case_size": "Gehäusegröße",
@@ -992,7 +1052,8 @@
     "template_name_placeholder": "Vorlagenname",
     "a11y_create_event": "Event erstellen",
     "create_event": "Event erstellen",
-    "invite_friends": "Freunde einladen"
+    "invite_friends": "Freunde einladen",
+    "clear_end_date_a11y": "Enddatum löschen"
   },
   "listings": {
     "catalog_photo": "Katalogfoto",
@@ -1015,7 +1076,10 @@
     "a11y_new_asking_price": "Neue Preisvorstellung",
     "a11y_save_new_price": "Neuen Preis speichern",
     "make_an_offer": "Angebot machen",
-    "load_failed": "Das Angebot konnte nicht geladen werden"
+    "load_failed": "Das Angebot konnte nicht geladen werden",
+    "close_category_menu_a11y": "Kategorie-Menü schließen",
+    "done_choosing_categories_a11y": "Kategorieauswahl fertig",
+    "close_modal_a11y": "Angebotsfenster schließen"
   },
   "chat": {
     "collector_not_found": "Sammler nicht gefunden",
@@ -1033,7 +1097,12 @@
     "start_conversation": "Sende eine Nachricht, um das Gespräch zu beginnen",
     "message_placeholder": "Nachricht schreiben...",
     "a11y_message_input": "Nachrichteneingabe",
-    "status_check_failed": "Konnte nicht prüfen, ob du diesem Sammler schreiben kannst"
+    "status_check_failed": "Konnte nicht prüfen, ob du diesem Sammler schreiben kannst",
+    "demo_type_message_a11y": "Testnachricht eingeben",
+    "demo_send_message_a11y": "Testnachricht senden",
+    "demo_peer_name": "Test-Sammler",
+    "demo_placeholder_note": "Platzhalter · wird nicht gespeichert",
+    "compose_hint": "Nachricht eingeben und auf Senden tippen"
   },
   "sell": {
     "sell_an_item": "Objekt verkaufen",
@@ -1051,7 +1120,10 @@
     "pick_choose_item": "Artikel auswählen",
     "pick_empty_title": "Noch nichts in deiner Sammlung",
     "pick_a11y_sell_external": "Etwas verkaufen, das nicht in meiner Sammlung ist",
-    "catalog_check_failed": "Der Katalog konnte nicht geprüft werden"
+    "catalog_check_failed": "Der Katalog konnte nicht geprüft werden",
+    "save_ebay_defaults_a11y": "eBay-Voreinstellungen speichern",
+    "description_a11y": "Beschreibung",
+    "age_confirm_a11y": "Ich bin 18 Jahre oder älter"
   },
   "purchase": {
     "invalid_deal_link": "Ungültiger Deal-Link",
@@ -1083,7 +1155,8 @@
     "mandate_a11y_max_price": "Höchstpreis pro Artikel",
     "mandate_any_region": "Alle Regionen",
     "mandate_a11y_pause": "Suche pausieren",
-    "mandate_pause_search": "Suche pausieren"
+    "mandate_pause_search": "Suche pausieren",
+    "got_it_a11y": "Ich habe es erhalten"
   },
   "edit_event": {
     "loading_event": "Event wird geladen...",
@@ -1145,7 +1218,17 @@
     "add_photo": "Foto hinzufügen",
     "image_unavailable": "Bild nicht verfügbar",
     "a11y_delete_photo": "Dieses Foto löschen",
-    "a11y_item_photo": "Artikelfoto"
+    "a11y_item_photo": "Artikelfoto",
+    "photo_picker_hint": "Doppeltippen, um die Fotoauswahl zu öffnen",
+    "zoom_photo_hint": "Doppeltippen, um dieses Foto zu vergrößern",
+    "remove_photo_hint": "Doppeltippen, um dieses Foto aus der Galerie zu entfernen",
+    "close_lightbox_a11y": "Lightbox schließen",
+    "close_image_viewer_a11y": "Bildansicht schließen",
+    "share_item_a11y": "Dieses Objekt teilen",
+    "sell_timing_soon_a11y": "Verkaufszeitpunkt bald verfügbar",
+    "rematch_catalog_a11y": "Dieses Objekt erneut mit dem Katalog abgleichen und Merkmale aktualisieren",
+    "notes_a11y": "Notizen zum Objekt",
+    "refresh_all_a11y": "Alle Marktdaten aktualisieren"
   },
   "tax": {
     "title": "Verkaufs- und Steuermeldung",
@@ -1238,7 +1321,11 @@
     "set_item_count_many": "{{count}} Objekte",
     "set_item_count_one": "1 Objekt",
     "list_load_failed": "Kategorien konnten nicht geladen werden",
-    "collector_search_failed": "Sammlersuche fehlgeschlagen"
+    "collector_search_failed": "Sammlersuche fehlgeschlagen",
+    "back_to_grid_a11y": "Zurück zur Übersicht",
+    "dismiss_tips_a11y": "Tipps ausblenden",
+    "follow_brand_a11y": "Marke folgen",
+    "share_set_progress_a11y": "Set-Fortschritt teilen"
   },
   "analytics": {
     "a11y_retry": "Analysedaten erneut laden",
@@ -1265,7 +1352,9 @@
     "price_range": "Preisspanne",
     "confidence_level": "Konfidenzniveau",
     "key_factors": "Wichtigste Faktoren",
-    "data_sources": "Datenquellen"
+    "data_sources": "Datenquellen",
+    "why_estimated_a11y": "Erfahre, warum dieser Preis geschätzt wurde",
+    "why_estimated_hint": "Öffnet eine Erklärung, wie dieser Preis berechnet wurde"
   },
   "calendar": {
     "a11y_grid": "Kalenderansicht",
@@ -1275,6 +1364,7 @@
   },
   "leaderboard": {
     "category_only_title": "Ranglisten gibt es pro Kategorie",
-    "category_only_body": "Öffne eine Kategorie in deiner Sammlung, um zu sehen, wie deine Sammlung dort abschneidet — nach Anzahl der Objekte oder nach Wert."
+    "category_only_body": "Öffne eine Kategorie in deiner Sammlung, um zu sehen, wie deine Sammlung dort abschneidet — nach Anzahl der Objekte oder nach Wert.",
+    "view_profile_hint": "Doppeltippen, um das Sammlerprofil anzusehen"
   }
 }

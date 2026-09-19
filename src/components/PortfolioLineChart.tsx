@@ -3,6 +3,7 @@ import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-nati
 import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg";
 import { formatPrice } from "@/lib/format";
 import { dateLocale } from '@/constants/dateFormats';
+import { useTranslation } from 'react-i18next';
 
 export type TimeSeriesPoint = {
   t: string; // ISO timestamp
@@ -130,6 +131,7 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
   onRetry,
   onScrubChange,
 }) => {
+  const { t } = useTranslation();
   const [width, setWidth] = useState(0);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
@@ -207,7 +209,7 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
             <Pressable
               onPress={onRetry}
               accessibilityRole="button"
-              accessibilityLabel="Retry loading the portfolio chart"
+              accessibilityLabel={t('home.retry_chart_a11y', { defaultValue: 'Retry loading the portfolio chart' })}
               hitSlop={8}
             >
               <Text style={[styles.emptyText, { color: accentColor, fontWeight: '700', marginTop: 6 }]}>

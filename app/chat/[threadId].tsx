@@ -602,7 +602,7 @@ function ThreadDetailScreen() {
             placeholder={t('chat.message_placeholder', { defaultValue: 'Type a message...' })}
             placeholderTextColor={colors.muted}
             accessibilityLabel={t('chat.a11y_message_input', { defaultValue: 'Message input' })}
-            accessibilityHint="Type a message and press send"
+            accessibilityHint={t('chat.compose_hint', { defaultValue: 'Type a message and press send' })}
             style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
             multiline
             maxLength={1000}

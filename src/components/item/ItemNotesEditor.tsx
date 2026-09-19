@@ -6,6 +6,7 @@ import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, Keyboard, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { radius, text, fontWeight } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 interface ItemNotesEditorProps {
   notes: string;
@@ -30,6 +31,7 @@ export const ItemNotesEditor = React.memo(function ItemNotesEditor({
   onSaveNotes,
   onFocus,
 }: ItemNotesEditorProps) {
+  const { t } = useTranslation();
   const { colors: theme } = useAppTheme();
   const notesInputRef = useRef<TextInput | null>(null);
   const blockRef = useRef<View | null>(null);
@@ -169,7 +171,7 @@ export const ItemNotesEditor = React.memo(function ItemNotesEditor({
         onBlur={handleBlur}
         textAlignVertical="top"
         blurOnSubmit={false}
-        accessibilityLabel="Item notes"
+        accessibilityLabel={t('item_details.notes_a11y', { defaultValue: 'Item notes' })}
       />
 
       {/* Always-visible Save button below the textarea. Works on web

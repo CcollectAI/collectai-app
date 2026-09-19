@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 interface ItemsErrorStateProps {
   error: string;
@@ -18,6 +19,7 @@ export const ItemsErrorState = React.memo(function ItemsErrorState({
   error,
   onRetry,
 }: ItemsErrorStateProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
@@ -29,7 +31,7 @@ export const ItemsErrorState = React.memo(function ItemsErrorState({
           style={[styles.retryBtn, { backgroundColor: colors.accent }]}
           onPress={onRetry}
           accessibilityRole="button"
-          accessibilityLabel="Retry loading items"
+          accessibilityLabel={t('items.retry_load_a11y', { defaultValue: 'Retry loading items' })}
         >
           <Text style={styles.retryText}>Retry</Text>
         </AnimatedPressable>

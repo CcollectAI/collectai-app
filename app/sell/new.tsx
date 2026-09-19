@@ -620,7 +620,7 @@ function SellNewScreen() {
             multiline
             maxLength={4000}
             style={[styles.field, styles.multiline, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
-            accessibilityLabel="Description"
+            accessibilityLabel={t('sell.description_a11y', { defaultValue: 'Description' })}
           />
 
           {/* Reach, stated BEFORE listing and derived from the ACTUAL match.

@@ -16,6 +16,7 @@ import {
 } from '@/types/priceExplanation';
 import type { CurrencyCode } from '@/data/types';
 import { formatPrice } from '@/lib/format';
+import { useTranslation } from 'react-i18next';
 
 type PriceCardProps = {
   /** How many sold comps the figure is built on. `undefined` = unknown.
@@ -41,6 +42,7 @@ export function PriceCard({
   compact = false,
   compCount,
 }: PriceCardProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const confidenceColor = getConfidenceColor(estimate.confidenceTier);
   const confidenceLabel = getConfidenceLabel(estimate.confidenceTier);
@@ -105,8 +107,8 @@ export function PriceCard({
           style={styles.whyLink}
           onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onWhyThisPrice?.(); }}
           accessibilityRole="button"
-          accessibilityLabel="Learn why this price was estimated"
-          accessibilityHint="Opens explanation of how this price was calculated"
+          accessibilityLabel={t('price_explanation.why_estimated_a11y', { defaultValue: 'Learn why this price was estimated' })}
+          accessibilityHint={t('price_explanation.why_estimated_hint', { defaultValue: 'Opens explanation of how this price was calculated' })}
         >
           <Ionicons name="information-circle-outline" size={16} color={colors.accent} />
           <Text style={[styles.whyLinkText, { color: colors.accent }]}>

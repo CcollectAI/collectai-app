@@ -51,7 +51,19 @@
     "load_failed_hint": "Nothing is missing — we just could not reach the list.",
     "inbox_a11y": "Inbox",
     "unread_count_a11y": "{{count}} unread",
-    "main_navigation_a11y": "Main navigation"
+    "main_navigation_a11y": "Main navigation",
+    "dismiss_hint": "Double tap to dismiss",
+    "open_in_browser_hint": "Double tap to open in browser",
+    "long_press_delete_hint": "Long press to delete",
+    "close_dropdown_a11y": "Close dropdown",
+    "search_options_a11y": "Search options",
+    "retry_pending_changes_a11y": "Retry all pending changes",
+    "clear_pending_changes_a11y": "Clear all pending changes",
+    "go_to_portfolio_a11y": "Go to Portfolio",
+    "retry_market_movers_a11y": "Try loading market movers again",
+    "help_a11y": "Help with using the app",
+    "dismiss_tip_a11y": "Dismiss tip",
+    "loading_a11y": "Loading"
   },
   "add_tab": {
     "subtitle": "Fast, camera-first flow.",
@@ -63,7 +75,9 @@
     "import_url": "Import from URL",
     "import_url_a11y": "Import item from marketplace URL",
     "add_manually": "Add manually",
-    "add_manually_a11y": "Add item manually"
+    "add_manually_a11y": "Add item manually",
+    "marketplace_url_a11y": "Marketplace URL",
+    "download_template_a11y": "Download import template"
   },
   "wishlist": {
     "add_title": "Add to Watchlist",
@@ -102,7 +116,10 @@
     "target_price_input_a11y": "Target price",
     "save_target_a11y": "Save target price",
     "save_target_button": "Save target",
-    "title": "Watchlist"
+    "title": "Watchlist",
+    "retry_load_a11y": "Try loading your watchlist again",
+    "keep_adding_a11y": "Keep adding — stay here after saving so you can add several items",
+    "add_item_a11y": "Add item to watchlist"
   },
   "events": {
     "ticket_fee_hint": "A {{pct}}% platform fee applies to paid tickets.",
@@ -132,7 +149,11 @@
     "a11y_prev_week": "Previous week",
     "a11y_current_week": "Go to current week",
     "a11y_next_week": "Next week",
-    "template_not_saved": "Event created — but it was not saved as a template."
+    "template_not_saved": "Event created — but it was not saved as a template.",
+    "reminder_hint": "Schedules a notification one hour before the event",
+    "filter_followed_a11y": "Filter to your followed categories",
+    "share_event_a11y": "Share this event",
+    "post_announcement_a11y": "Post announcement"
   },
   "marketplace": {
     "find_collectors": "Find Collectors",
@@ -140,7 +161,10 @@
     "close_user_search_a11y": "Close user search",
     "search_users_placeholder": "Search by name or handle...",
     "search_users_a11y": "Search users by name or handle",
-    "a11y_upgrade_market_movers": "Upgrade to Pro to see Market Movers"
+    "a11y_upgrade_market_movers": "Upgrade to Pro to see Market Movers",
+    "close_picker_a11y": "Close marketplace picker",
+    "retry_prices_a11y": "Retry loading market prices",
+    "connect_account_a11y": "Connect account"
   },
   "search": {
     "placeholder": "Search items, collectors, events...",
@@ -191,7 +215,10 @@
     "field_name_placeholder": "Field name",
     "remove_field_a11y": "Remove field",
     "add_custom_field_a11y": "Add custom field",
-    "add_field": "Add field"
+    "add_field": "Add field",
+    "quantity_a11y": "Quantity",
+    "acquired_date_hint": "Opens a calendar to pick the date you acquired this item",
+    "clear_acquired_date_a11y": "Clear acquisition date"
   },
   "items_empty": {
     "hero_title": "Start your collection",
@@ -221,7 +248,10 @@
     "save": "Save",
     "not_found": "Not Found",
     "a11y_try_scanning_again": "Try scanning again",
-    "a11y_add_manually": "Add item manually"
+    "a11y_add_manually": "Add item manually",
+    "isbn_field_a11y": "ISBN input field",
+    "isbn_hint": "Enter 10 or 13 digit ISBN number",
+    "lookup_isbn_a11y": "Look up ISBN"
   },
   "filters": {
     "close_a11y": "Close filters",
@@ -246,7 +276,12 @@
     "grading_service": "Grading Service",
     "cert_number": "Certification Number",
     "lookup_cert_a11y": "Look up certificate",
-    "look_up": "Look Up"
+    "look_up": "Look Up",
+    "toggle_details_hint": "Double tap to toggle grading details",
+    "open_certificate_hint": "Double tap to open certificate in browser",
+    "certificate_lookup_hint": "Double tap to open certificate lookup form",
+    "submission_page_hint": "Double tap to open submission page in browser",
+    "toggle_reasoning_a11y": "Toggle grade reasoning"
   },
   "auth": {
     "sign_in": "Sign in",
@@ -403,7 +438,15 @@
     "a11y_open_watchlist": "Open your watchlist",
     "breakdown_load_failed": "Couldn't load your category breakdown",
     "estimated_share_one": "{{amount}} of this is estimated — 1 item we have no market comps for",
-    "estimated_share_many": "{{amount}} of this is estimated — {{count}} items we have no market comps for"
+    "estimated_share_many": "{{amount}} of this is estimated — {{count}} items we have no market comps for",
+    "refresh_watchlist_a11y": "Refresh watchlist",
+    "see_all_watchlist_a11y": "See all watchlist items",
+    "close_add_menu_a11y": "Close add item menu",
+    "add_menu_a11y": "Add item menu",
+    "retry_chart_a11y": "Retry loading the portfolio chart",
+    "dismiss_savings_a11y": "Dismiss savings notification",
+    "collection_value_unavailable_a11y": "Collection value: not available yet",
+    "dismiss_suggestion_a11y": "Dismiss this suggestion"
   },
   "items": {
     "title": "Items",
@@ -431,7 +474,10 @@
     "a11y_view_archived": "View archived items and restore them",
     "a11y_open_projects": "Open build and paint projects",
     "section_total": "Total",
-    "portfolio_value_line": "Portfolio value: {{value}}"
+    "portfolio_value_line": "Portfolio value: {{value}}",
+    "cancel_category_change_a11y": "Cancel category change",
+    "retry_load_a11y": "Retry loading items",
+    "add_new_a11y": "Add new item"
   },
   "scan": {
     "title": "QuickScan",
@@ -492,7 +538,11 @@
     },
     "a11y_cancel": "Cancel and go back",
     "a11y_finish": "Finish scanning",
-    "a11y_take_photo": "Take photo"
+    "a11y_take_photo": "Take photo",
+    "discard_item_a11y": "Discard this item",
+    "save_and_next_a11y": "Save item and scan next",
+    "process_all_a11y": "Process all detected items",
+    "done_go_back_a11y": "Done, go back"
   },
   "settings": {
     "title": "Settings",
@@ -601,7 +651,9 @@
     "add_step_placeholder": "Add a step...",
     "a11y_new_step": "New step title",
     "a11y_add_step": "Add step",
-    "load_failed": "Couldn't load your projects"
+    "load_failed": "Couldn't load your projects",
+    "start_for_item_a11y": "Start a build project for this item",
+    "start_new_a11y": "Start a new build project"
   },
   "watchlist": {
     "add_title": "Add to Watchlist",
@@ -633,7 +685,8 @@
     "load_failed": "Couldn't load announcements",
     "attendees_only_title": "Announcements are for attendees",
     "attendees_only_hint": "Mark yourself Going or Interested on the event to see what the host posts.",
-    "attendees_only_cta": "Back to the event"
+    "attendees_only_cta": "Back to the event",
+    "compose_a11y": "Compose announcement"
   },
   "project_header": {
     "mark_complete_a11y": "Mark project as complete",
@@ -748,7 +801,9 @@
     "manage_a11y": "Manage subscription",
     "manage": "Manage Subscription",
     "renews_on": "Renews on {{date}}",
-    "access_until": "Pro access until {{date}}"
+    "access_until": "Pro access until {{date}}",
+    "retry_plans_a11y": "Try loading the plans again",
+    "restore_purchases_a11y": "Restore previous purchases"
   },
   "mfa": {
     "title": "Two-Factor Authentication",
@@ -758,7 +813,9 @@
     "remove_a11y": "Remove this factor",
     "enable_a11y": "Enable two-factor authentication",
     "enable_2fa": "Enable 2FA",
-    "load_failed": "Couldn't check your two-factor authentication status"
+    "load_failed": "Couldn't check your two-factor authentication status",
+    "qr_code_a11y": "QR code for authenticator app",
+    "totp_code_a11y": "TOTP verification code"
   },
   "event_detail": {
     "not_found": "Event not found",
@@ -856,7 +913,8 @@
   },
   "ads": {
     "sponsored": "Sponsored",
-    "ad": "Ad"
+    "ad": "Ad",
+    "advertisement_a11y": "Advertisement"
   },
   "favorites": {
     "saved": "Saved to favourites",
@@ -954,7 +1012,9 @@
     "postage_placeholder": "e.g. 7,25",
     "a11y_save_postage": "Save postage",
     "postage_hint": "What did it cost you to post it? We can't see this, so your profit is shown before postage until you tell us. Nothing is shared with the buyer.",
-    "postage_zero_ok": "Handed it over in person? Enter 0 — that is an answer, not a blank."
+    "postage_zero_ok": "Handed it over in person? Enter 0 — that is an answer, not a blank.",
+    "decline_counter_a11y": "Turn down the seller's counter",
+    "view_offers_a11y": "View offers"
   },
   "item_attrs": {
     "case_size": "Case Size",
@@ -992,7 +1052,8 @@
     "template_name_placeholder": "Template name",
     "a11y_create_event": "Create event",
     "create_event": "Create Event",
-    "invite_friends": "Invite Friends"
+    "invite_friends": "Invite Friends",
+    "clear_end_date_a11y": "Clear end date"
   },
   "listings": {
     "catalog_photo": "Catalog photo",
@@ -1015,7 +1076,10 @@
     "a11y_new_asking_price": "New asking price",
     "a11y_save_new_price": "Save the new price",
     "make_an_offer": "Make an offer",
-    "load_failed": "Couldn't load this listing"
+    "load_failed": "Couldn't load this listing",
+    "close_category_menu_a11y": "Close category menu",
+    "done_choosing_categories_a11y": "Done choosing categories",
+    "close_modal_a11y": "Close listing modal"
   },
   "chat": {
     "collector_not_found": "Collector not found",
@@ -1033,7 +1097,12 @@
     "start_conversation": "Send a message to start the conversation",
     "message_placeholder": "Type a message...",
     "a11y_message_input": "Message input",
-    "status_check_failed": "Couldn't check whether you can message this collector"
+    "status_check_failed": "Couldn't check whether you can message this collector",
+    "demo_type_message_a11y": "Type a test message",
+    "demo_send_message_a11y": "Send test message",
+    "demo_peer_name": "Test Collector",
+    "demo_placeholder_note": "Placeholder · not saved",
+    "compose_hint": "Type a message and press send"
   },
   "sell": {
     "sell_an_item": "Sell an item",
@@ -1051,7 +1120,10 @@
     "pick_choose_item": "Choose an item",
     "pick_empty_title": "Nothing in your collection yet",
     "pick_a11y_sell_external": "Sell something not in my collection",
-    "catalog_check_failed": "Couldn't check the catalogue"
+    "catalog_check_failed": "Couldn't check the catalogue",
+    "save_ebay_defaults_a11y": "Save eBay defaults",
+    "description_a11y": "Description",
+    "age_confirm_a11y": "I'm 18 or older"
   },
   "purchase": {
     "invalid_deal_link": "Invalid deal link",
@@ -1083,7 +1155,8 @@
     "mandate_a11y_max_price": "Maximum price per item",
     "mandate_any_region": "Any Region",
     "mandate_a11y_pause": "Pause search",
-    "mandate_pause_search": "Pause Search"
+    "mandate_pause_search": "Pause Search",
+    "got_it_a11y": "I got it"
   },
   "edit_event": {
     "loading_event": "Loading event...",
@@ -1145,7 +1218,17 @@
     "add_photo": "Add Photo",
     "image_unavailable": "Image unavailable",
     "a11y_delete_photo": "Delete this photo",
-    "a11y_item_photo": "Item photo"
+    "a11y_item_photo": "Item photo",
+    "photo_picker_hint": "Double tap to open photo picker",
+    "zoom_photo_hint": "Double tap to zoom in on this photo",
+    "remove_photo_hint": "Double tap to remove this photo from the gallery",
+    "close_lightbox_a11y": "Close lightbox",
+    "close_image_viewer_a11y": "Close image viewer",
+    "share_item_a11y": "Share this item",
+    "sell_timing_soon_a11y": "Sell timing coming soon",
+    "rematch_catalog_a11y": "Re-match this item against the catalog and update attributes",
+    "notes_a11y": "Item notes",
+    "refresh_all_a11y": "Refresh all intelligence data"
   },
   "tax": {
     "title": "Sales & tax reporting",
@@ -1238,7 +1321,11 @@
     "set_item_count_many": "{{count}} items",
     "set_item_count_one": "1 item",
     "list_load_failed": "Couldn't load categories",
-    "collector_search_failed": "Couldn't search collectors"
+    "collector_search_failed": "Couldn't search collectors",
+    "back_to_grid_a11y": "Back to grid",
+    "dismiss_tips_a11y": "Dismiss tips",
+    "follow_brand_a11y": "Follow brand",
+    "share_set_progress_a11y": "Share set progress"
   },
   "analytics": {
     "a11y_retry": "Retry loading analytics data",
@@ -1265,7 +1352,9 @@
     "price_range": "Price Range",
     "confidence_level": "Confidence Level",
     "key_factors": "Key Factors",
-    "data_sources": "Data Sources"
+    "data_sources": "Data Sources",
+    "why_estimated_a11y": "Learn why this price was estimated",
+    "why_estimated_hint": "Opens explanation of how this price was calculated"
   },
   "calendar": {
     "a11y_grid": "Calendar grid",
@@ -1275,6 +1364,7 @@
   },
   "leaderboard": {
     "category_only_title": "Leaderboards are per category",
-    "category_only_body": "Open a category from your collection to see how your collection ranks there — by items owned or by value held."
+    "category_only_body": "Open a category from your collection to see how your collection ranks there — by items owned or by value held.",
+    "view_profile_hint": "Double tap to view collector profile"
   }
 }

@@ -9,6 +9,7 @@ import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import type { QueuedMutation, MutationType } from '@/lib/mutationQueue';
+import { useTranslation } from 'react-i18next';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -128,6 +129,7 @@ function MutationQueuePanelInner({
   onRetryAll,
   onClear,
 }: MutationQueuePanelProps) {
+  const { t } = useTranslation();
   if (mutations.length === 0) return null;
 
   return (
@@ -177,7 +179,7 @@ function MutationQueuePanelInner({
           onPress={onRetryAll}
           style={[styles.actionBtn, { backgroundColor: colors.accent + '20' }]}
           accessibilityRole="button"
-          accessibilityLabel="Retry all pending changes"
+          accessibilityLabel={t('common.retry_pending_changes_a11y', { defaultValue: 'Retry all pending changes' })}
         >
           <Ionicons name="refresh" size={14} color={colors.accent} />
           <Text style={[styles.actionText, { color: colors.accent }]}>Retry All</Text>
@@ -187,7 +189,7 @@ function MutationQueuePanelInner({
           onPress={onClear}
           style={[styles.actionBtn, { backgroundColor: colors.danger + '15' }]}
           accessibilityRole="button"
-          accessibilityLabel="Clear all pending changes"
+          accessibilityLabel={t('common.clear_pending_changes_a11y', { defaultValue: 'Clear all pending changes' })}
         >
           <Ionicons name="close-circle-outline" size={14} color={colors.danger} />
           <Text style={[styles.actionText, { color: colors.danger }]}>Clear</Text>

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import type { BuildPaintProject } from '@/data';
 import type { AppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   isBuildable: boolean;
@@ -26,6 +27,7 @@ const BuildProjectsSection: React.FC<Props> = ({
   onStartNew,
   colors,
 }) => {
+  const { t } = useTranslation();
   if (!isBuildable) return null;
 
   return (
@@ -92,7 +94,7 @@ const BuildProjectsSection: React.FC<Props> = ({
         style={[styles.startBuildBtn, { backgroundColor: accentColor }]}
         onPress={onStartNew}
         accessibilityRole="button"
-        accessibilityLabel="Start a new build project"
+        accessibilityLabel={t('projects.start_new_a11y', { defaultValue: 'Start a new build project' })}
       >
         <Ionicons name="construct-outline" size={16} color={colors.accentText} />
         <Text style={[styles.startBuildBtnText, { color: colors.accentText }]}>Start New Build</Text>

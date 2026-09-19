@@ -78,7 +78,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
               placeholderTextColor={colors.muted}
               keyboardType="number-pad"
               style={[styles.input, { color: colors.text }]}
-              accessibilityLabel="Quantity"
+              accessibilityLabel={t('add_manual.quantity_a11y', { defaultValue: 'Quantity' })}
               returnKeyType="next"
             />
           </View>
@@ -98,7 +98,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
             style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}
             accessibilityRole="button"
             accessibilityLabel={t('add_manual.date_acquired_a11y')}
-            accessibilityHint="Opens a calendar to pick the date you acquired this item"
+            accessibilityHint={t('add_manual.acquired_date_hint', { defaultValue: 'Opens a calendar to pick the date you acquired this item' })}
             accessibilityValue={{ text: acquisitionDate || 'no date selected' }}
           >
             <Ionicons name="calendar-outline" size={16} color={colors.muted} style={styles.inputIcon} />
@@ -112,7 +112,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
                 onPress={() => onAcquisitionDateChange('')}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityRole="button"
-                accessibilityLabel="Clear acquisition date"
+                accessibilityLabel={t('add_manual.clear_acquired_date_a11y', { defaultValue: 'Clear acquisition date' })}
               >
                 <Ionicons name="close-circle" size={18} color={colors.muted} />
               </AnimatedPressable>

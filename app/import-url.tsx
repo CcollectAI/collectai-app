@@ -111,7 +111,7 @@ function ImportUrlScreen() {
             autoFocus
             returnKeyType="go"
             onSubmitEditing={handleSubmit}
-            accessibilityLabel="Marketplace URL"
+            accessibilityLabel={t('add_tab.marketplace_url_a11y', { defaultValue: 'Marketplace URL' })}
           />
           <AnimatedPressable
             style={[styles.submitBtn, {

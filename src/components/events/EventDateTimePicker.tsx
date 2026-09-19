@@ -142,7 +142,7 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
                 onPress={() => onEndDateChange('')}
                 hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel="Clear end date"
+                accessibilityLabel={t('create_event.clear_end_date_a11y', { defaultValue: 'Clear end date' })}
               >
                 <Ionicons name="close-circle" size={16} color={colors.muted} />
               </AnimatedPressable>

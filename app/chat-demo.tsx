@@ -90,8 +90,8 @@ function ChatDemoScreen() {
             <Ionicons name="chevron-back" size={24} color={colors.text} />
           </AnimatedPressable>
           <View style={styles.headerTitleBlock}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>Test Collector</Text>
-            <Text style={[styles.headerSub, { color: colors.muted }]}>Placeholder · not saved</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{t('chat.demo_peer_name', { defaultValue: 'Test Collector' })}</Text>
+            <Text style={[styles.headerSub, { color: colors.muted }]}>{t('chat.demo_placeholder_note', { defaultValue: 'Placeholder · not saved' })}</Text>
           </View>
           <View style={{ width: 32 }} />
         </View>
@@ -121,7 +121,7 @@ function ChatDemoScreen() {
             style={[styles.input, { color: colors.text, backgroundColor: colors.background, borderColor: colors.border }]}
             onSubmitEditing={send}
             returnKeyType="send"
-            accessibilityLabel="Type a test message"
+            accessibilityLabel={t('chat.demo_type_message_a11y', { defaultValue: 'Type a test message' })}
           />
           <AnimatedPressable
             onPress={send}
@@ -129,7 +129,7 @@ function ChatDemoScreen() {
             style={[styles.sendBtn, { backgroundColor: draft.trim() ? colors.accent : colors.border }]}
             hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel="Send test message"
+            accessibilityLabel={t('chat.demo_send_message_a11y', { defaultValue: 'Send test message' })}
           >
             <Ionicons name="arrow-up" size={20} color={colors.accentText}/>
           </AnimatedPressable>

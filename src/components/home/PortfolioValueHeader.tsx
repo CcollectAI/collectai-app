@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedCounter } from "@/motion";
 import type { Currency } from "@/lib/settings";
 import { useAppTheme } from "@/hooks/useAppTheme";
+import { useTranslation } from 'react-i18next';
 
 // ── Props ──────────────────────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ function PortfolioValueHeaderInner({
   animationsEnabled = true,
   tier,
 }: PortfolioValueHeaderProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const isPositive = deltaPct >= 0;
   const tierColor = tier ? TIER_COLORS[tier] ?? TIER_COLORS.Unranked : null;
@@ -104,7 +106,7 @@ function PortfolioValueHeaderInner({
         <Text
           style={[s.totalValue, { color: theme.muted }]}
           accessibilityRole="text"
-          accessibilityLabel="Collection value: not available yet"
+          accessibilityLabel={t('home.collection_value_unavailable_a11y', { defaultValue: 'Collection value: not available yet' })}
         >
           —
         </Text>

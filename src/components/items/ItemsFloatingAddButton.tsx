@@ -7,6 +7,7 @@ import { Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 interface ItemsFloatingAddButtonProps {
   onPress: () => void;
@@ -15,6 +16,7 @@ interface ItemsFloatingAddButtonProps {
 export const ItemsFloatingAddButton = React.memo(function ItemsFloatingAddButton({
   onPress,
 }: ItemsFloatingAddButtonProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
@@ -22,7 +24,7 @@ export const ItemsFloatingAddButton = React.memo(function ItemsFloatingAddButton
       style={[styles.floatingAddBtn, { backgroundColor: colors.accent }]}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel="Add new item"
+      accessibilityLabel={t('items.add_new_a11y', { defaultValue: 'Add new item' })}
     >
       <Ionicons name="add" size={22} color={colors.accentText}/>
       <Text style={styles.floatingAddText}>Add Item</Text>

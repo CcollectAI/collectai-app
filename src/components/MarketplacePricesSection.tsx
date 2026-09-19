@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
 import logger from "@/utils/logger";
 import { conditionDisplayName } from '@/lib/conditionVocabulary';
+import { useTranslation } from 'react-i18next';
 
 // ── Exported types ──────────────────────────────────────────────────────
 
@@ -69,6 +70,7 @@ export const MarketplacePricesSection = React.memo(function MarketplacePricesSec
   formatPrice,
   toNum,
 }: MarketplacePricesSectionProps) {
+  const { t } = useTranslation();
   return (
     <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
       <Pressable
@@ -100,7 +102,7 @@ export const MarketplacePricesSection = React.memo(function MarketplacePricesSec
             onPress={onRetry}
             style={[s.retryBtn, { borderColor: theme.accent }]}
             accessibilityRole="button"
-            accessibilityLabel="Retry loading market prices"
+            accessibilityLabel={t('marketplace.retry_prices_a11y', { defaultValue: 'Retry loading market prices' })}
           >
             <Text style={{ color: theme.accent, fontSize: 13, fontWeight: "600" }}>Retry</Text>
           </AnimatedPressable>

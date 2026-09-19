@@ -7,6 +7,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 interface EventAnnouncementsCardProps {
   eventId: string;
@@ -21,6 +22,7 @@ export const EventAnnouncementsCard = React.memo(function EventAnnouncementsCard
   isCreator,
   onNavigate,
 }: EventAnnouncementsCardProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const path = `/events/${encodeURIComponent(eventId)}/announcements`;
 
@@ -66,7 +68,7 @@ export const EventAnnouncementsCard = React.memo(function EventAnnouncementsCard
           onPress={() => onNavigate(path)}
           style={[styles.postAnnouncementBtn, { backgroundColor: colors.accent + '15', borderColor: colors.accent + '40' }]}
           accessibilityRole="button"
-          accessibilityLabel="Post announcement"
+          accessibilityLabel={t('events.post_announcement_a11y', { defaultValue: 'Post announcement' })}
         >
           <Ionicons name="add-circle-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
           <Text style={[styles.postAnnouncementText, { color: colors.accent }]}>Post Announcement</Text>

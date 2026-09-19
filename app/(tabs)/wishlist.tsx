@@ -806,7 +806,7 @@ function WatchlistTabScreen() {
           style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
           onPress={() => { setLoading(true); loadItems(); loadMatches(); }}
           accessibilityRole="button"
-          accessibilityLabel="Try loading your watchlist again"
+          accessibilityLabel={t('wishlist.retry_load_a11y', { defaultValue: 'Try loading your watchlist again' })}
         >
           <Ionicons name="refresh" size={18} color={colors.accentText} />
           <Text style={[styles.emptyBtnText, { color: colors.accentText }]}>{t('common.try_again')}</Text>
@@ -1023,7 +1023,7 @@ function WatchlistTabScreen() {
               style={styles.keepAddingRow}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: keepAdding }}
-              accessibilityLabel="Keep adding — stay here after saving so you can add several items"
+              accessibilityLabel={t('wishlist.keep_adding_a11y', { defaultValue: 'Keep adding — stay here after saving so you can add several items' })}
             >
               <Ionicons
                 name={keepAdding ? 'checkbox' : 'square-outline'}

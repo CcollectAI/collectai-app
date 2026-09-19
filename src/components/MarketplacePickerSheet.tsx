@@ -27,6 +27,7 @@ import { useSettings } from '@/lib/settings';
 import { collectorsApi } from '@/api/collectorsApi';
 import { openAffiliateUrl } from '@/utils/affiliateHelpers';
 import { formatPrice } from '@/lib/format';
+import { useTranslation } from 'react-i18next';
 
 type AffiliateLink = {
   source: string;
@@ -55,6 +56,7 @@ export default function MarketplacePickerSheet({
   maxPrice,
   maxPriceCurrency,
 }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const [links, setLinks] = useState<AffiliateLink[]>([]);
@@ -97,7 +99,7 @@ export default function MarketplacePickerSheet({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <AnimatedPressable style={styles.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close marketplace picker">
+      <AnimatedPressable style={styles.backdrop} onPress={onClose} accessibilityRole="button" accessibilityLabel={t('marketplace.close_picker_a11y', { defaultValue: 'Close marketplace picker' })}>
         <View />
       </AnimatedPressable>
       <View style={[styles.sheet, { backgroundColor: colors.card }]}>
@@ -112,7 +114,7 @@ export default function MarketplacePickerSheet({
               </Text>
             ) : null}
           </View>
-          <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close marketplace picker" accessibilityHint="Double tap to dismiss">
+          <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('marketplace.close_picker_a11y', { defaultValue: 'Close marketplace picker' })} accessibilityHint={t('common.dismiss_hint', { defaultValue: 'Double tap to dismiss' })}>
             <Ionicons name="close" size={22} color={colors.muted} />
           </AnimatedPressable>
         </View>
@@ -127,7 +129,7 @@ export default function MarketplacePickerSheet({
               onPress={() => handleOpenLink(link.affiliate_url || link.url)}
               accessibilityRole="link"
               accessibilityLabel={`Open ${link.label}`}
-              accessibilityHint="Double tap to open in browser"
+              accessibilityHint={t('common.open_in_browser_hint', { defaultValue: 'Double tap to open in browser' })}
             >
               <Text style={[styles.linkLabel, { color: colors.text }]}>{link.label}</Text>
               <Ionicons name="open-outline" size={18} color={colors.accent} />

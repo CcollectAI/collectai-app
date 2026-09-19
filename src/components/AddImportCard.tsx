@@ -8,6 +8,7 @@ import {
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 
 type ImportSummary = {
   total: number;
@@ -30,6 +31,7 @@ export const AddImportCard: React.FC<Props> = ({
   onUploadFile,
   onDownloadTemplate,
 }) => {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
@@ -103,7 +105,7 @@ export const AddImportCard: React.FC<Props> = ({
             },
           ]}
           accessibilityRole="button"
-          accessibilityLabel="Download import template"
+          accessibilityLabel={t('add_tab.download_template_a11y', { defaultValue: 'Download import template' })}
         >
           <Text
             style={[

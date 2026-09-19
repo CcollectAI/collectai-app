@@ -20,6 +20,7 @@ import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 import type { CollectorsEvent } from '@/data/events';
 import { formatEventWhen } from '@/lib/calendar';
+import { useTranslation } from 'react-i18next';
 
 interface EventActionBarProps {
   event: CollectorsEvent;
@@ -30,6 +31,7 @@ export const EventActionBar = React.memo(function EventActionBar({
   event,
   hapticsEnabled,
 }: EventActionBarProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { showToast } = useToast();
 
@@ -90,7 +92,7 @@ export const EventActionBar = React.memo(function EventActionBar({
         onPress={handleShare}
         style={[styles.shareBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
         accessibilityRole="button"
-        accessibilityLabel="Share this event"
+        accessibilityLabel={t('events.share_event_a11y', { defaultValue: 'Share this event' })}
       >
         <Ionicons name="share-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
         <Text style={[styles.shareBtnText, { color: colors.accent }]}>Share</Text>

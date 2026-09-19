@@ -167,7 +167,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={t('item_details.a11y_add_photo', { defaultValue: 'Add a new photo' })}
-                  accessibilityHint="Double tap to open photo picker"
+                  accessibilityHint={t('item_details.photo_picker_hint', { defaultValue: 'Double tap to open photo picker' })}
                 >
                   <View style={[s.galleryAddCard, { backgroundColor: theme.card, borderColor: theme.accent }]}>
                     {imageUploading || photoUploading ? (
@@ -190,7 +190,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                   onPress={() => onZoomImage(item.image_url)}
                   accessibilityRole="button"
                   accessibilityLabel={`Photo ${index + 1} of ${imageCount}${item.label ? ` (${LABEL_DISPLAY[item.label] || item.label})` : ""}`}
-                  accessibilityHint="Double tap to zoom in on this photo"
+                  accessibilityHint={t('item_details.zoom_photo_hint', { defaultValue: 'Double tap to zoom in on this photo' })}
                 >
                   {failedImageIds.has(item.id) ? (
                     <View style={[s.galleryFallback, { width: GALLERY_WIDTH, height: GALLERY_HEIGHT, backgroundColor: theme.background }]}>
@@ -246,7 +246,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
                     style={[s.galleryDeleteBtn, { backgroundColor: theme.card + "D9" }]}
                     accessibilityRole="button"
                     accessibilityLabel={t('item_details.a11y_delete_photo', { defaultValue: 'Delete this photo' })}
-                    accessibilityHint="Double tap to remove this photo from the gallery"
+                    accessibilityHint={t('item_details.remove_photo_hint', { defaultValue: 'Double tap to remove this photo from the gallery' })}
                   >
                     <Ionicons name="close-circle" size={26} color={theme.danger ?? "#EF4444"} />
                   </Pressable>
@@ -302,7 +302,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
         }}
         accessibilityRole="button"
         accessibilityLabel={t('item_details.a11y_item_photo', { defaultValue: 'Item photo' })}
-        accessibilityHint="Double tap to zoom in on this photo"
+        accessibilityHint={t('item_details.zoom_photo_hint', { defaultValue: 'Double tap to zoom in on this photo' })}
       >
         {displayImageUri && !failedImageIds.has("__single__") ? (
           <Image
@@ -337,7 +337,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
         ]}
         accessibilityRole="button"
         accessibilityLabel={displayImageUri ? "Change photo" : "Add your photo"}
-        accessibilityHint="Double tap to open photo picker"
+        accessibilityHint={t('item_details.photo_picker_hint', { defaultValue: 'Double tap to open photo picker' })}
       >
         {photoUploading ? (
           <ActivityIndicator size="small" color={theme.accentText} />

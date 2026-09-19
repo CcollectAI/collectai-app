@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useScannerTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import type { DetectedMultiItem } from '@/data/types';
+import { useTranslation } from 'react-i18next';
 
 const TIFFANY = '#81D8D0';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -35,6 +36,7 @@ export function MultiItemOverlay({
   onSelectItem,
   onProcessAll,
 }: Props) {
+  const { t } = useTranslation();
   const { colors } = useScannerTheme();
 
   return (
@@ -118,7 +120,7 @@ export function MultiItemOverlay({
           style={[styles.processAllBtn, { backgroundColor: TIFFANY }]}
           onPress={onProcessAll}
           accessibilityRole="button"
-          accessibilityLabel="Process all detected items"
+          accessibilityLabel={t('scan.process_all_a11y', { defaultValue: 'Process all detected items' })}
         >
           <Ionicons name="layers" size={18} color="#FFFFFF" />
           <Text style={styles.processAllText}>Process All ({detectedItems.length})</Text>

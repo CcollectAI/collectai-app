@@ -11,6 +11,7 @@ import { View, Text, Pressable, Animated, StyleSheet } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { useFeatureTour, type TipId } from '@/lib/featureTour';
 import { BRAND_COLORS } from '@/constants/colors';
+import { useTranslation } from 'react-i18next';
 
 type FeatureTipProps = {
   /** Unique identifier for this tip */
@@ -24,6 +25,7 @@ type FeatureTipProps = {
 };
 
 export function FeatureTip({ tipId, message, pointerPosition = 'top', style }: FeatureTipProps) {
+  const { t } = useTranslation();
   const { isDismissed, dismiss, ready } = useFeatureTour();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -55,7 +57,7 @@ export function FeatureTip({ tipId, message, pointerPosition = 'top', style }: F
           onPress={() => dismiss(tipId)}
           style={styles.dismissBtn}
           accessibilityRole="button"
-          accessibilityLabel="Dismiss tip"
+          accessibilityLabel={t('common.dismiss_tip_a11y', { defaultValue: 'Dismiss tip' })}
         >
           <Text style={styles.dismissText}>Got it</Text>
         </Pressable>

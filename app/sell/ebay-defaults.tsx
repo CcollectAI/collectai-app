@@ -279,7 +279,7 @@ function EbayDefaultsScreen() {
           onPress={handleSave}
           disabled={!requiredOk || saving}
           accessibilityRole="button"
-          accessibilityLabel="Save eBay defaults"
+          accessibilityLabel={t('sell.save_ebay_defaults_a11y', { defaultValue: 'Save eBay defaults' })}
           accessibilityState={{ disabled: !requiredOk || saving, busy: saving }}
         >
           {saving ? (

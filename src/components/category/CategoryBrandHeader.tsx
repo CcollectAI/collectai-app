@@ -13,6 +13,7 @@ import { AnimatedPressable } from '@/motion';
 import { CATEGORY_FOLLOW_ENABLED } from '@/config/featureFlags';
 import type { AppTheme } from '@/hooks/useAppTheme';
 import { formatNumber } from '@/lib/format';
+import { useTranslation } from 'react-i18next';
 
 export type CategorySponsor = {
   name: string;
@@ -37,6 +38,7 @@ function fmtCount(n?: number): string | null {
 }
 
 function CategoryBrandHeader({ sponsor, colors, onFollow }: Props) {
+  const { t } = useTranslation();
   if (!sponsor) return null;
   const cover = sponsor.coverColors ?? ['#312e81', '#db2777'];
   const followers = fmtCount(sponsor.followers);
@@ -68,7 +70,7 @@ function CategoryBrandHeader({ sponsor, colors, onFollow }: Props) {
           {!!meta && <Text style={[styles.meta, { color: colors.muted }]} numberOfLines={1}>{meta}</Text>}
         </View>
         {CATEGORY_FOLLOW_ENABLED && (
-          <AnimatedPressable style={styles.followBtn} onPress={onFollow} accessibilityRole="button" accessibilityLabel="Follow brand">
+          <AnimatedPressable style={styles.followBtn} onPress={onFollow} accessibilityRole="button" accessibilityLabel={t('category.follow_brand_a11y', { defaultValue: 'Follow brand' })}>
             <Text style={styles.followText}>Follow</Text>
           </AnimatedPressable>
         )}

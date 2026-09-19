@@ -10,6 +10,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 type SetItem = {
   id: string;
@@ -30,6 +31,7 @@ type Props = {
 };
 
 export default React.memo(function SetProgressSection({ categoryId, onSetPress }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [sets, setSets] = useState<SetItem[]>([]);
   const [progress, setProgress] = useState<Record<string, SetProgressItem>>({});
@@ -79,7 +81,7 @@ export default React.memo(function SetProgressSection({ categoryId, onSetPress }
             Share.share({ message: `My Set Progress:\n${lines.join('\n')}` });
           }}
           accessibilityRole="button"
-          accessibilityLabel="Share set progress"
+          accessibilityLabel={t('category.share_set_progress_a11y', { defaultValue: 'Share set progress' })}
         >
           <Ionicons name="share-outline" size={18} color={colors.muted} />
         </AnimatedPressable>

@@ -18,6 +18,7 @@ import type { CurrencyCode } from '@/data/types';
 import { BRAND_COLORS } from '@/constants/colors';
 import { formatCategoryName } from '@/constants/categories';
 import { conditionDisplayName } from '@/lib/conditionVocabulary';
+import { useTranslation } from 'react-i18next';
 
 const TIFFANY = BRAND_COLORS.tiffany;
 const TIFFANY_DARK = BRAND_COLORS.tiffanyDark;
@@ -58,6 +59,7 @@ function BatchSummaryScreenInner({
   onFinish,
   colors,
 }: BatchSummaryScreenProps) {
+  const { t } = useTranslation();
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle="dark-content" />
@@ -119,7 +121,7 @@ function BatchSummaryScreenInner({
           style={[styles.summaryDoneBtn, { backgroundColor: TIFFANY }]}
           onPress={onFinish}
           accessibilityRole="button"
-          accessibilityLabel="Done, go back"
+          accessibilityLabel={t('scan.done_go_back_a11y', { defaultValue: 'Done, go back' })}
         >
           <Text style={styles.summaryDoneBtnText}>Done</Text>
         </AnimatedPressable>

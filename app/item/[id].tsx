@@ -1126,7 +1126,7 @@ function ItemDetailScreen() {
               style={[styles.galleryShareBtn, { backgroundColor: theme.background + 'E6' }]}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel="Share this item"
+              accessibilityLabel={t('item_details.share_item_a11y', { defaultValue: 'Share this item' })}
             >
               <Ionicons name="share-outline" size={16} color={theme.text} />
             </AnimatedPressable>
