@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Item } from '@/data';
 import type { AppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   categoryId: string | undefined;
@@ -33,6 +34,7 @@ const TOTAL_KEY: Record<string, string> = {
 };
 
 const MangaSeriesProgress: React.FC<Props> = ({ categoryId, items, accentColor, colors }) => {
+  const { t } = useTranslation();
   if (!categoryId || !SERIES_CATEGORIES.has(categoryId) || items.length === 0) return null;
 
   const unitLabel = UNIT_LABELS[categoryId] ?? 'vol';
@@ -65,7 +67,7 @@ const MangaSeriesProgress: React.FC<Props> = ({ categoryId, items, accentColor, 
     <View style={styles.section}>
       <View style={styles.sectionHeaderRow}>
         <Ionicons name="library-outline" size={18} color={accentColor} />
-        <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Series Progress</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>{t('category.series_progress', { defaultValue: 'Series Progress' })}</Text>
       </View>
       {seriesEntries.slice(0, 8).map(([seriesName, series]) => {
         const pct = series.total ? Math.min(100, Math.round((series.count / series.total) * 100)) : null;

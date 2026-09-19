@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { text as textToken, fontWeight as fw } from '@/theme/tokens';
 import type { Achievement } from '@/lib/achievements';
+import { useTranslation } from 'react-i18next';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SectionCard (local helper)
@@ -91,6 +92,7 @@ export const UserAchievementsSection = React.memo(function UserAchievementsSecti
   recentAchievementIds,
   challenges,
 }: UserAchievementsSectionProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
@@ -113,7 +115,7 @@ export const UserAchievementsSection = React.memo(function UserAchievementsSecti
 
       {/* Active Challenges */}
       {challenges.length > 0 && (
-        <SectionCard title="Active Challenges" icon="trophy-outline">
+        <SectionCard title={t('user_profile.active_challenges', { defaultValue: 'Active Challenges' })} icon="trophy-outline">
           {challenges.slice(0, 3).map((ch) => {
             const pct = ch.target > 0 ? Math.min(ch.progress / ch.target, 1) : 0;
             return (

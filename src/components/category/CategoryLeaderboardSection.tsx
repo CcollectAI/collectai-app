@@ -30,6 +30,7 @@ import { MEDAL_COLORS } from '@/constants/colors';
 import logger from '@/utils/logger';
 import { GAMIFICATION_UI_ENABLED } from '@/config/featureFlags';
 import { formatNumber } from '@/lib/format';
+import { useTranslation } from 'react-i18next';
 
 type LeaderboardEntry = {
   user_id: string;
@@ -46,6 +47,7 @@ type Props = {
 };
 
 export default React.memo(function CategoryLeaderboardSection({ categoryId: _categoryId }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
 
@@ -79,7 +81,7 @@ export default React.memo(function CategoryLeaderboardSection({ categoryId: _cat
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <Ionicons name="podium-outline" size={18} color={colors.accent} />
-        <Text style={[styles.title, { color: colors.text }]}>Top Collectors</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('leaderboard.top_collectors', { defaultValue: 'Top Collectors' })}</Text>
       </View>
 
       <AutoRotatingCarousel intervalMs={5500} horizontalInset={30}>

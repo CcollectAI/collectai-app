@@ -471,7 +471,7 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
             >
               <Ionicons name="help-buoy-outline" size={20} color={colors.accent} />
               <View style={styles.helpRowText}>
-                <Text style={[styles.helpRowTitle, { color: colors.text }]}>Need a helping hand?</Text>
+                <Text style={[styles.helpRowTitle, { color: colors.text }]}>{t('guide.need_help', { defaultValue: 'Need a helping hand?' })}</Text>
                 <Text style={[styles.helpRowSummary, { color: colors.muted }]} numberOfLines={2}>
                   Short answers on adding items, selling, alerts and what Pro gets you.
                 </Text>

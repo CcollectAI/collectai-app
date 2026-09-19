@@ -171,9 +171,24 @@ function scanFile(path) {
       findings.push({
         line: i + 1,
         col: m.index + 1,
-        text: raw.slice(0, 80),
+        text: raw,
         kind: 'jsx-text',
       });
+    }
+
+    // 1b) JSX text on its OWN line: the `>` closes the previous line and the
+    //     `</` opens the next, so the same-line regex above can never see it.
+    //     This was a blind spot until 2026-09-19 and hid 278 visible strings --
+    //     more than the whole reported backlog at the time. Any wrapped
+    //     paragraph of copy lands here, which is most long strings in the app.
+    if (!/[<>{}]/.test(trimmed) && trimmed.length >= 3 && /[a-zA-Z]{3,}/.test(trimmed)
+        && !ALLOWLIST_STRINGS.has(trimmed) && LOOKS_HUMAN.test(trimmed)
+        && !trimmed.startsWith('/*')) {
+      const prev = lines.slice(0, i).reverse().find((l) => l.trim());
+      const next = lines.slice(i + 1).find((l) => l.trim());
+      if (prev && next && prev.trimEnd().endsWith('>') && next.trim().startsWith('</')) {
+        findings.push({ line: i + 1, col: 1, text: trimmed, kind: 'jsx-text' });
+      }
     }
 
     // 2) Flagged prop values: accessibilityLabel="Foo bar"
@@ -188,7 +203,10 @@ function scanFile(path) {
         findings.push({
           line: i + 1,
           col: m.index + 1,
-          text: `${prop}="${val.slice(0, 60)}"`,
+          // NOT truncated: this output gets copied into locale files, and a
+          // clipped string becomes a wrong translation in seven of them. That
+          // happened on 2026-09-19 with a 65-char placeholder cut at 60.
+          text: `${prop}="${val}"`,
           kind: 'prop',
         });
       }

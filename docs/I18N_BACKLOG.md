@@ -6,10 +6,27 @@ different failures — CLAUDE.md §gates spells that out. A string that never
 reaches a locale file cannot be missing from one, so parity is green while six
 locales render English.
 
-**Backlog: 93 strings across 62 files** (measured 2026-09-19, after the a11y
-slice below; 653 at the start. Every number in this file goes stale within a
-session or two — `npm run i18n:check` prints the live one, so re-run it before
-quoting one.)
+**Backlog: 230 strings across 104 files** (measured 2026-09-19.)
+
+⛔ **The number went UP, and every earlier number in this file was wrong.**
+`check-i18n-strings.mjs` matched JSX text with `/>([^<>{}\n]+)</g`, which needs
+the opening `>` and the closing `<` **on the same line**. Every text node that
+wraps onto its own line — which is most sentence-length copy in the app — was
+invisible to it. Fixing that on 2026-09-19 took the count from 22 to 243: the
+gate was blind to **more strings than it had ever reported**. "653 at the
+start" was itself an undercount.
+
+The same file also printed prop values through `val.slice(0, 60)`. A 65-char
+placeholder in `ItemNotesEditor` was reported clipped at the 60th character,
+mid-sentence, and that clipped English was on its way into all seven locale
+files before an exact-match assertion in the applier refused it. Both the
+truncation and the blind spot are fixed; findings are now printed in full.
+
+**The lesson is not "the regex was wrong".** It is that a lint whose count only
+ever goes down looks like progress, and nobody re-derives the denominator. When
+a gate reports a backlog, check what it CANNOT see before trusting the trend —
+same family as the "a green gate whose own safe form WAS the bug" entry in
+`docs/CLASS_SWEEPS.md`.
 
 **2026-09-19: the mechanical `accessibilityLabel` slice is DONE.** Of 149
 hardcoded a11y labels, 47 had an English string that already existed verbatim in
@@ -58,6 +75,15 @@ findings, one of them a visible English button.
 `i18n:check` is deliberately **not** a blocking gate; making it one would wedge
 every deploy until the backlog is zero — same reasoning as `check:reachable`
 and `audit_orphan_tables.py`.
+
+⛔ **`src/app/` is a dead duplicate router tree** (found 2026-09-19 while
+wiring a "free" finding in `src/app/+not-found.tsx`). `app.json` pins
+expo-router to `{ root: './app' }`, nothing imports `src/app/`, and the
+directory is leftover from `e34e12cb` which shelved `src/app/(tabs)`. It still
+holds `+not-found.tsx`, `_layout.tsx`, `index.tsx` and `(admin)/review.tsx`.
+Do not translate it — it is a deletion candidate, Merle's call. Same precedent
+as `SellOnSparrowSection` below: checking reachability turned translation work
+into a deletion.
 
 ## Rank by reachability, not by count
 

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import logger from '@/utils/logger';
 import type { AppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 
 type ExternalMarketplace = {
   id: string;
@@ -31,11 +32,12 @@ const ExternalMarketplacesSection: React.FC<Props> = ({
   onPress,
   colors,
 }) => {
+  const { t } = useTranslation();
   if (marketplaces.length === 0) return null;
 
   return (
     <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>External Marketplaces</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('category.external_marketplaces', { defaultValue: 'External Marketplaces' })}</Text>
       <View style={styles.marketplaceRow}>
         {marketplaces.map((mp) => {
           const affiliateMatch = affiliateLinks.find(

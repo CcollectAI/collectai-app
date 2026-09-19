@@ -38,6 +38,7 @@ import { formatNumber, fmtCurrency } from '@/lib/format';
 import { getCollectorCategories, type CollectorCategoryStanding } from '@/api/socialApi';
 import { getCategoryById } from '@/data/categories';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   userId: string;
@@ -49,6 +50,7 @@ export const UserCategoriesSection = React.memo(function UserCategoriesSection({
   userId,
   isSelf = false,
 }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const router = useRouter();
@@ -151,7 +153,7 @@ export const UserCategoriesSection = React.memo(function UserCategoriesSection({
                   </Text>
                 </View>
               ) : (
-                <Text style={[styles.unranked, { color: colors.muted }]} numberOfLines={1}>Not ranked</Text>
+                <Text style={[styles.unranked, { color: colors.muted }]} numberOfLines={1}>{t('user_profile.not_ranked', { defaultValue: 'Not ranked' })}</Text>
               )}
             </AnimatedPressable>
           );

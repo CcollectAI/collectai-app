@@ -18,6 +18,7 @@ import { View } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { EmptyState } from '@/components/EmptyState';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { useTranslation } from 'react-i18next';
 
 /**
  * No `title` prop (2026-09-17). It used to take one and feed it to
@@ -29,12 +30,13 @@ import { QuickNavBar } from '@/components/QuickNavBar';
  * two apart. The shared message is deliberate, the dead prop was not.
  */
 export function SellingUnavailable() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <EmptyState
         icon="construct-outline"
-        title="Selling is coming soon"
+        title={t('sell.coming_soon_title', { defaultValue: 'Selling is coming soon' })}
         subtitle="Listing your collection across eBay, Mercari and Cardmarket is still being built. We'll turn it on once marketplace accounts can be connected."
         colors={colors}
         style={{ flex: 1 }}

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   photoUrl: string | null;
@@ -18,13 +19,14 @@ export const PhotoUploadSection = React.memo(function PhotoUploadSection({
   photoError,
   onShowSourcePicker,
 }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
         <Ionicons name="camera-outline" size={16} color={colors.accent} />
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Photo (Optional)</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('add_manual.photo_optional', { defaultValue: 'Photo (Optional)' })}</Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>

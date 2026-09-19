@@ -158,7 +158,7 @@ function NotificationPreferencesSectionInner() {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.accent} />
-          <Text style={[styles.loadingText, { color: colors.muted }]}>Loading settings...</Text>
+          <Text style={[styles.loadingText, { color: colors.muted }]}>{t('settings.loading', { defaultValue: 'Loading settings...' })}</Text>
         </View>
       ) : loadFailed ? (
         <View style={styles.errorRow}>

@@ -11,6 +11,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { categoryDisplayName } from '@/constants/categories';
+import { useTranslation } from 'react-i18next';
 
 /**
  * ⚠️ This section is currently NEVER RENDERED, and that is deliberate for now.
@@ -48,6 +49,7 @@ export const RegionalInsightsSection = React.memo(function RegionalInsightsSecti
   items,
   onSearchItem,
 }: RegionalInsightsSectionProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   if (items.length === 0) return null;
@@ -57,7 +59,7 @@ export const RegionalInsightsSection = React.memo(function RegionalInsightsSecti
       <Text style={[styles.sectionTitle, { color: colors.text }]}>
         <Ionicons name="location-outline" size={16} color={colors.accent} /> Popular in Your Region
       </Text>
-      <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>Trending near you based on collector activity</Text>
+      <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>{t('marketplace.regional_insights_sub', { defaultValue: 'Trending near you based on collector activity' })}</Text>
       <View style={{ gap: 6, marginTop: 8 }}>
         {items.map((item) => (
           <AnimatedPressable

@@ -8,6 +8,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 type GradingStandard = {
   service: string;
@@ -72,6 +73,7 @@ const ALIASES: Record<string, string> = {
 type Props = { categoryId: string };
 
 export default React.memo(function CategoryGradingGuide({ categoryId }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [expanded, setExpanded] = useState(false);
 
@@ -88,7 +90,7 @@ export default React.memo(function CategoryGradingGuide({ categoryId }: Props) {
         accessibilityLabel={`Grading standards, ${expanded ? 'collapse' : 'expand'}`}
       >
         <Ionicons name="shield-checkmark-outline" size={18} color={colors.accent} />
-        <Text style={[styles.title, { color: colors.text }]}>Grading Standards</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('grading.standards_title', { defaultValue: 'Grading Standards' })}</Text>
         <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={colors.muted} />
       </AnimatedPressable>
 

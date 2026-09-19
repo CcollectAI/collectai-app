@@ -253,7 +253,7 @@ const EventAnnouncementsScreen: React.FC = () => {
         /* Empty state */
         <Animated.View style={[styles.emptyContainer, settings.animationsEnabled ? animatedStyle : undefined]}>
           <Ionicons name="megaphone-outline" size={48} color={colors.muted} />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>No announcements yet</Text>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('announcement.empty', { defaultValue: 'No announcements yet' })}</Text>
           <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
             {isHost
               ? 'Tap the compose button below to send the first announcement to attendees.'

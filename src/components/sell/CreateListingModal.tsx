@@ -98,7 +98,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
           <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Create Listing</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('listings.create_title', { defaultValue: 'Create Listing' })}</Text>
             <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('common.close', { defaultValue: 'Close' })}>
               <Ionicons name="close" size={24} color={colors.muted} />
             </AnimatedPressable>
@@ -110,7 +110,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
             value={titleField.value}
             onChangeText={titleField.onChange}
             onBlur={titleField.onBlur}
-            placeholder="Item title"
+            placeholder={t('listings.item_title_placeholder', { defaultValue: 'Item title' })}
             placeholderTextColor={colors.muted}
             autoFocus
             returnKeyType="next"
@@ -156,7 +156,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
                 <Text style={[styles.feeValue, { color: colors.error }]}>-{formatPrice(displayFees.fees, currency)}</Text>
               </View>
               <View style={styles.feeRow}>
-                <Text style={[styles.feeLabel, { color: colors.muted }]}>Est. net</Text>
+                <Text style={[styles.feeLabel, { color: colors.muted }]}>{t('listings.est_net', { defaultValue: 'Est. net' })}</Text>
                 <Text style={[styles.feeValue, { color: colors.success }]}>{formatPrice(displayFees.net, currency)}</Text>
               </View>
             </View>
@@ -172,7 +172,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
             {creating ? (
               <ActivityIndicator size="small" color={colors.accentText} />
             ) : (
-              <Text style={[styles.createBtnText, { color: colors.accentText }]}>Create as Draft</Text>
+              <Text style={[styles.createBtnText, { color: colors.accentText }]}>{t('listings.create_as_draft', { defaultValue: 'Create as Draft' })}</Text>
             )}
           </AnimatedPressable>
         </View>

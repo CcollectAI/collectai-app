@@ -21,8 +21,10 @@ import { QuickNavBar } from '@/components/QuickNavBar';
 import { EmptyState } from '@/components/EmptyState';
 import { helpTopic } from '@/data/appHelp';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 function HelpTopicScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { topicId } = useLocalSearchParams<{ topicId?: string }>();
   const { animatedStyle } = useEnterReveal({ delay: 50 });
@@ -37,7 +39,7 @@ function HelpTopicScreen() {
         <Stack.Screen options={{ headerTitle: '' }} />
         <EmptyState
           icon="help-buoy-outline"
-          title="We have no help page for that yet"
+          title={t('guide.not_found_title', { defaultValue: 'We have no help page for that yet' })}
           subtitle="Try searching for what you are trying to do — the search bar looks in here too."
           colors={colors}
         />
@@ -52,7 +54,7 @@ function HelpTopicScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Animated.View style={animatedStyle}>
           <View style={[styles.hero, { backgroundColor: colors.accent + '14', borderColor: colors.accent + '33' }]}>
-            <Text style={[styles.eyebrow, { color: colors.muted }]}>Need a helping hand?</Text>
+            <Text style={[styles.eyebrow, { color: colors.muted }]}>{t('guide.need_help', { defaultValue: 'Need a helping hand?' })}</Text>
             <Text style={[styles.title, { color: colors.text }]}>{topic.title}</Text>
             <Text style={[styles.summary, { color: colors.muted }]}>{topic.summary}</Text>
           </View>

@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { PublicUserProfile } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   profile: PublicUserProfile | null;
@@ -61,6 +62,7 @@ export const PublicUserProfileCard: React.FC<Props> = ({
   onPress,
   onConnect,
 }) => {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   if (loading) {
@@ -68,7 +70,7 @@ export const PublicUserProfileCard: React.FC<Props> = ({
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.accent} />
-          <Text style={[styles.loadingText, { color: colors.muted }]}>Loading profile...</Text>
+          <Text style={[styles.loadingText, { color: colors.muted }]}>{t('user_profile.loading', { defaultValue: 'Loading profile...' })}</Text>
         </View>
       </View>
     );

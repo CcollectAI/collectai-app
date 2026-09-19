@@ -182,7 +182,7 @@ function MutationQueuePanelInner({
           accessibilityLabel={t('common.retry_pending_changes_a11y', { defaultValue: 'Retry all pending changes' })}
         >
           <Ionicons name="refresh" size={14} color={colors.accent} />
-          <Text style={[styles.actionText, { color: colors.accent }]}>Retry All</Text>
+          <Text style={[styles.actionText, { color: colors.accent }]}>{t('common.retry_all', { defaultValue: 'Retry All' })}</Text>
         </AnimatedPressable>
 
         <AnimatedPressable

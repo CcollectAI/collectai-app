@@ -10,6 +10,7 @@ import { formatPrice } from '@/lib/format';
 import { radius, text, fontWeight, gap } from '@/theme/tokens';
 import type { CurrencyCode } from '@/data/types';
 import { categoryDisplayName } from '@/constants/categories';
+import { useTranslation } from 'react-i18next';
 
 interface PredictionComp {
   item_key: string;
@@ -27,6 +28,7 @@ export const PredictionCompsCard = React.memo(function PredictionCompsCard({
   comparisons,
   currency,
 }: PredictionCompsCardProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   if (comparisons.length === 0) return null;
@@ -35,7 +37,7 @@ export const PredictionCompsCard = React.memo(function PredictionCompsCard({
     <View style={[styles.predCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.predCardHeader}>
         <Ionicons name="analytics-outline" size={16} color={colors.accent} />
-        <Text style={[styles.predCardTitle, { color: colors.text }]}>Actuals vs Predicted</Text>
+        <Text style={[styles.predCardTitle, { color: colors.text }]}>{t('analytics.actuals_vs_predicted', { defaultValue: 'Actuals vs Predicted' })}</Text>
       </View>
       {comparisons.map((comp) => {
         const diff = comp.actual - comp.predicted;

@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import type { CollectorsEvent } from '@/data/events';
+import { useTranslation } from 'react-i18next';
 
 interface EventRsvpSectionProps {
   /**
@@ -50,6 +51,7 @@ export const EventRsvpSection = React.memo(function EventRsvpSection({
   onToggleDropAlert,
   onToggleStreamFollow,
 }: EventRsvpSectionProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   const goingCount = event.goingCount ?? 0;
@@ -82,7 +84,7 @@ export const EventRsvpSection = React.memo(function EventRsvpSection({
           ) : rsvpStatus === 'interested' ? (
             <View style={[styles.attendedBadge, { backgroundColor: colors.border + '40', borderColor: colors.border }]}>
               <Ionicons name="star" size={16} color={colors.muted} style={{ marginRight: 6 }} />
-              <Text style={[styles.attendedBadgeText, { color: colors.muted }]}>Was interested</Text>
+              <Text style={[styles.attendedBadgeText, { color: colors.muted }]}>{t('event_detail.was_interested', { defaultValue: 'Was interested' })}</Text>
             </View>
           ) : null}
         </View>

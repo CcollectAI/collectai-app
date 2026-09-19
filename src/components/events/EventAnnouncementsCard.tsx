@@ -71,7 +71,7 @@ export const EventAnnouncementsCard = React.memo(function EventAnnouncementsCard
           accessibilityLabel={t('events.post_announcement_a11y', { defaultValue: 'Post announcement' })}
         >
           <Ionicons name="add-circle-outline" size={16} color={colors.accent} style={{ marginRight: 6 }} />
-          <Text style={[styles.postAnnouncementText, { color: colors.accent }]}>Post Announcement</Text>
+          <Text style={[styles.postAnnouncementText, { color: colors.accent }]}>{t('events.post_announcement_title', { defaultValue: 'Post Announcement' })}</Text>
         </AnimatedPressable>
       )}
     </View>

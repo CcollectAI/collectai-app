@@ -11,6 +11,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { KIND_ICON, KIND_LABEL } from '@/constants/eventConstants';
 import { parseEventDate, getCountdown, formatEventWhen } from '@/lib/calendar';
 import type { CollectorsEvent } from '@/data/events';
+import { useTranslation } from 'react-i18next';
 
 // Only sources a member can RECOGNISE get a badge. Measured 2026-09-13: live
 // events come from ticketmaster, seatgeek, rss, musicbrainz and newsletter, and
@@ -38,6 +39,7 @@ interface EventHeroSectionProps {
 export const EventHeroSection = React.memo(function EventHeroSection({
   event,
 }: EventHeroSectionProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
@@ -57,7 +59,7 @@ export const EventHeroSection = React.memo(function EventHeroSection({
       {event.status === 'cancelled' && (
         <View style={[styles.cancelledBanner, { backgroundColor: colors.danger + '15' }]}>
           <Ionicons name="close-circle-outline" size={16} color={colors.danger} />
-          <Text style={[styles.cancelledBannerText, { color: colors.danger }]}>This event has been cancelled</Text>
+          <Text style={[styles.cancelledBannerText, { color: colors.danger }]}>{t('event_detail.cancelled', { defaultValue: 'This event has been cancelled' })}</Text>
         </View>
       )}
 

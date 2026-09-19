@@ -16,6 +16,7 @@ import { cleanCatalogTitle } from '@/lib/catalogPresentation';
 import { formatPrice } from '@/lib/format';
 import type { Currency } from '@/lib/settings';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 type NewItem = {
   id: string;
@@ -32,6 +33,7 @@ type Props = {
 };
 
 export default React.memo(function NewReleasesSection({ categoryId, currency = 'EUR', onItemPress }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [items, setItems] = useState<NewItem[]>([]);
 
@@ -68,7 +70,7 @@ export default React.memo(function NewReleasesSection({ categoryId, currency = '
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <Ionicons name="sparkles-outline" size={18} color={colors.accent} />
-        <Text style={[styles.title, { color: colors.text }]}>Featured in Catalog</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('category.featured_in_catalog', { defaultValue: 'Featured in Catalog' })}</Text>
       </View>
 
       <AutoRotatingCarousel intervalMs={5000} horizontalInset={30}>

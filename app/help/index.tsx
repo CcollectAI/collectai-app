@@ -19,8 +19,10 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { APP_HELP } from '@/data/appHelp';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 function HelpIndexScreen() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const router = useRouter();
@@ -32,8 +34,8 @@ function HelpIndexScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Animated.View style={animatedStyle}>
           <View style={[styles.hero, { backgroundColor: colors.accent + '14', borderColor: colors.accent + '33' }]}>
-            <Text style={[styles.eyebrow, { color: colors.muted }]}>Need a helping hand?</Text>
-            <Text style={[styles.title, { color: colors.text }]}>Using Sparrow</Text>
+            <Text style={[styles.eyebrow, { color: colors.muted }]}>{t('guide.need_help', { defaultValue: 'Need a helping hand?' })}</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{t('guide.using_sparrow', { defaultValue: 'Using Sparrow' })}</Text>
             <Text style={[styles.summary, { color: colors.muted }]}>
               Short answers to the things people ask first. You can also just
               type what you are trying to do into the search bar.

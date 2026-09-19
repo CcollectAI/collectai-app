@@ -5,6 +5,7 @@
  */
 import React from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 interface PriceRangeFilterProps {
   priceMin: number | null;
@@ -30,6 +31,7 @@ function PriceRangeFilterInner({
   currencySymbol,
   colors,
 }: PriceRangeFilterProps) {
+  const { t } = useTranslation();
   const unit = currencySymbol ? ` (${currencySymbol})` : '';
   return (
     <View style={styles.priceInputRow}>
@@ -72,7 +74,7 @@ function PriceRangeFilterInner({
               { borderColor: colors.border, color: colors.text },
               currencySymbol ? styles.fieldInputWithAffix : null,
             ]}
-            placeholder="No limit"
+            placeholder={t('filters.no_limit', { defaultValue: 'No limit' })}
             placeholderTextColor={colors.muted}
             keyboardType="numeric"
             value={priceMax?.toString() || ''}

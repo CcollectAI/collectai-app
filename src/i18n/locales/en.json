@@ -63,7 +63,12 @@
     "retry_market_movers_a11y": "Try loading market movers again",
     "help_a11y": "Help with using the app",
     "dismiss_tip_a11y": "Dismiss tip",
-    "loading_a11y": "Loading"
+    "loading_a11y": "Loading",
+    "no_movers": "No movers to show right now.",
+    "got_it": "Got it",
+    "retry_all": "Retry All",
+    "coming_soon": "Coming soon",
+    "not_now": "Not now"
   },
   "add_tab": {
     "subtitle": "Fast, camera-first flow.",
@@ -77,7 +82,9 @@
     "add_manually": "Add manually",
     "add_manually_a11y": "Add item manually",
     "marketplace_url_a11y": "Marketplace URL",
-    "download_template_a11y": "Download import template"
+    "download_template_a11y": "Download import template",
+    "import_item": "Import Item",
+    "supported_sites": "Supported sites"
   },
   "wishlist": {
     "add_title": "Add to Watchlist",
@@ -153,7 +160,8 @@
     "reminder_hint": "Schedules a notification one hour before the event",
     "filter_followed_a11y": "Filter to your followed categories",
     "share_event_a11y": "Share this event",
-    "post_announcement_a11y": "Post announcement"
+    "post_announcement_a11y": "Post announcement",
+    "post_announcement_title": "Post Announcement"
   },
   "marketplace": {
     "find_collectors": "Find Collectors",
@@ -164,7 +172,9 @@
     "a11y_upgrade_market_movers": "Upgrade to Pro to see Market Movers",
     "close_picker_a11y": "Close marketplace picker",
     "retry_prices_a11y": "Retry loading market prices",
-    "connect_account_a11y": "Connect account"
+    "connect_account_a11y": "Connect account",
+    "market_prices": "Market Prices",
+    "regional_insights_sub": "Trending near you based on collector activity"
   },
   "search": {
     "placeholder": "Search items, collectors, events...",
@@ -218,7 +228,9 @@
     "add_field": "Add field",
     "quantity_a11y": "Quantity",
     "acquired_date_hint": "Opens a calendar to pick the date you acquired this item",
-    "clear_acquired_date_a11y": "Clear acquisition date"
+    "clear_acquired_date_a11y": "Clear acquisition date",
+    "intro_title": "Manual Entry",
+    "photo_optional": "Photo (Optional)"
   },
   "items_empty": {
     "hero_title": "Start your collection",
@@ -263,7 +275,8 @@
     "apply": "Apply Filters",
     "preset_name_placeholder": "Preset name",
     "preset_name_a11y": "Preset name",
-    "save_preset_btn_a11y": "Save preset"
+    "save_preset_btn_a11y": "Save preset",
+    "no_limit": "No limit"
   },
   "grading": {
     "lookup_a11y": "Look up grading certificate",
@@ -281,7 +294,8 @@
     "open_certificate_hint": "Double tap to open certificate in browser",
     "certificate_lookup_hint": "Double tap to open certificate lookup form",
     "submission_page_hint": "Double tap to open submission page in browser",
-    "toggle_reasoning_a11y": "Toggle grade reasoning"
+    "toggle_reasoning_a11y": "Toggle grade reasoning",
+    "standards_title": "Grading Standards"
   },
   "auth": {
     "sign_in": "Sign in",
@@ -446,7 +460,10 @@
     "retry_chart_a11y": "Retry loading the portfolio chart",
     "dismiss_savings_a11y": "Dismiss savings notification",
     "collection_value_unavailable_a11y": "Collection value: not available yet",
-    "dismiss_suggestion_a11y": "Dismiss this suggestion"
+    "dismiss_suggestion_a11y": "Dismiss this suggestion",
+    "your_categories": "Your Categories",
+    "new_to_this": "New to this? Start here",
+    "no_target": "No target"
   },
   "items": {
     "title": "Items",
@@ -477,7 +494,8 @@
     "portfolio_value_line": "Portfolio value: {{value}}",
     "cancel_category_change_a11y": "Cancel category change",
     "retry_load_a11y": "Retry loading items",
-    "add_new_a11y": "Add new item"
+    "add_new_a11y": "Add new item",
+    "add_item_title": "Add Item"
   },
   "scan": {
     "title": "QuickScan",
@@ -597,7 +615,8 @@
     "large_text": "Large Text",
     "a11y_change_collecting_experience": "Change how long you have been collecting",
     "collecting_experience": "Collecting experience",
-    "collecting_experience_question": "How long have you been collecting?"
+    "collecting_experience_question": "How long have you been collecting?",
+    "loading": "Loading settings..."
   },
   "sponsor_profile": {
     "company_name": "Company name",
@@ -653,7 +672,12 @@
     "a11y_add_step": "Add step",
     "load_failed": "Couldn't load your projects",
     "start_for_item_a11y": "Start a build project for this item",
-    "start_new_a11y": "Start a new build project"
+    "start_new_a11y": "Start a new build project",
+    "build_and_paint": "Build & Paint",
+    "build_and_paint_projects": "Build & Paint Projects",
+    "start_build_project": "Start Build Project",
+    "start_new_build": "Start New Build",
+    "linked_item": "Linked Item"
   },
   "watchlist": {
     "add_title": "Add to Watchlist",
@@ -686,7 +710,8 @@
     "attendees_only_title": "Announcements are for attendees",
     "attendees_only_hint": "Mark yourself Going or Interested on the event to see what the host posts.",
     "attendees_only_cta": "Back to the event",
-    "compose_a11y": "Compose announcement"
+    "compose_a11y": "Compose announcement",
+    "empty": "No announcements yet"
   },
   "project_header": {
     "mark_complete_a11y": "Mark project as complete",
@@ -775,7 +800,10 @@
     "connect_ebay_hint": "Sign in with your eBay account to list items directly",
     "connect_ebay_a11y": "Connect eBay account",
     "connect_failed_title": "Couldn't connect to eBay",
-    "connect_failed_body": "Please try again. If this keeps failing, check your internet connection."
+    "connect_failed_body": "Please try again. If this keeps failing, check your internet connection.",
+    "connect_title": "Connect Marketplace",
+    "seller_name_optional": "Seller Name (optional)",
+    "seller_name_placeholder": "Your seller username"
   },
   "add_manual_basic": {
     "title": "Basic Information",
@@ -822,7 +850,9 @@
     "promote_a11y": "Promote this event",
     "promote_title": "Promote This Event",
     "promote_subtitle": "Reach more collectors with sponsored placement",
-    "load_failed": "Couldn't load this event"
+    "load_failed": "Couldn't load this event",
+    "cancelled": "This event has been cancelled",
+    "was_interested": "Was interested"
   },
   "user_profile": {
     "blocked_user": "You have blocked this user",
@@ -833,7 +863,10 @@
     "load_failed_title": "Couldn't load this profile",
     "load_failed_hint": "Check your connection and try again.",
     "not_found_title": "Collector not found",
-    "not_found_hint": "This profile doesn't exist or is no longer public."
+    "not_found_hint": "This profile doesn't exist or is no longer public.",
+    "loading": "Loading profile...",
+    "active_challenges": "Active Challenges",
+    "not_ranked": "Not ranked"
   },
   "items_detail": {
     "thin_cat_help": "This category needs your data — share what you paid below to help improve estimates.",
@@ -909,7 +942,8 @@
     "title": "Set progress",
     "subtitle": "Auto-detected from your items",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
-    "no_sets": "No sets in progress yet"
+    "no_sets": "No sets in progress yet",
+    "est_value": "Est. value"
   },
   "ads": {
     "sponsored": "Sponsored",
@@ -1079,7 +1113,11 @@
     "load_failed": "Couldn't load this listing",
     "close_category_menu_a11y": "Close category menu",
     "done_choosing_categories_a11y": "Done choosing categories",
-    "close_modal_a11y": "Close listing modal"
+    "close_modal_a11y": "Close listing modal",
+    "create_title": "Create Listing",
+    "item_title_placeholder": "Item title",
+    "est_net": "Est. net",
+    "create_as_draft": "Create as Draft"
   },
   "chat": {
     "collector_not_found": "Collector not found",
@@ -1123,7 +1161,11 @@
     "catalog_check_failed": "Couldn't check the catalogue",
     "save_ebay_defaults_a11y": "Save eBay defaults",
     "description_a11y": "Description",
-    "age_confirm_a11y": "I'm 18 or older"
+    "age_confirm_a11y": "I'm 18 or older",
+    "publish_defaults": "Publish defaults",
+    "find_this": "Find this →",
+    "save_defaults": "Save defaults",
+    "coming_soon_title": "Selling is coming soon"
   },
   "purchase": {
     "invalid_deal_link": "Invalid deal link",
@@ -1228,7 +1270,15 @@
     "sell_timing_soon_a11y": "Sell timing coming soon",
     "rematch_catalog_a11y": "Re-match this item against the catalog and update attributes",
     "notes_a11y": "Item notes",
-    "refresh_all_a11y": "Refresh all intelligence data"
+    "refresh_all_a11y": "Refresh all intelligence data",
+    "condition_assessment": "Condition Assessment",
+    "price_trend": "Price Trend",
+    "loading_price_data": "Loading price data...",
+    "current_estimate": "Current estimate",
+    "item_history": "Item History",
+    "sell_timing": "Sell Timing",
+    "notes_placeholder": "Add your notes about condition, origin, where you bought it, etc.",
+    "shop_this_item": "Shop this item"
   },
   "tax": {
     "title": "Sales & tax reporting",
@@ -1280,7 +1330,8 @@
     "a11y_create_first_event": "Create your first event",
     "select_tier": "Select Sponsorship Tier",
     "select_tier_sub": "Choose the visibility level for your event",
-    "per_event": "Per Event"
+    "per_event": "Per Event",
+    "select_event": "Select which event to notify"
   },
   "share": {
     "send_to": "Send to",
@@ -1325,7 +1376,15 @@
     "back_to_grid_a11y": "Back to grid",
     "dismiss_tips_a11y": "Dismiss tips",
     "follow_brand_a11y": "Follow brand",
-    "share_set_progress_a11y": "Share set progress"
+    "share_set_progress_a11y": "Share set progress",
+    "no_items_yet": "No items yet in this category.",
+    "tips_title": "Tips for New Collectors",
+    "also_collected_by": "Also Collected By",
+    "external_marketplaces": "External Marketplaces",
+    "series_progress": "Series Progress",
+    "featured_in_catalog": "Featured in Catalog",
+    "related_categories": "Related Categories",
+    "complete_your_sets": "Complete Your Sets"
   },
   "analytics": {
     "a11y_retry": "Retry loading analytics data",
@@ -1338,14 +1397,22 @@
     "a11y_how_scores": "How are scores calculated?",
     "how_scores_calculated": "How are these scores calculated?",
     "load_failed": "Some of your analytics couldn't load.",
-    "snapshot_load_failed": "Couldn't load your analytics"
+    "snapshot_load_failed": "Couldn't load your analytics",
+    "advanced_title": "Advanced analytics",
+    "category_performance": "Category Performance",
+    "prediction_accuracy": "Prediction Accuracy",
+    "actuals_vs_predicted": "Actuals vs Predicted"
   },
   "guide": {
     "no_guide_yet": "No guide for this category yet",
     "looking_after_it": "Looking after it",
     "what_drives_value": "What drives value",
     "one_everyone_wants": "The one everyone wants",
-    "where_to_start": "Where to start"
+    "where_to_start": "Where to start",
+    "not_found_title": "We have no help page for that yet",
+    "need_help": "Need a helping hand?",
+    "using_sparrow": "Using Sparrow",
+    "how_scores_work": "How Scores Work"
   },
   "price_explanation": {
     "title": "Price Explanation",
@@ -1365,6 +1432,7 @@
   "leaderboard": {
     "category_only_title": "Leaderboards are per category",
     "category_only_body": "Open a category from your collection to see how your collection ranks there — by items owned or by value held.",
-    "view_profile_hint": "Double tap to view collector profile"
+    "view_profile_hint": "Double tap to view collector profile",
+    "top_collectors": "Top Collectors"
   }
 }

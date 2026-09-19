@@ -39,8 +39,8 @@ function SellTimingBadgeInner({ itemId }: SellTimingBadgeProps) {
         <Ionicons name="time-outline" size={16} color={colors.accent} />
       </View>
       <View style={styles.textWrap}>
-        <Text style={[styles.title, { color: colors.text }]}>Sell Timing</Text>
-        <Text style={[styles.subtitle, { color: colors.muted }]}>Coming soon</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('item_details.sell_timing', { defaultValue: 'Sell Timing' })}</Text>
+        <Text style={[styles.subtitle, { color: colors.muted }]}>{t('common.coming_soon', { defaultValue: 'Coming soon' })}</Text>
       </View>
       <View style={[styles.badge, { backgroundColor: colors.accent + "15" }]}>
         <Ionicons name="sparkles-outline" size={12} color={colors.accent} />

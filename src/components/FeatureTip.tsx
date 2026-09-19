@@ -59,7 +59,7 @@ export function FeatureTip({ tipId, message, pointerPosition = 'top', style }: F
           accessibilityRole="button"
           accessibilityLabel={t('common.dismiss_tip_a11y', { defaultValue: 'Dismiss tip' })}
         >
-          <Text style={styles.dismissText}>Got it</Text>
+          <Text style={styles.dismissText}>{t('common.got_it', { defaultValue: 'Got it' })}</Text>
         </Pressable>
       </View>
       {pointerPosition === 'bottom' && <View style={styles.pointerBottom} />}

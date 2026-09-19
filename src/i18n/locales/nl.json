@@ -63,7 +63,12 @@
     "retry_market_movers_a11y": "Probeer de marktbewegers opnieuw te laden",
     "help_a11y": "Hulp bij het gebruik van de app",
     "dismiss_tip_a11y": "Tip sluiten",
-    "loading_a11y": "Bezig met laden"
+    "loading_a11y": "Bezig met laden",
+    "no_movers": "Op dit moment geen stijgers of dalers.",
+    "got_it": "Begrepen",
+    "retry_all": "Alles opnieuw proberen",
+    "coming_soon": "Binnenkort",
+    "not_now": "Niet nu"
   },
   "add_tab": {
     "subtitle": "Snelle, camera-gerichte flow.",
@@ -77,7 +82,9 @@
     "add_manually": "Handmatig toevoegen",
     "add_manually_a11y": "Item handmatig toevoegen",
     "marketplace_url_a11y": "Marktplaats-URL",
-    "download_template_a11y": "Importsjabloon downloaden"
+    "download_template_a11y": "Importsjabloon downloaden",
+    "import_item": "Item importeren",
+    "supported_sites": "Ondersteunde sites"
   },
   "wishlist": {
     "add_title": "Toevoegen aan volglijst",
@@ -153,7 +160,8 @@
     "reminder_hint": "Plant een melding één uur voor het evenement",
     "filter_followed_a11y": "Filter op je gevolgde categorieën",
     "share_event_a11y": "Dit evenement delen",
-    "post_announcement_a11y": "Aankondiging plaatsen"
+    "post_announcement_a11y": "Aankondiging plaatsen",
+    "post_announcement_title": "Aankondiging plaatsen"
   },
   "marketplace": {
     "find_collectors": "Verzamelaars vinden",
@@ -164,7 +172,9 @@
     "a11y_upgrade_market_movers": "Upgrade naar Pro om Market Movers te zien",
     "close_picker_a11y": "Marktplaatskiezer sluiten",
     "retry_prices_a11y": "Marktprijzen opnieuw proberen te laden",
-    "connect_account_a11y": "Account koppelen"
+    "connect_account_a11y": "Account koppelen",
+    "market_prices": "Marktprijzen",
+    "regional_insights_sub": "Populair bij jou in de buurt op basis van activiteit van verzamelaars"
   },
   "search": {
     "placeholder": "Zoek items, verzamelaars, evenementen...",
@@ -218,7 +228,9 @@
     "add_field": "Veld toevoegen",
     "quantity_a11y": "Aantal",
     "acquired_date_hint": "Opent een kalender om de datum te kiezen waarop je dit item hebt gekregen",
-    "clear_acquired_date_a11y": "Aanschafdatum wissen"
+    "clear_acquired_date_a11y": "Aanschafdatum wissen",
+    "intro_title": "Handmatige invoer",
+    "photo_optional": "Foto (optioneel)"
   },
   "items_empty": {
     "hero_title": "Start je collectie",
@@ -263,7 +275,8 @@
     "apply": "Filters toepassen",
     "preset_name_placeholder": "Presetnaam",
     "preset_name_a11y": "Presetnaam",
-    "save_preset_btn_a11y": "Preset opslaan"
+    "save_preset_btn_a11y": "Preset opslaan",
+    "no_limit": "Geen limiet"
   },
   "grading": {
     "lookup_a11y": "Certificaat opzoeken",
@@ -281,7 +294,8 @@
     "open_certificate_hint": "Dubbeltik om het certificaat in de browser te openen",
     "certificate_lookup_hint": "Dubbeltik om het certificaat-zoekformulier te openen",
     "submission_page_hint": "Dubbeltik om de inzendpagina in de browser te openen",
-    "toggle_reasoning_a11y": "Toelichting bij de grade tonen of verbergen"
+    "toggle_reasoning_a11y": "Toelichting bij de grade tonen of verbergen",
+    "standards_title": "Gradingstandaarden"
   },
   "auth": {
     "sign_in": "Inloggen",
@@ -446,7 +460,10 @@
     "retry_chart_a11y": "Portfoliografiek opnieuw proberen te laden",
     "dismiss_savings_a11y": "Besparingsmelding sluiten",
     "collection_value_unavailable_a11y": "Waarde van je collectie: nog niet beschikbaar",
-    "dismiss_suggestion_a11y": "Deze suggestie sluiten"
+    "dismiss_suggestion_a11y": "Deze suggestie sluiten",
+    "your_categories": "Jouw categorieën",
+    "new_to_this": "Nieuw hierin? Begin hier",
+    "no_target": "Geen streefprijs"
   },
   "items": {
     "title": "Items",
@@ -477,7 +494,8 @@
     "portfolio_value_line": "Portfoliowaarde: {{value}}",
     "cancel_category_change_a11y": "Categoriewijziging annuleren",
     "retry_load_a11y": "Items opnieuw proberen te laden",
-    "add_new_a11y": "Nieuw item toevoegen"
+    "add_new_a11y": "Nieuw item toevoegen",
+    "add_item_title": "Item toevoegen"
   },
   "scan": {
     "title": "QuickScan",
@@ -597,7 +615,8 @@
     "large_text": "Grote tekst",
     "a11y_change_collecting_experience": "Wijzig hoe lang je al verzamelt",
     "collecting_experience": "Verzamelervaring",
-    "collecting_experience_question": "Hoe lang verzamel je al?"
+    "collecting_experience_question": "Hoe lang verzamel je al?",
+    "loading": "Instellingen laden..."
   },
   "sponsor_profile": {
     "company_name": "Bedrijfsnaam",
@@ -653,7 +672,12 @@
     "a11y_add_step": "Stap toevoegen",
     "load_failed": "Je projecten konden niet worden geladen",
     "start_for_item_a11y": "Een bouwproject voor dit item starten",
-    "start_new_a11y": "Een nieuw bouwproject starten"
+    "start_new_a11y": "Een nieuw bouwproject starten",
+    "build_and_paint": "Bouwen & schilderen",
+    "build_and_paint_projects": "Bouw- & schilderprojecten",
+    "start_build_project": "Bouwproject starten",
+    "start_new_build": "Nieuw bouwproject starten",
+    "linked_item": "Gekoppeld item"
   },
   "watchlist": {
     "add_title": "Toevoegen aan volglijst",
@@ -686,7 +710,8 @@
     "attendees_only_title": "Aankondigingen zijn voor deelnemers",
     "attendees_only_hint": "Geef op het evenement aan dat je gaat of geïnteresseerd bent om te zien wat de organisator plaatst.",
     "attendees_only_cta": "Terug naar het evenement",
-    "compose_a11y": "Aankondiging opstellen"
+    "compose_a11y": "Aankondiging opstellen",
+    "empty": "Nog geen aankondigingen"
   },
   "project_header": {
     "mark_complete_a11y": "Project markeren als voltooid",
@@ -775,7 +800,10 @@
     "connect_ebay_hint": "Meld je aan met je eBay-account om items direct te plaatsen",
     "connect_ebay_a11y": "eBay-account koppelen",
     "connect_failed_title": "Kon geen verbinding maken met eBay",
-    "connect_failed_body": "Probeer het opnieuw. Blijft het misgaan? Controleer je internetverbinding."
+    "connect_failed_body": "Probeer het opnieuw. Blijft het misgaan? Controleer je internetverbinding.",
+    "connect_title": "Marktplaats koppelen",
+    "seller_name_optional": "Verkopersnaam (optioneel)",
+    "seller_name_placeholder": "Je gebruikersnaam als verkoper"
   },
   "add_manual_basic": {
     "title": "Basisgegevens",
@@ -822,7 +850,9 @@
     "promote_a11y": "Dit evenement promoten",
     "promote_title": "Dit evenement promoten",
     "promote_subtitle": "Bereik meer verzamelaars met een gesponsorde plaatsing",
-    "load_failed": "Dit evenement kon niet worden geladen"
+    "load_failed": "Dit evenement kon niet worden geladen",
+    "cancelled": "Dit evenement is geannuleerd",
+    "was_interested": "Was geïnteresseerd"
   },
   "user_profile": {
     "blocked_user": "Je hebt deze gebruiker geblokkeerd",
@@ -833,7 +863,10 @@
     "load_failed_title": "Kon dit profiel niet laden",
     "load_failed_hint": "Controleer je verbinding en probeer het opnieuw.",
     "not_found_title": "Verzamelaar niet gevonden",
-    "not_found_hint": "Dit profiel bestaat niet of is niet meer openbaar."
+    "not_found_hint": "Dit profiel bestaat niet of is niet meer openbaar.",
+    "loading": "Profiel laden...",
+    "active_challenges": "Actieve uitdagingen",
+    "not_ranked": "Niet gerangschikt"
   },
   "items_detail": {
     "thin_cat_help": "Deze categorie heeft je gegevens nodig — geef hieronder aan wat je hebt betaald om de schattingen te verbeteren.",
@@ -909,7 +942,8 @@
     "title": "Setvoortgang",
     "subtitle": "Automatisch gedetecteerd uit je items",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
-    "no_sets": "Nog geen sets in uitvoering"
+    "no_sets": "Nog geen sets in uitvoering",
+    "est_value": "Gesch. waarde"
   },
   "ads": {
     "sponsored": "Gesponsord",
@@ -1079,7 +1113,11 @@
     "load_failed": "De advertentie kon niet worden geladen",
     "close_category_menu_a11y": "Categoriemenu sluiten",
     "done_choosing_categories_a11y": "Klaar met categorieën kiezen",
-    "close_modal_a11y": "Advertentievenster sluiten"
+    "close_modal_a11y": "Advertentievenster sluiten",
+    "create_title": "Advertentie maken",
+    "item_title_placeholder": "Titel van het item",
+    "est_net": "Gesch. netto",
+    "create_as_draft": "Als concept opslaan"
   },
   "chat": {
     "collector_not_found": "Verzamelaar niet gevonden",
@@ -1123,7 +1161,11 @@
     "catalog_check_failed": "De catalogus kon niet worden gecontroleerd",
     "save_ebay_defaults_a11y": "eBay-standaardwaarden opslaan",
     "description_a11y": "Omschrijving",
-    "age_confirm_a11y": "Ik ben 18 jaar of ouder"
+    "age_confirm_a11y": "Ik ben 18 jaar of ouder",
+    "publish_defaults": "Publicatie-standaarden",
+    "find_this": "Dit vinden →",
+    "save_defaults": "Standaardwaarden opslaan",
+    "coming_soon_title": "Verkopen komt binnenkort"
   },
   "purchase": {
     "invalid_deal_link": "Ongeldige deal-link",
@@ -1228,7 +1270,15 @@
     "sell_timing_soon_a11y": "Verkoopmoment binnenkort beschikbaar",
     "rematch_catalog_a11y": "Dit item opnieuw aan de catalogus koppelen en kenmerken bijwerken",
     "notes_a11y": "Notities bij item",
-    "refresh_all_a11y": "Alle marktinformatie vernieuwen"
+    "refresh_all_a11y": "Alle marktinformatie vernieuwen",
+    "condition_assessment": "Conditiebeoordeling",
+    "price_trend": "Prijsontwikkeling",
+    "loading_price_data": "Prijsgegevens laden...",
+    "current_estimate": "Huidige schatting",
+    "item_history": "Geschiedenis van het item",
+    "sell_timing": "Verkoopmoment",
+    "notes_placeholder": "Voeg je notities toe over conditie, herkomst, waar je het hebt gekocht, enzovoort.",
+    "shop_this_item": "Dit item kopen"
   },
   "tax": {
     "title": "Verkoop- en belastingrapportage",
@@ -1280,7 +1330,8 @@
     "a11y_create_first_event": "Maak je eerste evenement",
     "select_tier": "Kies een sponsorniveau",
     "select_tier_sub": "Kies het zichtbaarheidsniveau voor je evenement",
-    "per_event": "Per evenement"
+    "per_event": "Per evenement",
+    "select_event": "Kies welk evenement je wilt melden"
   },
   "share": {
     "send_to": "Sturen naar",
@@ -1325,7 +1376,15 @@
     "back_to_grid_a11y": "Terug naar raster",
     "dismiss_tips_a11y": "Tips sluiten",
     "follow_brand_a11y": "Merk volgen",
-    "share_set_progress_a11y": "Setvoortgang delen"
+    "share_set_progress_a11y": "Setvoortgang delen",
+    "no_items_yet": "Nog geen items in deze categorie.",
+    "tips_title": "Tips voor beginnende verzamelaars",
+    "also_collected_by": "Ook verzameld door",
+    "external_marketplaces": "Externe marktplaatsen",
+    "series_progress": "Voortgang van de serie",
+    "featured_in_catalog": "Uitgelicht in de catalogus",
+    "related_categories": "Verwante categorieën",
+    "complete_your_sets": "Maak je sets compleet"
   },
   "analytics": {
     "a11y_retry": "Analysegegevens opnieuw laden",
@@ -1338,14 +1397,22 @@
     "a11y_how_scores": "Hoe worden scores berekend?",
     "how_scores_calculated": "Hoe worden deze scores berekend?",
     "load_failed": "Een deel van je analyse kon niet worden geladen.",
-    "snapshot_load_failed": "Je analyse kon niet worden geladen"
+    "snapshot_load_failed": "Je analyse kon niet worden geladen",
+    "advanced_title": "Geavanceerde analyses",
+    "category_performance": "Prestaties per categorie",
+    "prediction_accuracy": "Nauwkeurigheid van voorspellingen",
+    "actuals_vs_predicted": "Werkelijk versus voorspeld"
   },
   "guide": {
     "no_guide_yet": "Nog geen gids voor deze categorie",
     "looking_after_it": "Onderhoud",
     "what_drives_value": "Wat de waarde bepaalt",
     "one_everyone_wants": "Het stuk dat iedereen wil",
-    "where_to_start": "Waar te beginnen"
+    "where_to_start": "Waar te beginnen",
+    "not_found_title": "Hier hebben we nog geen hulppagina voor",
+    "need_help": "Kun je hulp gebruiken?",
+    "using_sparrow": "Sparrow gebruiken",
+    "how_scores_work": "Hoe scores werken"
   },
   "price_explanation": {
     "title": "Prijsuitleg",
@@ -1365,6 +1432,7 @@
   "leaderboard": {
     "category_only_title": "Ranglijsten zijn per categorie",
     "category_only_body": "Open een categorie in je collectie om te zien hoe je collectie daar scoort — op aantal items of op waarde.",
-    "view_profile_hint": "Dubbeltik om het profiel van de verzamelaar te bekijken"
+    "view_profile_hint": "Dubbeltik om het profiel van de verzamelaar te bekijken",
+    "top_collectors": "Topverzamelaars"
   }
 }

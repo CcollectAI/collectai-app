@@ -230,7 +230,7 @@ function EbayDefaultsScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.heading, { color: colors.text }]}>Publish defaults</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>{t('sell.publish_defaults', { defaultValue: 'Publish defaults' })}</Text>
         <Text style={[styles.intro, { color: colors.muted }]}>
           eBay requires a category and three policy IDs on every listing.
           Set them once here and Sparrow will apply them automatically when
@@ -264,7 +264,7 @@ function EbayDefaultsScreen() {
                   accessibilityRole="link"
                   accessibilityLabel={`Open eBay help for ${field.label}`}
                 >
-                  <Text style={[styles.helpLink, { color: colors.accent }]}>Find this →</Text>
+                  <Text style={[styles.helpLink, { color: colors.accent }]}>{t('sell.find_this', { defaultValue: 'Find this →' })}</Text>
                 </AnimatedPressable>
               )}
             </View>
@@ -287,7 +287,7 @@ function EbayDefaultsScreen() {
           ) : (
             <>
               <Ionicons name="checkmark-circle-outline" size={18} color="#fff" />
-              <Text style={styles.saveBtnText}>Save defaults</Text>
+              <Text style={styles.saveBtnText}>{t('sell.save_defaults', { defaultValue: 'Save defaults' })}</Text>
             </>
           )}
         </AnimatedPressable>

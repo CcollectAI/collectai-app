@@ -101,7 +101,7 @@ export function StartCollectingCard() {
           <Ionicons name="school-outline" size={22} color={colors.accent} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.title, { color: colors.text }]}>New to this? Start here</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('home.new_to_this', { defaultValue: 'New to this? Start here' })}</Text>
           <Text style={[styles.sub, { color: colors.muted }]} numberOfLines={2}>
             A short guide to {name} — the words, what to avoid, and what to buy first.
           </Text>

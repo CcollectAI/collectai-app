@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { BottomSheetModal } from './BottomSheetModal';
+import { useTranslation } from 'react-i18next';
 
 type ScoreExplanationSheetProps = {
   visible: boolean;
@@ -91,6 +92,7 @@ export function ScoreExplanationSheet({
   diversificationScore = 0,
   tier,
 }: ScoreExplanationSheetProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   const handleClose = useCallback(() => {
@@ -108,7 +110,7 @@ export function ScoreExplanationSheet({
     <BottomSheetModal
       visible={visible}
       onClose={handleClose}
-      title="How Scores Work"
+      title={t('guide.how_scores_work', { defaultValue: 'How Scores Work' })}
       colors={colors}
       mode="pageSheet"
     >

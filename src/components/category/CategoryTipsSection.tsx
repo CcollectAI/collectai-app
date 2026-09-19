@@ -87,7 +87,7 @@ export default React.memo(function CategoryTipsSection({ categoryId }: Props) {
     <View style={[styles.container, { backgroundColor: colors.accent + '10', borderColor: colors.accent + '30' }]}>
       <View style={styles.header}>
         <Ionicons name="bulb-outline" size={18} color={colors.accent} />
-        <Text style={[styles.title, { color: colors.text }]}>Tips for New Collectors</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('category.tips_title', { defaultValue: 'Tips for New Collectors' })}</Text>
         <View style={{ flex: 1 }} />
         <AnimatedPressable
           onPress={handleDismiss}

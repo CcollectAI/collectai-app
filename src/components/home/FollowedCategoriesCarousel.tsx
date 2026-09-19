@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { CATEGORY_VISUAL, type CategoryId } from "@/data/categories";
+import { useTranslation } from 'react-i18next';
 
 // ── Props ──────────────────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ function FollowedCategoriesCarouselInner({
   hapticsEnabled = true,
   showHeader = true,
 }: FollowedCategoriesCarouselProps) {
+  const { t } = useTranslation();
   const renderItem = useCallback(
     (catSlug: string) => {
       const visual = CATEGORY_VISUAL[catSlug as CategoryId];
@@ -87,7 +89,7 @@ function FollowedCategoriesCarouselInner({
     <View style={s.listContainer}>
       {showHeader && (
         <View style={s.sectionHeader}>
-          <Text style={[s.sectionTitle, { color: theme.text }]}>Your Categories</Text>
+          <Text style={[s.sectionTitle, { color: theme.text }]}>{t('home.your_categories', { defaultValue: 'Your Categories' })}</Text>
         </View>
       )}
       {categories.map(renderItem)}

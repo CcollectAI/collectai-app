@@ -6,8 +6,10 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 
 export const AddManualIntroCard = React.memo(function AddManualIntroCard() {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
@@ -16,7 +18,7 @@ export const AddManualIntroCard = React.memo(function AddManualIntroCard() {
         <Ionicons name="create-outline" size={20} color={colors.accent} />
       </View>
       <View style={styles.introText}>
-        <Text style={[styles.introTitle, { color: colors.text }]}>Manual Entry</Text>
+        <Text style={[styles.introTitle, { color: colors.text }]}>{t('add_manual.intro_title', { defaultValue: 'Manual Entry' })}</Text>
         <Text style={[styles.introSubtitle, { color: colors.muted }]}>
           Enter item details yourself for full control
         </Text>

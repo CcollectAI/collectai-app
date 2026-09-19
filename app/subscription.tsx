@@ -428,7 +428,7 @@ function SubscriptionScreen() {
               accessibilityLabel={t('subscription.retry_plans_a11y', { defaultValue: 'Try loading the plans again' })}
             >
               <Text style={[styles.retryBtnText, { color: colors.accentText }]}>
-                Try again
+                {t('common.try_again', { defaultValue: 'Try again' })}
               </Text>
             </AnimatedPressable>
             {/* __DEV__ only, so no customer and no App Store reviewer ever sees
@@ -590,7 +590,7 @@ function SubscriptionScreen() {
             style={{ color: colors.accent }}
             onPress={() => Linking.openURL('https://sparrowcollect.com/privacy.html')}
           >
-            Privacy Policy
+            {t('auth.register.privacy_policy', { defaultValue: 'Privacy Policy' })}
           </Text>
           .
         </Text>

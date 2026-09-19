@@ -907,7 +907,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
               style={[styles.offersBtnText, { color: offersToAction > 0 ? colors.accent : colors.text }]}
               numberOfLines={1}
             >
-              Open bids
+              {t('offers.open_bids', { defaultValue: 'Open bids' })}
             </Text>
             {offersToAction > 0 ? (
               <View style={[styles.badge, { backgroundColor: colors.accent, borderColor: colors.background }]}>

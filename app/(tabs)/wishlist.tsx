@@ -624,7 +624,7 @@ function WatchlistTabScreen() {
               </Text>
             ) : (
               <Text style={[styles.setTargetText, { color: colors.accent }]}>
-                Set target price
+                {t('wishlist.set_target_price')}
               </Text>
             )}
             <Ionicons name="pencil-outline" size={16} color={colors.accent} />
@@ -1009,7 +1009,7 @@ function WatchlistTabScreen() {
               multiline
               numberOfLines={3}
               style={[styles.input, styles.textArea, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}
-              accessibilityLabel={t('wishlist.notes_a11y', { defaultValue: 'Notes' })}
+              accessibilityLabel={t('wishlist.notes_a11y')}
             />
 
             {/* Save Button */}

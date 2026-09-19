@@ -5,6 +5,7 @@ import { AnimatedPressable } from '@/motion';
 import { formatPrice } from '@/lib/format';
 import type { Item } from '@/data';
 import type { AppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   items: Item[];
@@ -26,62 +27,65 @@ const CategoryItemsList: React.FC<Props> = ({
   onShopPress,
   onSeeAll,
   colors,
-}) => (
-  <View style={styles.section}>
-    <Text style={[styles.sectionTitle, { color: colors.text }]}>Items in {categoryName}</Text>
-    {items.length === 0 ? (
-      <Text style={[styles.emptyText, { color: colors.muted }]}>No items yet in this category.</Text>
-    ) : (
-      items.slice(0, 6).map((item) => (
-        <AnimatedPressable
-          key={item.id}
-          style={[styles.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => onItemPress(item)}
-          onLongPress={() => onItemLongPress(item)}
-          accessibilityRole="button"
-          accessibilityLabel={`Shop for ${item.name}, ${formatPrice(item.price)}. Long press for more marketplaces.`}
-        >
-          {item.imageUrl ? (
-            <Image source={{ uri: item.imageUrl }} style={styles.itemThumb} />
-          ) : (
-            <View style={[styles.itemThumbPlaceholder, { backgroundColor: colors.accent + '10' }]}>
-              <Ionicons name="cube-outline" size={18} color={colors.accent} />
-            </View>
-          )}
-          <View style={styles.itemInfo}>
-            <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-              {item.name}
-            </Text>
-            <Text style={[styles.itemCategory, { color: colors.muted }]}>
-              {formatPrice(item.price)}
-            </Text>
-          </View>
+}) => {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.section}>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Items in {categoryName}</Text>
+      {items.length === 0 ? (
+        <Text style={[styles.emptyText, { color: colors.muted }]}>{t('category.no_items_yet', { defaultValue: 'No items yet in this category.' })}</Text>
+      ) : (
+        items.slice(0, 6).map((item) => (
           <AnimatedPressable
-            onPress={() => onShopPress(item)}
-            hitSlop={8}
+            key={item.id}
+            style={[styles.itemCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => onItemPress(item)}
+            onLongPress={() => onItemLongPress(item)}
             accessibilityRole="button"
-            accessibilityLabel={`Shop for ${item.name} on marketplaces`}
+            accessibilityLabel={`Shop for ${item.name}, ${formatPrice(item.price)}. Long press for more marketplaces.`}
           >
-            <Ionicons name="open-outline" size={20} color={colors.accent} />
+            {item.imageUrl ? (
+              <Image source={{ uri: item.imageUrl }} style={styles.itemThumb} />
+            ) : (
+              <View style={[styles.itemThumbPlaceholder, { backgroundColor: colors.accent + '10' }]}>
+                <Ionicons name="cube-outline" size={18} color={colors.accent} />
+              </View>
+            )}
+            <View style={styles.itemInfo}>
+              <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
+                {item.name}
+              </Text>
+              <Text style={[styles.itemCategory, { color: colors.muted }]}>
+                {formatPrice(item.price)}
+              </Text>
+            </View>
+            <AnimatedPressable
+              onPress={() => onShopPress(item)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={`Shop for ${item.name} on marketplaces`}
+            >
+              <Ionicons name="open-outline" size={20} color={colors.accent} />
+            </AnimatedPressable>
           </AnimatedPressable>
+        ))
+      )}
+      {items.length > 6 && (
+        <AnimatedPressable
+          style={styles.seeAllButton}
+          onPress={onSeeAll}
+          accessibilityRole="link"
+          accessibilityLabel={`See all ${items.length} items in catalog`}
+        >
+          <Text style={[styles.seeAllText, { color: accentColor }]}>
+            See all {items.length} items
+          </Text>
+          <Ionicons name="arrow-forward" size={14} color={accentColor} />
         </AnimatedPressable>
-      ))
-    )}
-    {items.length > 6 && (
-      <AnimatedPressable
-        style={styles.seeAllButton}
-        onPress={onSeeAll}
-        accessibilityRole="link"
-        accessibilityLabel={`See all ${items.length} items in catalog`}
-      >
-        <Text style={[styles.seeAllText, { color: accentColor }]}>
-          See all {items.length} items
-        </Text>
-        <Ionicons name="arrow-forward" size={14} color={accentColor} />
-      </AnimatedPressable>
-    )}
-  </View>
-);
+      )}
+    </View>
+  );
+};
 
 export default React.memo(CategoryItemsList);
 

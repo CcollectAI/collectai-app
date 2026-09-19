@@ -41,7 +41,7 @@ export function ConditionGradeSection({ defects, grade }: Props) {
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <Ionicons name="shield-checkmark-outline" size={18} color={colors.brand.dark} />
-        <Text style={[styles.title, { color: colors.text }]}>Condition Assessment</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('item_details.condition_assessment', { defaultValue: 'Condition Assessment' })}</Text>
       </View>
 
       {/* Grade badge */}

@@ -63,7 +63,12 @@
     "retry_market_movers_a11y": "値動きの読み込みをもう一度試す",
     "help_a11y": "アプリの使い方のヘルプ",
     "dismiss_tip_a11y": "ヒントを閉じる",
-    "loading_a11y": "読み込み中"
+    "loading_a11y": "読み込み中",
+    "no_movers": "現在表示できる値動きはありません。",
+    "got_it": "了解",
+    "retry_all": "すべて再試行",
+    "coming_soon": "近日公開",
+    "not_now": "今はしない"
   },
   "add_tab": {
     "subtitle": "高速、カメラ優先のフロー。",
@@ -77,7 +82,9 @@
     "add_manually": "手動で追加",
     "add_manually_a11y": "アイテムを手動で追加",
     "marketplace_url_a11y": "マーケットのURL",
-    "download_template_a11y": "インポート用テンプレートをダウンロード"
+    "download_template_a11y": "インポート用テンプレートをダウンロード",
+    "import_item": "アイテムをインポート",
+    "supported_sites": "対応サイト"
   },
   "wishlist": {
     "add_title": "ウォッチリストに追加",
@@ -153,7 +160,8 @@
     "reminder_hint": "イベントの1時間前に通知を予約します",
     "filter_followed_a11y": "フォロー中のカテゴリーで絞り込む",
     "share_event_a11y": "このイベントを共有",
-    "post_announcement_a11y": "お知らせを投稿"
+    "post_announcement_a11y": "お知らせを投稿",
+    "post_announcement_title": "お知らせを投稿"
   },
   "marketplace": {
     "find_collectors": "コレクターを探す",
@@ -164,7 +172,9 @@
     "a11y_upgrade_market_movers": "Market Movers を見るには Pro にアップグレード",
     "close_picker_a11y": "マーケット選択を閉じる",
     "retry_prices_a11y": "市場価格の読み込みを再試行",
-    "connect_account_a11y": "アカウントを連携"
+    "connect_account_a11y": "アカウントを連携",
+    "market_prices": "市場価格",
+    "regional_insights_sub": "コレクターの動きに基づく、お近くの人気"
   },
   "search": {
     "placeholder": "アイテム、コレクター、イベントを検索...",
@@ -218,7 +228,9 @@
     "add_field": "フィールドを追加",
     "quantity_a11y": "数量",
     "acquired_date_hint": "このアイテムを取得した日付を選ぶカレンダーを開きます",
-    "clear_acquired_date_a11y": "取得日をクリア"
+    "clear_acquired_date_a11y": "取得日をクリア",
+    "intro_title": "手動入力",
+    "photo_optional": "写真（任意）"
   },
   "items_empty": {
     "hero_title": "コレクションを始めよう",
@@ -263,7 +275,8 @@
     "apply": "フィルターを適用",
     "preset_name_placeholder": "プリセット名",
     "preset_name_a11y": "プリセット名",
-    "save_preset_btn_a11y": "プリセットを保存"
+    "save_preset_btn_a11y": "プリセットを保存",
+    "no_limit": "上限なし"
   },
   "grading": {
     "lookup_a11y": "グレーディング証明書を検索",
@@ -281,7 +294,8 @@
     "open_certificate_hint": "ダブルタップで証明書をブラウザで開きます",
     "certificate_lookup_hint": "ダブルタップで証明書検索フォームを開きます",
     "submission_page_hint": "ダブルタップで申し込みページをブラウザで開きます",
-    "toggle_reasoning_a11y": "評価の根拠を表示／非表示"
+    "toggle_reasoning_a11y": "評価の根拠を表示／非表示",
+    "standards_title": "グレーディング基準"
   },
   "auth": {
     "sign_in": "サインイン",
@@ -446,7 +460,10 @@
     "retry_chart_a11y": "ポートフォリオのグラフを再読み込み",
     "dismiss_savings_a11y": "節約の通知を閉じる",
     "collection_value_unavailable_a11y": "コレクションの価値：まだ取得できません",
-    "dismiss_suggestion_a11y": "この提案を閉じる"
+    "dismiss_suggestion_a11y": "この提案を閉じる",
+    "your_categories": "あなたのカテゴリー",
+    "new_to_this": "はじめてですか？ここから始めましょう",
+    "no_target": "目標価格なし"
   },
   "items": {
     "title": "アイテム",
@@ -477,7 +494,8 @@
     "portfolio_value_line": "ポートフォリオ価値: {{value}}",
     "cancel_category_change_a11y": "カテゴリーの変更をキャンセル",
     "retry_load_a11y": "アイテムの読み込みを再試行",
-    "add_new_a11y": "新しいアイテムを追加"
+    "add_new_a11y": "新しいアイテムを追加",
+    "add_item_title": "アイテムを追加"
   },
   "scan": {
     "title": "クイックスキャン",
@@ -597,7 +615,8 @@
     "large_text": "大きな文字",
     "a11y_change_collecting_experience": "収集歴を変更",
     "collecting_experience": "収集歴",
-    "collecting_experience_question": "収集歴はどのくらいですか？"
+    "collecting_experience_question": "収集歴はどのくらいですか？",
+    "loading": "設定を読み込み中..."
   },
   "sponsor_profile": {
     "company_name": "会社名",
@@ -653,7 +672,12 @@
     "a11y_add_step": "手順を追加",
     "load_failed": "プロジェクトを読み込めませんでした",
     "start_for_item_a11y": "このアイテムの制作プロジェクトを始める",
-    "start_new_a11y": "新しい制作プロジェクトを始める"
+    "start_new_a11y": "新しい制作プロジェクトを始める",
+    "build_and_paint": "制作＆塗装",
+    "build_and_paint_projects": "制作＆塗装プロジェクト",
+    "start_build_project": "制作プロジェクトを開始",
+    "start_new_build": "新しい制作を開始",
+    "linked_item": "リンクされたアイテム"
   },
   "watchlist": {
     "add_title": "ウォッチリストに追加",
@@ -686,7 +710,8 @@
     "attendees_only_title": "お知らせは参加者向けです",
     "attendees_only_hint": "イベントで「参加」または「興味あり」を選ぶと、主催者の投稿を見られます。",
     "attendees_only_cta": "イベントに戻る",
-    "compose_a11y": "お知らせを作成"
+    "compose_a11y": "お知らせを作成",
+    "empty": "お知らせはまだありません"
   },
   "project_header": {
     "mark_complete_a11y": "プロジェクトを完了にする",
@@ -775,7 +800,10 @@
     "connect_ebay_hint": "eBayアカウントでログインすると直接出品できます",
     "connect_ebay_a11y": "eBayアカウントを連携",
     "connect_failed_title": "eBayに接続できませんでした",
-    "connect_failed_body": "もう一度お試しください。繰り返し失敗する場合はインターネット接続をご確認ください。"
+    "connect_failed_body": "もう一度お試しください。繰り返し失敗する場合はインターネット接続をご確認ください。",
+    "connect_title": "マーケットプレイスを連携",
+    "seller_name_optional": "出品者名（任意）",
+    "seller_name_placeholder": "出品者のユーザー名"
   },
   "add_manual_basic": {
     "title": "基本情報",
@@ -822,7 +850,9 @@
     "promote_a11y": "このイベントを宣伝",
     "promote_title": "このイベントを宣伝",
     "promote_subtitle": "スポンサー枠でより多くのコレクターに届けます",
-    "load_failed": "このイベントを読み込めませんでした"
+    "load_failed": "このイベントを読み込めませんでした",
+    "cancelled": "このイベントは中止されました",
+    "was_interested": "興味ありだった"
   },
   "user_profile": {
     "blocked_user": "このユーザーをブロックしています",
@@ -833,7 +863,10 @@
     "load_failed_title": "プロフィールを読み込めませんでした",
     "load_failed_hint": "接続を確認して、もう一度お試しください。",
     "not_found_title": "コレクターが見つかりません",
-    "not_found_hint": "このプロフィールは存在しないか、公開されていません。"
+    "not_found_hint": "このプロフィールは存在しないか、公開されていません。",
+    "loading": "プロフィールを読み込み中...",
+    "active_challenges": "進行中のチャレンジ",
+    "not_ranked": "ランク外"
   },
   "items_detail": {
     "thin_cat_help": "このカテゴリーはデータが不足しています。購入価格を下に入力すると推定精度が上がります。",
@@ -909,7 +942,8 @@
     "title": "セット進捗",
     "subtitle": "アイテムから自動検出",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
-    "no_sets": "進行中のセットはまだありません"
+    "no_sets": "進行中のセットはまだありません",
+    "est_value": "推定価値"
   },
   "ads": {
     "sponsored": "スポンサー",
@@ -1079,7 +1113,11 @@
     "load_failed": "出品を読み込めませんでした",
     "close_category_menu_a11y": "カテゴリーメニューを閉じる",
     "done_choosing_categories_a11y": "カテゴリーの選択を完了",
-    "close_modal_a11y": "出品ウィンドウを閉じる"
+    "close_modal_a11y": "出品ウィンドウを閉じる",
+    "create_title": "出品を作成",
+    "item_title_placeholder": "アイテムのタイトル",
+    "est_net": "推定手取り",
+    "create_as_draft": "下書きとして作成"
   },
   "chat": {
     "collector_not_found": "コレクターが見つかりません",
@@ -1123,7 +1161,11 @@
     "catalog_check_failed": "カタログを確認できませんでした",
     "save_ebay_defaults_a11y": "eBayの既定値を保存",
     "description_a11y": "説明",
-    "age_confirm_a11y": "18歳以上です"
+    "age_confirm_a11y": "18歳以上です",
+    "publish_defaults": "公開時の既定値",
+    "find_this": "これを探す →",
+    "save_defaults": "既定値を保存",
+    "coming_soon_title": "販売機能は近日公開"
   },
   "purchase": {
     "invalid_deal_link": "無効な取引リンク",
@@ -1228,7 +1270,15 @@
     "sell_timing_soon_a11y": "売り時の判定は近日公開",
     "rematch_catalog_a11y": "このアイテムをカタログと再照合して属性を更新",
     "notes_a11y": "アイテムのメモ",
-    "refresh_all_a11y": "すべての市場データを更新"
+    "refresh_all_a11y": "すべての市場データを更新",
+    "condition_assessment": "コンディション評価",
+    "price_trend": "価格の推移",
+    "loading_price_data": "価格データを読み込み中...",
+    "current_estimate": "現在の推定価値",
+    "item_history": "アイテムの履歴",
+    "sell_timing": "売り時",
+    "notes_placeholder": "状態、来歴、購入場所などのメモを追加してください。",
+    "shop_this_item": "このアイテムを探す"
   },
   "tax": {
     "title": "売上と税務レポート",
@@ -1280,7 +1330,8 @@
     "a11y_create_first_event": "最初のイベントを作成",
     "select_tier": "スポンサーティアを選択",
     "select_tier_sub": "イベントの表示レベルを選択してください",
-    "per_event": "1イベントあたり"
+    "per_event": "1イベントあたり",
+    "select_event": "通知するイベントを選択"
   },
   "share": {
     "send_to": "送信先",
@@ -1325,7 +1376,15 @@
     "back_to_grid_a11y": "グリッドに戻る",
     "dismiss_tips_a11y": "ヒントを閉じる",
     "follow_brand_a11y": "ブランドをフォロー",
-    "share_set_progress_a11y": "セットの進捗を共有"
+    "share_set_progress_a11y": "セットの進捗を共有",
+    "no_items_yet": "このカテゴリーにはまだアイテムがありません。",
+    "tips_title": "初心者コレクター向けのヒント",
+    "also_collected_by": "こんな人も集めています",
+    "external_marketplaces": "外部マーケットプレイス",
+    "series_progress": "シリーズの進捗",
+    "featured_in_catalog": "カタログの注目アイテム",
+    "related_categories": "関連カテゴリー",
+    "complete_your_sets": "セットを完成させよう"
   },
   "analytics": {
     "a11y_retry": "分析データを再読み込み",
@@ -1338,14 +1397,22 @@
     "a11y_how_scores": "スコアはどのように計算されますか？",
     "how_scores_calculated": "これらのスコアはどのように計算されますか？",
     "load_failed": "分析の一部を読み込めませんでした。",
-    "snapshot_load_failed": "分析を読み込めませんでした"
+    "snapshot_load_failed": "分析を読み込めませんでした",
+    "advanced_title": "高度な分析",
+    "category_performance": "カテゴリー別パフォーマンス",
+    "prediction_accuracy": "予測の精度",
+    "actuals_vs_predicted": "実績と予測の比較"
   },
   "guide": {
     "no_guide_yet": "このカテゴリーのガイドはまだありません",
     "looking_after_it": "お手入れ",
     "what_drives_value": "価値を左右する要素",
     "one_everyone_wants": "誰もが欲しがる一品",
-    "where_to_start": "始め方"
+    "where_to_start": "始め方",
+    "not_found_title": "この項目のヘルプページはまだありません",
+    "need_help": "お困りですか？",
+    "using_sparrow": "Sparrowの使い方",
+    "how_scores_work": "スコアの仕組み"
   },
   "price_explanation": {
     "title": "価格の説明",
@@ -1365,6 +1432,7 @@
   "leaderboard": {
     "category_only_title": "ランキングはカテゴリごとです",
     "category_only_body": "コレクションからカテゴリを開くと、所有数または資産価値での順位を確認できます。",
-    "view_profile_hint": "ダブルタップでコレクターのプロフィールを表示します"
+    "view_profile_hint": "ダブルタップでコレクターのプロフィールを表示します",
+    "top_collectors": "トップコレクター"
   }
 }

@@ -1829,7 +1829,7 @@ function ItemDetailScreen() {
                    already being sold ([[learning_copy_written_from_code_not_from_the_doc]]).
                    Sub-labels renamed to the doc's words too. */
                 <LockedPreviewSection
-                  title="Advanced analytics"
+                  title={t('analytics.advanced_title', { defaultValue: 'Advanced analytics' })}
                   requiredPlan="Pro"
                   features={[
                     { label: 'Market prices', description: '— live listings from eBay, Mercari, Vinted & more' },

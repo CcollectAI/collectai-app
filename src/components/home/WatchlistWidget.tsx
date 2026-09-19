@@ -122,7 +122,7 @@ function WatchlistWidgetInner({
                     </Text>
                   </>
                 ) : (
-                  <Text style={[s.noTarget, { color: theme.muted }]}>No target</Text>
+                  <Text style={[s.noTarget, { color: theme.muted }]}>{t('home.no_target', { defaultValue: 'No target' })}</Text>
                 )}
               </View>
             </AnimatedPressable>

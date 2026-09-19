@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { ProvenanceTimeline } from "@/components/ProvenanceTimeline";
+import { useTranslation } from 'react-i18next';
 
 // ── Props interface ─────────────────────────────────────────────────────
 
@@ -53,6 +54,7 @@ export const ProvenanceHistorySection = React.memo(function ProvenanceHistorySec
   authenticitySignals,
   onToggleExpanded,
 }: ProvenanceHistorySectionProps) {
+  const { t } = useTranslation();
   return (
     <View style={[s.sectionBlock, { borderTopColor: theme.border }]}>
       <Pressable
@@ -63,7 +65,7 @@ export const ProvenanceHistorySection = React.memo(function ProvenanceHistorySec
       >
         <View style={s.sectionHeaderLeft}>
           <Ionicons name="time-outline" size={20} color={theme.accent} />
-          <Text style={[s.sectionTitle, { color: theme.text }]}>Item History</Text>
+          <Text style={[s.sectionTitle, { color: theme.text }]}>{t('item_details.item_history', { defaultValue: 'Item History' })}</Text>
         </View>
         {provenanceLoading ? (
           <ActivityIndicator size="small" color={theme.accent} />

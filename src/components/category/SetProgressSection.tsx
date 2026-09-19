@@ -70,7 +70,7 @@ export default React.memo(function SetProgressSection({ categoryId, onSetPress }
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <Ionicons name="layers-outline" size={18} color={colors.accent} />
-        <Text style={[styles.title, { color: colors.text }]}>Complete Your Sets</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('category.complete_your_sets', { defaultValue: 'Complete Your Sets' })}</Text>
         <View style={{ flex: 1 }} />
         <AnimatedPressable
           onPress={() => {

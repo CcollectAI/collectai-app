@@ -109,7 +109,7 @@ export function SellerAgeGateProvider({ children }: { children: React.ReactNode 
               accessibilityRole="button"
               accessibilityLabel={t('common.cancel', { defaultValue: 'Cancel' })}
             >
-              <Text style={[s.secondaryText, { color: colors.muted }]}>Not now</Text>
+              <Text style={[s.secondaryText, { color: colors.muted }]}>{t('common.not_now', { defaultValue: 'Not now' })}</Text>
             </Pressable>
           </View>
         </View>

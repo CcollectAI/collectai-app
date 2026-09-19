@@ -145,7 +145,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
               <View style={styles.headerLeft}>
                 <Ionicons name="storefront-outline" size={20} color={colors.accent} />
                 <Text style={[styles.headerTitle, { color: colors.text }]}>
-                  List for Sale
+                  {t('item_details.list_for_sale', { defaultValue: 'List for Sale' })}
                 </Text>
               </View>
               <Pressable

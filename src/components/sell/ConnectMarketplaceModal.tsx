@@ -60,7 +60,7 @@ export const ConnectMarketplaceModal = React.memo(function ConnectMarketplaceMod
       <View style={styles.modalOverlay}>
         <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
           <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Connect Marketplace</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('marketplace_connections.connect_title', { defaultValue: 'Connect Marketplace' })}</Text>
             <AnimatedPressable onPress={onClose} accessibilityRole="button" accessibilityLabel={t('common.close', { defaultValue: 'Close' })}>
               <Ionicons name="close" size={24} color={colors.muted} />
             </AnimatedPressable>
@@ -77,12 +77,12 @@ export const ConnectMarketplaceModal = React.memo(function ConnectMarketplaceMod
               );
             })}
           </ScrollView>
-          <Text style={[styles.modalLabel, { color: colors.text }]}>Seller Name (optional)</Text>
+          <Text style={[styles.modalLabel, { color: colors.text }]}>{t('marketplace_connections.seller_name_optional', { defaultValue: 'Seller Name (optional)' })}</Text>
           <TextInput
             style={[styles.modalInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
             value={sellerName}
             onChangeText={onSellerNameChange}
-            placeholder="Your seller username"
+            placeholder={t('marketplace_connections.seller_name_placeholder', { defaultValue: 'Your seller username' })}
             placeholderTextColor={colors.muted}
             returnKeyType="done"
           />

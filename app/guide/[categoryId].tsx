@@ -138,7 +138,7 @@ function GuideScreen() {
                 is a filing category; this is how you would open if somebody
                 asked you about their first Lorcana pack across a table. */}
             <Text style={[styles.heroEyebrow, { color: colors.muted }]}>
-              Need a helping hand?
+              {t('guide.need_help', { defaultValue: 'Need a helping hand?' })}
             </Text>
             <Text style={[styles.title, { color: colors.text }]}>
               Starting out in {title}

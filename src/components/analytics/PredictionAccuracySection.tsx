@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { text, fontWeight, radius, shadow } from '@/theme/tokens';
 import { categoryDisplayName } from '@/constants/categories';
+import { useTranslation } from 'react-i18next';
 
 const COLORS = {
   card: '#FFFFFF',
@@ -29,6 +30,7 @@ type Props = {
 };
 
 function PredictionAccuracySectionInner({ data }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   if (!data || data.length === 0) return null;
@@ -37,7 +39,7 @@ function PredictionAccuracySectionInner({ data }: Props) {
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.cardHeader}>
         <Ionicons name="analytics-outline" size={18} color={colors.accent} />
-        <Text style={[styles.cardTitle, { color: colors.text }]}>Prediction Accuracy</Text>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>{t('analytics.prediction_accuracy', { defaultValue: 'Prediction Accuracy' })}</Text>
       </View>
       <View style={styles.predHeader}>
         <Text style={[styles.predHeaderText, { color: colors.muted, flex: 2 }]}>Category</Text>

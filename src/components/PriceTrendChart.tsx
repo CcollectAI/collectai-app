@@ -29,6 +29,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { radius, text as textTokens, fontWeight, gap } from "@/theme/tokens";
 import { dateLocale } from '@/constants/dateFormats';
+import { useTranslation } from 'react-i18next';
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -108,6 +109,7 @@ function buildBandPath(
 // ── Component ────────────────────────────────────────────────────────────
 
 function PriceTrendChartInner({ itemId }: PriceTrendChartProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const [chartWidth, setChartWidth] = useState(0);
@@ -187,7 +189,7 @@ function PriceTrendChartInner({ itemId }: PriceTrendChartProps) {
       <View style={styles.headerRow}>
         <View style={styles.headerLeft}>
           <Ionicons name="analytics-outline" size={18} color={colors.accent} />
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Price Trend</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>{t('item_details.price_trend', { defaultValue: 'Price Trend' })}</Text>
         </View>
         {hasData && (
           <View style={[styles.directionBadge, { backgroundColor: directionColor + "15" }]}>
@@ -236,7 +238,7 @@ function PriceTrendChartInner({ itemId }: PriceTrendChartProps) {
       {priceTrendLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.accent} />
-          <Text style={[styles.loadingText, { color: colors.muted }]}>Loading price data...</Text>
+          <Text style={[styles.loadingText, { color: colors.muted }]}>{t('item_details.loading_price_data', { defaultValue: 'Loading price data...' })}</Text>
         </View>
       ) : !hasData ? (
         <View style={styles.emptyContainer}>
@@ -313,7 +315,7 @@ function PriceTrendChartInner({ itemId }: PriceTrendChartProps) {
       {/* Current price footer */}
       {hasData && priceTrendData?.current_q50 != null && (
         <View style={[styles.footer, { borderTopColor: colors.border }]}>
-          <Text style={[styles.footerLabel, { color: colors.muted }]}>Current estimate</Text>
+          <Text style={[styles.footerLabel, { color: colors.muted }]}>{t('item_details.current_estimate', { defaultValue: 'Current estimate' })}</Text>
           <Text style={[styles.footerValue, { color: colors.text }]}>
             {formatPrice(priceTrendData.current_q50)}
           </Text>

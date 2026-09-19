@@ -162,7 +162,7 @@ export const ItemNotesEditor = React.memo(function ItemNotesEditor({
             backgroundColor: theme.background,
           },
         ]}
-        placeholder="Add your notes about condition, origin, where you bought it, etc."
+        placeholder={t('item_details.notes_placeholder', { defaultValue: 'Add your notes about condition, origin, where you bought it, etc.' })}
         placeholderTextColor={theme.muted}
         multiline
         value={notes}

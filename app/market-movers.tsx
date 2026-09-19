@@ -352,7 +352,7 @@ function MarketMoversScreen() {
       ) : movers.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="trending-up-outline" size={40} color={colors.muted} />
-          <Text style={[styles.emptyText, { color: colors.muted }]}>No movers to show right now.</Text>
+          <Text style={[styles.emptyText, { color: colors.muted }]}>{t('common.no_movers', { defaultValue: 'No movers to show right now.' })}</Text>
         </View>
       ) : (
         <FlatList

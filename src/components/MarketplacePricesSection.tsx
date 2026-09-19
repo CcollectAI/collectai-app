@@ -81,7 +81,7 @@ export const MarketplacePricesSection = React.memo(function MarketplacePricesSec
       >
         <View style={s.sectionHeaderLeft}>
           <Ionicons name="cart-outline" size={20} color={theme.accent} />
-          <Text style={[s.sectionTitle, { color: theme.text }]}>Market Prices</Text>
+          <Text style={[s.sectionTitle, { color: theme.text }]}>{t('marketplace.market_prices', { defaultValue: 'Market Prices' })}</Text>
         </View>
         {marketLoading ? (
           <ActivityIndicator size="small" color={theme.accent} />

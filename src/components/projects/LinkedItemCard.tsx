@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import type { BuildPaintProject } from "@/data";
+import { useTranslation } from 'react-i18next';
 
 export interface LinkedItemCardProps {
   project: BuildPaintProject;
@@ -24,6 +25,7 @@ export const LinkedItemCard = React.memo(function LinkedItemCard({
   categoryName,
   accentColor,
 }: LinkedItemCardProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   if (!project.itemId || (!project.itemName && !project.itemImageUrl)) {
@@ -33,7 +35,7 @@ export const LinkedItemCard = React.memo(function LinkedItemCard({
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.cardHeader}>
-        <Text style={[styles.cardTitle, { color: colors.text }]}>Linked Item</Text>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>{t('projects.linked_item', { defaultValue: 'Linked Item' })}</Text>
         <Ionicons name="link-outline" size={16} color={colors.muted} />
       </View>
       <View style={styles.linkedItemRow}>

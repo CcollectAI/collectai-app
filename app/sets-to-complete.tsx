@@ -35,6 +35,7 @@ import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { categoryDisplayName } from '@/constants/categories';
+import { useTranslation } from 'react-i18next';
 
 const MIN_COMPLETENESS = 0.4;
 const MAX_COMPLETENESS = 0.95;
@@ -51,6 +52,7 @@ type Bucket = {
 };
 
 const SetsToCompleteScreen: React.FC = () => {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   /**
    * Optional category scope. The screen was global — every unfinished set in
@@ -311,7 +313,7 @@ const SetsToCompleteScreen: React.FC = () => {
                 ]}
               />
               <SummaryStat
-                label="Est. value"
+                label={t('set_completion.est_value', { defaultValue: 'Est. value' })}
                 value={formatPrice(summary.value)}
                 tint={colors.accent}
               />

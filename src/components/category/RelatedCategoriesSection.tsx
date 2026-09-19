@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { AnimatedPressable } from '@/motion';
 import type { AppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 
 type RelatedCategory = {
   id: string;
@@ -16,11 +17,12 @@ type Props = {
 };
 
 const RelatedCategoriesSection: React.FC<Props> = ({ categories, onCategoryPress, colors }) => {
+  const { t } = useTranslation();
   if (categories.length === 0) return null;
 
   return (
     <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Related Categories</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('category.related_categories', { defaultValue: 'Related Categories' })}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedRow}>
         {categories.map((rc) => (
           <AnimatedPressable

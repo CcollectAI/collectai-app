@@ -129,14 +129,14 @@ function ImportUrlScreen() {
             ) : (
               <>
                 <Ionicons name="download-outline" size={20} color={colors.accentText} />
-                <Text style={[styles.submitBtnText, { color: colors.accentText }]}>Import Item</Text>
+                <Text style={[styles.submitBtnText, { color: colors.accentText }]}>{t('add_tab.import_item', { defaultValue: 'Import Item' })}</Text>
               </>
             )}
           </AnimatedPressable>
         </View>
 
         <View style={[styles.sitesCard, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sitesTitle, { color: colors.muted }]}>Supported sites</Text>
+          <Text style={[styles.sitesTitle, { color: colors.muted }]}>{t('add_tab.supported_sites', { defaultValue: 'Supported sites' })}</Text>
           <Text style={[styles.sitesText, { color: colors.muted }]}>
             eBay, Mercari, StockX, TCGPlayer, BrickLink, Discogs, MyFigureCollection, Ktown4u, Weverse
           </Text>

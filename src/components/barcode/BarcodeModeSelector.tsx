@@ -44,7 +44,7 @@ export const BarcodeModeSelector = React.memo(function BarcodeModeSelector({
     >
       <View style={[styles.manualEntryCard, { backgroundColor: colors.card }]}>
         <Text style={[styles.manualEntryTitle, { color: colors.text }]}>
-          Manual Entry
+          {t('add_manual.intro_title', { defaultValue: 'Manual Entry' })}
         </Text>
         <Text style={[styles.manualEntryHelper, { color: colors.muted }]}>
           Can't scan? Type the ISBN code from the back cover

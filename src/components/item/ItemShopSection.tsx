@@ -27,6 +27,7 @@ import { AnimatedPressable } from '@/motion';
 import { BottomSheetModal } from '@/components/BottomSheetModal';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 interface AffiliateLink {
   source: string;
@@ -40,6 +41,7 @@ interface ItemShopSectionProps {
 }
 
 export const ItemShopSection = React.memo(function ItemShopSection({ affiliateLinks }: ItemShopSectionProps) {
+  const { t } = useTranslation();
   const { colors: theme } = useAppTheme();
   const { settings } = useSettings();
   const [open, setOpen] = useState(false);
@@ -78,7 +80,7 @@ export const ItemShopSection = React.memo(function ItemShopSection({ affiliateLi
       >
         <Ionicons name="bag-handle-outline" size={18} color={theme.accent} />
         <Text style={[styles.triggerText, { color: theme.text }]} numberOfLines={1}>
-          Shop this item
+          {t('item_details.shop_this_item', { defaultValue: 'Shop this item' })}
         </Text>
         <Text style={[styles.triggerMeta, { color: theme.muted }]} numberOfLines={1}>
           {single ? single.label : `${affiliateLinks.length} places`}
@@ -89,7 +91,7 @@ export const ItemShopSection = React.memo(function ItemShopSection({ affiliateLi
       <BottomSheetModal
         visible={open}
         onClose={() => setOpen(false)}
-        title="Shop this item"
+        title={t('item_details.shop_this_item', { defaultValue: 'Shop this item' })}
         colors={theme}
         maxHeight="60%"
       >

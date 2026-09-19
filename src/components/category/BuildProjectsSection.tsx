@@ -33,7 +33,7 @@ const BuildProjectsSection: React.FC<Props> = ({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Build & Paint Projects</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('projects.build_and_paint_projects', { defaultValue: 'Build & Paint Projects' })}</Text>
         {buildProjects.length > 0 && (
           <Text style={[styles.sectionCount, { color: colors.muted }]}>
             {buildProjects.length} project{buildProjects.length !== 1 ? 's' : ''}
@@ -97,7 +97,7 @@ const BuildProjectsSection: React.FC<Props> = ({
         accessibilityLabel={t('projects.start_new_a11y', { defaultValue: 'Start a new build project' })}
       >
         <Ionicons name="construct-outline" size={16} color={colors.accentText} />
-        <Text style={[styles.startBuildBtnText, { color: colors.accentText }]}>Start New Build</Text>
+        <Text style={[styles.startBuildBtnText, { color: colors.accentText }]}>{t('projects.start_new_build', { defaultValue: 'Start New Build' })}</Text>
       </AnimatedPressable>
     </View>
   );

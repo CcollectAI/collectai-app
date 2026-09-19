@@ -15,6 +15,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { fmtCurrency } from '@/lib/format';
 import { radius, text, fontWeight, shadow } from '@/theme/tokens';
 import { categoryDisplayName } from '@/constants/categories';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Shape of one row from `GET /portfolio/category-stats`.
@@ -57,6 +58,7 @@ function CategoryPerformanceSectionInner({
   categoryStats,
   categoryHealth,
 }: CategoryPerformanceSectionProps) {
+  const { t } = useTranslation();
   const router = useRouter();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
@@ -67,7 +69,7 @@ function CategoryPerformanceSectionInner({
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.cardHeader}>
         <Ionicons name="grid-outline" size={18} color={colors.accent} />
-        <Text style={[styles.cardTitle, { color: colors.text }]}>Category Performance</Text>
+        <Text style={[styles.cardTitle, { color: colors.text }]}>{t('analytics.category_performance', { defaultValue: 'Category Performance' })}</Text>
         <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{categoryStats.length} categories</Text>
       </View>
       {categoryStats.slice(0, 8).map((cat) => {

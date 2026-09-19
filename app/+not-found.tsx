@@ -41,7 +41,7 @@ export default function NotFoundScreen() {
         }}
       >
         <Text style={{ color: colors.accentText, fontWeight: "600" }}>
-          Go to Portfolio
+          {t('common.go_to_portfolio_a11y', { defaultValue: 'Go to Portfolio' })}
         </Text>
       </Pressable>
     </View>

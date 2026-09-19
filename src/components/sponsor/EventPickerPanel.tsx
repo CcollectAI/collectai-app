@@ -44,7 +44,7 @@ export const EventPickerPanel = React.memo(function EventPickerPanel({
         </View>
         <View>
           <Text style={[styles.title, { color: colors.text }]}>{t('announce.send_announcement')}</Text>
-          <Text style={[styles.subtitle, { color: colors.muted }]}>Select which event to notify</Text>
+          <Text style={[styles.subtitle, { color: colors.muted }]}>{t('sponsor.select_event', { defaultValue: 'Select which event to notify' })}</Text>
         </View>
       </View>
 

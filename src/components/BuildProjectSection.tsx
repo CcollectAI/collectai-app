@@ -51,7 +51,7 @@ export const BuildProjectSection = React.memo(function BuildProjectSection({
       <View style={s.sectionHeaderRow} accessibilityRole="header">
         <View style={s.sectionHeaderLeft}>
           <Ionicons name="construct-outline" size={20} color={buildAccent ?? theme.accent} />
-          <Text style={[s.sectionTitle, { color: theme.text }]}>Build & Paint</Text>
+          <Text style={[s.sectionTitle, { color: theme.text }]}>{t('projects.build_and_paint', { defaultValue: 'Build & Paint' })}</Text>
         </View>
       </View>
       {linkedProject ? (
@@ -93,7 +93,7 @@ export const BuildProjectSection = React.memo(function BuildProjectSection({
           accessibilityLabel={t('projects.start_for_item_a11y', { defaultValue: 'Start a build project for this item' })}
         >
           <Ionicons name="add-circle-outline" size={18} color={colors.accentText} />
-          <Text style={[s.startBuildButtonText, { color: colors.accentText }]}>Start Build Project</Text>
+          <Text style={[s.startBuildButtonText, { color: colors.accentText }]}>{t('projects.start_build_project', { defaultValue: 'Start Build Project' })}</Text>
         </Pressable>
       )}
     </View>

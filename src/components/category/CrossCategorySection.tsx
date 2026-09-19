@@ -12,6 +12,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import { CATEGORY_VISUAL } from '@/data/categories';
 import logger from '@/utils/logger';
 import { categoryDisplayName } from '@/constants/categories';
+import { useTranslation } from 'react-i18next';
 
 type Correlation = {
   category: string;
@@ -25,6 +26,7 @@ type Props = {
 };
 
 export default React.memo(function CrossCategorySection({ categoryId, onCategoryPress }: Props) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const [correlations, setCorrelations] = useState<Correlation[]>([]);
 
@@ -48,7 +50,7 @@ export default React.memo(function CrossCategorySection({ categoryId, onCategory
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <Ionicons name="people-outline" size={18} color={colors.accent} />
-        <Text style={[styles.title, { color: colors.text }]}>Also Collected By</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('category.also_collected_by', { defaultValue: 'Also Collected By' })}</Text>
       </View>
 
       {correlations.map((c) => {

@@ -418,7 +418,7 @@ function ListingDetailScreen() {
               <Text
                 style={[styles.primaryBtnText, { color: colors.accentText }]}
               >
-                Try again
+                {t('common.try_again', { defaultValue: 'Try again' })}
               </Text>
             </AnimatedPressable>
           }
@@ -849,7 +849,7 @@ function ListingDetailScreen() {
                       { color: colors.accentText },
                     ]}
                   >
-                    Change price
+                    {t('listings.change_price', { defaultValue: 'Change price' })}
                   </Text>
                 </AnimatedPressable>
                 <AnimatedPressable
@@ -867,7 +867,7 @@ function ListingDetailScreen() {
                   accessibilityLabel={t('listings.a11y_mark_sold', { defaultValue: 'Mark as sold' })}
                 >
                   <Text style={[styles.primaryBtnText, { color: colors.text }]}>
-                    Mark as sold
+                    {t('listings.a11y_mark_sold', { defaultValue: 'Mark as sold' })}
                   </Text>
                 </AnimatedPressable>
               </>
@@ -960,7 +960,7 @@ function ListingDetailScreen() {
                 accessibilityLabel={t('listings.a11y_marketplace_terms', { defaultValue: 'Read the marketplace terms' })}
               >
                 <Text style={[styles.noticeLink, { color: colors.accent }]}>
-                  Marketplace terms
+                  {t('listings.marketplace_terms', { defaultValue: 'Marketplace terms' })}
                 </Text>
               </AnimatedPressable>
             </View>
