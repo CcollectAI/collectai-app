@@ -78,7 +78,10 @@ describe('useOptimisticArchive', () => {
     const { result } = renderHook(() => useOptimisticArchive(setItems, reloadItems));
 
     await act(async () => {
-      await result.current.mutate('1');
+      // `mutate` REJECTS since 2026-09-19 — it used to swallow, which made
+      // every caller's catch dead code and let items.tsx toast "Archived"
+      // in green after a FAILED archive. The rollback below is unchanged.
+      await expect(result.current.mutate('1')).rejects.toThrow();
     });
 
     expect(reloadItems).toHaveBeenCalled();
@@ -152,7 +155,10 @@ describe('useOptimisticDelete', () => {
     const { result } = renderHook(() => useOptimisticDelete(setItems, reloadItems));
 
     await act(async () => {
-      await result.current.mutate('2');
+      // `mutate` REJECTS since 2026-09-19 — it used to swallow, which made
+      // every caller's catch dead code and let items.tsx toast "Archived"
+      // in green after a FAILED archive. The rollback below is unchanged.
+      await expect(result.current.mutate('2')).rejects.toThrow();
     });
 
     expect(reloadItems).toHaveBeenCalled();
@@ -206,7 +212,10 @@ describe('useOptimisticBulkArchive', () => {
     const { result } = renderHook(() => useOptimisticBulkArchive(setItems, reloadItems));
 
     await act(async () => {
-      await result.current.mutate(['1', '2']);
+      // `mutate` REJECTS since 2026-09-19 — it used to swallow, which made
+      // every caller's catch dead code and let items.tsx toast "Archived"
+      // in green after a FAILED archive. The rollback below is unchanged.
+      await expect(result.current.mutate(['1', '2'])).rejects.toThrow();
     });
 
     expect(reloadItems).toHaveBeenCalled();
@@ -243,7 +252,10 @@ describe('useOptimisticBulkDelete', () => {
     const { result } = renderHook(() => useOptimisticBulkDelete(setItems, reloadItems));
 
     await act(async () => {
-      await result.current.mutate(['1']);
+      // `mutate` REJECTS since 2026-09-19 — it used to swallow, which made
+      // every caller's catch dead code and let items.tsx toast "Archived"
+      // in green after a FAILED archive. The rollback below is unchanged.
+      await expect(result.current.mutate(['1'])).rejects.toThrow();
     });
 
     expect(reloadItems).toHaveBeenCalled();

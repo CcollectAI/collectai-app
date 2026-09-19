@@ -69,6 +69,7 @@ Two rules the tooling learned the hard way:
 | Y | A gate that has never seen its own bug | 2026-09-19 | ✅ swept: **40 of 42 fire** on their own pre-fix commit, **0 blind**. 1 needs `.env` to run, 1 was silent on a clean parent but fires under mutation. The sweep itself was wrong 3 times first |
 | Y-2 | What does a gate MISS (not: has it fired) | 2026-09-19 | ⚠️ **INCONCLUSIVE** — "files in the commit" ≠ "sites of the class". The two worst scorers each caught **2 of 2** real instances; the low ratios were the denominator. A sounder run needs a per-class signature and is circular |
 | Y-3 | What a gate misses, via its own report vs the human fix | 2026-09-19 | ✅ **works, with 3 exclusions**. Confirmed: `check:half-done-silence` cannot see `useOptimisticRsvp.ts`, a file its OWN commit fixed — the second proven instance after `delist`. **A gate fences one shape, not a class**, and both misses were found by reading |
+| Z | The optimistic mutation that told the member it worked | 2026-09-19 | ✅ **fixed**: `useOptimisticMutation` swallowed, so `await mutate()` was followed by a SUCCESS toast on failure — "Archived" in green after a failed archive, 5 call sites. It now rethrows; 7 tests pinned the old behaviour. Found by reading siblings after Y-3, not by any gate |
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
@@ -2194,6 +2195,55 @@ every wrong version produced a confident, uniform table:
 
 Each time the tell was the same: a uniform result. **All-42-identical is not a
 finding, it is a broken tool.**
+
+## Z — the optimistic mutation that told the member it worked (2026-09-19)
+
+**Found by acting on Y-3's lesson — read the siblings — and it is the worst
+member-facing defect of the day.**
+
+`useOptimisticMutation.mutate` caught its own failure, rolled back, logged, and
+**did not rethrow**. Every caller had written the correct handling anyway:
+
+```ts
+try {
+  await optimisticArchive.mutate(id);
+  showToast({ message: 'Archived', type: 'success' });   // ALWAYS RAN
+} catch (err) {
+  showToast({ message: 'Failed to archive', type: 'error' });   // DEAD CODE
+}
+```
+
+So a **failed** archive showed the member **"Archived"** in green with a success
+haptic — and the item then reappeared when the reload landed. Five call sites:
+archive, delete, bulk archive, bulk delete on the Items tab, plus RSVP.
+
+**Worse than the silent-failure class**, because it is not silence: the app
+states the opposite of what happened. The member has no reason to retry.
+
+**The fix is the rethrow, not new handling.** All five `.mutate(` call sites
+were already inside a `try` with the right message and `userErrorMessage` copy —
+the hook was the only thing preventing them from working. `mutate` now rolls
+back and then throws, so correct dead code became live code.
+
+The RSVP toast added earlier the same day moved OUT of `useOptimisticRsvp`: with
+the rethrow, the screen's own catch fires, and a toast in both places showed two.
+The hook rolls back; the screen decides what to say.
+
+**Seven tests asserted the old behaviour**, one of them named *"swallows error if
+onRollback throws"* — the class-S shape again, tests pinning the lie. All
+re-pointed at the new contract, and the rollback assertions they really cared
+about are unchanged.
+
+Mutation-proven: removing `throw err` turns 5 tests red across two suites; the
+tree is green with it. 138 suites / 1178 tests, `tsc` 0.
+
+**How it was found, which is the transferable part.** Y-3 proved
+`check:half-done-silence` could not see `useOptimisticRsvp.ts`. Reading that
+hook's siblings — everything else built on `useOptimisticMutation` — turned up
+five more instances of the same shape in `useOptimisticItems.ts`, and then the
+shared hook underneath them all. **No gate reported any of this**; the
+`showToast` in the `try` is what makes it invisible to
+`check:half-done-silence`, which looks for a catch that only logs.
 
 ## Y-3 — what a gate misses, asked a way that works (2026-09-19)
 

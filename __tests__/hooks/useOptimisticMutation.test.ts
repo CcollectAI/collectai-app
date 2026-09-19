@@ -104,7 +104,10 @@ describe('useOptimisticMutation', () => {
     );
 
     await act(async () => {
-      await result.current.mutate('args');
+      // REJECTS since 2026-09-19. Swallowing made every caller's catch dead
+      // code, and items.tsx showed "Archived" in green after a FAILED archive
+      // because the line after the await always ran.
+      await expect(result.current.mutate('args')).rejects.toThrow('API failure');
     });
 
     expect(onRollback).toHaveBeenCalledWith('args', err);
@@ -125,9 +128,10 @@ describe('useOptimisticMutation', () => {
       }),
     );
 
-    // First call fails
+    // First call fails — and now rejects, so it is caught here rather than
+    // silently resolving as it used to.
     await act(async () => {
-      await result.current.mutate('a');
+      await expect(result.current.mutate('a')).rejects.toThrow('First fail');
     });
     expect(result.current.error).toBeTruthy();
 
@@ -160,7 +164,7 @@ describe('useOptimisticMutation', () => {
     expect(result.current.error).toBeTruthy();
   });
 
-  it('swallows error if onRollback throws', async () => {
+  it('still reports the original failure when onRollback itself throws', async () => {
     const mutationFn = jest.fn().mockRejectedValue(new Error('API fail'));
     const onRollback = jest.fn().mockImplementation(() => {
       throw new Error('Rollback crash');
@@ -174,9 +178,10 @@ describe('useOptimisticMutation', () => {
       }),
     );
 
-    // Should not throw
+    // A crash inside the rollback must not swallow the failure the caller needs
+    // to hear about, nor replace it with the rollback's own error.
     await act(async () => {
-      await result.current.mutate('args');
+      await expect(result.current.mutate('args')).rejects.toThrow('API fail');
     });
 
     expect(result.current.error).toBeTruthy();

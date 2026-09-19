@@ -110,6 +110,22 @@ export function useOptimisticMutation<TArgs, TResult = void>(
       }
 
       logger.error('[useOptimisticMutation] mutation failed, rolled back:', err.message);
+
+      // RETHROW. Swallowing here made every caller's `catch` dead code — and
+      // worse than dead: `items.tsx` does
+      //     await optimisticArchive.mutate(id);
+      //     showToast({ message: 'Archived', type: 'success' });
+      // so a FAILED archive showed the member "Archived" in green with a
+      // success haptic, and the item then reappeared when the reload landed.
+      // Four handlers on the Items tab were like that (archive, delete, bulk
+      // archive, bulk delete), plus RSVP (class V-adjacent, 2026-09-19).
+      //
+      // Every one of the five `.mutate(` call sites is already inside a
+      // try/catch that writes the right message, so throwing turns correct
+      // dead code live rather than asking anyone to write new handling.
+      // The rollback has already run by this point, so the caller is catching
+      // a failure whose state has been repaired.
+      throw err;
     } finally {
       setIsLoading(false);
     }

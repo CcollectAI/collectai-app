@@ -1,5 +1,5 @@
 /**
- * A failed RSVP must reach the member, not just the log.
+ * A failed optimistic mutation must REACH THE CALLER, not just the log.
  *
  * Found 2026-09-18 by `check:half-done-silence`. RSVP is a primary action on
  * the Events tab and a failure arrived as nothing at all:
@@ -53,23 +53,30 @@ beforeEach(() => {
 });
 
 describe('a failed RSVP is visible to the member', () => {
-  it('toasts when the list-screen RSVP fails', async () => {
+  it('rejects so the screen\'s catch can speak', async () => {
     mockRsvp.mockRejectedValue(new Error('network'));
     const setEvents = jest.fn();
     const reload = jest.fn();
     const { result } = renderHook(() => useOptimisticRsvpList(setEvents, reload));
 
+    let threw = false;
     await act(async () => {
-      await result.current.mutate({ eventId: 'e1', currentlyAttending: false });
+      try {
+        await result.current.mutate({ eventId: 'e1', currentlyAttending: false });
+      } catch {
+        threw = true;
+      }
     });
 
-    expect(mockShowToast).toHaveBeenCalledTimes(1);
-    expect(mockShowToast.mock.calls[0][0]).toMatchObject({ type: 'error' });
-    // and it still reloads, so the list agrees with the server
+    // The contract the screens rely on. While `mutate` swallowed, every
+    // caller's catch was dead code — and `items.tsx` went on to show
+    // "Archived" in green after a FAILED archive.
+    expect(threw).toBe(true);
+    // and it still rolls back first, so the list agrees with the server
     expect(reload).toHaveBeenCalled();
   });
 
-  it('toasts when the detail-screen RSVP fails', async () => {
+  it('rejects from the detail-screen variant too', async () => {
     mockUnrsvp.mockRejectedValue(new Error('network'));
     const { result } = renderHook(() =>
       useOptimisticRsvpDetail(
@@ -78,11 +85,16 @@ describe('a failed RSVP is visible to the member', () => {
       ),
     );
 
+    let threw = false;
     await act(async () => {
-      await result.current.mutate({ eventId: 'e1', currentlyAttending: true });
+      try {
+        await result.current.mutate({ eventId: 'e1', currentlyAttending: true });
+      } catch {
+        threw = true;
+      }
     });
 
-    expect(mockShowToast).toHaveBeenCalledTimes(1);
+    expect(threw).toBe(true);
   });
 
   it('records the failure with logger.error — warn is stripped in release builds', async () => {
@@ -90,21 +102,28 @@ describe('a failed RSVP is visible to the member', () => {
     const { result } = renderHook(() => useOptimisticRsvpList(jest.fn(), jest.fn()));
 
     await act(async () => {
-      await result.current.mutate({ eventId: 'e1', currentlyAttending: false });
+      try {
+        await result.current.mutate({ eventId: 'e1', currentlyAttending: false });
+      } catch { /* expected */ }
     });
 
     expect(mockLogger.error).toHaveBeenCalled();
     expect(mockLogger.warn).not.toHaveBeenCalled();
   });
 
-  it('says nothing when the RSVP succeeds', async () => {
+  it('does not throw when the RSVP succeeds', async () => {
     mockRsvp.mockResolvedValue(undefined);
     const { result } = renderHook(() => useOptimisticRsvpList(jest.fn(), jest.fn()));
 
+    let threw = false;
     await act(async () => {
-      await result.current.mutate({ eventId: 'e1', currentlyAttending: false });
+      try {
+        await result.current.mutate({ eventId: 'e1', currentlyAttending: false });
+      } catch {
+        threw = true;
+      }
     });
 
-    expect(mockShowToast).not.toHaveBeenCalled();
+    expect(threw).toBe(false);
   });
 });
