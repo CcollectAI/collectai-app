@@ -203,7 +203,7 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
       return (
         <View style={styles.emptyContainer}>
           <Text style={[styles.emptyText, { color: axisLabelColor }]}>
-            Couldn&apos;t load your chart.
+            {t('home.chart_load_failed', { defaultValue: "Couldn't load your chart." })}
           </Text>
           {onRetry ? (
             <Pressable
@@ -223,7 +223,7 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
     return (
       <View style={styles.emptyContainer}>
         <Text style={[styles.emptyText, { color: axisLabelColor }]}>
-          No history yet. Add items to see your portfolio curve.
+          {t('home.no_history_hint', { defaultValue: 'No history yet. Add items to see your portfolio curve.' })}
         </Text>
       </View>
     );

@@ -272,11 +272,10 @@ const SetsToCompleteScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.title, { color: colors.text }]}>
-          Sets to complete
+          {t('set_completion.sets_to_complete', { defaultValue: 'Sets to complete' })}
         </Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          Collections close to 100%. Sorted by what you&apos;re nearest to
-          finishing.
+          {t('set_completion.close_to_complete', { defaultValue: "Collections close to 100%. Sorted by what you're nearest to finishing." })}
         </Text>
 
         {/* Summary card — only shown when we have candidates to summarise */}

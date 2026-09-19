@@ -1290,7 +1290,7 @@ function OffersScreen() {
           // tappable, and saying where the controls went beats a card that
           // simply looks like it lost them.
           <Text style={[styles.compactHint, { color: colors.muted }]}>
-            Tap to manage this trade
+            {t('offers.tap_to_manage', { defaultValue: 'Tap to manage this trade' })}
           </Text>
         ) : (
         <View style={styles.actions}>
@@ -1708,9 +1708,7 @@ function OffersScreen() {
       >
         <ScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
           <Text style={[styles.sheetHint, { color: colors.muted }]}>
-            The buyer sees this so they can follow the parcel. Sparrow doesn&apos;t
-            check it and it doesn&apos;t complete the trade — you both still confirm
-            by hand.
+            {t('offers.tracking_explainer', { defaultValue: "The buyer sees this so they can follow the parcel. Sparrow doesn't check it and it doesn't complete the trade — you both still confirm by hand." })}
           </Text>
 
           {/* A dropdown, not a chip grid — `showActionSheet` is what every other
@@ -1747,7 +1745,7 @@ function OffersScreen() {
             // keeps getting bitten by.
             <View style={styles.carrierError}>
               <Text style={[styles.sheetHint, { color: colors.muted }]}>
-                Couldn&apos;t load the carrier list.
+                {t('offers.carrier_load_failed', { defaultValue: "Couldn't load the carrier list." })}
               </Text>
               <AnimatedPressable
                 onPress={() => {
@@ -1784,9 +1782,7 @@ function OffersScreen() {
               in the sheet rather than letting the seller discover it after. */}
           {carrierKey && carriers.find((c) => c.key === carrierKey)?.linkable === false ? (
             <Text style={[styles.sheetHint, { color: colors.muted }]}>
-              This carrier needs the delivery postcode to open a tracking page,
-              which Sparrow doesn&apos;t hold. The buyer will see the code to search
-              with instead of a link.
+              {t('offers.postcode_carrier_note', { defaultValue: "This carrier needs the delivery postcode to open a tracking page, which Sparrow doesn't hold. The buyer will see the code to search with instead of a link." })}
             </Text>
           ) : null}
 
@@ -1811,7 +1807,7 @@ function OffersScreen() {
             accessibilityLabel={t('offers.a11y_save_tracking', { defaultValue: 'Save tracking details' })}
           >
             <Text style={[styles.btnText, { color: canSaveTracking ? colors.accentText : colors.muted }]}>
-              Save tracking
+              {t('offers.save_tracking', { defaultValue: 'Save tracking' })}
             </Text>
           </AnimatedPressable>
         </ScrollView>

@@ -473,7 +473,7 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
               <View style={styles.helpRowText}>
                 <Text style={[styles.helpRowTitle, { color: colors.text }]}>{t('guide.need_help', { defaultValue: 'Need a helping hand?' })}</Text>
                 <Text style={[styles.helpRowSummary, { color: colors.muted }]} numberOfLines={2}>
-                  Short answers on adding items, selling, alerts and what Pro gets you.
+                  {t('search.faq_subtitle', { defaultValue: 'Short answers on adding items, selling, alerts and what Pro gets you.' })}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={colors.muted} />

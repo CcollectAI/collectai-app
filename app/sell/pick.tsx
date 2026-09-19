@@ -170,7 +170,7 @@ function SellPickScreen() {
           contentContainerStyle={styles.list}
           ListHeaderComponent={
             <Text style={[styles.hint, { color: colors.muted }]}>
-              Pick what you want to sell. You&apos;ll set the price next.
+              {t('sell.pick_intro', { defaultValue: "Pick what you want to sell. You'll set the price next." })}
             </Text>
           }
           ListEmptyComponent={
@@ -190,7 +190,7 @@ function SellPickScreen() {
                   accessibilityLabel={t('sell.pick_a11y_sell_external', { defaultValue: 'Sell something not in my collection' })}
                 >
                   <Text style={[styles.ctaText, { color: colors.accentText }]}>
-                    Sell something else
+                    {t('sell.sell_something_else', { defaultValue: 'Sell something else' })}
                   </Text>
                 </AnimatedPressable>
               }

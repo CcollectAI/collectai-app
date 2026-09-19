@@ -80,7 +80,7 @@ export function PriceCard({
           interval and is in fact the absence of one. */}
       {compCount === 1 ? (
         <Text style={[styles.rangeText, { color: colors.muted }]}>
-          One sale — not enough for a range yet
+          {t('price_explanation.one_sale_only', { defaultValue: 'One sale — not enough for a range yet' })}
         </Text>
       ) : (
         <Text style={[styles.rangeText, { color: colors.muted }]}>
@@ -112,7 +112,7 @@ export function PriceCard({
         >
           <Ionicons name="information-circle-outline" size={16} color={colors.accent} />
           <Text style={[styles.whyLinkText, { color: colors.accent }]}>
-            Why this price?
+            {t('price_explanation.why_this_price', { defaultValue: 'Why this price?' })}
           </Text>
         </Pressable>
       )}

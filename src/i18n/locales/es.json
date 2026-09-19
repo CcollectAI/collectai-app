@@ -68,7 +68,32 @@
     "got_it": "Entendido",
     "retry_all": "Reintentar todo",
     "coming_soon": "Próximamente",
-    "not_now": "Ahora no"
+    "not_now": "Ahora no",
+    "no_items_match_search": "Ningún artículo coincide con tu búsqueda",
+    "try_different_keyword": "Prueba otra palabra clave o borra los filtros",
+    "items_load_failed": "No se pudieron cargar tus artículos",
+    "collection_safe_retry": "Tu colección está a salvo: solo no pudimos acceder a ella. Desliza hacia abajo para reintentar.",
+    "page_not_found": "Página no encontrada",
+    "archive_load_failed": "No se pudo cargar tu archivo",
+    "nothing_archived": "No hay nada archivado",
+    "condition_guide_intro": "El estado influye mucho en el valor de los coleccionables. Usa esta guía para evaluar tus artículos con precisión.",
+    "movers_load_failed": "No se pudieron cargar los movimientos del mercado.",
+    "no_suggestions_yet": "Aún no hay sugerencias",
+    "unexpected_error": "Se ha producido un error inesperado. Inténtalo de nuevo.",
+    "event_ended": "Evento finalizado",
+    "loading_history": "Cargando el historial...",
+    "no_history_yet": "Aún no hay historial",
+    "complete_your_collection": "Completa tu colección",
+    "attending_following": "Coleccionistas que asisten o siguen",
+    "no_attendees_yet": "Todavía no hay coleccionistas apuntados. Puedes ser el primero.",
+    "host_collector": "Coleccionista anfitrión",
+    "related_category": "Categoría relacionada",
+    "price_range": "Rango de precio",
+    "found_market_price": "Hemos encontrado un precio de mercado para esto",
+    "tap_to_correct": "Toca el nombre, la categoría o el estado para corregir",
+    "correction_submitted": "Corrección enviada",
+    "buyers_see_this": "Los compradores lo ven en cada artículo que publicas.",
+    "archive_explainer": "Aquí aparecen los artículos que archivas y los que salen de tu colección al completarse una venta. Puedes devolver cualquiera."
   },
   "add_tab": {
     "subtitle": "Flujo rápido, cámara primero.",
@@ -84,7 +109,15 @@
     "marketplace_url_a11y": "URL del marketplace",
     "download_template_a11y": "Descargar la plantilla de importación",
     "import_item": "Importar artículo",
-    "supported_sites": "Sitios compatibles"
+    "supported_sites": "Sitios compatibles",
+    "barcode_hint": "Libros, álbumes y productos en caja con código de barras.",
+    "manual_hint": "Introduce tú mismo los datos de la carta o figura si prefieres el control total.",
+    "paste_link": "Pega un enlace del marketplace",
+    "extract_note": "Extraeremos automáticamente los datos del artículo desde el anuncio.",
+    "import_from_file": "Importar desde archivo",
+    "download_template_label": "Descargar la plantilla",
+    "snap_prefill": "Haz una foto y rellenamos los datos por ti. Puedes cambiar lo que quieras antes de guardar.",
+    "spreadsheet_import": "¿Ya tienes tu colección en una hoja de cálculo? Sube un archivo Excel o CSV para importar artículos en bloque."
   },
   "wishlist": {
     "add_title": "Añadir a la lista de seguimiento",
@@ -126,7 +159,15 @@
     "title": "Lista de seguimiento",
     "retry_load_a11y": "Inténtalo de nuevo para cargar tu lista de seguimiento",
     "keep_adding_a11y": "Seguir añadiendo — quédate aquí tras guardar para añadir varios artículos",
-    "add_item_a11y": "Añadir el artículo a la lista de seguimiento"
+    "add_item_a11y": "Añadir el artículo a la lista de seguimiento",
+    "no_market_price": "Aún no hay precio de mercado",
+    "load_failed": "No se pudo cargar tu lista de seguimiento",
+    "empty_pitch": "Sigue los precios, recibe avisos cuando bajen y no te pierdas ninguna oferta.",
+    "keep_adding_reuse": "Seguir añadiendo: quédate aquí y reutiliza esta categoría y precio objetivo",
+    "helps_predictions": "Esto mejora las predicciones de precios para todos",
+    "added_to_collection": "Añadido a tu colección",
+    "change_category": "Cambiar categoría",
+    "saved_items_safe": "Tus artículos guardados están a salvo: solo no pudimos acceder a ellos. Comprueba tu conexión e inténtalo de nuevo."
   },
   "events": {
     "ticket_fee_hint": "Se aplica una comisión de plataforma del {{pct}}% a las entradas de pago.",
@@ -161,7 +202,15 @@
     "filter_followed_a11y": "Filtrar por tus categorías seguidas",
     "share_event_a11y": "Compartir este evento",
     "post_announcement_a11y": "Publicar el anuncio",
-    "post_announcement_title": "Publicar anuncio"
+    "post_announcement_title": "Publicar anuncio",
+    "set_reminder": "Programar recordatorio",
+    "nearby_subtitle": "Lanzamientos, quedadas y streams para coleccionistas.",
+    "my_categories": "Mis categorías",
+    "load_failed": "No se pudieron cargar los eventos",
+    "pull_to_retry": "Desliza hacia abajo para reintentar.",
+    "nearby_events": "Eventos cerca de ti",
+    "announcements_title": "Anuncios del evento",
+    "updates_from_host": "Novedades del organizador"
   },
   "marketplace": {
     "find_collectors": "Encontrar coleccionistas",
@@ -174,7 +223,10 @@
     "retry_prices_a11y": "Reintentar cargar los precios de mercado",
     "connect_account_a11y": "Conectar la cuenta",
     "market_prices": "Precios de mercado",
-    "regional_insights_sub": "Tendencia cerca de ti según la actividad de los coleccionistas"
+    "regional_insights_sub": "Tendencia cerca de ti según la actividad de los coleccionistas",
+    "prices_load_failed": "No se pudieron cargar los precios de mercado. Comprueba tu conexión e inténtalo de nuevo.",
+    "upgrade_to_see": "Mejora tu plan para verlo",
+    "movers_explainer": "Los mayores movimientos de precio de 7 días en tus categorías: qué sube, qué baja y cuánto."
   },
   "search": {
     "placeholder": "Buscar artículos, coleccionistas, eventos...",
@@ -184,14 +236,16 @@
     "no_results": "No se encontraron resultados",
     "no_price_yet": "Sin precio aún",
     "browse_by_category": "Explorar por categoría",
-    "title": "Explorar"
+    "title": "Explorar",
+    "faq_subtitle": "Respuestas breves sobre añadir artículos, vender, avisos y qué te da Pro."
   },
   "item_detail": {
     "valuation_a11y": "Valoración y detalles del artículo",
     "save_a11y": "Guardar en la colección",
     "save": "Guardar en la colección",
     "a11y_scan_another": "Escanear otro artículo",
-    "scan_another": "Escanear otro"
+    "scan_another": "Escanear otro",
+    "quickscan_tip": "Consejo: usa QuickScan para introducir datos más rápido con ayuda de la IA"
   },
   "onboarding": {
     "skip_a11y": "Saltar selección de categoría",
@@ -230,7 +284,10 @@
     "acquired_date_hint": "Abre un calendario para elegir la fecha en que adquiriste este artículo",
     "clear_acquired_date_a11y": "Borrar la fecha de adquisición",
     "intro_title": "Entrada manual",
-    "photo_optional": "Foto (opcional)"
+    "photo_optional": "Foto (opcional)",
+    "discard_draft_title": "Descartar borrador",
+    "full_control": "Introduce los datos tú mismo para tener el control total",
+    "extra_details_hint": "Añade los detalles propios de tu artículo (p. ej. año, región, talla)"
   },
   "items_empty": {
     "hero_title": "Empieza tu colección",
@@ -263,7 +320,10 @@
     "a11y_add_manually": "Añadir artículo manualmente",
     "isbn_field_a11y": "Campo de entrada del ISBN",
     "isbn_hint": "Introduce un ISBN de 10 o 13 dígitos",
-    "lookup_isbn_a11y": "Buscar el ISBN"
+    "lookup_isbn_a11y": "Buscar el ISBN",
+    "point_camera": "Apunta la cámara al código de barras o ISBN",
+    "looking_up": "Buscando el producto...",
+    "cant_scan_hint": "¿No puedes escanear? Escribe el ISBN de la contraportada"
   },
   "filters": {
     "close_a11y": "Cerrar filtros",
@@ -276,7 +336,11 @@
     "preset_name_placeholder": "Nombre del preajuste",
     "preset_name_a11y": "Nombre del preajuste",
     "save_preset_btn_a11y": "Guardar preajuste",
-    "no_limit": "Sin límite"
+    "no_limit": "Sin límite",
+    "filters_and_sort": "Filtros y orden",
+    "saved_presets": "Ajustes guardados",
+    "save_preset": "Guardar ajuste",
+    "save_filter_preset": "Guardar ajuste de filtro"
   },
   "grading": {
     "lookup_a11y": "Buscar certificado de grading",
@@ -295,7 +359,8 @@
     "certificate_lookup_hint": "Toca dos veces para abrir el formulario de búsqueda de certificados",
     "submission_page_hint": "Toca dos veces para abrir la página de envío en el navegador",
     "toggle_reasoning_a11y": "Mostrar u ocultar la explicación de la nota",
-    "standards_title": "Estándares de grading"
+    "standards_title": "Estándares de grading",
+    "cert_number_hint": "Introduce el número impreso en tu certificado de gradación o en la etiqueta del slab."
   },
   "auth": {
     "sign_in": "Iniciar sesión",
@@ -384,7 +449,8 @@
     "a11y_update_password": "Actualizar contraseña",
     "update_password": "Actualizar contraseña",
     "a11y_back_to_sign_in": "Volver a iniciar sesión",
-    "back_to_sign_in": "Volver a iniciar sesión"
+    "back_to_sign_in": "Volver a iniciar sesión",
+    "set_new_password": "Establece una contraseña nueva"
   },
   "nav": {
     "portfolio": "Portafolio",
@@ -463,7 +529,10 @@
     "dismiss_suggestion_a11y": "Descartar esta sugerencia",
     "your_categories": "Tus categorías",
     "new_to_this": "¿Empiezas ahora? Comienza aquí",
-    "no_target": "Sin precio objetivo"
+    "no_target": "Sin precio objetivo",
+    "chart_load_failed": "No se pudo cargar tu gráfico.",
+    "no_history_hint": "Aún no hay historial. Añade artículos para ver la curva de tu portafolio.",
+    "value_breakdown_hint": "Añade artículos a tu colección para ver cómo se reparte su valor por categoría."
   },
   "items": {
     "title": "Artículos",
@@ -560,7 +629,13 @@
     "discard_item_a11y": "Descartar este artículo",
     "save_and_next_a11y": "Guardar el artículo y escanear el siguiente",
     "process_all_a11y": "Procesar todos los artículos detectados",
-    "done_go_back_a11y": "Listo, atrás"
+    "done_go_back_a11y": "Listo, atrás",
+    "save_and_next_button": "Guardar y siguiente",
+    "batch_complete": "Escaneo por lotes completado",
+    "total_estimated_value": "Valor total estimado",
+    "nothing_saved": "No se ha guardado ningún artículo en esta sesión.",
+    "one_by_one": "Uno a uno",
+    "all_at_once": "Todos a la vez"
   },
   "settings": {
     "title": "Ajustes",
@@ -616,7 +691,8 @@
     "a11y_change_collecting_experience": "Cambiar cuánto tiempo llevas coleccionando",
     "collecting_experience": "Experiencia coleccionando",
     "collecting_experience_question": "¿Cuánto tiempo llevas coleccionando?",
-    "loading": "Cargando los ajustes..."
+    "loading": "Cargando los ajustes...",
+    "payment_handle_explainer": "Añade el identificador con el que los compradores pueden pagarte y Sparrow abrirá su app con el importe acordado ya escrito. Solo lo ve el comprador de un intercambio que hayas aceptado. Sparrow nunca gestiona el dinero."
   },
   "sponsor_profile": {
     "company_name": "Nombre de la empresa",
@@ -677,7 +753,16 @@
     "build_and_paint_projects": "Proyectos de montaje y pintura",
     "start_build_project": "Iniciar proyecto de montaje",
     "start_new_build": "Iniciar un montaje nuevo",
-    "linked_item": "Artículo vinculado"
+    "linked_item": "Artículo vinculado",
+    "empty_hint": "Toca el botón + para crear tu primer proyecto de montaje o pintura",
+    "none_in_category": "Aún no hay proyectos de montaje en esta categoría.",
+    "select_category_placeholder": "Elige una categoría...",
+    "link_to_item": "Vincular a un artículo (opcional)",
+    "no_portfolio_items": "No hay artículos del portafolio en esta categoría",
+    "template_steps_note": "Los pasos de la plantilla se añadirán tras la creación",
+    "no_paint_recipes": "Aún no hay recetas de pintura. Añade tus listas de pinturas y notas de técnica.",
+    "add_paint": "Añadir pintura",
+    "track_paints_subtitle": "Lleva el control de pinturas, marcas y técnicas"
   },
   "watchlist": {
     "add_title": "Añadir a la lista de seguimiento",
@@ -711,7 +796,8 @@
     "attendees_only_hint": "Marca en el evento que vas o que te interesa para ver lo que publica el organizador.",
     "attendees_only_cta": "Volver al evento",
     "compose_a11y": "Redactar un anuncio",
-    "empty": "Aún no hay anuncios"
+    "empty": "Aún no hay anuncios",
+    "sent_as_dm": "Enviado por mensaje directo a todos los asistentes"
   },
   "project_header": {
     "mark_complete_a11y": "Marcar el proyecto como completado",
@@ -753,7 +839,9 @@
     "submit_a11y": "Enviar el precio de venta",
     "cancel_a11y": "Cancelar la introducción del precio de venta",
     "report_a11y": "Informar del precio de venta",
-    "price_off_a11y": "Informar de que el precio parece incorrecto"
+    "price_off_a11y": "Informar de que el precio parece incorrecto",
+    "sold_becomes_comp": "¿Lo vendiste? Tu precio pasa a ser la referencia",
+    "member_sale_note": "Para la mayoría de artículos aquí, una venta entre miembros es el único precio de venta real que existe. Añade la tuya y fijará el precio de este artículo, para ti y para todos los que tengan uno."
   },
   "marketplace_filter": {
     "close_a11y": "Cerrar los filtros",
@@ -784,7 +872,8 @@
     "retry_a11y": "Volver a cargar el informe",
     "estimated_value": "Valor estimado",
     "export_pdf_a11y": "Exportar el informe en PDF",
-    "export_report": "Exportar el informe"
+    "export_report": "Exportar el informe",
+    "report_load_failed": "No se pudo cargar el informe. Comprueba tu conexión e inténtalo de nuevo."
   },
   "alert_settings": {
     "section_a11y": "Sección de ajustes de alertas",
@@ -792,7 +881,9 @@
     "drop_threshold": "Umbral de bajada",
     "price_increases": "Subidas de precio",
     "increase_threshold": "Umbral de subida",
-    "new_listings": "Anuncios nuevos"
+    "new_listings": "Anuncios nuevos",
+    "alert_types": "Tipos de avisos",
+    "notification_frequency": "Frecuencia de las notificaciones"
   },
   "marketplace_connections": {
     "section_title": "Cuentas de mercados",
@@ -803,7 +894,10 @@
     "connect_failed_body": "Vuelve a intentarlo. Si sigue fallando, comprueba tu conexión a internet.",
     "connect_title": "Conectar marketplace",
     "seller_name_optional": "Nombre del vendedor (opcional)",
-    "seller_name_placeholder": "Tu nombre de usuario como vendedor"
+    "seller_name_placeholder": "Tu nombre de usuario como vendedor",
+    "set_up_defaults": "Configurar los valores por defecto",
+    "edit_defaults": "Editar los valores por defecto",
+    "none_connected": "Aún no hay marketplaces conectados. Cuando inicies sesión, Sparrow podrá ayudarte a publicar artículos en eBay."
   },
   "add_manual_basic": {
     "title": "Información básica",
@@ -811,7 +905,8 @@
     "custom_category_label": "Nombre de categoría personalizado",
     "custom_category_a11y": "Nombre de categoría personalizado",
     "set_series": "Set / serie",
-    "set_series_a11y": "Set o serie"
+    "set_series_a11y": "Set o serie",
+    "custom_category_note": "Las categorías personalizadas no tienen precio por IA: tú defines el valor"
   },
   "wishlist_edit_target": {
     "title": "Establecer el precio objetivo",
@@ -831,7 +926,11 @@
     "renews_on": "Se renueva el {{date}}",
     "access_until": "Acceso Pro hasta el {{date}}",
     "retry_plans_a11y": "Inténtalo de nuevo para cargar los planes",
-    "restore_purchases_a11y": "Restaurar compras anteriores"
+    "restore_purchases_a11y": "Restaurar compras anteriores",
+    "in_beta": "Estás en la beta de Sparrow",
+    "plans_load_failed": "No se pudieron cargar los planes",
+    "restore_purchases": "Restaurar compras",
+    "beta_pricing_note": "Todas las funciones Pro están desbloqueadas gratis mientras probamos. Los precios llegarán tras la beta: te avisaremos antes de cualquier cambio."
   },
   "mfa": {
     "title": "Autenticación en dos pasos",
@@ -843,7 +942,11 @@
     "enable_2fa": "Activar la verificación en dos pasos",
     "load_failed": "No se pudo comprobar el estado de tu autenticación en dos pasos",
     "qr_code_a11y": "Código QR para la app de autenticación",
-    "totp_code_a11y": "Código de verificación TOTP"
+    "totp_code_a11y": "Código de verificación TOTP",
+    "intro": "Añade una capa extra de seguridad a tu cuenta con una app de autenticación TOTP.",
+    "scan_instruction": "Abre tu app de autenticación (Google Authenticator, Authy, etc.) y escanea este código:",
+    "protected": "Tu cuenta está protegida con autenticación en dos pasos.",
+    "enable_prompt": "Protege tu cuenta activando la autenticación en dos pasos con una app de autenticación."
   },
   "event_detail": {
     "not_found": "Evento no encontrado",
@@ -852,7 +955,8 @@
     "promote_subtitle": "Llega a más coleccionistas con una posición patrocinada",
     "load_failed": "No se pudo cargar este evento",
     "cancelled": "Este evento se ha cancelado",
-    "was_interested": "Estaba interesado"
+    "was_interested": "Estaba interesado",
+    "not_found_body": "Este evento todavía no existe. Intenta abrirlo de nuevo desde la pestaña Eventos."
   },
   "user_profile": {
     "blocked_user": "Has bloqueado a este usuario",
@@ -866,7 +970,10 @@
     "not_found_hint": "Este perfil no existe o ya no es público.",
     "loading": "Cargando el perfil...",
     "active_challenges": "Retos activos",
-    "not_ranked": "Sin clasificar"
+    "not_ranked": "Sin clasificar",
+    "what_others_see": "Esto es lo que ven otros coleccionistas.",
+    "categories_load_failed": "No se pudieron cargar las categorías ahora mismo.",
+    "allow_discovery_hint": "Activa «Permitir que me descubran» en Ajustes → Privacidad para aparecer en las clasificaciones por categoría."
   },
   "items_detail": {
     "thin_cat_help": "Esta categoría necesita tus datos: indica abajo cuánto pagaste para mejorar las estimaciones.",
@@ -920,7 +1027,9 @@
     "blocked_load_failed": "No se pudieron cargar tus usuarios bloqueados",
     "blocked_load_failed_hint": "No se ha desbloqueado a nadie: simplemente no pudimos acceder a la lista.",
     "blocked_empty": "No hay usuarios bloqueados",
-    "blocked_empty_hint": "No has bloqueado a nadie. Los usuarios bloqueados no pueden enviarte mensajes."
+    "blocked_empty_hint": "No has bloqueado a nadie. Los usuarios bloqueados no pueden enviarte mensajes.",
+    "export_description": "Instantánea completa de 30 columnas: cada detalle de cada artículo, en tu moneda. Para seguros, contabilidad o un archivo completo de la colección.",
+    "delete_warning": "Esto eliminará permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer."
   },
   "billing": {
     "free": "Gratis",
@@ -943,7 +1052,9 @@
     "subtitle": "Detectado automáticamente desde tus artículos",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
     "no_sets": "Todavía no hay colecciones en progreso",
-    "est_value": "Valor est."
+    "est_value": "Valor est.",
+    "sets_to_complete": "Sets por completar",
+    "close_to_complete": "Colecciones cerca del 100 %. Ordenadas por lo que estás más cerca de terminar."
   },
   "ads": {
     "sponsored": "Patrocinado",
@@ -970,7 +1081,9 @@
   },
   "notifications": {
     "mark_all_read": "Marcar todo como leído",
-    "load_failed": "No se pudieron cargar tus notificaciones"
+    "load_failed": "No se pudieron cargar tus notificaciones",
+    "empty": "Aún no hay notificaciones",
+    "empty_hint": "Aquí verás avisos de precio, novedades de ofertas y más."
   },
   "diagnostics": {
     "title": "Diagnóstico",
@@ -1048,7 +1161,12 @@
     "postage_hint": "¿Cuánto te costó enviarlo? No podemos verlo, así que tu beneficio se muestra sin los gastos de envío hasta que lo indiques. No se comparte nada con la persona compradora.",
     "postage_zero_ok": "¿Lo entregaste en mano? Escribe 0: eso es una respuesta, no un campo vacío.",
     "decline_counter_a11y": "Rechazar la contraoferta del vendedor",
-    "view_offers_a11y": "Ver las ofertas"
+    "view_offers_a11y": "Ver las ofertas",
+    "tap_to_manage": "Toca para gestionar este intercambio",
+    "carrier_load_failed": "No se pudo cargar la lista de transportistas.",
+    "save_tracking": "Guardar el seguimiento",
+    "tracking_explainer": "El comprador lo ve para seguir el paquete. Sparrow no lo comprueba ni completa el intercambio: ambos seguís confirmando a mano.",
+    "postcode_carrier_note": "Este transportista necesita el código postal de entrega para abrir la página de seguimiento, y Sparrow no lo tiene. El comprador verá el código para buscar en vez de un enlace."
   },
   "item_attrs": {
     "case_size": "Tamaño de la caja",
@@ -1068,7 +1186,10 @@
     "a11y_lookup_cgc": "Buscar certificado CGC",
     "a11y_browse_discogs": "Explorar en Discogs",
     "a11y_visit_warhammer": "Visitar Warhammer Community",
-    "chase_treasure_hunt": "Chase / Treasure Hunt"
+    "chase_treasure_hunt": "Chase / Treasure Hunt",
+    "size_affects_value": "La talla influye en el valor de mercado: los precios varían según la talla",
+    "build_instructions": "Instrucciones de montaje",
+    "vaulted_note": "Este Pop! ya no se fabrica. Los artículos retirados suelen subir de valor."
   },
   "create_event": {
     "from_template": "Desde plantilla",
@@ -1087,7 +1208,11 @@
     "a11y_create_event": "Crear evento",
     "create_event": "Crear evento",
     "invite_friends": "Invitar amigos",
-    "clear_end_date_a11y": "Borrar la fecha de fin"
+    "clear_end_date_a11y": "Borrar la fecha de fin",
+    "sponsored_note": "Este evento se marcará como patrocinado y se destacará a los coleccionistas.",
+    "invite_after_create": "Podrás invitar a amigos después de crear el evento.",
+    "invite_via_chat": "Invitar a amigos por chat",
+    "available_after_creation": "Disponible tras crear el evento"
   },
   "listings": {
     "catalog_photo": "Foto del catálogo",
@@ -1117,7 +1242,25 @@
     "create_title": "Crear anuncio",
     "item_title_placeholder": "Título del artículo",
     "est_net": "Neto est.",
-    "create_as_draft": "Crear como borrador"
+    "create_as_draft": "Crear como borrador",
+    "catalog_photo_note": "Foto del catálogo: no es el artículo del vendedor",
+    "message_seller": "Enviar mensaje al vendedor",
+    "raise_price_note": "Subir el precio no avisa a nadie.",
+    "save_price": "Guardar el precio",
+    "clear_filters": "Borrar filtros",
+    "choose_item_to_sell": "Elige un artículo para vender",
+    "loading_more": "Cargando más…",
+    "select_where_to_list": "Elige dónde quieres publicar este artículo",
+    "you_receive": "Recibes",
+    "listing_format": "Formato del anuncio",
+    "fee_comparison": "Comparación de comisiones",
+    "filtered_by": "Filtrado por:",
+    "no_catalogue_alert": "Este anuncio no avisará a los miembros que siguen este artículo: no está vinculado a una ficha del catálogo. Sigue apareciendo al explorar y buscar.",
+    "match_then_relist": "Vincula el artículo de tu colección a una ficha del catálogo y vuelve a publicarlo: todos los que lo siguen recibirán un aviso de precio objetivo.",
+    "no_payment_handling": "Sparrow no gestiona el pago ni el envío. Los acuerdas directamente con el vendedor y no hay protección al comprador.",
+    "unmatched_price_note": "Este anuncio no está vinculado a un artículo del catálogo, así que no puede avisar a nadie. El nuevo precio sí aparece en el marketplace.",
+    "marketplace_intro": "Todo lo que hay aquí lo publican coleccionistas como tú. Escribe a un vendedor para acordar un precio: Sparrow no gestiona el pago ni el envío. Publica tus artículos y se avisará a los miembros que los siguen.",
+    "arrange_between_yourselves": "Compradores y vendedores acuerdan entre ellos el pago y el envío. Sparrow no gestiona el pago y no hay protección al comprador."
   },
   "chat": {
     "collector_not_found": "Coleccionista no encontrado",
@@ -1140,7 +1283,8 @@
     "demo_send_message_a11y": "Enviar el mensaje de prueba",
     "demo_peer_name": "Coleccionista de prueba",
     "demo_placeholder_note": "Marcador de posición · no se guarda",
-    "compose_hint": "Escribe un mensaje y pulsa enviar"
+    "compose_hint": "Escribe un mensaje y pulsa enviar",
+    "invite_inbox_note": "Aparecerá en su bandeja de entrada, donde podrán aceptarla o rechazarla."
   },
   "sell": {
     "sell_an_item": "Vender un artículo",
@@ -1165,7 +1309,19 @@
     "publish_defaults": "Valores por defecto de publicación",
     "find_this": "Encontrar esto →",
     "save_defaults": "Guardar los valores por defecto",
-    "coming_soon_title": "Vender estará disponible pronto"
+    "coming_soon_title": "Vender estará disponible pronto",
+    "item_photo_note": "La foto de tu artículo. El anuncio la usa a menos que añadas la tuya.",
+    "add_real_photos": "Añade fotos del artículo real",
+    "checking_catalogue": "Comprobando el catálogo…",
+    "list_it": "Publicar",
+    "pick_intro": "Elige lo que quieres vender. Después pondrás el precio.",
+    "sell_something_else": "Vender otra cosa",
+    "confirm_your_age": "Confirma tu edad",
+    "not_in_collection": "Para algo que tienes pero no está en tu colección. Lo añadiremos por ti: no hace falta crear una colección para vender.",
+    "cover_photo_reference": "Permite que Sparrow use tu foto de portada como imagen de referencia de este producto, visible para otros miembros. Es opcional y puedes desactivarlo después.",
+    "no_catalogue_match": "No hay coincidencia en el catálogo para ese título. Seguirá apareciendo al explorar y buscar: prueba con el nombre exacto del producto para llegar también a quienes lo esperan.",
+    "arrange_with_buyer": "Sparrow no gestiona el pago ni el envío: los acuerdas directamente con el comprador.",
+    "age_gate_explainer": "Para vender artículos, publicar en marketplaces o conectar una cuenta de vendedor, confirma que tienes la edad legal en tu región (18 años o la mayoría de edad local)."
   },
   "purchase": {
     "invalid_deal_link": "Enlace de oferta no válido",
@@ -1198,7 +1354,14 @@
     "mandate_any_region": "Cualquier región",
     "mandate_a11y_pause": "Pausar la búsqueda",
     "mandate_pause_search": "Pausar búsqueda",
-    "got_it_a11y": "Lo he recibido"
+    "got_it_a11y": "Lo he recibido",
+    "quality_filter_hint": "Más alto = filtro de calidad más estricto para vendedor y anuncio.",
+    "leave_unchecked_hint": "Déjalo todo sin marcar para buscar en todos los marketplaces.",
+    "price_position": "Posición del precio del anuncio dentro del rango previsto",
+    "watch_note": "Vigilamos los marketplaces y te avisamos cuando se alcance tu precio.",
+    "deal_discovery_pitch": "El descubrimiento de ofertas es una función de Sparrow Pro. Mejora tu plan y deja que Sparrow cace ofertas por ti.",
+    "add_item_and_max": "Añade un artículo y tu precio máximo.",
+    "link_item_explainer": "Vincula la búsqueda a un artículo conocido para que podamos mostrarte lo que te ahorró una oferta. Si lo omites, la búsqueda funciona igual."
   },
   "edit_event": {
     "loading_event": "Cargando evento...",
@@ -1209,7 +1372,8 @@
     "save_changes": "Guardar cambios",
     "danger_zone": "Zona de peligro",
     "a11y_cancel_event": "Cancelar evento",
-    "cancel_event": "Cancelar evento"
+    "cancel_event": "Cancelar evento",
+    "cancel_warning": "Cancelar este evento es definitivo. Se avisará a todos los asistentes."
   },
   "catalog": {
     "image_coming_soon": "Imagen próximamente",
@@ -1235,7 +1399,12 @@
     "a11y_back_to_set": "Volver al set",
     "price_load_failed": "No se pudo cargar el valor de mercado.",
     "a11y_retry_price": "Volver a cargar el valor de mercado",
-    "items_load_failed": "No se pudieron cargar estos artículos"
+    "items_load_failed": "No se pudieron cargar estos artículos",
+    "unrecognized_item": "Todavía no reconocemos este artículo",
+    "help_us_improve": "Ayúdanos a mejorar Sparrow Collect diciéndonos qué es esto.",
+    "suggest_new_category": "O sugiere una categoría nueva",
+    "suggestions_explainer": "Cuando escaneas o añades artículos que no reconocemos, aparecen aquí para que sigas su estado.",
+    "no_categories_match": "Ninguna categoría coincide con \"{{query}}\""
   },
   "inbox": {
     "sent_requests": "Solicitudes enviadas",
@@ -1278,7 +1447,10 @@
     "item_history": "Historial del artículo",
     "sell_timing": "Momento de venta",
     "notes_placeholder": "Añade tus notas sobre el estado, el origen, dónde lo compraste, etc.",
-    "shop_this_item": "Comprar este artículo"
+    "shop_this_item": "Comprar este artículo",
+    "no_items_to_display": "No hay artículos que mostrar",
+    "add_your_photo": "Añade tu foto",
+    "no_confirmed_sales": "Todavía no tenemos ventas confirmadas de este artículo. Indica lo que vale para ti o completa los datos para que podamos identificarlo."
   },
   "tax": {
     "title": "Informe de ventas e impuestos",
@@ -1287,7 +1459,13 @@
     "where_the_line_is": "Dónde está el límite",
     "what_that_means": "Qué significa para ti",
     "a11y_read_section_6": "Leer la sección 6 de los términos del mercado",
-    "earlier_years": "Años anteriores"
+    "earlier_years": "Años anteriores",
+    "no_sales_counted": "Aún no se han contado ventas completadas",
+    "your_position": "Tu situación fiscal es responsabilidad tuya.",
+    "marketplace_terms_section": "Términos del marketplace, sección 6",
+    "unreachable_note": "Esto no dice nada sobre tu situación: solo no pudimos contactar con el servidor. Los umbrales de abajo siguen siendo válidos.",
+    "counting_starts": "El recuento empieza cuando se completa un intercambio: tú y el comprador confirmáis el cambio. No se cuenta nada mientras una oferta siga abierta.",
+    "counted_per_year": "Se cuenta por año natural, en euros, porque ese es el periodo de declaración y el umbral está fijado en euros. Nada de esto es asesoramiento fiscal."
   },
   "announce": {
     "title_optional": "Título (opcional)",
@@ -1296,7 +1474,8 @@
     "a11y_body": "Cuerpo del anuncio",
     "image_url_optional": "URL de la imagen (opcional)",
     "a11y_send": "Enviar anuncio",
-    "send_announcement": "Enviar anuncio"
+    "send_announcement": "Enviar anuncio",
+    "sent_to_all_attendees": "Esto se enviará a todos los asistentes de este evento."
   },
   "sponsor": {
     "tiers": "Niveles de patrocinio",
@@ -1331,7 +1510,11 @@
     "select_tier": "Selecciona el nivel de patrocinio",
     "select_tier_sub": "Elige el nivel de visibilidad de tu evento",
     "per_event": "Por evento",
-    "select_event": "Elige qué evento notificar"
+    "select_event": "Elige qué evento notificar",
+    "title": "Patrocina en Sparrow Collect",
+    "pitch": "Llega a coleccionistas apasionados, anuncia lanzamientos exclusivos y haz crecer tu marca con la comunidad que ama lo que haces.",
+    "registration_free": "El registro es gratuito. Elegirás un nivel al crear tu primer evento.",
+    "notify_attendees_hint": "Avisa a los asistentes de novedades, cambios de horario u ofertas exclusivas."
   },
   "share": {
     "send_to": "Enviar a",
@@ -1339,14 +1522,17 @@
     "chats_load_failed": "No se pudieron cargar tus chats.",
     "a11y_retry_chats": "Reintentar cargar los chats",
     "outside_sparrow": "Fuera de Sparrow",
-    "a11y_share_elsewhere": "Compartir en otro sitio"
+    "a11y_share_elsewhere": "Compartir en otro sitio",
+    "no_chats_yet": "Aún no hay chats. Escribe primero a alguien desde su perfil o desde un anuncio y después podrás enviarle artículos directamente."
   },
   "settle": {
     "agreed_amount": "Importe acordado",
     "deliver_to": "Entregar a",
     "delivery_address": "Dirección de entrega",
     "a11y_save_address": "Guardar la dirección de entrega",
-    "list_load_failed": "No se pudo cargar esa lista."
+    "list_load_failed": "No se pudo cargar esa lista.",
+    "no_address_yet": "El comprador aún no ha añadido una dirección de entrega. Pídesela por chat: la necesitas antes de poder reservar.",
+    "address_shared_note": "Se comparte solo con este vendedor y para este intercambio. Sparrow no contrata ni asegura el envío."
   },
   "category": {
     "a11y_see_all_yours": "Ver todos tus artículos de esta categoría",
@@ -1384,7 +1570,14 @@
     "series_progress": "Progreso de la serie",
     "featured_in_catalog": "Destacado en el catálogo",
     "related_categories": "Categorías relacionadas",
-    "complete_your_sets": "Completa tus sets"
+    "complete_your_sets": "Completa tus sets",
+    "not_found_body": "Esta categoría no existe o no se pudo cargar.",
+    "guide_subtitle": "El vocabulario, en qué fijarte, qué evitar y por dónde empezar.",
+    "sets_missing_subtitle": "Lo que aún te falta de los sets que ya has empezado.",
+    "no_collectors_found": "No se han encontrado coleccionistas",
+    "find_friends": "Buscar amigos",
+    "guidance_disclaimer": "Orientación general, no es una tasación. Los precios cambian y el estado lo juzga quien compra.",
+    "items_in": "Artículos en {{category}}"
   },
   "analytics": {
     "a11y_retry": "Volver a cargar los datos de análisis",
@@ -1401,7 +1594,10 @@
     "advanced_title": "Analíticas avanzadas",
     "category_performance": "Rendimiento por categoría",
     "prediction_accuracy": "Precisión de las predicciones",
-    "actuals_vs_predicted": "Real frente a lo previsto"
+    "actuals_vs_predicted": "Real frente a lo previsto",
+    "preview_notice": "Vista previa: estas cifras son de ejemplo. Añade artículos a tu portafolio para ver tus analíticas reales.",
+    "view_all": "Ver todo",
+    "no_earlier_value": "Aún no hay un valor anterior con el que comparar: todo lo que tienes se añadió dentro de este periodo."
   },
   "guide": {
     "no_guide_yet": "Aún no hay guía para esta categoría",
@@ -1412,7 +1608,10 @@
     "not_found_title": "Todavía no tenemos una página de ayuda sobre eso",
     "need_help": "¿Necesitas ayuda?",
     "using_sparrow": "Usar Sparrow",
-    "how_scores_work": "Cómo funcionan las puntuaciones"
+    "how_scores_work": "Cómo funcionan las puntuaciones",
+    "what_counts": "Lo que cuenta:",
+    "faq_intro": "Respuestas breves a lo que la gente pregunta primero. También puedes escribir en la barra de búsqueda lo que quieres hacer.",
+    "scores_update_note": "Las puntuaciones se actualizan cuando añades, quitas o modificas artículos de tu colección. Se calculan a partir de tus datos de catálogo y de referencias del mercado."
   },
   "price_explanation": {
     "title": "Explicación del precio",
@@ -1421,7 +1620,9 @@
     "key_factors": "Factores clave",
     "data_sources": "Fuentes de datos",
     "why_estimated_a11y": "Descubre por qué este precio es estimado",
-    "why_estimated_hint": "Abre una explicación de cómo se calculó este precio"
+    "why_estimated_hint": "Abre una explicación de cómo se calculó este precio",
+    "one_sale_only": "Una venta: aún no basta para un rango",
+    "why_this_price": "¿Por qué este precio?"
   },
   "calendar": {
     "a11y_grid": "Cuadrícula del calendario",
@@ -1433,6 +1634,9 @@
     "category_only_title": "Las clasificaciones son por categoría",
     "category_only_body": "Abre una categoría de tu colección para ver cómo se clasifica — por objetos que tienes o por valor.",
     "view_profile_hint": "Toca dos veces para ver el perfil del coleccionista",
-    "top_collectors": "Mejores coleccionistas"
+    "top_collectors": "Mejores coleccionistas",
+    "discoverable_note": "Coleccionistas que eligieron ser visibles, ordenados por lo que tienen en esta categoría.",
+    "load_failed": "No se pudo cargar la clasificación. Desliza hacia abajo para reintentar.",
+    "empty": "Todavía no hay nadie en la clasificación."
   }
 }

@@ -598,7 +598,7 @@ const ManualAddScreen: React.FC = () => {
                 accessibilityLabel={t('add_manual.discard_draft_a11y')}
               >
                 <Text style={[styles.discardDraftText, { color: colors.error ?? '#E53935' }]}>
-                  Discard Draft
+                  {t('add_manual.discard_draft_title', { defaultValue: 'Discard Draft' })}
                 </Text>
               </Pressable>
             )}

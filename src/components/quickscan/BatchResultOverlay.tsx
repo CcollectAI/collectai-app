@@ -119,7 +119,7 @@ function BatchResultOverlayInner({
               <>
                 <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
                 <Text style={[styles.batchOverlayBtnText, { color: '#FFFFFF' }]}>
-                  Save & Next
+                  {t('scan.save_and_next_button', { defaultValue: 'Save & Next' })}
                 </Text>
               </>
             )}

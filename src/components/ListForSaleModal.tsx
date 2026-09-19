@@ -172,7 +172,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                 Marketplaces
               </Text>
               <Text style={[styles.sectionHint, { color: colors.muted }]}>
-                Select where you want to list this item
+                {t('listings.select_where_to_list', { defaultValue: 'Select where you want to list this item' })}
               </Text>
 
               {MARKETPLACE_OPTIONS.map((mp) => {
@@ -269,7 +269,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                             <View style={[styles.feeDivider, { backgroundColor: colors.border }]} />
                             <View style={styles.feeItem}>
                               <Text style={[styles.feeLabel, { color: colors.muted }]}>
-                                You receive
+                                {t('listings.you_receive', { defaultValue: 'You receive' })}
                               </Text>
                               <Text style={[styles.feeValue, { color: colors.success }]}>
                                 {/* currency-ok: net = the seller's typed price minus fees, so already in settings.currency. */}
@@ -286,7 +286,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
 
               {/* ── Listing Format ────────────────────────────────── */}
               <Text style={[styles.sectionLabel, { color: colors.text, marginTop: 20 }]}>
-                Listing Format
+                {t('listings.listing_format', { defaultValue: 'Listing Format' })}
               </Text>
 
               <View style={styles.formatRow}>
@@ -385,7 +385,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                   ]}
                 >
                   <Text style={[styles.comparisonTitle, { color: colors.text }]}>
-                    Fee Comparison
+                    {t('listings.fee_comparison', { defaultValue: 'Fee Comparison' })}
                   </Text>
                   {feeBreakdowns.map((fb) => {
                     const mp = MARKETPLACE_OPTIONS.find((o) => o.id === fb.marketplaceId);

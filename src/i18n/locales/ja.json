@@ -68,7 +68,32 @@
     "got_it": "了解",
     "retry_all": "すべて再試行",
     "coming_soon": "近日公開",
-    "not_now": "今はしない"
+    "not_now": "今はしない",
+    "no_items_match_search": "検索条件に合うアイテムがありません",
+    "try_different_keyword": "別のキーワードを試すか、フィルターを解除してください",
+    "items_load_failed": "アイテムを読み込めませんでした",
+    "collection_safe_retry": "コレクションは無事です。今は取得できませんでした。下に引いて再試行してください。",
+    "page_not_found": "ページが見つかりません",
+    "archive_load_failed": "アーカイブを読み込めませんでした",
+    "nothing_archived": "アーカイブはありません",
+    "condition_guide_intro": "コンディションはコレクターズアイテムの価値を大きく左右します。このガイドを使って正確に評価しましょう。",
+    "movers_load_failed": "値動きを読み込めませんでした。",
+    "no_suggestions_yet": "まだ候補はありません",
+    "unexpected_error": "予期しないエラーが発生しました。もう一度お試しください。",
+    "event_ended": "イベント終了",
+    "loading_history": "履歴を読み込み中...",
+    "no_history_yet": "まだ履歴がありません",
+    "complete_your_collection": "コレクションを完成させよう",
+    "attending_following": "参加・フォロー中のコレクター",
+    "no_attendees_yet": "まだ参加予定のコレクターはいません。最初の一人になれます。",
+    "host_collector": "主催コレクター",
+    "related_category": "関連カテゴリー",
+    "price_range": "価格帯",
+    "found_market_price": "これの市場価格が見つかりました",
+    "tap_to_correct": "名前・カテゴリー・状態をタップして修正",
+    "correction_submitted": "修正を送信しました",
+    "buyers_see_this": "出品するすべてのアイテムで購入者に表示されます。",
+    "archive_explainer": "アーカイブしたアイテムと、販売完了でコレクションから外れたアイテムがここに表示されます。いつでも戻せます。"
   },
   "add_tab": {
     "subtitle": "高速、カメラ優先のフロー。",
@@ -84,7 +109,15 @@
     "marketplace_url_a11y": "マーケットのURL",
     "download_template_a11y": "インポート用テンプレートをダウンロード",
     "import_item": "アイテムをインポート",
-    "supported_sites": "対応サイト"
+    "supported_sites": "対応サイト",
+    "barcode_hint": "バーコードのある書籍、アルバム、箱入り商品。",
+    "manual_hint": "すべて自分で管理したい場合は、カードやフィギュアの詳細を手動で入力してください。",
+    "paste_link": "マーケットのリンクを貼り付け",
+    "extract_note": "出品情報からアイテムの詳細を自動で取得します。",
+    "import_from_file": "ファイルからインポート",
+    "download_template_label": "テンプレートをダウンロード",
+    "snap_prefill": "写真を撮ると詳細を自動入力します。保存前にすべて変更できます。",
+    "spreadsheet_import": "コレクションをすでに表計算ソフトで管理していますか？ Excel または CSV ファイルをアップロードすると一括で取り込めます。"
   },
   "wishlist": {
     "add_title": "ウォッチリストに追加",
@@ -126,7 +159,15 @@
     "title": "ウォッチリスト",
     "retry_load_a11y": "ウォッチリストの読み込みをもう一度試す",
     "keep_adding_a11y": "続けて追加 — 保存後もこの画面に留まり、複数のアイテムを追加できます",
-    "add_item_a11y": "アイテムをウォッチリストに追加"
+    "add_item_a11y": "アイテムをウォッチリストに追加",
+    "no_market_price": "市場価格はまだありません",
+    "load_failed": "ウォッチリストを読み込めませんでした",
+    "empty_pitch": "価格を追跡し、値下がり時に通知を受け取り、欲しいアイテムのお得な機会を逃しません。",
+    "keep_adding_reuse": "続けて追加 — この画面に留まり、同じカテゴリーと目標価格を再利用します",
+    "helps_predictions": "これはみんなの価格予測の精度向上に役立ちます",
+    "added_to_collection": "コレクションに追加しました",
+    "change_category": "カテゴリーを変更",
+    "saved_items_safe": "保存したアイテムは無事です。取得できなかっただけです。接続を確認して、もう一度お試しください。"
   },
   "events": {
     "ticket_fee_hint": "有料チケットには{{pct}}%のプラットフォーム手数料がかかります。",
@@ -161,7 +202,15 @@
     "filter_followed_a11y": "フォロー中のカテゴリーで絞り込む",
     "share_event_a11y": "このイベントを共有",
     "post_announcement_a11y": "お知らせを投稿",
-    "post_announcement_title": "お知らせを投稿"
+    "post_announcement_title": "お知らせを投稿",
+    "set_reminder": "リマインダーを設定",
+    "nearby_subtitle": "コレクションのドロップ、ミートアップ、配信。",
+    "my_categories": "マイカテゴリー",
+    "load_failed": "イベントを読み込めませんでした",
+    "pull_to_retry": "下に引いて再試行してください。",
+    "nearby_events": "近くのイベント",
+    "announcements_title": "イベントのお知らせ",
+    "updates_from_host": "主催者からのお知らせ"
   },
   "marketplace": {
     "find_collectors": "コレクターを探す",
@@ -174,7 +223,10 @@
     "retry_prices_a11y": "市場価格の読み込みを再試行",
     "connect_account_a11y": "アカウントを連携",
     "market_prices": "市場価格",
-    "regional_insights_sub": "コレクターの動きに基づく、お近くの人気"
+    "regional_insights_sub": "コレクターの動きに基づく、お近くの人気",
+    "prices_load_failed": "市場価格を読み込めませんでした。接続を確認して、もう一度お試しください。",
+    "upgrade_to_see": "アップグレードして表示",
+    "movers_explainer": "あなたのカテゴリーにおける過去7日間の最大の価格変動 — 何が上がり、何が下がり、どれだけ動いたか。"
   },
   "search": {
     "placeholder": "アイテム、コレクター、イベントを検索...",
@@ -184,14 +236,16 @@
     "no_results": "結果が見つかりません",
     "no_price_yet": "価格はまだありません",
     "browse_by_category": "カテゴリから探す",
-    "title": "さがす"
+    "title": "さがす",
+    "faq_subtitle": "アイテムの追加、販売、アラート、Proでできることへの短い回答。"
   },
   "item_detail": {
     "valuation_a11y": "アイテムの評価と詳細",
     "save_a11y": "コレクションに保存",
     "save": "コレクションに保存",
     "a11y_scan_another": "別のアイテムをスキャン",
-    "scan_another": "別のものをスキャン"
+    "scan_another": "別のものをスキャン",
+    "quickscan_tip": "ヒント: QuickScan を使うと AI の支援でより速く入力できます"
   },
   "onboarding": {
     "skip_a11y": "カテゴリー選択をスキップ",
@@ -230,7 +284,10 @@
     "acquired_date_hint": "このアイテムを取得した日付を選ぶカレンダーを開きます",
     "clear_acquired_date_a11y": "取得日をクリア",
     "intro_title": "手動入力",
-    "photo_optional": "写真（任意）"
+    "photo_optional": "写真（任意）",
+    "discard_draft_title": "下書きを破棄",
+    "full_control": "すべて自分で管理するために詳細を手動で入力",
+    "extra_details_hint": "アイテム固有の情報を追加してください（例: 年代、地域、サイズ）"
   },
   "items_empty": {
     "hero_title": "コレクションを始めよう",
@@ -263,7 +320,10 @@
     "a11y_add_manually": "アイテムを手動で追加",
     "isbn_field_a11y": "ISBN入力欄",
     "isbn_hint": "10桁または13桁のISBNを入力してください",
-    "lookup_isbn_a11y": "ISBNを検索"
+    "lookup_isbn_a11y": "ISBNを検索",
+    "point_camera": "カメラをバーコードまたはISBNに向けてください",
+    "looking_up": "商品を検索中...",
+    "cant_scan_hint": "スキャンできませんか？ 裏表紙のISBNを入力してください"
   },
   "filters": {
     "close_a11y": "フィルターを閉じる",
@@ -276,7 +336,11 @@
     "preset_name_placeholder": "プリセット名",
     "preset_name_a11y": "プリセット名",
     "save_preset_btn_a11y": "プリセットを保存",
-    "no_limit": "上限なし"
+    "no_limit": "上限なし",
+    "filters_and_sort": "フィルターと並び替え",
+    "saved_presets": "保存したプリセット",
+    "save_preset": "プリセットを保存",
+    "save_filter_preset": "フィルタープリセットを保存"
   },
   "grading": {
     "lookup_a11y": "グレーディング証明書を検索",
@@ -295,7 +359,8 @@
     "certificate_lookup_hint": "ダブルタップで証明書検索フォームを開きます",
     "submission_page_hint": "ダブルタップで申し込みページをブラウザで開きます",
     "toggle_reasoning_a11y": "評価の根拠を表示／非表示",
-    "standards_title": "グレーディング基準"
+    "standards_title": "グレーディング基準",
+    "cert_number_hint": "グレーディング証明書またはスラブのラベルに印字された番号を入力してください。"
   },
   "auth": {
     "sign_in": "サインイン",
@@ -384,7 +449,8 @@
     "a11y_update_password": "パスワードを更新",
     "update_password": "パスワードを更新",
     "a11y_back_to_sign_in": "ログインに戻る",
-    "back_to_sign_in": "ログインに戻る"
+    "back_to_sign_in": "ログインに戻る",
+    "set_new_password": "新しいパスワードを設定"
   },
   "nav": {
     "portfolio": "ポートフォリオ",
@@ -463,7 +529,10 @@
     "dismiss_suggestion_a11y": "この提案を閉じる",
     "your_categories": "あなたのカテゴリー",
     "new_to_this": "はじめてですか？ここから始めましょう",
-    "no_target": "目標価格なし"
+    "no_target": "目標価格なし",
+    "chart_load_failed": "グラフを読み込めませんでした。",
+    "no_history_hint": "まだ履歴がありません。アイテムを追加するとポートフォリオの推移が表示されます。",
+    "value_breakdown_hint": "コレクションにアイテムを追加すると、カテゴリー別の価値の内訳が表示されます。"
   },
   "items": {
     "title": "アイテム",
@@ -560,7 +629,13 @@
     "discard_item_a11y": "このアイテムを破棄",
     "save_and_next_a11y": "アイテムを保存して次をスキャン",
     "process_all_a11y": "検出したアイテムをすべて処理",
-    "done_go_back_a11y": "完了して戻る"
+    "done_go_back_a11y": "完了して戻る",
+    "save_and_next_button": "保存して次へ",
+    "batch_complete": "一括スキャン完了",
+    "total_estimated_value": "推定価値の合計",
+    "nothing_saved": "このセッションでは何も保存されませんでした。",
+    "one_by_one": "1つずつ",
+    "all_at_once": "まとめて"
   },
   "settings": {
     "title": "設定",
@@ -616,7 +691,8 @@
     "a11y_change_collecting_experience": "収集歴を変更",
     "collecting_experience": "収集歴",
     "collecting_experience_question": "収集歴はどのくらいですか？",
-    "loading": "設定を読み込み中..."
+    "loading": "設定を読み込み中...",
+    "payment_handle_explainer": "購入者が支払いに使えるアカウント名を追加すると、Sparrow が合意した金額を入力した状態で相手のアプリを開きます。表示されるのは、あなたが承諾した取引の購入者だけです。Sparrow が金銭を扱うことはありません。"
   },
   "sponsor_profile": {
     "company_name": "会社名",
@@ -677,7 +753,16 @@
     "build_and_paint_projects": "制作＆塗装プロジェクト",
     "start_build_project": "制作プロジェクトを開始",
     "start_new_build": "新しい制作を開始",
-    "linked_item": "リンクされたアイテム"
+    "linked_item": "リンクされたアイテム",
+    "empty_hint": "＋ボタンをタップして最初の制作・塗装プロジェクトを作成しましょう",
+    "none_in_category": "このカテゴリーにはまだ制作プロジェクトがありません。",
+    "select_category_placeholder": "カテゴリーを選択...",
+    "link_to_item": "アイテムにリンク（任意）",
+    "no_portfolio_items": "このカテゴリーにポートフォリオのアイテムがありません",
+    "template_steps_note": "テンプレートの手順は作成後に追加されます",
+    "no_paint_recipes": "塗料レシピはまだありません。塗料リストとテクニックのメモを追加しましょう。",
+    "add_paint": "塗料を追加",
+    "track_paints_subtitle": "塗料・ブランド・テクニックを記録"
   },
   "watchlist": {
     "add_title": "ウォッチリストに追加",
@@ -711,7 +796,8 @@
     "attendees_only_hint": "イベントで「参加」または「興味あり」を選ぶと、主催者の投稿を見られます。",
     "attendees_only_cta": "イベントに戻る",
     "compose_a11y": "お知らせを作成",
-    "empty": "お知らせはまだありません"
+    "empty": "お知らせはまだありません",
+    "sent_as_dm": "参加者全員にDMで送信されます"
   },
   "project_header": {
     "mark_complete_a11y": "プロジェクトを完了にする",
@@ -753,7 +839,9 @@
     "submit_a11y": "販売価格を送信",
     "cancel_a11y": "販売価格の入力をキャンセル",
     "report_a11y": "販売価格を報告",
-    "price_off_a11y": "価格が不自然だと報告"
+    "price_off_a11y": "価格が不自然だと報告",
+    "sold_becomes_comp": "売れましたか？ その価格が参考価格になります",
+    "member_sale_note": "ここにある多くのアイテムでは、メンバー間の販売が唯一の実売価格です。あなたの価格を追加すると、このアイテムの価格になります — あなたにも、同じものを持つ全員にも。"
   },
   "marketplace_filter": {
     "close_a11y": "フィルターを閉じる",
@@ -784,7 +872,8 @@
     "retry_a11y": "レポートを再読み込み",
     "estimated_value": "推定価値",
     "export_pdf_a11y": "レポートをPDFで書き出す",
-    "export_report": "レポートを書き出す"
+    "export_report": "レポートを書き出す",
+    "report_load_failed": "レポートを読み込めませんでした。接続を確認して、もう一度お試しください。"
   },
   "alert_settings": {
     "section_a11y": "アラート設定セクション",
@@ -792,7 +881,9 @@
     "drop_threshold": "値下がりのしきい値",
     "price_increases": "値上がり",
     "increase_threshold": "値上がりのしきい値",
-    "new_listings": "新着出品"
+    "new_listings": "新着出品",
+    "alert_types": "アラートの種類",
+    "notification_frequency": "通知の頻度"
   },
   "marketplace_connections": {
     "section_title": "マーケットプレイスのアカウント",
@@ -803,7 +894,10 @@
     "connect_failed_body": "もう一度お試しください。繰り返し失敗する場合はインターネット接続をご確認ください。",
     "connect_title": "マーケットプレイスを連携",
     "seller_name_optional": "出品者名（任意）",
-    "seller_name_placeholder": "出品者のユーザー名"
+    "seller_name_placeholder": "出品者のユーザー名",
+    "set_up_defaults": "既定値を設定",
+    "edit_defaults": "既定値を編集",
+    "none_connected": "まだマーケットプレイスが連携されていません。サインインすると、Sparrow が eBay への出品をお手伝いします。"
   },
   "add_manual_basic": {
     "title": "基本情報",
@@ -811,7 +905,8 @@
     "custom_category_label": "カスタムカテゴリー名",
     "custom_category_a11y": "カスタムカテゴリー名",
     "set_series": "セット／シリーズ",
-    "set_series_a11y": "セットまたはシリーズ"
+    "set_series_a11y": "セットまたはシリーズ",
+    "custom_category_note": "カスタムカテゴリーはAI価格の対象外です — 価値はご自身で設定します"
   },
   "wishlist_edit_target": {
     "title": "目標価格を設定",
@@ -831,7 +926,11 @@
     "renews_on": "{{date}}に更新されます",
     "access_until": "{{date}}までProをご利用いただけます",
     "retry_plans_a11y": "プランの読み込みをもう一度試す",
-    "restore_purchases_a11y": "以前の購入を復元"
+    "restore_purchases_a11y": "以前の購入を復元",
+    "in_beta": "Sparrow ベータに参加中です",
+    "plans_load_failed": "プランを読み込めませんでした",
+    "restore_purchases": "購入を復元",
+    "beta_pricing_note": "テスト期間中はすべての Pro 機能を無料で利用できます。価格はベータ終了後に決まります — 変更前にお知らせします。"
   },
   "mfa": {
     "title": "二要素認証",
@@ -843,7 +942,11 @@
     "enable_2fa": "二要素認証を有効化",
     "load_failed": "二要素認証の状態を確認できませんでした",
     "qr_code_a11y": "認証アプリ用のQRコード",
-    "totp_code_a11y": "TOTP確認コード"
+    "totp_code_a11y": "TOTP確認コード",
+    "intro": "TOTP認証アプリでアカウントのセキュリティを強化します。",
+    "scan_instruction": "認証アプリ（Google Authenticator、Authy など）を開いて、このコードをスキャンしてください:",
+    "protected": "アカウントは二要素認証で保護されています。",
+    "enable_prompt": "認証アプリで二要素認証を有効にして、アカウントを保護しましょう。"
   },
   "event_detail": {
     "not_found": "イベントが見つかりません",
@@ -852,7 +955,8 @@
     "promote_subtitle": "スポンサー枠でより多くのコレクターに届けます",
     "load_failed": "このイベントを読み込めませんでした",
     "cancelled": "このイベントは中止されました",
-    "was_interested": "興味ありだった"
+    "was_interested": "興味ありだった",
+    "not_found_body": "このイベントはまだ存在しません。イベントタブからもう一度開いてみてください。"
   },
   "user_profile": {
     "blocked_user": "このユーザーをブロックしています",
@@ -866,7 +970,10 @@
     "not_found_hint": "このプロフィールは存在しないか、公開されていません。",
     "loading": "プロフィールを読み込み中...",
     "active_challenges": "進行中のチャレンジ",
-    "not_ranked": "ランク外"
+    "not_ranked": "ランク外",
+    "what_others_see": "これは他のコレクターに表示される内容です。",
+    "categories_load_failed": "現在カテゴリーを読み込めませんでした。",
+    "allow_discovery_hint": "設定 → プライバシー で「発見を許可」をオンにすると、カテゴリーのランキングに掲載されます。"
   },
   "items_detail": {
     "thin_cat_help": "このカテゴリーはデータが不足しています。購入価格を下に入力すると推定精度が上がります。",
@@ -920,7 +1027,9 @@
     "blocked_load_failed": "ブロックしたユーザーを読み込めませんでした",
     "blocked_load_failed_hint": "ブロックは解除されていません。リストに接続できなかっただけです。",
     "blocked_empty": "ブロックしたユーザーはいません",
-    "blocked_empty_hint": "まだ誰もブロックしていません。ブロックしたユーザーはあなたにメッセージを送れません。"
+    "blocked_empty_hint": "まだ誰もブロックしていません。ブロックしたユーザーはあなたにメッセージを送れません。",
+    "export_description": "30項目の詳細なスナップショット — すべてのアイテムのあらゆる情報を、あなたの通貨で。保険、税務、コレクション記録の保管に。",
+    "delete_warning": "アカウントとすべてのデータが完全に削除されます。この操作は取り消せません。"
   },
   "billing": {
     "free": "無料",
@@ -943,7 +1052,9 @@
     "subtitle": "アイテムから自動検出",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
     "no_sets": "進行中のセットはまだありません",
-    "est_value": "推定価値"
+    "est_value": "推定価値",
+    "sets_to_complete": "完成させたいセット",
+    "close_to_complete": "100%に近いコレクション。完成に最も近い順に並んでいます。"
   },
   "ads": {
     "sponsored": "スポンサー",
@@ -970,7 +1081,9 @@
   },
   "notifications": {
     "mark_all_read": "すべて既読にする",
-    "load_failed": "通知を読み込めませんでした"
+    "load_failed": "通知を読み込めませんでした",
+    "empty": "通知はまだありません",
+    "empty_hint": "ここに価格アラートやお得情報などが表示されます。"
   },
   "diagnostics": {
     "title": "診断",
@@ -1048,7 +1161,12 @@
     "postage_hint": "発送にいくらかかりましたか？こちらでは確認できないため、入力されるまで利益は送料を差し引く前の金額で表示されます。購入者には共有されません。",
     "postage_zero_ok": "手渡しの場合は 0 と入力してください。空欄ではなく、ひとつの答えです。",
     "decline_counter_a11y": "出品者のカウンターオファーを断る",
-    "view_offers_a11y": "オファーを見る"
+    "view_offers_a11y": "オファーを見る",
+    "tap_to_manage": "タップしてこの取引を管理",
+    "carrier_load_failed": "配送業者の一覧を読み込めませんでした。",
+    "save_tracking": "追跡番号を保存",
+    "tracking_explainer": "購入者が荷物を追跡するために表示されます。Sparrow は内容を確認せず、取引も完了しません — 双方が手動で確認する必要があります。",
+    "postcode_carrier_note": "この配送業者は追跡ページを開くのに配送先の郵便番号が必要ですが、Sparrow は保持していません。購入者にはリンクではなく検索用のコードが表示されます。"
   },
   "item_attrs": {
     "case_size": "ケースサイズ",
@@ -1068,7 +1186,10 @@
     "a11y_lookup_cgc": "CGC証明書を検索",
     "a11y_browse_discogs": "Discogsで見る",
     "a11y_visit_warhammer": "Warhammer Communityを開く",
-    "chase_treasure_hunt": "チェイス / トレジャーハント"
+    "chase_treasure_hunt": "チェイス / トレジャーハント",
+    "size_affects_value": "サイズは市場価値に影響します — サイズによって価格が変わります",
+    "build_instructions": "組み立て説明書",
+    "vaulted_note": "この Pop! は生産終了しています。ヴォルト入りのアイテムは価値が上がることが多いです。"
   },
   "create_event": {
     "from_template": "テンプレートから",
@@ -1087,7 +1208,11 @@
     "a11y_create_event": "イベントを作成",
     "create_event": "イベントを作成",
     "invite_friends": "友達を招待",
-    "clear_end_date_a11y": "終了日をクリア"
+    "clear_end_date_a11y": "終了日をクリア",
+    "sponsored_note": "このイベントはスポンサー付きとして表示され、コレクターに強調表示されます。",
+    "invite_after_create": "イベントを作成した後に友達を招待できます。",
+    "invite_via_chat": "チャットで友達を招待",
+    "available_after_creation": "イベント作成後に利用できます"
   },
   "listings": {
     "catalog_photo": "カタログ写真",
@@ -1117,7 +1242,25 @@
     "create_title": "出品を作成",
     "item_title_placeholder": "アイテムのタイトル",
     "est_net": "推定手取り",
-    "create_as_draft": "下書きとして作成"
+    "create_as_draft": "下書きとして作成",
+    "catalog_photo_note": "カタログ写真 — 出品者の現物ではありません",
+    "message_seller": "出品者にメッセージ",
+    "raise_price_note": "値上げしても誰にも通知されません。",
+    "save_price": "価格を保存",
+    "clear_filters": "フィルターを解除",
+    "choose_item_to_sell": "販売するアイテムを選択",
+    "loading_more": "さらに読み込み中…",
+    "select_where_to_list": "このアイテムを出品する場所を選択",
+    "you_receive": "受取額",
+    "listing_format": "出品形式",
+    "fee_comparison": "手数料の比較",
+    "filtered_by": "絞り込み:",
+    "no_catalogue_alert": "この出品はこのアイテムを待っているメンバーに通知されません — カタログに紐づいていないためです。閲覧と検索には表示されます。",
+    "match_then_relist": "コレクション内のアイテムをカタログに紐づけてから再出品すると、ウォッチしている全員に目標価格の通知が届きます。",
+    "no_payment_handling": "Sparrow は支払いや配送を扱いません。出品者と直接やり取りする必要があり、購入者保護はありません。",
+    "unmatched_price_note": "この出品はカタログに紐づいていないため、ウォッチ中の人に通知できません。新しい価格はマーケットに表示されます。",
+    "marketplace_intro": "ここにあるものはすべて、あなたのようなコレクターが出品しています。出品者にメッセージを送って価格を決めてください — Sparrow は支払いや配送を扱いません。自分のアイテムを出品すると、ウォッチしているメンバーに通知が届きます。",
+    "arrange_between_yourselves": "支払いと配送は購入者と出品者の間で取り決めます。Sparrow は支払いを扱わず、購入者保護もありません。"
   },
   "chat": {
     "collector_not_found": "コレクターが見つかりません",
@@ -1140,7 +1283,8 @@
     "demo_send_message_a11y": "テストメッセージを送信",
     "demo_peer_name": "テストコレクター",
     "demo_placeholder_note": "サンプル · 保存されません",
-    "compose_hint": "メッセージを入力して送信を押してください"
+    "compose_hint": "メッセージを入力して送信を押してください",
+    "invite_inbox_note": "相手の受信トレイに表示され、承認または辞退できます。"
   },
   "sell": {
     "sell_an_item": "アイテムを売る",
@@ -1165,7 +1309,19 @@
     "publish_defaults": "公開時の既定値",
     "find_this": "これを探す →",
     "save_defaults": "既定値を保存",
-    "coming_soon_title": "販売機能は近日公開"
+    "coming_soon_title": "販売機能は近日公開",
+    "item_photo_note": "アイテムの写真です。自分で追加しない限り、出品にこれが使われます。",
+    "add_real_photos": "実物の写真を追加してください",
+    "checking_catalogue": "カタログを確認中…",
+    "list_it": "出品する",
+    "pick_intro": "販売したいものを選んでください。次に価格を設定します。",
+    "sell_something_else": "別のものを売る",
+    "confirm_your_age": "年齢を確認してください",
+    "not_in_collection": "コレクションに入っていない所有物のためのものです。こちらで追加します — 販売のためにコレクションを作る必要はありません。",
+    "cover_photo_reference": "あなたのカバー写真をこの商品の参考画像として Sparrow が使うことを許可します。他のメンバーにも表示されます。任意で、後からオフにできます。",
+    "no_catalogue_match": "そのタイトルはカタログに一致しません。閲覧と検索には表示されます — 正確な商品名を試すと、待っているメンバーにも届きます。",
+    "arrange_with_buyer": "Sparrow は支払いや配送を扱いません — 購入者と直接やり取りしてください。",
+    "age_gate_explainer": "アイテムの販売、マーケットプレイスへの出品、出品者アカウントの連携を行うには、お住まいの地域で法定年齢（18歳または現地の成年年齢）に達していることをご確認ください。"
   },
   "purchase": {
     "invalid_deal_link": "無効な取引リンク",
@@ -1198,7 +1354,14 @@
     "mandate_any_region": "すべての地域",
     "mandate_a11y_pause": "検索を一時停止",
     "mandate_pause_search": "検索を一時停止",
-    "got_it_a11y": "受け取りました"
+    "got_it_a11y": "受け取りました",
+    "quality_filter_hint": "高いほど、出品者・出品の品質フィルターが厳しくなります。",
+    "leave_unchecked_hint": "すべて未選択のままにすると、全マーケットを検索します。",
+    "price_position": "予測レンジ内での出品価格の位置",
+    "watch_note": "マーケットを監視し、設定価格に達したらお知らせします。",
+    "deal_discovery_pitch": "お得情報の発見は Sparrow Pro の機能です。アップグレードすると Sparrow が代わりに探します。",
+    "add_item_and_max": "アイテムと上限価格を追加してください。",
+    "link_item_explainer": "検索を既知のアイテムに紐づけると、お得だった金額を表示できます。指定しなくても検索は実行されます。"
   },
   "edit_event": {
     "loading_event": "イベントを読み込み中...",
@@ -1209,7 +1372,8 @@
     "save_changes": "変更を保存",
     "danger_zone": "危険な操作",
     "a11y_cancel_event": "イベントを中止",
-    "cancel_event": "イベントを中止"
+    "cancel_event": "イベントを中止",
+    "cancel_warning": "このイベントの中止は取り消せません。参加者全員に通知されます。"
   },
   "catalog": {
     "image_coming_soon": "画像は近日公開",
@@ -1235,7 +1399,12 @@
     "a11y_back_to_set": "セットに戻る",
     "price_load_failed": "市場価値を読み込めませんでした。",
     "a11y_retry_price": "市場価値をもう一度読み込む",
-    "items_load_failed": "これらのアイテムを読み込めませんでした"
+    "items_load_failed": "これらのアイテムを読み込めませんでした",
+    "unrecognized_item": "このアイテムはまだ認識できません",
+    "help_us_improve": "これが何かを教えて、Sparrow Collect の改善にご協力ください。",
+    "suggest_new_category": "または新しいカテゴリーを提案",
+    "suggestions_explainer": "認識できないアイテムをスキャンまたは追加すると、ここに表示され状況を追跡できます。",
+    "no_categories_match": "「{{query}}」に一致するカテゴリーはありません"
   },
   "inbox": {
     "sent_requests": "送信したリクエスト",
@@ -1278,7 +1447,10 @@
     "item_history": "アイテムの履歴",
     "sell_timing": "売り時",
     "notes_placeholder": "状態、来歴、購入場所などのメモを追加してください。",
-    "shop_this_item": "このアイテムを探す"
+    "shop_this_item": "このアイテムを探す",
+    "no_items_to_display": "表示するアイテムがありません",
+    "add_your_photo": "自分の写真を追加",
+    "no_confirmed_sales": "このアイテムの確定した販売実績はまだありません。ご自身にとっての価値を入力するか、詳細を記入して照合できるようにしてください。"
   },
   "tax": {
     "title": "売上と税務レポート",
@@ -1287,7 +1459,13 @@
     "where_the_line_is": "基準はどこか",
     "what_that_means": "あなたにとっての意味",
     "a11y_read_section_6": "マーケットプレイス規約の第6条を読む",
-    "earlier_years": "過去の年"
+    "earlier_years": "過去の年",
+    "no_sales_counted": "完了した販売はまだ集計されていません",
+    "your_position": "税務上の取り扱いはご自身の責任で行ってください。",
+    "marketplace_terms_section": "マーケットプレイス規約 第6条",
+    "unreachable_note": "これはあなたの状況を示すものではありません — サーバーに接続できなかっただけです。下の基準は引き続き適用されます。",
+    "counting_starts": "集計は取引が完了した時点から始まります — あなたと購入者の双方が交換を確認します。オファーが未成立の間は集計されません。",
+    "counted_per_year": "報告期間が暦年であり、基準額がユーロ建てのため、暦年ごとにユーロで集計します。これは税務アドバイスではありません。"
   },
   "announce": {
     "title_optional": "タイトル（任意）",
@@ -1296,7 +1474,8 @@
     "a11y_body": "お知らせ本文",
     "image_url_optional": "画像URL（任意）",
     "a11y_send": "お知らせを送信",
-    "send_announcement": "お知らせを送信"
+    "send_announcement": "お知らせを送信",
+    "sent_to_all_attendees": "このイベントの参加者全員に送信されます。"
   },
   "sponsor": {
     "tiers": "スポンサーシップの階層",
@@ -1331,7 +1510,11 @@
     "select_tier": "スポンサーティアを選択",
     "select_tier_sub": "イベントの表示レベルを選択してください",
     "per_event": "1イベントあたり",
-    "select_event": "通知するイベントを選択"
+    "select_event": "通知するイベントを選択",
+    "title": "Sparrow Collect でスポンサーになる",
+    "pitch": "熱心なコレクターにリーチし、限定ドロップを告知し、あなたの作るものを愛するコミュニティとブランドを育てましょう。",
+    "registration_free": "登録は無料です。最初のイベント作成時にプランを選びます。",
+    "notify_attendees_hint": "参加者に更新、スケジュール変更、限定オファーをお知らせします。"
   },
   "share": {
     "send_to": "送信先",
@@ -1339,14 +1522,17 @@
     "chats_load_failed": "チャットを読み込めませんでした。",
     "a11y_retry_chats": "チャットを再読み込み",
     "outside_sparrow": "Sparrow の外部",
-    "a11y_share_elsewhere": "別の場所で共有"
+    "a11y_share_elsewhere": "別の場所で共有",
+    "no_chats_yet": "まだチャットがありません。まず相手のプロフィールか出品からメッセージを送ると、アイテムを直接送れるようになります。"
   },
   "settle": {
     "agreed_amount": "合意金額",
     "deliver_to": "配送先",
     "delivery_address": "配送先住所",
     "a11y_save_address": "配送先住所を保存",
-    "list_load_failed": "そのリストを読み込めませんでした。"
+    "list_load_failed": "そのリストを読み込めませんでした。",
+    "no_address_yet": "購入者はまだ配送先住所を登録していません。チャットで確認してください — 手配の前に必要です。",
+    "address_shared_note": "この取引のため、この出品者にのみ共有されます。Sparrow は配送の手配も保険も行いません。"
   },
   "category": {
     "a11y_see_all_yours": "このカテゴリーのあなたのアイテムをすべて見る",
@@ -1384,7 +1570,14 @@
     "series_progress": "シリーズの進捗",
     "featured_in_catalog": "カタログの注目アイテム",
     "related_categories": "関連カテゴリー",
-    "complete_your_sets": "セットを完成させよう"
+    "complete_your_sets": "セットを完成させよう",
+    "not_found_body": "このカテゴリーは存在しないか、読み込めませんでした。",
+    "guide_subtitle": "用語、注意点、避けるべきこと、そして始め方。",
+    "sets_missing_subtitle": "すでに集め始めたセットで、まだ足りないもの。",
+    "no_collectors_found": "コレクターが見つかりません",
+    "find_friends": "友達を探す",
+    "guidance_disclaimer": "一般的な目安であり、査定ではありません。価格は変動し、状態は買い手が判断します。",
+    "items_in": "{{category}} のアイテム"
   },
   "analytics": {
     "a11y_retry": "分析データを再読み込み",
@@ -1401,7 +1594,10 @@
     "advanced_title": "高度な分析",
     "category_performance": "カテゴリー別パフォーマンス",
     "prediction_accuracy": "予測の精度",
-    "actuals_vs_predicted": "実績と予測の比較"
+    "actuals_vs_predicted": "実績と予測の比較",
+    "preview_notice": "プレビュー — これはサンプルの数値です。ポートフォリオにアイテムを追加すると実際の分析が表示されます。",
+    "view_all": "すべて見る",
+    "no_earlier_value": "比較できる過去の価値がまだありません — 所有品はすべてこの期間内に追加されています。"
   },
   "guide": {
     "no_guide_yet": "このカテゴリーのガイドはまだありません",
@@ -1412,7 +1608,10 @@
     "not_found_title": "この項目のヘルプページはまだありません",
     "need_help": "お困りですか？",
     "using_sparrow": "Sparrowの使い方",
-    "how_scores_work": "スコアの仕組み"
+    "how_scores_work": "スコアの仕組み",
+    "what_counts": "対象になるもの:",
+    "faq_intro": "よくある最初の質問への短い回答です。やりたいことを検索バーに入力しても構いません。",
+    "scores_update_note": "スコアはコレクションのアイテムを追加・削除・更新すると再計算されます。カタログデータと市場の参照情報に基づいて算出されます。"
   },
   "price_explanation": {
     "title": "価格の説明",
@@ -1421,7 +1620,9 @@
     "key_factors": "主な要因",
     "data_sources": "データソース",
     "why_estimated_a11y": "この価格が推定である理由を見る",
-    "why_estimated_hint": "この価格の算出方法の説明を開きます"
+    "why_estimated_hint": "この価格の算出方法の説明を開きます",
+    "one_sale_only": "販売1件 — レンジを出すにはまだ不足です",
+    "why_this_price": "この価格の理由は？"
   },
   "calendar": {
     "a11y_grid": "カレンダーグリッド",
@@ -1433,6 +1634,9 @@
     "category_only_title": "ランキングはカテゴリごとです",
     "category_only_body": "コレクションからカテゴリを開くと、所有数または資産価値での順位を確認できます。",
     "view_profile_hint": "ダブルタップでコレクターのプロフィールを表示します",
-    "top_collectors": "トップコレクター"
+    "top_collectors": "トップコレクター",
+    "discoverable_note": "公開を選んだコレクターを、このカテゴリーの所有内容で順位付けしています。",
+    "load_failed": "ランキングを読み込めませんでした。下に引いて再試行してください。",
+    "empty": "まだランキングに誰もいません。"
   }
 }

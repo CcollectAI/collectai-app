@@ -589,7 +589,7 @@ function UserProfileScreen() {
                  "Message" button and reasonably reads it as broken. */}
           {isSelf ? (
             <Text style={[styles.selfNote, { color: colors.muted }]}>
-              This is what other collectors see.
+              {t('user_profile.what_others_see', { defaultValue: 'This is what other collectors see.' })}
             </Text>
           ) : null}
 

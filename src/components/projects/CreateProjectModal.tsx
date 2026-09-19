@@ -190,7 +190,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
                   </View>
                 ) : (
                   <Text style={[styles.pickerPlaceholder, { color: colors.muted }]}>
-                    Select a category...
+                    {t('projects.select_category_placeholder', { defaultValue: 'Select a category...' })}
                   </Text>
                 )}
                 <Ionicons name="chevron-down" size={18} color={colors.muted} />
@@ -200,7 +200,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
               {selectedCategoryId && (
                 <>
                   <Text style={[styles.inputLabel, { color: colors.text, marginTop: 16 }]}>
-                    Link to Item (optional)
+                    {t('projects.link_to_item', { defaultValue: 'Link to Item (optional)' })}
                   </Text>
                   {loadingItems ? (
                     <ActivityIndicator size="small" color={colors.accent} style={{ marginVertical: 8 }} />
@@ -251,7 +251,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
                     </AnimatedPressable>
                   ) : (
                     <Text style={[styles.noItemsText, { color: colors.muted }]}>
-                      No portfolio items in this category
+                      {t('projects.no_portfolio_items', { defaultValue: 'No portfolio items in this category' })}
                     </Text>
                   )}
                 </>
@@ -285,7 +285,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
                         {selectedTemplate.steps.length} steps for {selectedTemplate.displayName}
                       </Text>
                       <Text style={[styles.templateHint, { color: colors.muted }]}>
-                        Template steps will be added after creation
+                        {t('projects.template_steps_note', { defaultValue: 'Template steps will be added after creation' })}
                       </Text>
                     </View>
                     <Ionicons

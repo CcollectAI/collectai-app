@@ -158,10 +158,10 @@ const SponsorRegisterScreen: React.FC = () => {
                 <Ionicons name="megaphone" size={36} color={colors.accent} />
               </View>
               <Text style={[styles.heroTitle, { color: colors.text }]}>
-                Sponsor on Sparrow Collect
+                {t('sponsor.title', { defaultValue: 'Sponsor on Sparrow Collect' })}
               </Text>
               <Text style={[styles.heroSubtitle, { color: colors.muted }]}>
-                Reach passionate collectors, announce exclusive drops, and grow your brand with the community that loves what you make.
+                {t('sponsor.pitch', { defaultValue: 'Reach passionate collectors, announce exclusive drops, and grow your brand with the community that loves what you make.' })}
               </Text>
             </View>
 
@@ -372,7 +372,7 @@ const SponsorRegisterScreen: React.FC = () => {
             </AnimatedPressable>
 
             <Text style={[styles.finePrint, { color: colors.muted }]}>
-              Registration is free. You'll choose a tier when creating your first event.
+              {t('sponsor.registration_free', { defaultValue: "Registration is free. You'll choose a tier when creating your first event." })}
             </Text>
 
             <View style={{ height: 32 }} />

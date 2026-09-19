@@ -87,7 +87,7 @@ const BuildProjectsSection: React.FC<Props> = ({
         </>
       ) : (
         <Text style={[styles.emptyText, { color: colors.muted }]}>
-          No build projects in this category yet.
+          {t('projects.none_in_category', { defaultValue: 'No build projects in this category yet.' })}
         </Text>
       )}
       <AnimatedPressable

@@ -502,7 +502,7 @@ function ListingDetailScreen() {
               {listing.image_is_catalog ? (
                 <View style={[styles.stockTag, { backgroundColor: colors.background + "E6" }]}>
                   <Text style={[styles.stockTagText, { color: colors.muted }]}>
-                    Catalog photo — not the seller&apos;s item
+                    {t('listings.catalog_photo_note', { defaultValue: "Catalog photo — not the seller's item" })}
                   </Text>
                 </View>
               ) : null}
@@ -550,7 +550,7 @@ function ListingDetailScreen() {
                   ]}
                 >
                   <Text style={[styles.stockTagText, { color: colors.muted }]}>
-                    Catalog photo — not the seller&apos;s item
+                    {t('listings.catalog_photo_note', { defaultValue: "Catalog photo — not the seller's item" })}
                   </Text>
                 </View>
               ) : null}
@@ -688,9 +688,7 @@ function ListingDetailScreen() {
               />
               <View style={{ flex: 1 }}>
                 <Text style={[styles.noticeText, { color: colors.muted }]}>
-                  This listing won&apos;t alert members watching for this item —
-                  it isn&apos;t matched to a catalogue entry. It still shows in
-                  browse and search.
+                  {t('listings.no_catalogue_alert', { defaultValue: "This listing won't alert members watching for this item — it isn't matched to a catalogue entry. It still shows in browse and search." })}
                 </Text>
                 <Text
                   style={[
@@ -698,8 +696,7 @@ function ListingDetailScreen() {
                     { color: colors.muted, marginTop: 4 },
                   ]}
                 >
-                  Match the item in your collection to a catalogue entry, then
-                  relist, and everyone watching it gets a Target Hit.
+                  {t('listings.match_then_relist', { defaultValue: 'Match the item in your collection to a catalogue entry, then relist, and everyone watching it gets a Target Hit.' })}
                 </Text>
               </View>
             </View>
@@ -904,7 +901,7 @@ function ListingDetailScreen() {
                   color={colors.accentText}
                 />
                 <Text style={[styles.primaryBtnText, { color: colors.text }]}>
-                  Message seller
+                  {t('listings.message_seller', { defaultValue: 'Message seller' })}
                 </Text>
               </AnimatedPressable>
             </>
@@ -950,9 +947,7 @@ function ListingDetailScreen() {
             />
             <View style={{ flex: 1 }}>
               <Text style={[styles.noticeText, { color: colors.muted }]}>
-                Sparrow doesn&apos;t handle payment or delivery. You arrange
-                those directly with the seller, and there is no buyer
-                protection.
+                {t('listings.no_payment_handling', { defaultValue: "Sparrow doesn't handle payment or delivery. You arrange those directly with the seller, and there is no buyer protection." })}
               </Text>
               <AnimatedPressable
                 onPress={() => router.push("/legal/marketplace-terms" as Href)}
@@ -1030,14 +1025,12 @@ function ListingDetailScreen() {
               // row exists and no alert can fire. Promising one here would be
               // the silent-dead-feature pattern with a confident label on top.
               <Text style={[styles.sheetNote, { color: colors.muted }]}>
-                This listing isn&apos;t matched to a catalogue item, so it
-                can&apos;t alert watchers. The new price still shows in the
-                marketplace.
+                {t('listings.unmatched_price_note', { defaultValue: "This listing isn't matched to a catalogue item, so it can't alert watchers. The new price still shows in the marketplace." })}
               </Text>
             )
           ) : parsedNewPrice !== null && parsedNewPrice > listing.price ? (
             <Text style={[styles.sheetNote, { color: colors.muted }]}>
-              Raising the price won&apos;t notify anyone.
+              {t('listings.raise_price_note', { defaultValue: "Raising the price won't notify anyone." })}
             </Text>
           ) : null}
 
@@ -1067,7 +1060,7 @@ function ListingDetailScreen() {
                   { color: priceChanged ? colors.accentText : colors.muted },
                 ]}
               >
-                Save price
+                {t('listings.save_price', { defaultValue: 'Save price' })}
               </Text>
             )}
           </AnimatedPressable>

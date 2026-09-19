@@ -787,9 +787,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
               </AnimatedPressable>
             </View>
             <Text style={[styles.introBody, { color: colors.muted }]}>
-              Everything here is listed by collectors like you. Message a seller to
-              agree a price — Sparrow doesn&apos;t handle payment or delivery. List
-              your own items and members watching them get alerted.
+              {t('listings.marketplace_intro', { defaultValue: "Everything here is listed by collectors like you. Message a seller to agree a price — Sparrow doesn't handle payment or delivery. List your own items and members watching them get alerted." })}
             </Text>
           </View>
         ) : null}
@@ -1092,7 +1090,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
                   accessibilityLabel={t('listings.a11y_clear_filters_search', { defaultValue: 'Clear all filters and search' })}
                 >
                   <Text style={[styles.ctaText, { color: colors.accentText }]}>
-                    Clear filters
+                    {t('listings.clear_filters', { defaultValue: 'Clear filters' })}
                   </Text>
                 </AnimatedPressable>
               ) : (
@@ -1103,7 +1101,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
                   accessibilityLabel={t('listings.a11y_choose_item_to_sell', { defaultValue: 'Choose an item from your collection to sell' })}
                 >
                   <Text style={[styles.ctaText, { color: colors.accentText }]}>
-                    Choose an item to sell
+                    {t('listings.choose_item_to_sell', { defaultValue: 'Choose an item to sell' })}
                   </Text>
                 </AnimatedPressable>
               )}
@@ -1138,7 +1136,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
                   <View style={styles.footerLoading}>
                     <ActivityIndicator size="small" color={colors.accent} />
                     <Text style={[styles.footerNote, { color: colors.muted }]}>
-                      Loading more…
+                      {t('listings.loading_more', { defaultValue: 'Loading more…' })}
                     </Text>
                   </View>
                 ) : !hasMore ? (
@@ -1149,8 +1147,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
                   </Text>
                 ) : null}
                 <Text style={[styles.footerNote, { color: colors.muted }]}>
-                  Buyers and sellers arrange payment and delivery between themselves.
-                  Sparrow doesn&apos;t handle payment and there is no buyer protection.
+                  {t('listings.arrange_between_yourselves', { defaultValue: "Buyers and sellers arrange payment and delivery between themselves. Sparrow doesn't handle payment and there is no buyer protection." })}
                 </Text>
                 <AnimatedPressable
                   onPress={() => router.push('/legal/marketplace-terms' as Href)}

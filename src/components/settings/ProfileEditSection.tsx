@@ -473,7 +473,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
           <View style={styles.settingInfo}>
             <Text style={[styles.settingLabel, { color: colors.text }]}>{t('account.download_inventory', { defaultValue: 'Download full inventory (CSV)' })}</Text>
             <Text style={[styles.settingHint, { color: colors.muted }]}>
-              Comprehensive 30-column snapshot — every detail of every item, in your currency. For insurance, accountants, or full collection records.
+              {t('account.export_description', { defaultValue: 'Comprehensive 30-column snapshot — every detail of every item, in your currency. For insurance, accountants, or full collection records.' })}
             </Text>
           </View>
           {exportingFullInventory ? (
@@ -653,7 +653,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
           </View>
           <View style={{ padding: 16, gap: 16 }}>
             <Text style={[{ color: colors.text, fontSize: textToken.md, lineHeight: 22 }]}>
-              This will permanently delete your account and all your data. This action cannot be undone.
+              {t('account.delete_warning', { defaultValue: 'This will permanently delete your account and all your data. This action cannot be undone.' })}
             </Text>
             <Text style={[{ color: colors.muted, fontSize: textToken.sm }]}>
               Type <Text style={{ fontWeight: fw.semibold, color: colors.text }}>DELETE</Text> to confirm.

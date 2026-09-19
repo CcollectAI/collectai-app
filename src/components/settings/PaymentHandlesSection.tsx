@@ -137,9 +137,7 @@ export function PaymentHandlesSection() {
     <View style={styles.section}>
       <Text style={[styles.heading, { color: colors.text }]}>{t('settings.getting_paid', { defaultValue: 'Getting paid' })}</Text>
       <Text style={[styles.blurb, { color: colors.muted }]}>
-        Add the handle buyers can pay you on and Sparrow will open their app with
-        the agreed amount already filled in. Only the buyer of a trade you have
-        accepted ever sees it. Sparrow never handles the money.
+        {t('settings.payment_handle_explainer', { defaultValue: 'Add the handle buyers can pay you on and Sparrow will open their app with the agreed amount already filled in. Only the buyer of a trade you have accepted ever sees it. Sparrow never handles the money.' })}
       </Text>
 
       {collectable.map((r) => {

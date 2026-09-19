@@ -66,7 +66,7 @@ function BatchSummaryScreenInner({
       <View style={styles.summaryHeader}>
         <Ionicons name="checkmark-circle" size={56} color={TIFFANY} />
         <Text style={[styles.summaryTitle, { color: colors.text }]}>
-          Batch Scan Complete
+          {t('scan.batch_complete', { defaultValue: 'Batch Scan Complete' })}
         </Text>
         <Text style={[styles.summarySubtitle, { color: colors.muted }]}>
           You scanned {savedBatchCount} item{savedBatchCount !== 1 ? 's' : ''}
@@ -74,7 +74,7 @@ function BatchSummaryScreenInner({
         {savedBatchCount > 0 && (
           <View style={[styles.summaryValueBadge, { backgroundColor: TIFFANY + '18' }]}>
             <Text style={[styles.summaryValueLabel, { color: TIFFANY_DARK }]}>
-              Total estimated value
+              {t('scan.total_estimated_value', { defaultValue: 'Total estimated value' })}
             </Text>
             <Text style={[styles.summaryValueAmount, { color: TIFFANY_DARK }]}>
               {formatPrice(totalBatchValue, currency)}
@@ -110,7 +110,7 @@ function BatchSummaryScreenInner({
         ListEmptyComponent={
           <View style={styles.summaryEmpty}>
             <Text style={[styles.summaryEmptyText, { color: colors.muted }]}>
-              No items were saved during this session.
+              {t('scan.nothing_saved', { defaultValue: 'No items were saved during this session.' })}
             </Text>
           </View>
         }

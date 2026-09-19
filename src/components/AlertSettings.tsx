@@ -123,7 +123,7 @@ export function AlertSettings({ preferences, onUpdate }: AlertSettingsProps) {
       accessibilityLabel={t('alert_settings.section_a11y')}
     >
       <Text style={[styles.sectionTitle, { color: colors.text }]} accessibilityRole="header">
-        Alert Types
+        {t('alert_settings.alert_types', { defaultValue: 'Alert Types' })}
       </Text>
 
       <SettingRow
@@ -184,7 +184,7 @@ export function AlertSettings({ preferences, onUpdate }: AlertSettingsProps) {
 
       {/* Frequency */}
       <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 16 }]}>
-        Notification Frequency
+        {t('alert_settings.notification_frequency', { defaultValue: 'Notification Frequency' })}
       </Text>
 
       <View style={styles.frequencyOptions}>

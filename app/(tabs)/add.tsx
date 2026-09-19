@@ -231,8 +231,7 @@ return (
             </View>
             <Text style={[styles.quickScanTitle, { color: colors.text }]}>{t('add_tab.quickscan_ai')}</Text>
             <Text style={[styles.quickScanSubtitle, { color: colors.muted }]}>
-              Snap a photo and we prefill the details. You can override anything
-              before saving.
+              {t('add_tab.snap_prefill', { defaultValue: 'Snap a photo and we prefill the details. You can override anything before saving.' })}
             </Text>
             <View style={[styles.quickScanButton, { backgroundColor: colors.accent + '20' }]}>
               <Text style={[styles.quickScanButtonText, { color: colors.accent }]}>{t('add_tab.start_quickscan')}</Text>
@@ -257,7 +256,7 @@ return (
           <View style={styles.barcodeTextBlock}>
             <Text style={[styles.barcodeTitle, { color: colors.text }]}>{t('add_tab.scan_barcode')}</Text>
             <Text style={[styles.barcodeSubtitle, { color: colors.muted }]}>
-              Books, albums, boxed products with barcodes.
+              {t('add_tab.barcode_hint', { defaultValue: 'Books, albums, boxed products with barcodes.' })}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.muted} />
@@ -291,7 +290,7 @@ return (
           <View style={styles.manualTextBlock}>
             <Text style={[styles.manualTitle, { color: colors.text }]}>{t('add_tab.add_manually')}</Text>
             <Text style={[styles.manualSubtitle, { color: colors.muted }]}>
-              Enter card / figure details yourself if you prefer full control.
+              {t('add_tab.manual_hint', { defaultValue: 'Enter card / figure details yourself if you prefer full control.' })}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.muted} />

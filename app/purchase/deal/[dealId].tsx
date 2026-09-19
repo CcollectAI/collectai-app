@@ -290,7 +290,7 @@ function DealDetailScreen() {
               )}
             </View>
             <Text style={[styles.barLabel, { color: colors.muted }]}>
-              Listing price position within predicted range
+              {t('purchase.price_position', { defaultValue: 'Listing price position within predicted range' })}
             </Text>
           </View>
         )}

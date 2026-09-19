@@ -395,8 +395,7 @@ function SellNewScreen() {
               noise (removed 2026-08-09: "self explanatory"). */}
           {!fromCollection ? (
             <Text style={[styles.lede, { color: colors.muted }]}>
-              For something you own that isn&apos;t in your collection. We&apos;ll add
-              it for you — you don&apos;t have to build a collection to sell.
+              {t('sell.not_in_collection', { defaultValue: "For something you own that isn't in your collection. We'll add it for you — you don't have to build a collection to sell." })}
             </Text>
           ) : null}
 
@@ -447,7 +446,7 @@ function SellNewScreen() {
                 </AnimatedPressable>
               </View>
               <Text style={[styles.fine, { color: colors.muted }]}>
-                Your item&apos;s photo. The listing uses this unless you add your own.
+                {t('sell.item_photo_note', { defaultValue: "Your item's photo. The listing uses this unless you add your own." })}
               </Text>
             </View>
           ) : photoUris.length > 0 ? (
@@ -517,7 +516,7 @@ function SellNewScreen() {
             >
               <Ionicons name="camera-outline" size={22} color={colors.muted} />
               <Text style={[styles.photoEmptyText, { color: colors.muted }]}>
-                Add photos of the actual item
+                {t('sell.add_real_photos', { defaultValue: 'Add photos of the actual item' })}
               </Text>
             </AnimatedPressable>
           )}
@@ -541,9 +540,7 @@ function SellNewScreen() {
                 color={consent ? colors.accent : colors.muted}
               />
               <Text style={[styles.consentText, { color: colors.muted }]}>
-                Let Sparrow use your cover photo as a reference picture for this
-                product, shown to other members. Optional, and you can turn it
-                off later.
+                {t('sell.cover_photo_reference', { defaultValue: 'Let Sparrow use your cover photo as a reference picture for this product, shown to other members. Optional, and you can turn it off later.' })}
               </Text>
             </AnimatedPressable>
           ) : null}
@@ -639,7 +636,7 @@ function SellNewScreen() {
             <View style={[styles.notice, { borderColor: colors.border }]}>
               <ActivityIndicator size="small" color={colors.muted} />
               <Text style={[styles.noticeText, { color: colors.muted }]}>
-                Checking the catalogue…
+                {t('sell.checking_catalogue', { defaultValue: 'Checking the catalogue…' })}
               </Text>
             </View>
           ) : match ? (
@@ -670,9 +667,7 @@ function SellNewScreen() {
             <View style={[styles.notice, { borderColor: colors.border }]}>
               <Ionicons name="information-circle-outline" size={16} color={colors.muted} />
               <Text style={[styles.noticeText, { color: colors.muted }]}>
-                No catalogue match for that title. It will still show in browse and
-                search — try the exact product name to also reach members watching
-                for it.
+                {t('sell.no_catalogue_match', { defaultValue: 'No catalogue match for that title. It will still show in browse and search — try the exact product name to also reach members watching for it.' })}
               </Text>
             </View>
           ) : null}
@@ -696,14 +691,13 @@ function SellNewScreen() {
               <ActivityIndicator color={canList ? colors.accentText : colors.muted} />
             ) : (
               <Text style={[styles.ctaText, { color: canList ? colors.accentText : colors.muted }]}>
-                List it
+                {t('sell.list_it', { defaultValue: 'List it' })}
               </Text>
             )}
           </AnimatedPressable>
 
           <Text style={[styles.fine, { color: colors.muted }]}>
-            Sparrow doesn&apos;t handle payment or delivery — you arrange those with
-            the buyer directly.
+            {t('sell.arrange_with_buyer', { defaultValue: "Sparrow doesn't handle payment or delivery — you arrange those with the buyer directly." })}
           </Text>
           <View style={{ height: 40 }} />
         </Animated.View>

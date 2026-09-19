@@ -116,6 +116,15 @@ const ALLOWLIST_STRINGS = new Set([
   // release build can show it. Same reasoning as the __DEV__-only screens
   // that are excluded from the backlog rather than translated.
   'Error Details (Dev Only):',
+  // Our own product name. Same rule as the third-party brands above: it is a
+  // proper noun, and it is deliberately preserved INSIDE otherwise-translated
+  // strings ("Sparrow's Watch", "Sparrow Pro").
+  'Sparrow Collect',
+  // Rendered only when `isBetaUnlocked`, and src/screens/Settings.tsx carries a
+  // comment saying it is deliberately English: its readers are a developer, a
+  // reviewer or a tester, and `check:submit-profiles` pins the flag false for
+  // store builds. Allowlisted so it stops being counted as translation debt.
+  'Beta build — every Pro feature is unlocked and billing is skipped. Not for the store.',
 ]);
 
 function walk(dir, out = []) {
@@ -136,6 +145,21 @@ function walk(dir, out = []) {
     }
   }
   return out;
+}
+
+/**
+ * Structure only: a line that is JSX text and nothing else.
+ *
+ * Deliberately does NOT apply LOOKS_HUMAN. A wrapped paragraph's SECOND line
+ * usually starts lower-case ("it for you — you don't have to…"), and
+ * LOOKS_HUMAN requires a leading capital. Testing it per line ended the run at
+ * the first continuation and lost the whole paragraph — the first version of
+ * this fix did exactly that and still missed 46 strings.
+ */
+function isPlainTextLine(t) {
+  return !/[<>{}]/.test(t) && t.length >= 3 && /[a-zA-Z]{3,}/.test(t)
+    && !ALLOWLIST_STRINGS.has(t)
+    && !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*');
 }
 
 /**
@@ -181,13 +205,26 @@ function scanFile(path) {
     //     This was a blind spot until 2026-09-19 and hid 278 visible strings --
     //     more than the whole reported backlog at the time. Any wrapped
     //     paragraph of copy lands here, which is most long strings in the app.
-    if (!/[<>{}]/.test(trimmed) && trimmed.length >= 3 && /[a-zA-Z]{3,}/.test(trimmed)
-        && !ALLOWLIST_STRINGS.has(trimmed) && LOOKS_HUMAN.test(trimmed)
-        && !trimmed.startsWith('/*')) {
+    if (isPlainTextLine(trimmed)) {
       const prev = lines.slice(0, i).reverse().find((l) => l.trim());
-      const next = lines.slice(i + 1).find((l) => l.trim());
-      if (prev && next && prev.trimEnd().endsWith('>') && next.trim().startsWith('</')) {
-        findings.push({ line: i + 1, col: 1, text: trimmed, kind: 'jsx-text' });
+      if (prev && prev.trimEnd().endsWith('>')) {
+        // A paragraph may WRAP across several lines before the closing tag.
+        // Catching only the single-line case still hid 46 strings after the
+        // first fix, so collect the whole run and report it as one finding.
+        const run = [trimmed];
+        let j = i + 1;
+        while (j < lines.length && isPlainTextLine(lines[j].trim())) {
+          run.push(lines[j].trim());
+          j += 1;
+        }
+        const after = lines.slice(j).find((l) => l.trim());
+        const joined = run.join(' ');
+        if (after && after.trim().startsWith('</') && LOOKS_HUMAN.test(joined)
+            && !ALLOWLIST_STRINGS.has(joined)) {
+          findings.push({ line: i + 1, col: 1, text: joined, kind: 'jsx-text',
+                          lineSpan: run.length });
+          i = j - 1; // skip the lines already consumed by this run
+        }
       }
     }
 

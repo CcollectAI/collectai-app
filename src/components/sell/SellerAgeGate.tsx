@@ -81,12 +81,10 @@ export function SellerAgeGateProvider({ children }: { children: React.ReactNode 
               <Ionicons name="shield-checkmark-outline" size={28} color={colors.brand.dark} />
             </View>
             <Text style={[s.title, { color: colors.text, fontFamily: fonts.bold }]}>
-              Confirm your age
+              {t('sell.confirm_your_age', { defaultValue: 'Confirm your age' })}
             </Text>
             <Text style={[s.body, { color: colors.muted }]}>
-              To sell items, list on marketplaces, or connect a seller account,
-              please confirm you are of legal age in your region (18 or the
-              local age of majority).
+              {t('sell.age_gate_explainer', { defaultValue: 'To sell items, list on marketplaces, or connect a seller account, please confirm you are of legal age in your region (18 or the local age of majority).' })}
             </Text>
 
             <Pressable

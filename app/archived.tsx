@@ -175,7 +175,7 @@ function ArchivedContent() {
         <View style={styles.empty}>
           <Ionicons name="alert-circle-outline" size={48} color={colors.danger} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            Could not load your archive
+            {t('common.archive_load_failed', { defaultValue: 'Could not load your archive' })}
           </Text>
           <Text style={[styles.emptyBody, { color: colors.muted }]}>
             {error} Pull down to try again — nothing has been deleted.
@@ -187,11 +187,10 @@ function ArchivedContent() {
       <View style={styles.empty}>
         <Ionicons name="archive-outline" size={48} color={colors.muted} />
         <Text style={[styles.emptyTitle, { color: colors.text }]}>
-          Nothing archived
+          {t('common.nothing_archived', { defaultValue: 'Nothing archived' })}
         </Text>
         <Text style={[styles.emptyBody, { color: colors.muted }]}>
-          Items you archive, and items that leave your collection when a sale
-          completes, appear here. You can put any of them back.
+          {t('common.archive_explainer', { defaultValue: 'Items you archive, and items that leave your collection when a sale completes, appear here. You can put any of them back.' })}
         </Text>
       </View>
     );

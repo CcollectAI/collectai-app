@@ -128,7 +128,7 @@ export function ItemGalleryGrid({
       <View style={styles.emptyContainer}>
         <Ionicons name="images-outline" size={48} color={colors.muted} />
         <Text style={[styles.emptyText, { color: colors.muted }]}>
-          No items to display
+          {t('item_details.no_items_to_display', { defaultValue: 'No items to display' })}
         </Text>
       </View>
     );

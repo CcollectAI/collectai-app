@@ -154,10 +154,10 @@ function CatalogSuggestionModalInner({
             <Ionicons name="help-circle-outline" size={28} color={colors.accent} />
             <View style={styles.headerText}>
               <Text style={[styles.title, { color: colors.text }]}>
-                We don't recognize this item yet
+                {t('catalog.unrecognized_item', { defaultValue: "We don't recognize this item yet" })}
               </Text>
               <Text style={[styles.subtitle, { color: colors.muted }]}>
-                Help us improve Sparrow Collect by telling us what this is.
+                {t('catalog.help_us_improve', { defaultValue: 'Help us improve Sparrow Collect by telling us what this is.' })}
               </Text>
             </View>
           </View>
@@ -217,7 +217,7 @@ function CatalogSuggestionModalInner({
           {!selectedCategory && (
             <View style={styles.fieldBlock}>
               <Text style={[styles.fieldLabel, { color: colors.muted }]}>
-                Or suggest a new category
+                {t('catalog.suggest_new_category', { defaultValue: 'Or suggest a new category' })}
               </Text>
               <TextInput
                 style={[styles.input, {
@@ -319,7 +319,7 @@ function CatalogSuggestionModalInner({
                 ListEmptyComponent={
                   <View style={styles.emptyList}>
                     <Text style={[styles.emptyText, { color: colors.muted }]}>
-                      No categories match "{categorySearch}"
+                      {t('catalog.no_categories_match', { defaultValue: 'No categories match "{{query}}"', query: categorySearch })}
                     </Text>
                   </View>
                 }

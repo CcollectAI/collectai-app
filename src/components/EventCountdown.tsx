@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { getCountdown, parseEventDate } from '@/lib/calendar';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   date: string;
@@ -27,6 +28,7 @@ export function EventCountdown({
   colors,
   showSeconds = false,
 }: Props) {
+  const { t } = useTranslation();
   const [countdown, setCountdown] = useState(() =>
     getCountdown(parseEventDate(date, time))
   );
@@ -50,7 +52,7 @@ export function EventCountdown({
     return (
       <View style={[styles.container, styles[`container_${size}`]]}>
         <Text style={[styles.pastText, styles[`text_${size}`], { color: colors.muted }]}>
-          Event ended
+          {t('common.event_ended', { defaultValue: 'Event ended' })}
         </Text>
       </View>
     );

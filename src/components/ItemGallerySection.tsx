@@ -350,7 +350,7 @@ export const ItemGallerySection = React.memo(function ItemGallerySection({
             />
             {!displayImageUri && (
               <Text style={[s.photoUploadOverlayText, { color: theme.accentText }]}>
-                Add your photo
+                {t('item_details.add_your_photo', { defaultValue: 'Add your photo' })}
               </Text>
             )}
           </>

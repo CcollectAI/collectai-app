@@ -444,7 +444,7 @@ const EditEventScreen: React.FC = () => {
 
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.danger + '30' }]}>
               <Text style={[styles.dangerHint, { color: colors.muted }]}>
-                Cancelling this event is permanent. All attendees will be notified.
+                {t('edit_event.cancel_warning', { defaultValue: 'Cancelling this event is permanent. All attendees will be notified.' })}
               </Text>
               <AnimatedPressable
                 onPress={handleCancelEvent}

@@ -125,8 +125,7 @@ function MarketMoversSectionInner() {
         </View>
 
         <Text style={[styles.lockedBlurb, { color: colors.muted }]}>
-          The biggest 7-day price moves across your categories — what is climbing,
-          what is falling, and by how much.
+          {t('marketplace.movers_explainer', { defaultValue: 'The biggest 7-day price moves across your categories — what is climbing, what is falling, and by how much.' })}
         </Text>
 
         {/* Three masked rows. The SHAPE of the feature is the pitch; the
@@ -158,7 +157,7 @@ function MarketMoversSectionInner() {
           accessibilityLabel={t('marketplace.a11y_upgrade_market_movers', { defaultValue: 'Upgrade to Pro to see Market Movers' })}
         >
           <Text style={[styles.upgradeBtnText, { color: colors.accentText }]}>
-            Upgrade to see
+            {t('marketplace.upgrade_to_see', { defaultValue: 'Upgrade to see' })}
           </Text>
         </AnimatedPressable>
       </View>

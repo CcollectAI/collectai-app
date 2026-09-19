@@ -186,7 +186,7 @@ function MFASetupScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={[styles.title, { color: NAVY }]}>{t('mfa.title')}</Text>
         <Text style={[styles.subtitle, { color: MUTED }]}>
-          Add an extra layer of security to your account with TOTP authenticator app.
+          {t('mfa.intro', { defaultValue: 'Add an extra layer of security to your account with TOTP authenticator app.' })}
         </Text>
 
         {loading ? (
@@ -216,7 +216,7 @@ function MFASetupScreen() {
           <View style={styles.enrollSection}>
             <Text style={[styles.stepTitle, { color: NAVY }]}>1. Scan this QR code</Text>
             <Text style={[styles.stepDesc, { color: MUTED }]}>
-              Open your authenticator app (Google Authenticator, Authy, etc.) and scan this code:
+              {t('mfa.scan_instruction', { defaultValue: 'Open your authenticator app (Google Authenticator, Authy, etc.) and scan this code:' })}
             </Text>
             <View style={[styles.qrContainer, { borderColor: BORDER }]}>
               <Image
@@ -275,7 +275,7 @@ function MFASetupScreen() {
               <Text style={[styles.statusText, { color: SUCCESS }]}>2FA is enabled</Text>
             </View>
             <Text style={[styles.statusDesc, { color: MUTED }]}>
-              Your account is protected with two-factor authentication.
+              {t('mfa.protected', { defaultValue: 'Your account is protected with two-factor authentication.' })}
             </Text>
 
             {factors
@@ -304,7 +304,7 @@ function MFASetupScreen() {
               <Text style={[styles.statusText, { color: MUTED }]}>2FA is not enabled</Text>
             </View>
             <Text style={[styles.statusDesc, { color: MUTED }]}>
-              Protect your account by enabling two-factor authentication with an authenticator app.
+              {t('mfa.enable_prompt', { defaultValue: 'Protect your account by enabling two-factor authentication with an authenticator app.' })}
             </Text>
 
             {enrolling ? (

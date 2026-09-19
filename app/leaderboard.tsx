@@ -124,7 +124,7 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
     >
       <Text style={[styles.catTitle, { color: colors.text }]}>{categoryName} leaderboard</Text>
       <Text style={[styles.catSubtitle, { color: colors.muted }]}>
-        Collectors who chose to be discoverable, ranked by what they hold in this category.
+        {t('leaderboard.discoverable_note', { defaultValue: 'Collectors who chose to be discoverable, ranked by what they hold in this category.' })}
       </Text>
 
       <View style={styles.catToggle}>
@@ -169,7 +169,7 @@ function CategoryLeaderboard({ categoryId }: { categoryId: string }) {
 
       {failed ? (
         <Text style={[styles.catEmpty, { color: colors.muted }]}>
-          Couldn&apos;t load the leaderboard. Pull down to try again.
+          {t('leaderboard.load_failed', { defaultValue: "Couldn't load the leaderboard. Pull down to try again." })}
         </Text>
       ) : !rows ? (
         <ActivityIndicator style={{ marginTop: 24 }} color={colors.accent} />
@@ -522,13 +522,13 @@ const LeaderboardScreen: React.FC = () => {
         {/* Leaderboard list — the same four states as category mode above. */}
         {loadFailed && !apiEntries?.length ? (
           <Text style={[styles.catEmpty, { color: colors.muted }]}>
-            Couldn&apos;t load the leaderboard. Pull down to try again.
+            {t('leaderboard.load_failed', { defaultValue: "Couldn't load the leaderboard. Pull down to try again." })}
           </Text>
         ) : !apiEntries ? (
           <ActivityIndicator style={{ marginTop: 24 }} color={colors.accent} />
         ) : apiEntries.length === 0 ? (
           <Text style={[styles.catEmpty, { color: colors.muted }]}>
-            Nobody is on the leaderboard yet.
+            {t('leaderboard.empty', { defaultValue: 'Nobody is on the leaderboard yet.' })}
           </Text>
         ) : null}
         {rankedUsers.map((user, index) => {

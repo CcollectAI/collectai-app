@@ -14,6 +14,7 @@ import { radius, text, fontWeight, gap } from '@/theme/tokens';
 import { formatPrice } from '@/lib/format';
 import type { PriceEstimate } from '@/types/priceExplanation';
 import type { CurrencyCode } from '@/data/types';
+import { useTranslation } from 'react-i18next';
 
 interface ScarcityData {
   scarcity_score: number;
@@ -64,6 +65,7 @@ export const ItemPriceSection = React.memo(function ItemPriceSection({
   toNum,
   compCount,
 }: ItemPriceSectionProps) {
+  const { t } = useTranslation();
   const { colors: theme } = useAppTheme();
 
   return (
@@ -85,7 +87,7 @@ export const ItemPriceSection = React.memo(function ItemPriceSection({
       {!featureFlags.FEATURE_EXPLAINABLE_AI_INTERFACES && (q10 || q50 || q90) && (
         <View style={styles.priceBandsRow}>
           <Text style={[styles.label, { color: theme.muted }]}>
-            Price range
+            {t('common.price_range', { defaultValue: 'Price range' })}
           </Text>
           <Text style={{ fontSize: text.md, fontWeight: fontWeight.medium, color: theme.text }}>
             {formatPrice(toNum(q10))} – {formatPrice(toNum(q50))} – {formatPrice(toNum(q90))}
@@ -120,7 +122,7 @@ export const ItemPriceSection = React.memo(function ItemPriceSection({
             <View style={styles.explanationHeaderLeft}>
               <Ionicons name="help-circle-outline" size={18} color={theme.accent} />
               <Text style={[styles.explanationHeader, { color: theme.text }]}>
-                Why this price?
+                {t('price_explanation.why_this_price', { defaultValue: 'Why this price?' })}
               </Text>
             </View>
             <Ionicons

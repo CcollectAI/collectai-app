@@ -122,7 +122,7 @@ const CategoryHeaderCard: React.FC<Props> = ({
               color={searchOpen ? tokens.brand.darker : '#fff'}
             />
             <Text style={[styles.pillText, searchOpen && styles.pillTextActive]}>
-              Find friends
+              {t('category.find_friends', { defaultValue: 'Find friends' })}
             </Text>
           </AnimatedPressable>
         )}

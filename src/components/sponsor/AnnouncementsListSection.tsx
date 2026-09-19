@@ -80,7 +80,7 @@ export const AnnouncementsListSection = React.memo(function AnnouncementsListSec
             </View>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('sponsor.no_announcements', { defaultValue: 'No Announcements Yet' })}</Text>
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-              Notify event attendees about updates, schedule changes, or exclusive offers.
+              {t('sponsor.notify_attendees_hint', { defaultValue: 'Notify event attendees about updates, schedule changes, or exclusive offers.' })}
             </Text>
             {hasEvents && (
               <AnimatedPressable onPress={onAnnounce} style={styles.emptyAction} accessibilityRole="button" accessibilityLabel={t('sponsor.a11y_send_first', { defaultValue: 'Send your first announcement' })}>

@@ -303,7 +303,7 @@ function FilterSheetInner({
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <Text style={[styles.headerTitle, { color: colors.text }]}>
-                Filters & Sort
+                {t('filters.filters_and_sort', { defaultValue: 'Filters & Sort' })}
               </Text>
               {hasActiveFilters && (
                 <View style={[styles.activeBadge, { backgroundColor: colors.accent }]}>
@@ -321,7 +321,7 @@ function FilterSheetInner({
             {presets.length > 0 && (
               <View style={styles.presetsSection}>
                 <Text style={[styles.presetsLabel, { color: colors.muted }]}>
-                  Saved Presets
+                  {t('filters.saved_presets', { defaultValue: 'Saved Presets' })}
                 </Text>
                 <ScrollView
                   horizontal
@@ -660,7 +660,7 @@ function FilterSheetInner({
             >
               <Ionicons name="bookmark-outline" size={16} color={colors.accent} />
               <Text style={[styles.footerBtnSecondaryText, { color: colors.accent }]}>
-                Save Preset
+                {t('filters.save_preset', { defaultValue: 'Save Preset' })}
               </Text>
             </Pressable>
 
@@ -692,7 +692,7 @@ function FilterSheetInner({
             onStartShouldSetResponder={() => true}
           >
             <Text style={[styles.presetModalTitle, { color: colors.text }]}>
-              Save Filter Preset
+              {t('filters.save_filter_preset', { defaultValue: 'Save Filter Preset' })}
             </Text>
             <TextInput
               style={[

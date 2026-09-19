@@ -362,10 +362,10 @@ function NotificationsScreen() {
     <View style={s.emptyState}>
       <Ionicons name="notifications-off-outline" size={48} color={theme.muted} />
       <Text style={[s.emptyTitle, { color: theme.text }]}>
-        No notifications yet
+        {t('notifications.empty', { defaultValue: 'No notifications yet' })}
       </Text>
       <Text style={[s.emptySubtitle, { color: theme.muted }]}>
-        You'll see price alerts, deal updates, and more here.
+        {t('notifications.empty_hint', { defaultValue: "You'll see price alerts, deal updates, and more here." })}
       </Text>
     </View>
   );

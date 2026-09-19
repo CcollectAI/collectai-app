@@ -114,7 +114,7 @@ function CategoryBreakdownSectionInner({
         // show a prompt instead of placeholder numbers.
         <View style={[s.breakdownCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <Text style={[s.breakdownEmpty, { color: theme.muted }]}>
-            Add items to your collection to see how their value breaks down by category.
+            {t('home.value_breakdown_hint', { defaultValue: 'Add items to your collection to see how their value breaks down by category.' })}
           </Text>
         </View>
       ) : (

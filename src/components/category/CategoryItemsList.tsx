@@ -31,7 +31,7 @@ const CategoryItemsList: React.FC<Props> = ({
   const { t } = useTranslation();
   return (
     <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Items in {categoryName}</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('category.items_in', { defaultValue: 'Items in {{category}}', category: categoryName })}</Text>
       {items.length === 0 ? (
         <Text style={[styles.emptyText, { color: colors.muted }]}>{t('category.no_items_yet', { defaultValue: 'No items yet in this category.' })}</Text>
       ) : (

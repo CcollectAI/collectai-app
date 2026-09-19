@@ -485,7 +485,7 @@ function EventDetailScreen() {
           <Ionicons name="calendar-outline" size={48} color={colors.muted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('event_detail.not_found')}</Text>
           <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-            This event doesn&apos;t exist yet. Try opening it from the Events tab again.
+            {t('event_detail.not_found_body', { defaultValue: "This event doesn't exist yet. Try opening it from the Events tab again." })}
           </Text>
           <AnimatedPressable
             onPress={() => safeGoBack(router)}

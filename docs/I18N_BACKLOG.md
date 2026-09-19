@@ -6,9 +6,23 @@ different failures — CLAUDE.md §gates spells that out. A string that never
 reaches a locale file cannot be missing from one, so parity is green while six
 locales render English.
 
-**Backlog: 230 strings across 104 files** (measured 2026-09-19.)
+**Backlog: 66 strings across 15 files — and every one of them is deliberate.**
+(Measured 2026-09-20. No live, reachable, user-facing English string remains.)
 
-⛔ **The number went UP, and every earlier number in this file was wrong.**
+The 66 break down as: unreachable screens (`sell/dashboard` 10, `twitch` 7,
+`twitch-leaderboard` 14, `franchise/[id]` 1), the dead `src/app/` router tree
+(2), five orphaned components with no importer (`ItemsStatusPanel` 5,
+`SearchStatusPanel` 6, `PortfolioChart` 2, `PriceTrendChart` 2,
+`TrendingCategoriesGrid` 1), `__DEV__`-only settings sections (12),
+`chat-demo` (1), the dead `!BETA_MODE && !COMMUNITY_GATED` branch in
+`leaderboard.tsx` (2), and the splash tagline "Track. Value. Collect." (1),
+which is brand copy and Merle's call, not a translation task.
+
+⛔ **Do not "finish" these by translating them.** Each one is a reachability or
+brand decision that is written down above. The right move for most of them is
+deletion, not translation.
+
+⛔ **On 2026-09-19 the number went UP, and every earlier number here was wrong.**
 `check-i18n-strings.mjs` matched JSX text with `/>([^<>{}\n]+)</g`, which needs
 the opening `>` and the closing `<` **on the same line**. Every text node that
 wraps onto its own line — which is most sentence-length copy in the app — was

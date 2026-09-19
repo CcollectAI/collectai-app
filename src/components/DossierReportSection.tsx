@@ -106,7 +106,7 @@ export const DossierReportSection = React.memo(function DossierReportSection({
       {dossierExpanded && dossierError && !dossierData && (
         <View style={s.sectionContent}>
           <Text style={[s.emptyText, { color: theme.muted }]}>
-            Could not load report. Check your connection and try again.
+            {t('dossier.report_load_failed', { defaultValue: 'Could not load report. Check your connection and try again.' })}
           </Text>
           <AnimatedPressable
             onPress={onRetry}

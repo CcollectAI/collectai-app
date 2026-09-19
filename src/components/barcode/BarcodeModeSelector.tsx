@@ -47,7 +47,7 @@ export const BarcodeModeSelector = React.memo(function BarcodeModeSelector({
           {t('add_manual.intro_title', { defaultValue: 'Manual Entry' })}
         </Text>
         <Text style={[styles.manualEntryHelper, { color: colors.muted }]}>
-          Can't scan? Type the ISBN code from the back cover
+          {t('barcode.cant_scan_hint', { defaultValue: "Can't scan? Type the ISBN code from the back cover" })}
         </Text>
         <View style={styles.manualEntryRow}>
           <TextInput

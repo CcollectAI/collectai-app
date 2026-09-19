@@ -680,7 +680,7 @@ function WatchlistTabScreen() {
           // With no target it would be a line on 15 of 20 cards saying nothing
           // actionable — the card already prompts "Set target price" above.
           <Text style={[styles.marketNone, { color: colors.muted }]}>
-            No market price yet
+            {t('wishlist.no_market_price', { defaultValue: 'No market price yet' })}
           </Text>
         ) : null}
 
@@ -796,11 +796,10 @@ function WatchlistTabScreen() {
           <Ionicons name="cloud-offline-outline" size={40} color={colors.danger} />
         </View>
         <Text style={[styles.emptyTitle, { color: colors.text }]}>
-          Couldn&apos;t load your watchlist
+          {t('wishlist.load_failed', { defaultValue: "Couldn't load your watchlist" })}
         </Text>
         <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-          Your saved items are safe — we just couldn&apos;t reach them. Check your
-          connection and try again.
+          {t('wishlist.saved_items_safe', { defaultValue: "Your saved items are safe — we just couldn't reach them. Check your connection and try again." })}
         </Text>
         <AnimatedPressable
           style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
@@ -819,7 +818,7 @@ function WatchlistTabScreen() {
       </View>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('wishlist.empty_title')}</Text>
       <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-        Track prices, get alerts when items drop, and never miss a deal on items you want.
+        {t('wishlist.empty_pitch', { defaultValue: 'Track prices, get alerts when items drop, and never miss a deal on items you want.' })}
       </Text>
       <AnimatedPressable
         style={[styles.emptyBtn, { backgroundColor: colors.accent }]}
@@ -1031,7 +1030,7 @@ function WatchlistTabScreen() {
                 color={keepAdding ? colors.accent : colors.muted}
               />
               <Text style={[styles.keepAddingText, { color: colors.muted }]}>
-                Keep adding — stay here and reuse this category and target
+                {t('wishlist.keep_adding_reuse', { defaultValue: 'Keep adding — stay here and reuse this category and target' })}
               </Text>
             </AnimatedPressable>
 
@@ -1124,7 +1123,7 @@ function WatchlistTabScreen() {
                   accessibilityLabel={t('wishlist.price_paid_a11y')}
                 />
                 <Text style={[styles.helperText, { color: colors.muted }]}>
-                  This helps improve price predictions for everyone
+                  {t('wishlist.helps_predictions', { defaultValue: 'This helps improve price predictions for everyone' })}
                 </Text>
 
                 <Text style={[styles.label, { color: colors.text }]}>{t('wishlist.notes_optional')}</Text>
@@ -1253,7 +1252,7 @@ function WatchlistTabScreen() {
             </View>
             <Text style={[styles.congratsTitle, { color: colors.text }]}>Congrats!</Text>
             <Text style={[styles.congratsSubtitle, { color: colors.muted }]}>
-              Added to your collection
+              {t('wishlist.added_to_collection', { defaultValue: 'Added to your collection' })}
             </Text>
           </Animated.View>
         </View>

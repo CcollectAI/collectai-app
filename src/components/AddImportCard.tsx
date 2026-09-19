@@ -55,7 +55,7 @@ export const AddImportCard: React.FC<Props> = ({
           },
         ]}
       >
-        Import from file
+        {t('add_tab.import_from_file', { defaultValue: 'Import from file' })}
       </Text>
 
       <Text
@@ -66,8 +66,7 @@ export const AddImportCard: React.FC<Props> = ({
           },
         ]}
       >
-        Already have your collection in a spreadsheet? Upload an Excel or CSV
-        file to import items in bulk.
+        {t('add_tab.spreadsheet_import', { defaultValue: 'Already have your collection in a spreadsheet? Upload an Excel or CSV file to import items in bulk.' })}
       </Text>
 
       <View style={styles.buttonRow}>
@@ -115,7 +114,7 @@ export const AddImportCard: React.FC<Props> = ({
               },
             ]}
           >
-            Download template
+            {t('add_tab.download_template_label', { defaultValue: 'Download template' })}
           </Text>
         </AnimatedPressable>
       </View>

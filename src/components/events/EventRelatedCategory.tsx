@@ -6,6 +6,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 interface CategoryInfo {
   id: string;
@@ -22,12 +23,13 @@ export const EventRelatedCategory = React.memo(function EventRelatedCategory({
   category,
   onPress,
 }: EventRelatedCategoryProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   return (
     <View style={styles.section}>
       <Text style={[styles.sectionTitle, { color: colors.text }]}>
-        Related category
+        {t('common.related_category', { defaultValue: 'Related category' })}
       </Text>
       <AnimatedPressable
         onPress={onPress}

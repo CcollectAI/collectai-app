@@ -49,7 +49,7 @@ export const ItemsCategoryModal = React.memo(function ItemsCategoryModal({
         <View style={[styles.modalContent, { backgroundColor: colors.card }]} accessibilityRole="menu">
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
-              Change Category
+              {t('wishlist.change_category', { defaultValue: 'Change Category' })}
             </Text>
             <Text style={[styles.modalSubtitle, { color: colors.muted }]}>
               Move {selectedCount} item{selectedCount > 1 ? 's' : ''} to:

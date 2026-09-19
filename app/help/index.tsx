@@ -37,8 +37,7 @@ function HelpIndexScreen() {
             <Text style={[styles.eyebrow, { color: colors.muted }]}>{t('guide.need_help', { defaultValue: 'Need a helping hand?' })}</Text>
             <Text style={[styles.title, { color: colors.text }]}>{t('guide.using_sparrow', { defaultValue: 'Using Sparrow' })}</Text>
             <Text style={[styles.summary, { color: colors.muted }]}>
-              Short answers to the things people ask first. You can also just
-              type what you are trying to do into the search bar.
+              {t('guide.faq_intro', { defaultValue: 'Short answers to the things people ask first. You can also just type what you are trying to do into the search bar.' })}
             </Text>
           </View>
 

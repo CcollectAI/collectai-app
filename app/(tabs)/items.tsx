@@ -73,6 +73,7 @@ import { userErrorMessage } from '@/lib/userErrorMessage';
 import { collectorsApi } from '@/api/collectorsApi';
 import { useAsync } from '@/hooks/useAsync';
 import { portfolioTotalLabel } from '@/lib/portfolioTotalLabel';
+import { useTranslation } from 'react-i18next';
 
 // Screen row shape + the provider→screen mapper live in @/data/screenItem so
 // the mapping is unit-testable (see screenItem.test.ts). Aliased to `Item`
@@ -87,6 +88,7 @@ const STATUS_CLEAR_DELAY_MS = 3000;
 const SCROLL_LOAD_THRESHOLD = 0.5;
 
 const ItemsScreen: React.FC = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ category?: string; collectionName?: string; sort?: string }>();
   const { colors } = useAppTheme();
@@ -915,10 +917,10 @@ const ItemsScreen: React.FC = () => {
     <View style={{ alignItems: 'center', paddingVertical: 32 }}>
       <Ionicons name="search-outline" size={40} color={colors.muted} />
       <Text style={{ color: colors.muted, fontSize: text.lg, marginTop: 12 }}>
-        No items match your search
+        {t('common.no_items_match_search', { defaultValue: 'No items match your search' })}
       </Text>
       <Text style={{ color: colors.muted, fontSize: text.md, marginTop: 4 }}>
-        Try a different keyword or clear filters
+        {t('common.try_different_keyword', { defaultValue: 'Try a different keyword or clear filters' })}
       </Text>
     </View>
   ) : error ? (
@@ -930,10 +932,10 @@ const ItemsScreen: React.FC = () => {
     <View style={{ alignItems: 'center', paddingVertical: 48, paddingHorizontal: 24 }}>
       <Ionicons name="cloud-offline-outline" size={40} color={colors.danger} />
       <Text style={{ color: colors.text, fontSize: text.lg, fontWeight: fontWeight.bold, marginTop: 12 }}>
-        Couldn&apos;t load your items
+        {t('common.items_load_failed', { defaultValue: "Couldn't load your items" })}
       </Text>
       <Text style={{ color: colors.muted, fontSize: text.md, marginTop: 4, textAlign: 'center' }}>
-        Your collection is safe — we just couldn&apos;t reach it. Pull down to try again.
+        {t('common.collection_safe_retry', { defaultValue: "Your collection is safe — we just couldn't reach it. Pull down to try again." })}
       </Text>
     </View>
   ) : <ItemsEmptyState />;

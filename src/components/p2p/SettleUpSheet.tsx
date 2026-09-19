@@ -259,8 +259,7 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
               // "Not given yet" is a real state, not an error — say so, so the
               // seller knows to ask rather than assuming the app lost it.
               <Text style={[styles.hint, { color: colors.muted }]}>
-                The buyer hasn&apos;t added a delivery address yet. Ask them in chat —
-                you need it before you can book.
+                {t('settle.no_address_yet', { defaultValue: "The buyer hasn't added a delivery address yet. Ask them in chat — you need it before you can book." })}
               </Text>
             )}
           </View>
@@ -270,8 +269,7 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
           <View style={[styles.addrBox, { borderColor: colors.border }]}>
             <Text style={[styles.addrCaption, { color: colors.muted }]}>{t('settle.delivery_address', { defaultValue: 'Delivery address' })}</Text>
             <Text style={[styles.hint, { color: colors.muted }]}>
-              Shared with this seller only, for this trade. Sparrow doesn&apos;t book
-              or insure the shipment.
+              {t('settle.address_shared_note', { defaultValue: "Shared with this seller only, for this trade. Sparrow doesn't book or insure the shipment." })}
             </Text>
             {field('recipient_name', 'Full name')}
             {field('line1', 'Address')}

@@ -118,7 +118,7 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
               />
             </View>
             <Text style={[styles.customHint, { color: colors.muted }]}>
-              Custom categories won't have AI pricing — you set the value yourself
+              {t('add_manual_basic.custom_category_note', { defaultValue: "Custom categories won't have AI pricing — you set the value yourself" })}
             </Text>
           </View>
         )}

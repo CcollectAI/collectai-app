@@ -515,7 +515,7 @@ function EventsScreen() {
             >
               <Ionicons name="notifications-outline" size={16} color={colors.accent} />
               <Text style={[styles.actionBtnText, { color: colors.text }]}>
-                Set Reminder
+                {t('events.set_reminder', { defaultValue: 'Set Reminder' })}
               </Text>
             </AnimatedPressable>
           </View>
@@ -534,7 +534,7 @@ function EventsScreen() {
             Events
           </Text>
           <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
-            Collection drops, meetups, and streams.
+            {t('events.nearby_subtitle', { defaultValue: 'Collection drops, meetups, and streams.' })}
           </Text>
         </View>
         <View style={styles.headerIcons}>
@@ -615,7 +615,7 @@ function EventsScreen() {
                 color={myCategoriesOnly ? colors.accentText : colors.muted}
               />
               <Text style={[styles.kindChipText, { color: myCategoriesOnly ? colors.accentText : colors.text }]}>
-                My Categories
+                {t('events.my_categories', { defaultValue: 'My Categories' })}
               </Text>
             </AnimatedPressable>
           )}
@@ -716,10 +716,10 @@ function EventsScreen() {
     <View style={styles.emptyContainer}>
       <Ionicons name="cloud-offline-outline" size={48} color={colors.muted} />
       <Text style={[styles.emptyTitle, { color: colors.text }]}>
-        Failed to load events
+        {t('events.load_failed', { defaultValue: 'Failed to load events' })}
       </Text>
       <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-        Pull down to retry.
+        {t('events.pull_to_retry', { defaultValue: 'Pull down to retry.' })}
       </Text>
     </View>
   ) : !loading ? (
@@ -792,7 +792,7 @@ function EventsScreen() {
         >
           {headerElement}
           <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 4, marginBottom: 12 }]}>
-            Nearby Events
+            {t('events.nearby_events', { defaultValue: 'Nearby Events' })}
           </Text>
           {nearbyLoading ? (
             <SkeletonList count={3} type="event" />

@@ -215,8 +215,7 @@ function GuideScreen() {
           </Section>
 
           <Text style={[styles.footnote, { color: colors.muted }]}>
-            General guidance, not valuation advice. Prices move and condition is
-            judged by whoever is buying.
+            {t('category.guidance_disclaimer', { defaultValue: 'General guidance, not valuation advice. Prices move and condition is judged by whoever is buying.' })}
           </Text>
         </Animated.View>
       </ScrollView>

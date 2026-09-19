@@ -118,7 +118,7 @@ const CategoryCollectorSearch: React.FC<Props> = ({ colors, onClose }) => {
             </AnimatedPressable>
           ) : results.length === 0 ? (
             <Text style={[styles.emptyText, { color: colors.muted }]}>
-              No collectors found
+              {t('category.no_collectors_found', { defaultValue: 'No collectors found' })}
             </Text>
           ) : (
             results.map((user) => {

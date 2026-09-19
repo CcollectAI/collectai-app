@@ -47,7 +47,7 @@ export const AddManualSubmitSection = React.memo(function AddManualSubmitSection
       <View style={styles.footerHint}>
         <Ionicons name="bulb-outline" size={14} color={colors.muted} />
         <Text style={[styles.footerHintText, { color: colors.muted }]}>
-          Tip: Use QuickScan for faster entry with AI assistance
+          {t('item_detail.quickscan_tip', { defaultValue: 'Tip: Use QuickScan for faster entry with AI assistance' })}
         </Text>
       </View>
     </>

@@ -42,10 +42,10 @@ export const EventAnnouncementsCard = React.memo(function EventAnnouncementsCard
           <Ionicons name="megaphone-outline" size={20} color={colors.accent} />
           <View style={styles.announcementsInfo}>
             <Text style={[styles.announcementsTitle, { color: colors.text }]}>
-              Event Announcements
+              {t('events.announcements_title', { defaultValue: 'Event Announcements' })}
             </Text>
             <Text style={[styles.announcementsSubtitle, { color: colors.muted }]}>
-              Updates from the host
+              {t('events.updates_from_host', { defaultValue: 'Updates from the host' })}
             </Text>
           </View>
         </View>

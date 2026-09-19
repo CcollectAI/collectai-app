@@ -68,7 +68,32 @@
     "got_it": "Begrepen",
     "retry_all": "Alles opnieuw proberen",
     "coming_soon": "Binnenkort",
-    "not_now": "Niet nu"
+    "not_now": "Niet nu",
+    "no_items_match_search": "Geen items komen overeen met je zoekopdracht",
+    "try_different_keyword": "Probeer een ander zoekwoord of wis de filters",
+    "items_load_failed": "Je items konden niet worden geladen",
+    "collection_safe_retry": "Je collectie is veilig — we konden er alleen even niet bij. Trek omlaag om het opnieuw te proberen.",
+    "page_not_found": "Pagina niet gevonden",
+    "archive_load_failed": "Je archief kon niet worden geladen",
+    "nothing_archived": "Niets gearchiveerd",
+    "condition_guide_intro": "De conditie heeft grote invloed op de waarde van verzamelobjecten. Gebruik deze gids om je items nauwkeurig te beoordelen.",
+    "movers_load_failed": "De marktbewegers konden niet worden geladen.",
+    "no_suggestions_yet": "Nog geen suggesties",
+    "unexpected_error": "Er is een onverwachte fout opgetreden. Probeer het opnieuw.",
+    "event_ended": "Evenement afgelopen",
+    "loading_history": "Geschiedenis laden...",
+    "no_history_yet": "Nog geen geschiedenis",
+    "complete_your_collection": "Maak je collectie compleet",
+    "attending_following": "Verzamelaars die aanwezig zijn of volgen",
+    "no_attendees_yet": "Nog geen verzamelaars aangemeld. Jij kunt de eerste zijn.",
+    "host_collector": "Organiserende verzamelaar",
+    "related_category": "Verwante categorie",
+    "price_range": "Prijsbereik",
+    "found_market_price": "We hebben hier een marktprijs voor gevonden",
+    "tap_to_correct": "Tik op naam, categorie of conditie om te corrigeren",
+    "correction_submitted": "Correctie verstuurd",
+    "buyers_see_this": "Kopers zien dit bij elk item dat je aanbiedt.",
+    "archive_explainer": "Items die je archiveert en items die je collectie verlaten bij een afgeronde verkoop, verschijnen hier. Je kunt ze allemaal terugzetten."
   },
   "add_tab": {
     "subtitle": "Snelle, camera-gerichte flow.",
@@ -84,7 +109,15 @@
     "marketplace_url_a11y": "Marktplaats-URL",
     "download_template_a11y": "Importsjabloon downloaden",
     "import_item": "Item importeren",
-    "supported_sites": "Ondersteunde sites"
+    "supported_sites": "Ondersteunde sites",
+    "barcode_hint": "Boeken, albums en producten in doos met een barcode.",
+    "manual_hint": "Voer de gegevens van je kaart of figuur zelf in als je volledige controle wilt.",
+    "paste_link": "Plak een link van een marktplaats",
+    "extract_note": "We halen de gegevens van het item automatisch uit de advertentie.",
+    "import_from_file": "Importeren uit bestand",
+    "download_template_label": "Sjabloon downloaden",
+    "snap_prefill": "Maak een foto en wij vullen de gegevens vast in. Je kunt alles aanpassen voordat je opslaat.",
+    "spreadsheet_import": "Heb je je collectie al in een spreadsheet? Upload een Excel- of CSV-bestand om items in bulk te importeren."
   },
   "wishlist": {
     "add_title": "Toevoegen aan volglijst",
@@ -126,7 +159,15 @@
     "title": "Volglijst",
     "retry_load_a11y": "Probeer je volglijst opnieuw te laden",
     "keep_adding_a11y": "Blijf toevoegen — blijf hier na het opslaan zodat je meerdere items kunt toevoegen",
-    "add_item_a11y": "Item aan volglijst toevoegen"
+    "add_item_a11y": "Item aan volglijst toevoegen",
+    "no_market_price": "Nog geen marktprijs",
+    "load_failed": "Je volglijst kon niet worden geladen",
+    "empty_pitch": "Volg prijzen, ontvang meldingen als items dalen en mis nooit meer een goede deal.",
+    "keep_adding_reuse": "Blijf toevoegen — blijf hier en gebruik deze categorie en streefprijs opnieuw",
+    "helps_predictions": "Dit helpt de prijsvoorspellingen voor iedereen te verbeteren",
+    "added_to_collection": "Toegevoegd aan je collectie",
+    "change_category": "Categorie wijzigen",
+    "saved_items_safe": "Je opgeslagen items zijn veilig — we konden er alleen even niet bij. Controleer je verbinding en probeer het opnieuw."
   },
   "events": {
     "ticket_fee_hint": "Bij betaalde tickets gelden platformkosten van {{pct}}%.",
@@ -161,7 +202,15 @@
     "filter_followed_a11y": "Filter op je gevolgde categorieën",
     "share_event_a11y": "Dit evenement delen",
     "post_announcement_a11y": "Aankondiging plaatsen",
-    "post_announcement_title": "Aankondiging plaatsen"
+    "post_announcement_title": "Aankondiging plaatsen",
+    "set_reminder": "Herinnering instellen",
+    "nearby_subtitle": "Drops, meetups en streams voor verzamelaars.",
+    "my_categories": "Mijn categorieën",
+    "load_failed": "Evenementen laden is mislukt",
+    "pull_to_retry": "Trek omlaag om het opnieuw te proberen.",
+    "nearby_events": "Evenementen in de buurt",
+    "announcements_title": "Aankondigingen bij het evenement",
+    "updates_from_host": "Updates van de organisator"
   },
   "marketplace": {
     "find_collectors": "Verzamelaars vinden",
@@ -174,7 +223,10 @@
     "retry_prices_a11y": "Marktprijzen opnieuw proberen te laden",
     "connect_account_a11y": "Account koppelen",
     "market_prices": "Marktprijzen",
-    "regional_insights_sub": "Populair bij jou in de buurt op basis van activiteit van verzamelaars"
+    "regional_insights_sub": "Populair bij jou in de buurt op basis van activiteit van verzamelaars",
+    "prices_load_failed": "De marktprijzen konden niet worden geladen. Controleer je verbinding en probeer het opnieuw.",
+    "upgrade_to_see": "Upgrade om te bekijken",
+    "movers_explainer": "De grootste prijsbewegingen van 7 dagen in jouw categorieën — wat stijgt, wat daalt en hoeveel."
   },
   "search": {
     "placeholder": "Zoek items, verzamelaars, evenementen...",
@@ -184,14 +236,16 @@
     "no_results": "Geen resultaten gevonden",
     "no_price_yet": "Nog geen prijs",
     "browse_by_category": "Blader per categorie",
-    "title": "Ontdek"
+    "title": "Ontdek",
+    "faq_subtitle": "Korte antwoorden over items toevoegen, verkopen, meldingen en wat Pro je oplevert."
   },
   "item_detail": {
     "valuation_a11y": "Item-taxatie en details",
     "save_a11y": "Opslaan in collectie",
     "save": "Opslaan in collectie",
     "a11y_scan_another": "Nog een item scannen",
-    "scan_another": "Nog een scannen"
+    "scan_another": "Nog een scannen",
+    "quickscan_tip": "Tip: gebruik QuickScan voor sneller invoeren met AI-hulp"
   },
   "onboarding": {
     "skip_a11y": "Categorie-keuze overslaan",
@@ -230,7 +284,10 @@
     "acquired_date_hint": "Opent een kalender om de datum te kiezen waarop je dit item hebt gekregen",
     "clear_acquired_date_a11y": "Aanschafdatum wissen",
     "intro_title": "Handmatige invoer",
-    "photo_optional": "Foto (optioneel)"
+    "photo_optional": "Foto (optioneel)",
+    "discard_draft_title": "Concept verwerpen",
+    "full_control": "Voer de gegevens zelf in voor volledige controle",
+    "extra_details_hint": "Voeg specifieke details van je item toe (bijv. jaargang, regio, maat)"
   },
   "items_empty": {
     "hero_title": "Start je collectie",
@@ -263,7 +320,10 @@
     "a11y_add_manually": "Item handmatig toevoegen",
     "isbn_field_a11y": "ISBN-invoerveld",
     "isbn_hint": "Voer een ISBN van 10 of 13 cijfers in",
-    "lookup_isbn_a11y": "ISBN opzoeken"
+    "lookup_isbn_a11y": "ISBN opzoeken",
+    "point_camera": "Richt de camera op de barcode of ISBN",
+    "looking_up": "Product opzoeken...",
+    "cant_scan_hint": "Scannen lukt niet? Typ de ISBN-code van de achterkant"
   },
   "filters": {
     "close_a11y": "Filters sluiten",
@@ -276,7 +336,11 @@
     "preset_name_placeholder": "Presetnaam",
     "preset_name_a11y": "Presetnaam",
     "save_preset_btn_a11y": "Preset opslaan",
-    "no_limit": "Geen limiet"
+    "no_limit": "Geen limiet",
+    "filters_and_sort": "Filters en sorteren",
+    "saved_presets": "Opgeslagen presets",
+    "save_preset": "Preset opslaan",
+    "save_filter_preset": "Filterpreset opslaan"
   },
   "grading": {
     "lookup_a11y": "Certificaat opzoeken",
@@ -295,7 +359,8 @@
     "certificate_lookup_hint": "Dubbeltik om het certificaat-zoekformulier te openen",
     "submission_page_hint": "Dubbeltik om de inzendpagina in de browser te openen",
     "toggle_reasoning_a11y": "Toelichting bij de grade tonen of verbergen",
-    "standards_title": "Gradingstandaarden"
+    "standards_title": "Gradingstandaarden",
+    "cert_number_hint": "Voer het nummer in dat op je gradingcertificaat of slablabel staat."
   },
   "auth": {
     "sign_in": "Inloggen",
@@ -384,7 +449,8 @@
     "a11y_update_password": "Wachtwoord bijwerken",
     "update_password": "Wachtwoord bijwerken",
     "a11y_back_to_sign_in": "Terug naar inloggen",
-    "back_to_sign_in": "Terug naar inloggen"
+    "back_to_sign_in": "Terug naar inloggen",
+    "set_new_password": "Stel een nieuw wachtwoord in"
   },
   "nav": {
     "portfolio": "Portfolio",
@@ -463,7 +529,10 @@
     "dismiss_suggestion_a11y": "Deze suggestie sluiten",
     "your_categories": "Jouw categorieën",
     "new_to_this": "Nieuw hierin? Begin hier",
-    "no_target": "Geen streefprijs"
+    "no_target": "Geen streefprijs",
+    "chart_load_failed": "Je grafiek kon niet worden geladen.",
+    "no_history_hint": "Nog geen geschiedenis. Voeg items toe om je portfoliocurve te zien.",
+    "value_breakdown_hint": "Voeg items aan je collectie toe om te zien hoe hun waarde per categorie is verdeeld."
   },
   "items": {
     "title": "Items",
@@ -560,7 +629,13 @@
     "discard_item_a11y": "Dit item weggooien",
     "save_and_next_a11y": "Item opslaan en volgende scannen",
     "process_all_a11y": "Alle gevonden items verwerken",
-    "done_go_back_a11y": "Klaar, terug"
+    "done_go_back_a11y": "Klaar, terug",
+    "save_and_next_button": "Opslaan en volgende",
+    "batch_complete": "Batchscan voltooid",
+    "total_estimated_value": "Totale geschatte waarde",
+    "nothing_saved": "Er zijn tijdens deze sessie geen items opgeslagen.",
+    "one_by_one": "Eén voor één",
+    "all_at_once": "Allemaal tegelijk"
   },
   "settings": {
     "title": "Instellingen",
@@ -616,7 +691,8 @@
     "a11y_change_collecting_experience": "Wijzig hoe lang je al verzamelt",
     "collecting_experience": "Verzamelervaring",
     "collecting_experience_question": "Hoe lang verzamel je al?",
-    "loading": "Instellingen laden..."
+    "loading": "Instellingen laden...",
+    "payment_handle_explainer": "Voeg de naam toe waarop kopers je kunnen betalen; Sparrow opent dan hun app met het afgesproken bedrag al ingevuld. Alleen de koper van een ruil die je hebt geaccepteerd ziet het. Sparrow raakt het geld nooit aan."
   },
   "sponsor_profile": {
     "company_name": "Bedrijfsnaam",
@@ -677,7 +753,16 @@
     "build_and_paint_projects": "Bouw- & schilderprojecten",
     "start_build_project": "Bouwproject starten",
     "start_new_build": "Nieuw bouwproject starten",
-    "linked_item": "Gekoppeld item"
+    "linked_item": "Gekoppeld item",
+    "empty_hint": "Tik op de +-knop om je eerste bouw- of schilderproject te maken",
+    "none_in_category": "Nog geen bouwprojecten in deze categorie.",
+    "select_category_placeholder": "Kies een categorie...",
+    "link_to_item": "Koppelen aan item (optioneel)",
+    "no_portfolio_items": "Geen portfolio-items in deze categorie",
+    "template_steps_note": "De stappen uit het sjabloon worden na het aanmaken toegevoegd",
+    "no_paint_recipes": "Nog geen verfrecepten. Voeg je verflijsten en technieknotities toe.",
+    "add_paint": "Verf toevoegen",
+    "track_paints_subtitle": "Houd verf, merken en technieken bij"
   },
   "watchlist": {
     "add_title": "Toevoegen aan volglijst",
@@ -711,7 +796,8 @@
     "attendees_only_hint": "Geef op het evenement aan dat je gaat of geïnteresseerd bent om te zien wat de organisator plaatst.",
     "attendees_only_cta": "Terug naar het evenement",
     "compose_a11y": "Aankondiging opstellen",
-    "empty": "Nog geen aankondigingen"
+    "empty": "Nog geen aankondigingen",
+    "sent_as_dm": "Verstuurd als DM naar alle deelnemers"
   },
   "project_header": {
     "mark_complete_a11y": "Project markeren als voltooid",
@@ -753,7 +839,9 @@
     "submit_a11y": "Verkoopprijs versturen",
     "cancel_a11y": "Invoer van verkoopprijs annuleren",
     "report_a11y": "Verkoopprijs doorgeven",
-    "price_off_a11y": "Prijs lijkt niet te kloppen"
+    "price_off_a11y": "Prijs lijkt niet te kloppen",
+    "sold_becomes_comp": "Verkocht? Jouw prijs wordt de referentie",
+    "member_sale_note": "Voor de meeste items hier is een verkoop door een lid de enige echte verkoopprijs die bestaat. Voeg die van jou toe en je bepaalt de prijs van dit item — voor jou en voor iedereen die er een heeft."
   },
   "marketplace_filter": {
     "close_a11y": "Filters sluiten",
@@ -784,7 +872,8 @@
     "retry_a11y": "Rapport opnieuw laden",
     "estimated_value": "Geschatte waarde",
     "export_pdf_a11y": "Rapport exporteren als pdf",
-    "export_report": "Rapport exporteren"
+    "export_report": "Rapport exporteren",
+    "report_load_failed": "Het rapport kon niet worden geladen. Controleer je verbinding en probeer het opnieuw."
   },
   "alert_settings": {
     "section_a11y": "Sectie meldingsinstellingen",
@@ -792,7 +881,9 @@
     "drop_threshold": "Drempel voor daling",
     "price_increases": "Prijsstijgingen",
     "increase_threshold": "Drempel voor stijging",
-    "new_listings": "Nieuwe advertenties"
+    "new_listings": "Nieuwe advertenties",
+    "alert_types": "Soorten meldingen",
+    "notification_frequency": "Frequentie van meldingen"
   },
   "marketplace_connections": {
     "section_title": "Marktplaatsaccounts",
@@ -803,7 +894,10 @@
     "connect_failed_body": "Probeer het opnieuw. Blijft het misgaan? Controleer je internetverbinding.",
     "connect_title": "Marktplaats koppelen",
     "seller_name_optional": "Verkopersnaam (optioneel)",
-    "seller_name_placeholder": "Je gebruikersnaam als verkoper"
+    "seller_name_placeholder": "Je gebruikersnaam als verkoper",
+    "set_up_defaults": "Standaardwaarden instellen",
+    "edit_defaults": "Standaardwaarden bewerken",
+    "none_connected": "Nog geen marktplaatsen gekoppeld. Zodra je inlogt, kan Sparrow je helpen items op eBay aan te bieden."
   },
   "add_manual_basic": {
     "title": "Basisgegevens",
@@ -811,7 +905,8 @@
     "custom_category_label": "Eigen categorienaam",
     "custom_category_a11y": "Eigen categorienaam",
     "set_series": "Set / serie",
-    "set_series_a11y": "Set of serie"
+    "set_series_a11y": "Set of serie",
+    "custom_category_note": "Eigen categorieën hebben geen AI-prijsbepaling — je stelt de waarde zelf in"
   },
   "wishlist_edit_target": {
     "title": "Streefprijs instellen",
@@ -831,7 +926,11 @@
     "renews_on": "Wordt verlengd op {{date}}",
     "access_until": "Pro-toegang tot {{date}}",
     "retry_plans_a11y": "Probeer de abonnementen opnieuw te laden",
-    "restore_purchases_a11y": "Eerdere aankopen herstellen"
+    "restore_purchases_a11y": "Eerdere aankopen herstellen",
+    "in_beta": "Je zit in de Sparrow-bèta",
+    "plans_load_failed": "De abonnementen konden niet worden geladen",
+    "restore_purchases": "Aankopen herstellen",
+    "beta_pricing_note": "Alle Pro-functies zijn gratis beschikbaar zolang we testen. Prijzen volgen na de bèta — je krijgt bericht voordat er iets verandert."
   },
   "mfa": {
     "title": "Tweestapsverificatie",
@@ -843,7 +942,11 @@
     "enable_2fa": "Tweestapsverificatie aanzetten",
     "load_failed": "De status van je tweestapsverificatie kon niet worden gecontroleerd",
     "qr_code_a11y": "QR-code voor je authenticator-app",
-    "totp_code_a11y": "TOTP-verificatiecode"
+    "totp_code_a11y": "TOTP-verificatiecode",
+    "intro": "Voeg een extra beveiligingslaag toe aan je account met een TOTP-authenticator-app.",
+    "scan_instruction": "Open je authenticator-app (Google Authenticator, Authy, enzovoort) en scan deze code:",
+    "protected": "Je account is beveiligd met tweefactorauthenticatie.",
+    "enable_prompt": "Beveilig je account door tweefactorauthenticatie in te schakelen met een authenticator-app."
   },
   "event_detail": {
     "not_found": "Evenement niet gevonden",
@@ -852,7 +955,8 @@
     "promote_subtitle": "Bereik meer verzamelaars met een gesponsorde plaatsing",
     "load_failed": "Dit evenement kon niet worden geladen",
     "cancelled": "Dit evenement is geannuleerd",
-    "was_interested": "Was geïnteresseerd"
+    "was_interested": "Was geïnteresseerd",
+    "not_found_body": "Dit evenement bestaat nog niet. Probeer het opnieuw te openen via het tabblad Evenementen."
   },
   "user_profile": {
     "blocked_user": "Je hebt deze gebruiker geblokkeerd",
@@ -866,7 +970,10 @@
     "not_found_hint": "Dit profiel bestaat niet of is niet meer openbaar.",
     "loading": "Profiel laden...",
     "active_challenges": "Actieve uitdagingen",
-    "not_ranked": "Niet gerangschikt"
+    "not_ranked": "Niet gerangschikt",
+    "what_others_see": "Dit is wat andere verzamelaars zien.",
+    "categories_load_failed": "De categorieën konden nu niet worden geladen.",
+    "allow_discovery_hint": "Zet Vindbaarheid toestaan aan bij Instellingen → Privacy om meegeteld te worden in de categorieklassementen."
   },
   "items_detail": {
     "thin_cat_help": "Deze categorie heeft je gegevens nodig — geef hieronder aan wat je hebt betaald om de schattingen te verbeteren.",
@@ -920,7 +1027,9 @@
     "blocked_load_failed": "Je geblokkeerde gebruikers konden niet worden geladen",
     "blocked_load_failed_hint": "Er is niemand gedeblokkeerd — we konden de lijst alleen niet bereiken.",
     "blocked_empty": "Geen geblokkeerde gebruikers",
-    "blocked_empty_hint": "Je hebt nog niemand geblokkeerd. Geblokkeerde gebruikers kunnen je geen berichten sturen."
+    "blocked_empty_hint": "Je hebt nog niemand geblokkeerd. Geblokkeerde gebruikers kunnen je geen berichten sturen.",
+    "export_description": "Volledig overzicht met 30 kolommen — elk detail van elk item, in jouw valuta. Voor verzekering, boekhouder of een compleet collectiearchief.",
+    "delete_warning": "Hiermee verwijder je je account en al je gegevens definitief. Dit kan niet ongedaan worden gemaakt."
   },
   "billing": {
     "free": "Gratis",
@@ -943,7 +1052,9 @@
     "subtitle": "Automatisch gedetecteerd uit je items",
     "complete": "{{owned}}/{{total}} • {{pct}}%",
     "no_sets": "Nog geen sets in uitvoering",
-    "est_value": "Gesch. waarde"
+    "est_value": "Gesch. waarde",
+    "sets_to_complete": "Sets om af te maken",
+    "close_to_complete": "Collecties die bijna op 100% staan. Gesorteerd op wat je het dichtst bij afronden bent."
   },
   "ads": {
     "sponsored": "Gesponsord",
@@ -970,7 +1081,9 @@
   },
   "notifications": {
     "mark_all_read": "Alles als gelezen markeren",
-    "load_failed": "Je meldingen konden niet worden geladen"
+    "load_failed": "Je meldingen konden niet worden geladen",
+    "empty": "Nog geen meldingen",
+    "empty_hint": "Hier zie je prijsmeldingen, deal-updates en meer."
   },
   "diagnostics": {
     "title": "Diagnostiek",
@@ -1048,7 +1161,12 @@
     "postage_hint": "Wat kostte het verzenden je? Wij zien dat niet, dus je winst staat er zonder verzendkosten bij tot je het invult. De koper ziet hier niets van.",
     "postage_zero_ok": "Persoonlijk overhandigd? Vul 0 in — dat is een antwoord, geen leeg veld.",
     "decline_counter_a11y": "Het tegenbod van de verkoper afwijzen",
-    "view_offers_a11y": "Biedingen bekijken"
+    "view_offers_a11y": "Biedingen bekijken",
+    "tap_to_manage": "Tik om deze ruil te beheren",
+    "carrier_load_failed": "De lijst met vervoerders kon niet worden geladen.",
+    "save_tracking": "Trackingnummer opslaan",
+    "tracking_explainer": "De koper ziet dit om het pakket te volgen. Sparrow controleert het niet en het rondt de ruil niet af — jullie bevestigen allebei nog handmatig.",
+    "postcode_carrier_note": "Deze vervoerder heeft de postcode van de bezorging nodig om een trackingpagina te openen, en die heeft Sparrow niet. De koper ziet in plaats van een link de code om mee te zoeken."
   },
   "item_attrs": {
     "case_size": "Kastmaat",
@@ -1068,7 +1186,10 @@
     "a11y_lookup_cgc": "CGC-certificaat opzoeken",
     "a11y_browse_discogs": "Bekijken op Discogs",
     "a11y_visit_warhammer": "Warhammer Community bezoeken",
-    "chase_treasure_hunt": "Chase / Treasure Hunt"
+    "chase_treasure_hunt": "Chase / Treasure Hunt",
+    "size_affects_value": "De maat beïnvloedt de marktwaarde — prijzen verschillen per maat",
+    "build_instructions": "Bouwinstructies",
+    "vaulted_note": "Deze Pop! wordt niet meer geproduceerd. Items uit de vault stijgen vaak in waarde."
   },
   "create_event": {
     "from_template": "Uit sjabloon",
@@ -1087,7 +1208,11 @@
     "a11y_create_event": "Evenement aanmaken",
     "create_event": "Evenement aanmaken",
     "invite_friends": "Vrienden uitnodigen",
-    "clear_end_date_a11y": "Einddatum wissen"
+    "clear_end_date_a11y": "Einddatum wissen",
+    "sponsored_note": "Dit evenement wordt gemarkeerd als gesponsord en extra getoond aan verzamelaars.",
+    "invite_after_create": "Je kunt vrienden uitnodigen nadat je het evenement hebt aangemaakt.",
+    "invite_via_chat": "Vrienden uitnodigen via chat",
+    "available_after_creation": "Beschikbaar nadat het evenement is aangemaakt"
   },
   "listings": {
     "catalog_photo": "Catalogusfoto",
@@ -1117,7 +1242,25 @@
     "create_title": "Advertentie maken",
     "item_title_placeholder": "Titel van het item",
     "est_net": "Gesch. netto",
-    "create_as_draft": "Als concept opslaan"
+    "create_as_draft": "Als concept opslaan",
+    "catalog_photo_note": "Catalogusfoto — niet het item van de verkoper",
+    "message_seller": "Verkoper berichten",
+    "raise_price_note": "Als je de prijs verhoogt, krijgt niemand een melding.",
+    "save_price": "Prijs opslaan",
+    "clear_filters": "Filters wissen",
+    "choose_item_to_sell": "Kies een item om te verkopen",
+    "loading_more": "Meer laden…",
+    "select_where_to_list": "Kies waar je dit item wilt aanbieden",
+    "you_receive": "Jij ontvangt",
+    "listing_format": "Soort advertentie",
+    "fee_comparison": "Vergelijking van kosten",
+    "filtered_by": "Gefilterd op:",
+    "no_catalogue_alert": "Deze advertentie waarschuwt leden die dit item volgen niet — hij is niet gekoppeld aan een catalogusvermelding. Hij is wel zichtbaar in bladeren en zoeken.",
+    "match_then_relist": "Koppel het item in je collectie aan een catalogusvermelding en plaats het opnieuw; iedereen die het volgt krijgt dan een melding dat de doelprijs is geraakt.",
+    "no_payment_handling": "Sparrow regelt geen betaling of bezorging. Dat regel je rechtstreeks met de verkoper, en er is geen kopersbescherming.",
+    "unmatched_price_note": "Deze advertentie is niet gekoppeld aan een catalogusitem, dus volgers krijgen geen melding. De nieuwe prijs is wel zichtbaar op de marktplaats.",
+    "marketplace_intro": "Alles hier wordt aangeboden door verzamelaars zoals jij. Stuur een verkoper een bericht om een prijs af te spreken — Sparrow regelt geen betaling of bezorging. Bied je eigen items aan en leden die ze volgen krijgen een melding.",
+    "arrange_between_yourselves": "Kopers en verkopers regelen betaling en bezorging onderling. Sparrow regelt geen betaling en er is geen kopersbescherming."
   },
   "chat": {
     "collector_not_found": "Verzamelaar niet gevonden",
@@ -1140,7 +1283,8 @@
     "demo_send_message_a11y": "Testbericht verzenden",
     "demo_peer_name": "Testverzamelaar",
     "demo_placeholder_note": "Voorbeeld · wordt niet opgeslagen",
-    "compose_hint": "Typ een bericht en druk op verzenden"
+    "compose_hint": "Typ een bericht en druk op verzenden",
+    "invite_inbox_note": "Het verschijnt in hun inbox, waar ze het kunnen accepteren of weigeren."
   },
   "sell": {
     "sell_an_item": "Een item verkopen",
@@ -1165,7 +1309,19 @@
     "publish_defaults": "Publicatie-standaarden",
     "find_this": "Dit vinden →",
     "save_defaults": "Standaardwaarden opslaan",
-    "coming_soon_title": "Verkopen komt binnenkort"
+    "coming_soon_title": "Verkopen komt binnenkort",
+    "item_photo_note": "De foto van je item. De advertentie gebruikt deze tenzij je zelf een foto toevoegt.",
+    "add_real_photos": "Voeg foto's van het echte item toe",
+    "checking_catalogue": "Catalogus controleren…",
+    "list_it": "Plaatsen",
+    "pick_intro": "Kies wat je wilt verkopen. Daarna stel je de prijs in.",
+    "sell_something_else": "Iets anders verkopen",
+    "confirm_your_age": "Bevestig je leeftijd",
+    "not_in_collection": "Voor iets wat je bezit maar niet in je collectie staat. Wij voegen het voor je toe — je hoeft geen collectie op te bouwen om te verkopen.",
+    "cover_photo_reference": "Laat Sparrow je omslagfoto gebruiken als referentiebeeld voor dit product, zichtbaar voor andere leden. Optioneel, en je kunt het later uitzetten.",
+    "no_catalogue_match": "Geen catalogustreffer voor die titel. Hij is wel zichtbaar in bladeren en zoeken — probeer de exacte productnaam om ook leden te bereiken die erop wachten.",
+    "arrange_with_buyer": "Sparrow regelt geen betaling of bezorging — dat regel je rechtstreeks met de koper.",
+    "age_gate_explainer": "Om items te verkopen, op marktplaatsen aan te bieden of een verkopersaccount te koppelen, bevestig je dat je de wettelijke leeftijd in jouw regio hebt (18 jaar of de lokale meerderjarigheid)."
   },
   "purchase": {
     "invalid_deal_link": "Ongeldige deal-link",
@@ -1198,7 +1354,14 @@
     "mandate_any_region": "Alle regio's",
     "mandate_a11y_pause": "Zoekopdracht pauzeren",
     "mandate_pause_search": "Zoekopdracht pauzeren",
-    "got_it_a11y": "Ik heb het ontvangen"
+    "got_it_a11y": "Ik heb het ontvangen",
+    "quality_filter_hint": "Hoger = strenger filter op kwaliteit van verkoper en advertentie.",
+    "leave_unchecked_hint": "Laat alles uitgevinkt om op alle marktplaatsen te zoeken.",
+    "price_position": "Positie van de vraagprijs binnen het voorspelde bereik",
+    "watch_note": "Wij houden marktplaatsen in de gaten en waarschuwen je als je prijs wordt gehaald.",
+    "deal_discovery_pitch": "Deals ontdekken is een functie van Sparrow Pro. Upgrade en laat Sparrow deals voor je zoeken.",
+    "add_item_and_max": "Voeg een item toe en je maximumprijs.",
+    "link_item_explainer": "Koppelt de zoekopdracht aan een bekend item zodat we kunnen laten zien wat een deal je bespaarde. Laat je het weg, dan loopt de zoekopdracht gewoon door."
   },
   "edit_event": {
     "loading_event": "Evenement laden...",
@@ -1209,7 +1372,8 @@
     "save_changes": "Wijzigingen opslaan",
     "danger_zone": "Gevarenzone",
     "a11y_cancel_event": "Evenement annuleren",
-    "cancel_event": "Evenement annuleren"
+    "cancel_event": "Evenement annuleren",
+    "cancel_warning": "Dit evenement annuleren is definitief. Alle deelnemers krijgen bericht."
   },
   "catalog": {
     "image_coming_soon": "Afbeelding volgt binnenkort",
@@ -1235,7 +1399,12 @@
     "a11y_back_to_set": "Terug naar set",
     "price_load_failed": "De marktwaarde kon niet worden geladen.",
     "a11y_retry_price": "Probeer de marktwaarde opnieuw te laden",
-    "items_load_failed": "Deze items konden niet worden geladen"
+    "items_load_failed": "Deze items konden niet worden geladen",
+    "unrecognized_item": "We herkennen dit item nog niet",
+    "help_us_improve": "Help Sparrow Collect verbeteren door ons te vertellen wat dit is.",
+    "suggest_new_category": "Of stel een nieuwe categorie voor",
+    "suggestions_explainer": "Als je items scant of toevoegt die we niet herkennen, verschijnen ze hier zodat je hun status kunt volgen.",
+    "no_categories_match": "Geen categorieën komen overeen met \"{{query}}\""
   },
   "inbox": {
     "sent_requests": "Verzonden verzoeken",
@@ -1278,7 +1447,10 @@
     "item_history": "Geschiedenis van het item",
     "sell_timing": "Verkoopmoment",
     "notes_placeholder": "Voeg je notities toe over conditie, herkomst, waar je het hebt gekocht, enzovoort.",
-    "shop_this_item": "Dit item kopen"
+    "shop_this_item": "Dit item kopen",
+    "no_items_to_display": "Geen items om weer te geven",
+    "add_your_photo": "Voeg je eigen foto toe",
+    "no_confirmed_sales": "We hebben hier nog geen bevestigde verkopen van. Vul in wat het jou waard is, of vul de details aan zodat we het kunnen matchen."
   },
   "tax": {
     "title": "Verkoop- en belastingrapportage",
@@ -1287,7 +1459,13 @@
     "where_the_line_is": "Waar de grens ligt",
     "what_that_means": "Wat dat voor jou betekent",
     "a11y_read_section_6": "Lees artikel 6 van de marktplaatsvoorwaarden",
-    "earlier_years": "Eerdere jaren"
+    "earlier_years": "Eerdere jaren",
+    "no_sales_counted": "Nog geen afgeronde verkopen meegeteld",
+    "your_position": "Je belastingpositie is jouw verantwoordelijkheid.",
+    "marketplace_terms_section": "Marktplaatsvoorwaarden, artikel 6",
+    "unreachable_note": "Dit zegt niets over jouw situatie — we konden alleen de server niet bereiken. De drempels hieronder gelden nog steeds.",
+    "counting_starts": "Het tellen begint zodra een ruil is afgerond — jij en de koper bevestigen allebei de uitwisseling. Zolang een bod openstaat, telt er niets mee.",
+    "counted_per_year": "Geteld per kalenderjaar, in euro's, omdat dat de rapportageperiode is en de drempel in euro's is vastgesteld. Niets hiervan is belastingadvies."
   },
   "announce": {
     "title_optional": "Titel (optioneel)",
@@ -1296,7 +1474,8 @@
     "a11y_body": "Tekst van aankondiging",
     "image_url_optional": "Afbeeldings-URL (optioneel)",
     "a11y_send": "Aankondiging versturen",
-    "send_announcement": "Aankondiging versturen"
+    "send_announcement": "Aankondiging versturen",
+    "sent_to_all_attendees": "Dit wordt naar alle deelnemers van dit evenement gestuurd."
   },
   "sponsor": {
     "tiers": "Sponsorniveaus",
@@ -1331,7 +1510,11 @@
     "select_tier": "Kies een sponsorniveau",
     "select_tier_sub": "Kies het zichtbaarheidsniveau voor je evenement",
     "per_event": "Per evenement",
-    "select_event": "Kies welk evenement je wilt melden"
+    "select_event": "Kies welk evenement je wilt melden",
+    "title": "Sponsor worden op Sparrow Collect",
+    "pitch": "Bereik gepassioneerde verzamelaars, kondig exclusieve drops aan en laat je merk groeien met de community die houdt van wat je maakt.",
+    "registration_free": "Registreren is gratis. Je kiest een niveau bij het aanmaken van je eerste evenement.",
+    "notify_attendees_hint": "Informeer deelnemers over updates, wijzigingen in het programma of exclusieve aanbiedingen."
   },
   "share": {
     "send_to": "Sturen naar",
@@ -1339,14 +1522,17 @@
     "chats_load_failed": "Je chats konden niet worden geladen.",
     "a11y_retry_chats": "Chats opnieuw laden",
     "outside_sparrow": "Buiten Sparrow",
-    "a11y_share_elsewhere": "Ergens anders delen"
+    "a11y_share_elsewhere": "Ergens anders delen",
+    "no_chats_yet": "Nog geen chats. Stuur iemand eerst een bericht via zijn profiel of een advertentie, daarna kun je items direct naar hem sturen."
   },
   "settle": {
     "agreed_amount": "Afgesproken bedrag",
     "deliver_to": "Bezorgen aan",
     "delivery_address": "Bezorgadres",
     "a11y_save_address": "Bezorgadres opslaan",
-    "list_load_failed": "Die lijst kon niet worden geladen."
+    "list_load_failed": "Die lijst kon niet worden geladen.",
+    "no_address_yet": "De koper heeft nog geen bezorgadres toegevoegd. Vraag ernaar in de chat — je hebt het nodig voordat je kunt boeken.",
+    "address_shared_note": "Alleen gedeeld met deze verkoper, voor deze ruil. Sparrow boekt of verzekert de verzending niet."
   },
   "category": {
     "a11y_see_all_yours": "Bekijk al je items in deze categorie",
@@ -1384,7 +1570,14 @@
     "series_progress": "Voortgang van de serie",
     "featured_in_catalog": "Uitgelicht in de catalogus",
     "related_categories": "Verwante categorieën",
-    "complete_your_sets": "Maak je sets compleet"
+    "complete_your_sets": "Maak je sets compleet",
+    "not_found_body": "Deze categorie bestaat niet of kon niet worden geladen.",
+    "guide_subtitle": "De termen, waar je op moet letten, wat je moet vermijden en waar je begint.",
+    "sets_missing_subtitle": "Wat je nog mist uit sets waar je al aan begonnen bent.",
+    "no_collectors_found": "Geen verzamelaars gevonden",
+    "find_friends": "Vrienden zoeken",
+    "guidance_disclaimer": "Algemene richtlijnen, geen taxatieadvies. Prijzen bewegen en de conditie wordt beoordeeld door wie er koopt.",
+    "items_in": "Items in {{category}}"
   },
   "analytics": {
     "a11y_retry": "Analysegegevens opnieuw laden",
@@ -1401,7 +1594,10 @@
     "advanced_title": "Geavanceerde analyses",
     "category_performance": "Prestaties per categorie",
     "prediction_accuracy": "Nauwkeurigheid van voorspellingen",
-    "actuals_vs_predicted": "Werkelijk versus voorspeld"
+    "actuals_vs_predicted": "Werkelijk versus voorspeld",
+    "preview_notice": "Voorbeeld — dit zijn voorbeeldcijfers. Voeg items aan je portfolio toe om je echte analyses te zien.",
+    "view_all": "Alles bekijken",
+    "no_earlier_value": "Nog geen eerdere waarde om mee te vergelijken — alles wat je bezit is binnen deze periode toegevoegd."
   },
   "guide": {
     "no_guide_yet": "Nog geen gids voor deze categorie",
@@ -1412,7 +1608,10 @@
     "not_found_title": "Hier hebben we nog geen hulppagina voor",
     "need_help": "Kun je hulp gebruiken?",
     "using_sparrow": "Sparrow gebruiken",
-    "how_scores_work": "Hoe scores werken"
+    "how_scores_work": "Hoe scores werken",
+    "what_counts": "Wat telt:",
+    "faq_intro": "Korte antwoorden op de vragen die mensen het eerst stellen. Je kunt ook gewoon typen wat je wilt doen in de zoekbalk.",
+    "scores_update_note": "Scores worden bijgewerkt terwijl je items in je collectie toevoegt, verwijdert of aanpast. Ze worden berekend op basis van je catalogusgegevens en marktreferenties."
   },
   "price_explanation": {
     "title": "Prijsuitleg",
@@ -1421,7 +1620,9 @@
     "key_factors": "Belangrijkste factoren",
     "data_sources": "Gegevensbronnen",
     "why_estimated_a11y": "Lees waarom deze prijs een schatting is",
-    "why_estimated_hint": "Opent een uitleg over hoe deze prijs is berekend"
+    "why_estimated_hint": "Opent een uitleg over hoe deze prijs is berekend",
+    "one_sale_only": "Eén verkoop — nog niet genoeg voor een bandbreedte",
+    "why_this_price": "Waarom deze prijs?"
   },
   "calendar": {
     "a11y_grid": "Kalenderraster",
@@ -1433,6 +1634,9 @@
     "category_only_title": "Ranglijsten zijn per categorie",
     "category_only_body": "Open een categorie in je collectie om te zien hoe je collectie daar scoort — op aantal items of op waarde.",
     "view_profile_hint": "Dubbeltik om het profiel van de verzamelaar te bekijken",
-    "top_collectors": "Topverzamelaars"
+    "top_collectors": "Topverzamelaars",
+    "discoverable_note": "Verzamelaars die zichtbaar willen zijn, gerangschikt op wat ze in deze categorie bezitten.",
+    "load_failed": "Het klassement kon niet worden geladen. Trek omlaag om het opnieuw te proberen.",
+    "empty": "Er staat nog niemand in het klassement."
   }
 }

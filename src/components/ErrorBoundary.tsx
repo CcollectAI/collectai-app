@@ -43,7 +43,7 @@ function ErrorFallback({
         </View>
         <Text style={[styles.title, { color: colors.text }]}>{t('common.error', { defaultValue: 'Something went wrong' })}</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          We encountered an unexpected error. Please try again.
+          {t('common.unexpected_error', { defaultValue: 'We encountered an unexpected error. Please try again.' })}
         </Text>
 
         {__DEV__ && error && (

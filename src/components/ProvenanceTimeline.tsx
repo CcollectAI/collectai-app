@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { timeAgo } from '@/lib/timeAgo';
+import { useTranslation } from 'react-i18next';
 
 type ProvenanceEvent = {
   id: string;
@@ -81,6 +82,7 @@ export function ProvenanceTimeline({
   authenticitySignals,
   loading = false,
 }: ProvenanceTimelineProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   if (loading) {
@@ -88,7 +90,7 @@ export function ProvenanceTimeline({
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="small" color={colors.accent} />
         <Text style={[styles.loadingText, { color: colors.muted }]}>
-          Loading history...
+          {t('common.loading_history', { defaultValue: 'Loading history...' })}
         </Text>
       </View>
     );
@@ -99,7 +101,7 @@ export function ProvenanceTimeline({
       <View style={styles.emptyContainer}>
         <Ionicons name="document-text-outline" size={28} color={colors.muted} />
         <Text style={[styles.emptyText, { color: colors.muted }]}>
-          No history yet
+          {t('common.no_history_yet', { defaultValue: 'No history yet' })}
         </Text>
       </View>
     );

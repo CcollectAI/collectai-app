@@ -351,8 +351,7 @@ function CreateMandateScreen() {
               </Text>
             </AnimatedPressable>
             <Text style={[styles.matchHint, { color: colors.muted }]}>
-              Links the search to a known item so we can show what a deal saved you.
-              Leave it out and the search still runs.
+              {t('purchase.link_item_explainer', { defaultValue: 'Links the search to a known item so we can show what a deal saved you. Leave it out and the search still runs.' })}
             </Text>
           </>
         )}
@@ -408,7 +407,7 @@ function CreateMandateScreen() {
           />
         </View>
         <Text style={[styles.hint, { color: colors.muted }]}>
-          Higher = stricter seller/listing quality filter.
+          {t('purchase.quality_filter_hint', { defaultValue: 'Higher = stricter seller/listing quality filter.' })}
         </Text>
 
         {/* Marketplace Sources — toggle switches */}
@@ -434,7 +433,7 @@ function CreateMandateScreen() {
           );
         })}
         <Text style={[styles.hint, { color: colors.muted }]}>
-          Leave all unchecked to search all marketplaces.
+          {t('purchase.leave_unchecked_hint', { defaultValue: 'Leave all unchecked to search all marketplaces.' })}
         </Text>
 
         {/* Region */}

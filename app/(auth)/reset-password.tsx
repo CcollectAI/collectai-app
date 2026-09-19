@@ -100,7 +100,7 @@ function ResetPasswordScreen() {
                 <Ionicons name="lock-closed-outline" size={32} color={colors.brand.dark} />
               </View>
               <Text style={[styles.brandTitle, { color: colors.text, fontFamily: fonts.bold }]}>
-                Set a new password
+                {t('auth.set_new_password', { defaultValue: 'Set a new password' })}
               </Text>
               <Text style={[styles.brandSubtitle, { color: colors.muted }]}>
                 {noSession

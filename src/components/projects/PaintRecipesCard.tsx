@@ -104,7 +104,7 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
 
       {paintRecipes.length === 0 && !addingRecipe ? (
         <Text style={[styles.emptyText, { color: colors.muted }]}>
-          No paint recipes yet. Add your paint lists and technique notes.
+          {t('projects.no_paint_recipes', { defaultValue: 'No paint recipes yet. Add your paint lists and technique notes.' })}
         </Text>
       ) : (
         <View style={styles.recipesList}>
@@ -267,7 +267,7 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
                 { color: newPaintBrand.trim() && newPaintColor.trim() ? accentColor : colors.muted },
               ]}
             >
-              Add Paint
+              {t('projects.add_paint', { defaultValue: 'Add Paint' })}
             </Text>
           </AnimatedPressable>
 
@@ -324,7 +324,7 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
           <View style={{ flex: 1, marginLeft: 8 }}>
             <Text style={[styles.applyTemplateTitle, { color: accentColor }]}>{t('projects.add_paint_recipe')}</Text>
             <Text style={[styles.applyTemplateHint, { color: colors.muted }]}>
-              Track paints, brands, and techniques
+              {t('projects.track_paints_subtitle', { defaultValue: 'Track paints, brands, and techniques' })}
             </Text>
           </View>
         </AnimatedPressable>

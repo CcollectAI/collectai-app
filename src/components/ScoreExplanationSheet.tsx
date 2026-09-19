@@ -177,7 +177,7 @@ export function ScoreExplanationSheet({
 
                 {/* Key factors */}
                 <Text style={[styles.factorsHeading, { color: colors.text }]}>
-                  What counts:
+                  {t('guide.what_counts', { defaultValue: 'What counts:' })}
                 </Text>
                 {sec.factors.map((factor, index) => (
                   <View key={index} style={styles.factorRow}>
@@ -193,8 +193,7 @@ export function ScoreExplanationSheet({
           <View style={[styles.disclaimerSection, { backgroundColor: colors.background }]}>
             <Ionicons name="information-circle-outline" size={16} color={colors.muted} />
             <Text style={[styles.disclaimerText, { color: colors.muted }]}>
-              Scores update as you add, remove, or update items in your collection.
-              They are calculated based on your catalog data and market reference information.
+              {t('guide.scores_update_note', { defaultValue: 'Scores update as you add, remove, or update items in your collection. They are calculated based on your catalog data and market reference information.' })}
             </Text>
           </View>
         </ScrollView>

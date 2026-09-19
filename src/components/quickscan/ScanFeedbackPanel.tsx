@@ -188,14 +188,14 @@ function ScanFeedbackPanelInner({
       {/* Feedback hint / sent badge */}
       {feedbackEnabled && !feedbackSent && scanSessionId && (
         <Text style={[styles.feedbackHint, { color: colors.muted }]}>
-          Tap name, category, or condition to correct
+          {t('common.tap_to_correct', { defaultValue: 'Tap name, category, or condition to correct' })}
         </Text>
       )}
       {feedbackSent && (
         <View style={styles.feedbackSentBadge}>
           <Ionicons name="checkmark-circle" size={14} color={colors.success} />
           <Text style={{ color: colors.success, fontSize: 11, marginLeft: 4 }}>
-            Correction submitted
+            {t('common.correction_submitted', { defaultValue: 'Correction submitted' })}
           </Text>
         </View>
       )}

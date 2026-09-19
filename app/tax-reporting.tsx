@@ -92,8 +92,7 @@ function TaxReportingScreen() {
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.cardTitle, { color: colors.text }]}>{t('tax.load_failed', { defaultValue: "Couldn't load your figures" })}</Text>
               <Text style={[styles.body, { color: colors.muted }]}>
-                This says nothing about where you stand — we just could not reach the
-                server. The thresholds below still apply.
+                {t('tax.unreachable_note', { defaultValue: 'This says nothing about where you stand — we just could not reach the server. The thresholds below still apply.' })}
               </Text>
               <AnimatedPressable
                 onPress={retry}
@@ -111,12 +110,10 @@ function TaxReportingScreen() {
                 {year === null ? (
                   <>
                     <Text style={[styles.cardTitle, { color: colors.text }]}>
-                      No completed sales counted yet
+                      {t('tax.no_sales_counted', { defaultValue: 'No completed sales counted yet' })}
                     </Text>
                     <Text style={[styles.body, { color: colors.muted }]}>
-                      Counting starts when a trade completes — both you and the buyer
-                      confirm the exchange. Nothing is counted while an offer is still
-                      open.
+                      {t('tax.counting_starts', { defaultValue: 'Counting starts when a trade completes — both you and the buyer confirm the exchange. Nothing is counted while an offer is still open.' })}
                     </Text>
                   </>
                 ) : (
@@ -195,7 +192,7 @@ function TaxReportingScreen() {
                   rules adopted by the UK, Canada, Australia, New Zealand, Japan and
                   others work the same way.{'\n\n'}
                   <Text style={{ color: colors.text }}>
-                    Your tax position is yours to handle.
+                    {t('tax.your_position', { defaultValue: 'Your tax position is yours to handle.' })}
                   </Text>{' '}
                   We do not file anything on your behalf, do not give tax advice, and do
                   not hold your tax identification number or bank details. Passing a
@@ -208,7 +205,7 @@ function TaxReportingScreen() {
                   accessibilityLabel={t('tax.a11y_read_section_6', { defaultValue: 'Read section 6 of the marketplace terms' })}
                 >
                   <Text style={[styles.linkText, { color: colors.accent }]}>
-                    Marketplace terms, section 6
+                    {t('tax.marketplace_terms_section', { defaultValue: 'Marketplace terms, section 6' })}
                   </Text>
                   <Ionicons name="chevron-forward" size={14} color={colors.accent} />
                 </AnimatedPressable>
@@ -235,8 +232,7 @@ function TaxReportingScreen() {
           )}
 
           <Text style={[styles.fine, { color: colors.muted }]}>
-            Counted per calendar year, in euros, because that is the reporting period
-            and the threshold is set in euros. Nothing here is tax advice.
+            {t('tax.counted_per_year', { defaultValue: 'Counted per calendar year, in euros, because that is the reporting period and the threshold is set in euros. Nothing here is tax advice.' })}
           </Text>
         </Animated.View>
       </ScrollView>

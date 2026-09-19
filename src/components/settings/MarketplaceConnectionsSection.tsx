@@ -227,8 +227,7 @@ export function MarketplaceConnectionsSection() {
             {accounts.length === 0 && !loadFailed && (
               <View style={styles.emptyRow}>
                 <Text style={[styles.emptyText, { color: colors.muted }]}>
-                  No marketplaces connected yet. Sparrow can help you list items
-                  on eBay once you sign in.
+                  {t('marketplace_connections.none_connected', { defaultValue: 'No marketplaces connected yet. Sparrow can help you list items on eBay once you sign in.' })}
                 </Text>
               </View>
             )}
@@ -293,7 +292,7 @@ export function MarketplaceConnectionsSection() {
                       >
                         <Ionicons name="settings-outline" size={14} color={colors.warning} />
                         <Text style={[styles.actionBtnText, { color: colors.warning }]}>
-                          Set up defaults
+                          {t('marketplace_connections.set_up_defaults', { defaultValue: 'Set up defaults' })}
                         </Text>
                       </AnimatedPressable>
                     )}
@@ -306,7 +305,7 @@ export function MarketplaceConnectionsSection() {
                       >
                         <Ionicons name="settings-outline" size={14} color={colors.muted} />
                         <Text style={[styles.actionBtnText, { color: colors.muted }]}>
-                          Edit defaults
+                          {t('marketplace_connections.edit_defaults', { defaultValue: 'Edit defaults' })}
                         </Text>
                       </AnimatedPressable>
                     )}

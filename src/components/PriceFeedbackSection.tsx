@@ -134,12 +134,10 @@ export const PriceFeedbackSection = React.memo(function PriceFeedbackSection({
           of the card. As a `text`-coloured 14/600 header it once outranked the
           figure it is about. A better offer is not a licence to shout. */}
       <Text style={[s.feedbackHeader, { color: theme.muted }]} accessibilityRole="header">
-        Sold it? Your price becomes the comp
+        {t('price_feedback.sold_becomes_comp', { defaultValue: 'Sold it? Your price becomes the comp' })}
       </Text>
       <Text style={[s.feedbackSubhead, { color: theme.muted }]}>
-        For most items here, a member sale is the only real sale price that
-        exists. Add yours and it prices this item — for you and everyone else
-        holding one.
+        {t('price_feedback.member_sale_note', { defaultValue: 'For most items here, a member sale is the only real sale price that exists. Add yours and it prices this item — for you and everyone else holding one.' })}
       </Text>
 
       {feedbackMessage && (

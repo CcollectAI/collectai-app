@@ -382,12 +382,10 @@ function SubscriptionScreen() {
               <Ionicons name="sparkles-outline" size={40} color={colors.accent} />
             </View>
             <Text style={[styles.comingSoonTitle, { color: colors.text }]}>
-              You&apos;re in the Sparrow beta
+              {t('subscription.in_beta', { defaultValue: "You're in the Sparrow beta" })}
             </Text>
             <Text style={[styles.comingSoonText, { color: colors.muted }]}>
-              Every Pro feature is unlocked for free while we&apos;re testing.
-              Pricing arrives after the beta — you&apos;ll get a heads-up before
-              anything changes.
+              {t('subscription.beta_pricing_note', { defaultValue: "Every Pro feature is unlocked for free while we're testing. Pricing arrives after the beta — you'll get a heads-up before anything changes." })}
             </Text>
           </View>
         ) : iapUnavailable || fetchError ? (
@@ -407,7 +405,7 @@ function SubscriptionScreen() {
               <Ionicons name="cloud-offline-outline" size={40} color={colors.warning} />
             </View>
             <Text style={[styles.comingSoonTitle, { color: colors.text }]}>
-              Plans couldn&apos;t load
+              {t('subscription.plans_load_failed', { defaultValue: "Plans couldn't load" })}
             </Text>
             <Text style={[styles.comingSoonText, { color: colors.muted }]}>
               {/* NAME THE STORE THE USER IS ACTUALLY IN. This said "App Store"
@@ -541,7 +539,7 @@ function SubscriptionScreen() {
                     style={[styles.secondaryBtnText, { color: colors.brand.dark }]}
                     numberOfLines={1}
                   >
-                    Restore Purchases
+                    {t('subscription.restore_purchases', { defaultValue: 'Restore Purchases' })}
                   </Text>
                 </>
               )}

@@ -20,7 +20,7 @@ export const AddManualIntroCard = React.memo(function AddManualIntroCard() {
       <View style={styles.introText}>
         <Text style={[styles.introTitle, { color: colors.text }]}>{t('add_manual.intro_title', { defaultValue: 'Manual Entry' })}</Text>
         <Text style={[styles.introSubtitle, { color: colors.muted }]}>
-          Enter item details yourself for full control
+          {t('add_manual.full_control', { defaultValue: 'Enter item details yourself for full control' })}
         </Text>
       </View>
     </View>

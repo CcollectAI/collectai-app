@@ -216,7 +216,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
           <View style={styles.fieldBlock}>
             <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('add_manual.custom_details')}</Text>
             <Text style={[styles.customHint, { color: colors.muted }]}>
-              Add any details specific to your item (e.g. Vintage, Region, Size)
+              {t('add_manual.extra_details_hint', { defaultValue: 'Add any details specific to your item (e.g. Vintage, Region, Size)' })}
             </Text>
             {customFields.map((field, idx) => (
               <View key={idx} style={styles.customFieldRow}>

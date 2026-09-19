@@ -40,7 +40,7 @@ export const ItemsFilterSummary = React.memo(function ItemsFilterSummary({
       {hasAnyFilter && (
         <View style={styles.filterSummaryRow}>
           <Text style={[styles.filterSummaryText, { color: colors.muted }]}>
-            Filtered by:
+            {t('listings.filtered_by', { defaultValue: 'Filtered by:' })}
           </Text>
           <View style={styles.filterChipsRow}>
             {categoryParam && (

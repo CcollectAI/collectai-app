@@ -386,7 +386,7 @@ function GradingSectionInner({
               autoFocus
             />
             <Text style={[s.modalHint, { color: theme.muted }]}>
-              Enter the number printed on your grading certificate or slab label.
+              {t('grading.cert_number_hint', { defaultValue: 'Enter the number printed on your grading certificate or slab label.' })}
             </Text>
 
             <Pressable

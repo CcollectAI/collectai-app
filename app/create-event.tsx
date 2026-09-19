@@ -185,7 +185,7 @@ const CreateEventScreen: React.FC = () => {
           <View style={[styles.sponsoredBanner, { backgroundColor: colors.accent + '12' }]}>
             <Ionicons name="megaphone-outline" size={16} color={colors.accent} />
             <Text style={[styles.sponsoredBannerText, { color: colors.accent }]}>
-              This event will be marked as sponsored and highlighted to collectors.
+              {t('create_event.sponsored_note', { defaultValue: 'This event will be marked as sponsored and highlighted to collectors.' })}
             </Text>
           </View>
         )}
@@ -544,7 +544,7 @@ const CreateEventScreen: React.FC = () => {
 
             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.inviteNote, { color: colors.muted }]}>
-                You can invite friends after creating the event.
+                {t('create_event.invite_after_create', { defaultValue: 'You can invite friends after creating the event.' })}
               </Text>
               <View
                 style={[
@@ -557,11 +557,11 @@ const CreateEventScreen: React.FC = () => {
               >
                 <Ionicons name="chatbubbles-outline" size={18} color={colors.muted} />
                 <Text style={[styles.inviteButtonText, { color: colors.muted }]}>
-                  Invite Friends via Chat
+                  {t('create_event.invite_via_chat', { defaultValue: 'Invite Friends via Chat' })}
                 </Text>
               </View>
               <Text style={[styles.inviteSubtext, { color: colors.muted }]}>
-                Available after event creation
+                {t('create_event.available_after_creation', { defaultValue: 'Available after event creation' })}
               </Text>
             </View>
           </View>

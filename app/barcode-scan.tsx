@@ -495,7 +495,7 @@ function BarcodeScanScreen() {
                 <View style={[styles.scanCorner, styles.scanCornerBR]} />
               </View>
               <Text style={styles.scanHint}>
-                Point camera at barcode or ISBN
+                {t('barcode.point_camera', { defaultValue: 'Point camera at barcode or ISBN' })}
               </Text>
             </View>
           </View>
@@ -514,7 +514,7 @@ function BarcodeScanScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
           <Text style={[styles.loadingText, { color: colors.text }]}>
-            Looking up product...
+            {t('barcode.looking_up', { defaultValue: 'Looking up product...' })}
           </Text>
           {scannedCode && (
             <Text style={[styles.codeText, { color: colors.muted }]}>

@@ -239,8 +239,7 @@ export function ShareToChatSheet({ visible, onClose, payload }: Props) {
           // No empty shelf. A member with no chats is told why, and handed the
           // route that does work, rather than shown a blank list.
           <Text style={[styles.hint, { color: colors.muted }]}>
-            No chats yet. Message someone from their profile or a listing first,
-            then you can send items straight to them.
+            {t('share.no_chats_yet', { defaultValue: 'No chats yet. Message someone from their profile or a listing first, then you can send items straight to them.' })}
           </Text>
         ) : (
           (threads ?? []).map((t) => {

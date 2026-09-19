@@ -335,7 +335,7 @@ function MarketMoversScreen() {
         <View style={styles.empty}>
           <Ionicons name="cloud-offline-outline" size={40} color={colors.muted} />
           <Text style={[styles.emptyText, { color: colors.muted }]}>
-            Couldn&apos;t load market movers.
+            {t('common.movers_load_failed', { defaultValue: "Couldn't load market movers." })}
           </Text>
           <AnimatedPressable
             onPress={() => {

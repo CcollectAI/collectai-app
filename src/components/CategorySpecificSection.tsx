@@ -136,7 +136,7 @@ function CategorySpecificSectionInner({
           <View style={[s.sizeInfoNote, { backgroundColor: theme.accent + "10" }]}>
             <Ionicons name="information-circle-outline" size={14} color={theme.accent} />
             <Text style={[s.sizeInfoNoteText, { color: theme.accent }]}>
-              Size affects market value — prices vary by size
+              {t('item_attrs.size_affects_value', { defaultValue: 'Size affects market value — prices vary by size' })}
             </Text>
           </View>
         </View>
@@ -178,7 +178,7 @@ function CategorySpecificSectionInner({
           <View style={[s.sizeInfoNote, { backgroundColor: theme.accent + "10" }]}>
             <Ionicons name="information-circle-outline" size={14} color={theme.accent} />
             <Text style={[s.sizeInfoNoteText, { color: theme.accent }]}>
-              Size affects market value — prices vary by size
+              {t('item_attrs.size_affects_value', { defaultValue: 'Size affects market value — prices vary by size' })}
             </Text>
           </View>
         </View>
@@ -235,7 +235,7 @@ function CategorySpecificSectionInner({
               <Text
                 style={[s.legoInstructionsBtnText, { color: CATEGORY_VISUAL["lego"]?.accentColor ?? theme.accent }]}
               >
-                Build Instructions
+                {t('item_attrs.build_instructions', { defaultValue: 'Build Instructions' })}
               </Text>
               <Ionicons name="open-outline" size={14} color={CATEGORY_VISUAL["lego"]?.accentColor ?? theme.accent} />
             </Pressable>
@@ -255,7 +255,7 @@ function CategorySpecificSectionInner({
               <Text style={[s.vaultedBadgeText, { color: colors.danger }]}>Vaulted</Text>
             </View>
             <Text style={[s.vaultedHint, { color: theme.muted }]}>
-              This Pop! has been retired from production. Vaulted items often increase in value.
+              {t('item_attrs.vaulted_note', { defaultValue: 'This Pop! has been retired from production. Vaulted items often increase in value.' })}
             </Text>
           </View>
         )}

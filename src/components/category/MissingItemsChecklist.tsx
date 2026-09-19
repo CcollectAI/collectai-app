@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import type { CategoryMissingItem } from '@/data';
 import type { AppTheme } from '@/hooks/useAppTheme';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   missingItems: CategoryMissingItem[];
@@ -26,13 +27,14 @@ const MissingItemsChecklist: React.FC<Props> = ({
   onSeeMore,
   colors,
 }) => {
+  const { t } = useTranslation();
   if (missingItems.length === 0) return null;
 
   return (
     <View style={[styles.missingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.missingCardHeader}>
         <Text style={[styles.missingCardTitle, { color: colors.text }]}>
-          Complete Your Collection
+          {t('common.complete_your_collection', { defaultValue: 'Complete Your Collection' })}
         </Text>
         <Text style={[styles.missingCardCount, { color: colors.muted }]}>
           {missingItems.length} left

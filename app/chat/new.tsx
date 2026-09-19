@@ -418,7 +418,7 @@ const NewChatScreen: React.FC = () => {
               checked 2026-09-14). What IS true: the request lands in their
               inbox and counts on their inbox badge. */}
           <Text style={[styles.infoText, { color: colors.muted }]}>
-            It will appear in their inbox, where they can accept or decline it.
+            {t('chat.invite_inbox_note', { defaultValue: 'It will appear in their inbox, where they can accept or decline it.' })}
           </Text>
         </View>
       </KeyboardAvoidingView>

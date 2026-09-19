@@ -21,7 +21,7 @@ export default function NotFoundScreen() {
       }}
     >
       <Text style={{ fontSize: 22, fontWeight: "700", marginBottom: 8, color: colors.text }}>
-        Page not found
+        {t('common.page_not_found', { defaultValue: 'Page not found' })}
       </Text>
       <Text style={{ marginBottom: 16, textAlign: "center", color: colors.muted }}>
         The route{" "}

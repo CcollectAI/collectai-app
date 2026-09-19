@@ -271,7 +271,7 @@ function ConditionGuideScreen() {
 
         {/* Intro text */}
         <Text style={[styles.introText, { color: colors.muted }]}>
-          Condition significantly affects the value of collectibles. Use this guide to accurately grade your items.
+          {t('common.condition_guide_intro', { defaultValue: 'Condition significantly affects the value of collectibles. Use this guide to accurately grade your items.' })}
         </Text>
 
         {/* Grade cards */}

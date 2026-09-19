@@ -224,11 +224,10 @@ function MySuggestionsContent() {
       <View style={styles.empty}>
         <Ionicons name="sparkles-outline" size={48} color={colors.muted} />
         <Text style={[styles.emptyTitle, { color: colors.text }]}>
-          No suggestions yet
+          {t('common.no_suggestions_yet', { defaultValue: 'No suggestions yet' })}
         </Text>
         <Text style={[styles.emptyBody, { color: colors.muted }]}>
-          When you scan or add items we don't recognize, they'll appear here so
-          you can track their status.
+          {t('catalog.suggestions_explainer', { defaultValue: "When you scan or add items we don't recognize, they'll appear here so you can track their status." })}
         </Text>
       </View>
     );

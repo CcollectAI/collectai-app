@@ -161,7 +161,7 @@ const AnnouncementComposerInner: React.FC<AnnouncementComposerProps> = ({
           <View style={[styles.composeHint, { backgroundColor: colors.accent + '06' }]}>
             <Ionicons name="information-circle-outline" size={11} color={colors.accent} />
             <Text style={[styles.composeHintText, { color: colors.accent }]}>
-              Sent as a DM to all attendees
+              {t('announcement.sent_as_dm', { defaultValue: 'Sent as a DM to all attendees' })}
             </Text>
           </View>
           <Text style={[styles.composeCharCount, { color: composeBody.length > 1800 ? colors.danger : colors.muted }]}>

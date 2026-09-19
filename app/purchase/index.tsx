@@ -293,7 +293,7 @@ function AgentHubScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[styles.headerTitle, { color: colors.text }]}>{t('purchase.sparrows_watch', { defaultValue: "Sparrow's Watch" })}</Text>
               <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
-                We watch marketplaces and alert you when your price is hit.
+                {t('purchase.watch_note', { defaultValue: 'We watch marketplaces and alert you when your price is hit.' })}
               </Text>
             </View>
           </View>
@@ -355,7 +355,7 @@ function AgentHubScreen() {
         >
           <Ionicons name="lock-closed" size={14} color={colors.accent} />
           <Text style={{ color: colors.text, fontSize: 13, flex: 1 }}>
-            Deal discovery is a Sparrow Pro feature. Upgrade to let Sparrow hunt deals for you.
+            {t('purchase.deal_discovery_pitch', { defaultValue: 'Deal discovery is a Sparrow Pro feature. Upgrade to let Sparrow hunt deals for you.' })}
           </Text>
           <Ionicons name="chevron-forward" size={16} color={colors.accent} />
         </AnimatedPressable>
@@ -387,7 +387,7 @@ function AgentHubScreen() {
           <View style={{ flex: 1 }}>
             <Text style={[styles.headerTitle, { color: colors.text }]}>{t('purchase.sparrows_watch', { defaultValue: "Sparrow's Watch" })}</Text>
             <Text style={[styles.headerSubtitle, { color: colors.muted }]}>
-              We watch marketplaces and alert you when your price is hit.
+              {t('purchase.watch_note', { defaultValue: 'We watch marketplaces and alert you when your price is hit.' })}
             </Text>
           </View>
           {/* Hidden while the empty card is showing: that card's button is the
@@ -463,7 +463,7 @@ function AgentHubScreen() {
             <Ionicons name="search-outline" size={32} color={colors.muted} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('purchase.not_watching_yet', { defaultValue: 'Not watching anything yet' })}</Text>
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-              Add an item and your max price.
+              {t('purchase.add_item_and_max', { defaultValue: 'Add an item and your max price.' })}
             </Text>
             <View style={styles.emptyCtaContainer}>
               <AnimatedPressable

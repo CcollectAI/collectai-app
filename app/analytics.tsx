@@ -514,7 +514,7 @@ function AnalyticsScreen() {
           <View style={[styles.errorBanner, { backgroundColor: colors.accent + '18' }]}>
             <Ionicons name="construct-outline" size={16} color={colors.accent} />
             <Text style={[styles.errorText, { color: colors.text }]}>
-              Preview — these are sample numbers. Add items to your portfolio to see your real analytics.
+              {t('analytics.preview_notice', { defaultValue: 'Preview — these are sample numbers. Add items to your portfolio to see your real analytics.' })}
             </Text>
           </View>
         )}
@@ -591,8 +591,7 @@ function AnalyticsScreen() {
               </View>
             ) : (
               <Text style={[styles.heroFrom, { color: colors.muted }]}>
-                No earlier value to measure against yet — everything you own was
-                added inside this window.
+                {t('analytics.no_earlier_value', { defaultValue: 'No earlier value to measure against yet — everything you own was added inside this window.' })}
               </Text>
             )}
 
@@ -1006,7 +1005,7 @@ function AnalyticsScreen() {
                 accessibilityLabel={t('analytics.a11y_view_all_categories', { defaultValue: 'View all categories' })}
               >
                 <Text style={[styles.viewAllText, { color: colors.accent }]}>
-                  View all
+                  {t('analytics.view_all', { defaultValue: 'View all' })}
                 </Text>
                 <Ionicons name="chevron-forward" size={14} color={colors.accent} />
               </AnimatedPressable>

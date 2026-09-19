@@ -156,7 +156,7 @@ function CameraViewfinderInner({
                     { color: batchMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)' },
                   ]}
                 >
-                  One by one
+                  {t('scan.one_by_one', { defaultValue: 'One by one' })}
                 </Text>
               </AnimatedPressable>
 
@@ -184,7 +184,7 @@ function CameraViewfinderInner({
                       { color: multiMode ? '#FFFFFF' : 'rgba(255,255,255,0.8)' },
                     ]}
                   >
-                    All at once
+                    {t('scan.all_at_once', { defaultValue: 'All at once' })}
                   </Text>
                 </AnimatedPressable>
               )}

@@ -122,7 +122,7 @@ const ComposeAnnouncementScreen: React.FC = () => {
             <View style={[styles.helperCard, { backgroundColor: colors.accent + '10', borderColor: colors.accent + '30' }]}>
               <Ionicons name="information-circle-outline" size={16} color={colors.accent} />
               <Text style={[styles.helperText, { color: colors.accent }]}>
-                This will be sent to all attendees of this event.
+                {t('announce.sent_to_all_attendees', { defaultValue: 'This will be sent to all attendees of this event.' })}
               </Text>
             </View>
 

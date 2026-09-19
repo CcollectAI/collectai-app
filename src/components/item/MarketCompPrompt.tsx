@@ -30,6 +30,7 @@ import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import { isMarketBacked } from '@/components/ValueSourceChip';
+import { useTranslation } from 'react-i18next';
 
 export type ValueChoice = 'market' | 'mine';
 
@@ -80,6 +81,7 @@ export const MarketCompPrompt = React.memo(function MarketCompPrompt({
   onChoose,
   busy = false,
 }: MarketCompPromptProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const cur = settings.currency;
@@ -94,7 +96,7 @@ export const MarketCompPrompt = React.memo(function MarketCompPrompt({
       ]}
     >
       <Text style={[styles.title, { color: colors.text }]}>
-        We found a market price for this
+        {t('common.found_market_price', { defaultValue: 'We found a market price for this' })}
       </Text>
       <Text style={[styles.body, { color: colors.muted }]}>
         Our comps say {formatPrice(marketValue, cur)}. You said{' '}

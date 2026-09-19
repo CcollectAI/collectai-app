@@ -90,10 +90,10 @@ function ImportUrlScreen() {
             <Ionicons name="link-outline" size={32} color={colors.accent} />
           </View>
           <Text style={[styles.title, { color: colors.text }]}>
-            Paste a marketplace link
+            {t('add_tab.paste_link', { defaultValue: 'Paste a marketplace link' })}
           </Text>
           <Text style={[styles.helper, { color: colors.muted }]}>
-            We'll extract the item details automatically from the listing.
+            {t('add_tab.extract_note', { defaultValue: "We'll extract the item details automatically from the listing." })}
           </Text>
           <TextInput
             style={[styles.urlInput, {

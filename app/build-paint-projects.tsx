@@ -185,7 +185,7 @@ function BuildPaintProjectsScreen() {
               <Ionicons name="color-palette-outline" size={48} color={colors.muted} />
               <Text style={[styles.emptyTitle, { color: colors.text }]}>{t('empty_state.no_projects', { defaultValue: 'No projects yet' })}</Text>
               <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-                Tap the + button to create your first build or paint project
+                {t('projects.empty_hint', { defaultValue: 'Tap the + button to create your first build or paint project' })}
               </Text>
               <View style={styles.emptyCtaContainer}>
                 <AnimatedPressable

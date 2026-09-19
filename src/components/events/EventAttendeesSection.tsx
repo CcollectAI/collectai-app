@@ -7,6 +7,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
+import { useTranslation } from 'react-i18next';
 
 interface AttendeeUser {
   id: string;
@@ -41,6 +42,7 @@ export const EventAttendeesSection = React.memo(function EventAttendeesSection({
   onUserPress,
   onConnectPress,
 }: EventAttendeesSectionProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   // Hide whenever there is nobody to show — NOT only when COMMUNITY_GATED.
@@ -74,11 +76,11 @@ export const EventAttendeesSection = React.memo(function EventAttendeesSection({
   return (
     <View style={styles.section}>
       <Text style={[styles.sectionTitle, { color: colors.text }]}>
-        Collectors attending / following
+        {t('common.attending_following', { defaultValue: 'Collectors attending / following' })}
       </Text>
       {attendees.length === 0 ? (
         <Text style={[styles.emptyText, { color: colors.muted }]}>
-          No collectors are marked as attending yet. You can be the first.
+          {t('common.no_attendees_yet', { defaultValue: 'No collectors are marked as attending yet. You can be the first.' })}
         </Text>
       ) : (
         <View style={[styles.attendeesCard, { backgroundColor: colors.card, borderColor: colors.border }]}>

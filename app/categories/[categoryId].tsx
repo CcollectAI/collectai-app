@@ -194,7 +194,7 @@ function CategoryStoreScreen() {
           <Ionicons name="alert-circle-outline" size={48} color={colors.muted} />
           <Text style={[styles.errorTitle, { color: colors.text }]}>{t('category.not_found', { defaultValue: 'Category not found' })}</Text>
           <Text style={[styles.errorSubtitle, { color: colors.muted }]}>
-            This category doesn&apos;t exist or couldn&apos;t be loaded.
+            {t('category.not_found_body', { defaultValue: "This category doesn't exist or couldn't be loaded." })}
           </Text>
           <AnimatedPressable style={[styles.backButton, { borderColor: colors.border }]} onPress={() => safeGoBack(router)} accessibilityRole="button" accessibilityLabel={t('common.go_back_a11y', { defaultValue: 'Go back' })}>
             <Text style={[styles.backButtonText, { color: colors.text }]}>{t('common.go_back', { defaultValue: 'Go back' })}</Text>
@@ -257,7 +257,7 @@ function CategoryStoreScreen() {
                 New to {categoryMeta.name}?
               </Text>
               <Text style={[styles.guideSub, { color: colors.muted }]} numberOfLines={2}>
-                The words, what to look after, what to avoid, and where to start.
+                {t('category.guide_subtitle', { defaultValue: 'The words, what to look after, what to avoid, and where to start.' })}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.muted} />
@@ -288,7 +288,7 @@ function CategoryStoreScreen() {
           <View style={{ flex: 1 }}>
             <Text style={[styles.guideTitle, { color: colors.text }]}>{t('category.finish_a_set', { defaultValue: 'Finish a set' })}</Text>
             <Text style={[styles.guideSub, { color: colors.muted }]} numberOfLines={2}>
-              What you are still missing from sets you have already started.
+              {t('category.sets_missing_subtitle', { defaultValue: 'What you are still missing from sets you have already started.' })}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.muted} />

@@ -1331,8 +1331,7 @@ function ItemDetailScreen() {
                       {UNPRICED_LABEL}
                     </Text>
                     <Text style={[styles.unpricedWhy, { color: theme.muted }]}>
-                      We have no confirmed sales for this one yet. Add what it
-                      is worth to you, or fill in the details so we can match it.
+                      {t('item_details.no_confirmed_sales', { defaultValue: 'We have no confirmed sales for this one yet. Add what it is worth to you, or fill in the details so we can match it.' })}
                     </Text>
                   </View>
                 ) : (

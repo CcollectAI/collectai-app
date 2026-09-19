@@ -25,6 +25,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { useAsync } from '@/hooks/useAsync';
 import { collectorsApi } from '@/api/collectorsApi';
 import { text as textToken, fontWeight as fw } from '@/theme/tokens';
+import { useTranslation } from 'react-i18next';
 
 interface TradeReputationSectionProps {
   userId: string;
@@ -36,6 +37,7 @@ export const TradeReputationSection = React.memo(function TradeReputationSection
   userId,
   isSelf = false,
 }: TradeReputationSectionProps) {
+  const { t } = useTranslation();
   const { colors } = useAppTheme();
 
   const { data: rep } = useAsync(
@@ -101,7 +103,7 @@ export const TradeReputationSection = React.memo(function TradeReputationSection
 
       {isSelf ? (
         <Text style={[styles.selfNote, { color: colors.muted }]}>
-          Buyers see this on every item you list.
+          {t('common.buyers_see_this', { defaultValue: 'Buyers see this on every item you list.' })}
         </Text>
       ) : null}
     </View>

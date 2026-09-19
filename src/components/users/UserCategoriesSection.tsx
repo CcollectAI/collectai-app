@@ -104,7 +104,7 @@ export const UserCategoriesSection = React.memo(function UserCategoriesSection({
 
       {failed ? (
         <Text style={[styles.empty, { color: colors.muted }]}>
-          Couldn&apos;t load categories right now.
+          {t('user_profile.categories_load_failed', { defaultValue: "Couldn't load categories right now." })}
         </Text>
       ) : rows === null ? (
         <ActivityIndicator style={{ marginTop: 12 }} color={colors.accent} />
@@ -166,8 +166,7 @@ export const UserCategoriesSection = React.memo(function UserCategoriesSection({
           reporting their privacy settings to someone else. */}
       {isSelf && rows?.some((r) => r.rank === null) ? (
         <Text style={[styles.hint, { color: colors.muted }]}>
-          Turn on Allow discovery in Settings → Privacy to be ranked on category
-          leaderboards.
+          {t('user_profile.allow_discovery_hint', { defaultValue: 'Turn on Allow discovery in Settings → Privacy to be ranked on category leaderboards.' })}
         </Text>
       ) : null}
     </View>

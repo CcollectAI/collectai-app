@@ -96,7 +96,7 @@ export const MarketplacePricesSection = React.memo(function MarketplacePricesSec
       {marketExpanded && marketError && marketResults.length === 0 && !marketLoading && (
         <View style={s.sectionContent}>
           <Text style={[s.emptyText, { color: theme.muted }]}>
-            Could not load market prices. Check your connection and try again.
+            {t('marketplace.prices_load_failed', { defaultValue: 'Could not load market prices. Check your connection and try again.' })}
           </Text>
           <AnimatedPressable
             onPress={onRetry}
