@@ -179,6 +179,13 @@ outcome measured against a wrong cost.
 
 ### Re-measured 2026-09-18: the join shipped, the SALE still never happens
 
+> ✅ **RESOLVED the same day — this heading is kept because the measurement
+> below is what produced the fix, but do not read it as the current state.**
+> Both halves landed 2026-09-18: the writer (`_record_p2p_sale`, inside the
+> completion transaction) and the form (`717e9392`, "Record-sale form: the
+> seller answers the one number Sparrow cannot know"). See the closing note at
+> the end of this section before acting on anything in it.
+
 The acquisition-fee half landed 2026-08-31 (`acquisition_fees`,
 `acquisition_fees_eur`, written through `PATCH /items/{id}/purchase`), and the
 join shipped as `GET /portfolio/realised-pl` — cost basis, per-sale fees,
@@ -198,6 +205,30 @@ unwritten row is.** What it needs, and the decision in it, is in
 `docs/CLASS_SWEEPS.md` class T — chiefly: a Sparrow P2P trade charges no fee and
 we never learn the seller's postage, so recording `net_proceeds = sale_price`
 would reintroduce this section's own error on the sell side.
+
+### ✅ Closed 2026-09-18, verified end to end 2026-09-20
+
+Option 3 shipped whole, in both halves, on the day of the measurement above:
+
+* **Writer** — `_record_p2p_sale` inside the completion transaction. Fees 0
+  (Sparrow charges none), `shipping_cost_actual` written **explicitly NULL**
+  (the column defaults to 0, which would claim postage was free),
+  `WHERE NOT EXISTS` for idempotency.
+* **Form** — `717e9392`, in `app/offers.tsx`. The seller sees "Add postage"
+  only when `postage_recorded === false`, and the tri-state matters: `null`
+  means no sale row exists (a trade completed before the writer landed) and the
+  submit would 404, so `!o.postage_recorded` is the wrong test. The amount goes
+  through `parseMoney`, because a Dutch seller types `7,25` and `Number()`
+  reads 7. `0` is a real answer (local pickup), not "unrecorded".
+* **Endpoint** — `POST /p2p/offers/{offer_id}/postage`, seller-only, completed
+  trades only. `net_proceeds` is recomputed from stored numbers, so the call
+  cannot rewrite the sale price.
+* **Read side** — `shipping_known` per row, `profit` null without it, and
+  `sales_without_shipping` beside `sales_without_cost_basis`.
+
+Covered by `server/tests/test_realised_pl.py` (23 tests) and
+`test_write_atomicity.py`. ⚠️ The paragraphs above this note describe the state
+*before* the fix; they were still being read as a to-do two days later.
 
 ## 6. Grading: narrow support, and a feature that half-works
 
