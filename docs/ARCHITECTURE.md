@@ -1103,6 +1103,37 @@ before "fixing" either:
   `server/tests/test_ground_truth_no_double_count.py`, whose five tests were
   each proven to fail against the defect they pin.
 
+  **MEASURED ON PROD 2026-09-20** (read-only, from EC2). The numbers the
+  paragraphs above quote were a month old, so here is the live picture:
+
+  | | rows | note |
+  |---|---|---|
+  | `price_ground_truths` | **9** | 8 `sparrow_p2p` (08-09..08-16), 1 `user_verified_sale` (08-29) |
+  | — of those, with `prediction_q50` | **0** | so `error_pct` has NEVER been computed, once |
+  | `verified_sales` | 1 | one row, one user |
+  | `scan_corrections` | 0 | the correction loop has no input yet |
+  | `price_predictions` (60d) | 1,213,789 | across 71,937 items |
+  | `market_hits` (90d) | 2,347,848 | the scraped backbone is healthy |
+  | `items` | 17 | 10 carry a `canonical_ref`; **6** are scoreable |
+
+  **The zero in row 2 is NOT a broken join, and that was worth proving rather
+  than assuming** — this repo has hit a `canonical_ref`/`item_ref` namespace
+  mismatch before. The lookup in `record_price_ground_truth` was run against
+  prod as written: for a real owned item it resolves,
+  `mtg:sum-283-bayou → q50 8015`, and the same subquery against a ref known to
+  have predictions returns `pokemon:charizard → 9.9`. The mechanism is sound.
+
+  The 9 ground truths simply belong to **two lorcana items that have no
+  predictions at all** (`preds_any = 0` for both refs). So `error_pct` will
+  start populating the first time a sale is recorded against one of the 6
+  scoreable items — no code change required.
+
+  This is what "a launch dependency, not a bug" looks like when you measure it:
+  every wire is connected and nothing has flowed through this one yet.
+  `server/scripts/check_price_anchoring.py` correctly reports
+  *"no scored ground truths yet — nothing to measure"*, which is the honest
+  answer rather than a number computed from nine rows.
+
   ⚠️ **This is why a member sale is not the same kind of evidence as a scraped
   sold comp.** The member saw our estimate before listing, so their price is
   partly our own model's output returning as "ground truth".
