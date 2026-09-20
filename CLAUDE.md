@@ -67,6 +67,23 @@ Per edit, before the next one:
    a day of successful deploys that landed one directory too high: hashes equal
    · the fix greps in the DEPLOYED file · `✓ <worker>` imported clean in
    `/opt/collectors/bake.log` · `/healthz` 200.
+9. **A CONFIG'S TEXT IS NOT ITS BEHAVIOUR.** On 2026-09-20 I grepped
+   `eslint.config.js` for the string `react-hooks`, found nothing, and told
+   Merle — and wrote into two docs and a script header — that
+   `react-hooks/rules-of-hooks` was not enforced. It is: the plugin arrives
+   through a preset, and the rule fires as an ERROR. I then built
+   `check-i18n-hook-scope` partly on that false premise; `tsc` had been
+   catching the case all along (`TS2304: Cannot find name 't'`).
+
+   Same shape as the day's other miss: grepping `check_i18n_defaults.py` for
+   "component"/"scope" is how you learn what a script SAYS, not what the
+   toolchain DOES.
+
+   **Run the tool against a file that must fail**, which costs one temp file:
+   write the violation, run the linter, read the output. For anything resolved
+   at runtime — eslint presets, babel plugins, tsconfig `extends`, env layering
+   — the effective config is the only config. `npx eslint --print-config <file>`
+   prints it.
 
    Added 2026-09-19, after rule 1–5 were applied to the fixes in a session and
    not to the probe: `probe_ignored_fields_v2.py` was wrong FOUR times — suffix

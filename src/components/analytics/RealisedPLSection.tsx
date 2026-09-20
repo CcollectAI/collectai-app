@@ -159,22 +159,29 @@ function RealisedPLSectionInner({ data, loading }: Props) {
   );
 }
 
+// Type scale per docs/ui-playbook.md: `xs` (10pt) is banned for anything a
+// member reads, the floor is `sm`, and the hierarchy is built by pushing the
+// LEAD up rather than everything else down. Sizes match this screen's own
+// cards (cardTitle `lg`, posName `md`, posBasis `sm`) so the section does not
+// read as a different app — the mistake `app/offers.tsx` was reported for
+// twice, first for being too small and then for being uniformly bumped flat.
 const styles = StyleSheet.create({
   card: { borderRadius: radius.lg, borderWidth: 1, padding: 16, marginBottom: 12 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  cardTitle: { fontSize: text.md, fontWeight: fontWeight.bold },
-  empty: { fontSize: text.sm, lineHeight: 20 },
-  totals: { flexDirection: 'row', gap: 24, marginBottom: 8 },
+  cardTitle: { fontSize: text.lg, fontWeight: fontWeight.bold },
+  empty: { fontSize: text.md, lineHeight: 21 },
+  totals: { flexDirection: 'row', gap: 24, marginBottom: 10 },
   total: { flex: 1 },
-  totalLabel: { fontSize: text.xs, marginBottom: 2 },
-  totalValue: { fontSize: text.lg, fontWeight: fontWeight.bold },
-  caveat: { fontSize: text.xs, lineHeight: 16, marginBottom: 4 },
+  totalLabel: { fontSize: text.sm, marginBottom: 2 },
+  // The amount leads — it is the one number this whole feature exists to state.
+  totalValue: { fontSize: text.xl, fontWeight: fontWeight.bold },
+  caveat: { fontSize: text.sm, lineHeight: 18, marginBottom: 4 },
   row: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, paddingVertical: 10, gap: 12 },
   rowFirst: { marginTop: 4 },
   rowLeft: { flex: 1 },
-  rowName: { fontSize: text.sm, fontWeight: fontWeight.semibold },
-  rowSub: { fontSize: text.xs, marginTop: 2 },
-  rowValue: { fontSize: text.sm, fontWeight: fontWeight.bold },
+  rowName: { fontSize: text.md, fontWeight: fontWeight.semibold },
+  rowSub: { fontSize: text.sm, lineHeight: 17, marginTop: 2 },
+  rowValue: { fontSize: text.md, fontWeight: fontWeight.bold },
 });
 
 export const RealisedPLSection = React.memo(RealisedPLSectionInner);
