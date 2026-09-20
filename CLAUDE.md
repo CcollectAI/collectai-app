@@ -27,6 +27,25 @@ Per edit, before the next one:
    read. **Never hand over a finding from a script whose own diff you have not
    audited** — a wrong fix costs an edit, a wrong finding costs Merle's trust in
    every number beside it.
+7. **A NOTE is an addition too, and the one you wrote this session is the most
+   likely sentence in the file to be WRONG.** A "still to do X" describes the
+   state at the moment of writing; the same session then often does X, and the
+   sentence survives as a to-do nobody re-reads. Two instances on 2026-09-20:
+
+   * `project_2026_09_18_realised_pl_has_no_writer.md` said *"Still to do: the
+     FORM"*. The form shipped in that same session (`717e9392`, titled
+     "Record-sale form"). Two days later I proposed rebuilding it, on the
+     strength of my own stale sentence, and only reading the code first stopped
+     me writing a duplicate of a finished feature.
+   * I listed four things to build for the pricing feedback loop. **Three
+     already existed** — `prediction_q50`/`error_pct` were already stored, the
+     holdout gate was already implemented, outlier clipping was already in
+     `train_price.py:683`.
+
+   So: **before proposing work, grep for it; before ending a session, re-read
+   every "still to do" / "remaining" / "not yet" you wrote in it.** And prefer
+   writing the VERIFICATION over the claim — "run X to see whether this is
+   still true" ages correctly; "this is not built" does not.
 
    Added 2026-09-19, after rule 1–5 were applied to the fixes in a session and
    not to the probe: `probe_ignored_fields_v2.py` was wrong FOUR times — suffix

@@ -921,10 +921,19 @@ EXCEPT-diffed in both directions against **both** live server expressions before
 adoption (all four counts 0), so it could not move a number already on screen.
 Gate: `npm run check:item-values`.
 
-**Still to do (Stage 2):** repoint `/portfolio/items`, `category-breakdown` and
-`/portfolio/overview` at the view. Until then the two server chains still order
-`quick` and `catalog` differently — currently 2 items have both and they agree,
-so it is latent, not live.
+~~**Still to do (Stage 2):** repoint `/portfolio/items`, `category-breakdown`
+and `/portfolio/overview` at the view.~~ ✅ **Done — verified 2026-09-20.** All
+three now read the single definition, though not the way this line predicted:
+they call `public.item_value_v1` directly, the function `v_item_values_v1`
+wraps, which gives the same one-definition guarantee. The code says so itself
+at `portfolio_router.py:290` and `:518` ("ONE DEFINITION (2026-08-19, Stage
+2)"), so this sentence had been stale for a month.
+
+⚠️ Two traps if you re-check it: `category-breakdown` is **not** in
+`portfolio_router.py` — it lives at `trends_and_deepdive_router.py:296` — and
+grepping the file for `v_item_values_v1` finds only comments, because the
+endpoints call the wrapped function rather than the view. Check for
+`item_value_v1` per handler, not the view name per file.
 
 #### `chat_threads_v1` user FKs — added 2026-07-31, two different semantics
 

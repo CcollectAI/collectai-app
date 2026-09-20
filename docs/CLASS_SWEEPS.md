@@ -331,8 +331,12 @@ Two things the gate got wrong, both found by proving it rather than running it:
   demands** — `{/* touch-ok: … */}` now counts. Proven: drop the slop → red; a
   reason inside the style object → still red; the JSX comment → green.
 
-Still open in this class: ~145 hard-coded (English) `accessibilityLabel`s ranked
-in `docs/I18N_BACKLOG.md`, and the 28pt controls reach 44 vertically but only
+~~Still open in this class: ~145 hard-coded (English) `accessibilityLabel`s~~
+✅ **Closed 2026-09-19/20.** All 137 reachable labels are translated into the
+seven locales; **9 remain and every one is deliberate** — unreachable screens,
+`__DEV__`-only sections, and a dead `!BETA_MODE && !COMMUNITY_GATED` branch.
+Re-measure with the grep in `docs/I18N_BACKLOG.md` rather than trusting this
+line. Still genuinely open: the 28pt controls reach 44 vertically but only
 ~36 horizontally — closing that needs a layout change, which is a design call.
 
 ## D — the platform fee was written six times (re-run 2026-09-17)
