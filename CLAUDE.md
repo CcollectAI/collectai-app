@@ -46,6 +46,27 @@ Per edit, before the next one:
    every "still to do" / "remaining" / "not yet" you wrote in it.** And prefer
    writing the VERIFICATION over the claim — "run X to see whether this is
    still true" ages correctly; "this is not built" does not.
+8. **A SERVER fix is not finished when it is committed.** On 2026-09-20 a
+   class-AA fix was written, tested, committed and written up in the register
+   as *fixed* — while production kept running the bug. A hash diff of all 393
+   files under `server/{app,workers,pipelines,scripts}` found **exactly one**
+   differing: that fix. A one-file drift is easier to miss than a twelve-file
+   one, because nothing feels outstanding.
+
+   And **rsync alone does not ship it**: `bake_orchestrator` loads workers with
+   `__import__`, which hits `sys.modules`, so the long-running `collectai-bake`
+   process keeps the old module cached — a correct file on disk with old
+   behaviour, which hash-diffs as deployed and behaves as not. The service must
+   RESTART. Restarting is the dangerous half: nine blocking `ExecStartPre`
+   gates, and one that fails takes production DOWN rather than failing the
+   deploy. Run all nine by hand first while the old process still serves, and
+   read the list off the unit (`systemctl cat collectai-bake.service | grep
+   ExecStartPre`), not off `docs/DEPLOYMENT.md`, which listed six for two days.
+
+   Then verify — never on the word "deploy ok", whose own script header records
+   a day of successful deploys that landed one directory too high: hashes equal
+   · the fix greps in the DEPLOYED file · `✓ <worker>` imported clean in
+   `/opt/collectors/bake.log` · `/healthz` 200.
 
    Added 2026-09-19, after rule 1–5 were applied to the fixes in a session and
    not to the probe: `probe_ignored_fields_v2.py` was wrong FOUR times — suffix
