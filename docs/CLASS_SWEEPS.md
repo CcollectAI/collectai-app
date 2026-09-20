@@ -33,6 +33,17 @@ in a chat session, so the open half was re-discovered instead of fixed.
 
 Two rules the tooling learned the hard way:
 
+- **Every class needs a findable write-up, headed `## <CLASS> — <title>`.**
+  The register stored detail in THREE shapes — `## X —`, `## Class G —`, and a
+  bold `**X —**` inside "What is open" — so a class's section could not be
+  located reliably, and on 2026-09-20 four summary rows had drifted from their
+  own correct, dated sections (H, L, S, G). The cause is structural: the
+  section is edited by whoever does the work, the one-line row is not.
+  `npm run check:class-register` now fails when a row has no locatable
+  write-up, and `--list` prints every row that CLAIMS open work so it gets
+  re-verified instead of recited. **Re-verify before quoting a row**: I recited
+  G's "4 decisions for Merle" repeatedly that day, and all four were closed.
+
 - **Resolve per block, not per file** — a marker at the top of a file silences
   every later site in it.
 - **Strip comments before matching**, and **make allowlists fail when an entry
@@ -64,10 +75,10 @@ Two rules the tooling learned the hard way:
 | T | The server sends it and the app never reads it | 2026-09-18 | measured: **74 of 461** fields declared in `src/api` are referenced nowhere else. Three confirmed: subscription dates ✅ **fixed** (the copy was already translated in 7 locales and rendered by nothing), realised P/L unreachable and the demand differentiator unshown — both product calls. The rest is mostly request params and deliberately-removed UI |
 | U | A provider CASTS a snake_case payload to a camelCase type | 2026-09-18 | ✅ all 4 found and mapped (sales, fee schedules, listings, accounts). **All behind `SELLING_ENABLED=false`** — I first called two of them live and the device disproved it. Real, and they ship the day selling is switched on. `tsc` cannot see this class |
 | V | The app SENDS a field the server drops on the floor | run 2, 2026-09-19 | ✅ **closed: 57 endpoints proven, 3 unreadable, 0 findings.** One LIVE finding fixed (every verified sale lost its date and venue); 3 dead fields removed; the 3 unreadable are 2 hand-verified clean + 1 behind `SELLING_ENABLED`. The probe was wrong 9 times |
-| W | A column the schema carries that no code mentions | 2026-09-18 | measured: **524 across 177 base tables**. Sampled `items` (19 of them): **18 hold no data at all** and the 19th is only its default — schema DEBT, not silent data loss. A cleanup decision, not a bug |
+| W | A column the schema carries that no code mentions | 2026-09-18 | measured: **524 across 177 base tables**. Sampled `items` (19 of them): **18 hold no data at all** and the 19th is only its default — schema DEBT, not silent data loss. A cleanup decision, not a bug **12 of the 524 were already DROPPED 2026-09-18** (migration `20260918c`); the rest is the decision. |
 | X | Committed to `web/` and never deployed | 2026-09-19 | ✅ swept and **FIXED**: 1 real drift (`terms.html`, two sentences — one the App Store 4.8 claim), deployed and verified live; 18 of 19 now byte-identical |
 | Y | A gate that has never seen its own bug | 2026-09-19 | ✅ swept: **40 of 42 fire** on their own pre-fix commit, **0 blind**. 1 needs `.env` to run, 1 was silent on a clean parent but fires under mutation. The sweep itself was wrong 3 times first |
-| Y-2 | What does a gate MISS (not: has it fired) | 2026-09-19 | ⚠️ **INCONCLUSIVE** — "files in the commit" ≠ "sites of the class". The two worst scorers each caught **2 of 2** real instances; the low ratios were the denominator. A sounder run needs a per-class signature and is circular |
+| Y-2 | What does a gate MISS (not: has it fired) | 2026-09-19 | ⚠️ **INCONCLUSIVE** — "files in the commit" ≠ "sites of the class". The two worst scorers each caught **2 of 2** real instances; the low ratios were the denominator. A sounder run needs a per-class signature and is circular **Superseded by Y-3**, which is the per-class run this row asks for and which worked — do not re-run Y-2's method. |
 | Y-3 | What a gate misses, via its own report vs the human fix | 2026-09-19 | ✅ **works, with 3 exclusions**. Confirmed: `check:half-done-silence` cannot see `useOptimisticRsvp.ts`, a file its OWN commit fixed — the second proven instance after `delist`. **A gate fences one shape, not a class**, and both misses were found by reading |
 | Z | A success message that is not conditional on success | swept 2026-09-19 | ✅ **2 fixed**: `useOptimisticMutation` swallowed so `await mutate()` was followed by a SUCCESS toast on failure ("Archived" in green, 5 call sites); and `setJSON` swallowed so "Following!" showed on a failed write with no server copy. 50 sites enumerated, the rest read and clean |
 | AA | One fact written to two tables, then counted twice downstream | **swept + DEPLOYED 2026-09-20** | ✅ **1 instance, fixed; no others.** Two-stage enumeration: 28 functions write 2+ real tables, but only ONE consumer reads a written-together pair and merges it — `_export_ground_truths` (the known case). Both `spawn_bg` candidates read and discarded. Limits written up below. |
