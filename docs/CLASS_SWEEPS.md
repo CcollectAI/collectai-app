@@ -33,6 +33,19 @@ in a chat session, so the open half was re-discovered instead of fixed.
 
 Two rules the tooling learned the hard way:
 
+- **Record the MEASUREMENT and the check that would falsify it, not the
+  conclusion.** A conclusion ages the moment the system moves; "run X, expect
+  Y" does not. `marketplace_sales` is the worked example (2026-09-20): writing
+  *"0 rows — a launch dependency"* would have been true and useless, because
+  0 rows has two causes and only one is benign — nothing has completed, or
+  completion fires and writes nothing (class S). What went in the file instead
+  is the row-by-row measurement with dates showing every sold listing predates
+  the writer, plus the falsifier: **the first completion after 2026-09-18 must
+  produce a row; if it does not, that is class S, not a launch dependency.**
+  The next reader can check that in one query instead of re-deriving the
+  question. Six stale rows were found in this register in a single day, and
+  every one of them was a conclusion with no way to re-test it.
+
 - **Every class needs a findable write-up, headed `## <CLASS> — <title>`.**
   The register stored detail in THREE shapes — `## X —`, `## Class G —`, and a
   bold `**X —**` inside "What is open" — so a class's section could not be
