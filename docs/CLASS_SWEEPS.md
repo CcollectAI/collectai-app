@@ -56,7 +56,7 @@ Two rules the tooling learned the hard way:
 | A | The client calls an endpoint the server does not serve (or that fails for a real member) | 2026-09-16 | ✅ closed 2026-09-18 — the last one open (`/collections/user/progress`) was a **response model**, not a query: a required `collection_key` against an `external_id` that is NULL on every production set, so it 500'd for every member, always |
 | B | A number on screen that its own source of truth disagrees with | 2026-09-16 | ✅ landed `02ee84b` |
 | C | The screen shows nothing useful for many seconds although the data is fast | 2026-09-16 | ✅ landed `02ee84b` |
-| D | One business rule, implemented twice, drifting | re-run 2026-09-17 | platform fee unified (6 copies → 1 per side) + parity test; other rules still to enumerate |
+| D | One business rule, implemented twice, drifting | re-run 2026-09-17 | ✅ **CLOSED 2026-09-20.** Ticket fee unified (6 copies → 1 per side, `test_platform_fee_parity.py`, mutation-proven 4 ways) · marketplace fee: the defect was the CONFIDENCE not the maths, `FeeBreakdown.estimated` + 3 tests · plan limits gated by `check:billing-limits-parity`, which compares **every numeric limit both tables declare**, not only the 3 the FE reads · "today" unified on `app.lib.clock.utc_today()` and gated by `check:server-today`, both in `verify:prebuild`. All four verified green 2026-09-20 |
 | E | What the member typed is not what we stored | 2026-09-16 | ✅ closed — gate rule was wrong, 13 sites + validators fixed |
 | F | The write succeeded and the screen still shows the old value | 2026-09-16 | ✅ closed 2026-09-17 (item-change chokepoint + both profile caches, tested) |
 | G | A paid feature a free member can reach, or a free feature a paying member is denied | 2026-09-16 | ✅ **CLOSED — 0 decisions left** (row corrected 2026-09-20; it said "4 decisions for Merle" long after all four resolved). 1 ✅ fixed (two Pro analytics endpoints open to free accounts) · 2 ❌ the note was wrong (`max_daily_deal_alerts` IS enforced) · 3 ❌ not a paywall decision (sell timing) · 4 ✅ decided 2026-09-19 — `EXPO_PUBLIC_BETA_UNLOCK_ALL` flipped to `false` on the EAS `production` environment, so forgetting to pin now yields a LOCKED build |
@@ -72,7 +72,7 @@ Two rules the tooling learned the hard way:
 | K | The save half-happened (multi-step writes without a transaction) | 2026-09-17 | ✅ all fixed and **deployed 2026-09-18**: billing webhook `8439f97` **+ the three paths it missed** (ledger insert, user lookup, Stripe payload shape) now on one chokepoint per handler, item edit, calendar, template, P2P listing transaction |
 | L | The control is there but a person cannot use it (touch targets, labels, contrast) | 2026-09-17 | ✅ all three halves: contrast `19a8fdc` (accent 2.02:1 = brand decision), 6 unlabelled icon-only controls, 20 touch targets + `check:touch-target`. ~145 untranslated labels remain (I18N_BACKLOG) |
 | S | The server answered `ok` and wrote nothing | 2026-09-17/18 **deployed** | ✅ **all 34 read**: 6 `ok`-without-a-write fixed, the announcement DM dead five months fixed, 4 money handlers made atomic + row-locked (a trade could complete twice or never; a sale banked twice; a mandate past its cap), 22 of the 34 sites cleared with the reason written down. 8 tests that PINNED the lie rewritten. ~~One decision left: `reports_count`~~ — **decided and DROPPED 2026-09-18** (migration `20260918b`); nothing decremented it, so it counted reports EVER FILED while every consumer counts reports still OPEN. **No decisions left in S.** |
-| T | The server sends it and the app never reads it | 2026-09-18 | measured: **74 of 461** fields declared in `src/api` are referenced nowhere else. Three confirmed: subscription dates ✅ **fixed** (the copy was already translated in 7 locales and rendered by nothing), realised P/L unreachable and the demand differentiator unshown — both product calls. The rest is mostly request params and deliberately-removed UI |
+| T | The server sends it and the app never reads it | 2026-09-18 | ⚠️ **STARTING LIST, not a finding list — and the count is unsafe.** The probe scanned only `src/api/*.ts`, but `AlertFeedItem` (the instance the class was FOUNDED on) lives in `src/data/types.ts` and never was in `src/api` — so **74 of 461** came from an instrument blind to its own founding example. The proposed narrowing was built 2026-09-20 and **still does not fire on the known positive**: the token `read` appears 5/3/6 times incidentally in its own consumers, so no identifier grep can ever flag it. Needs AST (does the mapper's returned literal construct the key), not text. **Quote no count from this class.** Of its 3 real findings: #3 ✅ fixed, #2 is a product call (demand data is competitive info), #1 **still open** — `getRealisedPL()` has ZERO callers, so realised profit is computed and displayed nowhere |
 | U | A provider CASTS a snake_case payload to a camelCase type | 2026-09-18 | ✅ all 4 found and mapped (sales, fee schedules, listings, accounts). **All behind `SELLING_ENABLED=false`** — I first called two of them live and the device disproved it. Real, and they ship the day selling is switched on. `tsc` cannot see this class |
 | V | The app SENDS a field the server drops on the floor | run 2, 2026-09-19 | ✅ **closed: 57 endpoints proven, 3 unreadable, 0 findings.** One LIVE finding fixed (every verified sale lost its date and venue); 3 dead fields removed; the 3 unreadable are 2 hand-verified clean + 1 behind `SELLING_ENABLED`. The probe was wrong 9 times |
 | W | A column the schema carries that no code mentions | 2026-09-18 | measured: **524 across 177 base tables**. Sampled `items` (19 of them): **18 hold no data at all** and the 19th is only its default — schema DEBT, not silent data loss. A cleanup decision, not a bug **12 of the 524 were already DROPPED 2026-09-18** (migration `20260918c`); the rest is the decision. |
@@ -408,9 +408,23 @@ where a member decides what to charge.
 exact, and a server schedule marked as a guess). The formulas themselves agree,
 so they were left where they are — the defect was the CONFIDENCE, not the maths.
 
-**Still owed for this class:** plan limits (already parity-gated by
-`check:billing-limits-parity`) and "today", which the server defines twice —
-Python in CEST, Postgres in UTC (class H's leftover).
+~~**Still owed for this class:** plan limits and "today".~~
+✅ **Both closed — verified 2026-09-20, and both were already done when this
+line was written.**
+
+* **Plan limits** — `check:billing-limits-parity` PASS. Worth knowing what its
+  output hides: it prints "3 FE-read key(s) agree", which reads like a tiny
+  denominator, but since 2026-08-16 it also compares **every numeric limit both
+  tables declare**. That was added after `free.max_mandates` sat at FE=3 / BE=0
+  for weeks — the paywall advertised "3 purchase mandates" to free users who got
+  none — because the old gate only looked at keys read as `limits.X`. The PASS
+  line under-reports its own coverage.
+* **"today"** — `app.lib.clock.utc_today()` is the single definition and
+  `check:server-today` PASS ("every server date comes from the database's
+  clock, or says why not"). Both are in `verify:prebuild`.
+
+This row said "still owed" for three days after the work landed. See
+`npm run check:class-register --list`.
 
 ## N — the client compares a status the database never writes (2026-09-17)
 
@@ -1629,9 +1643,44 @@ A grep for the identifier cannot tell a dropped field from a request parameter,
 and it cannot see a field consumed under a different name (`total_profit` →
 `totalProfit`). So this enumeration is a **starting list, not a finding list** —
 which is the same shape as class N: the measurement is the deliverable, and the
-gate is not worth writing until something narrows it. The narrowing that would
+gate is not worth writing until something narrows it. ~~The narrowing that would
 work here: only fields on a type that a `get<…>` RESPONSE uses, and only where
-the mapping function for that type exists and omits the key.
+the mapping function for that type exists and omits the key.~~
+
+### 2026-09-20 — the narrowing was tried, and GREP CANNOT CLOSE THIS CLASS
+
+Two things came out of building it, and the second is the one that matters.
+
+**1. The original probe was blind to the instance the class was founded on.**
+It scanned "every field declared in a type inside `src/api/*.ts`".
+`AlertFeedItem` — the `read` flag the mapper dropped, which is why this class
+exists — is declared in **`src/data/types.ts`**, and `git log -S` confirms it has
+lived there since 2026-01-31 and was **never** in `src/api`. So **74 of 461** is
+a measurement taken by an instrument that could not see its own founding
+example. Scanning both surfaces and keeping only fields that every consumer
+omits gives ~100 candidates, not 74 — but see below before quoting that number
+either.
+
+**2. The proposed narrowing does not work, and no grep-based one will.** Run
+against the pre-fix commit (`73e1207c`, where `useAlertsFeed` hardcoded
+`isRead: false`), the narrowed probe **still does not flag `AlertFeedItem.read`**.
+The reason is fundamental rather than a bug: the bare token `read` appears
+**5, 3 and 6 times** in the three consumer files — `useAlertsFeed.ts`,
+`SupabaseDataProvider.ts`, `CachedDataProvider.ts` — incidentally. Any
+identifier grep says "consumed". The same holds for `value`, `category`,
+`status`, `name`: the shorter and more ordinary the field name, the more
+certainly a grep is wrong, and those are exactly the fields a mapper drops.
+
+**So the 100 are NOT reported as findings here.** A probe that cannot fire on
+the known positive cannot be trusted on the unknown ones — the rule this file
+already states, and the third time it has bitten a sweep instrument in one day.
+
+**What would actually work is AST, not text:** parse each mapper's returned
+object literal and ask whether the key is *constructed* there, rather than
+whether the string appears in the file. `check-cast-not-mapped.mjs` already
+walks provider mappings and is the natural place to extend. Until that exists,
+this class stays a starting list and **no number from it should be quoted as a
+finding count.**
 
 ## U — a provider casts a snake_case payload to a camelCase type (2026-09-18)
 
