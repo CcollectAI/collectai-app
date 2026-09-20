@@ -27,6 +27,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { text, fontWeight, radius } from '@/theme/tokens';
+// `{ cents: true }` on every figure here: this card states a SETTLED result,
+// and §5's worked example only works with them — a EUR 956.25 basis on a card
+// sold for EUR 1000 looks like a EUR 44 gain and is a EUR 104.05 loss. The app
+// default is whole euros because an ESTIMATE carrying two decimals claims a
+// precision the model does not have. Nothing here is an estimate.
 import { fmtCurrency } from '@/lib/format';
 import { useSettings } from '@/lib/settings';
 import type { RealisedPL } from '@/api/portfolioApi';
@@ -81,7 +86,7 @@ function RealisedPLSectionInner({ data, loading }: Props) {
                   { color: data.total_profit >= 0 ? colors.success : colors.danger },
                 ]}
               >
-                {fmtCurrency(data.total_profit, settings)}
+                {fmtCurrency(data.total_profit, settings, { cents: true })}
               </Text>
             </View>
             <View style={styles.total}>
@@ -89,7 +94,7 @@ function RealisedPLSectionInner({ data, loading }: Props) {
                 {t('analytics.net_proceeds', { defaultValue: 'Net proceeds' })}
               </Text>
               <Text style={[styles.totalValue, { color: colors.text }]}>
-                {fmtCurrency(data.total_net_proceeds, settings)}
+                {fmtCurrency(data.total_net_proceeds, settings, { cents: true })}
               </Text>
             </View>
           </View>
@@ -126,7 +131,7 @@ function RealisedPLSectionInner({ data, loading }: Props) {
                     {s.item_name ?? t('common.unknown_item', { defaultValue: 'Unknown item' })}
                   </Text>
                   <Text style={[styles.rowSub, { color: colors.muted }]} numberOfLines={1}>
-                    {s.net_proceeds != null ? fmtCurrency(s.net_proceeds, settings) : '—'}
+                    {s.net_proceeds != null ? fmtCurrency(s.net_proceeds, settings, { cents: true }) : '—'}
                     {!known
                       ? ` · ${
                           !s.cost_basis_known
@@ -148,7 +153,7 @@ function RealisedPLSectionInner({ data, loading }: Props) {
                     },
                   ]}
                 >
-                  {known && s.profit != null ? fmtCurrency(s.profit, settings) : '—'}
+                  {known && s.profit != null ? fmtCurrency(s.profit, settings, { cents: true }) : '—'}
                 </Text>
               </View>
             );

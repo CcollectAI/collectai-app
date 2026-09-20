@@ -70,14 +70,14 @@ describe('RealisedPLSection', () => {
     // exactly the error this feature exists to prevent. The figure must be
     // NEGATIVE and must not be either of those.
     //
-    // -56.25 renders as "-€56": whole euros are deliberate app-wide
-    // (`money()` in src/lib/format.ts, 2026-09-17 — the only exception is an
-    // amount that would round to zero, because €0 is this app's string for
-    // "worth unknown"). The sign leads the symbol, also deliberate.
+    // CENTS here: this card is the SECOND exception to money()'s 0-decimal
+    // default (2026-09-20). §5's example only works with them: a EUR 956.25
+    // basis on a EUR 1000 sale looks like a EUR 44 gain and is a EUR 104.05
+    // loss. Separator is locale-driven, hence [.,]. Sign leads the symbol.
     // Appears twice — the headline total and the row — so getByText would
     // throw on the ambiguity rather than pass.
-    expect(screen.getAllByText('-€56').length).toBeGreaterThan(0);
-    expect(screen.queryByText('€1000')).toBeNull();
+    expect(screen.getAllByText(/^-€56[.,]25$/).length).toBe(2);
+    expect(screen.queryByText(/^€1000/)).toBeNull();
   });
 
   it('withholds a profit whose postage is unrecorded rather than showing a net', () => {
@@ -99,14 +99,14 @@ describe('RealisedPLSection', () => {
   it('the row shows NET PROCEEDS beside the profit, not the profit twice', () => {
     // Caught by mutation, not by writing it: a bad revert rewrote the subtitle
     // into a copy of the profit expression and all five tests stayed green,
-    // so the card showed "-€56 / -€56" with the €900 the member was actually
+    // so the card showed "-€56 / -€56" with the €900,00 the member was actually
     // paid nowhere on screen. A P/L figure alone is unreadable without what it
     // was measured against — the rule the Positions card states.
     render(<RealisedPLSection data={payload()} loading={false} />);
     // TWICE: once as the headline "Net proceeds", once on the row. The
     // corrupted version rendered it ONCE (the row showed the profit again), so
     // asserting mere presence passes on the bug — count is what discriminates.
-    expect(screen.getAllByText('€900').length).toBe(2);
+    expect(screen.getAllByText(/^€900[.,]00$/).length).toBe(2);
   });
 
   it('counts the excluded sales instead of folding them into the headline', () => {

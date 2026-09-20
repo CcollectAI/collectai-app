@@ -103,12 +103,34 @@ function getFormatter(
  * the NUMBER (grouping and decimal separators are genuinely locale-specific and
  * a Dutch user should keep "1.234"), and the symbol is prefixed here.
  */
-function money(amount: number, currency: Currency, locale: string): string {
-  // 0 decimals is deliberate for every figure in this app EXCEPT one that would
-  // round to ZERO (2026-09-17). On production **885,445** catalogue prices sit
-  // between 0 and 1, and `€0` is the string this app uses for "we do not know
-  // what this is worth" (see the unpriced rule below) — so a real 30-cent card
-  // was displayed as worthless, on the majority of the cheap catalogue.
+export type MoneyOpts = {
+  /**
+   * Show minor units on an amount >= 1. OFF everywhere by default — see below.
+   *
+   * The SECOND exception, added 2026-09-20 for realised P/L (Merle's call).
+   * `docs/COLLECTOR_DEMAND.md` §5 is a worked example that only works with
+   * cents: a **EUR 956.25** basis on a card sold for EUR 1000 looks like a
+   * EUR 44 gain and is a **EUR 104.05 loss**. Rounding to whole euros there
+   * erases the arithmetic the feature exists to show, on the one screen whose
+   * whole job is to state a settled result rather than an estimate.
+   *
+   * Deliberately opt-IN. An estimate carrying two decimals claims a precision
+   * the model does not have, which is why the default stays 0.
+   */
+  cents?: boolean;
+};
+
+function money(amount: number, currency: Currency, locale: string, opts?: MoneyOpts): string {
+  // 0 decimals is deliberate for every figure in this app EXCEPT two
+  // (2026-09-17, second added 2026-09-20):
+  //
+  //   1. an amount that would round to ZERO. On production **885,445**
+  //      catalogue prices sit between 0 and 1, and `€0` is the string this app
+  //      uses for "we do not know what this is worth" (see the unpriced rule
+  //      below) — so a real 30-cent card was displayed as worthless, on the
+  //      majority of the cheap catalogue.
+  //   2. `opts.cents`, opt-in, for a SETTLED figure where the cents are the
+  //      point — realised P/L. See `MoneyOpts.cents` above.
   //
   // JPY and KRW have no minor unit, so there are no cents to show: an amount
   // under one unit is reported as "under one" rather than as zero.
@@ -127,22 +149,30 @@ function money(amount: number, currency: Currency, locale: string): string {
   // that shows a loss writes `-{formatPrice(...)}` by hand — so a negative
   // reaching this function was the one spelling nothing agreed with.
   const neg = amount < 0 ? '-' : '';
+  // JPY and KRW have no minor unit, so `cents` cannot apply to them however it
+  // is passed — asking for decimals on a currency that has none prints a
+  // fraction of a yen that does not exist.
+  const wantCents = Boolean(opts?.cents) && hasMinorUnits;
   if (subUnit && !hasMinorUnits) return `<${neg}${sym}${fmt(1, 0)}`;
   if (subUnit) {
     // Below half a cent even two decimals print "0,00" — the same lie, longer.
     if (Number(abs.toFixed(2)) === 0) return `<${neg}${sym}${fmt(0.01, 2)}`;
     return `${neg}${sym}${fmt(abs, 2)}`;
   }
-  return `${neg}${sym}${fmt(abs, 0)}`;
+  return `${neg}${sym}${fmt(abs, wantCents ? 2 : 0)}`;
 }
 
 /**
  * Format a EUR amount into the selected currency using Settings.fxRates.
  * Preferred when you have access to the full Settings context.
  */
-export function fmtCurrency(amountEUR: number, s: Pick<Settings,'currency'|'numberLocale'|'fxRates'>) {
+export function fmtCurrency(
+  amountEUR: number,
+  s: Pick<Settings,'currency'|'numberLocale'|'fxRates'>,
+  opts?: MoneyOpts,
+) {
   const val = convertEUR(amountEUR, s);
-  return money(val, s.currency, s.numberLocale);
+  return money(val, s.currency, s.numberLocale, opts);
 }
 
 /**
