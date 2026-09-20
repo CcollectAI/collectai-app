@@ -222,6 +222,41 @@ arithmetic above and it only works with cents: **EUR 956.25** basis, **EUR
 to state a settled result. Opt-in via `MoneyOpts.cents`, used in exactly one
 component, ignored for JPY/KRW which have no minor unit.
 
+#### `marketplace_sales` is 0 rows — EXPLAINED, not assumed (2026-09-20)
+
+"It is a launch dependency" is the kind of sentence that hides a silent write
+failure for months, so it was measured rather than asserted. **0 rows has two
+possible causes and only one is benign:** nothing has completed, or completion
+fires and writes nothing (class S — `{"ok": true}` with no row).
+
+Read from production:
+
+| | when | has a sale row |
+|---|---|---|
+| 3 listings at `status='sold'` | 2026-08-15 / 08-16 / 08-19 | no |
+| 1 P2P offer `completed` | 2026-08-07 | no |
+| 2 P2P offers `accepted` (not completed) | 2026-08-20 | n/a |
+
+**Every one predates the writer**, which landed 2026-09-18. Nothing has
+completed since. So the table is empty because nothing has happened — the
+benign cause — and the screen's empty state is the correct thing to show.
+
+**The falsifiable check, for whoever looks next:** the FIRST P2P completion
+after 2026-09-18 must produce a `marketplace_sales` row.
+`_record_p2p_sale` writes it inside the completion transaction with
+`WHERE NOT EXISTS` for idempotency and `sold_at = now()`. If a trade completes
+and no row appears, that is class S and not a launch dependency — check
+`_settle_completed_trade` before adding anything to this file.
+
+**Found while checking, latent not live:** two paths set a listing to `sold`,
+and they disagree. `record_sale` (`marketplace_listing_router.py:1048`) sets
+`sold_at`; the P2P settlement (`p2p_offers_router.py:2341`) sets
+`delisted_at` and leaves `sold_at` NULL — which is why all three sold listings
+above carry a NULL. It is harmless today: the SALE row carries the real
+timestamp and `marketplace_listings.sold_at` is returned by the API but
+rendered on no screen. It would stop being harmless the moment something
+sorts or displays it.
+
 **A currency bug was found while building it and is fixed:** `net_proceeds` is
 stored in the SELLER's currency while `cost_basis` is EUR by construction, so
 `profit` subtracted EUR from USD and `total_profit` summed across currencies —
