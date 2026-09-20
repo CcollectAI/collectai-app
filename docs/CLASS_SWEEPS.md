@@ -70,15 +70,26 @@ Two rules the tooling learned the hard way:
 | Y-2 | What does a gate MISS (not: has it fired) | 2026-09-19 | ⚠️ **INCONCLUSIVE** — "files in the commit" ≠ "sites of the class". The two worst scorers each caught **2 of 2** real instances; the low ratios were the denominator. A sounder run needs a per-class signature and is circular |
 | Y-3 | What a gate misses, via its own report vs the human fix | 2026-09-19 | ✅ **works, with 3 exclusions**. Confirmed: `check:half-done-silence` cannot see `useOptimisticRsvp.ts`, a file its OWN commit fixed — the second proven instance after `delist`. **A gate fences one shape, not a class**, and both misses were found by reading |
 | Z | A success message that is not conditional on success | swept 2026-09-19 | ✅ **2 fixed**: `useOptimisticMutation` swallowed so `await mutate()` was followed by a SUCCESS toast on failure ("Archived" in green, 5 call sites); and `setJSON` swallowed so "Following!" showed on a failed write with no server copy. 50 sites enumerated, the rest read and clean |
-| AA | One fact written to two tables, then counted twice downstream | **swept 2026-09-20** | ✅ **1 instance, fixed; no others.** Two-stage enumeration: 28 functions write 2+ real tables, but only ONE consumer reads a written-together pair and merges it — `_export_ground_truths` (the known case). Both `spawn_bg` candidates read and discarded. Limits written up below. |
+| AA | One fact written to two tables, then counted twice downstream | **swept + DEPLOYED 2026-09-20** | ✅ **1 instance, fixed; no others.** Two-stage enumeration: 28 functions write 2+ real tables, but only ONE consumer reads a written-together pair and merges it — `_export_ground_truths` (the known case). Both `spawn_bg` candidates read and discarded. Limits written up below. |
 
 ## AA — one fact in two tables, counted twice (swept 2026-09-20)
 
-**Found 1, fixed 1, no others.** The instance was `verified_sales` +
+**Found 1, fixed 1, DEPLOYED, no others.** The instance was `verified_sales` +
 `price_ground_truths` both receiving one user-typed sale, then
 `_export_ground_truths` merging them and writing each row twice for weight —
 4x, with two contradictory condition labels. Fixed and pinned by
 `server/tests/test_ground_truth_no_double_count.py`.
+
+**Deployed 2026-09-20 11:49**, and this step is the one most likely to be
+skipped: the retrain worker runs on EC2, and a hash diff of all 393 server
+files showed **exactly one** differing — this fix, still unshipped after the
+commit. `bake_orchestrator` loads workers with `__import__`, which hits
+`sys.modules`, so the long-running `collectai-bake` process keeps the old
+module cached and a file swap alone changes nothing; the service must restart.
+All nine `ExecStartPre` gates were run by hand first (read off the unit, not
+off DEPLOYMENT.md) because a failing blocking gate takes production DOWN rather
+than failing the deploy. Verified after: hashes equal, the fix greps in the
+deployed file, `✓ model_retrain_worker` imported clean, `/healthz` 200.
 
 **How it was enumerated**, in two stages, because writing two tables per event
 is normal and only the combined-downstream subset is the class:
