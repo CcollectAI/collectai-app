@@ -616,33 +616,45 @@ This is non-intrusive and uses `expo-store-review` (wraps StoreKit/Play In-App R
 npx expo start
 ```
 
-### EAS Build (Production)
+### EAS Build — LOCAL ONLY
+
+⛔ **Never omit `--local`.** The Expo account is on the free plan and has no
+paid services; a cloud build is billable. Every command below builds on this
+machine. Corrected 2026-09-20 — this section used to print
+`eas build --platform ios --profile production` with no `--local`, which is
+the cloud path.
+
+Use the npm scripts rather than raw `eas build`, because they carry `--local`,
+the right profile and the output path:
 
 ```bash
-# Install EAS CLI
-npm install -g eas-cli
+npm run build:ios:local      # eas build -p ios --profile store --local -> ./builds/sparrow-ios-local.ipa
+npm run submit:ios           # eas submit -p ios --profile store --path ./builds/...
+npm run release:ios          # both, in order
 
-# Login to Expo
-eas login
-
-# iOS build
-eas build --platform ios --profile production
-
-# Android build
-eas build --platform android --profile production
-
-# Submit to stores
-eas submit --platform ios --profile production
-eas submit --platform android --profile production
+npm run build:android:local  # local Android, same rule
 ```
+
+The build NUMBER comes from EAS remote (`cli.appVersionSource: "remote"`,
+`store.autoIncrement: true`); the value in `app.json` is ignored. Do not try to
+set it there.
 
 ### EAS Build Profiles
 
-| Profile | Use case | Distribution |
-|---------|----------|--------------|
-| `development` | Local testing with dev client | Internal (simulator) |
-| `preview` | TestFlight / Internal testing | Internal |
-| `production` | App Store / Google Play | Store |
+| Profile | Use case | Paywall |
+|---------|----------|---------|
+| `development` | Local testing with dev client (simulator) | n/a |
+| `preview` | Internal testing | locked |
+| `production` | Base profile the store profiles extend | locked |
+| `store` | **App Store / Google Play — the one to ship** | locked (`EXPO_PUBLIC_BETA_UNLOCK_ALL=false`) |
+| `internal` | Paid screens reviewed on TestFlight | ⚠️ **UNLOCKED** |
+
+⚠️ **`internal` produces a paywall-less build** — every user reports as `pro`
+and RevenueCat is skipped. It exists so paid screens can be reviewed, and a
+build made from it must never be promoted to the App Store.
+`npm run check:submit-profiles` flags it, because `eas.json` also defines a
+`submit.internal` profile, which means it CAN be submitted. That gate is not
+wired into `verify:prebuild`, so nothing stops it automatically.
 
 ## Monitoring
 
