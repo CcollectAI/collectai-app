@@ -208,6 +208,27 @@ would reintroduce this section's own error on the sell side.
 
 ### ✅ Closed 2026-09-18, verified end to end 2026-09-20
 
+**And surfaced 2026-09-20**, which was the part still missing: the endpoint had
+**zero callers**, so all of the above was computed and displayed nowhere. It is
+now `RealisedPLSection` on `app/analytics.tsx`, above Positions — one is money
+that changed hands, the other a projection against a live estimate.
+
+⚠️ **This screen shows CENTS, and that is a deliberate exception** (Merle's
+call, 2026-09-20). Every other figure in the app rounds to whole euros
+(`money()` in `src/lib/format.ts`), because an estimate carrying two decimals
+claims a precision the model does not have. But §5's worked example is the
+arithmetic above and it only works with cents: **EUR 956.25** basis, **EUR
+104.05** loss. Rounding there erases the point on the one screen whose job is
+to state a settled result. Opt-in via `MoneyOpts.cents`, used in exactly one
+component, ignored for JPY/KRW which have no minor unit.
+
+**A currency bug was found while building it and is fixed:** `net_proceeds` is
+stored in the SELLER's currency while `cost_basis` is EUR by construction, so
+`profit` subtracted EUR from USD and `total_profit` summed across currencies —
+this section's own error, in the feature built to prevent it. Latent only
+because `marketplace_sales` was empty. `normalise_sales_to_eur` converts first;
+4 tests, 2 mutation-proven. Deployed 2026-09-20.
+
 Option 3 shipped whole, in both halves, on the day of the measurement above:
 
 * **Writer** — `_record_p2p_sale` inside the completion transaction. Fees 0
