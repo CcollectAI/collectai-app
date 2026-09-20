@@ -59,12 +59,19 @@ types/                  # category.ts (36 categories)
 | Agent | Purpose | Key File |
 |-------|---------|----------|
 | Pricing | Ridge regression v2, q10/q50/q90 quantile predictions | `app/ml/model_loader.py` |
-| Alert & Insight | Threshold, anomaly, set completion alerts | `app/agents/alert_agent.py` |
-| Learning & Calibration | Feedback loop, calibration gate | `app/agents/calibration_agent.py` |
+| Alert & Insight | Threshold, anomaly, set completion alerts | `app/features/alerts_feature_router.py` + `workers/auction_alert_worker.py` |
+| Learning & Calibration | Feedback loop, calibration gate | `workers/calibration_worker.py` + `workers/calibration_scheduler.py` |
 | Vision & Classification | 2-tier: OpenAI Vision → heuristic (54 categories). CLIP/fal.ai tier removed 2026-07-27 — FAL_KEY was never set, so it never ran | `app/ml/vision_classifier.py` |
 | Marketplace Aggregation | Multi-source search, dedup, provenance scoring | `app/agents/marketplace_agent.py` |
 | Smart Deal | Purchase mandates, policy engine, deal discovery | `app/agents/deal_discovery_agent.py` |
-| Catalog Learning | Capture unrecognized items, auto-map by consensus, surface new category candidates | `features/catalog_learning_router.py` |
+| Catalog Learning | Capture unrecognized items, auto-map by consensus, surface new category candidates | `app/features/catalog_learning_router.py` + `workers/catalog_learning_worker.py` |
+
+⚠️ **Paths corrected 2026-09-20.** This table named `app/agents/alert_agent.py`
+and `app/agents/calibration_agent.py`; **neither file has ever existed**. Both
+capabilities are real but live in `workers/`, so anyone grepping for the agent
+concluded the layer was missing — calibration in particular, which is the layer
+that scores the pricing model. `catalog_learning_router.py` was listed without
+its `app/` prefix. Before trusting a path in this table, `ls` it.
 
 ### Server Directory Structure
 
@@ -1064,6 +1071,47 @@ before "fixing" either:
   codebase can populate this table — it is a launch dependency, not a bug. Do
   not "fix" it by seeding rows: a synthetic ground truth would make the gate
   confidently wrong rather than honestly quiet.
+
+  **Corrected 2026-09-20 — the holdout does NOT come from this table alone.**
+  `_export_ground_truths` writes `data/<category>/train_ground_truth.jsonl`
+  from **two** sources, and `_retrain_category` holds back the leading slice of
+  that FILE: `public.verified_sales` (the member's typed price, with their real
+  condition) and `public.price_ground_truths`. Which matters, because recording
+  one verified sale writes BOTH tables — `feedback_router.py:456` inserts the
+  sale, then `:488` calls `record_price_ground_truth(source='user_verified_sale')`
+  on the same number.
+
+  Until 2026-09-20 the export selected from both without filtering, and then
+  wrote every row **twice** for 2x weight. One user-typed price therefore
+  reached training **four times**, and the two copies disagreed about
+  condition: `verified_sales` carries the real one, `price_ground_truths` has
+  no condition column so the exporter hardcoded `'Good'` — a Mint sale scored
+  `condition_score` 0.95 down one path and 0.70 down the other, flattening the
+  only feature that is not constant (ground-truth rows pass no `attrs`, so
+  rarity and edition are both 0.5).
+
+  It also **defeated the holdout it feeds**: the `verified_sales` copy landed
+  in the holdout while the `price_ground_truths` copy of the same sale stayed
+  in training, so the promotion gate scored the new model on a row it had just
+  trained on. Separately `n_holdout` could be odd, splitting a weighted pair
+  (~40% of realistic file sizes at `HOLDOUT_FRACTION=0.20`).
+
+  Fixed by excluding `source='user_verified_sale'` from the ground-truth query
+  (`sparrow_p2p` and `deal_desk` never write `verified_sales`, so they stay),
+  merging both sources newest-first, and rounding the holdout to a whole pair
+  via `_holdout_size()`. Pinned by
+  `server/tests/test_ground_truth_no_double_count.py`, whose five tests were
+  each proven to fail against the defect they pin.
+
+  ⚠️ **This is why a member sale is not the same kind of evidence as a scraped
+  sold comp.** The member saw our estimate before listing, so their price is
+  partly our own model's output returning as "ground truth".
+  `price_ground_truths` already stores `prediction_q50` and `error_pct` on
+  every row — nobody was reading them. `server/scripts/check_price_anchoring.py`
+  now compares how often member-reported sales land within 5% of our own
+  prediction against `sparrow_p2p`/`deal_desk`, which a member cannot anchor
+  to. The control is the point: a tight error distribution on its own cannot
+  tell anchoring from an accurate model.
 
 The same class, but rendering a *wrong* value rather than none — the leaderboard
 showed **XP as money** (fixed 2026-07-31):
