@@ -70,7 +70,60 @@ Two rules the tooling learned the hard way:
 | Y-2 | What does a gate MISS (not: has it fired) | 2026-09-19 | ⚠️ **INCONCLUSIVE** — "files in the commit" ≠ "sites of the class". The two worst scorers each caught **2 of 2** real instances; the low ratios were the denominator. A sounder run needs a per-class signature and is circular |
 | Y-3 | What a gate misses, via its own report vs the human fix | 2026-09-19 | ✅ **works, with 3 exclusions**. Confirmed: `check:half-done-silence` cannot see `useOptimisticRsvp.ts`, a file its OWN commit fixed — the second proven instance after `delist`. **A gate fences one shape, not a class**, and both misses were found by reading |
 | Z | A success message that is not conditional on success | swept 2026-09-19 | ✅ **2 fixed**: `useOptimisticMutation` swallowed so `await mutate()` was followed by a SUCCESS toast on failure ("Archived" in green, 5 call sites); and `setJSON` swallowed so "Following!" showed on a failed write with no server copy. 50 sites enumerated, the rest read and clean |
-| AA | One fact written to two tables, then counted twice downstream | found 2026-09-20 | 🔶 **1 found, 1 fixed, class NOT swept.** Recording a verified sale writes BOTH `verified_sales` AND `price_ground_truths` (same number, `source='user_verified_sale'`). `_export_ground_truths` read both, then wrote each row twice for weight — so one user-typed price reached model training **4x**, with two contradictory condition labels, and the same sale sat in the promotion holdout AND its training set. Fixed + pinned by `test_ground_truth_no_double_count.py`. **The sweep is the open part**: nothing enumerates the other places one event writes two tables. Start from every `INSERT` that follows another `INSERT` in the same handler. |
+| AA | One fact written to two tables, then counted twice downstream | **swept 2026-09-20** | ✅ **1 instance, fixed; no others.** Two-stage enumeration: 28 functions write 2+ real tables, but only ONE consumer reads a written-together pair and merges it — `_export_ground_truths` (the known case). Both `spawn_bg` candidates read and discarded. Limits written up below. |
+
+## AA — one fact in two tables, counted twice (swept 2026-09-20)
+
+**Found 1, fixed 1, no others.** The instance was `verified_sales` +
+`price_ground_truths` both receiving one user-typed sale, then
+`_export_ground_truths` merging them and writing each row twice for weight —
+4x, with two contradictory condition labels. Fixed and pinned by
+`server/tests/test_ground_truth_no_double_count.py`.
+
+**How it was enumerated**, in two stages, because writing two tables per event
+is normal and only the combined-downstream subset is the class:
+
+1. Functions writing 2+ tables: 28, after filtering candidate names against the
+   154 real tables in the migrations (`UPDATE a listing…` in a docstring yields
+   a table called `a`).
+2. Consumers reading a written-together PAIR *and* merging it (`list(a)+list(b)`,
+   `UNION`, `.extend`, `chain`): **1** — the known one.
+
+**The enumerator was wrong twice before it was right, and both are worth
+knowing.** Its first version stripped every triple-quoted string as a
+"docstring" — and all SQL in this repo lives in triple-quoted strings, so it
+deleted exactly what it searched for, returned 4 regex artefacts, and missed
+the instance already known. Its second version built table pairs from direct
+`INSERT`s only, so the known pair was never formed and stage 2's "0 findings"
+was meaningless. Both were caught by asserting the KNOWN INSTANCE appears;
+that assertion is now the first thing each stage does.
+
+**False positives discarded, with the reason:**
+
+* `rsvp_event()` → `event_attendees` + `event_sponsor_analytics` via `spawn_bg`.
+  Not a duplicate: the second is a denormalised counter (`SET rsvps = rsvps + 1`)
+  read by LEFT JOIN, never summed with a COUNT of attendees. It can *drift*
+  from its source, which is a different class and not yet swept.
+* `create_listing()` → spawns `_publish_supply_hook`, which writes
+  **`market_hits`** — the 2.35M-row table the price model trains on. This looked
+  like the worst possible version of the class: a member's asking price, set
+  after seeing our estimate, entering the training backbone. It is not. The hook
+  writes `is_listing = TRUE` and the training export filters
+  `AND (is_listing IS NOT TRUE)`. Asking prices never reach the model.
+
+**What this sweep cannot see**, so the next person does not read "swept" as
+"impossible":
+
+* a consumer that combines two tables by SUMMING separate aggregate queries
+  rather than concatenating rows — no list merge to match on;
+* a duplicate completed across a queue or a scheduled worker rather than within
+  one function or its `spawn_bg` callees;
+* the same fact duplicated across the API boundary and re-added in TypeScript.
+
+**Minor, noted not fixed:** `_price_to_features(price, condition, is_sold, attrs)`
+accepts `price` and `is_sold` and uses neither — `is_sold` is computed from
+`attrs` at the call site and thrown away. Harmless today because the query
+already filters listings out, but it reads like a feature that exists.
 
 I–L were launched as four parallel read-only agents on 2026-09-16 and all four
 died within seconds of each other on the account's session limit. The briefs are
