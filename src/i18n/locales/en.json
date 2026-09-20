@@ -93,7 +93,8 @@
     "tap_to_correct": "Tap name, category, or condition to correct",
     "correction_submitted": "Correction submitted",
     "buyers_see_this": "Buyers see this on every item you list.",
-    "archive_explainer": "Items you archive, and items that leave your collection when a sale completes, appear here. You can put any of them back."
+    "archive_explainer": "Items you archive, and items that leave your collection when a sale completes, appear here. You can put any of them back.",
+    "unknown_item": "Unknown item"
   },
   "add_tab": {
     "subtitle": "Fast, camera-first flow.",
@@ -1597,7 +1598,15 @@
     "actuals_vs_predicted": "Actuals vs Predicted",
     "preview_notice": "Preview — these are sample numbers. Add items to your portfolio to see your real analytics.",
     "view_all": "View all",
-    "no_earlier_value": "No earlier value to measure against yet — everything you own was added inside this window."
+    "no_earlier_value": "No earlier value to measure against yet — everything you own was added inside this window.",
+    "realised_pl": "Realised P/L",
+    "realised_pl_empty": "Nothing sold yet. Record a sale and this shows what you actually made — purchase price and fees included, not an estimate.",
+    "realised_profit": "Profit",
+    "net_proceeds": "Net proceeds",
+    "sales_without_basis": "{{count}} sale(s) excluded — no purchase price recorded",
+    "sales_without_postage": "{{count}} sale(s) excluded — postage not recorded",
+    "basis_unknown": "no purchase price",
+    "postage_unknown": "postage not recorded"
   },
   "guide": {
     "no_guide_yet": "No guide for this category yet",

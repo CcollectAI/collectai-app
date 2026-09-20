@@ -265,3 +265,67 @@ class TestPostageNobodyRecorded:
         assert out["sales"][0]["shipping_known"] is True
         assert out["sales"][0]["profit"] == round(867.20 - 956.25, 2)
         assert out["sales_without_shipping"] == 0
+
+
+class TestCurrencyNormalisation:
+    """A sale in USD must not have a EUR cost basis subtracted from it.
+
+    `net_proceeds` and `sale_price` are stored in the SELLER's currency;
+    `cost_basis` is EUR by construction (`purchase_price_eur +
+    acquisition_fees_eur`). Subtracting one from the other books the FX rate as
+    profit, and `total_profit` then sums across currencies — the §5 error the
+    whole feature exists to prevent, committed on the sell side.
+
+    Latent until 2026-09-20 only because `marketplace_sales` was empty.
+    """
+
+    @staticmethod
+    async def _fake_fx(amount: float, currency: str) -> float:
+        """1 USD = 0.50 EUR. Deliberately not 1.0, or the test proves nothing."""
+        return amount if currency == "EUR" else amount * 0.5
+
+    @pytest.mark.asyncio
+    async def test_usd_sale_is_converted_before_the_basis_is_subtracted(self):
+        from app.routes.portfolio_router import normalise_sales_to_eur
+        rows = await normalise_sales_to_eur(
+            [sale(net_proceeds=200.0, sale_price=200.0, currency="USD", cost_basis=50.0)],
+            self._fake_fx,
+        )
+        out = summarise_realised_sales(rows)
+        # 200 USD -> 100 EUR, minus a 50 EUR basis = 50 EUR.
+        # Unconverted it would read 150 — a 3x overstatement of the profit.
+        assert out["sales"][0]["profit"] == 50.0
+        assert out["total_profit"] == 50.0
+
+    @pytest.mark.asyncio
+    async def test_eur_sales_are_untouched(self):
+        from app.routes.portfolio_router import normalise_sales_to_eur
+        rows = await normalise_sales_to_eur(
+            [sale(net_proceeds=200.0, sale_price=200.0, currency="EUR", cost_basis=50.0)],
+            self._fake_fx,
+        )
+        assert summarise_realised_sales(rows)["sales"][0]["profit"] == 150.0
+
+    @pytest.mark.asyncio
+    async def test_mixed_currency_total_is_summed_in_one_unit(self):
+        from app.routes.portfolio_router import normalise_sales_to_eur
+        rows = await normalise_sales_to_eur(
+            [
+                sale(id="a", net_proceeds=200.0, sale_price=200.0, currency="USD", cost_basis=50.0),
+                sale(id="b", net_proceeds=100.0, sale_price=100.0, currency="EUR", cost_basis=50.0),
+            ],
+            self._fake_fx,
+        )
+        # (100-50) + (100-50) = 100. Unconverted: (200-50)+(100-50) = 200.
+        assert summarise_realised_sales(rows)["total_profit"] == 100.0
+
+    @pytest.mark.asyncio
+    async def test_the_sellers_own_currency_is_not_dropped(self):
+        """Dropping it is the class T defect this screen was built to fix."""
+        from app.routes.portfolio_router import normalise_sales_to_eur
+        rows = await normalise_sales_to_eur(
+            [sale(net_proceeds=200.0, sale_price=200.0, currency="USD", cost_basis=50.0)],
+            self._fake_fx,
+        )
+        assert rows[0]["sale_currency"] == "USD"
+        assert rows[0]["currency"] == "EUR", "the amounts ARE euros now; saying USD mislabels them"

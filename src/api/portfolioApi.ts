@@ -66,8 +66,17 @@ export type RealisedSale = {
   sale_price: number | null;
   currency: string | null;
   net_proceeds: number | null;
+  /** All money on this row is EUR — the server converts before subtracting the
+   *  EUR cost basis. This is the currency the SELLER used, kept so a member who
+   *  sold in USD is not told the sale was in euros. */
+  sale_currency: string | null;
   cost_basis: number | null;
   cost_basis_known: boolean;
+  /** False when the seller has not said what postage cost — `profit` is then
+   *  null, because a net BEFORE postage presented as a result is exactly the
+   *  §5 error this feature exists to prevent. The server has always sent this;
+   *  the type dropped it (class T). */
+  shipping_known: boolean;
   profit: number | null;
   fees: { platform: number; payment_processing: number; shipping: number };
 };
@@ -78,6 +87,9 @@ export type RealisedPL = {
   total_profit: number;
   total_net_proceeds: number;
   sales_without_cost_basis: number;
+  /** Sales excluded from `total_profit` because postage is unrecorded. Shown
+   *  beside `sales_without_cost_basis`, never silently folded in. */
+  sales_without_shipping: number;
 };
 
 export const getRealisedPL = () => get<RealisedPL>("/portfolio/realised-pl");

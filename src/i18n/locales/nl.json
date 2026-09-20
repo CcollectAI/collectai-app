@@ -93,7 +93,8 @@
     "tap_to_correct": "Tik op naam, categorie of conditie om te corrigeren",
     "correction_submitted": "Correctie verstuurd",
     "buyers_see_this": "Kopers zien dit bij elk item dat je aanbiedt.",
-    "archive_explainer": "Items die je archiveert en items die je collectie verlaten bij een afgeronde verkoop, verschijnen hier. Je kunt ze allemaal terugzetten."
+    "archive_explainer": "Items die je archiveert en items die je collectie verlaten bij een afgeronde verkoop, verschijnen hier. Je kunt ze allemaal terugzetten.",
+    "unknown_item": "Onbekend item"
   },
   "add_tab": {
     "subtitle": "Snelle, camera-gerichte flow.",
@@ -1597,7 +1598,15 @@
     "actuals_vs_predicted": "Werkelijk versus voorspeld",
     "preview_notice": "Voorbeeld — dit zijn voorbeeldcijfers. Voeg items aan je portfolio toe om je echte analyses te zien.",
     "view_all": "Alles bekijken",
-    "no_earlier_value": "Nog geen eerdere waarde om mee te vergelijken — alles wat je bezit is binnen deze periode toegevoegd."
+    "no_earlier_value": "Nog geen eerdere waarde om mee te vergelijken — alles wat je bezit is binnen deze periode toegevoegd.",
+    "realised_pl": "Gerealiseerde W/V",
+    "realised_pl_empty": "Nog niets verkocht. Leg een verkoop vast en je ziet hier wat je echt hebt verdiend — inclusief aankoopprijs en kosten, geen schatting.",
+    "realised_profit": "Winst",
+    "net_proceeds": "Netto-opbrengst",
+    "sales_without_basis": "{{count}} verkoop/verkopen uitgesloten — geen aankoopprijs vastgelegd",
+    "sales_without_postage": "{{count}} verkoop/verkopen uitgesloten — verzendkosten niet vastgelegd",
+    "basis_unknown": "geen aankoopprijs",
+    "postage_unknown": "verzendkosten niet vastgelegd"
   },
   "guide": {
     "no_guide_yet": "Nog geen gids voor deze categorie",

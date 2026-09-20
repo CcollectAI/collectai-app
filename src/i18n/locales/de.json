@@ -93,7 +93,8 @@
     "tap_to_correct": "Tippe auf Name, Kategorie oder Zustand, um zu korrigieren",
     "correction_submitted": "Korrektur gesendet",
     "buyers_see_this": "Käufer sehen das bei jedem Objekt, das du anbietest.",
-    "archive_explainer": "Objekte, die du archivierst, und Objekte, die deine Sammlung nach einem abgeschlossenen Verkauf verlassen, erscheinen hier. Du kannst sie jederzeit zurückholen."
+    "archive_explainer": "Objekte, die du archivierst, und Objekte, die deine Sammlung nach einem abgeschlossenen Verkauf verlassen, erscheinen hier. Du kannst sie jederzeit zurückholen.",
+    "unknown_item": "Unbekanntes Objekt"
   },
   "add_tab": {
     "subtitle": "Schneller, kamerazuerst Flow.",
@@ -1597,7 +1598,15 @@
     "actuals_vs_predicted": "Ist-Werte gegen Vorhersage",
     "preview_notice": "Vorschau — das sind Beispielzahlen. Füge Objekte zu deinem Portfolio hinzu, um deine echten Analysen zu sehen.",
     "view_all": "Alle ansehen",
-    "no_earlier_value": "Noch kein früherer Wert zum Vergleich — alles, was du besitzt, wurde in diesem Zeitraum hinzugefügt."
+    "no_earlier_value": "Noch kein früherer Wert zum Vergleich — alles, was du besitzt, wurde in diesem Zeitraum hinzugefügt.",
+    "realised_pl": "Realisierter Gewinn/Verlust",
+    "realised_pl_empty": "Noch nichts verkauft. Trage einen Verkauf ein und hier steht, was du wirklich verdient hast — inklusive Kaufpreis und Gebühren, keine Schätzung.",
+    "realised_profit": "Gewinn",
+    "net_proceeds": "Nettoerlös",
+    "sales_without_basis": "{{count}} Verkauf/Verkäufe ausgeschlossen — kein Kaufpreis hinterlegt",
+    "sales_without_postage": "{{count}} Verkauf/Verkäufe ausgeschlossen — Porto nicht hinterlegt",
+    "basis_unknown": "kein Kaufpreis",
+    "postage_unknown": "Porto nicht hinterlegt"
   },
   "guide": {
     "no_guide_yet": "Noch kein Leitfaden für diese Kategorie",

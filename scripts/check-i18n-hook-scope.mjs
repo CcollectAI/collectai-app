@@ -9,11 +9,24 @@
  * not in eslint.config.js either, so the only thing standing between a
  * hook-less `t(` and production was tsc noticing an undefined name.
  *
- * tsc catches the easy half (no `t` anywhere in the file). It does NOT catch
- * the half that actually happens when translating in bulk: a file with TWO
- * components where only one declares `t`, and the literal lived in the other.
- * That compiles if the other component has a prop or local named `t`, and it
- * throws at render otherwise -- on whichever screen was not opened in testing.
+ * ⚠️ CORRECTED 2026-09-20 — THIS GATE IS LARGELY REDUNDANT, and the premise it
+ * was written on was wrong. I grepped `eslint.config.js` for the string
+ * "react-hooks", found nothing, and concluded the rule was not enforced. It is:
+ * the plugin arrives through a preset, and `react-hooks/rules-of-hooks` fires
+ * as an ERROR. Measured against a two-component file where only one declares
+ * `t`:
+ *
+ *     tsc               error TS2304: Cannot find name 't'   <- catches it
+ *     rules-of-hooks    silent                               <- different class
+ *     this gate         catches it
+ *
+ * So tsc is the real defence for an undeclared `t`, and rules-of-hooks covers
+ * the conditional-hook case this gate never looked at. What is left here is
+ * narrow: a `t` that RESOLVES lexically but from the wrong scope (a module-level
+ * binding, or one captured from an enclosing closure), which compiles and is
+ * not a hook-order violation. Kept because it is cheap and that case is real,
+ * but it should not be cited as the thing standing between a hook-less `t` and
+ * production. tsc is.
  *
  * This walks each top-level component and asserts that any t( inside it is
  * covered by a `const { t } = useTranslation()` in that same component.

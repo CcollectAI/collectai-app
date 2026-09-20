@@ -277,12 +277,18 @@ plural key explicitly in code — see `category.set_item_count_one/_many`.
    A doc that credits a gate with a check it does not make is worse than no doc:
    it is why step 2 is easy to skip.
 6b. **`npm run check:i18n-hook-scope`** (added 2026-09-19, in `verify:prebuild`)
-   is the gate step 6 used to be wrongly credited with. It walks every top-level
-   component and fails if one calls `t()` without a `const { t } =
-   useTranslation()` of its own. `react-hooks/rules-of-hooks` is NOT in
-   `eslint.config.js`, and `tsc` only catches the easy half — a file with no `t`
-   at all. The half it misses is a file with TWO components where only one
-   declares `t`, which is precisely what bulk translation produces.
+   walks every top-level component and fails if one calls `t()` without a
+   `const { t } = useTranslation()` of its own.
+   ⚠️ **Corrected 2026-09-20: it is largely redundant, and I built it on a
+   false premise.** I grepped `eslint.config.js` for "react-hooks", found
+   nothing, and told Merle the rule was not enforced. It is — the plugin comes
+   from a preset, and `rules-of-hooks` fires as an ERROR. Measured on a
+   two-component file where only one declares `t`: **tsc** reports
+   `TS2304: Cannot find name 't'`, **rules-of-hooks** is silent (different
+   class), **this gate** catches it. So `tsc` is the real defence; what remains
+   for this gate is the narrow case of a `t` that resolves lexically from the
+   WRONG scope — a module-level binding or one captured from a closure — which
+   compiles cleanly. Worth keeping, not worth citing as the safety net.
    ⚠️ Insert the hook as the **first statement** of the component, above any
    early return. Several components in the 2026-09-19 slice open with
    `if (!visible) return null;` / `if (!showAds) return null;`, and a hook

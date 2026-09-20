@@ -93,7 +93,8 @@
     "tap_to_correct": "Appuyez sur le nom, la catégorie ou l'état pour corriger",
     "correction_submitted": "Correction envoyée",
     "buyers_see_this": "Les acheteurs le voient sur chaque objet que vous mettez en vente.",
-    "archive_explainer": "Les objets que vous archivez, et ceux qui quittent votre collection à la finalisation d'une vente, apparaissent ici. Vous pouvez tous les restaurer."
+    "archive_explainer": "Les objets que vous archivez, et ceux qui quittent votre collection à la finalisation d'une vente, apparaissent ici. Vous pouvez tous les restaurer.",
+    "unknown_item": "Objet inconnu"
   },
   "add_tab": {
     "subtitle": "Flux rapide, photo d'abord.",
@@ -1597,7 +1598,15 @@
     "actuals_vs_predicted": "Réel comparé au prévu",
     "preview_notice": "Aperçu — ces chiffres sont des exemples. Ajoutez des objets à votre portefeuille pour voir vos vraies analyses.",
     "view_all": "Tout voir",
-    "no_earlier_value": "Pas encore de valeur antérieure pour comparer — tout ce que vous possédez a été ajouté durant cette période."
+    "no_earlier_value": "Pas encore de valeur antérieure pour comparer — tout ce que vous possédez a été ajouté durant cette période.",
+    "realised_pl": "P/P réalisé",
+    "realised_pl_empty": "Rien de vendu pour l'instant. Enregistrez une vente et vous verrez ici ce que vous avez réellement gagné — prix d'achat et frais compris, pas une estimation.",
+    "realised_profit": "Bénéfice",
+    "net_proceeds": "Produit net",
+    "sales_without_basis": "{{count}} vente(s) exclue(s) — aucun prix d'achat enregistré",
+    "sales_without_postage": "{{count}} vente(s) exclue(s) — frais de port non enregistrés",
+    "basis_unknown": "pas de prix d'achat",
+    "postage_unknown": "frais de port non enregistrés"
   },
   "guide": {
     "no_guide_yet": "Pas encore de guide pour cette catégorie",

@@ -93,7 +93,8 @@
     "tap_to_correct": "Toca el nombre, la categoría o el estado para corregir",
     "correction_submitted": "Corrección enviada",
     "buyers_see_this": "Los compradores lo ven en cada artículo que publicas.",
-    "archive_explainer": "Aquí aparecen los artículos que archivas y los que salen de tu colección al completarse una venta. Puedes devolver cualquiera."
+    "archive_explainer": "Aquí aparecen los artículos que archivas y los que salen de tu colección al completarse una venta. Puedes devolver cualquiera.",
+    "unknown_item": "Artículo desconocido"
   },
   "add_tab": {
     "subtitle": "Flujo rápido, cámara primero.",
@@ -1597,7 +1598,15 @@
     "actuals_vs_predicted": "Real frente a lo previsto",
     "preview_notice": "Vista previa: estas cifras son de ejemplo. Añade artículos a tu portafolio para ver tus analíticas reales.",
     "view_all": "Ver todo",
-    "no_earlier_value": "Aún no hay un valor anterior con el que comparar: todo lo que tienes se añadió dentro de este periodo."
+    "no_earlier_value": "Aún no hay un valor anterior con el que comparar: todo lo que tienes se añadió dentro de este periodo.",
+    "realised_pl": "P/G realizado",
+    "realised_pl_empty": "Aún no has vendido nada. Registra una venta y aquí verás lo que has ganado de verdad: precio de compra y comisiones incluidos, no una estimación.",
+    "realised_profit": "Beneficio",
+    "net_proceeds": "Ingresos netos",
+    "sales_without_basis": "{{count}} venta(s) excluida(s): sin precio de compra registrado",
+    "sales_without_postage": "{{count}} venta(s) excluida(s): gastos de envío no registrados",
+    "basis_unknown": "sin precio de compra",
+    "postage_unknown": "gastos de envío no registrados"
   },
   "guide": {
     "no_guide_yet": "Aún no hay guía para esta categoría",

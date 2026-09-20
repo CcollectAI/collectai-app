@@ -93,7 +93,8 @@
     "tap_to_correct": "이름, 카테고리, 상태를 눌러 수정하세요",
     "correction_submitted": "수정 사항을 보냈습니다",
     "buyers_see_this": "등록하는 모든 아이템에서 구매자에게 표시됩니다.",
-    "archive_explainer": "보관한 아이템과 판매 완료로 컬렉션에서 빠진 아이템이 여기에 표시됩니다. 언제든 되돌릴 수 있습니다."
+    "archive_explainer": "보관한 아이템과 판매 완료로 컬렉션에서 빠진 아이템이 여기에 표시됩니다. 언제든 되돌릴 수 있습니다.",
+    "unknown_item": "알 수 없는 아이템"
   },
   "add_tab": {
     "subtitle": "빠른 카메라 우선 흐름.",
@@ -1597,7 +1598,15 @@
     "actuals_vs_predicted": "실제값 대 예측값",
     "preview_notice": "미리보기 — 예시 숫자입니다. 포트폴리오에 아이템을 추가하면 실제 분석이 표시됩니다.",
     "view_all": "전체 보기",
-    "no_earlier_value": "비교할 이전 가치가 아직 없습니다 — 보유 항목이 모두 이 기간에 추가되었습니다."
+    "no_earlier_value": "비교할 이전 가치가 아직 없습니다 — 보유 항목이 모두 이 기간에 추가되었습니다.",
+    "realised_pl": "실현 손익",
+    "realised_pl_empty": "아직 판매한 항목이 없습니다. 판매를 기록하면 구매가와 수수료를 포함한 실제 수익이 여기에 표시됩니다. 추정치가 아닙니다.",
+    "realised_profit": "수익",
+    "net_proceeds": "순수익",
+    "sales_without_basis": "{{count}}건 제외 — 구매가가 기록되지 않음",
+    "sales_without_postage": "{{count}}건 제외 — 배송비가 기록되지 않음",
+    "basis_unknown": "구매가 없음",
+    "postage_unknown": "배송비 미기록"
   },
   "guide": {
     "no_guide_yet": "이 카테고리의 가이드가 아직 없습니다",

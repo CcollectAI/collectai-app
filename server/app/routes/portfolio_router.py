@@ -1120,10 +1120,55 @@ async def realised_pl(
                 user_id,
             )
 
-        return summarise_realised_sales(rows)
+        # `net_proceeds` is stored in the SALE's currency (any ISO code the
+        # seller used) while `cost_basis` is EUR by construction
+        # (`items.purchase_price_eur + acquisition_fees_eur`). Subtracting one
+        # from the other books the FX RATE as profit, and `total_profit` then
+        # sums across currencies — this section's own §5 error, committed by
+        # the feature built to prevent it. Latent only because
+        # `marketplace_sales` is empty: the first USD sale would have shipped a
+        # wrong number. Same fix and same reasoning as the P2P ground-truth
+        # hook, which converts before comparing against a EUR forecast.
+        #
+        # Converted HERE rather than in `summarise_realised_sales`, which stays
+        # a synchronous pure function over rows so it can be tested without a
+        # DB or an FX service. `convert_to_eur` short-circuits on "EUR" without
+        # touching the rates service, so an all-EUR portfolio costs nothing.
+        from app.lib.fx_service import convert_to_eur
+
+        # Every money field on a row must end up in ONE unit, or the client
+        # renders a converted amount under the original currency's symbol —
+        # the same mismatch one level up. So `sale_price` converts too, the
+        # row's `currency` becomes EUR because that is what the numbers now
+        # are, and the seller's original currency is preserved as
+        # `sale_currency` rather than dropped (dropping it would be the class
+        # T defect this screen was built to fix).
+        return summarise_realised_sales(
+            await normalise_sales_to_eur(rows, convert_to_eur)
+        )
     except Exception as e:
         _logger.error("[portfolio/realised-pl] DB error: %s", e)
         raise error_response(500, "Failed to load realised P/L", code="DB_ERROR")
+
+
+async def normalise_sales_to_eur(rows, convert) -> list[dict]:
+    """Put every money field on a sale row into ONE unit: EUR.
+
+    `convert` is INJECTED rather than imported so this can be tested against a
+    known rate without an FX service — the same reason `summarise_realised_sales`
+    below is a pure function over rows.
+    """
+    out: list[dict] = []
+    for r in rows:
+        d = dict(r)
+        src = (d.get("currency") or "EUR").upper()
+        for field in ("net_proceeds", "sale_price"):
+            if d.get(field) is not None:
+                d[field] = round(await convert(float(d[field]), src), 2)
+        d["sale_currency"] = src
+        d["currency"] = "EUR"
+        out.append(d)
+    return out
 
 
 def summarise_realised_sales(rows) -> dict:
@@ -1179,6 +1224,9 @@ def summarise_realised_sales(rows) -> dict:
             "sold_at": r["sold_at"].isoformat() if r["sold_at"] else None,
             "sale_price": float(r["sale_price"]) if r["sale_price"] is not None else None,
             "currency": r["currency"],
+            # The seller's own currency, kept beside the EUR figures so a
+            # member who sold in USD is not told the sale was in euros.
+            "sale_currency": r.get("sale_currency") if isinstance(r, dict) else None,
             "net_proceeds": net,
             "cost_basis": basis,
             "cost_basis_known": basis is not None,

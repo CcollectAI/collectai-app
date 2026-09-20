@@ -93,7 +93,8 @@
     "tap_to_correct": "名前・カテゴリー・状態をタップして修正",
     "correction_submitted": "修正を送信しました",
     "buyers_see_this": "出品するすべてのアイテムで購入者に表示されます。",
-    "archive_explainer": "アーカイブしたアイテムと、販売完了でコレクションから外れたアイテムがここに表示されます。いつでも戻せます。"
+    "archive_explainer": "アーカイブしたアイテムと、販売完了でコレクションから外れたアイテムがここに表示されます。いつでも戻せます。",
+    "unknown_item": "不明なアイテム"
   },
   "add_tab": {
     "subtitle": "高速、カメラ優先のフロー。",
@@ -1597,7 +1598,15 @@
     "actuals_vs_predicted": "実績と予測の比較",
     "preview_notice": "プレビュー — これはサンプルの数値です。ポートフォリオにアイテムを追加すると実際の分析が表示されます。",
     "view_all": "すべて見る",
-    "no_earlier_value": "比較できる過去の価値がまだありません — 所有品はすべてこの期間内に追加されています。"
+    "no_earlier_value": "比較できる過去の価値がまだありません — 所有品はすべてこの期間内に追加されています。",
+    "realised_pl": "確定損益",
+    "realised_pl_empty": "まだ販売はありません。販売を記録すると、購入価格や手数料を含めた実際の損益がここに表示されます（推定ではありません）。",
+    "realised_profit": "利益",
+    "net_proceeds": "手取り額",
+    "sales_without_basis": "{{count}} 件を除外 — 購入価格が未記録",
+    "sales_without_postage": "{{count}} 件を除外 — 送料が未記録",
+    "basis_unknown": "購入価格なし",
+    "postage_unknown": "送料が未記録"
   },
   "guide": {
     "no_guide_yet": "このカテゴリーのガイドはまだありません",

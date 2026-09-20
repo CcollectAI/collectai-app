@@ -49,6 +49,8 @@ import { fmtCurrency } from '@/lib/format';
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { useAsync } from "@/hooks/useAsync";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
+import { RealisedPLSection } from "@/components/analytics/RealisedPLSection";
+import { getRealisedPL } from "@/api/portfolioApi";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 
 // Import analytics store
@@ -134,6 +136,15 @@ function AnalyticsScreen() {
     errorDetail: categoryError,
     retry: retryCategories,
   } = useAsync(() => dataProvider.listCategorySummaries(), []);
+
+  // Realised P/L. Gated on the SAME limit the endpoint enforces
+  // (`require_plan("pro")` / `limits.advanced_analytics`) rather than a second
+  // opinion about who may see it — a paywall only the client enforces is not
+  // one, and a client that disagrees with the server just renders a 403.
+  const { data: realisedPL, loading: realisedLoading } = useAsync(
+    () => (limits.advanced_analytics ? getRealisedPL() : Promise.resolve(null)),
+    [limits.advanced_analytics],
+  );
 
   const loading = snapshotLoading || categoriesLoading;
   const errMsg = (e: unknown): string => {
@@ -878,6 +889,13 @@ function AnalyticsScreen() {
             sort order (absolute P/L, not value), different fields (cost basis,
             P/L, the valuation band), and it only ever ranks items whose cost
             basis is real. */}
+        {/* Realised sits above Positions: one is money that changed hands,
+            the other is a projection against a live estimate. Reading the
+            projection first invites treating it as a result. */}
+        {limits.advanced_analytics ? (
+          <RealisedPLSection data={realisedPL} loading={realisedLoading} />
+        ) : null}
+
         {limits.advanced_analytics && items.length > 0 && (
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
