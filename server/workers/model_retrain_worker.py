@@ -142,11 +142,30 @@ async def _export_ground_truths(conn, category: str, cutoff: datetime) -> int:
 
     Ground truth data gets 2x weight (written twice) since it's the highest
     quality pricing signal.
+
+    ⚠️ The two queries below MUST NOT both return the same real-world sale.
+    Recording a verified sale writes BOTH `verified_sales` AND
+    `price_ground_truths` (feedback_router.py, source='user_verified_sale',
+    added 2026-04-25 to stop price_ground_truths sitting empty). This function
+    was written 2026-03-01, when `price_ground_truths` really did hold only
+    Deal Desk offers — hence the old comment here saying so. From April the two
+    overlapped, and because each row is then written twice for weight, ONE
+    user-typed price landed in the training file FOUR times.
+
+    Worse than the weight: the same sale arrived with two different condition
+    labels. `verified_sales` carries the member's real condition; this table
+    has no condition column, so the row below hardcodes 'Good'. A Mint sale
+    scored 0.95 via one path and 0.70 via the other, teaching the model that
+    the same price means two different conditions — flattening the only
+    feature that is not constant (rarity/edition are both 0.5 here, see below).
+
+    `sparrow_p2p` and `deal_desk` rows are NOT duplicated — they never write
+    `verified_sales` — so they stay.
     """
-    # Verified sales from users
+    # Verified sales from users. Carries the member's real condition.
     rows = await conn.fetch(
         """
-        SELECT sale_price, condition
+        SELECT sale_price AS price, condition, created_at AS ts
         FROM public.verified_sales
         WHERE category = $1
           AND sale_price > 0
@@ -158,23 +177,36 @@ async def _export_ground_truths(conn, category: str, cutoff: datetime) -> int:
         cutoff,
     )
 
-    # Price ground truths from Deal Desk completed offers
+    # Ground truths that are NOT already counted above: Deal Desk completions
+    # and P2P trades. `user_verified_sale` is excluded because it is the same
+    # sale as a `verified_sales` row — see the docstring.
     gt_rows = await conn.fetch(
         """
-        SELECT actual_price, 'Good' AS condition
+        SELECT actual_price AS price, 'Good' AS condition, recorded_at AS ts
         FROM public.price_ground_truths
         WHERE item_id IN (
             SELECT id FROM public.items WHERE category = $1
         )
         AND actual_price > 0
         AND recorded_at >= $2
+        AND source <> 'user_verified_sale'
+        ORDER BY recorded_at DESC
         LIMIT 500
         """,
         category,
         cutoff,
     )
 
-    all_rows = list(rows) + list(gt_rows)
+    # Merge newest-first ACROSS both sources. _retrain_category holds out the
+    # LEADING slice of this file and documents it as "the most recent"; with a
+    # plain `rows + gt_rows` concatenation that was only true of the first
+    # half, so the holdout was the newest verified sales rather than the newest
+    # ground truth.
+    all_rows = sorted(
+        list(rows) + list(gt_rows),
+        key=lambda r: r["ts"],
+        reverse=True,
+    )
     if not all_rows:
         return 0
 
@@ -186,8 +218,7 @@ async def _export_ground_truths(conn, category: str, cutoff: datetime) -> int:
 
     with open(gt_path, "w") as f:
         for row in all_rows:
-            price_field = "sale_price" if "sale_price" in row.keys() else "actual_price"
-            price = float(row[price_field])
+            price = float(row["price"])
             condition = row.get("condition")
             features = _price_to_features(price, condition, True)
             record = {"features": features, "price": round(price, 2)}
@@ -269,6 +300,22 @@ async def _export_scan_corrections(conn, category: str, cutoff: datetime) -> int
 
 HOLDOUT_FRACTION = float(os.getenv("MODEL_RETRAIN_HOLDOUT_FRAC", "0.20"))
 PROMOTION_TOLERANCE = float(os.getenv("MODEL_RETRAIN_TOLERANCE", "1.05"))  # new MAE allowed up to 5% worse
+
+
+def _holdout_size(n_total: int) -> int:
+    """How many LEADING lines of train_ground_truth.jsonl to hold back.
+
+    `_export_ground_truths` writes every record TWICE, as adjacent lines, to
+    give ground truth 2x weight. An odd cut splits a pair: one copy goes to the
+    holdout and its identical twin stays in training, so the promotion gate
+    scores the new model on a row it just trained on and reports an MAE that is
+    too good to be true. At the default 0.20 that happens for ~40% of realistic
+    file sizes (76 of the 191 even totals between 20 and 400).
+
+    Always returns an even number, so a held-out record is held out whole.
+    """
+    n = max(0, int(n_total * HOLDOUT_FRACTION))
+    return n - (n % 2)
 
 # Minimum holdout before the gate is allowed to REVERT a freshly trained model.
 #
@@ -512,9 +559,9 @@ def _retrain_category(category: str) -> dict:
         with open(gt_path) as f:
             gt_full_lines = [ln for ln in f if ln.strip()]
         n_total = len(gt_full_lines)
-        # _export_ground_truths writes newest-first (ORDER BY created_at DESC),
-        # so the LEADING slice is the most-recent.
-        n_holdout = max(0, int(n_total * HOLDOUT_FRACTION))
+        # _export_ground_truths merges both sources newest-first, so the
+        # LEADING slice is the most-recent.
+        n_holdout = _holdout_size(n_total)
         for ln in gt_full_lines[:n_holdout]:
             try:
                 holdout_records.append(json.loads(ln))

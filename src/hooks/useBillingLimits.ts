@@ -25,9 +25,25 @@ const FORCE_PLAN_KEY = '@collectai/force_plan';
 // to a real runtime lookup on `process.env`, which is empty in a release
 // bundle — so the flag silently read '' in every built app and beta unlock
 // never turned on (set completion stayed gated on TestFlight).
-// Proof: in builds/sparrow-ios-internal.ipa the string
-// "EXPO_PUBLIC_REVENUECAT_IOS_KEY" is absent (inlined, value baked in) while
-// "EXPO_PUBLIC_BETA_UNLOCK_ALL" survives in the Hermes string table.
+// The rule above still holds — keep the bare member expression. But the
+// worked example under it is now STALE, and re-checking it is the point:
+// re-run the same test on a fresh artifact rather than trusting the note.
+//
+// Verified on build 161 (2026-09-20, `builds/sparrow-ios-local.ipa`, profile
+// `store`):
+//   EXPO_PUBLIC_REVENUECAT_IOS_KEY  ABSENT  -> inlined
+//   EXPO_PUBLIC_BETA_UNLOCK_ALL     ABSENT  -> inlined  (was PRESENT = the bug)
+//   EXPO_PUBLIC_FORCE_PLAN          ABSENT  -> inlined
+// So beta unlock is no longer stuck off by accident; it now carries whatever
+// the build profile pinned, and `store` pins it "false".
+//
+// How to re-check, on any .ipa:
+//   unzip -o <ipa> 'Payload/*.app/main.jsbundle'
+//   strings Payload/*.app/main.jsbundle | grep -c EXPO_PUBLIC_BETA_UNLOCK_ALL
+// 0 = inlined (good). Non-zero = a runtime lookup that reads '' in release.
+// EXPO_PUBLIC_SUPABASE_URL still matches once — that hit is inside the
+// "Supabase strict mode: missing ..." error STRING, not a lookup, so count the
+// occurrences and read their context before calling it a regression.
 const ENV_FORCE_PLAN = (process.env.EXPO_PUBLIC_FORCE_PLAN || '').toLowerCase();
 
 // Beta-unlock mode — distinct from FORCE_PLAN. When set, every user gets Pro
