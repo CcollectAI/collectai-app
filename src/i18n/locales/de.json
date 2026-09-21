@@ -1606,7 +1606,16 @@
     "sales_without_basis": "{{count}} Verkauf/Verkäufe ausgeschlossen — kein Kaufpreis hinterlegt",
     "sales_without_postage": "{{count}} Verkauf/Verkäufe ausgeschlossen — Porto nicht hinterlegt",
     "basis_unknown": "kein Kaufpreis",
-    "postage_unknown": "Porto nicht hinterlegt"
+    "postage_unknown": "Porto nicht hinterlegt",
+    "tier_diamond": "Diamant",
+    "tier_gold": "Gold",
+    "tier_silver": "Silber",
+    "tier_unranked": "Ohne Rang",
+    "score_rarity": "Seltenheit",
+    "score_completeness": "Vollständigkeit",
+    "score_diversity": "Vielfalt",
+    "tier_coverage": "Seltenheit aus {{rarityKnown}} von {{rarityTotal}} Objekten · Set-Vollständigkeit aus {{setsKnown}} von {{setsTotal}} Sets",
+    "tier_unranked_hint": "Noch kein Rang — füge Objekte aus katalogisierten Sets hinzu, um einen Seltenheits- und Vollständigkeitswert aufzubauen."
   },
   "guide": {
     "no_guide_yet": "Noch kein Leitfaden für diese Kategorie",

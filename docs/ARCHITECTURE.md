@@ -549,6 +549,7 @@ section is about, made inside the checker for it.
 | table | what it is | joined by | historically read by |
 |-------|-----------|-----------|----------------------|
 | `price_predictions` | catalog-model output, partitioned | `items.canonical_ref = item_ref` | `/portfolio/overview`, `/portfolio/items`, `/portfolio/timeseries` |
+| `category_items` | the catalogue row behind an item (rarity, attributes) | `category_items.item_key = items.canonical_key AND category = category` — **BARE key to BARE key**, never `canonical_ref`, which is namespaced | `/portfolio/items` (`rarity_score`) |
 | `quick_predictions` | ~~per-item QuickScan output~~ **catalogue valuation, see below** | `item_id = items.id` | `/analytics/portfolio/category-breakdown`, **and the Items tab** (`itemsProvider.mapItemRow`) |
 
 An item priced in one but not the other counted on some Home surfaces and read

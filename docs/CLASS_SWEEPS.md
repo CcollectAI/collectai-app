@@ -95,6 +95,7 @@ Two rules the tooling learned the hard way:
 | Y-3 | What a gate misses, via its own report vs the human fix | 2026-09-19 | ✅ **works, with 3 exclusions**. Confirmed: `check:half-done-silence` cannot see `useOptimisticRsvp.ts`, a file its OWN commit fixed — the second proven instance after `delist`. **A gate fences one shape, not a class**, and both misses were found by reading |
 | Z | A success message that is not conditional on success | swept 2026-09-19 | ✅ **2 fixed**: `useOptimisticMutation` swallowed so `await mutate()` was followed by a SUCCESS toast on failure ("Archived" in green, 5 call sites); and `setJSON` swallowed so "Following!" showed on a failed write with no server copy. 50 sites enumerated, the rest read and clean |
 | AA | One fact written to two tables, then counted twice downstream | **swept + DEPLOYED 2026-09-20** | ✅ **1 instance, fixed; no others.** Two-stage enumeration: 28 functions write 2+ real tables, but only ONE consumer reads a written-together pair and merges it — `_export_ground_truths` (the known case). Both `spawn_bg` candidates read and discarded. Limits written up below. |
+| AB | The server SENDS a field the client reads under another name | 2026-09-21 | ✅ **1 instance, fixed, and gated.** `collection` on the analytics item mapper read `it.collection ?? it.set_name`; `/portfolio/items` sends `collection_name`. Undefined for every item on every account for five weeks — it pinned the Portfolio Tier at "Unranked". Gate `check:phantom-response-fields`. The mirror of class V, which covers the REQUEST direction only |
 
 ## AA — one fact in two tables, counted twice (swept 2026-09-20)
 
@@ -2119,6 +2120,66 @@ deliberately hides it, and the same flag file states the rule ("anything here ha
 to be a feature the app actually ships"). Also note the XP board has no "you are
 #N of M" line, which the CATEGORY board does have — so a member outside the top
 ranks learns nothing about themselves from it.
+
+## Class AB — a property whose every source is a key the server never sends (2026-09-21)
+
+**The mirror of class V.** V covers the request direction — a client key no
+Pydantic model declares, silently dropped and answered 200. Nothing covered the
+response direction, and it cost five weeks:
+
+```ts
+collection: it.collection ?? it.set_name ?? undefined,
+```
+
+`/portfolio/items` sends **`collection_name`**. It has never sent `collection`
+or `set_name`. So the property was `undefined` for every item on every account;
+set completion computed over an empty list; the Portfolio Tier's composite
+could not clear its Silver threshold; and the card told every member they were
+"Unranked". `tsc` was green throughout, because the client's own `Raw` type
+declares both keys optional — and `RawPortfolioItem` had declared
+`collection_name` correctly since 2026-08-15. **The type knew. The mapper did
+not.**
+
+### The gate, and why it is shaped this way
+
+`scripts/check-phantom-response-fields.mjs`: a property whose EVERY source in
+its `??` chain is a key the server's response never contains.
+
+It is deliberately NOT "any read of an unknown key". This codebase writes
+tolerant chains on purpose — `it.id ?? it.item_id` accepts an older build or
+the Signals proxy shape — and flagging those would need a hand-maintained
+allowlist, the first failure mode in
+[[learning_four_ways_a_new_gate_is_wrong]]. **A chain with one real key
+resolves; a chain with none can only ever yield its fallback.** That second
+shape is dead code that type-checks, and it is the whole class.
+
+Mutation-proven in both directions: renaming a real key (`value_source` →
+`value_sourceXX`) makes it fire; reverting silences it. Deleting the server's
+`rarity_score` emission makes the client's read go red, which is the regression
+this fix most needs to survive.
+
+### Three instrument bugs in the gate itself, before it could be trusted
+
+Recorded because the pattern is the point — a gate's own output is a claim:
+
+1. **The property boundary.** The terminator regex required whitespace after
+   the colon, so a property whose value starts on the NEXT line never ended the
+   previous one. One finding reported the key sets of four properties merged
+   together. Caught by reading the SHAPE of the output, not by an assertion —
+   rule 6b.
+2. **Keys added after the literal.** The server emits rarity with
+   `row["rarity_score"] = …`, and the extractor only matched `"key":`. The gate
+   reported the field being ADDED as phantom.
+3. **The exemption marker** was read from one line above the property, so a
+   reason worth writing — which is longer than one line — did not register.
+
+### What it found beyond the bug
+
+Nine more properties that can only ever be undefined, all now annotated with a
+written reason rather than deleted. One deserves a decision:
+**`/portfolio/items` does not SELECT `items.quantity`**, though the column
+exists — so every item in analytics counts as quantity 1. Not fixed here; it is
+a separate contract question.
 
 ## Class G — worked 2026-09-18
 

@@ -21,6 +21,7 @@ from app.config import API_SHARED_SECRET, SIGNALS_BASE_URL
 from app.rate_limit import per_user_rate_limit
 from app.lib.db_helpers import get_db_pool
 from app.lib.comp_market import market_of_evidence
+from app.ml.valuation_features import rarity_to_score_or_none
 
 router = APIRouter(tags=["Portfolio"])
 
@@ -583,7 +584,23 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     -- it is stated here rather than left to be rediscovered.
                     i.collection_name,
                     l.evidence_summary,
-                    s.total_items AS set_size
+                    s.total_items AS set_size,
+                    -- RARITY, for the Portfolio Tier card (2026-09-21).
+                    --
+                    -- The card has shown "Unranked" to every real account since
+                    -- it shipped: its composite is 0.5*rarity + 0.3*completeness
+                    -- + 0.2*diversification and Silver starts at 0.30, so with
+                    -- rarity pinned at 0 the ceiling was 0.20 -- arithmetically
+                    -- incapable of awarding a rank. This SELECT is the missing
+                    -- half. See docs/HELP_AND_GUIDES.md "Portfolio Tier".
+                    --
+                    -- Catalogue first, the member's own attrs second: the
+                    -- catalogue is curated and covers far more items than a
+                    -- hand-typed one does. Both are scored by the SAME function
+                    -- the price model trains on, so the two cannot drift.
+                    cat.rarity AS catalog_rarity,
+                    cat.attributes_json AS catalog_attrs,
+                    i.attrs AS item_attrs
                 FROM items i
                 LEFT JOIN LATERAL public.item_value_v1(i) iv ON TRUE
                 LEFT JOIN latest l ON l.item_ref = i.canonical_ref
@@ -597,6 +614,32 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                 LEFT JOIN public.sets s
                        ON s.category_id = i.category
                       AND lower(s.name) = lower(i.collection_name)
+                -- THE CATALOGUE ROW BEHIND THIS ITEM.
+                --
+                -- VOCABULARY, and the trap this join exists to avoid:
+                -- `items.canonical_ref` is trigger-derived and NAMESPACED
+                -- (`category || ':' || canonical_key`), while
+                -- `category_items.item_key` is BARE. Joining ref -> item_key
+                -- matches zero rows, type-checks, deploys, and returns rarity
+                -- NULL for every item -- which is the bug this whole change is
+                -- fixing, reproduced (learning_canonical_key_vs_item_ref_namespace).
+                -- Join the BARE key to the BARE key.
+                --
+                -- LATERAL + LIMIT 1, not a plain LEFT JOIN: nothing in the repo
+                -- proves (category, item_key) is unique, and a second matching
+                -- catalogue row would DUPLICATE the item -- inflating the
+                -- member's portfolio total. That is the same shape as the
+                -- duplicate `sets` row guarded by sets_category_lower_name_uniq
+                -- (docs/HELP_AND_GUIDES.md), except here there is no index to
+                -- rely on. A LATERAL cannot multiply rows whatever the
+                -- catalogue holds.
+                LEFT JOIN LATERAL (
+                    SELECT ci.rarity, ci.attributes_json
+                    FROM public.category_items ci
+                    WHERE ci.item_key = i.canonical_key
+                      AND ci.category = i.category
+                    LIMIT 1
+                ) cat ON TRUE
                 WHERE i.user_id = $1 AND NOT i.archived
                 ORDER BY COALESCE(l.q50, 0) DESC
                 """,
@@ -618,7 +661,30 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                 # dict, so a connection without the codec degrades to "no market
                 # claim" rather than to a wrong one.
                 item_market = market_of_evidence(r["evidence_summary"])
-                items.append({
+
+                # RARITY, catalogue first, the member's own attrs second.
+                #
+                # `rarity_to_score_or_none`, not `rarity_to_score`: the model's
+                # variant guesses a neutral 0.50 when it cannot read anything,
+                # which is right for a feature vector and wrong for a number
+                # shown to a member. An unknown must arrive as an ABSENT key so
+                # the client averages over what is known instead of being handed
+                # a guess with the same shape as a measurement
+                # (docs/ui-playbook.md "A guessed number must not be printed
+                # like a known one").
+                rarity_score = None
+                rarity_source = None
+                if r["catalog_rarity"]:
+                    rarity_score = rarity_to_score_or_none({"rarity": r["catalog_rarity"]})
+                    rarity_source = "catalog" if rarity_score is not None else None
+                if rarity_score is None and r["catalog_attrs"]:
+                    rarity_score = rarity_to_score_or_none(r["catalog_attrs"])
+                    rarity_source = "catalog" if rarity_score is not None else None
+                if rarity_score is None and r["item_attrs"]:
+                    rarity_score = rarity_to_score_or_none(r["item_attrs"])
+                    rarity_source = "item" if rarity_score is not None else None
+
+                row = {
                     "id": r["id"],
                     "name": r["name"],
                     "category": r["category"] or "uncategorized",
@@ -653,7 +719,18 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     # completeness percentage (learning_empty_answer_rendered_as_zero).
                     "collection_name": r["collection_name"],
                     "set_size": int(r["set_size"]) if r["set_size"] is not None else None,
-                })
+                }
+                # ABSENT, not null and not 0, when we cannot read a rarity.
+                # `computeAverageRarityScore` skips a non-number, so omitting
+                # the key makes the member's score an average over the items we
+                # actually know about; a 0 would drag every uncatalogued item
+                # into the mean and a 0.50 would invent evidence. `rarity_source`
+                # travels with it so the card can state its own coverage --
+                # the confidence belongs with the number, not in a comment.
+                if rarity_score is not None:
+                    row["rarity_score"] = round(float(rarity_score), 4)
+                    row["rarity_source"] = rarity_source
+                items.append(row)
 
             return {"items": items}
     except Exception as e:

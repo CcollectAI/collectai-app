@@ -133,6 +133,30 @@ for another (added 2026-07-28 and 2026-08-19):
 An **absent** `value_source` (an older server build) must be read as *unknown*,
 never as market — the conservative side is the one that under-claims.
 
+### `rarity_score` is ABSENT when unknown, never 0 and never 0.50 (2026-09-21)
+
+| field | meaning |
+|---|---|
+| `rarity_score` | 0–1, from the catalogue row behind the item or, failing that, the member's own `items.attrs`. **The key is omitted entirely when we cannot read one** |
+| `rarity_source` | `catalog` \| `item` — which side produced it, so a caller can state its coverage |
+
+The omission is the contract, not an oversight. `rarity_to_score` (the price
+model's) returns a neutral **0.50** for an unreadable item, which is right for
+a feature vector and wrong for anything shown to a member: it would rank a
+mystery exactly as confidently as a measurement. `/portfolio/items` uses
+`rarity_to_score_or_none`, which returns `None` both when there are no rarity
+attributes AND when the attributes match no tier keyword ("Trainer" tells us
+nothing about rarity; it is not "middling").
+
+**Clients must average over the keys that are present**, never substitute 0 —
+`0` would drag every uncatalogued item into the mean, which is the
+`unknown-as-zero` class. `computeAverageRarityScore` skips non-numbers for
+exactly this reason, and `check:phantom-response-fields` fails if the server
+stops sending the field while a client still reads it.
+
+Same rule as `value_source` above and `set_size` below: **absent means
+unknown**, and unknown and zero are different sentences.
+
 ## Barcode & Intake
 
 | Method | Path | Auth | Description |

@@ -70,14 +70,30 @@ _RARITY_TIERS = [
 ]
 
 
+# The attribute keys rarity is read from. Named once so `rarity_to_score` and
+# `rarity_to_score_or_none` cannot drift apart -- they answer the same question
+# and differ only in what they say when the answer is unknown.
+_RARITY_ATTR_KEYS = ("rarity", "foil", "holo", "variant", "finish", "subtype", "type")
+
+
+def _rarity_blob(attrs: dict) -> str:
+    return " ".join(str(attrs.get(k, "")) for k in _RARITY_ATTR_KEYS).lower()
+
+
+def _explicit_foil(attrs: dict) -> bool:
+    return attrs.get("is_foil") is True or attrs.get("foil") in (True, "true", "yes", "1")
+
+
 def rarity_to_score(attrs: dict) -> float:
-    """Derive a rarity score from attrs. Looks at rarity/foil/variant fields."""
-    blob = " ".join(
-        str(attrs.get(k, "")) for k in
-        ("rarity", "foil", "holo", "variant", "finish", "subtype", "type")
-    ).lower()
+    """Derive a rarity score from attrs. Looks at rarity/foil/variant fields.
+
+    Falls back to a NEUTRAL 0.50 when nothing is readable, which is right for a
+    model feature vector -- 0.0 would be an extreme, not an absence. Anything
+    shown to a member wants `rarity_to_score_or_none` instead: see its docstring.
+    """
+    blob = _rarity_blob(attrs)
     # explicit boolean foil flags
-    if attrs.get("is_foil") is True or attrs.get("foil") in (True, "true", "yes", "1"):
+    if _explicit_foil(attrs):
         if not blob.strip():
             return 0.82
     if not blob.strip():
@@ -86,6 +102,34 @@ def rarity_to_score(attrs: dict) -> float:
         if any(kw in blob for kw in kws):
             return score
     return _DEFAULT_RARITY
+
+
+def rarity_to_score_or_none(attrs: Any) -> float | None:
+    """`rarity_to_score`, but **None** wherever it would guess 0.50.
+
+    The model wants a neutral number for a missing feature. A member's Portfolio
+    Tier wants the opposite: docs/ui-playbook.md "A guessed number must not be
+    printed like a known one" and "A number you do not have yet is not zero".
+    Handing 0.50 to the tier card would rank an unreadable item exactly as
+    confidently as a measured one, and averaging it in would move a rank on
+    evidence nobody has.
+
+    None is returned in BOTH unknown cases, which `rarity_to_score` collapses
+    into one number:
+      * no rarity attributes at all;
+      * attributes present but matching no tier keyword ("Trainer", "Promo Deck")
+        -- vocabulary we do not model, which is not the same as "middling".
+    """
+    a = _as_dict(attrs)
+    blob = _rarity_blob(a)
+    if _explicit_foil(a) and not blob.strip():
+        return 0.82
+    if not blob.strip():
+        return None
+    for score, kws in _RARITY_TIERS:
+        if any(kw in blob for kw in kws):
+            return score
+    return None
 
 
 def edition_to_score(attrs: dict) -> float:

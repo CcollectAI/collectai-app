@@ -267,6 +267,22 @@ exports[`PortfolioTierBadge matches snapshot for Diamond tier 1`] = `
       </Text>
     </View>
   </View>
+  <Text
+    style={
+      [
+        {
+          "fontSize": 12,
+          "marginTop": 12,
+          "textAlign": "center",
+        },
+        {
+          "color": "#64748B",
+        },
+      ]
+    }
+  >
+    Rarity from 40 of 40 items · set completion from 3 of 3 sets
+  </Text>
   <View
     accessibilityLabel="How are scores calculated?"
     accessibilityRole="button"

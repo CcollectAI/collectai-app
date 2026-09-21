@@ -1606,7 +1606,16 @@
     "sales_without_basis": "{{count}} sale(s) excluded — no purchase price recorded",
     "sales_without_postage": "{{count}} sale(s) excluded — postage not recorded",
     "basis_unknown": "no purchase price",
-    "postage_unknown": "postage not recorded"
+    "postage_unknown": "postage not recorded",
+    "tier_diamond": "Diamond",
+    "tier_gold": "Gold",
+    "tier_silver": "Silver",
+    "tier_unranked": "Unranked",
+    "score_rarity": "Rarity",
+    "score_completeness": "Completeness",
+    "score_diversity": "Diversity",
+    "tier_coverage": "Rarity from {{rarityKnown}} of {{rarityTotal}} items · set completion from {{setsKnown}} of {{setsTotal}} sets",
+    "tier_unranked_hint": "Not ranked yet — add items from catalogued sets to build a rarity and completeness score."
   },
   "guide": {
     "no_guide_yet": "No guide for this category yet",

@@ -106,12 +106,30 @@ import { PredictionAccuracySection } from '../../src/components/analytics/Predic
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeTierSummary(tier: string, scores?: Partial<{ rarityScore: number; completenessScore: number; diversificationScore: number }>) {
+/**
+ * TYPED as `PortfolioTierSummary`, not `{ tier: string, ... }`.
+ *
+ * It used to be loosely typed, so when the summary gained its coverage fields
+ * on 2026-09-21 `tsc` stayed green and all eight of these blew up at RUNTIME
+ * instead. A test helper that does not commit to the real type cannot tell you
+ * the real type moved.
+ *
+ * Note what these tests can and cannot prove: they render a summary handed to
+ * them, so they check the BADGE. They say nothing about whether the tier can
+ * be earned — that is `__tests__/analytics/portfolioTier.test.ts`, and its
+ * absence is why "Unranked for every account" survived five weeks of green.
+ */
+function makeTierSummary(
+  tier: Tier,
+  scores?: Partial<Omit<PortfolioTierSummary, 'tier'>>,
+): PortfolioTierSummary {
   return {
     tier,
     rarityScore: scores?.rarityScore ?? 0.85,
     completenessScore: scores?.completenessScore ?? 0.72,
     diversificationScore: scores?.diversificationScore ?? 0.60,
+    rarityCoverage: scores?.rarityCoverage ?? { known: 40, total: 40 },
+    completenessCoverage: scores?.completenessCoverage ?? { known: 3, total: 3 },
   };
 }
 

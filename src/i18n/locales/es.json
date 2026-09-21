@@ -1606,7 +1606,16 @@
     "sales_without_basis": "{{count}} venta(s) excluida(s): sin precio de compra registrado",
     "sales_without_postage": "{{count}} venta(s) excluida(s): gastos de envío no registrados",
     "basis_unknown": "sin precio de compra",
-    "postage_unknown": "gastos de envío no registrados"
+    "postage_unknown": "gastos de envío no registrados",
+    "tier_diamond": "Diamante",
+    "tier_gold": "Oro",
+    "tier_silver": "Plata",
+    "tier_unranked": "Sin clasificar",
+    "score_rarity": "Rareza",
+    "score_completeness": "Completitud",
+    "score_diversity": "Diversidad",
+    "tier_coverage": "Rareza a partir de {{rarityKnown}} de {{rarityTotal}} objetos · finalización de sets a partir de {{setsKnown}} de {{setsTotal}} sets",
+    "tier_unranked_hint": "Aún sin clasificar: añade objetos de sets catalogados para construir una puntuación de rareza y completitud."
   },
   "guide": {
     "no_guide_yet": "Aún no hay guía para esta categoría",

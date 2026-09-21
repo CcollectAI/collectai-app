@@ -136,7 +136,13 @@ export interface RawPortfolioItem {
   change_1d_pct?: number;
   change_7d_pct?: number;
   liquidity_score?: number;
+  /** 0–1 rarity, from the catalogue row or the member's own attrs. **ABSENT
+   *  when we cannot read one** — the server omits the key rather than sending
+   *  0 or a neutral 0.50, so the client averages over what is known instead of
+   *  over a guess. See `rarity_to_score_or_none` (2026-09-21). */
   rarity_score?: number;
+  /** Which side produced `rarity_score`, so the card can state its coverage. */
+  rarity_source?: 'catalog' | 'item' | null;
   completeness_score?: number;
   fraud_risk_score?: number;
   purchasePrice?: number;

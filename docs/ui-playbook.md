@@ -2615,6 +2615,57 @@ server answers. Either is honest; printing the guess plainly is not.
 This is the same rule as `value_source` on an item and the `+` on the Items
 total — **the confidence travels with the number, not in a comment.**
 
+## A card can state a rank it is incapable of awarding (2026-09-21)
+
+The Analytics "Portfolio Tier" card showed **Unranked · Rarity 0 ·
+Completeness 0** to every real account from the day it shipped, and would have
+forever: two of its three inputs were never served, and with them pinned at 0
+the composite could not reach the Silver threshold whatever a member owned. The
+card was not broken in the usual sense — it rendered, it was tappable, it
+explained itself in a bottom sheet. It simply described a ranking system that
+could not rank.
+
+Four rules this playbook already had, all of them broken in one 200-line card:
+
+- **A guessed number must not be printed like a known one** (2026-09-17). The
+  fix could have shipped rarity as the model's neutral `0.50` for unreadable
+  items and every tier would have moved immediately. That is a guess wearing a
+  measurement's clothes. The server omits the key, the client averages over
+  what is present, and the card prints its own coverage — *"rarity from 12 of
+  40 items"* — because 0.62 over 3 items and 0.62 over 190 are different
+  claims. **The confidence travels with the number.**
+- **A number you do not have yet is not zero** (2026-09-09). Rarity and
+  completeness render `—`, not `0`, when nothing backs them. "Scored zero" and
+  "cannot be scored yet" are different sentences.
+- **Your own empty state is a different sentence** (2026-08-20). "Unranked" is
+  not last place and it is the COMMON case for a new collection, so it now says
+  what would move it, the way a null leaderboard rank renders "Not ranked"
+  rather than a number.
+- **Two boards ranking the same idea should be the same object** (2026-08-17).
+  There were two `Tier` types with the same name — `statusScoring.ts` with a
+  **Silver** floor and `portfolioMetrics.ts` with an **Unranked** one — so a
+  member could read "Gold" on the Items tab and "Unranked" on Analytics in the
+  same session. The type, the floor rule, the colours, the icons and the label
+  keys now live in `src/analytics/tier.ts` and nowhere else. ⚠️ The two NUMERIC
+  scales are still different on purpose (points-of-100 per collection vs
+  composite-of-1 per portfolio); they are declared side by side in that file so
+  aligning them is one decision in one place, not a rediscovered contradiction.
+
+And one that is new:
+
+**Copy that explains a score is part of the score.** The "How are these scores
+calculated?" sheet listed fifteen factors — print runs, PSA/BGS/CGC grades,
+regional exclusives, a ">90% completeness bonus multiplier", diversity across
+"eras, price tiers and geography". **Not one of them was read by any scorer.**
+It was a plausible essay about a number that was zero. Every line now names a
+rule the code applies, and the sheet's header says where each lives, so the
+next person to change `_RARITY_TIERS` can see what else has to change.
+
+The tier name and the three score labels were also bare English on all seven
+locales — `{tierSummary.tier}` interpolated straight out of the type. Nine keys
+added. **A type's member is a value, not a label** — the same rule as
+"A backend field is a value, not a label" (2026-09-09).
+
 ## A 28pt button needs hitSlop, and the slop needs a direction (2026-09-17)
 
 Apple asks for 44×44pt, Android for 48dp, and this app draws 28-40pt icon

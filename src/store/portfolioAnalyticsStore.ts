@@ -28,13 +28,11 @@ import {
 import { logger } from '@/lib/logger';
 import {
   getPortfolioItems,
-  getPortfolioOverviewRaw,
   getPortfolioTimeseries,
 } from '@/api/portfolioApi';
 import type {
   RawPortfolioTimeseriesPoint,
   RawPortfolioItem,
-  RawPortfolioSet,
 } from '@/../types/api';
 
 let cachedSnapshot: PortfolioSnapshot | null = null;
@@ -125,22 +123,6 @@ const DEMO_ITEMS: PortfolioItemSnapshot[] = [
   },
 ];
 
-// Set-completion demo: 2 partially completed sets.
-const DEMO_SETS = [
-  {
-    setId: 'mtg-power9',
-    setName: 'MTG – Power 9',
-    ownedCount: 3,
-    totalCount: 9,
-  },
-  {
-    setId: 'lorcana-enchanted',
-    setName: 'Disney Lorcana – Enchanted',
-    ownedCount: 5,
-    totalCount: 12,
-  },
-];
-
 /**
  * Portfolio reads go through the app's ONE authenticated client.
  *
@@ -224,7 +206,19 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
       id: String(it.id ?? it.item_id ?? Math.random().toString(36).slice(2)),
       name: String(it.name ?? it.title ?? 'Untitled item'),
       category: String(it.category ?? it.category_slug ?? 'unknown'),
-      collection: it.collection ?? it.set_name ?? undefined,
+      // `collection_name`, which is what /portfolio/items sends. This read
+      // used to be `it.collection ?? it.set_name` — the endpoint has never
+      // sent either, so `collection` was undefined for every item on every
+      // account, set completion computed over an empty list, and the Portfolio
+      // Tier could not leave "Unranked". Gate: check:phantom-response-fields.
+      collection: it.collection_name ?? undefined,
+      // `sets.total_items`. Nullable on purpose: null is "we hold no catalogue
+      // row for this set", NOT a set of size 0 (see `hasKnownSetSize`).
+      setSize: typeof it.set_size === 'number' ? it.set_size : null,
+      // phantom-ok: /portfolio/items does not SELECT items.quantity, though the
+      // column exists — so every analytics item counts as 1. Reading it here is
+      // harmless and correct the day the endpoint sends it; inventing a
+      // multiplier would not be.
       quantity: typeof it.quantity === 'number' ? it.quantity : 1,
       currentValue: Number(
         it.current_value ??
@@ -234,10 +228,12 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
       ),
       costBasis:
         typeof it.cost_basis === 'number' ? it.cost_basis : undefined,
+      // phantom-ok: /portfolio/items sends `current_value`, already resolved through the value chain; `estimated_value` is another caller's shape.
       estimatedValue:
         typeof it.estimated_value === 'number'
           ? it.estimated_value
           : undefined,
+      // phantom-ok: realised P/L is its own endpoint (/portfolio/realised-pl), never a field on an item row.
       realizedPL:
         typeof it.realized_pl === 'number' ? it.realized_pl : undefined,
       unrealizedPL:
@@ -270,18 +266,29 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
         typeof it.change_7d_pct === 'number'
           ? it.change_7d_pct
           : undefined,
+      // phantom-ok: never sent by any server build; kept for the Signals proxy shape.
       liquidityScore:
         typeof it.liquidity_score === 'number'
           ? it.liquidity_score
           : undefined,
+      // UNDEFINED, never 0, when the server omits it: `computeAverageRarityScore`
+      // skips a non-number, so an unknown item is left out of the average
+      // instead of dragging it to zero. The server omits the key precisely so
+      // this stays possible.
       rarityScore:
         typeof it.rarity_score === 'number'
           ? it.rarity_score
           : undefined,
+      raritySource:
+        it.rarity_source === 'catalog' || it.rarity_source === 'item'
+          ? it.rarity_source
+          : undefined,
+      // phantom-ok: per-ITEM completeness is not a thing the server computes; set completion is per-collection, derived below.
       completenessScore:
         typeof it.completeness_score === 'number'
           ? it.completeness_score
           : undefined,
+      // phantom-ok: never sent by any server build; kept for the Signals proxy shape.
       fraudRiskScore:
         typeof it.fraud_risk_score === 'number'
           ? it.fraud_risk_score
@@ -293,39 +300,6 @@ async function loadItemsFromBackend(): Promise<PortfolioItemSnapshot[] | null> {
     logger.error('[portfolioAnalyticsStore] Items backend error:', error);
     // THROW, same reason: `?? []` in every caller turned a failure into "you own nothing".
     throw error instanceof Error ? error : new Error('Could not load portfolio items');
-  }
-}
-
-/**
- * Optionally load set completion from backend; falls back to demo.
- */
-async function loadSetsFromBackend(): Promise<
-  { setId: string; setName: string; ownedCount: number; totalCount: number }[]
-> {
-  try {
-    // RAW, not the typed getter: PortfolioSnapshotSchema has no `sets` key, so
-    // zod would strip exactly what this function exists to read.
-    const raw = (await getPortfolioOverviewRaw()) as { sets?: RawPortfolioSet[]; set_completion?: RawPortfolioSet[] } | null;
-    const sets: RawPortfolioSet[] = Array.isArray(raw?.sets)
-      ? raw.sets
-      : Array.isArray(raw?.set_completion)
-      ? raw.set_completion
-      : [];
-
-    if (!sets.length) return __DEV__ ? DEMO_SETS : [];
-
-    return sets.map((s: RawPortfolioSet) => ({
-      setId: String(s.set_id ?? s.id ?? 'unknown-set'),
-      setName: String(s.set_name ?? s.name ?? 'Unknown set'),
-      ownedCount: Number(s.owned_count ?? s.owned ?? 0),
-      totalCount: Number(s.total_count ?? s.total ?? 1),
-    }));
-  } catch (error) {
-    // logger.error, not warn: warn is stripped in release builds, so a backend
-    // failure here left no trace at all in exactly the build that matters.
-    logger.error('[portfolioAnalyticsStore] Sets backend error:', error);
-    // THROW, same as the two loaders above (a sibling the gate did not match).
-    throw error instanceof Error ? error : new Error('Could not load portfolio sets');
   }
 }
 
@@ -394,16 +368,16 @@ export async function fetchPortfolioWinnersLosers(): Promise<{
  * This is the richest endpoint; all others can be derived from this.
  */
 export async function fetchPortfolioSnapshot(): Promise<PortfolioSnapshot> {
-  const [series, items, sets] = await Promise.all([
+  const [series, items] = await Promise.all([
     fetchPortfolioSeries(),
     (async () => (await loadItemsFromBackend()) ?? (__DEV__ ? DEMO_ITEMS : []))(),
-    loadSetsFromBackend(),
   ]);
 
+  // Set completion is DERIVED from these items inside computePortfolioSnapshot
+  // — nothing to fetch and nothing a caller can forget to pass.
   const snapshot = computePortfolioSnapshot({
     series,
     items,
-    sets,
   });
 
   cachedSnapshot = snapshot;

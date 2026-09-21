@@ -218,24 +218,68 @@ Seed data for E2E lives in `server/migrations/`-adjacent scratch SQL and is
 tagged for removal: `sets.metadata->>'seed' = 'e2e-sets-2026-08-15'` and
 `items.source = 'seed:e2e-sets'`.
 
-## Portfolio Tier is NOT wired (found 2026-08-15)
+## Portfolio Tier — WIRED 2026-09-21 (was dead 2026-08-15 → 2026-09-21)
 
-Unrelated screen, same class, recorded here so it is not rediscovered.
-`computeTierFromScores` takes rarity, completeness and diversification:
+`computeTierFromScores` takes rarity, completeness and diversification, and for
+five weeks two of the three were structurally 0:
 
-- **rarity** ← `items[].rarity_score`. `/portfolio/items` does not return that
-  field. Always 0.
-- **completeness** ← `loadSetsFromBackend()`, which reads `raw.sets` /
-  `raw.set_completion` from `/portfolio/overview`. That endpoint returns neither
-  key. Always 0 in production — in `__DEV__` it substitutes `DEMO_SETS`, which
-  is why the screen shows a plausible number on a dev build and 0 on a real one.
-- **diversification** ← allocations. This one genuinely works.
+- **rarity** ← `items[].rarity_score`, which `/portfolio/items` did not return.
+- **completeness** ← `loadSetsFromBackend()`, reading `raw.sets` /
+  `raw.set_completion` off `/portfolio/overview` — an endpoint that returns
+  `total_value`, `total_prev_value`, `change_1d_pct`, `item_count`, `items` and
+  neither of those keys.
+- **diversification** ← allocations. This one always worked.
 
-`composite = 0.5*rarity + 0.3*completeness + 0.2*diversification`, and Silver
-starts at 0.30. With the first two pinned at 0, the ceiling is **0.20** — so the
-tier is arithmetically incapable of ever leaving "Unranked" for any real user.
-Fixing it means serving `rarity_score` and set completion from the API; until
-then the card states a rank it can never award.
+`composite = 0.5*rarity + 0.3*completeness + 0.2*diversification` and Silver
+starts at 0.30, so with the first two pinned at 0 the ceiling was **0.20**: the
+card was arithmetically incapable of awarding any rank to any real account, and
+said "Unranked" to all of them.
+
+**Two things made it survive five weeks**, and both are the general lesson:
+
+- **`__DEV__` substituted `DEMO_SETS`** when the set list came back empty, so
+  the card showed a plausible number on the build anyone checking it would be
+  running, and 0 on every real one. A fallback that only lies in the build you
+  test in is worse than no fallback. It is deleted.
+- **All eight tier tests passed a hand-made `makeTierSummary('Diamond')`
+  straight to the badge.** None drove the computation from an input an account
+  could produce, so the suite was green and structurally blind. See
+  `__tests__/analytics/portfolioTier.test.ts`, which drives the real thing.
+
+### What it reads now
+
+| axis | source |
+|---|---|
+| rarity | `category_items.rarity` / `.attributes_json` via the catalogue join, else the member's own `items.attrs`, scored by `rarity_to_score_or_none` |
+| completeness | `computeCollectionStatusScores` over `collection_name` + `set_size`, which `/portfolio/items` **already returned** — nothing new is fetched |
+| diversification | allocations, unchanged |
+
+**Unknown is absent, not 0 and not 0.5.** `rarity_to_score` guesses a neutral
+0.50 when it cannot read an item — correct for a model feature vector, wrong
+for a number shown to a member. `rarity_to_score_or_none` returns `None` in
+both unknown cases (no attributes, and attributes matching no tier keyword),
+the server omits the key entirely, and `computeAverageRarityScore` averages
+over what is left. The card states its own coverage — "rarity from 12 of 40
+items" — because 0.62 over 3 items and 0.62 over 190 are different claims.
+
+**The join is the trap.** `items.canonical_ref` is trigger-derived and
+NAMESPACED (`category || ':' || canonical_key`); `category_items.item_key` is
+BARE. Joining ref → item_key matches zero rows, type-checks, deploys, and
+returns rarity NULL for everyone — reproducing this exact bug. Join bare to
+bare. It is a `LEFT JOIN LATERAL … LIMIT 1` because nothing in the repo proves
+`(category, item_key)` is unique and a double match would DUPLICATE the item,
+inflating the member's portfolio total.
+
+⚠️ **Not yet measured:** how many real items resolve to a catalogue row with a
+readable rarity. The code is correct either way, but if coverage is low the
+card will still read "Unranked" for most accounts — and it will now say so
+honestly, with the coverage line, instead of implying a rank it could never
+award. Run: `SELECT count(*) FILTER (WHERE ci.rarity IS NOT NULL), count(*)
+FROM items i LEFT JOIN category_items ci ON ci.item_key = i.canonical_key AND
+ci.category = i.category;`
+
+Gate: `npm run check:phantom-response-fields` fails if the server stops sending
+`rarity_score` while the client still reads it.
 
 ## Both surfaces need the nav bar (2026-08-16)
 

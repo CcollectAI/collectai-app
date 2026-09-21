@@ -133,6 +133,80 @@ is a syntax error in JSX, so it could never be written; `False in (None, 0)`
 folding booleans in silently; a `//` comment inside Python; and a `package.json`
 edit whose anchor appeared twice, so it silently did not apply.
 
+## The Portfolio Tier could not award a rank, and the tests could not tell (2026-09-21)
+
+The Analytics "Portfolio Tier" card said **Unranked · Rarity 0 · Completeness
+0** to every real account from the day it shipped. Not a rendering bug: two of
+its three inputs were never served, so `composite = 0.5*0 + 0.3*0 + 0.2*d` had
+a ceiling of **0.20** and Silver starts at **0.30**. The card was
+arithmetically incapable of awarding any rank to anyone, while a bottom sheet
+explained in fifteen bullets how the ranking worked.
+
+**The two halves, and the surprise in the second one:**
+
+* `rarity_score` was never returned by `/portfolio/items`. Now joined from the
+  catalogue — and **the join is the trap**: `items.canonical_ref` is
+  trigger-derived and NAMESPACED (`category || ':' || canonical_key`) while
+  `category_items.item_key` is BARE. Joining ref → item_key matches zero rows,
+  type-checks, deploys, and returns NULL for everyone — reproducing the bug
+  being fixed. `LEFT JOIN LATERAL … LIMIT 1`, because nothing in the repo
+  proves `(category, item_key)` is unique and a double match would DUPLICATE
+  the item and inflate the member's total.
+* Set completion needed **no server work at all**. `/portfolio/items` has
+  returned `collection_name` and `set_size` since 2026-08-15, and
+  `computeCollectionStatusScores` already turns them into owned/expected. The
+  client was asking `/portfolio/overview` for a `sets` key that endpoint has
+  never sent — while the data sat in a response it was already parsing.
+
+**Why it survived five weeks — three mechanisms, all previously documented:**
+
+1. **A fallback that only lies in the build you test in.** The empty set list
+   fell back to `DEMO_SETS` under `__DEV__`, so the card showed a plausible
+   number on a dev build and 0 on every real one. Deleted.
+2. **Eight green tests that assert nothing about the class.** Every tier test
+   hands the badge a hand-made `makeTierSummary('Diamond')`. Not one drives the
+   computation from an input an account could produce. A suite is evidence only
+   about what it asserts — and this one was *typed loosely* (`tier: string`),
+   so when the summary gained fields, `tsc` stayed green and all eight failed
+   at runtime. Now typed to the real interface, so the next drift is a compile
+   error.
+3. **No gate watched the response direction.** `check_dropped_fields.py` covers
+   client → server only. Class **AB** and `check:phantom-response-fields` now
+   cover server → client.
+
+**The rule that shaped the fix: unknown is ABSENT, not 0 and not 0.50.**
+`rarity_to_score` guesses a neutral 0.50 for an unreadable item — right for a
+model feature vector, wrong for a number shown to a member. Shipping that would
+have moved every tier immediately and been a guess wearing a measurement's
+clothes. `rarity_to_score_or_none` returns `None`, the server omits the key,
+the client averages over what is present, and the card prints its own coverage
+("rarity from 12 of 40 items"). Proved on 105 parity cases that the model's own
+function is behaviourally unchanged.
+
+**Three of my own errors, caught by the rules rather than by luck:**
+
+* The new gate was wrong three times before it could be quoted — a property
+  boundary that swallowed the next three properties, an extractor blind to
+  `row["key"] = …`, and an exemption marker read from one line only. The first
+  was caught by the SHAPE of the output (rule 6b), not by a failing assertion.
+* **A mutation test that proved nothing.** I "proved" `check_sql_columns.py`
+  was blind to `LEFT JOIN LATERAL` using `ci.rarityXX` — but its reference
+  regex only matches lowercase columns, so the probe was invisible, not the
+  gate. With `ci.rarity_xx` the gate fires correctly. **The instrument under
+  test was my mutation.**
+* **A revert that damaged the function it was restoring.** After mutating
+  `rarity_to_score_or_none`, its body was byte-identical to `rarity_to_score`'s
+  tail, so `str.replace` restored the FIRST occurrence — silently turning the
+  MODEL function into the None-returning one, with four tests pointing at it.
+  Anchor a revert to the function, not to a string that now appears twice.
+
+⚠️ **Not yet measured, and it decides how much this moves:** how many real
+items resolve to a catalogue row with a readable rarity, and whether
+`category_items (category, item_key)` is indexed — the LATERAL runs per item on
+a hot endpoint. Both need a production read. The code is correct either way;
+with low coverage the card will still say "Unranked", but now says so honestly
+with its coverage line instead of implying a rank it cannot award.
+
 ## Two gates written on 2026-09-18, and what each one got wrong first
 
 ### `npm run check:half-done-silence`

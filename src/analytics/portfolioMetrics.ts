@@ -11,7 +11,14 @@
  * No React / no network calls. This is reused by the store layer.
  */
 
-export type Tier = 'Diamond' | 'Gold' | 'Silver' | 'Unranked';
+import { type Tier, tierFromComposite } from './tier';
+import {
+  computeCollectionStatusScores,
+  hasKnownSetSize,
+} from '@/utils/statusScoring';
+
+// One definition, shared with the Items tab — see src/analytics/tier.ts.
+export type { Tier };
 
 export interface TimeSeriesPoint {
   /** ISO timestamp (e.g. "2025-11-20T10:00:00Z") */
@@ -48,6 +55,14 @@ export interface PortfolioItemSnapshot {
   name: string;
   category: string;
   collection?: string;
+  /** `sets.total_items` for `collection`. **null/undefined means we hold no
+   *  catalogue row for that set** — never 0, which would read as "a set of no
+   *  cards" and compute as 100% complete. */
+  setSize?: number | null;
+  /** Where `rarityScore` came from: `catalog` (a curated catalogue row) or
+   *  `item` (the member's own attributes). Undefined when rarity is unknown —
+   *  and then `rarityScore` is undefined too, never 0. */
+  raritySource?: 'catalog' | 'item';
   quantity: number;
 
   /** Current mark-to-market value per item * quantity */
@@ -124,6 +139,15 @@ export interface PortfolioTierSummary {
   rarityScore: number;
   completenessScore: number;
   diversificationScore: number;
+  /** How many items the rarity average is actually built from, and how many
+   *  there are. The confidence travels WITH the number, not in a comment
+   *  (docs/ui-playbook.md, "A guessed number must not be printed like a known
+   *  one"): 0.62 over 3 of 200 items and 0.62 over 190 of 200 are different
+   *  claims, and the card has to be able to say which one it is holding. */
+  rarityCoverage: { known: number; total: number };
+  /** Sets whose real size we know, of the collections held. Completeness
+   *  averages over these only — a set with no catalogue row is not 0% done. */
+  completenessCoverage: { known: number; total: number };
 }
 
 export interface PortfolioSnapshot {
@@ -359,6 +383,8 @@ export function computeTierFromScores(
   rarityScore: number,
   completenessScore: number,
   diversificationScore: number,
+  rarityCoverage: { known: number; total: number } = { known: 0, total: 0 },
+  completenessCoverage: { known: number; total: number } = { known: 0, total: 0 },
 ): PortfolioTierSummary {
   const rarity = clamp(rarityScore, 0, 1);
   const completeness = clamp(completenessScore, 0, 1);
@@ -369,24 +395,59 @@ export function computeTierFromScores(
     0.3 * completeness +
     0.2 * diversification;
 
-  let tier: Tier = 'Unranked';
-
-  if (composite >= 0.8 && rarity >= 0.75 && completeness >= 0.7) {
-    tier = 'Diamond';
-  } else if (composite >= 0.55) {
-    tier = 'Gold';
-  } else if (composite >= 0.3) {
-    tier = 'Silver';
-  } else {
-    tier = 'Unranked';
-  }
+  const tier: Tier = tierFromComposite(composite, rarity, completeness);
 
   return {
     tier,
     rarityScore: rarity,
     completenessScore: completeness,
     diversificationScore: diversification,
+    rarityCoverage,
+    completenessCoverage,
   };
+}
+
+/**
+ * Set completion, derived from the items we already hold.
+ *
+ * This used to ask `/portfolio/overview` for a `sets` / `set_completion` key.
+ * That endpoint returns `total_value`, `total_prev_value`, `change_1d_pct`,
+ * `item_count` and `items` — it has never sent either key, so `sets` was always
+ * `[]`, completeness was always 0, and the Portfolio Tier's composite could not
+ * clear the 0.30 Silver threshold no matter what a member owned.
+ *
+ * ⚠️ AND IT LOOKED FINE ON A DEV BUILD. The empty case substituted `DEMO_SETS`
+ * under `__DEV__`, so the card showed a plausible number to whoever was
+ * checking and 0 to everyone else. The demo data is gone with it — a fallback
+ * that only lies in the build you test in is worse than no fallback.
+ *
+ * Nothing needs to be fetched: `/portfolio/items` already returns
+ * `collection_name` and `set_size`, and `computeCollectionStatusScores` already
+ * turns those into owned/expected counts — with the `hasKnownSetSize` guard
+ * that keeps "we hold no catalogue row for this set" out of the denominator,
+ * rather than counting it as 0% or as complete.
+ */
+export function setsFromItems(items: PortfolioItemSnapshot[]): SetCompletion[] {
+  const scored = computeCollectionStatusScores(
+    items.map((snap: PortfolioItemSnapshot) => ({
+      id: snap.id,
+      category: snap.category,
+      collection_name: snap.collection ?? null,
+      set_size: snap.setSize ?? null,
+      value: snap.currentValue,
+      rarity_score: snap.rarityScore ?? null,
+    })),
+  );
+
+  // Only sets whose real size we know. A collection with no catalogue row
+  // contributes NOTHING rather than a made-up denominator — the same rule
+  // app/sets-to-complete.tsx applies, for the same reason.
+  return scored.filter(hasKnownSetSize).map((sc) => ({
+    setId: sc.key,
+    setName: sc.key,
+    ownedCount: sc.ownedCount,
+    totalCount: sc.expectedCount,
+  }));
 }
 
 /**
@@ -403,7 +464,13 @@ export function computePortfolioSnapshot(args: {
   sets?: SetCompletion[];
 }): PortfolioSnapshot {
   const { series, items } = args;
-  const sets = args.sets ?? [];
+  // DERIVED from the items unless a caller insists otherwise.
+  //
+  // It used to be `args.sets ?? []`, and every caller that did not pass sets
+  // silently scored completeness 0 — indistinguishable from a member who
+  // genuinely completes no set. That default is the bug this function exists
+  // to have fixed, so the safe thing is what happens when you say nothing.
+  const sets = args.sets ?? setsFromItems(items);
 
   const pl = computePLFromSeries(series);
   const allocations = computeAllocationsFromItems(items);
@@ -415,6 +482,16 @@ export function computePortfolioSnapshot(args: {
     rarityScore,
     completenessScore,
     diversificationScore,
+    {
+      known: items.filter((i) => typeof i.rarityScore === 'number').length,
+      total: items.length,
+    },
+    {
+      known: sets.length,
+      total: new Set(
+        items.map((i) => i.collection).filter((c): c is string => !!c),
+      ).size,
+    },
   );
 
   return {

@@ -14,26 +14,25 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { ScoreExplanationSheet } from '@/components/ScoreExplanationSheet';
 import type { PortfolioTierSummary } from '@/analytics/portfolioMetrics';
 import { BETA_MODE, COMMUNITY_GATED } from '@/config/featureFlags';
+import { TIER_COLORS, TIER_ICONS, TIER_LABEL_KEYS } from '@/analytics/tier';
 import { radius, text, fontWeight, shadow } from '@/theme/tokens';
 import { useTranslation } from 'react-i18next';
 
-// Colors now sourced from useAppTheme() — see component body
+// Colors now sourced from useAppTheme() — see component body.
+// The tier vocabulary is shared with the Items tab: src/analytics/tier.ts.
 
-const TIER_COLORS: Record<string, string> = {
-  Diamond: '#A78BFA',
-  Gold: '#FBBF24',
-  Silver: '#94A3B8',
-  Unranked: '#64748B',
-};
-
-const TIER_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  Diamond: 'diamond-outline',
-  Gold: 'trophy-outline',
-  Silver: 'medal-outline',
-  Unranked: 'help-circle-outline',
-};
-
-function formatScore(s: number): string {
+/**
+ * A score with NO evidence behind it is `—`, not `0`.
+ *
+ * Rarity and completeness are both averages over the items we could actually
+ * read. When that set is empty the honest render is a dash: "0" is a claim
+ * that the collection scored zero, which is a different sentence from "we
+ * cannot score this yet" (docs/ui-playbook.md, "A number you do not have yet
+ * is not zero"). Diversification is always computed from allocations, so it
+ * never takes this branch.
+ */
+function formatScore(s: number, coverage?: { known: number }): string {
+  if (coverage && coverage.known === 0) return '—';
   return `${Math.round(s * 100)}`;
 }
 
@@ -79,12 +78,12 @@ function PortfolioTierBadgeInner({ tierSummary, leaderboardCategoryId }: Props) 
           <View style={styles.tierBadgeContainer}>
             <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[tierSummary.tier] + '20' }]}>
               <Ionicons
-                name={TIER_ICONS[tierSummary.tier]}
+                name={TIER_ICONS[tierSummary.tier] as keyof typeof Ionicons.glyphMap}
                 size={28}
                 color={TIER_COLORS[tierSummary.tier]}
               />
               <Text style={[styles.tierLabel, { color: TIER_COLORS[tierSummary.tier] }]}>
-                {tierSummary.tier}
+                {t(TIER_LABEL_KEYS[tierSummary.tier], { defaultValue: tierSummary.tier })}
               </Text>
             </View>
           </View>
@@ -102,12 +101,12 @@ function PortfolioTierBadgeInner({ tierSummary, leaderboardCategoryId }: Props) 
           >
             <View style={[styles.tierBadge, { backgroundColor: TIER_COLORS[tierSummary.tier] + '20' }]}>
               <Ionicons
-                name={TIER_ICONS[tierSummary.tier]}
+                name={TIER_ICONS[tierSummary.tier] as keyof typeof Ionicons.glyphMap}
                 size={28}
                 color={TIER_COLORS[tierSummary.tier]}
               />
               <Text style={[styles.tierLabel, { color: TIER_COLORS[tierSummary.tier] }]}>
-                {tierSummary.tier}
+                {t(TIER_LABEL_KEYS[tierSummary.tier], { defaultValue: tierSummary.tier })}
               </Text>
               <Ionicons
                 name="chevron-forward"
@@ -122,20 +121,51 @@ function PortfolioTierBadgeInner({ tierSummary, leaderboardCategoryId }: Props) 
 
         <View style={styles.scoresRow}>
           <View style={styles.scoreItem}>
-            <Text style={[styles.scoreValue, { color: colors.text }]}>{formatScore(tierSummary.rarityScore)}</Text>
-            <Text style={[styles.scoreLabel, { color: colors.muted }]}>Rarity</Text>
+            <Text style={[styles.scoreValue, { color: colors.text }]}>
+              {formatScore(tierSummary.rarityScore, tierSummary.rarityCoverage)}
+            </Text>
+            <Text style={[styles.scoreLabel, { color: colors.muted }]}>{t('analytics.score_rarity', { defaultValue: 'Rarity' })}</Text>
           </View>
           <View style={[styles.scoreDivider, { backgroundColor: colors.border }]} />
           <View style={styles.scoreItem}>
-            <Text style={[styles.scoreValue, { color: colors.text }]}>{formatScore(tierSummary.completenessScore)}</Text>
-            <Text style={[styles.scoreLabel, { color: colors.muted }]}>Completeness</Text>
+            <Text style={[styles.scoreValue, { color: colors.text }]}>
+              {formatScore(tierSummary.completenessScore, tierSummary.completenessCoverage)}
+            </Text>
+            <Text style={[styles.scoreLabel, { color: colors.muted }]}>{t('analytics.score_completeness', { defaultValue: 'Completeness' })}</Text>
           </View>
           <View style={[styles.scoreDivider, { backgroundColor: colors.border }]} />
           <View style={styles.scoreItem}>
             <Text style={[styles.scoreValue, { color: colors.text }]}>{formatScore(tierSummary.diversificationScore)}</Text>
-            <Text style={[styles.scoreLabel, { color: colors.muted }]}>Diversity</Text>
+            <Text style={[styles.scoreLabel, { color: colors.muted }]}>{t('analytics.score_diversity', { defaultValue: 'Diversity' })}</Text>
           </View>
         </View>
+
+        {/* WHAT THE SCORES ARE BUILT ON.
+            A rarity of 62 over 3 of 200 items and the same 62 over 190 of 200
+            are different claims. The card states which it is holding, rather
+            than printing a number that looks equally certain either way. */}
+        <Text style={[styles.coverageLine, { color: colors.muted }]}>
+          {t('analytics.tier_coverage', {
+            defaultValue:
+              'Rarity from {{rarityKnown}} of {{rarityTotal}} items · set completion from {{setsKnown}} of {{setsTotal}} sets',
+            rarityKnown: tierSummary.rarityCoverage.known,
+            rarityTotal: tierSummary.rarityCoverage.total,
+            setsKnown: tierSummary.completenessCoverage.known,
+            setsTotal: tierSummary.completenessCoverage.total,
+          })}
+        </Text>
+
+        {/* "Unranked" is not last place, and it is the COMMON case for a new
+            collection. Say what would move it, the way a null leaderboard rank
+            says "Not ranked" rather than a number (ui-playbook, 2026-08-17). */}
+        {tierSummary.tier === 'Unranked' && (
+          <Text style={[styles.unrankedHint, { color: colors.muted }]}>
+            {t('analytics.tier_unranked_hint', {
+              defaultValue:
+                'Not ranked yet — add items from catalogued sets to build a rarity and completeness score.',
+            })}
+          </Text>
+        )}
 
         <AnimatedPressable
           style={[styles.whyScoresBtn, { borderTopColor: colors.border }]}
@@ -220,6 +250,17 @@ const styles = StyleSheet.create({
   scoreDivider: {
     width: 1,
     height: 32,
+  },
+  coverageLine: {
+    fontSize: text.sm,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  unrankedHint: {
+    fontSize: text.sm,
+    marginTop: 8,
+    textAlign: 'center',
+    lineHeight: 18,
   },
   whyScoresBtn: {
     flexDirection: 'row',

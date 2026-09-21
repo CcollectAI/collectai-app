@@ -28,44 +28,60 @@ type ScoreExplanationSheetProps = {
 
 const TIFFANY = '#81D8D0';
 
+/**
+ * WHAT THESE SECTIONS MAY SAY.
+ *
+ * Every line here has to describe a rule the code actually applies. The
+ * previous copy promised five rarity factors — print runs, PSA/BGS/CGC grades,
+ * regional exclusives, "vaulted, retired or discontinued" — none of which any
+ * scorer has ever read; completeness promised a ">90% bonus multiplier" and
+ * "key chase cards weigh more heavily", and diversity promised eras, price
+ * tiers and geography. The scores were 0 at the time, so the sheet explained
+ * the derivation of a number that did not exist.
+ *
+ * The real rules: rarity is `_RARITY_TIERS` in server/app/ml/valuation_features.py
+ * read off the catalogue row (or the item's own attributes), completeness is
+ * owned ÷ `sets.total_items`, and diversity is 1 − Σ(category value share²).
+ * Change one of those and change the line here in the same commit.
+ */
 const SCORE_SECTIONS = [
   {
     key: 'rarity',
     icon: 'sparkles-outline' as const,
     title: 'Rarity Score',
-    description: 'Measures how rare and hard-to-find the items in your collection are.',
+    description: 'The average rarity of the items we can identify in your collection.',
     factors: [
-      'Limited edition and numbered items score higher',
-      'Vaulted, retired, or discontinued items increase rarity',
-      'Items with low print runs or production numbers',
-      'Graded items (PSA/BGS/CGC) at high grades boost this score',
-      'Regional exclusives and event-only releases',
+      'Read from the catalogue entry for each item, or from the details on the item itself',
+      'Secret, hyper and one-of-one rares score highest, then ultra rare and alternate art',
+      'Foils, holos and refractors sit above plain rares; commons score lowest',
+      'Items we cannot identify a rarity for are left out of the average, not scored zero',
+      'So this is an average over identified items — the card shows how many that is',
     ],
   },
   {
     key: 'completeness',
     icon: 'checkmark-done-outline' as const,
     title: 'Completeness Score',
-    description: 'Tracks how complete your sets and collections are across categories.',
+    description: 'How much of each set you own, across the sets we hold a catalogue entry for.',
     factors: [
-      'Percentage of items owned within tracked sets',
-      'Full sets and master sets score significantly higher',
-      'Near-complete sets (>90%) receive a bonus multiplier',
-      'Covering multiple sets within a category adds depth',
-      'Key chase cards or anchor pieces weigh more heavily',
+      'Items you own in a set, divided by the number of items that set contains',
+      'Weighted by set size, so a finished large set counts for more than a finished small one',
+      'A set we hold no catalogue entry for is skipped entirely',
+      'Skipped, not counted as 0% — an unknown set size is not an empty set',
+      'Name a set on your items to have it counted',
     ],
   },
   {
     key: 'diversity',
     icon: 'grid-outline' as const,
     title: 'Diversity Score',
-    description: 'Reflects how well-diversified your collection is across different categories and types.',
+    description: 'How evenly your collection\u2019s value is spread across categories.',
     factors: [
-      'Collecting across multiple categories improves this score',
-      'Balanced allocation (not concentrated in one category) scores higher',
-      'Covering different eras, series, or product lines within categories',
-      'Mix of price tiers (entry-level through premium grails)',
-      'Geographic and brand diversity adds to the score',
+      'Measured on VALUE, not item count — one grail can outweigh fifty commons',
+      'Everything in a single category scores near 0',
+      'An even split across several categories scores near 100',
+      'Adding a category moves this more than adding another item to one you already hold',
+      'This is the only one of the three that never depends on catalogue data',
     ],
   },
 ];

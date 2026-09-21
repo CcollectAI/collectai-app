@@ -1,4 +1,9 @@
-export type Tier = 'Diamond' | 'Gold' | 'Silver';
+import { type Tier, tierFromPoints } from '@/analytics/tier';
+
+// One definition, shared with the Analytics tier card — see
+// src/analytics/tier.ts. This scale's floor stays Silver; the reason is
+// written on `tierFromPoints`.
+export type { Tier };
 
 export interface BaseItem {
   id?: string | number;
@@ -275,9 +280,7 @@ export function computeCollectionStatusScores(
  * - Silver: everyone else
  */
 export function tierForPoints(points: number): Tier {
-  if (points >= 75) return 'Diamond';
-  if (points >= 50) return 'Gold';
-  return 'Silver';
+  return tierFromPoints(points);
 }
 
 /**

@@ -1606,7 +1606,16 @@
     "sales_without_basis": "{{count}}건 제외 — 구매가가 기록되지 않음",
     "sales_without_postage": "{{count}}건 제외 — 배송비가 기록되지 않음",
     "basis_unknown": "구매가 없음",
-    "postage_unknown": "배송비 미기록"
+    "postage_unknown": "배송비 미기록",
+    "tier_diamond": "다이아몬드",
+    "tier_gold": "골드",
+    "tier_silver": "실버",
+    "tier_unranked": "순위 없음",
+    "score_rarity": "희귀도",
+    "score_completeness": "완성도",
+    "score_diversity": "다양성",
+    "tier_coverage": "희귀도는 {{rarityTotal}}개 중 {{rarityKnown}}개 · 세트 완성도는 {{setsTotal}}개 중 {{setsKnown}}개 기준",
+    "tier_unranked_hint": "아직 순위가 없습니다. 카탈로그에 등록된 세트의 아이템을 추가하면 희귀도와 완성도 점수가 만들어집니다."
   },
   "guide": {
     "no_guide_yet": "이 카테고리의 가이드가 아직 없습니다",

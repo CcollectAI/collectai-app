@@ -1606,7 +1606,16 @@
     "sales_without_basis": "{{count}} 件を除外 — 購入価格が未記録",
     "sales_without_postage": "{{count}} 件を除外 — 送料が未記録",
     "basis_unknown": "購入価格なし",
-    "postage_unknown": "送料が未記録"
+    "postage_unknown": "送料が未記録",
+    "tier_diamond": "ダイヤモンド",
+    "tier_gold": "ゴールド",
+    "tier_silver": "シルバー",
+    "tier_unranked": "ランク外",
+    "score_rarity": "レアリティ",
+    "score_completeness": "コンプリート度",
+    "score_diversity": "多様性",
+    "tier_coverage": "レアリティは{{rarityTotal}}点中{{rarityKnown}}点 ・ セット完成度は{{setsTotal}}セット中{{setsKnown}}セットに基づきます",
+    "tier_unranked_hint": "まだランク外です。カタログ登録済みセットのアイテムを追加すると、レアリティとコンプリート度のスコアが作られます。"
   },
   "guide": {
     "no_guide_yet": "このカテゴリーのガイドはまだありません",
