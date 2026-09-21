@@ -625,14 +625,24 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                 -- fixing, reproduced (learning_canonical_key_vs_item_ref_namespace).
                 -- Join the BARE key to the BARE key.
                 --
-                -- LATERAL + LIMIT 1, not a plain LEFT JOIN: nothing in the repo
-                -- proves (category, item_key) is unique, and a second matching
-                -- catalogue row would DUPLICATE the item -- inflating the
-                -- member's portfolio total. That is the same shape as the
-                -- duplicate `sets` row guarded by sets_category_lower_name_uniq
-                -- (docs/HELP_AND_GUIDES.md), except here there is no index to
-                -- rely on. A LATERAL cannot multiply rows whatever the
-                -- catalogue holds.
+                -- LATERAL + LIMIT 1 rather than a plain LEFT JOIN.
+                --
+                -- ⚠️ CORRECTED 2026-09-21, after measuring: the first version of
+                -- this comment said "nothing in the repo proves (category,
+                -- item_key) is unique". The repo does not, but the DATABASE
+                -- does -- `category_items_category_item_key_key`, a UNIQUE
+                -- index on exactly (category, item_key). A plain LEFT JOIN
+                -- could not have duplicated a row. The stated reason was wrong;
+                -- the absence of a CREATE INDEX in server/migrations/ is not
+                -- the absence of the index (it predates them).
+                --
+                -- Kept anyway, because it is measured and costs nothing: the
+                -- planner drives it through `idx_category_items_item_key` under
+                -- a Memoize node, 0.213 ms on the heaviest account. It also
+                -- keeps the row-count guarantee local to this query rather than
+                -- dependent on a constraint declared elsewhere. If this is ever
+                -- simplified to a plain LEFT JOIN, that unique index is what
+                -- makes it safe -- drop the index and the join duplicates.
                 LEFT JOIN LATERAL (
                     SELECT ci.rarity, ci.attributes_json
                     FROM public.category_items ci

@@ -270,13 +270,42 @@ bare. It is a `LEFT JOIN LATERAL … LIMIT 1` because nothing in the repo proves
 `(category, item_key)` is unique and a double match would DUPLICATE the item,
 inflating the member's portfolio total.
 
-⚠️ **Not yet measured:** how many real items resolve to a catalogue row with a
-readable rarity. The code is correct either way, but if coverage is low the
-card will still read "Unranked" for most accounts — and it will now say so
-honestly, with the coverage line, instead of implying a rank it could never
-award. Run: `SELECT count(*) FILTER (WHERE ci.rarity IS NOT NULL), count(*)
-FROM items i LEFT JOIN category_items ci ON ci.item_key = i.canonical_key AND
-ci.category = i.category;`
+### Measured on production, 2026-09-21
+
+| | count |
+|---|---|
+| unarchived items in the **whole** database | **17** |
+| resolve to a catalogue row | 9 |
+| …and that row carries a rarity | **8** |
+| carry a rarity signal in their own `attrs` | 9 |
+| **name a set at all** | **1** |
+
+**Rarity works: 8 of 17 (47%).** Comfortably above the ~20% floor this change
+was gated on, and the `attrs` fallback covers 9 more.
+
+**Completeness does not, and the reason is the data, not the code.** Exactly
+ONE item in production names a set, so there is almost nothing for
+`computeCollectionStatusScores` to measure. The axis is wired correctly and
+will light up as soon as items carry `collection_name`; until then it
+contributes ~0 and the card says so — "set completion from 0 of N sets" —
+rather than scoring it as failure.
+
+So the honest expectation after deploy: accounts holding catalogue-backed
+items move to **Silver**; an account whose items resolve to nothing stays
+**Unranked**, with a coverage line explaining why. Prod holds 17 items across
+3 accounts, so this is a pre-launch database — the fix is correct, its visible
+effect is small until there is data.
+
+**Falsifier, to re-run rather than re-reason:** `bash scripts/tier_coverage_probe.sh`
+(read-only). Expect `resolve_catalogue` and `catalogue_rarity` to rise
+with the catalogue, and `named_set` to rise as items gain `collection_name`.
+
+**Performance: settled.** `(category, item_key)` is UNIQUE
+(`category_items_category_item_key_key`), and the planner drives the join
+through `idx_category_items_item_key` under a Memoize node — **0.213 ms** on
+the heaviest account. ⚠️ The LATERAL's original justification ("nothing proves
+the key is unique") was WRONG: the repo does not prove it, the database does.
+Corrected in place in `portfolio_router.py`.
 
 Gate: `npm run check:phantom-response-fields` fails if the server stops sending
 `rarity_score` while the client still reads it.

@@ -200,12 +200,25 @@ function is behaviourally unchanged.
   MODEL function into the None-returning one, with four tests pointing at it.
   Anchor a revert to the function, not to a string that now appears twice.
 
-⚠️ **Not yet measured, and it decides how much this moves:** how many real
-items resolve to a catalogue row with a readable rarity, and whether
-`category_items (category, item_key)` is indexed — the LATERAL runs per item on
-a hot endpoint. Both need a production read. The code is correct either way;
-with low coverage the card will still say "Unranked", but now says so honestly
-with its coverage line instead of implying a rank it cannot award.
+**Measured on prod the same day, and it corrected me twice.** 17 unarchived
+items in the entire database; 9 resolve to a catalogue row, **8 carry a
+catalogue rarity (47%)**, 9 have a rarity signal in their own `attrs` — and
+**exactly 1 names a set**.
+
+* **Rarity clears the bar**; the fix will move real accounts to Silver.
+* **Completeness cannot, and it is the DATA, not the code.** One item names a
+  set, so the axis has nothing to measure. It is wired correctly and says
+  "set completion from 0 of N sets" instead of scoring a zero.
+* **The performance worry was unfounded, and so was my reason for the LATERAL.**
+  `(category, item_key)` is UNIQUE (`category_items_category_item_key_key`) —
+  I had written "nothing in the repo proves (category, item_key) is unique",
+  which is true and irrelevant: the repo is not the schema. A plain LEFT JOIN
+  could never have duplicated. Planner: index scan + Memoize, **0.213 ms**.
+  Comment corrected in place. **Absence of a CREATE INDEX in `migrations/` is
+  not absence of the index.**
+
+Falsifier kept rather than a verdict: `bash scripts/tier_coverage_probe.sh`,
+read-only, prints all three numbers.
 
 ## Two gates written on 2026-09-18, and what each one got wrong first
 
