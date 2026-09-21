@@ -218,7 +218,18 @@ Seed data for E2E lives in `server/migrations/`-adjacent scratch SQL and is
 tagged for removal: `sets.metadata->>'seed' = 'e2e-sets-2026-08-15'` and
 `items.source = 'seed:e2e-sets'`.
 
-## Portfolio Tier — WIRED 2026-09-21 (was dead 2026-08-15 → 2026-09-21)
+## Portfolio Tier — WIRED + SERVER DEPLOYED 2026-09-21 (dead 2026-08-15 → 2026-09-21)
+
+> **Deploy state:** the SERVER half is live on prod (restarted 2026-09-21
+> 12:35:13 CEST). The CLIENT half — the coverage line, the `—` states, the
+> unified tier, the 9 i18n keys — ships with **build 162**.
+>
+> ⚠️ **Until 162, build 161 shows a PARTIAL version of this.** 161 already
+> reads `rarity_score` (that mapping always existed) but does NOT read
+> `collection_name`, so on 161 a member now sees a real rank driven by rarity
+> alone, beside "Completeness 0", with no coverage line to explain it. That is
+> better than an unreachable rank and worse than the finished card; it is the
+> price of shipping the halves apart, and it is deliberate.
 
 `computeTierFromScores` takes rarity, completeness and diversification, and for
 five weeks two of the three were structurally 0:

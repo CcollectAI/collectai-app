@@ -220,6 +220,33 @@ catalogue rarity (47%)**, 9 have a rarity signal in their own `attrs` — and
 Falsifier kept rather than a verdict: `bash scripts/tier_coverage_probe.sh`,
 read-only, prints all three numbers.
 
+### Deployed the same day, and verified rather than assumed
+
+Order that matters: **rsync FIRST, then the nine gates, then restart.** Running
+the gates before the files are in place tests the OLD code and proves nothing
+about what will load; rsync alone cannot hurt the running service, because
+`bake` holds the old modules in `sys.modules`. So the safe window is exactly
+"new files on disk, old process still serving".
+
+* Full hash diff of all 393 files first — **only my 2 had drifted**, so nothing
+  rode along. 13 more differed by EXISTENCE, not content; `deploy_to_ec2.sh`
+  uses `rsync --files-from` with **no `--delete`**, so the 4 prod-only files
+  were never at risk. Check that before trusting any deploy script.
+* Verified the landing, because `deploy ok` is the phrase that script's own
+  header records a day of successful-but-wrong deploys printing: hashes equal
+  (`1eb3e791…`, `75805cd7…`), the fix greps in the DEPLOYED file, and **no
+  stray `/opt/collectors/app/` tree** one directory too high.
+* All nine `ExecStartPre` gates run by hand against the new files: 9 PASS.
+* Restart 12:35:13 CEST → `active`, `/healthz` 200, `✓` worker imports in
+  **`/opt/collectors/bake.log`** (not journald), 0 error lines.
+* Behaviour proved on the live interpreter, not inferred from the hash:
+  `rarity_to_score_or_none({"rarity":"Ultra Rare"}) == 0.9`, `Trainer → None`,
+  `{} → None`, and the model's `rarity_to_score({}) == 0.5` unchanged.
+
+⚠️ **The client half is NOT deployed** — it needs build 162. Build 161 already
+reads `rarity_score` but not `collection_name`, so members on 161 now get a
+rank from rarity alone, beside "Completeness 0", with no coverage line.
+
 ## Two gates written on 2026-09-18, and what each one got wrong first
 
 ### `npm run check:half-done-silence`
