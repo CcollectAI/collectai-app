@@ -76,7 +76,7 @@ Two rules the tooling learned the hard way:
 | H | The date on screen is not the date that was meant | 2026-09-16 | ✅ **both halves closed** — locale half 09-17 (12 sites through `dateLocale()`, `check:date-locale` gates it), server half 09-18 (EC2 is CEST, Postgres UTC: `date.today()` and `CURRENT_DATE` disagreed 00:00–02:00 nightly). This row said "locale half open" until 09-19; the detail sections had recorded both closures days earlier |
 | I | One tap, two writes (unguarded async handlers) | 2026-09-17 | ✅ swept by checker, 6 fixed + 5 reasoned, `check:double-submit` in prebuild |
 | J | A member can see data that is not theirs (RLS / IDOR / public views) | 2026-09-17, **reopened 2026-09-22** | ⚠️ **"prod verified clean" was WRONG** — the 09-17 sweep scoped to user-reachable tables and client-read views, so it could not see backend tables. On 09-22 **11 public tables had RLS off with anon SELECT/INSERT/UPDATE/DELETE** (incl. `market_hits_daily`, `price_prediction_daily`) and `v_images_needing_embeddings` (DEFINER, unfiltered) served every member's `item_images` to anon. 12 fixed + applied (`20260922`). The admin half ✅ **closed the same day** (`20260922c`): 24 admin tables (`ugc_*`, `content_*`, `creators`, `weekly_calendars`, `admin_*`, `subscription_events`) had `USING (true)` for `public` or no RLS, because collectai-admin queried them from the browser with the anon key. The browser client now points at ONE route, `collectai-admin/src/app/api/admin/sb/[...path]/route.ts` (admin cookie + table allowlist + no rpc/auth + no unfiltered PATCH/DELETE → service role), and the tables deny anon. Side effect: the 4 tabs on `admin_content_config`/`admin_dev_hub` had been silently empty (deny-all policy) and now load. **Re-test:** `curl $SUPABASE_URL/rest/v1/market_hits_daily?limit=1 -H "apikey: $ANON"` expect 401; the advisor's `rls_disabled_in_public` should list only the 4 `ugc_*` |
-| AC | A SECURITY DEFINER function anyone can call (PUBLIC's default EXECUTE) | 2026-09-22 | ⚠️ **6 of 150 fixed, 144 unread.** Postgres grants EXECUTE to PUBLIC on every new function, and anon/authenticated inherit it — `REVOKE … FROM anon` alone is a no-op. `cleanup_market_hits(p_days)` let anyone `DELETE` the whole of `market_hits` via `POST /rest/v1/rpc/cleanup_market_hits {"p_days":0}`. The 6 maintenance fns revoked (`20260922b`); cron (job 18, 27) runs as owner and is unaffected. **Next:** diff the 150 against the 16 `.rpc()` names the clients call — each non-client one needs its own reason or a revoke. **Re-test:** `SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace AND n.nspname='public' WHERE p.prosecdef AND has_function_privilege('anon',p.oid,'EXECUTE')` — was 150 on 09-22, 144 after |
+| AC | A SECURITY DEFINER function anyone can call (PUBLIC's default EXECUTE) | 2026-09-22 | ✅ **swept + applied same day: 127 revoked, 23 kept with a written reason** (`20260922b` 6, `20260922d` 121). Postgres grants EXECUTE to PUBLIC on every new function, and anon/authenticated inherit it — `REVOKE … FROM anon` alone is a no-op. `cleanup_market_hits(p_days)` let anyone `DELETE` the whole of `market_hits` via `POST /rest/v1/rpc/cleanup_market_hits {"p_days":0}`. `rpc_send_message_v1(thread, sender, body)` let anyone post a DM as any member. Cron (jobs 18/23/27/29/31) runs as the owner and is unaffected. **Not done (a decision):** `ALTER DEFAULT PRIVILEGES … REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC`, so the NEXT new function is born open again. **Re-test:** `SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace AND n.nspname='public' WHERE p.prosecdef AND has_function_privilege('anon',p.oid,'EXECUTE')` — expect **23** (150 → 144 → 23 on 09-22) |
 | M | The database fails, and the app reads the failure as "no" | 2026-09-17 | ✅ closed 2026-09-18: app half fixed + gated; `20260917b` **and** `20260917c` applied; blocking verified working on prod as a member (block written, pending DM denied, a blocked member's request refused) |
 | R | Which endpoints answer without a token | 2026-09-17 | ✅ 21 enumerated, all deliberate; documented in API.md; the one real leak fixed in Q |
 | Q | The server's error text is member copy | 2026-09-17 | ✅ 13 fixed to sentences, 10 reasoned + `check_error_copy.py`; one PUBLIC endpoint was leaking DB text |
@@ -121,16 +121,36 @@ authenticated; granted to service_role. Their only callers are pg_cron jobs 18
 and 27, which run as `postgres`, the owner. Verified: anon `POST
 /rest/v1/rpc/refresh_core_mvs` → 401; the other five by `has_function_privilege`.
 
-**Open: 144 DEFINER functions in `public` are still anon-executable.** Most are
-the real client RPCs (the clients call 16 by name via `.rpc()`), plus trigger
-functions, which cannot be called directly. The sweep: list the 144, subtract
-the 16 client names and the trigger functions, and give each remaining one a
-reason or a revoke. A chokepoint would beat a sweep: `ALTER DEFAULT PRIVILEGES
-IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC` stops new functions
-inheriting it — but then every new client RPC needs an explicit GRANT, so it
-is a decision, not a fix.
+**The sweep of the other 144 (`20260922d`, applied 2026-09-22).** This
+paragraph first said "most are the real client RPCs". Measured, **16 of 144**
+were. Each of the 144 was classified by what needs the CALLER to hold EXECUTE:
+CLIENT 16 (a `.rpc('…')` in the app, edge functions or admin; no RPC name has
+left the app since 2026-05-01, so older builds call nothing extra), POLICY 1
+(`is_chat_thread_member`), VIEW 2, INVOKER_FN 1, TRIGGER 3 → **23 kept**. The
+other **121 revoked** from PUBLIC/anon/authenticated and granted to
+service_role. The server calls them as `postgres` (the owner).
 
-**Re-test:** the count query in the register row. 150 → 144 on 2026-09-22.
+How it was checked, before and after:
+- Rolled-back dry run on prod: two real members (one with 2 chat threads, one
+  with 8 items) saw identical rows before and after.
+- Live after apply: anon `rpc/rpc_lens_list` and `rpc/rpc_send_message_v1`
+  return `42501 permission denied`; the kept `rpc_is_blocked_v1` and
+  `rpc_get_presence_v1` return 200; 0 permission errors in `bake.log`.
+
+**The classifier's blind spot, checked:** it skipped same-name callers, so an
+INVOKER overload calling a DEFINER one would be missed. Exactly one mixed
+pair exists (`rpc_api_rate_allow`), and neither body calls the other.
+
+**An instrument error from this session:** one outside probe returned
+"Invalid API key" for BOTH a revoked and a kept RPC. The key was fine: an
+unanchored `grep` read it wrongly. A probe whose control fails is a broken
+probe, not a finding.
+
+**Still open, a decision:** `ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE
+EXECUTE ON FUNCTIONS FROM PUBLIC` would stop new functions being born open,
+but every new client RPC would then need an explicit GRANT.
+
+**Re-test:** the count query in the register row. Expect 23.
 
 ## AA — one fact in two tables, counted twice (swept 2026-09-20)
 
