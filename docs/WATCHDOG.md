@@ -1250,6 +1250,52 @@ Largest: `portfolio_valuations_v1` 452, `demand_signals` 241, `predict_sessions`
 (`dac7_seller_year` is a tax record; `label_events`/`predict_sessions` are training
 data), and any user deleted outside `/account` will keep producing more.
 
+## Nothing asked whether data was open (2026-09-22)
+
+The "RLS coverage" check only asked one question: *is a table silently
+DENIED* (RLS on, no policy, so a feature is empty). Nobody asked the opposite
+one, *is a table silently OPEN*. The Supabase Security Advisor found the
+answer, not this report:
+
+- 11 public tables with RLS **off** and anon holding SELECT/INSERT/UPDATE/DELETE
+  (`market_hits_daily`, `price_prediction_daily`, …)
+- 26 admin-dashboard tables with `ALL … TO public USING (true)`
+- 150 SECURITY DEFINER functions anon could execute. One was
+  `cleanup_market_hits(p_days)`, i.e. `DELETE FROM market_hits` for anyone with
+  the anon key.
+
+The anon key ships in the app, so "anon can" means "anyone can". The fixes are
+migrations `20260922`–`20260922e` (docs/CLASS_SWEEPS.md, classes J and AC).
+Three checks now look in that direction:
+
+| check | fires when | severity |
+|---|---|---|
+| RLS is OFF on a table the anon key can reach | `relrowsecurity = false` and anon/authenticated hold any grant (tables + partitioned parents) | **high** |
+| Write policy open to every client role | an ALL/INSERT/UPDATE/DELETE policy for public/anon/authenticated whose USING and WITH CHECK are both `true`, on a table those roles can write. **SELECT `true` is not flagged**, because catalogue reads are meant to be public | **high** |
+| SECURITY DEFINER function anyone can call | a non-trigger DEFINER function anon can EXECUTE that is not on the `expected` list (the 20 kept, each with its reason, in `20260922d`) | medium |
+
+**The old check had to change too.** 20260922c/e left 33 tables with RLS on,
+no policy and no client grant. That is server-only by construction, so it
+cannot be a dead client feature. The no-policy check now skips tables no
+client role can reach. Without that, the lockdown would have paged 31 false
+mediums every morning.
+
+**Proved, not assumed** (run against prod, with the real `collect_findings`):
+
+- **Natural positive:** before `20260922e`, the write-policy check reported
+  `calendar_items` and `generated_captions`, two tables the name-pattern list in
+  `20260922c` had missed. This check found them on its first run; that is what
+  `20260922e` locks.
+- **Injected positive**, in a transaction that was rolled back: a new table
+  granted to anon with RLS off → high; a new DEFINER function → medium. After
+  the rollback, `to_regclass` confirmed both objects were gone.
+- **Negative:** on the fixed prod all three report healthy; the full run
+  showed `bugs_high: 0`.
+
+**When a new client RPC trips the medium:** if the app really calls it, add
+it to `expected` in the check, with the reason. If only the server or cron
+calls it, run the `suggested_fix` (revoke from PUBLIC, grant to service_role).
+
 ## Related audits
 
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes

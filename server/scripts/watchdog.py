@@ -294,11 +294,18 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
 
     # --- tables the code reads that nothing writes ---
     with guard("RLS coverage"):
+        # A table no client role holds a grant on is server-only BY
+        # CONSTRUCTION (20260922/c/e revoked anon + authenticated on 33 of
+        # them), so "no policy" there cannot be a dead client feature — the
+        # client could not have reached it with any policy. Counting those
+        # would page 31 false mediums a day.
         rows = await c.fetch("""
             SELECT c.relname tbl, (SELECT COUNT(*) FROM pg_policy p WHERE p.polrelid=c.oid) pols
             FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
             WHERE n.nspname='public' AND c.relkind='r' AND c.relrowsecurity
               AND NOT EXISTS (SELECT 1 FROM pg_policy p WHERE p.polrelid=c.oid)
+              AND (has_table_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,DELETE')
+                   OR has_table_privilege('authenticated', c.oid, 'SELECT,INSERT,UPDATE,DELETE'))
         """)
         for r in rows:
             # Server-only by design. RLS-on with no policy denies ALL client
@@ -327,6 +334,111 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
                 "Users can neither read nor write this table; any feature on it is silently empty.",
                 tbl_link(r["tbl"]),
                 "SELECT relrowsecurity FROM pg_class WHERE relname='%s';" % r["tbl"])
+
+    # --- the OPPOSITE direction: data anyone with the anon key can reach ---
+    #
+    # The check above only ever asked "is a feature silently DENIED". Nothing
+    # asked "is data silently OPEN", so on 2026-09-22 the Security Advisor, not
+    # this report, found 11 public tables with RLS off and anon holding
+    # SELECT/INSERT/UPDATE/DELETE (market_hits_daily among them), 26 admin
+    # tables with `USING (true)` for public, and 150 SECURITY DEFINER functions
+    # anon could execute — one of them `DELETE FROM market_hits`. The anon key
+    # ships in the app, so "anon can" means "anyone can". docs/CLASS_SWEEPS.md
+    # classes J and AC; docs/WATCHDOG.md "Nothing asked whether data was open".
+    with guard("anon exposure: RLS off", "high"):
+        rows = await c.fetch("""
+            SELECT c.relname tbl
+            FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+            WHERE n.nspname='public' AND c.relkind IN ('r','p') AND NOT c.relrowsecurity
+              AND (has_table_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,DELETE')
+                   OR has_table_privilege('authenticated', c.oid, 'SELECT,INSERT,UPDATE,DELETE'))
+            ORDER BY 1
+        """)
+        for r in rows:
+            bug("high", "RLS is OFF on a table the anon key can reach: %s" % r["tbl"],
+                "Row-level security is disabled and anon/authenticated hold a grant, so anyone "
+                "with the app's anon key can read (and, with a write grant, rewrite) every row "
+                "over PostgREST. New tables are born this way unless the migration enables RLS.",
+                tbl_link(r["tbl"]),
+                "SELECT relrowsecurity, has_table_privilege('anon','public.%s','SELECT') "
+                "FROM pg_class WHERE relname='%s';" % (r["tbl"], r["tbl"]),
+                "server-only: ALTER TABLE public.%s ENABLE ROW LEVEL SECURITY; REVOKE ALL ON "
+                "public.%s FROM anon, authenticated;  client-read: enable RLS + an owner-scoped "
+                "policy (see 20260922_security_advisor_rls_and_definer_views.sql)" % (r["tbl"], r["tbl"]))
+        if not rows:
+            healthy.append({"check": "no public table has RLS off while a client role can reach it",
+                            "detail": "tables + partitioned parents, anon and authenticated"})
+
+    with guard("anon exposure: write policy open to everyone", "high"):
+        # SELECT USING (true) is legitimate for catalogue data and is NOT
+        # flagged. A WRITE policy that is `true` for a client role is never
+        # legitimate: it hands the table to anyone holding the anon key.
+        rows = await c.fetch("""
+            SELECT p.tablename tbl, p.policyname pol, p.cmd
+            FROM pg_policies p
+            JOIN pg_namespace n ON n.nspname=p.schemaname
+            JOIN pg_class c ON c.relnamespace=n.oid AND c.relname=p.tablename
+            WHERE p.schemaname='public' AND p.cmd IN ('ALL','INSERT','UPDATE','DELETE')
+              AND p.roles && ARRAY['public','anon','authenticated']::name[]
+              AND coalesce(p.qual, 'true') = 'true'
+              AND coalesce(p.with_check, p.qual, 'true') = 'true'
+              AND (has_table_privilege('anon', c.oid, 'INSERT,UPDATE,DELETE')
+                   OR has_table_privilege('authenticated', c.oid, 'INSERT,UPDATE,DELETE'))
+            ORDER BY 1, 2
+        """)
+        for r in rows:
+            bug("high", "Write policy open to every client role: %s.%s" % (r["tbl"], r["pol"]),
+                "%s policy with USING/WITH CHECK (true) for public/anon/authenticated: anyone "
+                "with the anon key can write this table." % r["cmd"],
+                tbl_link(r["tbl"]),
+                "SELECT policyname, cmd, roles, qual, with_check FROM pg_policies "
+                "WHERE tablename='%s';" % r["tbl"],
+                "scope the policy to auth.uid(), or DROP it and REVOKE ALL FROM anon, "
+                "authenticated if only the server writes (20260922c/e)")
+        if not rows:
+            healthy.append({"check": "no write policy is open to every client role",
+                            "detail": "ALL/INSERT/UPDATE/DELETE with USING/WITH CHECK true"})
+
+    with guard("anon exposure: SECURITY DEFINER functions"):
+        # Postgres grants EXECUTE on every new function to PUBLIC, and a
+        # DEFINER function runs as its owner, past RLS. These are the 20
+        # non-trigger ones anon may run, each for a reason written down in
+        # supabase/migrations/20260922d_revoke_non_client_definer_fns.sql.
+        # Anything else anon can execute is new since then and unreviewed.
+        expected = {
+            # called by the app via supabase.rpc()
+            "rpc_block_user_v1", "rpc_clear_typing_v1",
+            "rpc_create_build_paint_project_v1", "rpc_decide_dm_request_v1",
+            "rpc_get_batch_presence_v1", "rpc_get_presence_v1", "rpc_get_typing_v1",
+            "rpc_go_offline_v1", "rpc_heartbeat_v1", "rpc_is_blocked_v1",
+            "rpc_list_blocked_v1", "rpc_mark_category_item_owned_v1",
+            "rpc_mark_thread_read_v1", "rpc_request_dm_v1", "rpc_set_typing_v1",
+            "rpc_unblock_user_v1",
+            # evaluated as the CALLER: RLS policy / view / invoker function
+            "is_chat_thread_member", "item_value_v1", "rpc_user_relevant_events_v1",
+            "predict_and_insert_v2",
+        }
+        rows = await c.fetch("""
+            SELECT p.proname fn, pg_get_function_identity_arguments(p.oid) args
+            FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace AND n.nspname='public'
+            WHERE p.prosecdef AND p.prokind='f' AND p.prorettype <> 'trigger'::regtype
+              AND has_function_privilege('anon', p.oid, 'EXECUTE')
+            ORDER BY 1
+        """)
+        unexpected = [r for r in rows if r["fn"] not in expected]
+        for r in unexpected:
+            sig = "public.%s(%s)" % (r["fn"], r["args"])
+            bug("medium", "SECURITY DEFINER function anyone can call: %s" % r["fn"],
+                "Runs as its owner, past RLS, and anon can EXECUTE it (Postgres' default PUBLIC "
+                "grant). Not on the reviewed list. If the app calls it, add it to `expected` in "
+                "this check with the reason; if only the server or cron does, revoke it.",
+                sql_link(),
+                "SELECT proacl FROM pg_proc WHERE oid = '%s'::regprocedure;" % sig,
+                "REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC, anon, authenticated; "
+                "GRANT EXECUTE ON FUNCTION %s TO service_role;" % (sig, sig))
+        if not unexpected:
+            healthy.append({"check": "every anon-callable SECURITY DEFINER function is reviewed",
+                            "detail": "%d callable, all on the 20260922d list" % len(rows)})
 
     # --- worker health ---
     #
