@@ -75,7 +75,8 @@ Two rules the tooling learned the hard way:
 | G | A paid feature a free member can reach, or a free feature a paying member is denied | 2026-09-16 | ✅ **CLOSED — 0 decisions left** (row corrected 2026-09-20; it said "4 decisions for Merle" long after all four resolved). 1 ✅ fixed (two Pro analytics endpoints open to free accounts) · 2 ❌ the note was wrong (`max_daily_deal_alerts` IS enforced) · 3 ❌ not a paywall decision (sell timing) · 4 ✅ decided 2026-09-19 — `EXPO_PUBLIC_BETA_UNLOCK_ALL` flipped to `false` on the EAS `production` environment, so forgetting to pin now yields a LOCKED build |
 | H | The date on screen is not the date that was meant | 2026-09-16 | ✅ **both halves closed** — locale half 09-17 (12 sites through `dateLocale()`, `check:date-locale` gates it), server half 09-18 (EC2 is CEST, Postgres UTC: `date.today()` and `CURRENT_DATE` disagreed 00:00–02:00 nightly). This row said "locale half open" until 09-19; the detail sections had recorded both closures days earlier |
 | I | One tap, two writes (unguarded async handlers) | 2026-09-17 | ✅ swept by checker, 6 fixed + 5 reasoned, `check:double-submit` in prebuild |
-| J | A member can see data that is not theirs (RLS / IDOR / public views) | 2026-09-17 | ✅ prod verified clean; repo drift fixed + gated |
+| J | A member can see data that is not theirs (RLS / IDOR / public views) | 2026-09-17, **reopened 2026-09-22** | ⚠️ **"prod verified clean" was WRONG** — the 09-17 sweep scoped to user-reachable tables and client-read views, so it could not see backend tables. On 09-22 **11 public tables had RLS off with anon SELECT/INSERT/UPDATE/DELETE** (incl. `market_hits_daily`, `price_prediction_daily`) and `v_images_needing_embeddings` (DEFINER, unfiltered) served every member's `item_images` to anon. 12 fixed + applied (`20260922`). **Open:** 4 `ugc_*` tables + all 7 RLS'd `ugc_*` use `USING (true)` for `public` — collectai-admin reads them in the browser with the anon key (decision). **Re-test:** `curl $SUPABASE_URL/rest/v1/market_hits_daily?limit=1 -H "apikey: $ANON"` expect 401; the advisor's `rls_disabled_in_public` should list only the 4 `ugc_*` |
+| AC | A SECURITY DEFINER function anyone can call (PUBLIC's default EXECUTE) | 2026-09-22 | ⚠️ **6 of 150 fixed, 144 unread.** Postgres grants EXECUTE to PUBLIC on every new function, and anon/authenticated inherit it — `REVOKE … FROM anon` alone is a no-op. `cleanup_market_hits(p_days)` let anyone `DELETE` the whole of `market_hits` via `POST /rest/v1/rpc/cleanup_market_hits {"p_days":0}`. The 6 maintenance fns revoked (`20260922b`); cron (job 18, 27) runs as owner and is unaffected. **Next:** diff the 150 against the 16 `.rpc()` names the clients call — each non-client one needs its own reason or a revoke. **Re-test:** `SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace AND n.nspname='public' WHERE p.prosecdef AND has_function_privilege('anon',p.oid,'EXECUTE')` — was 150 on 09-22, 144 after |
 | M | The database fails, and the app reads the failure as "no" | 2026-09-17 | ✅ closed 2026-09-18: app half fixed + gated; `20260917b` **and** `20260917c` applied; blocking verified working on prod as a member (block written, pending DM denied, a blocked member's request refused) |
 | R | Which endpoints answer without a token | 2026-09-17 | ✅ 21 enumerated, all deliberate; documented in API.md; the one real leak fixed in Q |
 | Q | The server's error text is member copy | 2026-09-17 | ✅ 13 fixed to sentences, 10 reasoned + `check_error_copy.py`; one PUBLIC endpoint was leaking DB text |
@@ -96,6 +97,40 @@ Two rules the tooling learned the hard way:
 | Z | A success message that is not conditional on success | swept 2026-09-19 | ✅ **2 fixed**: `useOptimisticMutation` swallowed so `await mutate()` was followed by a SUCCESS toast on failure ("Archived" in green, 5 call sites); and `setJSON` swallowed so "Following!" showed on a failed write with no server copy. 50 sites enumerated, the rest read and clean |
 | AA | One fact written to two tables, then counted twice downstream | **swept + DEPLOYED 2026-09-20** | ✅ **1 instance, fixed; no others.** Two-stage enumeration: 28 functions write 2+ real tables, but only ONE consumer reads a written-together pair and merges it — `_export_ground_truths` (the known case). Both `spawn_bg` candidates read and discarded. Limits written up below. |
 | AB | The server SENDS a field the client reads under another name | **swept + server DEPLOYED 2026-09-21** | ✅ **1 instance, fixed, and gated.** `collection` on the analytics item mapper read `it.collection ?? it.set_name`; `/portfolio/items` sends `collection_name`. Undefined for every item on every account for five weeks — it pinned the Portfolio Tier at "Unranked". Gate `check:phantom-response-fields`. The mirror of class V, which covers the REQUEST direction only |
+
+## AC — a SECURITY DEFINER function anyone can call (2026-09-22)
+
+**How it was found.** Re-running the Security Advisor's RLS lints by hand
+(class J reopened) listed `refresh_core_mvs` as reading a flagged view. Its ACL
+was `{=X/postgres, …, anon=X/postgres, authenticated=X/postgres, …}`. The
+leading `=X` is **PUBLIC**: Postgres grants EXECUTE on every new function to
+PUBLIC, and every role inherits it. So **`REVOKE EXECUTE … FROM anon,
+authenticated` alone changes nothing** — the revoke must name PUBLIC.
+
+**The worst instance.** `cleanup_market_hits(p_days int)` is DEFINER and runs
+`DELETE FROM market_hits WHERE coalesce(observed_at, seen_at) < now() -
+make_interval(days => p_days)`. With the anon key from the app bundle,
+`POST /rest/v1/rpc/cleanup_market_hits {"p_days":0}` deleted the pricing
+dataset. Never probed over HTTP — if the revoke had failed, the probe would
+have been the attack.
+
+**Fixed (`20260922b`, applied 2026-09-22):** `cleanup_market_hits`,
+`cleanup_old_tasks`, `cleanup_stale_presence`, `refresh_category_summaries`,
+`refresh_core_mvs`, `refresh_mv_top_movers` — revoked from PUBLIC, anon,
+authenticated; granted to service_role. Their only callers are pg_cron jobs 18
+and 27, which run as `postgres`, the owner. Verified: anon `POST
+/rest/v1/rpc/refresh_core_mvs` → 401; the other five by `has_function_privilege`.
+
+**Open: 144 DEFINER functions in `public` are still anon-executable.** Most are
+the real client RPCs (the clients call 16 by name via `.rpc()`), plus trigger
+functions, which cannot be called directly. The sweep: list the 144, subtract
+the 16 client names and the trigger functions, and give each remaining one a
+reason or a revoke. A chokepoint would beat a sweep: `ALTER DEFAULT PRIVILEGES
+IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC` stops new functions
+inheriting it — but then every new client RPC needs an explicit GRANT, so it
+is a decision, not a fix.
+
+**Re-test:** the count query in the register row. 150 → 144 on 2026-09-22.
 
 ## AA — one fact in two tables, counted twice (swept 2026-09-20)
 
