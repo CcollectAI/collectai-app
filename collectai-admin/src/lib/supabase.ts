@@ -23,11 +23,16 @@ export function getSupabase(): SupabaseClient | null {
   if (!isSupabaseConfigured()) return null;
 
   if (!_client) {
-    _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    // Every query goes to our own /api/admin/sb route, never to Supabase
+    // directly: the route checks the admin session cookie and forwards with
+    // the service-role key, and the admin tables deny the anon key. The key
+    // passed here is only a placeholder header the route discards.
+    // supabase-js builds `${base}/rest/v1/<table>`, which is the route's path.
+    _client = createClient(`${window.location.origin}/api/admin/sb`, SUPABASE_ANON_KEY, {
       auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
       },
     });
   }
