@@ -1170,7 +1170,14 @@
     "carrier_load_failed": "Die Liste der Versanddienste konnte nicht geladen werden.",
     "save_tracking": "Sendungsnummer speichern",
     "tracking_explainer": "Der Käufer sieht das, um die Sendung zu verfolgen. Sparrow prüft es nicht und es schließt den Handel nicht ab — ihr bestätigt beide weiterhin von Hand.",
-    "postcode_carrier_note": "Dieser Versanddienst braucht die Empfänger-Postleitzahl, um eine Sendungsverfolgung zu öffnen; die hat Sparrow nicht. Der Käufer sieht statt eines Links den Code zum Nachschlagen."
+    "postcode_carrier_note": "Dieser Versanddienst braucht die Empfänger-Postleitzahl, um eine Sendungsverfolgung zu öffnen; die hat Sparrow nicht. Der Käufer sieht statt eines Links den Code zum Nachschlagen.",
+    "pct_of_asking": "{{pct}} von {{price}} Preisvorstellung",
+    "at_asking": "Entspricht der Preisvorstellung von {{price}}",
+    "pct_of_asking_short": "{{pct}} der Preisvorstellung",
+    "at_asking_short": "Zur Preisvorstellung",
+    "step_postage_title": "Porto erfassen",
+    "step_postage_now": "Was hat der Versand gekostet? Bis du es einträgst, wird dein Gewinn als unbekannt angezeigt.",
+    "step_postage_done": "Erfasst. Es zählt in deinem realisierten G/V."
   },
   "item_attrs": {
     "case_size": "Gehäusegröße",
@@ -1606,8 +1613,6 @@
     "realised_pl_empty": "Noch nichts verkauft. Trage einen Verkauf ein und hier steht, was du wirklich verdient hast — inklusive Kaufpreis und Gebühren, keine Schätzung.",
     "realised_profit": "Gewinn",
     "net_proceeds": "Nettoerlös",
-    "sales_without_basis": "{{count}} Verkauf/Verkäufe ausgeschlossen — kein Kaufpreis hinterlegt",
-    "sales_without_postage": "{{count}} Verkauf/Verkäufe ausgeschlossen — Porto nicht hinterlegt",
     "basis_unknown": "kein Kaufpreis",
     "postage_unknown": "Porto nicht hinterlegt",
     "tier_diamond": "Diamant",
@@ -1620,7 +1625,11 @@
     "tier_coverage": "Seltenheit aus {{rarityKnown}} von {{rarityTotal}} Objekten · Set-Vollständigkeit aus {{setsKnown}} von {{setsTotal}} Sets",
     "tier_unranked_hint": "Noch kein Rang — füge Objekte aus katalogisierten Sets hinzu, um einen Seltenheits- und Vollständigkeitswert aufzubauen.",
     "concentration_high": "Hohe Konzentration — {{category}} macht den Großteil deines Werts aus",
-    "concentration_medium": "Mäßig konzentriert in {{category}}"
+    "concentration_medium": "Mäßig konzentriert in {{category}}",
+    "sales_without_basis_one": "1 Verkauf ausgeschlossen — kein Kaufpreis hinterlegt",
+    "sales_without_basis_many": "{{count}} Verkäufe ausgeschlossen — kein Kaufpreis hinterlegt",
+    "sales_without_postage_one": "1 Verkauf ausgeschlossen — Porto nicht hinterlegt",
+    "sales_without_postage_many": "{{count}} Verkäufe ausgeschlossen — Porto nicht hinterlegt"
   },
   "guide": {
     "no_guide_yet": "Noch kein Leitfaden für diese Kategorie",

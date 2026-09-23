@@ -28,6 +28,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import ScreenHeader from '@/components/ScreenHeader';
 import { BottomSheetModal } from '@/components/BottomSheetModal';
+import { PostageSheet } from '@/components/offers/PostageSheet';
 import { OfferAmountSheet } from '@/components/p2p/OfferAmountSheet';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
@@ -40,7 +41,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
 import { showActionSheet } from '@/hooks/useActionSheetPicker';
-import { formatPrice, parseMoney } from '@/lib/format';
+import { formatPrice, parseMoney, formatPercent } from '@/lib/format';
 import { convertCurrency } from '@/lib/fx';
 import type { CurrencyCode } from '@/data/types';
 import { collectorsApi } from '@/api/collectorsApi';
@@ -185,7 +186,6 @@ function OffersScreen() {
   // answered, realised P/L withholds a profit for that sale rather than
   // reporting a net-before-postage as a result.
   const [postageFor, setPostageFor] = useState<P2POffer | null>(null);
-  const [postageAmount, setPostageAmount] = useState('');
   const [carriers, setCarriers] = useState<P2PCarrier[]>([]);
   const [carriersState, setCarriersState] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
   const [carrierKey, setCarrierKey] = useState<string | null>(null);
@@ -616,17 +616,14 @@ function OffersScreen() {
   }, [act, canSaveTracking, carrierKey, trackingCode, trackingFor]);
 
   const openPostage = useCallback((o: P2POffer) => {
-    setPostageAmount('');
     setPostageFor(o);
   }, []);
   const closePostage = useCallback(() => setPostageFor(null), []);
 
-  const savePostage = useCallback(async () => {
+  // The amount arrives parsed (PostageSheet uses parseMoney and refuses an
+  // unparseable or negative entry).
+  const savePostage = useCallback(async (amount: number) => {
     if (!postageFor) return;
-    // parseMoney, not Number: a Dutch seller types "7,25" and Number() would
-    // read 7 — `npm run check:numbers` enforces this and is right to.
-    const amount = parseMoney(postageAmount);
-    if (amount === null || amount < 0) return;
     const offerId = postageFor.id;
     setPostageFor(null);
     await act(
@@ -634,7 +631,7 @@ function OffersScreen() {
       offerId,
       t('offers.postage_saved', { defaultValue: 'Postage recorded' }),
     );
-  }, [act, postageAmount, postageFor, t]);
+  }, [act, postageFor, t]);
 
   const onGrade = useCallback((o: P2POffer) => {
     Alert.alert(
@@ -1142,8 +1139,13 @@ function OffersScreen() {
             <Text style={[styles.amountDelta, { color: colors.muted }]}>
               {(() => {
                 const pct = Math.round(((o.amount - o.listing_price) / o.listing_price) * 100);
-                const sign = pct > 0 ? '+' : '';
-                return `${sign}${pct}% of ${viewerPrice(o.listing_price, o.currency)} asking`;
+                const price = viewerPrice(o.listing_price, o.currency);
+                // "0% of €60 asking" read as nonsense for an offer AT the
+                // asking price (walked 2026-09-23) — say so instead. Was also
+                // hard-coded English.
+                return pct === 0
+                  ? t('offers.at_asking', { price })
+                  : t('offers.pct_of_asking', { pct: formatPercent(pct, { decimals: 0, sign: true }), price });
               })()}
             </Text>
           ) : null}
@@ -1821,68 +1823,7 @@ function OffersScreen() {
           — it will not subtract a cost basis from a net that is missing a cost.
           docs/COLLECTOR_DEMAND.md §5 is the whole reason: the EUR 956.25 card
           that looks like a gain and is a EUR 104 loss once postage lands. */}
-      <BottomSheetModal
-        visible={postageFor !== null}
-        onClose={closePostage}
-        title={t('offers.add_postage', { defaultValue: 'Add postage' })}
-        colors={colors}
-        maxHeight="60%"
-      >
-        <ScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
-          <Text style={[styles.sheetHint, { color: colors.muted }]}>
-            {t('offers.postage_hint', {
-              defaultValue:
-                "What did it cost you to post it? We can't see this, so your profit is shown before postage until you tell us. Nothing is shared with the buyer.",
-            })}
-          </Text>
-
-          <Text style={[styles.sheetLabel, { color: colors.text }]}>
-            {t('offers.postage_amount', { defaultValue: 'Postage you paid' })}
-          </Text>
-          <TextInput
-            value={postageAmount}
-            onChangeText={setPostageAmount}
-            placeholder={t('offers.postage_placeholder', { defaultValue: 'e.g. 7,25' })}
-            placeholderTextColor={colors.muted}
-            keyboardType="decimal-pad"
-            maxLength={10}
-            style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
-            accessibilityLabel={t('offers.postage_amount', { defaultValue: 'Postage you paid' })}
-          />
-          {/* 0 is a real answer and says so, because free postage (local
-              pickup) is NOT the same as "not recorded" — that distinction is
-              the whole reason the column is nullable. */}
-          <Text style={[styles.sheetHint, { color: colors.muted }]}>
-            {t('offers.postage_zero_ok', {
-              defaultValue: 'Handed it over in person? Enter 0 — that is an answer, not a blank.',
-            })}
-          </Text>
-
-          <AnimatedPressable
-            onPress={savePostage}
-            disabled={parseMoney(postageAmount) === null}
-            style={[
-              styles.btn,
-              styles.sheetSave,
-              parseMoney(postageAmount) !== null
-                ? { backgroundColor: colors.accent }
-                : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
-            ]}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: parseMoney(postageAmount) === null }}
-            accessibilityLabel={t('offers.a11y_save_postage', { defaultValue: 'Save postage' })}
-          >
-            <Text
-              style={[
-                styles.btnText,
-                { color: parseMoney(postageAmount) !== null ? colors.accentText : colors.muted },
-              ]}
-            >
-              {t('common.save', { defaultValue: 'Save' })}
-            </Text>
-          </AnimatedPressable>
-        </ScrollView>
-      </BottomSheetModal>
+      <PostageSheet visible={postageFor !== null} onClose={closePostage} onSave={savePostage} />
 
       {/* Seller side of the negotiation. Same component as the buyer's, so the
           two ladders cannot drift apart. */}

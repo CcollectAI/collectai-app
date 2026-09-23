@@ -907,7 +907,17 @@ async def portfolio_category_stats(
                     PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY value_eur) AS median_value,
                     MIN(value_eur) AS min_item_value,
                     MAX(value_eur) AS max_item_value,
-                    COALESCE(SUM(value_eur), 0) - COALESCE(SUM(q50_7d), 0) AS change_7d
+                    -- 7-day change over the items that HAVE a price 7 days
+                    -- ago, and only those. Was `SUM(value) - SUM(q50_7d)` over
+                    -- every item: an item with no 7-day-old price dropped out
+                    -- of the second SUM, so its whole value counted as "gain"
+                    -- and a category with no history read +100.0% (walked on
+                    -- Android 2026-09-23: LEGO / Lorcana / One Piece, all
+                    -- unchanged, all "+100.0%").
+                    SUM(value_eur - q50_7d)
+                        FILTER (WHERE value_eur IS NOT NULL AND q50_7d IS NOT NULL) AS change_7d,
+                    SUM(q50_7d)
+                        FILTER (WHERE value_eur IS NOT NULL AND q50_7d IS NOT NULL) AS base_7d
                 FROM valued
                 GROUP BY category
                 ORDER BY total_value DESC
@@ -918,8 +928,13 @@ async def portfolio_category_stats(
             categories = []
             for r in rows:
                 tv = float(r["total_value"] or 0)
-                c7 = float(r["change_7d"] or 0)
-                trend = "up" if c7 > 0 else ("down" if c7 < 0 else "flat")
+                # Known only when some item has a price from 7 days ago. The
+                # percentage is change / the 7-day-OLD value (it divided by the
+                # current total, which is not a percentage change).
+                base = float(r["base_7d"]) if r["base_7d"] is not None else 0.0
+                known = r["change_7d"] is not None and base > 0
+                c7 = float(r["change_7d"]) if known else 0.0
+                trend = ("up" if c7 > 0 else ("down" if c7 < 0 else "flat")) if known else "flat"
                 # `median_value` / `min_item_value` are None for a category where
                 # NOTHING is priced. Emitted as null, NOT 0.0 — a category we
                 # cannot value must not claim to be worth nothing, which is the
@@ -937,7 +952,11 @@ async def portfolio_category_stats(
                     "min_item_value": round(float(lo), 2) if lo is not None else None,
                     "max_item_value": round(float(hi), 2) if hi is not None else None,
                     "change_7d": round(c7, 2),
-                    "change_7d_pct": round(c7 / tv * 100, 2) if tv > 0 else 0.0,
+                    # 0.0 / "flat" when unknown, NOT null: builds up to 161
+                    # call `change_7d_pct.toFixed(1)` unguarded, and null would
+                    # crash the screen. New clients hide it on `change_7d_known`.
+                    "change_7d_pct": round(c7 / base * 100, 2) if known else 0.0,
+                    "change_7d_known": known,
                     "trend": trend,
                 })
 

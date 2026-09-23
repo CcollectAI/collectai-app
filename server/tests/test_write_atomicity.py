@@ -26,6 +26,7 @@ These tests assert ORDER through a recording connection, not source text. The
 inspected source.
 """
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -682,8 +683,20 @@ class TestSetPostage:
         upd = next(e for e in conn.events if e.startswith("UPDATE public.marketplace_sales"))
         # The sale price comes from the row, never from the request — this
         # endpoint must not be a way to rewrite what the item sold for.
-        assert "net_proceeds = sale_price" in upd
+        # (`round(` allowed: money is rounded to cents at the write.)
+        assert re.search(r"net_proceeds = (round\()?sale_price", upd)
         assert "COALESCE(platform_fee, 0)" in upd
+
+    @pytest.mark.asyncio
+    async def test_money_is_rounded_to_cents_at_the_write(self, monkeypatch):
+        # A float8 bound into NUMERIC keeps its binary noise: 4.95 was stored as
+        # 4.95000000000000017763… and the net as 55.04999… (prod, 2026-09-23).
+        conn = _PostageConn(_completed_offer(), _sale_after(4.95))
+        monkeypatch.setattr(p2p, "get_db_pool", lambda: _Pool(conn))
+        await p2p.set_postage(OFFER, p2p.PostageIn(amount=4.95), user_id=SELLER)
+        upd = next(e for e in conn.events if e.startswith("UPDATE public.marketplace_sales"))
+        assert "shipping_cost_actual = round($2::numeric, 2)" in upd
+        assert "net_proceeds = round(" in upd
 
 
 # ---------------------------------------------------------------------------

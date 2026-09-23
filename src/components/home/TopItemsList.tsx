@@ -13,6 +13,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { radius, text, fontWeight as fw, shadow } from "@/theme/tokens";
 import { categoryDisplayName } from '@/constants/categories';
 
+import { formatPercent } from '@/lib/format';
 // ── Types ──────────────────────────────────────────────────────────────
 
 export type ItemRow = {
@@ -46,8 +47,7 @@ interface TopItemsListProps {
 
 function formatPct(p?: number): string {
   if (p === undefined || p === null || Number.isNaN(p)) return "—";
-  const sign = p > 0 ? "+" : "";
-  return `${sign}${(p * 100).toFixed(2)}%`;
+  return formatPercent(p * 100, { decimals: 2, sign: true });
 }
 
 // ── Component ──────────────────────────────────────────────────────────

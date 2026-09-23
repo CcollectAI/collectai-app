@@ -40,7 +40,7 @@ import { useHasEverHadItems } from "@/hooks/useHasEverHadItems";
 import { ItemsEmptyState } from "@/components/items";
 import { EmptyState } from "@/components/EmptyState";
 import { splitPortfolioByValueSource, summariseMarkets, rankPositions, rankMovers, valueConcentration } from '@/lib/portfolioAnalytics';
-import { fmtCurrency } from '@/lib/format';
+import { fmtCurrency, formatPercent } from '@/lib/format';
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { useAsync } from "@/hooks/useAsync";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
@@ -74,8 +74,7 @@ import { categoryDisplayName } from '@/constants/categories';
 // ─────────────────────────────────────────────────────────────────────────────
 
 function formatPct(p: number, includeSign = true): string {
-  const sign = includeSign && p > 0 ? "+" : "";
-  return `${sign}${(p * 100).toFixed(2)}%`;
+  return formatPercent(p * 100, { decimals: 2, sign: includeSign });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

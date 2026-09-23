@@ -11,6 +11,7 @@ import { text, fontWeight, radius, shadow } from '@/theme/tokens';
 import { categoryDisplayName } from '@/constants/categories';
 import { useTranslation } from 'react-i18next';
 
+import { formatPercent } from '@/lib/format';
 const COLORS = {
   card: '#FFFFFF',
   navy: '#0F172A',
@@ -54,7 +55,7 @@ function PredictionAccuracySectionInner({ data }: Props) {
               {categoryDisplayName(cat.category)}
             </Text>
             <Text style={[styles.predValue, { color: colors.muted }]}>
-              {(cat.mape * 100).toFixed(1)}%
+              {formatPercent(cat.mape * 100)}
             </Text>
             <Text style={[styles.predValue, { color: r2Color, fontWeight: fontWeight.bold }]}>
               {cat.r2.toFixed(2)}

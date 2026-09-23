@@ -90,10 +90,30 @@ describe('RealisedPLSection', () => {
         loading={false}
       />,
     );
-    expect(screen.getByText('—')).toBeTruthy();
+    // TWO dashes: the row AND the headline. With every sale excluded the total
+    // is unknown, not zero — it rendered a green "€0,00" (walked on Android
+    // 2026-09-23), which is a result where there is none.
+    expect(screen.getAllByText('—').length).toBe(2);
+    expect(screen.queryByText(/€0[.,]00/)).toBeNull();
     // Twice on purpose: once as the excluded-count line, once on the row —
     // getByText would throw on the ambiguity rather than pass.
     expect(screen.getAllByText(/postage not recorded/i).length).toBe(2);
+    // Singular, not "1 sale(s)".
+    expect(screen.getByText(/^1 sale excluded — postage not recorded$/)).toBeTruthy();
+  });
+
+  it('pluralises the excluded count', () => {
+    render(
+      <RealisedPLSection
+        data={payload({
+          count: 3,
+          sales: [sale({ id: 'a', shipping_known: false, profit: null }), sale({ id: 'b', shipping_known: false, profit: null }), sale({ id: 'c' })],
+          sales_without_shipping: 2,
+        })}
+        loading={false}
+      />,
+    );
+    expect(screen.getByText(/^2 sales excluded — postage not recorded$/)).toBeTruthy();
   });
 
   it('the row shows NET PROCEEDS beside the profit, not the profit twice', () => {

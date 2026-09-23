@@ -571,9 +571,10 @@ async def _record_p2p_sale(conn, listing_id: str, seller_id: str,
             (listing_id, user_id, buyer_marketplace_id, sale_price, currency,
              shipping_cost_actual, platform_fee, payment_processing_fee,
              net_proceeds, status, sold_at)
-        SELECT $1::uuid, $2::uuid, 'sparrow', $3, $4,
+        -- round(...,2): the agreed amount is a float8; see /postage.
+        SELECT $1::uuid, $2::uuid, 'sparrow', round($3::numeric, 2), $4,
                NULL, 0, 0,
-               $3, 'completed', now()
+               round($3::numeric, 2), 'completed', now()
          WHERE NOT EXISTS (
            SELECT 1 FROM public.marketplace_sales WHERE listing_id = $1::uuid
          )
@@ -1098,7 +1099,7 @@ async def create_offer(
             INSERT INTO public.p2p_offers
                 (listing_id, buyer_id, seller_id, amount, currency, status,
                  message, counter_count, created_at, updated_at)
-            VALUES ($1::uuid, $2::uuid, $3::uuid, $4, $5, $6, $7, 0, now(), now())
+            VALUES ($1::uuid, $2::uuid, $3::uuid, round($4::numeric, 2), $5, $6, $7, 0, now(), now())
             RETURNING id, listing_id, buyer_id, seller_id, amount, currency,
                       status, message, counter_count, created_at,
                       seller_confirmed_at, buyer_confirmed_at,
@@ -1431,7 +1432,7 @@ async def respond_to_offer(
                 await conn.execute(
                     """
                     UPDATE public.p2p_offers
-                       SET status = $2, amount = $3,
+                       SET status = $2, amount = round($3::numeric, 2),
                            counter_count = counter_count + 1, updated_at = now()
                      WHERE id = $1::uuid
                     """,
@@ -2146,11 +2147,15 @@ async def set_postage(
             row = await conn.fetchrow(
                 """
                 UPDATE public.marketplace_sales
-                   SET shipping_cost_actual = $2,
-                       net_proceeds = sale_price
+                   -- round(..., 2): `amount` binds as a float8, and a NUMERIC
+                   -- column stores a float's exact binary value — 4.95 landed
+                   -- as 4.95000000000000017763… and net_proceeds as
+                   -- 55.04999999… (measured 2026-09-23). Money is cents.
+                   SET shipping_cost_actual = round($2::numeric, 2),
+                       net_proceeds = round(sale_price
                                       - COALESCE(platform_fee, 0)
                                       - COALESCE(payment_processing_fee, 0)
-                                      - $2,
+                                      - round($2::numeric, 2), 2),
                        updated_at = now()
                  WHERE listing_id = $1::uuid AND user_id = $3::uuid
              RETURNING sale_price, net_proceeds, shipping_cost_actual, currency

@@ -12,7 +12,7 @@ import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { fmtCurrency } from '@/lib/format';
+import { fmtCurrency, formatPercent } from '@/lib/format';
 import { radius, text, fontWeight, shadow } from '@/theme/tokens';
 import { categoryDisplayName } from '@/constants/categories';
 import { useTranslation } from 'react-i18next';
@@ -39,6 +39,9 @@ interface CategoryStat {
   max_item_value: number | null;
   change_7d: number;
   change_7d_pct: number;
+  /** False when no item in the category has a price from 7 days ago, so there
+   *  is nothing to compare. Absent on servers before 2026-09-23. */
+  change_7d_known?: boolean;
   trend: string;
 }
 
@@ -83,7 +86,7 @@ function CategoryPerformanceSectionInner({
             style={[styles.catStatRow, { borderBottomColor: colors.border }]}
             onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled }); router.push(`/categories/${encodeURIComponent(cat.category)}` as Href); }}
             accessibilityRole="button"
-            accessibilityLabel={`${categoryDisplayName(cat.category)}: ${cat.item_count} items, ${fmtCurrency(cat.total_value, settings)}, 7d ${cat.trend}`}
+            accessibilityLabel={`${categoryDisplayName(cat.category)}: ${cat.item_count} items, ${fmtCurrency(cat.total_value, settings)}${cat.change_7d_known !== false ? `, 7d ${cat.trend}` : ''}`}
           >
             <View style={styles.catStatLeft}>
               <View style={styles.catStatNameRow}>
@@ -114,12 +117,17 @@ function CategoryPerformanceSectionInner({
               <Text style={[styles.catStatValue, { color: colors.text }]}>
                 {fmtCurrency(cat.total_value, settings)}
               </Text>
-              <View style={styles.catStatTrend}>
-                <Ionicons name={trendIcon} size={12} color={trendColor} />
-                <Text style={[styles.catStatPct, { color: trendColor }]}>
-                  {cat.change_7d_pct > 0 ? '+' : ''}{cat.change_7d_pct.toFixed(1)}%
-                </Text>
-              </View>
+              {/* No 7-day comparison → no figure. It read "+100.0%" for every
+                  category without price history (the server counted the whole
+                  value as change); a trend we cannot measure is not shown. */}
+              {cat.change_7d_known !== false ? (
+                <View style={styles.catStatTrend}>
+                  <Ionicons name={trendIcon} size={12} color={trendColor} />
+                  <Text style={[styles.catStatPct, { color: trendColor }]}>
+                    {formatPercent(cat.change_7d_pct, { sign: true })}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           </AnimatedPressable>
         );

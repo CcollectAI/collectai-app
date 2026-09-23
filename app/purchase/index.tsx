@@ -25,7 +25,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useSettings } from "@/lib/settings";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, formatPercent } from "@/lib/format";
 import { collectorsApi } from "@/api/collectorsApi";
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { useFollowedCategories } from "@/hooks/useFollowedCategories";
@@ -648,7 +648,7 @@ function AgentHubScreen() {
                       </Text>
                       {deal.priceVsQ50Pct != null && deal.priceVsQ50Pct < 0 && (
                         <Text style={[styles.dealDiscount, { color: colors.success }]}>
-                          {Math.abs(deal.priceVsQ50Pct).toFixed(0)}% below
+                          {formatPercent(Math.abs(deal.priceVsQ50Pct), { decimals: 0 })} below
                         </Text>
                       )}
                     </View>

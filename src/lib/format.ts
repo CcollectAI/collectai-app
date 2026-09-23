@@ -200,6 +200,36 @@ export function formatPrice(amount: number | null | undefined, currency: Currenc
 }
 
 /**
+ * The ONE percentage formatter, on the SAME locale as money.
+ *
+ * Percentages were hand-built with `.toFixed(1)}%` in ~20 places, and toFixed
+ * always prints a dot. Money follows the member's number locale, so a Dutch
+ * reader got "€60,00" beside "+18.9%" on one screen (walked on Android
+ * 2026-09-23). This formats the number through the same cached Intl formatter
+ * `money()` uses. Sign rules match money: the sign leads, an ASCII hyphen for
+ * a loss, and `sign: true` adds "+" to a gain.
+ *
+ * `npm run check:percent-format` fails on a hand-built `toFixed(...)%`.
+ */
+export function formatPercent(
+  value: number | null | undefined,
+  opts?: { decimals?: number; sign?: boolean; locale?: NumberLocale },
+): string {
+  if (value == null || !Number.isFinite(value)) return '—';
+  const d = opts?.decimals ?? 1;
+  const loc = opts?.locale ?? _activeNumberLocale ?? 'en-US';
+  const body = getFormatter(loc, {
+    style: 'decimal',
+    minimumFractionDigits: d,
+    maximumFractionDigits: d,
+  }).format(Math.abs(value));
+  // A value that ROUNDS to zero gets no sign: "+0,0%" claims a direction.
+  const rounded = Number(Math.abs(value).toFixed(d));
+  const sign = value < 0 && rounded !== 0 ? '-' : value > 0 && rounded !== 0 && opts?.sign ? '+' : '';
+  return `${sign}${body}%`;
+}
+
+/**
  * "We have no price" vs "this is worth nothing" are different facts, and the
  * intake pipeline collapses both to 0 (an ISBN scan with no market comps saves
  * estimated_value = 0). Showing "€ 0" reads as *worthless* when it means

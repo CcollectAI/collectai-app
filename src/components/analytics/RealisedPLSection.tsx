@@ -56,6 +56,12 @@ function RealisedPLSectionInner({ data, loading }: Props) {
 
   const hasSales = data.count > 0;
   const excluded = data.sales_without_cost_basis + data.sales_without_shipping;
+  // The server sums profit over sales with BOTH a cost basis and a postage
+  // figure, and returns 0.0 when there are none. Rendered as-is that was a
+  // green "Profit €0,00" over "1 sale excluded" (walked on Android
+  // 2026-09-23): zero is a result, and here there is no result. The server
+  // keeps 0.0 for builds that expect a number; this is where it is read.
+  const profitKnown = data.sales.some((s) => s.cost_basis_known && s.shipping_known);
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -83,10 +89,14 @@ function RealisedPLSectionInner({ data, loading }: Props) {
               <Text
                 style={[
                   styles.totalValue,
-                  { color: data.total_profit >= 0 ? colors.success : colors.danger },
+                  {
+                    color: !profitKnown
+                      ? colors.muted
+                      : data.total_profit >= 0 ? colors.success : colors.danger,
+                  },
                 ]}
               >
-                {fmtCurrency(data.total_profit, settings, { cents: true })}
+                {profitKnown ? fmtCurrency(data.total_profit, settings, { cents: true }) : '—'}
               </Text>
             </View>
             <View style={styles.total}>
@@ -103,18 +113,18 @@ function RealisedPLSectionInner({ data, loading }: Props) {
               the Positions card follows for items with no purchase price. */}
           {excluded > 0 ? (
             <Text style={[styles.caveat, { color: colors.muted }]}>
+              {/* _one / _many chosen here, the house pattern (home.estimated_share_*):
+                  "1 sale(s) excluded" was the old single string. */}
               {data.sales_without_cost_basis > 0
-                ? t('analytics.sales_without_basis', {
-                    defaultValue: '{{count}} sale(s) excluded — no purchase price recorded',
-                    count: data.sales_without_cost_basis,
-                  })
+                ? data.sales_without_cost_basis === 1
+                  ? t('analytics.sales_without_basis_one')
+                  : t('analytics.sales_without_basis_many', { count: data.sales_without_cost_basis })
                 : ''}
               {data.sales_without_cost_basis > 0 && data.sales_without_shipping > 0 ? ' · ' : ''}
               {data.sales_without_shipping > 0
-                ? t('analytics.sales_without_postage', {
-                    defaultValue: '{{count}} sale(s) excluded — postage not recorded',
-                    count: data.sales_without_shipping,
-                  })
+                ? data.sales_without_shipping === 1
+                  ? t('analytics.sales_without_postage_one')
+                  : t('analytics.sales_without_postage_many', { count: data.sales_without_shipping })
                 : ''}
             </Text>
           ) : null}

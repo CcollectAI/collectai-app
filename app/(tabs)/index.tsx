@@ -52,7 +52,7 @@ import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { useTranslation } from "react-i18next";
-import { fmtCurrency } from '@/lib/format';
+import { fmtCurrency, formatPercent } from '@/lib/format';
 import { useToast } from "@/components/Toast";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
 import { collectorsApi } from "@/api/collectorsApi";
@@ -94,8 +94,7 @@ const ADD_BANNER_MAX_ITEMS = 3;
 
 function formatPct(p?: number): string {
   if (p === undefined || p === null || Number.isNaN(p)) return "—";
-  const sign = p > 0 ? "+" : "";
-  return `${sign}${(p * 100).toFixed(2)}%`;
+  return formatPercent(p * 100, { decimals: 2, sign: true });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

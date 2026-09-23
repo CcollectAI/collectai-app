@@ -1170,7 +1170,14 @@
     "carrier_load_failed": "배송사 목록을 불러오지 못했습니다.",
     "save_tracking": "운송장 번호 저장",
     "tracking_explainer": "구매자가 배송을 확인할 수 있도록 표시됩니다. Sparrow는 이를 검증하지 않으며 거래를 완료하지도 않습니다 — 양쪽이 직접 확인해야 합니다.",
-    "postcode_carrier_note": "이 배송사는 추적 페이지를 열려면 배송지 우편번호가 필요하지만 Sparrow는 이를 보관하지 않습니다. 구매자에게는 링크 대신 조회용 코드가 표시됩니다."
+    "postcode_carrier_note": "이 배송사는 추적 페이지를 열려면 배송지 우편번호가 필요하지만 Sparrow는 이를 보관하지 않습니다. 구매자에게는 링크 대신 조회용 코드가 표시됩니다.",
+    "pct_of_asking": "희망가 {{price}} 대비 {{pct}}",
+    "at_asking": "희망가 {{price}}와 동일",
+    "pct_of_asking_short": "희망가 대비 {{pct}}",
+    "at_asking_short": "희망가와 동일",
+    "step_postage_title": "배송비 기록",
+    "step_postage_now": "발송 비용이 얼마였나요? 입력하기 전까지 수익은 알 수 없음으로 표시됩니다.",
+    "step_postage_done": "기록됨. 실현 손익에 반영됩니다."
   },
   "item_attrs": {
     "case_size": "케이스 크기",
@@ -1606,8 +1613,6 @@
     "realised_pl_empty": "아직 판매한 항목이 없습니다. 판매를 기록하면 구매가와 수수료를 포함한 실제 수익이 여기에 표시됩니다. 추정치가 아닙니다.",
     "realised_profit": "수익",
     "net_proceeds": "순수익",
-    "sales_without_basis": "{{count}}건 제외 — 구매가가 기록되지 않음",
-    "sales_without_postage": "{{count}}건 제외 — 배송비가 기록되지 않음",
     "basis_unknown": "구매가 없음",
     "postage_unknown": "배송비 미기록",
     "tier_diamond": "다이아몬드",
@@ -1620,7 +1625,11 @@
     "tier_coverage": "희귀도는 {{rarityTotal}}개 중 {{rarityKnown}}개 · 세트 완성도는 {{setsTotal}}개 중 {{setsKnown}}개 기준",
     "tier_unranked_hint": "아직 순위가 없습니다. 카탈로그에 등록된 세트의 아이템을 추가하면 희귀도와 완성도 점수가 만들어집니다.",
     "concentration_high": "높은 집중도 — {{category}}이(가) 가치의 대부분을 차지합니다",
-    "concentration_medium": "{{category}}에 다소 집중되어 있습니다"
+    "concentration_medium": "{{category}}에 다소 집중되어 있습니다",
+    "sales_without_basis_one": "1건 제외 — 구매가가 기록되지 않음",
+    "sales_without_basis_many": "{{count}}건 제외 — 구매가가 기록되지 않음",
+    "sales_without_postage_one": "1건 제외 — 배송비가 기록되지 않음",
+    "sales_without_postage_many": "{{count}}건 제외 — 배송비가 기록되지 않음"
   },
   "guide": {
     "no_guide_yet": "이 카테고리의 가이드가 아직 없습니다",

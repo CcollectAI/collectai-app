@@ -1170,7 +1170,14 @@
     "carrier_load_failed": "配送業者の一覧を読み込めませんでした。",
     "save_tracking": "追跡番号を保存",
     "tracking_explainer": "購入者が荷物を追跡するために表示されます。Sparrow は内容を確認せず、取引も完了しません — 双方が手動で確認する必要があります。",
-    "postcode_carrier_note": "この配送業者は追跡ページを開くのに配送先の郵便番号が必要ですが、Sparrow は保持していません。購入者にはリンクではなく検索用のコードが表示されます。"
+    "postcode_carrier_note": "この配送業者は追跡ページを開くのに配送先の郵便番号が必要ですが、Sparrow は保持していません。購入者にはリンクではなく検索用のコードが表示されます。",
+    "pct_of_asking": "希望価格 {{price}} の {{pct}}",
+    "at_asking": "希望価格 {{price}} と同額",
+    "pct_of_asking_short": "希望価格の {{pct}}",
+    "at_asking_short": "希望価格と同額",
+    "step_postage_title": "送料を記録",
+    "step_postage_now": "発送にいくらかかりましたか?入力するまで、利益は不明と表示されます。",
+    "step_postage_done": "記録済み。実現損益に反映されます。"
   },
   "item_attrs": {
     "case_size": "ケースサイズ",
@@ -1606,8 +1613,6 @@
     "realised_pl_empty": "まだ販売はありません。販売を記録すると、購入価格や手数料を含めた実際の損益がここに表示されます（推定ではありません）。",
     "realised_profit": "利益",
     "net_proceeds": "手取り額",
-    "sales_without_basis": "{{count}} 件を除外 — 購入価格が未記録",
-    "sales_without_postage": "{{count}} 件を除外 — 送料が未記録",
     "basis_unknown": "購入価格なし",
     "postage_unknown": "送料が未記録",
     "tier_diamond": "ダイヤモンド",
@@ -1620,7 +1625,11 @@
     "tier_coverage": "レアリティは{{rarityTotal}}点中{{rarityKnown}}点 ・ セット完成度は{{setsTotal}}セット中{{setsKnown}}セットに基づきます",
     "tier_unranked_hint": "まだランク外です。カタログ登録済みセットのアイテムを追加すると、レアリティとコンプリート度のスコアが作られます。",
     "concentration_high": "集中度が高い — 価値の大半を{{category}}が占めています",
-    "concentration_medium": "{{category}}にやや集中しています"
+    "concentration_medium": "{{category}}にやや集中しています",
+    "sales_without_basis_one": "1 件を除外 — 購入価格が未記録",
+    "sales_without_basis_many": "{{count}} 件を除外 — 購入価格が未記録",
+    "sales_without_postage_one": "1 件を除外 — 送料が未記録",
+    "sales_without_postage_many": "{{count}} 件を除外 — 送料が未記録"
   },
   "guide": {
     "no_guide_yet": "このカテゴリーのガイドはまだありません",

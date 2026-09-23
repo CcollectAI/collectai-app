@@ -1,5 +1,6 @@
 import type { CurrencyCode } from '@/data/types';
 
+import { formatPercent } from '@/lib/format';
 export type QuickScanPrediction = {
   name?: string;
   estimated_mid?: number;
@@ -42,7 +43,7 @@ export function assessAuthenticity(
   if (prediction.price_band) {
     reasons.push(`Price band: ${prediction.price_band}`);
   }
-  reasons.push(`Model confidence: ${(confidence * 100).toFixed(0)}%`);
+  reasons.push(`Model confidence: ${formatPercent(confidence * 100, { decimals: 0 })}`);
 
   let score = confidence * 100;
   let label: AuthenticityAssessment['label'] = 'Check details';

@@ -1170,7 +1170,14 @@
     "carrier_load_failed": "No se pudo cargar la lista de transportistas.",
     "save_tracking": "Guardar el seguimiento",
     "tracking_explainer": "El comprador lo ve para seguir el paquete. Sparrow no lo comprueba ni completa el intercambio: ambos seguís confirmando a mano.",
-    "postcode_carrier_note": "Este transportista necesita el código postal de entrega para abrir la página de seguimiento, y Sparrow no lo tiene. El comprador verá el código para buscar en vez de un enlace."
+    "postcode_carrier_note": "Este transportista necesita el código postal de entrega para abrir la página de seguimiento, y Sparrow no lo tiene. El comprador verá el código para buscar en vez de un enlace.",
+    "pct_of_asking": "{{pct}} del precio pedido de {{price}}",
+    "at_asking": "Al precio pedido de {{price}}",
+    "pct_of_asking_short": "{{pct}} del precio pedido",
+    "at_asking_short": "Al precio pedido",
+    "step_postage_title": "Registrar gastos de envío",
+    "step_postage_now": "¿Cuánto te costó el envío? Hasta que lo indiques, tu beneficio aparece como desconocido.",
+    "step_postage_done": "Registrado. Cuenta en tu resultado realizado."
   },
   "item_attrs": {
     "case_size": "Tamaño de la caja",
@@ -1606,8 +1613,6 @@
     "realised_pl_empty": "Aún no has vendido nada. Registra una venta y aquí verás lo que has ganado de verdad: precio de compra y comisiones incluidos, no una estimación.",
     "realised_profit": "Beneficio",
     "net_proceeds": "Ingresos netos",
-    "sales_without_basis": "{{count}} venta(s) excluida(s): sin precio de compra registrado",
-    "sales_without_postage": "{{count}} venta(s) excluida(s): gastos de envío no registrados",
     "basis_unknown": "sin precio de compra",
     "postage_unknown": "gastos de envío no registrados",
     "tier_diamond": "Diamante",
@@ -1620,7 +1625,11 @@
     "tier_coverage": "Rareza a partir de {{rarityKnown}} de {{rarityTotal}} objetos · finalización de sets a partir de {{setsKnown}} de {{setsTotal}} sets",
     "tier_unranked_hint": "Aún sin clasificar: añade objetos de sets catalogados para construir una puntuación de rareza y completitud.",
     "concentration_high": "Alta concentración — {{category}} concentra la mayor parte de tu valor",
-    "concentration_medium": "Moderadamente concentrado en {{category}}"
+    "concentration_medium": "Moderadamente concentrado en {{category}}",
+    "sales_without_basis_one": "1 venta excluida: sin precio de compra registrado",
+    "sales_without_basis_many": "{{count}} ventas excluidas: sin precio de compra registrado",
+    "sales_without_postage_one": "1 venta excluida: gastos de envío no registrados",
+    "sales_without_postage_many": "{{count}} ventas excluidas: gastos de envío no registrados"
   },
   "guide": {
     "no_guide_yet": "Aún no hay guía para esta categoría",

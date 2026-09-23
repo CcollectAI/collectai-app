@@ -21,7 +21,7 @@ import { collectorsApi } from '@/api/collectorsApi';
 import type { TopMover } from '@/api/dataMoatApi';
 import { useFollowedCategories } from '@/hooks/useFollowedCategories';
 import { useBillingLimits } from '@/hooks/useBillingLimits';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, formatPercent } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import logger from '@/utils/logger';
@@ -255,8 +255,7 @@ function MarketMoversSectionInner() {
                   that the move was EUR 1.77. */}
               <View style={styles.deltaCol}>
                 <Text style={[styles.delta, { color: c }]}>
-                  {up ? '+' : ''}
-                  {delta.toFixed(1)}%
+                  {formatPercent(delta, { sign: true })}
                 </Text>
                 {typeof deltaEur === 'number' ? (
                   <Text style={[styles.deltaSub, { color: c }]}>

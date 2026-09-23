@@ -13,6 +13,7 @@ Endpoints:
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
@@ -130,6 +131,23 @@ async def _check_not_blocked(
         raise error_response(403, "Cannot message this user", code=ErrorCode.FORBIDDEN)
 
 
+async def _act_as_member(conn: asyncpg.Connection, user_id: str) -> None:
+    """Make auth.uid() return `user_id` for the rest of the CURRENT transaction.
+
+    `v_chat_inbox_v1` filters `WHERE p.user_id = auth.uid()` (migration
+    20260917). This router reads it as `postgres`, where auth.uid() is NULL, so
+    the view returned NO rows to the server at all: /chat/threads was always
+    empty and /chat/unread-count always 0, for every member (measured
+    2026-09-23: 0 rows as postgres, 1 as the member). `is_local = true` scopes
+    the setting to the transaction, so a pooled connection never carries one
+    member's identity into the next request. Call inside `conn.transaction()`.
+    """
+    await conn.execute(
+        "SELECT set_config('request.jwt.claims', $1, true)",
+        json.dumps({"sub": user_id, "role": "authenticated"}),
+    )
+
+
 async def _get_thread_participant(
     conn: asyncpg.Connection,
     thread_id: str,
@@ -178,7 +196,8 @@ async def list_threads(
         return {"threads": [], "total_count": 0}
 
     try:
-        async with pool.acquire() as conn:
+        async with pool.acquire() as conn, conn.transaction():
+            await _act_as_member(conn, user_id)
             rows = await conn.fetch(
                 """
                 SELECT thread_id, user_id, other_user_id, other_display_name, other_avatar_url, last_message_at, last_message_body, unread_count, created_at, updated_at
@@ -561,7 +580,8 @@ async def get_unread_count(
         return {"unread_count": 0}
 
     try:
-        async with pool.acquire() as conn:
+        async with pool.acquire() as conn, conn.transaction():
+            await _act_as_member(conn, user_id)
             count = await conn.fetchval(
                 """
                 SELECT COUNT(*) FROM v_chat_inbox_v1

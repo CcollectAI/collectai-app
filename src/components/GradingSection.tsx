@@ -20,7 +20,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { fireHaptic, HapticIntent } from "@/haptics";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, formatPercent } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 
 // ── Exported types ──────────────────────────────────────────────────────
@@ -278,7 +278,7 @@ function GradingSectionInner({
                       <Text style={[s.gradingPopTableCell, { color: theme.text, flex: 1, fontWeight: '600' }]}>{entry.grade}</Text>
                       <Text style={[s.gradingPopTableCell, { color: theme.text, flex: 1, textAlign: 'right' }]}>{formatNumber(entry.count)}</Text>
                       <Text style={[s.gradingPopTableCell, { color: theme.muted, flex: 1, textAlign: 'right' }]}>
-                        {entry.pct_of_total != null ? `${entry.pct_of_total.toFixed(1)}%` : '-'}
+                        {formatPercent(entry.pct_of_total)}
                       </Text>
                     </View>
                   ))}

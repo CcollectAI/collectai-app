@@ -90,8 +90,20 @@ jest.mock('../../src/theme/tokens', () => ({
   },
 }));
 
+// formatPercent is stubbed too (en-US output of the real one): PredictionAccuracy
+// Section formats through it since 2026-09-23, and this whole-module mock
+// otherwise dropped it ("is not a function"). A stub, not requireActual: the
+// real module loads ./fx and the logger, which changed how the icon mock
+// rendered in unrelated snapshots.
 jest.mock('../../src/lib/format', () => ({
   formatPrice: (price: number, currency: string) => `${currency} ${price}`,
+  formatPercent: (v: number | null | undefined, o?: { decimals?: number; sign?: boolean }) => {
+    if (v == null || !Number.isFinite(v)) return '—';
+    const d = o?.decimals ?? 1;
+    const r = Number(Math.abs(v).toFixed(d));
+    const sign = v < 0 && r !== 0 ? '-' : v > 0 && r !== 0 && o?.sign ? '+' : '';
+    return `${sign}${Math.abs(v).toFixed(d)}%`;
+  },
 }));
 
 jest.mock('../../src/lib/timeAgo', () => ({

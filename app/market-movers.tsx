@@ -21,7 +21,7 @@ import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
 import type { TopMover } from '@/api/dataMoatApi';
 import { useFollowedCategories } from '@/hooks/useFollowedCategories';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, formatPercent } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { radius, text, fontWeight } from '@/theme/tokens';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
@@ -219,8 +219,7 @@ function MarketMoversScreen() {
               number the list is sorted on is the one that reads first. */}
           <View style={styles.deltaCol}>
             <Text style={[rank === 'pct' ? styles.delta : styles.deltaSub, { color: c }]}>
-              {up ? '+' : ''}
-              {delta.toFixed(1)}%
+              {formatPercent(delta, { sign: true })}
             </Text>
             {typeof deltaEur === 'number' ? (
               <Text style={[rank === 'pct' ? styles.deltaSub : styles.delta, { color: c }]}>

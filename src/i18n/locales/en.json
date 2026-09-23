@@ -1170,7 +1170,14 @@
     "carrier_load_failed": "Couldn't load the carrier list.",
     "save_tracking": "Save tracking",
     "tracking_explainer": "The buyer sees this so they can follow the parcel. Sparrow doesn't check it and it doesn't complete the trade — you both still confirm by hand.",
-    "postcode_carrier_note": "This carrier needs the delivery postcode to open a tracking page, which Sparrow doesn't hold. The buyer will see the code to search with instead of a link."
+    "postcode_carrier_note": "This carrier needs the delivery postcode to open a tracking page, which Sparrow doesn't hold. The buyer will see the code to search with instead of a link.",
+    "pct_of_asking": "{{pct}} of {{price}} asking",
+    "at_asking": "At the {{price}} asking price",
+    "pct_of_asking_short": "{{pct}} of asking",
+    "at_asking_short": "At asking",
+    "step_postage_title": "Record postage",
+    "step_postage_now": "What did posting it cost you? Until you say, your profit is shown as unknown.",
+    "step_postage_done": "Recorded. It counts in your realised P/L."
   },
   "item_attrs": {
     "case_size": "Case Size",
@@ -1606,8 +1613,6 @@
     "realised_pl_empty": "Nothing sold yet. Record a sale and this shows what you actually made — purchase price and fees included, not an estimate.",
     "realised_profit": "Profit",
     "net_proceeds": "Net proceeds",
-    "sales_without_basis": "{{count}} sale(s) excluded — no purchase price recorded",
-    "sales_without_postage": "{{count}} sale(s) excluded — postage not recorded",
     "basis_unknown": "no purchase price",
     "postage_unknown": "postage not recorded",
     "tier_diamond": "Diamond",
@@ -1620,7 +1625,11 @@
     "tier_coverage": "Rarity from {{rarityKnown}} of {{rarityTotal}} items · set completion from {{setsKnown}} of {{setsTotal}} sets",
     "tier_unranked_hint": "Not ranked yet — add items from catalogued sets to build a rarity and completeness score.",
     "concentration_high": "High concentration — {{category}} carries most of your value",
-    "concentration_medium": "Moderately concentrated in {{category}}"
+    "concentration_medium": "Moderately concentrated in {{category}}",
+    "sales_without_basis_one": "1 sale excluded — no purchase price recorded",
+    "sales_without_basis_many": "{{count}} sales excluded — no purchase price recorded",
+    "sales_without_postage_one": "1 sale excluded — postage not recorded",
+    "sales_without_postage_many": "{{count}} sales excluded — postage not recorded"
   },
   "guide": {
     "no_guide_yet": "No guide for this category yet",

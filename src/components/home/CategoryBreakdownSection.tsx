@@ -12,6 +12,7 @@ import { SkeletonList } from "@/components/Skeleton";
 import { radius, text as textToken, fontWeight as fw } from "@/theme/tokens";
 import { useTranslation } from "react-i18next";
 
+import { formatPercent } from '@/lib/format';
 // ── Types ──────────────────────────────────────────────────────────────
 
 export type CategoryBreakdownItem = {
@@ -135,7 +136,7 @@ function CategoryBreakdownSectionInner({
                 style={s.breakdownBarRow}
                 onPress={() => onCategoryPress?.(cat.category)}
                 accessibilityRole="button"
-                accessibilityLabel={`${displayName(cat.category)}: ${cat.percentage.toFixed(0)}% of portfolio. Tap to view category.`}
+                accessibilityLabel={`${displayName(cat.category)}: ${formatPercent(cat.percentage, { decimals: 0 })} of portfolio. Tap to view category.`}
               >
                 <Text style={[s.breakdownBarLabel, { color: theme.text }]} numberOfLines={1}>
                   {displayName(cat.category)}
@@ -149,7 +150,7 @@ function CategoryBreakdownSectionInner({
                   />
                 </View>
                 <Text style={[s.breakdownBarPct, { color: theme.muted }]}>
-                  {cat.percentage.toFixed(0)}%
+                  {formatPercent(cat.percentage, { decimals: 0 })}
                 </Text>
               </AnimatedPressable>
             );
@@ -168,7 +169,7 @@ function CategoryBreakdownSectionInner({
                 style={[s.breakdownCategoryCard, { backgroundColor: theme.background, borderColor: theme.border }]}
                 onPress={() => onCategoryPress?.(cat.category)}
                 accessibilityRole="button"
-                accessibilityLabel={`${displayName(cat.category)}: ${cat.item_count} item${cat.item_count !== 1 ? "s" : ""}, ${formatPrice(cat.total_value)}, ${cat.percentage.toFixed(0)}%. Tap to view category.`}
+                accessibilityLabel={`${displayName(cat.category)}: ${cat.item_count} item${cat.item_count !== 1 ? "s" : ""}, ${formatPrice(cat.total_value)}, ${formatPercent(cat.percentage, { decimals: 0 })}. Tap to view category.`}
               >
                 <Text style={[s.breakdownCatName, { color: theme.text }]} numberOfLines={1}>
                   {displayName(cat.category)}
@@ -181,7 +182,7 @@ function CategoryBreakdownSectionInner({
                 </Text>
                 <View style={[s.breakdownPctBadge, { backgroundColor: theme.accent + "15" }]}>
                   <Text style={[s.breakdownPctBadgeText, { color: theme.accent }]}>
-                    {cat.percentage.toFixed(0)}%
+                    {formatPercent(cat.percentage, { decimals: 0 })}
                   </Text>
                 </View>
               </AnimatedPressable>

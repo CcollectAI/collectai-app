@@ -6,7 +6,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, formatPercent } from '@/lib/format';
 import { radius, text, fontWeight, gap } from '@/theme/tokens';
 import type { CurrencyCode } from '@/data/types';
 import { categoryDisplayName } from '@/constants/categories';
@@ -58,7 +58,7 @@ export const PredictionCompsCard = React.memo(function PredictionCompsCard({
                 {formatPrice(comp.predicted, currency)}
               </Text>
               <Text style={{ fontSize: text.md, fontWeight: fontWeight.bold, color: isOver ? colors.success : colors.danger }}>
-                {formatPrice(comp.actual, currency)} ({isOver ? '+' : ''}{diffPct.toFixed(0)}%)
+                {formatPrice(comp.actual, currency)} ({formatPercent(diffPct, { decimals: 0, sign: true })})
               </Text>
             </View>
           </View>

@@ -52,11 +52,12 @@ import { useSettings } from '@/lib/settings';
 import { useAsync } from '@/hooks/useAsync';
 import { useToast } from '@/components/Toast';
 import { fireHaptic, HapticIntent } from '@/haptics';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, formatPercent } from '@/lib/format';
 import { convertCurrency } from '@/lib/fx';
 import type { CurrencyCode } from '@/data/types';
 import { timeAgo } from '@/lib/timeAgo';
 import { collectorsApi } from '@/api/collectorsApi';
+import { PostageSheet } from '@/components/offers/PostageSheet';
 import type { P2POffer } from '@/api/p2pApi';
 import { radius, text as textToken, fontWeight, shadow } from '@/theme/tokens';
 import logger from '@/utils/logger';
@@ -78,6 +79,7 @@ function TradeScreen() {
   const { offerId } = useLocalSearchParams<{ offerId?: string }>();
 
   const [busy, setBusy] = useState(false);
+  const [postageOpen, setPostageOpen] = useState(false);
   const [counterOpen, setCounterOpen] = useState(false);
   const [settleOpen, setSettleOpen] = useState(false);
 
@@ -223,6 +225,22 @@ function TradeScreen() {
         ),
         detail: 'Both sides confirm. That is what completes the trade.',
       },
+      // Seller only, and only once a sale row exists: `postage_recorded` is a
+      // TRI-STATE — true answered, false unknown (offer the sheet), null no sale
+      // row (a trade from before completion recorded one; submitting would 404).
+      // This screen had no postage step, so from the default "All" tab —
+      // whose cards open here — realised P/L's missing number could not be
+      // entered (walked on Android 2026-09-23).
+      ...(!offer.i_am_buyer && done && offer.postage_recorded != null
+        ? [{
+            key: 'postage',
+            title: t('offers.step_postage_title'),
+            state: state(offer.postage_recorded === true, offer.postage_recorded === false),
+            detail: offer.postage_recorded === true
+              ? t('offers.step_postage_done')
+              : t('offers.step_postage_now'),
+          }]
+        : []),
       {
         key: 'rate',
         title: offer.i_am_buyer ? 'Rate the seller' : 'Rate the buyer',
@@ -232,7 +250,7 @@ function TradeScreen() {
           : 'Unlocks once you have both confirmed.',
       },
     ];
-  }, [offer]);
+  }, [offer, t]);
 
   const openListing = useCallback(() => {
     if (!offer) return;
@@ -313,7 +331,9 @@ function TradeScreen() {
                     an unstated basis is a number nobody can check. */}
                 {pct !== null ? (
                   <Text style={[styles.amountSub, { color: colors.muted }]}>
-                    {'  '}{pct > 0 ? '+' : ''}{pct}% of asking
+                    {'  '}{pct === 0
+                      ? t('offers.at_asking_short')
+                      : t('offers.pct_of_asking_short', { pct: formatPercent(pct, { decimals: 0, sign: true }) })}
                   </Text>
                 ) : null}
               </Text>
@@ -515,6 +535,22 @@ function TradeScreen() {
                 </View>
               ) : null}
 
+              {s.key === 'postage' && s.state === 'now' ? (
+                <View style={styles.actions}>
+                  <AnimatedPressable
+                    onPress={() => setPostageOpen(true)}
+                    disabled={busy}
+                    style={[styles.btn, { backgroundColor: colors.accent }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('offers.add_postage', { defaultValue: 'Add postage' })}
+                  >
+                    <Text style={[styles.btnText, { color: colors.accentText }]}>
+                      {t('offers.add_postage', { defaultValue: 'Add postage' })}
+                    </Text>
+                  </AnimatedPressable>
+                </View>
+              ) : null}
+
               {s.key === 'rate' && s.state === 'now' ? (
                 <View style={styles.actions}>
                   <AnimatedPressable
@@ -586,6 +622,19 @@ function TradeScreen() {
         amountLabel={viewerPrice(offer.amount)}
         offerId={offer.id}
         colors={colors}
+      />
+
+      {/* The same sheet the offers list uses (src/components/offers/PostageSheet). */}
+      <PostageSheet
+        visible={postageOpen}
+        onClose={() => setPostageOpen(false)}
+        onSave={(amount) => {
+          setPostageOpen(false);
+          act(
+            () => collectorsApi.p2pSetPostage(offer.id, amount),
+            t('offers.postage_saved', { defaultValue: 'Postage recorded' }),
+          );
+        }}
       />
 
       {/* QuickNavBar reserves its own space (normal flex row, not absolute), so

@@ -1170,7 +1170,14 @@
     "carrier_load_failed": "Impossible de charger la liste des transporteurs.",
     "save_tracking": "Enregistrer le suivi",
     "tracking_explainer": "L'acheteur le voit pour suivre le colis. Sparrow ne le vérifie pas et cela ne finalise pas l'échange — vous confirmez tous les deux manuellement.",
-    "postcode_carrier_note": "Ce transporteur a besoin du code postal de livraison pour ouvrir une page de suivi, et Sparrow ne le détient pas. L'acheteur verra le code à rechercher plutôt qu'un lien."
+    "postcode_carrier_note": "Ce transporteur a besoin du code postal de livraison pour ouvrir une page de suivi, et Sparrow ne le détient pas. L'acheteur verra le code à rechercher plutôt qu'un lien.",
+    "pct_of_asking": "{{pct}} du prix demandé de {{price}}",
+    "at_asking": "Au prix demandé de {{price}}",
+    "pct_of_asking_short": "{{pct}} du prix demandé",
+    "at_asking_short": "Au prix demandé",
+    "step_postage_title": "Indiquer les frais de port",
+    "step_postage_now": "Combien t'a coûté l'envoi ? Tant que tu ne l'indiques pas, ton bénéfice reste inconnu.",
+    "step_postage_done": "Enregistré. Pris en compte dans ton résultat réalisé."
   },
   "item_attrs": {
     "case_size": "Taille du boîtier",
@@ -1606,8 +1613,6 @@
     "realised_pl_empty": "Rien de vendu pour l'instant. Enregistrez une vente et vous verrez ici ce que vous avez réellement gagné — prix d'achat et frais compris, pas une estimation.",
     "realised_profit": "Bénéfice",
     "net_proceeds": "Produit net",
-    "sales_without_basis": "{{count}} vente(s) exclue(s) — aucun prix d'achat enregistré",
-    "sales_without_postage": "{{count}} vente(s) exclue(s) — frais de port non enregistrés",
     "basis_unknown": "pas de prix d'achat",
     "postage_unknown": "frais de port non enregistrés",
     "tier_diamond": "Diamant",
@@ -1620,7 +1625,11 @@
     "tier_coverage": "Rareté sur {{rarityKnown}} des {{rarityTotal}} objets · complétude des sets sur {{setsKnown}} des {{setsTotal}} sets",
     "tier_unranked_hint": "Pas encore classé — ajoutez des objets issus de sets catalogués pour construire un score de rareté et de complétude.",
     "concentration_high": "Forte concentration — {{category}} représente l'essentiel de ta valeur",
-    "concentration_medium": "Modérément concentré sur {{category}}"
+    "concentration_medium": "Modérément concentré sur {{category}}",
+    "sales_without_basis_one": "1 vente exclue — aucun prix d'achat enregistré",
+    "sales_without_basis_many": "{{count}} ventes exclues — aucun prix d'achat enregistré",
+    "sales_without_postage_one": "1 vente exclue — frais de port non enregistrés",
+    "sales_without_postage_many": "{{count}} ventes exclues — frais de port non enregistrés"
   },
   "guide": {
     "no_guide_yet": "Pas encore de guide pour cette catégorie",

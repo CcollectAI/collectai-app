@@ -12,6 +12,7 @@ import type { Currency } from "@/lib/settings";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useTranslation } from 'react-i18next';
 
+import { formatPercent } from '@/lib/format';
 // ── Props ──────────────────────────────────────────────────────────────
 
 const TIER_COLORS: Record<string, string> = {
@@ -57,8 +58,7 @@ interface PortfolioValueHeaderProps {
 
 function formatPct(p?: number): string {
   if (p === undefined || p === null || Number.isNaN(p)) return "—";
-  const sign = p > 0 ? "+" : "";
-  return `${sign}${(p * 100).toFixed(2)}%`;
+  return formatPercent(p * 100, { decimals: 2, sign: true });
 }
 
 function formatDelta(n: number, currency: Currency, fp: PortfolioValueHeaderProps["formatPrice"]): string {

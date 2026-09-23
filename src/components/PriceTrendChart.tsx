@@ -24,7 +24,7 @@ import Svg, { Path, Line, Circle } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useItemPriceTrend } from "@/hooks/useItemPriceTrend";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, formatPercent } from "@/lib/format";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { radius, text as textTokens, fontWeight, gap } from "@/theme/tokens";
@@ -195,8 +195,7 @@ function PriceTrendChartInner({ itemId }: PriceTrendChartProps) {
           <View style={[styles.directionBadge, { backgroundColor: directionColor + "15" }]}>
             <Ionicons name={directionIcon as keyof typeof Ionicons.glyphMap} size={14} color={directionColor} />
             <Text style={[styles.directionText, { color: directionColor }]}>
-              {pctChange > 0 ? "+" : ""}
-              {pctChange.toFixed(1)}%
+              {formatPercent(pctChange, { sign: true })}
             </Text>
           </View>
         )}

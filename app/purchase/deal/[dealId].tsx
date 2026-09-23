@@ -25,7 +25,7 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useSettings } from "@/lib/settings";
 import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, formatPercent } from "@/lib/format";
 import { collectorsApi } from "@/api/collectorsApi";
 import { useToast } from "@/components/Toast";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
@@ -259,7 +259,7 @@ function DealDetailScreen() {
             <View style={[styles.discountBadge, { backgroundColor: colors.success + "15" }]}>
               <Ionicons name="trending-down" size={14} color={colors.success} />
               <Text style={[styles.discountText, { color: colors.success }]}>
-                {Math.abs(deal.priceVsQ50Pct!).toFixed(1)}% below market median
+                {formatPercent(Math.abs(deal.priceVsQ50Pct!))} below market median
               </Text>
             </View>
           )}

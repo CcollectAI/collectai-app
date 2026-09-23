@@ -45,7 +45,7 @@ import { collectorsApi } from "@/api/collectorsApi";
 import { enrichOnDemand } from "@/api/marketplaceApi";
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import logger from "@/utils/logger";
-import { formatPrice, getCurrencySymbol, isUnpriced, parseMoney, UNPRICED_LABEL } from "@/lib/format";
+import { formatPrice, getCurrencySymbol, isUnpriced, parseMoney, UNPRICED_LABEL, formatPercent } from "@/lib/format";
 import { computeItemDelta } from '@/lib/portfolioAnalytics';
 import { ValueSourceChip } from "@/components/ValueSourceChip";
 import type { CurrencyCode } from "@/data/types";
@@ -1435,7 +1435,7 @@ function ItemDetailScreen() {
                   <Text style={[styles.valuationDelta, { color: tone }]}>
                     {/* currency-ok: both legs converted above, so this is already in settings.currency */}
                     {sign}{formatPrice(Math.abs(delta.pl), settings.currency)}
-                    {' ('}{sign}{Math.abs(delta.pct).toFixed(1)}%{') '}
+                    {' ('}{sign}{formatPercent(Math.abs(delta.pct))}{') '}
                     <Text style={{ color: theme.muted }}>
                       {/* currency-ok: paidInMemberCurrency is converted above */}
                       on {formatPrice(paidInMemberCurrency ?? null, settings.currency)} paid
