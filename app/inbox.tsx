@@ -179,13 +179,17 @@ function InboxScreen() {
     loadInbox();
   }, [loadInbox]);
 
-  // Supabase Realtime: refresh threads on new DM messages
+  // Supabase Realtime: refresh threads on new DM messages.
+  // `chat_messages_v1`, not `dm_messages`: that table no longer exists, and the
+  // realtime publication was empty, so this never fired — the inbox only
+  // refreshed on focus (2026-09-23; migration 20260923_realtime_publish_chat_
+  // messages). RLS scopes delivery to threads the member belongs to.
   useEffect(() => {
     const channel = supabase.channel('inbox-updates')
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'dm_messages',
+        table: 'chat_messages_v1',
       }, () => {
         loadInbox();
       })

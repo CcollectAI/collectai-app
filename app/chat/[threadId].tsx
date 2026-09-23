@@ -221,11 +221,18 @@ function ThreadDetailScreen() {
   useEffect(() => {
     if (!threadId) return;
 
+    // `chat_messages_v1` with ITS columns (user_id, body), mapped exactly as
+    // getThreadMessages maps them. This listened on `dm_messages` — a table that
+    // no longer exists — with the legacy `author_user_id` / `text` / `read_at`
+    // fields, and the realtime publication was empty, so an open thread never
+    // showed the other member's new message until you left and came back
+    // (2026-09-23). The UPDATE listener for read receipts went with it: this
+    // table has no per-message read_at (reads live on chat_thread_reads_v1).
     const channel = supabase.channel(`thread-${threadId}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'dm_messages',
+        table: 'chat_messages_v1',
         filter: `thread_id=eq.${threadId}`,
       }, (payload) => {
         const newMsg = payload.new as Record<string, unknown>;
@@ -234,34 +241,18 @@ function ThreadDetailScreen() {
           if (prev.some((m) => m.id === newMsg.id)) return prev;
           return [...prev, {
             id: newMsg.id as string,
-            threadId: newMsg.thread_id as string,
-            authorUserId: newMsg.author_user_id as string,
-            text: newMsg.text as string,
-            createdAt: newMsg.created_at as string,
-            readAt: (newMsg.read_at as string) ?? null,
+            threadId: (newMsg.thread_id as string | null) ?? threadId,
+            authorUserId: newMsg.user_id as string,
+            text: (newMsg.body as string | null) ?? '',
+            createdAt: (newMsg.created_at as string) ?? new Date().toISOString(),
+            readAt: null,
             localStatus: 'sent',
           }];
         });
         // Mark as read if the new message is from the other user
-        if (newMsg.author_user_id !== currentUserId) {
+        if (newMsg.user_id !== currentUserId) {
           dataProvider.markThreadRead(threadId).catch((err) => logger.info('[Chat] markRead error:', err));
         }
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'dm_messages',
-        filter: `thread_id=eq.${threadId}`,
-      }, (payload) => {
-        // Sync read receipts when messages are updated (e.g. read_at set)
-        const updated = payload.new as Record<string, unknown>;
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === updated.id
-              ? { ...m, readAt: (updated.read_at as string) ?? m.readAt }
-              : m
-          )
-        );
       })
       .subscribe();
 
