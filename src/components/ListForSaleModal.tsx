@@ -23,6 +23,7 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
@@ -135,7 +136,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={KEYBOARD_AVOIDING_BEHAVIOR}
       >
         <View style={styles.overlay}>
           <Pressable style={styles.overlayBackdrop} onPress={close} accessibilityRole="button" accessibilityLabel={t('listings.close_modal_a11y', { defaultValue: 'Close listing modal' })} />

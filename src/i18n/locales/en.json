@@ -246,7 +246,8 @@
     "save": "Save to Collection",
     "a11y_scan_another": "Scan another item",
     "scan_another": "Scan Another",
-    "quickscan_tip": "Tip: Use QuickScan for faster entry with AI assistance"
+    "quickscan_tip": "Tip: Use QuickScan for faster entry with AI assistance",
+    "load_failed": "Couldn't load this item."
   },
   "onboarding": {
     "skip_a11y": "Skip to category selection",
@@ -974,7 +975,9 @@
     "not_ranked": "Not ranked",
     "what_others_see": "This is what other collectors see.",
     "categories_load_failed": "Couldn't load categories right now.",
-    "allow_discovery_hint": "Turn on Allow discovery in Settings → Privacy to be ranked on category leaderboards."
+    "allow_discovery_hint": "Turn on Allow discovery in Settings → Privacy to be ranked on category leaderboards.",
+    "block_user": "Block user",
+    "unblock_user": "Unblock user"
   },
   "items_detail": {
     "thin_cat_help": "This category needs your data — share what you paid below to help improve estimates.",
@@ -1615,7 +1618,9 @@
     "score_completeness": "Completeness",
     "score_diversity": "Diversity",
     "tier_coverage": "Rarity from {{rarityKnown}} of {{rarityTotal}} items · set completion from {{setsKnown}} of {{setsTotal}} sets",
-    "tier_unranked_hint": "Not ranked yet — add items from catalogued sets to build a rarity and completeness score."
+    "tier_unranked_hint": "Not ranked yet — add items from catalogued sets to build a rarity and completeness score.",
+    "concentration_high": "High concentration — {{category}} carries most of your value",
+    "concentration_medium": "Moderately concentrated in {{category}}"
   },
   "guide": {
     "no_guide_yet": "No guide for this category yet",

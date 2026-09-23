@@ -246,7 +246,8 @@
     "save": "Guardar en la colección",
     "a11y_scan_another": "Escanear otro artículo",
     "scan_another": "Escanear otro",
-    "quickscan_tip": "Consejo: usa QuickScan para introducir datos más rápido con ayuda de la IA"
+    "quickscan_tip": "Consejo: usa QuickScan para introducir datos más rápido con ayuda de la IA",
+    "load_failed": "No se pudo cargar este artículo."
   },
   "onboarding": {
     "skip_a11y": "Saltar selección de categoría",
@@ -974,7 +975,9 @@
     "not_ranked": "Sin clasificar",
     "what_others_see": "Esto es lo que ven otros coleccionistas.",
     "categories_load_failed": "No se pudieron cargar las categorías ahora mismo.",
-    "allow_discovery_hint": "Activa «Permitir que me descubran» en Ajustes → Privacidad para aparecer en las clasificaciones por categoría."
+    "allow_discovery_hint": "Activa «Permitir que me descubran» en Ajustes → Privacidad para aparecer en las clasificaciones por categoría.",
+    "block_user": "Bloquear usuario",
+    "unblock_user": "Desbloquear usuario"
   },
   "items_detail": {
     "thin_cat_help": "Esta categoría necesita tus datos: indica abajo cuánto pagaste para mejorar las estimaciones.",
@@ -1615,7 +1618,9 @@
     "score_completeness": "Completitud",
     "score_diversity": "Diversidad",
     "tier_coverage": "Rareza a partir de {{rarityKnown}} de {{rarityTotal}} objetos · finalización de sets a partir de {{setsKnown}} de {{setsTotal}} sets",
-    "tier_unranked_hint": "Aún sin clasificar: añade objetos de sets catalogados para construir una puntuación de rareza y completitud."
+    "tier_unranked_hint": "Aún sin clasificar: añade objetos de sets catalogados para construir una puntuación de rareza y completitud.",
+    "concentration_high": "Alta concentración — {{category}} concentra la mayor parte de tu valor",
+    "concentration_medium": "Moderadamente concentrado en {{category}}"
   },
   "guide": {
     "no_guide_yet": "Aún no hay guía para esta categoría",

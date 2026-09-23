@@ -14,6 +14,7 @@ import {
   Platform,
   RefreshControl,
 } from "react-native";
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -298,7 +299,7 @@ function ProjectDetailScreen() {
       <Stack.Screen options={{ headerTitle: project.title }} />
       <View style={[styles.safe, { backgroundColor: colors.background }]}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={KEYBOARD_AVOIDING_BEHAVIOR}
           style={{ flex: 1 }}
           keyboardVerticalOffset={Platform.OS === "ios" ? 88 : 0}
         >

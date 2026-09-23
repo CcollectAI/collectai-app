@@ -13,7 +13,6 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  Modal,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -88,7 +87,6 @@ function UserProfileScreen() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isUserBlocked, setIsUserBlocked] = useState(false);
   const [dmStatus, setDmStatus] = useState<DmStatusType>('none');
-  const [showMenu, setShowMenu] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { showToast } = useToast();
 
@@ -164,7 +162,6 @@ function UserProfileScreen() {
 
   const handleBlockToggle = useCallback(async () => {
     if (!userId) return;
-    setShowMenu(false);
 
     if (isUserBlocked) {
       // Unblock
@@ -499,20 +496,13 @@ function UserProfileScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
         {/* The back control and the bell/bubble/gear cluster come from the native
-            header (`iconOnlyHeader` in app/_layout.tsx, 2026-09-15) — this route
-            was `headerShown: false` and had neither in any branch. This row keeps
-            only the ⋯ menu. The error states below keep an explicit "Go back",
-            because a dead end must offer a way out. */}
-        <View style={styles.topRow}>
-          <AnimatedPressable
-            onPress={() => setShowMenu(true)}
-            style={styles.menuBtn}
-            accessibilityRole="button"
-            accessibilityLabel={t('common.more_options_a11y')}
-          >
-            <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
-          </AnimatedPressable>
-        </View>
+            header (`iconOnlyHeader` in app/_layout.tsx, 2026-09-15). A row here
+            held only a ⋯ button whose one entry was Block: an empty band above
+            the card with a floating icon (removed 2026-09-22 at Merle's request).
+            Block/Unblock now sits at the foot of the profile instead. It must
+            stay reachable (App Store guideline 1.2, user-generated content). The
+            error states below keep an explicit "Go back", because a dead end must
+            offer a way out. */}
 
         {/* Blocked banner */}
         {isUserBlocked && (
@@ -655,53 +645,26 @@ function UserProfileScreen() {
         {/* Bio + Interests */}
         <UserCollectionPreview profile={profile} />
 
+        <AnimatedPressable
+          style={styles.blockLink}
+          onPress={handleBlockToggle}
+          accessibilityRole="button"
+          accessibilityLabel={isUserBlocked ? t('user_profile.unblock_user') : t('user_profile.block_user')}
+        >
+          <Ionicons
+            name={isUserBlocked ? 'checkmark-circle-outline' : 'ban-outline'}
+            size={16}
+            color={isUserBlocked ? colors.muted : colors.danger}
+          />
+          <Text style={[styles.blockLinkText, { color: isUserBlocked ? colors.muted : colors.danger }]}>
+            {isUserBlocked ? t('user_profile.unblock_user') : t('user_profile.block_user')}
+          </Text>
+        </AnimatedPressable>
+
         {/* Bottom spacing */}
         <View style={{ height: 32 }} />
       </ScrollView>
 
-      {/* 3-dot menu modal */}
-      <Modal
-        visible={showMenu}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowMenu(false)}
-      >
-        <AnimatedPressable
-          style={styles.menuOverlay}
-          onPress={() => setShowMenu(false)}
-          accessibilityRole="button"
-          accessibilityLabel={t('common.close_menu_a11y')}
-        >
-          <View style={[styles.menuSheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <AnimatedPressable
-              style={styles.menuItem}
-              onPress={handleBlockToggle}
-              accessibilityRole="button"
-              accessibilityLabel={isUserBlocked ? 'Unblock user' : 'Block user'}
-            >
-              <Ionicons
-                name={isUserBlocked ? 'checkmark-circle-outline' : 'ban-outline'}
-                size={20}
-                color={isUserBlocked ? colors.accent : colors.danger}
-              />
-              <Text style={[styles.menuItemText, { color: isUserBlocked ? colors.text : colors.danger }]}>
-                {isUserBlocked ? 'Unblock User' : 'Block User'}
-              </Text>
-            </AnimatedPressable>
-
-            <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
-
-            <AnimatedPressable
-              style={styles.menuItem}
-              onPress={() => setShowMenu(false)}
-              accessibilityRole="button"
-              accessibilityLabel={t('common.cancel', { defaultValue: 'Cancel' })}
-            >
-              <Text style={[styles.menuItemText, { color: colors.muted }]}>Cancel</Text>
-            </AnimatedPressable>
-          </View>
-        </AnimatedPressable>
-      </Modal>
       <QuickNavBar />
     </SafeAreaView>
   );
@@ -734,17 +697,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
-  // Holds the menu button alone since the inline Back row was removed, so it
-  // pushes to the right rather than justifying two children apart.
-  topRow: {
+  // Quiet, centred text action at the foot of the profile — the only Block
+  // control (App Store 1.2). `sm` is the type floor for readable text.
+  blockLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    gap: 6,
+    marginTop: 24,
+    paddingVertical: 10,
     paddingHorizontal: 16,
-    paddingTop: 8,
   },
-  menuBtn: {
-    padding: 8,
+  blockLinkText: {
+    fontSize: textToken.sm,
+    fontWeight: fw.medium,
   },
   blockedBanner: {
     flexDirection: 'row',
@@ -869,32 +836,4 @@ const styles = StyleSheet.create({
 
 
   // Menu modal
-  menuOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  menuSheet: {
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    paddingVertical: 8,
-    paddingBottom: 32,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-  },
-  menuItemText: {
-    fontSize: textToken.lg,
-    fontWeight: fw.medium,
-  },
-  menuDivider: {
-    height: 1,
-    marginHorizontal: 16,
-  },
 });

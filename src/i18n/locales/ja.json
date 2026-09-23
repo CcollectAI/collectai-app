@@ -246,7 +246,8 @@
     "save": "コレクションに保存",
     "a11y_scan_another": "別のアイテムをスキャン",
     "scan_another": "別のものをスキャン",
-    "quickscan_tip": "ヒント: QuickScan を使うと AI の支援でより速く入力できます"
+    "quickscan_tip": "ヒント: QuickScan を使うと AI の支援でより速く入力できます",
+    "load_failed": "このアイテムを読み込めませんでした。"
   },
   "onboarding": {
     "skip_a11y": "カテゴリー選択をスキップ",
@@ -974,7 +975,9 @@
     "not_ranked": "ランク外",
     "what_others_see": "これは他のコレクターに表示される内容です。",
     "categories_load_failed": "現在カテゴリーを読み込めませんでした。",
-    "allow_discovery_hint": "設定 → プライバシー で「発見を許可」をオンにすると、カテゴリーのランキングに掲載されます。"
+    "allow_discovery_hint": "設定 → プライバシー で「発見を許可」をオンにすると、カテゴリーのランキングに掲載されます。",
+    "block_user": "ユーザーをブロック",
+    "unblock_user": "ブロックを解除"
   },
   "items_detail": {
     "thin_cat_help": "このカテゴリーはデータが不足しています。購入価格を下に入力すると推定精度が上がります。",
@@ -1615,7 +1618,9 @@
     "score_completeness": "コンプリート度",
     "score_diversity": "多様性",
     "tier_coverage": "レアリティは{{rarityTotal}}点中{{rarityKnown}}点 ・ セット完成度は{{setsTotal}}セット中{{setsKnown}}セットに基づきます",
-    "tier_unranked_hint": "まだランク外です。カタログ登録済みセットのアイテムを追加すると、レアリティとコンプリート度のスコアが作られます。"
+    "tier_unranked_hint": "まだランク外です。カタログ登録済みセットのアイテムを追加すると、レアリティとコンプリート度のスコアが作られます。",
+    "concentration_high": "集中度が高い — 価値の大半を{{category}}が占めています",
+    "concentration_medium": "{{category}}にやや集中しています"
   },
   "guide": {
     "no_guide_yet": "このカテゴリーのガイドはまだありません",

@@ -24,6 +24,7 @@ import {
   ActivityIndicator,
   Keyboard,
 } from 'react-native';
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { router, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -82,7 +83,7 @@ function ImportUrlScreen() {
       <Stack.Screen options={{ headerTitle: t('screen_titles.import_url') }} />
       <KeyboardAvoidingView
         style={styles.content}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={KEYBOARD_AVOIDING_BEHAVIOR}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 20}
       >
         <View style={[styles.card, { backgroundColor: colors.card }]}>

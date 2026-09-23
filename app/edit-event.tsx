@@ -21,11 +21,11 @@ import {
   TextInput,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   Alert,
   Switch,
   Animated,
 } from 'react-native';
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { dataProvider } from '@/data';
@@ -218,7 +218,7 @@ const EditEventScreen: React.FC = () => {
       <Stack.Screen options={{ headerTitle: t('screen_titles.edit_event') }} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={KEYBOARD_AVOIDING_BEHAVIOR}
       >
         <ScrollView
           style={styles.scroll}

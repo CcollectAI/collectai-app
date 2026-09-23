@@ -16,9 +16,9 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   ScrollView,
-  Platform,
   Pressable,
 } from "react-native";
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 // react-native's own SafeAreaView is iOS-only — it renders as a plain View on
 // Android, so content sits under the status bar and gesture nav. Always take it
 // from react-native-safe-area-context (see docs/ui-playbook.md).
@@ -126,7 +126,7 @@ export function BottomSheetModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={KEYBOARD_AVOIDING_BEHAVIOR}
         style={styles.flex}
       >
         <View style={styles.overlay}>

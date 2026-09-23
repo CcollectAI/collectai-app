@@ -37,14 +37,9 @@ import { useSettings } from "@/lib/settings";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { SkeletonList } from "@/components/Skeleton";
 import { useHasEverHadItems } from "@/hooks/useHasEverHadItems";
-import {
-  mapRiskNotes,
-  type PortfolioRiskNote,
-  type RawPersonalizedInsights,
-} from "@/data/personalizedInsights";
 import { ItemsEmptyState } from "@/components/items";
 import { EmptyState } from "@/components/EmptyState";
-import { splitPortfolioByValueSource, summariseMarkets, rankPositions, rankMovers } from '@/lib/portfolioAnalytics';
+import { splitPortfolioByValueSource, summariseMarkets, rankPositions, rankMovers, valueConcentration } from '@/lib/portfolioAnalytics';
 import { fmtCurrency } from '@/lib/format';
 import { QuickNavBar } from "@/components/QuickNavBar";
 import { useAsync } from "@/hooks/useAsync";
@@ -112,7 +107,6 @@ function AnalyticsScreen() {
   // marketplace effect that wrote to state nothing rendered (the trending rail
   // it fed was removed), so all four of its arrays were computed and thrown
   // away. Mapped through a pure seam fn — see src/data/personalizedInsights.ts.
-  const [riskNotes, setRiskNotes] = useState<PortfolioRiskNote[]>([]);
   const [predictionAccuracy, setPredictionAccuracy] = useState<{ category: string; mae: number; mape: number; r2: number }[] | null>(null);
   // `avg_value` removed 2026-08-10 — the server counted unpriced items as EUR 0
   // in the denominator. Replaced by median + spread; null means nothing in the
@@ -188,18 +182,18 @@ function AnalyticsScreen() {
   // nothing.
   useEffect(() => {
     let cancelled = false;
+    // fetchInsights() (/insights/personalized) used to lead this list. Dropped
+    // 2026-09-22: its only reader was the concentration line, which it made
+    // WRONG — the server ranks categories by item COUNT, and the line says
+    // "carries most of your value" directly under an allocation list ranked by
+    // VALUE. Walked on Android: "Pokémon carries most of your value" under LEGO
+    // 66.78% / Pokémon 17.64%. The line now reads the allocations it sits in.
     Promise.allSettled([
-      collectorsApi.fetchInsights(),
       collectorsApi.getPredictionAccuracy(),
       collectorsApi.getPortfolioCategoryStats(),
       collectorsApi.getCategoryHealth(),
-    ]).then(([insightsResult, accuracyResult, statsResult, healthResult]) => {
+    ]).then(([accuracyResult, statsResult, healthResult]) => {
       if (cancelled) return;
-      if (insightsResult.status === 'fulfilled' && insightsResult.value) {
-        setRiskNotes(mapRiskNotes(insightsResult.value as RawPersonalizedInsights));
-      } else if (insightsResult.status === 'rejected') {
-        logger.warn('[Analytics] personalized insights fetch failed:', insightsResult.reason);
-      }
       if (accuracyResult.status === 'fulfilled') {
         const data = accuracyResult.value as { categories?: { category: string; mae: number; mape: number; r2: number }[] } | undefined;
         if (Array.isArray(data?.categories)) setPredictionAccuracy(data!.categories);
@@ -388,10 +382,9 @@ function AnalyticsScreen() {
    * of NULL-category items, because "grow your uncategorized collection" is
    * advice to buy more of a non-category.
    */
-  const concentration = useMemo(
-    () => riskNotes.find((n) => n.sharePct != null && n.category) ?? null,
-    [riskNotes],
-  );
+  // From the allocations this line sits under, so it can never name a
+  // different category than the bar above it (see valueConcentration).
+  const concentration = useMemo(() => valueConcentration(allocations), [allocations]);
   // Category colors for allocation bars
   const categoryColors = useMemo(() => {
     const colors = [BRAND_COLORS.tiffany, BRAND_COLORS.tiffanyDark, "#44A9A1", "#2D8A84", "#1F6B66"];
@@ -763,21 +756,14 @@ function AnalyticsScreen() {
                   style={[
                     styles.riskDot,
                     {
-                      backgroundColor:
-                        concentration.level === 'high'
-                          ? colors.danger
-                          : concentration.level === 'medium'
-                            ? colors.accent
-                            : colors.muted,
+                      backgroundColor: concentration.level === 'high' ? colors.danger : colors.accent,
                     },
                   ]}
                 />
                 <Text style={[styles.concentrationText, { color: colors.muted }]}>
                   {concentration.level === 'high'
-                    ? `High concentration — ${categoryDisplayName(concentration.category)} carries most of your value`
-                    : concentration.level === 'medium'
-                      ? `Moderately concentrated in ${categoryDisplayName(concentration.category)}`
-                      : `Reasonably spread across ${allocations.length} categories`}
+                    ? t('analytics.concentration_high', { category: categoryDisplayName(concentration.category) })
+                    : t('analytics.concentration_medium', { category: categoryDisplayName(concentration.category) })}
                 </Text>
               </View>
             )}

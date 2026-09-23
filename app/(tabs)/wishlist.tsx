@@ -16,9 +16,9 @@ import {
   ActivityIndicator,
   Animated,
   KeyboardAvoidingView,
-  Platform,
   RefreshControl,
 } from 'react-native';
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TabBackButton } from '@/components/TabBackButton';
@@ -951,7 +951,7 @@ function WatchlistTabScreen() {
       <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => { closeModal(); resetForm(); }}>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={KEYBOARD_AVOIDING_BEHAVIOR}
         >
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
@@ -1089,7 +1089,7 @@ function WatchlistTabScreen() {
       <Modal visible={acquireModalVisible} animationType="slide" transparent onRequestClose={() => { closeAcquireModal(); setAcquireItem(null); }}>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={KEYBOARD_AVOIDING_BEHAVIOR}
         >
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
@@ -1164,7 +1164,7 @@ function WatchlistTabScreen() {
       <Modal visible={editTargetModalVisible} animationType="slide" transparent onRequestClose={() => { closeEditTargetModal(); setEditTargetItem(null); }}>
         <KeyboardAvoidingView
           style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={KEYBOARD_AVOIDING_BEHAVIOR}
         >
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>

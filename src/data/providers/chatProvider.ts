@@ -112,14 +112,48 @@ export async function listIncomingRequests(): Promise<DmRequest[]> {
 
     if (!data) return [];
 
-    return (data as Record<string, unknown>[]).map((row) => {
+    // Every request rendered as "Unknown" until 2026-09-22: `fromUserName` was
+    // the literal 'Unknown' and no name was ever looked up (walked on Android —
+    // a request from "Merle" showed as "Unknown"). One batched read of the
+    // per-member profile view, the same source users/[userId] uses. NOT
+    // `user_public_profiles`: that is the SEARCH view and drops members who
+    // turned off "Allow discovery", so they would stay "Unknown".
+    // A failed name lookup must not hide the requests themselves, so it logs
+    // and falls back to the placeholder rather than throwing.
+    const rows = data as Record<string, unknown>[];
+    const requesterIds = [...new Set(rows.map((r) => r.requester_id as string).filter(Boolean))];
+    const names = new Map<string, { handle: string | null; avatarUrl: string | null }>();
+    if (requesterIds.length > 0) {
+      try {
+        const { data: profs, error: profErr } = await withTimeout(
+          supabase
+            .from('user_public_profile_v1')
+            .select('user_id, display_handle, avatar_url')
+            .in('user_id', requesterIds),
+          SUPABASE_READ_TIMEOUT_MS,
+          'listIncomingRequests.profiles',
+        );
+        if (profErr) throw profErr;
+        for (const p of (profs ?? []) as Record<string, unknown>[]) {
+          names.set(p.user_id as string, {
+            handle: (p.display_handle as string | null) ?? null,
+            avatarUrl: (p.avatar_url as string | null) ?? null,
+          });
+        }
+      } catch (e) {
+        logger.error('[SupabaseDataProvider] listIncomingRequests requester names failed:', e);
+      }
+    }
+
+    return rows.map((row) => {
     const ctx = (row.context ?? null) as Record<string, unknown> | null;
+    const who = names.get(row.requester_id as string);
     return {
       threadId: (row.thread_id ?? row.id) as string,
       fromUserId: row.requester_id as string,
-      fromUserName: 'Unknown',
-      fromUserHandle: null,
-      fromUserAvatarUrl: null,
+      fromUserName: who?.handle || 'Unknown',
+      fromUserHandle: who?.handle ?? null,
+      fromUserAvatarUrl: who?.avatarUrl ?? null,
       fromUserAvatarColor: '#6b7280',
       requestMessage: (ctx?.message as string | null) ?? null,
       requestedAt: (row.created_at ?? new Date().toISOString()) as string,

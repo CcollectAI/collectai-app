@@ -17,6 +17,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 // SafeAreaView removed — Stack header handles safe area
 import { router, Stack } from 'expo-router';
 import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
@@ -468,7 +469,7 @@ function BarcodeScanScreen() {
       {scanState === 'scanning' && (
         <KeyboardAvoidingView
           style={styles.scanningContainer}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={KEYBOARD_AVOIDING_BEHAVIOR}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 20}
         >
           <View style={styles.cameraContainer}>

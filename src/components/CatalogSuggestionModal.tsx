@@ -19,6 +19,7 @@ import {
   Platform,
   Keyboard,
 } from "react-native";
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { AnimatedPressable } from "@/motion";
@@ -137,7 +138,7 @@ function CatalogSuggestionModalInner({
     >
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={KEYBOARD_AVOIDING_BEHAVIOR}
       >
         <TouchableOpacity
           style={styles.backdrop}

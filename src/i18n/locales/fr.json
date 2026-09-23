@@ -246,7 +246,8 @@
     "save": "Enregistrer dans la collection",
     "a11y_scan_another": "Scanner un autre article",
     "scan_another": "Scanner un autre",
-    "quickscan_tip": "Astuce : utilisez QuickScan pour une saisie plus rapide assistée par l'IA"
+    "quickscan_tip": "Astuce : utilisez QuickScan pour une saisie plus rapide assistée par l'IA",
+    "load_failed": "Impossible de charger cet objet."
   },
   "onboarding": {
     "skip_a11y": "Passer la sélection de catégorie",
@@ -974,7 +975,9 @@
     "not_ranked": "Non classé",
     "what_others_see": "Voici ce que voient les autres collectionneurs.",
     "categories_load_failed": "Impossible de charger les catégories pour le moment.",
-    "allow_discovery_hint": "Activez « Autoriser la découverte » dans Paramètres → Confidentialité pour figurer dans les classements par catégorie."
+    "allow_discovery_hint": "Activez « Autoriser la découverte » dans Paramètres → Confidentialité pour figurer dans les classements par catégorie.",
+    "block_user": "Bloquer l'utilisateur",
+    "unblock_user": "Débloquer l'utilisateur"
   },
   "items_detail": {
     "thin_cat_help": "Cette catégorie a besoin de vos données : indiquez ci-dessous le prix payé pour améliorer les estimations.",
@@ -1615,7 +1618,9 @@
     "score_completeness": "Complétude",
     "score_diversity": "Diversité",
     "tier_coverage": "Rareté sur {{rarityKnown}} des {{rarityTotal}} objets · complétude des sets sur {{setsKnown}} des {{setsTotal}} sets",
-    "tier_unranked_hint": "Pas encore classé — ajoutez des objets issus de sets catalogués pour construire un score de rareté et de complétude."
+    "tier_unranked_hint": "Pas encore classé — ajoutez des objets issus de sets catalogués pour construire un score de rareté et de complétude.",
+    "concentration_high": "Forte concentration — {{category}} représente l'essentiel de ta valeur",
+    "concentration_medium": "Modérément concentré sur {{category}}"
   },
   "guide": {
     "no_guide_yet": "Pas encore de guide pour cette catégorie",

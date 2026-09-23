@@ -16,10 +16,10 @@ import {
   TextInput,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   Animated,
   Image,
 } from 'react-native';
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Stack } from 'expo-router';
 import { dataProvider } from '@/data';
@@ -141,7 +141,7 @@ const SponsorRegisterScreen: React.FC = () => {
       <Stack.Screen options={{ headerTitle: t('screen_titles.become_sponsor') }} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={KEYBOARD_AVOIDING_BEHAVIOR}
       >
         <ScrollView
           style={styles.scroll}

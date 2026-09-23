@@ -16,6 +16,7 @@ import {
   Platform,
   type ListRenderItemInfo,
 } from 'react-native';
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Redirect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -75,7 +76,7 @@ function ChatDemoScreen() {
   return (
     <KeyboardAvoidingView
       style={[styles.safe, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={KEYBOARD_AVOIDING_BEHAVIOR}
       keyboardVerticalOffset={insets.bottom}
     >
       <SafeAreaView style={styles.flex} edges={['top', 'left', 'right']}>

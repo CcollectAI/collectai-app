@@ -20,12 +20,12 @@ import {
   TextInput,
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform,
   Switch,
   Animated,
   FlatList,
   TouchableOpacity,
 } from 'react-native';
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { dataProvider } from '@/data';
@@ -177,7 +177,7 @@ const CreateEventScreen: React.FC = () => {
       <Stack.Screen options={{ headerTitle: isSponsored ? 'Create Sponsored Event' : 'Create Event' }} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={KEYBOARD_AVOIDING_BEHAVIOR}
       >
 
         {/* Sponsored badge */}

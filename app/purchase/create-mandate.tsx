@@ -21,6 +21,7 @@ import {
   Switch,
   KeyboardAvoidingView,
 } from "react-native";
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -268,7 +269,7 @@ function CreateMandateScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={["left", "right"]}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={KEYBOARD_AVOIDING_BEHAVIOR}
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 88 : 0}
       >

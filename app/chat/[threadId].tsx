@@ -12,13 +12,13 @@ import {
   FlatList,
   TextInput,
   KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   Image,
   RefreshControl,
   Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -544,7 +544,7 @@ function ThreadDetailScreen() {
 
       <KeyboardAvoidingView
         style={styles.flex1}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={KEYBOARD_AVOIDING_BEHAVIOR}
         keyboardVerticalOffset={0}
       >
         {/* Messages */}

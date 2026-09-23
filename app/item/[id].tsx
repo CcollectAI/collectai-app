@@ -10,12 +10,12 @@ import {
   Pressable,
   Share,
   KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   Animated,
   RefreshControl,
   useWindowDimensions,
 } from "react-native";
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { showActionSheet } from "@/hooks/useActionSheetPicker";
@@ -50,6 +50,7 @@ import { computeItemDelta } from '@/lib/portfolioAnalytics';
 import { ValueSourceChip } from "@/components/ValueSourceChip";
 import type { CurrencyCode } from "@/data/types";
 import { AnimatedPressable } from "@/motion";
+import { Skeleton } from "@/components/Skeleton";
 import { isBuildableCategory } from "@/constants/buildStepTemplates";
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
@@ -257,16 +258,30 @@ function ItemDetailScreen() {
      *  is the only half that can legally be subtracted from `value`. */
     purchasePriceEur?: number | null;
   } | null>(null);
+  // Whether the fetch below has answered. Without it, a screen opened with a
+  // bare id (deep link, Search, franchise page, offer) rendered its PLACEHOLDERS
+  // as facts while the row was in flight — "Unknown item" and "Not yet priced"
+  // for a named, €900 item (walked on Android 2026-09-22, ~12 s on a slow
+  // network) — and a failed fetch returned silently, leaving them up for good.
+  const [coreStatus, setCoreStatus] = useState<'loading' | 'loaded' | 'failed'>('loading');
+  const [coreNonce, setCoreNonce] = useState(0);
   useEffect(() => {
     if (isDraft || !id) return;
     let cancelled = false;
+    setCoreStatus('loading');
     (async () => {
       const { data, error } = await supabase
         .from('items')
         .select('attrs, collection_name, canonical_key, name, title, category, condition, estimated_value, predicted_price_eur, image_url, notes, purchase_price, purchase_price_eur, purchase_currency, acquisition_fees')
         .eq('id', id)
         .maybeSingle();
-      if (cancelled || error || !data) return;
+      if (cancelled) return;
+      if (error || !data) {
+        // logger.error, not warn: warn is stripped in release builds.
+        logger.error('[ItemDetail] core row fetch failed:', error ?? 'no row');
+        setCoreStatus('failed');
+        return;
+      }
       const row = data as {
         attrs?: Record<string, unknown> | null; collection_name?: string | null; canonical_key?: string | null;
         name?: string | null; title?: string | null; category?: string | null; condition?: string | null;
@@ -299,6 +314,7 @@ function ItemDetailScreen() {
       }
       if (cancelled) return;
 
+      setCoreStatus('loaded');
       setSavedCore({
         // name and title are the two halves of the same pair — see the
         // paired-columns note in docs/ARCHITECTURE.md.
@@ -340,7 +356,11 @@ function ItemDetailScreen() {
       setSavedSubtypeId(typeof sub === 'string' ? sub : null);
     })();
     return () => { cancelled = true; };
-  }, [id, isDraft]);
+  }, [id, isDraft, coreNonce]);
+
+  // The caller passed no name, so the name and value on screen can only come
+  // from the fetch above — until it answers they are placeholders, not facts.
+  const awaitingCore = !isDraft && !!id && !params.name?.trim() && coreStatus !== 'loaded';
 
   // Pick whichever source has data. Drafts use the route-param attrs;
   // saved items use the lazily-fetched attrs.
@@ -1038,7 +1058,7 @@ function ItemDetailScreen() {
     <View style={[styles.safeArea, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={KEYBOARD_AVOIDING_BEHAVIOR}
         // 0, not 80. This screen renders under the native stack header
         // (`iconOnlyHeader`), so the KAV's own frame already starts below it —
         // an 80pt offset added 80pt of phantom padding and shoved the whole
@@ -1194,7 +1214,26 @@ function ItemDetailScreen() {
               lead with identity and then value. Read mode only: in edit mode
               the name is a form field and stays in the card with the other
               fields, exactly as the value row already does. */}
-          {!isDraft && !isEditing && (
+          {!isDraft && !isEditing && awaitingCore && coreStatus === 'failed' ? (
+            <View style={styles.coreFailed} accessibilityLiveRegion="polite">
+              <Text style={[styles.coreFailedText, { color: theme.muted }]}>
+                {t('item_detail.load_failed')}
+              </Text>
+              <AnimatedPressable
+                onPress={() => setCoreNonce((n) => n + 1)}
+                style={[styles.coreRetry, { borderColor: theme.accent }]}
+                accessibilityRole="button"
+                accessibilityLabel={t('common.try_again')}
+              >
+                <Text style={[styles.coreRetryText, { color: theme.accent }]}>{t('common.try_again')}</Text>
+              </AnimatedPressable>
+            </View>
+          ) : !isDraft && !isEditing && awaitingCore ? (
+            <View style={styles.coreSkeleton} accessibilityLabel={t('common.loading_a11y')}>
+              <Skeleton width="70%" height={28} borderRadius={6} />
+              <Skeleton width="100%" height={96} borderRadius={12} style={{ marginTop: 16 }} />
+            </View>
+          ) : !isDraft && !isEditing ? (
             <Text
               style={[styles.itemTitle, { color: theme.text }]}
               accessibilityRole="header"
@@ -1202,7 +1241,7 @@ function ItemDetailScreen() {
             >
               {editableName}
             </Text>
-          )}
+          ) : null}
 
           {/* ── ORDER OF THIS SCREEN (2026-08-23) ─────────────────────
               Reported as *"the full card area is not optimized and it looks
@@ -1276,7 +1315,10 @@ function ItemDetailScreen() {
               with the figure, so a priced item must get the card even when the
               ML band is absent — which is the common case (this item shows a
               catalogue-sourced EUR 6 and no band). */}
-          {(priceEstimate || q10 || q50 || q90 || confidence
+          {/* `!awaitingCore`: until the row lands, `editableValue` is the
+              route default "0", so the card would lead with "Not yet priced"
+              for an item that has a price. The skeleton above stands in. */}
+          {!awaitingCore && (priceEstimate || q10 || q50 || q90 || confidence
             // The term MUST match the lead's own render condition exactly.
             // `!isUnpriced(...)` alone opened the card for a DRAFT with a
             // value: the lead is `!isDraft && !isEditing`, the feedback is
@@ -1980,6 +2022,13 @@ const styles = StyleSheet.create({
   // It matches `valuationAmount` exactly, and that is fine BECAUSE of the tint:
   // the figure is set apart by an accent surface and accent text, not by
   // out-sizing the title. Name is the title, value is the headline.
+  // Stands in for the title AND the valuation card while a bare-id open waits
+  // for its row, so neither placeholder is ever read as a fact.
+  coreSkeleton: { marginTop: 12, marginBottom: 4 },
+  coreFailed: { marginTop: 16, alignItems: 'flex-start', gap: 10 },
+  coreFailedText: { fontSize: text.md, lineHeight: 20 },
+  coreRetry: { borderWidth: 1, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 16 },
+  coreRetryText: { fontSize: text.md, fontWeight: fontWeight.semibold },
   itemTitle: {
     fontSize: text['2xl'],
     fontWeight: fontWeight.extrabold,

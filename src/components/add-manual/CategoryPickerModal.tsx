@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, TextInput, Platform, Keyboard, KeyboardAvoidingView,
 } from 'react-native';
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { fireHaptic, HapticIntent } from '@/haptics';
@@ -66,7 +67,7 @@ export const CategoryPickerModal = React.memo(function CategoryPickerModal({
     <Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={KEYBOARD_AVOIDING_BEHAVIOR}
       >
         <View style={[styles.sheet, { backgroundColor: colors.card }]}>
           <View style={[styles.header, { borderBottomColor: colors.border }]}>

@@ -24,6 +24,7 @@ import {
   Animated,
   Image,
 } from 'react-native';
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -194,7 +195,7 @@ function LoginScreen() {
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={KEYBOARD_AVOIDING_BEHAVIOR}
         >
           <ScrollView
             contentContainerStyle={styles.scroll}

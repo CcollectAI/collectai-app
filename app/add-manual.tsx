@@ -6,12 +6,12 @@ import {
   View,
   StyleSheet,
   KeyboardAvoidingView,
-  Platform,
   Animated,
   Alert,
   Pressable,
   Text,
 } from "react-native";
+import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 // TextInput, ActivityIndicator, TouchableOpacity, Keyboard, Ionicons moved to extracted components
 import { useRouter, Stack, useLocalSearchParams } from "expo-router";
 import { supabase } from "@/lib/supabase";
@@ -581,7 +581,7 @@ const ManualAddScreen: React.FC = () => {
       <Stack.Screen options={{ headerTitle: t('screen_titles.add_manually') }} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={KEYBOARD_AVOIDING_BEHAVIOR}
       >
         <ScrollView
           style={styles.scroll}

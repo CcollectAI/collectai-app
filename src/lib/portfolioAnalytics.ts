@@ -332,3 +332,26 @@ export function summariseMarkets(
   parts.sort();
   return { us, eu, mixed, unknownCount, label: `${parts.join(' + ')} market${parts.length > 1 ? 's' : ''}` };
 }
+
+/**
+ * Whether one category dominates the collection BY VALUE — the verdict the
+ * Analytics allocation card prints under its bar.
+ *
+ * Computed from the SAME allocations the card draws, so it cannot name a
+ * different category than the bar above it. Until 2026-09-22 the verdict came
+ * from `/insights/personalized`, which ranks categories by item COUNT: walked on
+ * Android, it said "Pokémon carries most of your value" under LEGO 66.78% /
+ * Pokémon 17.64%. Thresholds mirror the server's OVEREXPOSURE_THRESHOLD (0.40)
+ * and HIGH_RISK_THRESHOLD (0.50) in server/app/config.py. Below 0.40, or with
+ * a single category (nothing to be concentrated against), there is no verdict.
+ */
+export function valueConcentration(
+  allocations: { category: string; weight: number }[],
+): { category: string; level: 'high' | 'medium' } | null {
+  if (!allocations || allocations.length < 2) return null;
+  let top = allocations[0];
+  for (const a of allocations) if (a.weight > top.weight) top = a;
+  if (top.weight >= 0.5) return { category: top.category, level: 'high' };
+  if (top.weight >= 0.4) return { category: top.category, level: 'medium' };
+  return null;
+}

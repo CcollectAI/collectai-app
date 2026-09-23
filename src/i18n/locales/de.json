@@ -246,7 +246,8 @@
     "save": "In Sammlung speichern",
     "a11y_scan_another": "Weiteren Artikel scannen",
     "scan_another": "Weiteren scannen",
-    "quickscan_tip": "Tipp: Nutze QuickScan für schnellere Eingabe mit KI-Unterstützung"
+    "quickscan_tip": "Tipp: Nutze QuickScan für schnellere Eingabe mit KI-Unterstützung",
+    "load_failed": "Dieses Objekt konnte nicht geladen werden."
   },
   "onboarding": {
     "skip_a11y": "Kategorieauswahl überspringen",
@@ -974,7 +975,9 @@
     "not_ranked": "Nicht platziert",
     "what_others_see": "Das sehen andere Sammler.",
     "categories_load_failed": "Die Kategorien konnten gerade nicht geladen werden.",
-    "allow_discovery_hint": "Aktiviere „Auffindbarkeit erlauben“ unter Einstellungen → Privatsphäre, um in den Kategorie-Bestenlisten zu erscheinen."
+    "allow_discovery_hint": "Aktiviere „Auffindbarkeit erlauben“ unter Einstellungen → Privatsphäre, um in den Kategorie-Bestenlisten zu erscheinen.",
+    "block_user": "Nutzer blockieren",
+    "unblock_user": "Blockierung aufheben"
   },
   "items_detail": {
     "thin_cat_help": "Diese Kategorie braucht deine Daten — gib unten an, was du bezahlt hast, um die Schätzungen zu verbessern.",
@@ -1615,7 +1618,9 @@
     "score_completeness": "Vollständigkeit",
     "score_diversity": "Vielfalt",
     "tier_coverage": "Seltenheit aus {{rarityKnown}} von {{rarityTotal}} Objekten · Set-Vollständigkeit aus {{setsKnown}} von {{setsTotal}} Sets",
-    "tier_unranked_hint": "Noch kein Rang — füge Objekte aus katalogisierten Sets hinzu, um einen Seltenheits- und Vollständigkeitswert aufzubauen."
+    "tier_unranked_hint": "Noch kein Rang — füge Objekte aus katalogisierten Sets hinzu, um einen Seltenheits- und Vollständigkeitswert aufzubauen.",
+    "concentration_high": "Hohe Konzentration — {{category}} macht den Großteil deines Werts aus",
+    "concentration_medium": "Mäßig konzentriert in {{category}}"
   },
   "guide": {
     "no_guide_yet": "Noch kein Leitfaden für diese Kategorie",
