@@ -15,9 +15,15 @@ interface UseUnsavedChangesOptions {
   isDirty: boolean;
   /** Called when the user confirms discard */
   onDiscard?: () => void;
+  /**
+   * Set `.current = true` just before navigating away AFTER a successful save.
+   * isDirty is still true in that tick (the listener only goes on re-render),
+   * so without it the member was asked to "discard" what they just saved.
+   */
+  bypassRef?: { current: boolean };
 }
 
-export function useUnsavedChanges({ isDirty, onDiscard }: UseUnsavedChangesOptions) {
+export function useUnsavedChanges({ isDirty, onDiscard, bypassRef }: UseUnsavedChangesOptions) {
   const navigation = useNavigation();
   const { t } = useTranslation();
 
@@ -25,6 +31,7 @@ export function useUnsavedChanges({ isDirty, onDiscard }: UseUnsavedChangesOptio
     if (!isDirty) return;
 
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (bypassRef?.current) return;
       // Block the navigation
       e.preventDefault();
 
@@ -47,5 +54,5 @@ export function useUnsavedChanges({ isDirty, onDiscard }: UseUnsavedChangesOptio
     });
 
     return unsubscribe;
-  }, [isDirty, navigation, onDiscard, t]);
+  }, [isDirty, navigation, onDiscard, t, bypassRef]);
 }

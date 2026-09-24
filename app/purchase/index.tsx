@@ -4,6 +4,8 @@
  * Shows active mandates as cards, recent deals feed, and create mandate button.
  */
 
+import { MARKETPLACE_BRAND_COLORS } from '@/constants/colors';
+import { marketplaceLabel } from '@/lib/marketplaceLabel';
 import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
@@ -20,7 +22,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useSettings } from "@/lib/settings";
 import { AnimatedPressable } from "@/motion";
@@ -185,7 +187,12 @@ function AgentHubScreen() {
         const mandateData = mandateRes.value as { mandates?: typeof mandates } | undefined;
         setMandates(mandateData?.mandates ?? []);
       } else {
-        logger.warn('[DealAgent] mandates load failed:', mandateRes.reason);
+        // error, not warn (warn is stripped in release), and the failed state
+        // is shown rather than an empty list: "Not watching anything yet" to a
+        // member whose searches simply failed to load is the empty-on-failure
+        // lie (class F).
+        logger.error('[DealAgent] mandates load failed:', mandateRes.reason);
+        setError('Could not load your searches. Pull to refresh.');
       }
 
       if (dealRes.status === 'fulfilled') {
@@ -218,9 +225,16 @@ function AgentHubScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // On FOCUS, not only on mount: creating a search goes back to this screen,
+  // and a mount-only load kept showing "Not watching anything yet" under a
+  // "Search activated" toast — the new search, and its deals, stayed invisible
+  // until the app was restarted (walked on Android 2026-09-24). loadData never
+  // raises `loading`, so a refocus refresh swaps the lists in place.
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData]),
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -644,7 +658,8 @@ function AgentHubScreen() {
                     </Text>
                     <View style={styles.dealMeta}>
                       <Text style={[styles.dealSource, { color: colors.muted }]}>
-                        {deal.listingSource}
+                        {/* The brand name, like the deal screen's chip — this row printed the raw id ("ebay", "sparrow"). */}
+                        {marketplaceLabel(deal.listingSource, MARKETPLACE_BRAND_COLORS[deal.listingSource]?.label, t)}
                       </Text>
                       {deal.priceVsQ50Pct != null && deal.priceVsQ50Pct < 0 && (
                         <Text style={[styles.dealDiscount, { color: colors.success }]}>

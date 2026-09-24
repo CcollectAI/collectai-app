@@ -345,7 +345,8 @@ class TestWatchlistSnipePayload:
 
         insert = conn.execute.await_args.args
         payload = json.loads(insert[3])
-        assert payload["listing_source"] == "ebay"
+        # A display name, not the slug (2026-09-24: the push read "on sparrow").
+        assert payload["listing_source"] == "eBay"
         assert payload["listing_url"] == "https://www.ebay.com/itm/123"
 
     @pytest.mark.asyncio
@@ -355,8 +356,18 @@ class TestWatchlistSnipePayload:
         assert sent == 1
 
         message = conn.execute.await_args.args[4]
-        assert "on ebay" in message
+        assert "on eBay" in message
         assert "Bayou Revised NM" in message
+
+    @pytest.mark.asyncio
+    async def test_a_member_listing_is_not_named_as_a_shop(self, _patch_retry):
+        """Walked 2026-09-24: "Charizard ex — €25.00 on sparrow"."""
+        mod = _patch_retry
+        row = {**self._row(), "provider": "sparrow"}
+        sent, conn = await self._run(mod, row)
+        assert sent == 1
+        message = conn.execute.await_args.args[4]
+        assert "from a Sparrow member" in message and "on sparrow" not in message
 
     @pytest.mark.asyncio
     async def test_item_id_is_the_dedupe_handle(self, _patch_retry):

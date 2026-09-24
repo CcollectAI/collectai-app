@@ -21,8 +21,10 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from app.agents.marketplace_agent import MarketplaceAgent
+from app.agents.marketplace_helpers import AggregationResult, ScoredMarketHit
 from app.agents.policy_engine import evaluate as policy_evaluate
 from app.lib.affiliate import build_affiliate_url
+from app.lib.listing_identity import listing_key
 from app.lib.shipping_service import detect_listing_region, estimate_shipping
 
 logger = logging.getLogger(__name__)
@@ -72,8 +74,31 @@ class DealDiscoveryAgent:
                 include_sold=False,  # only active listings for deals
             )
         except Exception as exc:
+            # Logged, but the member listings below are still checked: an
+            # outside marketplace failing is no reason to skip Sparrow's own.
             logger.error("[DealDiscovery] MarketplaceAgent failed for mandate %s: %s", mandate_id, exc)
-            return []
+            result = AggregationResult(
+                hits=[], total_sources_queried=0, successful_sources=0,
+                aggregate_confidence=0.0, dedup_count=0, query_metadata={},
+            )
+
+        # 1a. Sparrow's OWN marketplace. Mandates searched outside marketplaces
+        #     only, so a member listing the exact card could fire Target Hit but
+        #     never a mandate deal (2026-09-24). Same hit shape, same policy.
+        try:
+            member_hits = await self._sparrow_hits(conn, mandate)
+        except Exception as exc:
+            logger.error("[DealDiscovery] Sparrow listings lookup failed for mandate %s: %s", mandate_id, exc)
+            member_hits = []
+        if member_hits:
+            result = type(result)(
+                hits=list(result.hits) + member_hits,
+                total_sources_queried=result.total_sources_queried + 1,
+                successful_sources=result.successful_sources + 1,
+                aggregate_confidence=result.aggregate_confidence,
+                dedup_count=result.dedup_count,
+                query_metadata=result.query_metadata,
+            )
 
         if not result.hits:
             logger.info("[DealDiscovery] No hits for mandate %s", mandate_id)
@@ -112,6 +137,10 @@ class DealDiscoveryAgent:
                 midpoint = (est.min_cost_eur + est.max_cost_eur) / 2.0
                 hit["shipping_cost"] = round(midpoint, 2)
                 hit["shipping_estimated"] = True
+                # The RANGE, for the deal screen: the midpoint alone read as the
+                # listing's own shipping ("+ shipping €22.50").
+                hit["shipping_min"] = round(est.min_cost_eur, 2)
+                hit["shipping_max"] = round(est.max_cost_eur, 2)
 
         # 2. Fetch price prediction (if available)
         prediction = await self._get_prediction(
@@ -135,9 +164,15 @@ class DealDiscoveryAgent:
             hit = scored_hit.hit
             hit_url = hit.get("url", "")
 
-            # Dedup: skip if we already have a deal for this URL
-            if hit_url and hit_url in existing_urls:
+            # Dedup by listing IDENTITY, not raw URL: eBay re-issues every item
+            # URL with a fresh tracking token, so a raw-URL check stored one
+            # item as a new deal on every scan (4 rows for one card, 2026-09-24).
+            # The key joins the set at once, so a batch cannot repeat it either.
+            hit_key = listing_key(hit_url)
+            if hit_key and hit_key in existing_urls:
                 continue
+            if hit_key:
+                existing_urls.add(hit_key)
 
             # Inject provenance score from ScoredMarketHit into the hit dict.
             # D6: also surface the inputs the policy engine's recency/scarcity
@@ -261,6 +296,67 @@ class DealDiscoveryAgent:
 
     # Maximum mandates processed per scan cycle to prevent OOM / runaway queries
     MAX_MANDATES_PER_CYCLE = 50
+
+    async def _sparrow_hits(self, conn, mandate: Dict[str, Any]) -> List[ScoredMarketHit]:
+        """Active member listings on Sparrow's own marketplace for this mandate.
+
+        A keyed mandate matches the exact catalogue key (`canonical_ref` is
+        namespaced, `marketplace_listings.canonical_key` is bare — the join
+        rebuilds the namespace, like Target Hit). A free-text one matches the
+        query in the title, within its category. Never the member's own
+        listings, never a blocked member's (either direction). Price is
+        converted to EUR because the policy compares it to the EUR max price.
+        """
+        from app.lib.blocks import blocked_user_ids
+        from app.lib.fx_service import convert_to_eur
+
+        user_id = str(mandate["user_id"])
+        hidden = await blocked_user_ids(conn, user_id)
+        rows = await conn.fetch(
+            """
+            SELECT l.id, l.listing_title, l.price, l.currency, l.condition_label,
+                   l.shipping_cost, l.ships_from, l.created_at
+              FROM public.marketplace_listings l
+             WHERE l.marketplace_id = 'sparrow'
+               AND l.status = 'active' AND l.delisted_at IS NULL
+               AND l.user_id <> $1::uuid
+               AND NOT (l.user_id = ANY($5::uuid[]))
+               AND (
+                    ($2::text IS NOT NULL AND l.category || ':' || l.canonical_key = $2::text)
+                 OR ($2::text IS NULL
+                     AND ($3::text IS NULL OR l.category = $3::text)
+                     AND l.listing_title ILIKE '%' || $4::text || '%')
+               )
+             ORDER BY l.created_at DESC
+             LIMIT 20
+            """,
+            user_id, mandate.get("canonical_ref"), mandate.get("category"),
+            str(mandate.get("search_query") or ""), hidden,
+        )
+        hits: List[ScoredMarketHit] = []
+        for r in rows:
+            price_eur = await convert_to_eur(float(r["price"]), r["currency"] or "EUR")
+            hits.append(ScoredMarketHit(
+                hit={
+                    "source": "sparrow",
+                    "url": f"https://sparrowcollect.com/l/{r['id']}",
+                    "title": r["listing_title"] or "",
+                    "price": round(price_eur, 2),
+                    "currency": "EUR",
+                    "condition": r["condition_label"],
+                    "shipping_cost": float(r["shipping_cost"]) if r["shipping_cost"] is not None else None,
+                    "ships_from": r["ships_from"],
+                    "listed_at": r["created_at"].isoformat() if r["created_at"] else None,
+                },
+                # A member listing: a named seller with a trade history on the
+                # platform, but no buyer protection — the same middling weight
+                # the policy gives an eBay listing (0.70).
+                provenance_score=0.7,
+                source_reliability=0.7,
+                recency_score=1.0,
+                is_sold=False,
+            ))
+        return hits
 
     async def scan_all_active(self, pool) -> List[Dict[str, Any]]:
         """Fetch active mandates due for scan (bounded) and process each.
@@ -506,7 +602,7 @@ class DealDiscoveryAgent:
             """,
             uuid.UUID(mandate_id),
         )
-        return {r["listing_url"] for r in rows}
+        return {listing_key(r["listing_url"]) for r in rows}
 
     async def _get_user_recent_deal_urls(
         self, conn, user_id: str, cooldown_hours: int = 24
@@ -529,7 +625,7 @@ class DealDiscoveryAgent:
                 uid,
                 str(cooldown_hours),
             )
-            return {r["listing_url"] for r in rows}
+            return {listing_key(r["listing_url"]) for r in rows}
         except Exception as exc:
             logger.debug("[DealDiscovery] User URL cooldown lookup failed: %s", exc)
             return set()
@@ -575,6 +671,7 @@ class DealDiscoveryAgent:
             verdict.passed,
             json.dumps(verdict.reasons),
             affiliate_source or None,
+            json.dumps(verdict.checks),
         )
 
     async def _persist_deals_batch(self, conn, rows: List[tuple]) -> bool:
@@ -595,7 +692,7 @@ class DealDiscoveryAgent:
                     provenance_score, deal_score, price_vs_q50_pct,
                     predicted_q50, predicted_q10, predicted_q90,
                     policy_passed, policy_reasons,
-                    affiliate_source
+                    affiliate_source, policy_checks
                 ) VALUES (
                     $1, $2, $3,
                     $4, $5, $6,
@@ -604,7 +701,7 @@ class DealDiscoveryAgent:
                     $13, $14, $15,
                     $16, $17, $18,
                     $19, $20::jsonb,
-                    $21
+                    $21, $22::jsonb
                 )
                 """,
                 rows,

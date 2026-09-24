@@ -17,6 +17,8 @@ from pydantic import BaseModel, Field
 from app.auth import get_current_user_id
 from app.rate_limit import per_user_rate_limit
 from app.config import (
+    APP_URL_SCHEME,
+    PAID_EVENTS_ENABLED,
     DB_ENABLED,
     STRIPE_SECRET_KEY,
     STRIPE_PRICE_ID_SPONSOR_FEATURED,
@@ -107,6 +109,10 @@ async def create_sponsor_checkout(
     _rl=Depends(_sponsor_checkout_limit),
 ):
     """Create a Stripe Checkout session for sponsoring an event."""
+    if not PAID_EVENTS_ENABLED:
+        raise error_response(
+            503, "Paid events are not available yet", code="PAID_FEATURE_UNAVAILABLE",
+        )
     stripe_mod = _get_stripe()
     if not stripe_mod or not STRIPE_SECRET_KEY:
         raise error_response(503, "Billing not configured")
@@ -142,8 +148,8 @@ async def create_sponsor_checkout(
             # Auto-detect payment methods (card, iDEAL, SEPA, etc.) by region
             line_items=[{"price": price_id, "quantity": 1}],
             mode="payment",
-            success_url=f"collectai://events/{body.event_id}?sponsor=success",
-            cancel_url=f"collectai://events/{body.event_id}?sponsor=cancel",
+            success_url=f"{APP_URL_SCHEME}://events/{body.event_id}?sponsor=success",
+            cancel_url=f"{APP_URL_SCHEME}://events/{body.event_id}?sponsor=cancel",
             metadata={
                 "type": "event_sponsor",
                 "event_id": body.event_id,

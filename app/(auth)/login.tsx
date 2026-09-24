@@ -17,6 +17,7 @@ import {
   Text,
   TextInput,
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -167,6 +168,10 @@ function LoginScreen() {
   }
 
   async function handleSignIn() {
+    // Close the keyboard on submit: it stayed up over the NEXT screen
+    // (verify-email's Resend button, the reset "sent" message) — walked on
+    // Android 2026-09-24.
+    Keyboard.dismiss();
     const trimmedEmail = email.trim();
     if (!trimmedEmail || !password) {
       showToast({ message: t('auth.errors.email_password_required'), type: 'warning' });
@@ -184,6 +189,15 @@ function LoginScreen() {
       track({ name: 'user_logged_in', properties: { method: 'email' } });
       router.replace('/(tabs)');
     } catch (e: unknown) {
+      // An account that signed up but never confirmed: Supabase answers 400
+      // `email_not_confirmed`. This was a toast reading "Email not confirmed"
+      // and nothing else — verify-email (the only screen with Resend) was
+      // reachable only straight after signUp, so a member who closed the app
+      // before confirming had no way to get the email again (2026-09-24).
+      if (isUnconfirmedEmailError(e)) {
+        router.push({ pathname: '/(auth)/verify-email', params: { email: trimmedEmail, from: 'login' } });
+        return;
+      }
       showToast({ message: userErrorMessage(e, t('auth.errors.sign_in_failed'), 'Login'), type: 'error' });
     } finally {
       setLoading(false);
@@ -377,6 +391,12 @@ function LoginScreen() {
       </SafeAreaView>
     </GradientBackground>
   );
+}
+
+/** Supabase's answer for a signed-up, never-confirmed account (measured on
+ *  prod 2026-09-24: 400 `{error_code: 'email_not_confirmed'}`). */
+export function isUnconfirmedEmailError(e: unknown): boolean {
+  return (e as { code?: unknown } | null)?.code === 'email_not_confirmed';
 }
 
 export default function LoginScreenWithBoundary() {

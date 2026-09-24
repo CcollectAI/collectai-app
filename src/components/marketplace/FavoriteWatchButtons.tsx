@@ -36,6 +36,8 @@ import { useSettings } from '@/lib/settings';
 import { formatPrice } from '@/lib/format';
 import type { CurrencyCode } from '@/data/types';
 import logger from '@/utils/logger';
+import { router } from 'expo-router';
+import { offerProOnPlanLimit } from '@/lib/planLimitPrompt';
 
 type Props = {
   /** `marketplace_listings.id`. */
@@ -124,6 +126,8 @@ export function FavoriteWatchButtons({
         }),
       });
     } catch (err) {
+      // A free member's 26th watch: offer Pro, not "try again".
+      if (offerProOnPlanLimit(err, t, () => router.push('/subscription'))) return;
       logger.error('[favorites] watch failed:', err);
       showToast({ message: t('favorites.watch_failed'), type: 'error' });
     } finally {

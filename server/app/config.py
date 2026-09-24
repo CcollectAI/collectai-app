@@ -510,3 +510,22 @@ def validate_config() -> None:
     empty = [k for k, v in warn_keys.items() if not v]
     if empty:
         _log.warning("Optional API keys not set (features will be degraded): %s", ", ".join(empty))
+
+# The app's URL scheme — app.json `"scheme": "sparrow"`. Every Stripe
+# success/cancel URL returns through it. They were `collectai://`, a scheme no
+# build has registered since the rename, so after paying for a ticket, a
+# sponsorship or a web subscription the member landed on a browser error with
+# no way back into the app (found 2026-09-24).
+APP_URL_SCHEME = "sparrow"
+
+# Paid EVENT features: ticket sales and event sponsorships. OFF until they can
+# actually take money correctly. Measured 2026-09-24: Stripe on prod is a TEST
+# key (a real card cannot pay), all three sponsor price ids are empty, one
+# sponsor route used invented price ids, and ticket checkout has no payout to
+# the organiser (no Connect transfer) — the platform would have kept the
+# organiser's whole ticket price. 0 events had a price or a sponsorship, so
+# nothing live is taken away. Turn on only with live Stripe prices AND an
+# organiser payout path. The app hides the same surfaces
+# (src/config/featureFlags.ts PAID_EVENTS_ENABLED); this server switch is what
+# also covers older builds.
+PAID_EVENTS_ENABLED: bool = os.getenv("PAID_EVENTS_ENABLED", "false").lower() in ("true", "1", "yes")

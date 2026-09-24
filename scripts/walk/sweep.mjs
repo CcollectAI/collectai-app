@@ -45,7 +45,7 @@
  *
  * Usage:
  *   node scripts/walk/sweep.mjs [--only <substr>] [--label <name>] [--locale nl]
- *        [--small] [--serial emulator-5560] [--timeout 30] [--restart-every 15]
+ *        [--small] [--serial <adb serial; default: the one attached device>] [--timeout 30] [--restart-every 15]
  *        [--fixtures file.json] [--out dir]
  * Output: builds/walk/<timestamp>-<label>/index.html (contact sheet),
  *         report.json, shots/, dumps/.
@@ -63,7 +63,17 @@ const argv = process.argv.slice(2);
 const arg = (name, dflt) => { const i = argv.indexOf(`--${name}`); return i >= 0 ? argv[i + 1] : dflt; };
 const flag = (name) => argv.includes(`--${name}`);
 if (flag('help')) { console.log(readFileSync(new URL(import.meta.url)).toString().split('*/')[0]); process.exit(0); }
-const SERIAL = arg('serial', 'emulator-5560');
+// Default: the ONE attached device. A hard-coded 'emulator-5560' outlived an
+// emulator restart that came back as 5554 (2026-09-24): every adb call hit a
+// missing serial, `allowFail` turned each into '', and a whole run reported
+// NO_DUMP on 79 routes, then "Language row not found" twice, with the row on
+// screen. Zero or several devices without --serial is an error, not a guess.
+const SERIAL = arg('serial', null) ?? (() => {
+  const r = spawnSync(ADB, ['devices'], { encoding: 'utf8' });
+  const devs = (r.stdout || '').split('\n').slice(1).map((l) => l.split('\t')).filter((p) => p[1] === 'device').map((p) => p[0]);
+  if (devs.length !== 1) { console.error(`sweep: ${devs.length} devices attached (${devs.join(', ') || 'none'}) — pass --serial`); process.exit(2); }
+  return devs[0];
+})();
 const ONLY = arg('only', null);
 const LOCALE = arg('locale', 'en');
 const SMALL = flag('small');
@@ -254,7 +264,7 @@ async function resolveFixtures(inventory) {
   const pairs = {
     itemId: `items?select=id&user_id=eq.${uid}&limit=1`,
     listingId: `marketplace_listings?select=id&user_id=eq.${uid}&limit=1`,
-    dealId: `mandate_deals?select=id&user_id=eq.${uid}&limit=1`,
+    dealId: `mandate_deals?select=id&user_id=eq.${uid}&policy_passed=is.true&limit=1`,
     projectId: `build_paint_projects?select=id&user_id=eq.${uid}&limit=1`,
     offerId: `p2p_offers?select=id&or=(buyer_id.eq.${uid},seller_id.eq.${uid})&limit=1`,
     eventId: `events?select=id&is_public=eq.true&status=eq.published&date=gte.${today}&order=date.asc&limit=1`,
@@ -312,12 +322,20 @@ const tapNode = (n) => sh(`input tap ${Math.round((n.x1 + n.x2) / 2)} ${Math.rou
 async function setAppLanguage(optionLabel, expectRowLabel) {
   sh(`am start -a android.intent.action.VIEW -d 'sparrow://settings' ${PKG} >/dev/null 2>&1`, { allowFail: true });
   await sleep(8000);
+  // Settings keeps its scroll position across the deep link, and the search
+  // below only scrolls DOWN — a screen left scrolled past the row never finds
+  // it (2026-09-24: two "row not found" aborts with the row just above view).
+  for (let i = 0; i < 6; i++) { sh('input swipe 540 700 540 1900 200'); await sleep(300); }
+  await sleep(800);
   let row = null;
+  const seen = [];  // per pass: node count + the first texts, so a miss says WHAT it saw
   for (let i = 0; i < 16 && !row; i++) {
-    row = parseNodes(dumpXml()).find((n) => SETTINGS_LANGUAGE.has(n.desc) && n.y2 > n.y1);
+    const nodes = parseNodes(dumpXml());
+    row = nodes.find((n) => SETTINGS_LANGUAGE.has(n.desc) && n.y2 > n.y1);
+    seen.push(`${nodes.length}:${nodes.filter((n) => n.text).slice(0, 3).map((n) => n.text).join('/')}`);
     if (!row) { sh('input swipe 540 1700 540 900 400'); await sleep(1200); }
   }
-  if (!row) throw new Error('language: Settings → Language row not found');
+  if (!row) throw new Error(`language: Settings → Language row not found; passes saw ${seen.join(' | ')}`);
   tapNode(row);
   await sleep(2000);
   const opt = parseNodes(dumpXml()).find((n) => n.desc === optionLabel && n.y2 > n.y1);

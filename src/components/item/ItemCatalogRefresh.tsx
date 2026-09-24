@@ -22,6 +22,7 @@ import { supabase } from '@/lib/supabase';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
+import { invalidateItemCaches } from '@/data/CachedDataProvider';
 
 interface Props {
   itemId: string;
@@ -101,9 +102,11 @@ export const ItemCatalogRefresh = React.memo(function ItemCatalogRefresh({
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
 
     let bestHit: CatalogMatchHit | null = null;
+    let ambiguous = false;
     try {
       const res = await matchCatalog(itemTitle.trim(), itemCategory.trim());
       bestHit = res.best;
+      ambiguous = !!res.ambiguous;
     } catch (e) {
       logger.error('[ItemCatalogRefresh] match call failed:', e);
       showToast({ message: 'Catalog match failed — try again later', type: 'error' });
@@ -113,7 +116,9 @@ export const ItemCatalogRefresh = React.memo(function ItemCatalogRefresh({
 
     if (!bestHit || (bestHit.match_score ?? 0) < 0.6) {
       showToast({
-        message: bestHit
+        message: ambiguous
+          ? 'Several catalog items share this name — kept as-is'
+          : bestHit
           ? `Best match was too weak (${Math.round((bestHit.match_score ?? 0) * 100)}%) — kept as-is`
           : 'No catalog match found',
         type: 'info',
@@ -156,6 +161,8 @@ export const ItemCatalogRefresh = React.memo(function ItemCatalogRefresh({
                 showToast({ message: 'Failed to update — try again', type: 'error' });
                 return;
               }
+              // Direct write: drop the cached collection it changed.
+              await invalidateItemCaches();
               fireHaptic(HapticIntent.JUDGMENT_LOCKED);
               showToast({ message: 'Catalog data refreshed', type: 'success' });
               onUpdated?.();

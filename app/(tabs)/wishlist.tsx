@@ -30,7 +30,7 @@ import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { useAuthContext } from '@/providers/useAuthContext';
 import { GATE_MAX_WAIT_MS } from '@/hooks/usePaginatedList';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
-import { formatPrice, parseMoney } from '@/lib/format';
+import { formatPrice, parseMoney, moneyInputValue } from '@/lib/format';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
@@ -49,6 +49,7 @@ import { HeaderActions } from '@/components/HeaderActions';
 // Pull from single source of truth — all 36 categories + "Other"
 import { categoryDisplayName, CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { offerProOnPlanLimit } from '@/lib/planLimitPrompt';
 
 const CONGRATS_DISPLAY_DURATION = 2000;
 const CONGRATS_SPRING = { tension: 50, friction: 7, useNativeDriver: true as const };
@@ -146,8 +147,8 @@ function WatchlistTabScreen() {
       logger.error('[Watchlist] loadItems error:', err);
       // Keep whatever was already on screen. Blanking the list on a refresh
       // failure would reproduce the exact bug this state exists to fix.
-      setLoadError(userErrorMessage(err, 'Could not load your watchlist'));
-      showToast({ message: 'Failed to load watchlist. Pull down to retry.', type: 'error' });
+      setLoadError(userErrorMessage(err, t('wishlist.load_failed')));
+      showToast({ message: t('wishlist.load_failed_pull'), type: 'error' });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -247,11 +248,11 @@ function WatchlistTabScreen() {
 
   const handleAdd = async () => {
     if (!formTitle.trim()) {
-      showToast({ message: 'Please enter a title.', type: 'warning' });
+      showToast({ message: t('wishlist.enter_title'), type: 'warning' });
       return;
     }
     if (!formCategory) {
-      showToast({ message: 'Please select a category.', type: 'warning' });
+      showToast({ message: t('wishlist.choose_category'), type: 'warning' });
       return;
     }
     // A target price is REQUIRED, not optional. This is the third guard and it
@@ -276,7 +277,7 @@ function WatchlistTabScreen() {
       showToast({
         // Says what the number DOES, not that a field is missing. "Required"
         // reads as bureaucracy; this reads as the reason to type it.
-        message: "Set a target price — that's the price we alert you at.",
+        message: t('wishlist.target_needed'),
         type: 'warning',
       });
       return;
@@ -334,7 +335,7 @@ function WatchlistTabScreen() {
           // The member typed this into a field labelled in their own currency and
           // it is STORED that way (targetPriceCurrency: settings.currency above).
           // currency-ok: already in the member's currency — converting would restate their own number.
-          message: `Target set \u2014 we'll alert you if it's listed below ${formatPrice(targetPrice, settings.currency)}`,
+          message: t('wishlist.target_set', { price: formatPrice(targetPrice, settings.currency, settings.numberLocale) }),
           type: 'success',
         });
       }
@@ -352,7 +353,10 @@ function WatchlistTabScreen() {
       }
       loadItems();
     } catch (err: any) {
-      showToast({ message: userErrorMessage(err, 'Failed to add item.', 'Wishlist'), type: 'error' });
+      // The 26th watch on the free plan is a 403 PLAN_LIMIT_WATCHLIST: offer
+      // Pro instead of "failed, try again" (src/lib/planLimitPrompt.ts).
+      if (offerProOnPlanLimit(err, t, () => router.push('/subscription'))) return;
+      showToast({ message: userErrorMessage(err, t('wishlist.add_failed'), 'Wishlist'), type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -361,19 +365,19 @@ function WatchlistTabScreen() {
   const handleRemove = (item: WatchlistItem) => {
     fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
     Alert.alert(
-      'Remove from Watchlist',
-      `Remove "${item.title}" from your watchlist?`,
+      t('wishlist.remove_title'),
+      t('wishlist.remove_body', { title: item.title }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Remove',
+          text: t('wishlist.remove'),
           style: 'destructive',
           onPress: async () => {
             try {
               await dataProvider.removeWatchlistItem(item.id);
               loadItems();
             } catch (err: any) {
-              showToast({ message: userErrorMessage(err, 'Failed to remove item.', 'Wishlist'), type: 'error' });
+              showToast({ message: userErrorMessage(err, t('wishlist.remove_failed'), 'Wishlist'), type: 'error' });
             }
           },
         },
@@ -385,7 +389,7 @@ function WatchlistTabScreen() {
   const handleEditTarget = (item: WatchlistItem) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setEditTargetItem(item);
-    setEditTargetValue(item.targetPrice?.toString() || '');
+    setEditTargetValue(moneyInputValue(item.targetPrice));
     openEditTargetModal();
   };
 
@@ -407,11 +411,11 @@ function WatchlistTabScreen() {
         fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
         showToast({
           // currency-ok: an edited target is stored in the member's own currency (as above), so this echoes back what they typed.
-          message: `Target set \u2014 we'll alert you if it's listed below ${formatPrice(newTarget, settings.currency)}`,
+          message: t('wishlist.target_set', { price: formatPrice(newTarget, settings.currency, settings.numberLocale) }),
           type: 'success',
         });
       } else {
-        showToast({ message: 'Target price updated', type: 'success' });
+        showToast({ message: t('wishlist.target_updated'), type: 'success' });
       }
 
       closeEditTargetModal();
@@ -419,7 +423,7 @@ function WatchlistTabScreen() {
       setEditTargetValue('');
       loadItems();
     } catch (err: any) {
-      showToast({ message: userErrorMessage(err, 'Failed to update target price.', 'Wishlist'), type: 'error' });
+      showToast({ message: userErrorMessage(err, t('wishlist.target_update_failed'), 'Wishlist'), type: 'error' });
     } finally {
       setEditTargetSaving(false);
     }
@@ -442,7 +446,7 @@ function WatchlistTabScreen() {
   const handleGotIt = (item: WatchlistItem) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
     setAcquireItem(item);
-    setAcquirePrice(item.targetPrice?.toString() || '');
+    setAcquirePrice(moneyInputValue(item.targetPrice));
     setAcquireNotes('');
     openAcquireModal();
   };
@@ -510,7 +514,7 @@ function WatchlistTabScreen() {
       // Reload list
       loadItems();
     } catch (err: any) {
-      showToast({ message: userErrorMessage(err, 'Failed to add to collection.', 'Wishlist'), type: 'error' });
+      showToast({ message: userErrorMessage(err, t('wishlist.add_to_collection_failed'), 'Wishlist'), type: 'error' });
     } finally {
       setAcquiring(false);
     }
@@ -1116,7 +1120,7 @@ function WatchlistTabScreen() {
                 <TextInput
                   value={acquirePrice}
                   onChangeText={setAcquirePrice}
-                  placeholder={acquireItem.targetPrice ? `Target was €${acquireItem.targetPrice}` : 'e.g. 150'}
+                  placeholder={acquireItem.targetPrice ? `Target was ${formatPrice(acquireItem.targetPrice, acquireItem.currency)}` : 'e.g. 150'}
                   placeholderTextColor={colors.muted}
                   keyboardType="numeric"
                   style={[styles.input, { backgroundColor: colors.background, color: colors.text, borderColor: colors.border }]}

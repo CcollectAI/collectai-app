@@ -1063,10 +1063,13 @@ async def browse_listings(
                    -- already, but a signal a buyer only sees AFTER tapping
                    -- cannot influence whether they tap. Excludes the seller's
                    -- own watchlist row — "1 watching" that is you is a lie.
+                   -- ...and the VIEWER's: a buyer who is the one watcher read
+                   -- "1 other member watching" about themselves (2026-09-24).
                    (SELECT count(*) FROM public.watchlist_items w
                      WHERE w.item_id = l.canonical_key
                        AND w.category = l.category
-                       AND w.user_id <> l.user_id) AS watchers,
+                       AND w.user_id <> l.user_id
+                       AND ($6::uuid IS NULL OR w.user_id <> $6::uuid)) AS watchers,
                    p.display_name, p.username,
                    -- EUR-normalised price, computed ONCE and then used by both
                    -- the bounds and the sort below. It used to be the same
@@ -1498,14 +1501,18 @@ async def get_listing(
                    -- is namespaced (learning_canonical_key_vs_item_ref_namespace).
                    -- Excludes the seller's own watchlist row: telling someone
                    -- "1 person is watching" when it is them is a lie.
-                   (SELECT count(*) FROM public.watchlist_items w
-                     WHERE w.item_id = l.canonical_key
-                       AND w.category = l.category
-                       AND w.user_id <> l.user_id) AS watchers,
+                   -- ...and the VIEWER's ($3): "1 other member watching" read
+                   -- by the one member watching is the same lie (2026-09-24).
                    (SELECT count(*) FROM public.watchlist_items w
                      WHERE w.item_id = l.canonical_key
                        AND w.category = l.category
                        AND w.user_id <> l.user_id
+                       AND ($3::uuid IS NULL OR w.user_id <> $3::uuid)) AS watchers,
+                   (SELECT count(*) FROM public.watchlist_items w
+                     WHERE w.item_id = l.canonical_key
+                       AND w.category = l.category
+                       AND w.user_id <> l.user_id
+                       AND ($3::uuid IS NULL OR w.user_id <> $3::uuid)
                        AND w.target_price IS NOT NULL
                        AND w.target_price >= l.price) AS watchers_above
             FROM public.marketplace_listings l
@@ -1516,7 +1523,7 @@ async def get_listing(
             LEFT JOIN public.profiles p ON p.id = l.user_id
             WHERE l.id = $1::uuid AND l.marketplace_id = $2
             """,
-            listing_id, SPARROW_MARKETPLACE_KEY,
+            listing_id, SPARROW_MARKETPLACE_KEY, user_id,
         )
         # A block hides the listing on the deep-link path too, otherwise the
         # browse filter is cosmetic: a Target Hit URL, a shared link or a
@@ -1893,6 +1900,11 @@ async def delist(
     # Pattern must stay in sync with _STATUS_SOLD / _STATUS_DELISTED above,
     # which in turn mirror marketplace_listings_status_check.
     status: str = Query(_STATUS_SOLD, pattern=r"^(sold|delisted)$"),
+    # What it actually sold for, in the listing's currency. Optional only so an
+    # older build still works; the app asks for it. Without it an off-platform
+    # sale was recorded nowhere — realised P/L missed it and DAC7 never counted
+    # it (2026-09-24).
+    sale_price: Optional[float] = Query(None, gt=0, le=10_000_000),
     user_id: str = Depends(get_current_user_id),
     _rl=Depends(_listing_write_limit),
 ) -> dict:
@@ -1900,18 +1912,48 @@ async def delist(
     if pool is None:
         raise error_response(503, "Database unavailable", code="DB_UNAVAILABLE")
 
+    # Deferred: p2p_offers_router imports from this module at call time too.
+    from app.features.p2p_offers_router import (
+        _dac7_accrue, _record_p2p_sale, retire_sold_item,
+    )
+
     async with pool.acquire() as conn:
-        updated = await conn.fetchval(
-            """
-            UPDATE public.marketplace_listings
-               SET status = $3, delisted_at = now(), updated_at = now()
-             WHERE id = $1::uuid AND user_id = $2::uuid AND delisted_at IS NULL
-            RETURNING id
-            """,
-            listing_id, user_id, status,
-        )
-    if updated is None:
-        raise error_response(404, "Listing not found", code="LISTING_NOT_FOUND")
+        async with conn.transaction():
+            # `sold_at` too: a listing marked sold here kept sold_at NULL, so
+            # "when did it sell" had no answer for every off-platform sale.
+            updated = await conn.fetchrow(
+                """
+                UPDATE public.marketplace_listings
+                   SET status = $3, delisted_at = now(), updated_at = now(),
+                       sold_at = CASE WHEN $3 = 'sold' THEN now() ELSE sold_at END
+                 WHERE id = $1::uuid AND user_id = $2::uuid AND delisted_at IS NULL
+                RETURNING id, item_id, currency
+                """,
+                listing_id, user_id, status,
+            )
+            if updated is None:
+                raise error_response(404, "Listing not found", code="LISTING_NOT_FOUND")
+            # Sold means it left the seller's collection — the same settlement an
+            # offer completion does. It stayed there, still counted in their
+            # portfolio value (walked on Android 2026-09-24). Delisting without a
+            # sale keeps the item: they still own it.
+            if status == _STATUS_SOLD and updated["item_id"]:
+                qty = await conn.fetchval(
+                    "SELECT COALESCE(quantity, 1) FROM public.items WHERE id = $1::uuid AND user_id = $2::uuid",
+                    str(updated["item_id"]), user_id,
+                )
+                if qty is not None:
+                    await retire_sold_item(conn, str(updated["item_id"]), user_id, int(qty))
+            # The seller's own sale record, with the SAME writer an in-app trade
+            # uses (fees 0, postage NULL = not told yet, addable later via
+            # /postage) — so realised P/L and the Sales tab see it.
+            if status == _STATUS_SOLD and sale_price is not None:
+                await _record_p2p_sale(conn, listing_id, user_id, sale_price, updated["currency"] or "EUR")
+    # DAC7 after the commit, like completion does: a compliance counter that
+    # cannot be written must not undo a sale that happened. One accrual per
+    # listing — the UPDATE above only matches a listing not yet delisted.
+    if status == _STATUS_SOLD and sale_price is not None:
+        await _dac7_accrue(user_id, sale_price, updated["currency"] or "EUR")
 
     # AWAITED, not fire-and-forget — unlike the publish hook.
     # Asymmetry is deliberate: a missing supply row is a non-event (the listing

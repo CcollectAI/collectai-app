@@ -11,6 +11,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import type { CollectorsEvent } from '@/data/events';
 import { useTranslation } from 'react-i18next';
+import { formatPrice } from '@/lib/format';
 
 interface EventRsvpSectionProps {
   /**
@@ -24,6 +25,12 @@ interface EventRsvpSectionProps {
    * of "one branch got the fix" bug this repo keeps paying for.
    */
   leadingActions?: React.ReactNode;
+  /**
+   * The HOST's actions. When set, they replace Going / Interested: the host
+   * was offered an RSVP to their own event, and "1 going" then counted them
+   * (walked on Android 2026-09-24).
+   */
+  hostActions?: React.ReactNode;
   event: CollectorsEvent;
   rsvpStatus: string | undefined;
   isPastEvent: boolean;
@@ -39,6 +46,7 @@ interface EventRsvpSectionProps {
 
 export const EventRsvpSection = React.memo(function EventRsvpSection({
   leadingActions,
+  hostActions,
   event,
   rsvpStatus,
   isPastEvent,
@@ -143,8 +151,10 @@ export const EventRsvpSection = React.memo(function EventRsvpSection({
             </AnimatedPressable>
           )}
 
-          {/* Going / Join Waitlist button */}
-          {event.isFull && rsvpStatus !== 'going' ? (
+          {hostActions}
+
+          {/* Going / Join Waitlist button — never for the host */}
+          {hostActions ? null : event.isFull && rsvpStatus !== 'going' ? (
             <AnimatedPressable
               onPress={onJoinWaitlist}
               style={[
@@ -189,14 +199,14 @@ export const EventRsvpSection = React.memo(function EventRsvpSection({
               />
               <Text style={[styles.actionBtnText, { color: rsvpStatus === 'going' ? colors.accent : colors.muted }]}>
                 {event.ticketPriceCents && event.ticketPriceCents > 0 && rsvpStatus !== 'going'
-                  ? `Buy Ticket \u20AC${(event.ticketPriceCents / 100).toFixed(2)}`
+                  ? `Buy Ticket ${formatPrice(event.ticketPriceCents / 100, 'EUR')}`
                   : 'Going'}
               </Text>
             </AnimatedPressable>
           )}
 
           {/* Interested button — hidden on a full event, see showInterestedBtn */}
-          {showInterestedBtn && (
+          {showInterestedBtn && !hostActions && (
           <AnimatedPressable
             onPress={onRsvpInterested}
             style={[
@@ -229,7 +239,7 @@ export const EventRsvpSection = React.memo(function EventRsvpSection({
         <View style={[styles.ticketBadge, { backgroundColor: colors.accent + '15', borderColor: colors.accent }]}>
           <Ionicons name="ticket-outline" size={14} color={colors.accent} style={{ marginRight: 4 }} />
           <Text style={[styles.ticketBadgeText, { color: colors.accent }]}>
-            Ticket: {'\u20AC'}{(event.ticketPriceCents / 100).toFixed(2)}
+            Ticket: {formatPrice(event.ticketPriceCents / 100, 'EUR')}
           </Text>
         </View>
       )}

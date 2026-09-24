@@ -79,7 +79,10 @@ function EventsScreen() {
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
   const [nearbyEvents, setNearbyEvents] = useState<{ id: string; title: string; date: string; location?: string; distance_km?: number }[]>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
-  const [nearbyError, setNearbyError] = useState(false);
+  // 'location' = we never got a position (services off, no fix — the device
+  // said ERR_CURRENT_LOCATION_IS_UNAVAILABLE on 2026-09-24 and the screen blamed
+  // the connection); 'load' = the request for nearby events failed.
+  const [nearbyError, setNearbyError] = useState<null | 'location' | 'load'>(null);
   const [kindFilter, setKindFilter] = useState<string | null>(null);
   // Default OFF — events tab shows ALL events on first visit. The
   // "My Categories" chip is opt-IN. Historical default-on caused empty
@@ -201,7 +204,7 @@ function EventsScreen() {
 
   const loadNearbyEvents = useCallback(async () => {
     setNearbyLoading(true);
-    setNearbyError(false);
+    setNearbyError(null);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -209,7 +212,22 @@ function EventsScreen() {
         setViewMode('list');
         return;
       }
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      let loc: Location.LocationObject | null = null;
+      try {
+        loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      } catch (locErr) {
+        // No current fix: a recent one is good enough for a 50 km radius.
+        logger.error('[Events] current position unavailable:', locErr);
+        try {
+          loc = await Location.getLastKnownPositionAsync();
+        } catch (lastErr) {
+          logger.error('[Events] last known position unavailable:', lastErr);
+        }
+      }
+      if (!loc) {
+        setNearbyError('location');
+        return;
+      }
       const data = await collectorsApi.getNearbyEvents(loc.coords.latitude, loc.coords.longitude, 50);
       const nearbyData = data as { events?: typeof nearbyEvents } | undefined;
       if (Array.isArray(nearbyData?.events)) {
@@ -221,8 +239,7 @@ function EventsScreen() {
       }
     } catch (err) {
       logger.error('[Events] nearby events failed:', err);
-      setNearbyError(true);
-      showToast({ message: 'Could not load nearby events', type: 'error' });
+      setNearbyError('load');
     } finally {
       setNearbyLoading(false);
     }
@@ -798,9 +815,17 @@ function EventsScreen() {
             <SkeletonList count={3} type="event" />
           ) : nearbyError ? (
             <View style={styles.emptyContainer}>
-              <Ionicons name="cloud-offline-outline" size={48} color={colors.muted} />
-              <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 12 }]}>{t('events.load_error_title')}</Text>
-              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>{t('events.load_error_body')}</Text>
+              <Ionicons name={nearbyError === 'location' ? 'location-outline' : 'cloud-offline-outline'} size={48} color={colors.muted} />
+              <Text style={[styles.emptyTitle, { color: colors.text, marginTop: 12 }]}>
+                {nearbyError === 'location'
+                  ? t('events.location_unavailable_title', { defaultValue: "Couldn't find your location" })
+                  : t('events.load_error_title')}
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+                {nearbyError === 'location'
+                  ? t('events.location_unavailable_body', { defaultValue: 'Turn on location services, then try again.' })
+                  : t('events.load_error_body')}
+              </Text>
               <AnimatedPressable
                 onPress={handleRetryNearby}
                 style={[styles.retryBtn, { backgroundColor: colors.accent }]}

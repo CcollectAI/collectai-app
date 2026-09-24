@@ -168,7 +168,23 @@
     "helps_predictions": "모두의 가격 예측 정확도를 높이는 데 도움이 됩니다",
     "added_to_collection": "컬렉션에 추가했습니다",
     "change_category": "카테고리 변경",
-    "saved_items_safe": "저장한 아이템은 안전합니다. 불러오지 못했을 뿐입니다. 연결을 확인하고 다시 시도하세요."
+    "saved_items_safe": "저장한 아이템은 안전합니다. 불러오지 못했을 뿐입니다. 연결을 확인하고 다시 시도하세요.",
+    "load_failed_pull": "관심 목록을 불러오지 못했습니다. 아래로 당겨 다시 시도하세요.",
+    "enter_title": "제목을 입력하세요.",
+    "choose_category": "카테고리를 선택하세요.",
+    "target_needed": "목표 가격을 설정하세요 — 그 가격에 알림을 보내 드립니다.",
+    "target_set": "목표 가격이 설정되었습니다 — {{price}} 미만으로 등록되면 알려 드립니다",
+    "target_updated": "목표 가격이 업데이트되었습니다",
+    "add_failed": "이 항목을 추가할 수 없습니다.",
+    "remove_failed": "이 항목을 삭제할 수 없습니다.",
+    "target_update_failed": "목표 가격을 업데이트할 수 없습니다.",
+    "add_to_collection_failed": "컬렉션에 추가할 수 없습니다.",
+    "remove_title": "관심 목록에서 삭제",
+    "remove_body": "“{{title}}”을(를) 관심 목록에서 삭제할까요?",
+    "remove": "삭제",
+    "added": "관심 목록에 추가했습니다",
+    "added_named": "“{{title}}”을(를) 관심 목록에 추가했습니다",
+    "scan_no_title": "이 스캔에는 아직 관심 목록에 추가할 제목이 없습니다"
   },
   "events": {
     "ticket_fee_hint": "유료 티켓에는 {{pct}}% 플랫폼 수수료가 적용됩니다.",
@@ -211,7 +227,9 @@
     "pull_to_retry": "아래로 당겨 다시 시도하세요.",
     "nearby_events": "주변 이벤트",
     "announcements_title": "이벤트 공지",
-    "updates_from_host": "주최자의 소식"
+    "updates_from_host": "주최자의 소식",
+    "location_unavailable_title": "위치를 찾을 수 없습니다",
+    "location_unavailable_body": "위치 서비스를 켠 후 다시 시도하세요."
   },
   "marketplace": {
     "find_collectors": "컬렉터 찾기",
@@ -227,7 +245,8 @@
     "regional_insights_sub": "컬렉터 활동을 기반으로 한 내 주변 인기",
     "prices_load_failed": "시장 가격을 불러오지 못했습니다. 연결을 확인하고 다시 시도하세요.",
     "upgrade_to_see": "업그레이드하고 보기",
-    "movers_explainer": "내 카테고리의 최근 7일 최대 가격 변동 — 무엇이 오르고, 무엇이 내리고, 얼마나 움직였는지."
+    "movers_explainer": "내 카테고리의 최근 7일 최대 가격 변동 — 무엇이 오르고, 무엇이 내리고, 얼마나 움직였는지.",
+    "sparrow_name": "Sparrow Collect 마켓플레이스"
   },
   "search": {
     "placeholder": "아이템, 컬렉터, 이벤트 검색...",
@@ -932,7 +951,45 @@
     "in_beta": "Sparrow 베타에 참여 중입니다",
     "plans_load_failed": "플랜을 불러오지 못했습니다",
     "restore_purchases": "구매 복원",
-    "beta_pricing_note": "테스트 기간에는 모든 Pro 기능을 무료로 사용할 수 있습니다. 가격은 베타 이후에 정해지며, 변경 전에 미리 알려드립니다."
+    "beta_pricing_note": "테스트 기간에는 모든 Pro 기능을 무료로 사용할 수 있습니다. 가격은 베타 이후에 정해지며, 변경 전에 미리 알려드립니다.",
+    "title": "구독",
+    "plan_free": "무료",
+    "plan_pro_monthly": "Pro 월간",
+    "plan_pro_yearly": "Pro 연간",
+    "price_per_month": "{{price}}/월",
+    "price_per_year": "{{price}}/년",
+    "price_yearly_saving": "{{price}} · 약 33% 절약",
+    "recommended": "추천",
+    "downgrade": "다운그레이드",
+    "plan_a11y": "{{name}} 플랜, {{price}}",
+    "plan_a11y_current": "현재 플랜",
+    "plan_a11y_recommended": "추천",
+    "select_plan_a11y": "{{name}} 플랜 선택",
+    "feature_mandates": "구매 의뢰 10건",
+    "feature_watchlist_unlimited": "관심 목록 무제한",
+    "feature_target_hit_unlimited": "Target Hit 알림 무제한",
+    "feature_deal_discovery": "딜 찾기",
+    "feature_set_completion": "세트 완성 추적 (트레이딩 카드 세트)",
+    "feature_advanced_analytics": "고급 분석",
+    "feature_no_ads": "광고 없음",
+    "feature_watchlist_25": "관심 목록 25개",
+    "feature_target_hit_daily": "하루 1회 Target Hit 알림",
+    "feature_basic_valuation": "기본 시세 평가",
+    "feature_community_events": "커뮤니티 이벤트",
+    "store_unreachable_ios": "App Store에서 구독 옵션을 불러오지 못했습니다. 연결을 확인하고 다시 시도하세요. 이미 구독 중이라면 아래의 구매 복원을 이용하세요.",
+    "store_unreachable_android": "Google Play에서 구독 옵션을 불러오지 못했습니다. 연결을 확인하고 다시 시도하세요. 이미 구독 중이라면 아래의 구매 복원을 이용하세요.",
+    "legal_renewal_ios": "구독은 해지할 때까지 자동으로 갱신됩니다. Apple ID 구독 설정에서 언제든지 해지할 수 있습니다. 결제는 확인 시 Apple ID 계정으로 청구됩니다.",
+    "legal_renewal_android": "구독은 해지할 때까지 자동으로 갱신됩니다. Google Play 정기 결제에서 언제든지 해지할 수 있습니다. 결제는 확인 시 Google Play 계정으로 청구됩니다.",
+    "legal_agree": "구독하면 이용약관 및 개인정보 처리방침에 동의하는 것으로 간주됩니다.",
+    "terms_link": "이용약관",
+    "privacy_link": "개인정보 처리방침",
+    "plan_unavailable": "지금은 이 플랜을 이용할 수 없습니다. 나중에 다시 시도하세요.",
+    "welcome_pro": "Sparrow Pro에 오신 것을 환영합니다!",
+    "restore_unavailable": "복원할 수 없습니다. 다시 시도하세요.",
+    "restore_none": "이전 구매 내역이 없습니다.",
+    "restored": "복원되었습니다 — {{plan}} 이용 중입니다.",
+    "manage_open_failed": "구독 페이지를 열 수 없습니다.",
+    "plans_load_error": "플랜을 불러올 수 없습니다."
   },
   "mfa": {
     "title": "2단계 인증",
@@ -948,7 +1005,9 @@
     "intro": "TOTP 인증 앱으로 계정 보안을 한 단계 더 강화하세요.",
     "scan_instruction": "인증 앱(Google Authenticator, Authy 등)을 열고 이 코드를 스캔하세요:",
     "protected": "계정이 2단계 인증으로 보호되고 있습니다.",
-    "enable_prompt": "인증 앱으로 2단계 인증을 켜서 계정을 보호하세요."
+    "enable_prompt": "인증 앱으로 2단계 인증을 켜서 계정을 보호하세요.",
+    "manual_key_hint": "이 휴대폰의 인증 앱이라 스캔할 수 없나요? 대신 이 설정 키를 입력하세요(길게 눌러 복사):",
+    "manual_key_a11y": "인증 앱용 설정 키"
   },
   "event_detail": {
     "not_found": "이벤트를 찾을 수 없습니다",
@@ -958,7 +1017,9 @@
     "load_failed": "이 이벤트를 불러오지 못했습니다",
     "cancelled": "이 이벤트는 취소되었습니다",
     "was_interested": "관심 있었음",
-    "not_found_body": "이 이벤트는 아직 없습니다. 이벤트 탭에서 다시 열어 보세요."
+    "not_found_body": "이 이벤트는 아직 없습니다. 이벤트 탭에서 다시 열어 보세요.",
+    "manage": "관리",
+    "manage_a11y": "이벤트 관리"
   },
   "user_profile": {
     "blocked_user": "이 사용자를 차단했습니다",
@@ -1049,7 +1110,12 @@
     "feature_requires_premium": "{{feature}}은(는) Premium이 필요합니다",
     "feature_requires_plan": "{{feature}}은(는) {{plan}}이 필요합니다",
     "unlock_feature": "이 기능을 잠금 해제하려면 업그레이드하세요",
-    "unlock_via_plan_feature": "{{plan}}의 '{{planFeature}}'에 포함됩니다"
+    "unlock_via_plan_feature": "{{plan}}의 '{{planFeature}}'에 포함됩니다",
+    "limit_watchlist_title": "관심 목록이 가득 찼습니다",
+    "limit_watchlist_body": "무료 플랜은 최대 {{count}}개까지 관심 목록에 추가할 수 있습니다. Sparrow Pro는 제한이 없습니다.",
+    "limit_generic_title": "Sparrow Pro 기능입니다",
+    "limit_generic_body": "무료 플랜에 포함된 한도에 도달했습니다. Sparrow Pro는 한도가 없습니다.",
+    "see_pro": "Sparrow Pro 보기"
   },
   "set_completion": {
     "title": "세트 진행률",
@@ -1223,7 +1289,11 @@
     "sponsored_note": "이 이벤트는 스폰서로 표시되어 컬렉터에게 강조됩니다.",
     "invite_after_create": "이벤트를 만든 후 친구를 초대할 수 있습니다.",
     "invite_via_chat": "채팅으로 친구 초대",
-    "available_after_creation": "이벤트 생성 후 이용할 수 있습니다"
+    "available_after_creation": "이벤트 생성 후 이용할 수 있습니다",
+    "visibility_public": "공개",
+    "visibility_private": "비공개",
+    "public_hint": "누구나 이 이벤트를 보고 참여할 수 있습니다",
+    "private_hint": "이 이벤트는 나만 볼 수 있습니다. 목록에 표시되지 않으며 다른 사람에게는 링크가 열리지 않습니다."
   },
   "listings": {
     "catalog_photo": "카탈로그 사진",
@@ -1271,7 +1341,16 @@
     "no_payment_handling": "Sparrow는 결제나 배송을 처리하지 않습니다. 판매자와 직접 정해야 하며 구매자 보호는 없습니다.",
     "unmatched_price_note": "이 리스팅은 카탈로그 항목과 연결되지 않아 알림을 보낼 수 없습니다. 새 가격은 마켓플레이스에 표시됩니다.",
     "marketplace_intro": "여기 있는 모든 것은 여러분 같은 컬렉터가 등록한 것입니다. 판매자에게 메시지를 보내 가격을 정하세요 — Sparrow는 결제나 배송을 처리하지 않습니다. 내 아이템을 등록하면 지켜보던 회원에게 알림이 갑니다.",
-    "arrange_between_yourselves": "결제와 배송은 구매자와 판매자가 서로 정합니다. Sparrow는 결제를 처리하지 않으며 구매자 보호도 없습니다."
+    "arrange_between_yourselves": "결제와 배송은 구매자와 판매자가 서로 정합니다. Sparrow는 결제를 처리하지 않으며 구매자 보호도 없습니다.",
+    "mark_sold_title": "판매 완료로 표시할까요?",
+    "mark_sold_body": "판매 글이 종료되고 아이템이 컬렉션에서 빠집니다. 판매는 판매 내역과 수익에 기록됩니다. 되돌릴 수 없습니다.",
+    "watchers_other_one": "다른 회원 1명이 관심 표시",
+    "gone_sold": "이 상품은 판매되었습니다.",
+    "gone_other": "이 판매 글은 더 이상 이용할 수 없습니다.",
+    "watchers_other_many": "다른 회원 {{count}}명이 관심 표시",
+    "sold_for_label": "얼마에 팔렸나요?",
+    "sold_for_a11y": "판매 가격",
+    "marked_sold": "판매 완료로 표시했습니다 — 판매 내역에 있습니다."
   },
   "chat": {
     "collector_not_found": "수집가를 찾을 수 없습니다",
@@ -1372,7 +1451,31 @@
     "watch_note": "마켓플레이스를 지켜보다가 설정한 가격에 도달하면 알려드립니다.",
     "deal_discovery_pitch": "딜 탐색은 Sparrow Pro 기능입니다. 업그레이드하면 Sparrow가 대신 찾아 드립니다.",
     "add_item_and_max": "아이템과 최대 가격을 추가하세요.",
-    "link_item_explainer": "검색을 알려진 아이템에 연결하면 절약한 금액을 보여줄 수 있습니다. 지정하지 않아도 검색은 실행됩니다."
+    "link_item_explainer": "검색을 알려진 아이템에 연결하면 절약한 금액을 보여줄 수 있습니다. 지정하지 않아도 검색은 실행됩니다.",
+    "mandate_active_a11y": "검색 활성",
+    "mandate_delete_search": "검색 삭제",
+    "mandate_delete_title": "이 검색을 삭제할까요?",
+    "mandate_delete_body": "Sparrow가 더 이상 찾지 않으며 목록에서 사라집니다. 이미 찾은 거래는 유지됩니다.",
+    "mandate_deleted": "검색이 삭제되었습니다",
+    "mandate_delete_failed": "검색을 삭제하지 못했습니다",
+    "why_match": "일치하는 이유",
+    "check_price_ok": "한도 {{max}} 이내",
+    "check_price_fail": "한도 {{max}} 초과",
+    "check_budget_ok": "총예산 {{remaining}} 남음",
+    "check_budget_fail": "총예산 초과",
+    "check_trust_ok": "판매자와 판매 글이 신뢰 설정을 충족합니다",
+    "check_trust_fail": "신뢰 설정 미만",
+    "check_source_ok": "선택한 마켓에서",
+    "check_source_fail": "선택하지 않은 마켓",
+    "check_keywords_ok": "제외한 단어 없음",
+    "check_keywords_fail": "제외한 단어 포함",
+    "check_card_ok": "찾는 카드 (#{{number}})",
+    "check_card_fail": "다른 카드 (#{{number}} 아님)",
+    "check_expired": "검색이 만료되었습니다",
+    "check_region": "내 지역으로 배송되지 않음",
+    "shipping_estimated_range": "배송비 미기재 — 보통 {{min}}–{{max}}. 판매 글을 확인하세요.",
+    "shipping_estimated": "배송비 미기재 — 판매 글을 확인하세요.",
+    "shipping_stated": "배송비 {{amount}} 별도"
   },
   "edit_event": {
     "loading_event": "이벤트 불러오는 중...",
@@ -1384,7 +1487,8 @@
     "danger_zone": "위험 구역",
     "a11y_cancel_event": "이벤트 취소",
     "cancel_event": "이벤트 취소",
-    "cancel_warning": "이 이벤트 취소는 되돌릴 수 없습니다. 모든 참가자에게 알림이 갑니다."
+    "cancel_warning": "이 이벤트 취소는 되돌릴 수 없습니다. 모든 참가자에게 알림이 갑니다.",
+    "publish": "이벤트 게시"
   },
   "catalog": {
     "image_coming_soon": "이미지 준비 중",
@@ -1670,5 +1774,10 @@
     "discoverable_note": "공개를 선택한 컬렉터를 이 카테고리의 보유 내용으로 순위를 매깁니다.",
     "load_failed": "리더보드를 불러오지 못했습니다. 아래로 당겨 다시 시도하세요.",
     "empty": "아직 리더보드에 아무도 없습니다."
+  },
+  "listing": {
+    "price_drop_alert_watchers_one": "새 가격이 관심 회원의 목표에 도달하면 알려 드립니다 — 하루 최대 한 번.",
+    "price_drop_alert_future": "이 상품을 관심 목록에 둔 회원은 새 가격이 목표에 도달하면 알림을 받습니다 — 회원당 하루 최대 한 번.",
+    "price_drop_alert_watchers_many": "새 가격이 목표에 도달한 관심 회원 {{count}}명에게 알려 드립니다 — 회원당 하루 최대 한 번."
   }
 }

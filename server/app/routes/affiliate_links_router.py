@@ -567,5 +567,7 @@ async def record_affiliate_click(
             user_id=user_id,
         )
     except Exception as e:
-        logger.debug("[affiliate-click] demand_signal record failed: %s", e)
+        # WARNING, not debug: debug is off in prod, so a failing write here was
+        # invisible while the endpoint kept answering {"ok": true}.
+        logger.warning("[affiliate-click] demand_signal record failed: %s", e)
     return {"ok": True}

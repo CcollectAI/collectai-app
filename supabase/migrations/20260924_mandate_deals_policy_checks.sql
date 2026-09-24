@@ -1,0 +1,12 @@
+-- Structured policy results for the deal screen (2026-09-24).
+--
+-- `policy_reasons` holds the engine's audit strings ("total €28.13 (price €5.63
+-- + shipping €22.50) <= max €30.0", "source 'ebay' in allowed list"), and the
+-- app showed them verbatim. `policy_checks` holds one record per check —
+-- {"code","ok",...numbers} — which the app renders as sentences in the member's
+-- language. `policy_reasons` stays: it is the audit trail, and older builds read
+-- it as a list of strings, so its shape must not change.
+--
+-- Nullable, no default: rows written before this column have no structured
+-- checks, and the app then shows none rather than inventing them.
+ALTER TABLE public.mandate_deals ADD COLUMN IF NOT EXISTS policy_checks jsonb;

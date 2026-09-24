@@ -168,7 +168,23 @@
     "helps_predictions": "これはみんなの価格予測の精度向上に役立ちます",
     "added_to_collection": "コレクションに追加しました",
     "change_category": "カテゴリーを変更",
-    "saved_items_safe": "保存したアイテムは無事です。取得できなかっただけです。接続を確認して、もう一度お試しください。"
+    "saved_items_safe": "保存したアイテムは無事です。取得できなかっただけです。接続を確認して、もう一度お試しください。",
+    "load_failed_pull": "ウォッチリストを読み込めませんでした。下に引いて再試行してください。",
+    "enter_title": "タイトルを入力してください。",
+    "choose_category": "カテゴリーを選択してください。",
+    "target_needed": "目標価格を設定してください — その価格で通知します。",
+    "target_set": "目標価格を設定しました — {{price}} を下回る出品があればお知らせします",
+    "target_updated": "目標価格を更新しました",
+    "add_failed": "このアイテムを追加できませんでした。",
+    "remove_failed": "このアイテムを削除できませんでした。",
+    "target_update_failed": "目標価格を更新できませんでした。",
+    "add_to_collection_failed": "コレクションに追加できませんでした。",
+    "remove_title": "ウォッチリストから削除",
+    "remove_body": "「{{title}}」をウォッチリストから削除しますか？",
+    "remove": "削除",
+    "added": "ウォッチリストに追加しました",
+    "added_named": "「{{title}}」をウォッチリストに追加しました",
+    "scan_no_title": "このスキャンにはまだウォッチできるタイトルがありません"
   },
   "events": {
     "ticket_fee_hint": "有料チケットには{{pct}}%のプラットフォーム手数料がかかります。",
@@ -211,7 +227,9 @@
     "pull_to_retry": "下に引いて再試行してください。",
     "nearby_events": "近くのイベント",
     "announcements_title": "イベントのお知らせ",
-    "updates_from_host": "主催者からのお知らせ"
+    "updates_from_host": "主催者からのお知らせ",
+    "location_unavailable_title": "現在地を取得できませんでした",
+    "location_unavailable_body": "位置情報サービスをオンにして、もう一度お試しください。"
   },
   "marketplace": {
     "find_collectors": "コレクターを探す",
@@ -227,7 +245,8 @@
     "regional_insights_sub": "コレクターの動きに基づく、お近くの人気",
     "prices_load_failed": "市場価格を読み込めませんでした。接続を確認して、もう一度お試しください。",
     "upgrade_to_see": "アップグレードして表示",
-    "movers_explainer": "あなたのカテゴリーにおける過去7日間の最大の価格変動 — 何が上がり、何が下がり、どれだけ動いたか。"
+    "movers_explainer": "あなたのカテゴリーにおける過去7日間の最大の価格変動 — 何が上がり、何が下がり、どれだけ動いたか。",
+    "sparrow_name": "Sparrow Collect マーケットプレイス"
   },
   "search": {
     "placeholder": "アイテム、コレクター、イベントを検索...",
@@ -932,7 +951,45 @@
     "in_beta": "Sparrow ベータに参加中です",
     "plans_load_failed": "プランを読み込めませんでした",
     "restore_purchases": "購入を復元",
-    "beta_pricing_note": "テスト期間中はすべての Pro 機能を無料で利用できます。価格はベータ終了後に決まります — 変更前にお知らせします。"
+    "beta_pricing_note": "テスト期間中はすべての Pro 機能を無料で利用できます。価格はベータ終了後に決まります — 変更前にお知らせします。",
+    "title": "サブスクリプション",
+    "plan_free": "無料",
+    "plan_pro_monthly": "Pro 月額",
+    "plan_pro_yearly": "Pro 年額",
+    "price_per_month": "{{price}}/月",
+    "price_per_year": "{{price}}/年",
+    "price_yearly_saving": "{{price}} · 約33%お得",
+    "recommended": "おすすめ",
+    "downgrade": "ダウングレード",
+    "plan_a11y": "{{name}}プラン、{{price}}",
+    "plan_a11y_current": "現在のプラン",
+    "plan_a11y_recommended": "おすすめ",
+    "select_plan_a11y": "{{name}}プランを選択",
+    "feature_mandates": "購入依頼 10件",
+    "feature_watchlist_unlimited": "ウォッチリスト無制限",
+    "feature_target_hit_unlimited": "Target Hit 通知 無制限",
+    "feature_deal_discovery": "お得情報の検索",
+    "feature_set_completion": "セットコンプリート管理（トレカのセット）",
+    "feature_advanced_analytics": "高度な分析",
+    "feature_no_ads": "広告なし",
+    "feature_watchlist_25": "ウォッチリスト 25件",
+    "feature_target_hit_daily": "毎日 Target Hit 通知 1件",
+    "feature_basic_valuation": "基本査定",
+    "feature_community_events": "コミュニティイベント",
+    "store_unreachable_ios": "App Store からサブスクリプションの情報を取得できませんでした。接続を確認してもう一度お試しください。すでに登録済みの場合は、下の「購入を復元」をご利用ください。",
+    "store_unreachable_android": "Google Play からサブスクリプションの情報を取得できませんでした。接続を確認してもう一度お試しください。すでに登録済みの場合は、下の「購入を復元」をご利用ください。",
+    "legal_renewal_ios": "サブスクリプションは解約するまで自動更新されます。Apple ID のサブスクリプション設定からいつでも解約できます。お支払いは確認時に Apple ID アカウントに請求されます。",
+    "legal_renewal_android": "サブスクリプションは解約するまで自動更新されます。Google Play の定期購入からいつでも解約できます。お支払いは確認時に Google Play アカウントに請求されます。",
+    "legal_agree": "サブスクリプションに登録すると、利用規約とプライバシーポリシーに同意したものとみなされます。",
+    "terms_link": "利用規約",
+    "privacy_link": "プライバシーポリシー",
+    "plan_unavailable": "このプランは現在ご利用いただけません。しばらくしてからもう一度お試しください。",
+    "welcome_pro": "Sparrow Pro へようこそ！",
+    "restore_unavailable": "復元できませんでした。もう一度お試しください。",
+    "restore_none": "以前の購入は見つかりませんでした。",
+    "restored": "復元しました — {{plan}} をご利用中です。",
+    "manage_open_failed": "サブスクリプションのページを開けませんでした。",
+    "plans_load_error": "プランを読み込めませんでした。"
   },
   "mfa": {
     "title": "二要素認証",
@@ -948,7 +1005,9 @@
     "intro": "TOTP認証アプリでアカウントのセキュリティを強化します。",
     "scan_instruction": "認証アプリ（Google Authenticator、Authy など）を開いて、このコードをスキャンしてください:",
     "protected": "アカウントは二要素認証で保護されています。",
-    "enable_prompt": "認証アプリで二要素認証を有効にして、アカウントを保護しましょう。"
+    "enable_prompt": "認証アプリで二要素認証を有効にして、アカウントを保護しましょう。",
+    "manual_key_hint": "このスマホの認証アプリでスキャンできない場合は、このセットアップキーを入力してください（長押しでコピー）：",
+    "manual_key_a11y": "認証アプリ用のセットアップキー"
   },
   "event_detail": {
     "not_found": "イベントが見つかりません",
@@ -958,7 +1017,9 @@
     "load_failed": "このイベントを読み込めませんでした",
     "cancelled": "このイベントは中止されました",
     "was_interested": "興味ありだった",
-    "not_found_body": "このイベントはまだ存在しません。イベントタブからもう一度開いてみてください。"
+    "not_found_body": "このイベントはまだ存在しません。イベントタブからもう一度開いてみてください。",
+    "manage": "管理",
+    "manage_a11y": "イベントを管理"
   },
   "user_profile": {
     "blocked_user": "このユーザーをブロックしています",
@@ -1049,7 +1110,12 @@
     "feature_requires_premium": "{{feature}}はPremiumが必要です",
     "feature_requires_plan": "{{feature}}は{{plan}}が必要です",
     "unlock_feature": "アップグレードしてこの機能をアンロック",
-    "unlock_via_plan_feature": "{{plan}}の「{{planFeature}}」に含まれます"
+    "unlock_via_plan_feature": "{{plan}}の「{{planFeature}}」に含まれます",
+    "limit_watchlist_title": "ウォッチリストがいっぱいです",
+    "limit_watchlist_body": "無料プランでは最大 {{count}} 件までウォッチできます。Sparrow Pro なら無制限です。",
+    "limit_generic_title": "Sparrow Pro の機能です",
+    "limit_generic_body": "無料プランの上限に達しました。Sparrow Pro なら上限がなくなります。",
+    "see_pro": "Sparrow Pro を見る"
   },
   "set_completion": {
     "title": "セット進捗",
@@ -1111,7 +1177,7 @@
     "back_items": "アイテム",
     "back_settings": "設定",
     "become_sponsor": "スポンサーになる",
-    "compose_announcement": "お知らせを作成",
+    "compose_announcement": "お知らせ投稿",
     "condition_guide": "コンディションガイド",
     "ebay_defaults": "eBay の既定設定",
     "edit_event": "イベントを編集",
@@ -1223,7 +1289,11 @@
     "sponsored_note": "このイベントはスポンサー付きとして表示され、コレクターに強調表示されます。",
     "invite_after_create": "イベントを作成した後に友達を招待できます。",
     "invite_via_chat": "チャットで友達を招待",
-    "available_after_creation": "イベント作成後に利用できます"
+    "available_after_creation": "イベント作成後に利用できます",
+    "visibility_public": "公開",
+    "visibility_private": "非公開",
+    "public_hint": "誰でもこのイベントを見て参加できます",
+    "private_hint": "このイベントはあなただけが見られます。一覧には表示されず、リンクも他の人には開きません。"
   },
   "listings": {
     "catalog_photo": "カタログ写真",
@@ -1271,7 +1341,16 @@
     "no_payment_handling": "Sparrow は支払いや配送を扱いません。出品者と直接やり取りする必要があり、購入者保護はありません。",
     "unmatched_price_note": "この出品はカタログに紐づいていないため、ウォッチ中の人に通知できません。新しい価格はマーケットに表示されます。",
     "marketplace_intro": "ここにあるものはすべて、あなたのようなコレクターが出品しています。出品者にメッセージを送って価格を決めてください — Sparrow は支払いや配送を扱いません。自分のアイテムを出品すると、ウォッチしているメンバーに通知が届きます。",
-    "arrange_between_yourselves": "支払いと配送は購入者と出品者の間で取り決めます。Sparrow は支払いを扱わず、購入者保護もありません。"
+    "arrange_between_yourselves": "支払いと配送は購入者と出品者の間で取り決めます。Sparrow は支払いを扱わず、購入者保護もありません。",
+    "mark_sold_title": "売却済みにしますか？",
+    "mark_sold_body": "出品が終了し、アイテムはコレクションから外れます。売上と利益に記録されます。元に戻せません。",
+    "watchers_other_one": "他に1人のメンバーがウォッチ中",
+    "gone_sold": "この商品は売却されました。",
+    "gone_other": "この出品は現在ご利用いただけません。",
+    "watchers_other_many": "他に{{count}}人のメンバーがウォッチ中",
+    "sold_for_label": "いくらで売れましたか？",
+    "sold_for_a11y": "販売価格",
+    "marked_sold": "売却済みにしました — 売上に表示されます。"
   },
   "chat": {
     "collector_not_found": "コレクターが見つかりません",
@@ -1372,7 +1451,31 @@
     "watch_note": "マーケットを監視し、設定価格に達したらお知らせします。",
     "deal_discovery_pitch": "お得情報の発見は Sparrow Pro の機能です。アップグレードすると Sparrow が代わりに探します。",
     "add_item_and_max": "アイテムと上限価格を追加してください。",
-    "link_item_explainer": "検索を既知のアイテムに紐づけると、お得だった金額を表示できます。指定しなくても検索は実行されます。"
+    "link_item_explainer": "検索を既知のアイテムに紐づけると、お得だった金額を表示できます。指定しなくても検索は実行されます。",
+    "mandate_active_a11y": "検索中",
+    "mandate_delete_search": "検索を削除",
+    "mandate_delete_title": "この検索を削除しますか？",
+    "mandate_delete_body": "Sparrowは監視を停止し、リストから削除されます。見つかった取引は残ります。",
+    "mandate_deleted": "検索を削除しました",
+    "mandate_delete_failed": "検索を削除できませんでした",
+    "why_match": "一致した理由",
+    "check_price_ok": "上限{{max}}以内",
+    "check_price_fail": "上限{{max}}を超えています",
+    "check_budget_ok": "総予算の残り{{remaining}}",
+    "check_budget_fail": "総予算を超えています",
+    "check_trust_ok": "出品者と出品が信頼設定を満たしています",
+    "check_trust_fail": "信頼設定を下回っています",
+    "check_source_ok": "選んだマーケットプレイスから",
+    "check_source_fail": "選んだマーケットプレイス以外",
+    "check_keywords_ok": "除外した語は含まれていません",
+    "check_keywords_fail": "除外した語を含みます",
+    "check_card_ok": "探しているカード（#{{number}}）",
+    "check_card_fail": "別のカード（#{{number}}ではありません）",
+    "check_expired": "検索の期限が切れています",
+    "check_region": "お住まいの地域には発送されません",
+    "shipping_estimated_range": "送料の記載なし — 通常{{min}}〜{{max}}。出品を確認してください。",
+    "shipping_estimated": "送料の記載なし — 出品を確認してください。",
+    "shipping_stated": "送料{{amount}}別"
   },
   "edit_event": {
     "loading_event": "イベントを読み込み中...",
@@ -1384,7 +1487,8 @@
     "danger_zone": "危険な操作",
     "a11y_cancel_event": "イベントを中止",
     "cancel_event": "イベントを中止",
-    "cancel_warning": "このイベントの中止は取り消せません。参加者全員に通知されます。"
+    "cancel_warning": "このイベントの中止は取り消せません。参加者全員に通知されます。",
+    "publish": "イベントを公開"
   },
   "catalog": {
     "image_coming_soon": "画像は近日公開",
@@ -1670,5 +1774,10 @@
     "discoverable_note": "公開を選んだコレクターを、このカテゴリーの所有内容で順位付けしています。",
     "load_failed": "ランキングを読み込めませんでした。下に引いて再試行してください。",
     "empty": "まだランキングに誰もいません。"
+  },
+  "listing": {
+    "price_drop_alert_watchers_one": "新しい価格がウォッチ中のメンバーの目標に達したらお知らせします（1日1回まで）。",
+    "price_drop_alert_future": "この商品をウォッチ中のメンバーには、新しい価格が目標に達したらお知らせします（各メンバー1日1回まで）。",
+    "price_drop_alert_watchers_many": "新しい価格が目標に達した{{count}}人のウォッチ中メンバーにお知らせします（各メンバー1日1回まで）。"
   }
 }

@@ -9,7 +9,7 @@
  * Uses __setDbForTesting to inject a mock db directly, avoiding
  * issues with jest.mock and dynamic import().
  */
-import { cacheGet, cacheSet, cacheClear, cacheEvictExpired, __setDbForTesting } from '../../src/data/offlineCache';
+import { cacheGet, cacheSet, cacheClear, cacheEvictExpired, bindCacheOwner, __setDbForTesting } from '../../src/data/offlineCache';
 
 // ---------------------------------------------------------------------------
 // In-memory mock for the SQLite db object
@@ -164,5 +164,38 @@ describe('offlineCache', () => {
     expect(deleted).toBe(1);
     expect(store.has('fresh')).toBe(true);
     expect(store.has('stale')).toBe(false);
+  });
+});
+
+// 2026-09-24: keys are not per-user, so the next account on the phone was
+// served the previous member's watchlist and items. The cache is bound to its
+// owner; a different owner (or signing out) wipes it.
+describe('bindCacheOwner', () => {
+  it('keeps the cache for the same member', async () => {
+    await bindCacheOwner('user-a');
+    await cacheSet('watchlist:list', ['a-row']);
+    expect(await bindCacheOwner('user-a')).toBe(false);
+    expect(await cacheGet('watchlist:list')).toEqual(['a-row']);
+  });
+
+  it("never serves member A's rows to member B", async () => {
+    await bindCacheOwner('user-a');
+    await cacheSet('watchlist:list', ['a-row']);
+    expect(await bindCacheOwner('user-b')).toBe(true);
+    expect(await cacheGet('watchlist:list')).toBeNull();
+  });
+
+  it('wipes on sign-out', async () => {
+    await bindCacheOwner('user-a');
+    await cacheSet('items:list', ['a-item']);
+    await bindCacheOwner(null);
+    expect(await cacheGet('items:list')).toBeNull();
+  });
+
+  it('a read issued right after the switch waits for the wipe', async () => {
+    await bindCacheOwner('user-a');
+    await cacheSet('watchlist:list', ['a-row']);
+    void bindCacheOwner('user-b'); // not awaited, as in the auth callback
+    expect(await cacheGet('watchlist:list')).toBeNull();
   });
 });

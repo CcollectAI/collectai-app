@@ -256,3 +256,8 @@ export function useBillingLimits() {
     ...billingState,
   };
 }
+
+/** The free plan's caps — the only plan that HAS caps, so the one a limit
+ *  error was raised against. Read by src/lib/planLimitPrompt.ts, which runs
+ *  from per-card components where a useBillingLimits() fetch each is too much. */
+export const FREE_PLAN_LIMITS: Readonly<BillingStatus['limits']> = DEFAULT_LIMITS;

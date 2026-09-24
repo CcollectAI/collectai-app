@@ -42,7 +42,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useAsync } from "@/hooks/useAsync";
 import { useSettings } from "@/lib/settings";
-import { formatPrice } from "@/lib/format";
+import { formatPrice, moneyInputPlaceholder, moneyInputValue, parseMoney } from "@/lib/format";
 import { convertCurrency } from "@/lib/fx";
 import type { CurrencyCode } from "@/data/types";
 import { collectorsApi } from "@/api/collectorsApi";
@@ -159,6 +159,9 @@ function ListingDetailScreen() {
   const [reported, setReported] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
   const [priceDraft, setPriceDraft] = useState("");
+  // "What did it sell for?" — the Mark-as-sold sheet (2026-09-24).
+  const [soldOpen, setSoldOpen] = useState(false);
+  const [soldDraft, setSoldDraft] = useState("");
   const [savingPrice, setSavingPrice] = useState(false);
   const [delisting, setDelisting] = useState(false);
   const [offered, setOffered] = useState(false);
@@ -281,9 +284,16 @@ function ListingDetailScreen() {
     // Accept a comma decimal separator: the app ships in 7 currencies and most
     // of Europe types "12,50". Without this the field silently rejects the way
     // half the target market writes money.
-    const n = parseFloat(priceDraft.replace(",", "."));
-    return Number.isFinite(n) && n > 0 ? n : null;
+    // parseMoney, not parseFloat(replace(",", ".")): that read "1.234,50" as
+    // 1.234. parseMoney treats the LAST separator as the decimal.
+    const n = parseMoney(priceDraft);
+    return n !== null && Number.isFinite(n) && n > 0 ? n : null;
   }, [priceDraft]);
+
+  const parsedSoldPrice = useMemo(() => {
+    const n = parseMoney(soldDraft);
+    return n !== null && Number.isFinite(n) && n > 0 ? n : null;
+  }, [soldDraft]);
 
   const priceChanged =
     parsedNewPrice !== null &&
@@ -342,8 +352,9 @@ function ListingDetailScreen() {
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, {
         enabled: settings.hapticsEnabled,
       });
-      await collectorsApi.delistListing(listing.id, "sold");
-      showToast({ message: "Marked as sold.", type: "success" });
+      await collectorsApi.delistListing(listing.id, "sold", parsedSoldPrice ?? undefined);
+      setSoldOpen(false);
+      showToast({ message: t('listings.marked_sold', { defaultValue: 'Marked as sold — it is in your Sales.' }), type: "success" });
       retry();
     } catch (e) {
       // This catch only logged, so a failed sale looked exactly like a
@@ -359,7 +370,7 @@ function ListingDetailScreen() {
     } finally {
       setDelisting(false);
     }
-  }, [listing, delisting, retry, settings.hapticsEnabled, showToast]);
+  }, [listing, delisting, parsedSoldPrice, retry, settings.hapticsEnabled, showToast, t]);
 
   if (loading) {
     return (
@@ -577,7 +588,9 @@ function ListingDetailScreen() {
                 color={colors.muted}
               />
               <Text style={[styles.bannerText, { color: colors.muted }]}>
-                This listing is no longer available ({listing.status}).
+                {listing.status === 'sold'
+                  ? t('listings.gone_sold', { defaultValue: 'This listing has sold.' })
+                  : t('listings.gone_other', { defaultValue: 'This listing is no longer available.' })}
               </Text>
             </View>
           ) : null}
@@ -702,7 +715,9 @@ function ListingDetailScreen() {
             </View>
           ) : null}
 
-          {listing.watchers > 0 ? (
+          {/* Live listings only: demand for something already sold is noise
+              (it still read "1 other member watching" after Mark as sold). */}
+          {!isGone && listing.watchers > 0 ? (
             <View
               style={[
                 styles.demandRow,
@@ -711,8 +726,13 @@ function ListingDetailScreen() {
             >
               <Ionicons name="eye-outline" size={14} color={colors.accent} />
               <Text style={[styles.demandText, { color: colors.text }]}>
-                {listing.watchers} other member
-                {listing.watchers === 1 ? "" : "s"} watching this item
+                {/* _one / _many chosen here — the house pattern (home.estimated_share_*). */}
+                {listing.watchers === 1
+                  ? t('listings.watchers_other_one', { defaultValue: '1 other member watching this item' })
+                  : t('listings.watchers_other_many', {
+                      count: listing.watchers,
+                      defaultValue: '{{count}} other members watching this item',
+                    })}
               </Text>
             </View>
           ) : null}
@@ -850,7 +870,14 @@ function ListingDetailScreen() {
                   </Text>
                 </AnimatedPressable>
                 <AnimatedPressable
-                  onPress={handleDelist}
+                  // Asks what it sold for, then confirms: marking sold ends the
+                  // listing, takes the item out of the collection
+                  // (retire_sold_item) and records the sale for realised P/L and
+                  // DAC7. One tap used to do the first and none of the rest.
+                  onPress={() => {
+                    setSoldDraft(moneyInputValue(listing.price));
+                    setSoldOpen(true);
+                  }}
                   disabled={delisting}
                   style={[
                     styles.primaryBtn,
@@ -964,6 +991,67 @@ function ListingDetailScreen() {
       </ScrollView>
 
       <BottomSheetModal
+        visible={soldOpen}
+        onClose={() => setSoldOpen(false)}
+        title={t('listings.mark_sold_title', { defaultValue: 'Mark as sold?' })}
+        scrollable
+        colors={colors}
+      >
+        <View style={styles.sheetBody}>
+          <Text style={[styles.sheetLabel, { color: colors.muted }]}>
+            {t('listings.sold_for_label', { defaultValue: 'What did it sell for?' })}
+          </Text>
+          <View
+            style={[
+              styles.priceField,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            <Text style={[styles.priceCurrency, { color: colors.muted }]}>
+              {listing.currency}
+            </Text>
+            <TextInput
+              value={soldDraft}
+              onChangeText={setSoldDraft}
+              keyboardType="decimal-pad"
+              autoFocus
+              selectTextOnFocus
+              placeholder={moneyInputPlaceholder()}
+              placeholderTextColor={colors.muted}
+              style={[styles.priceInput, { color: colors.text }]}
+              accessibilityLabel={t('listings.sold_for_a11y', { defaultValue: 'Sale price' })}
+              returnKeyType="done"
+            />
+          </View>
+          <Text style={[styles.sheetNote, { color: colors.muted }]}>
+            {t('listings.mark_sold_body', { defaultValue: 'The listing ends and the item leaves your collection. The sale goes into your Sales and profit. This cannot be undone.' })}
+          </Text>
+          <AnimatedPressable
+            onPress={handleDelist}
+            disabled={parsedSoldPrice === null || delisting}
+            style={[
+              styles.primaryBtn,
+              {
+                backgroundColor: parsedSoldPrice !== null && !delisting ? colors.accent : colors.border,
+                marginTop: 16,
+              },
+            ]}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: parsedSoldPrice === null || delisting }}
+            accessibilityLabel={t('listings.a11y_mark_sold', { defaultValue: 'Mark as sold' })}
+          >
+            {delisting ? (
+              <ActivityIndicator size="small" color={colors.accentText} />
+            ) : (
+              <Text style={[styles.primaryBtnText, { color: parsedSoldPrice !== null ? colors.accentText : colors.muted }]}>
+                {t('listings.a11y_mark_sold', { defaultValue: 'Mark as sold' })}
+              </Text>
+            )}
+          </AnimatedPressable>
+        </View>
+      </BottomSheetModal>
+
+      <BottomSheetModal
         visible={priceOpen}
         onClose={() => setPriceOpen(false)}
         title={t('listings.change_price', { defaultValue: 'Change price' })}
@@ -1016,9 +1104,22 @@ function ListingDetailScreen() {
           {parsedNewPrice !== null && parsedNewPrice < listing.price ? (
             listing.reaches_target_hit ? (
               <Text style={[styles.sheetNote, { color: colors.accent }]}>
+                {/* "at most once a day": Target Hit alerts each watcher once
+                    per 24 h (docs/P2P_MARKETPLACE_SPEC.md §8b), so a drop
+                    right after an alert reaches nobody — this promised it
+                    would (walked 2026-09-24). */}
                 {listing.watchers > 0
-                  ? `We'll alert the ${listing.watchers === 1 ? "member" : "members"} watching this whose target your new price meets.`
-                  : "Members watching this item will be alerted if your new price meets their target."}
+                  ? listing.watchers === 1
+                    ? t('listing.price_drop_alert_watchers_one', {
+                        defaultValue: "We'll alert the member watching this if your new price meets their target — at most once a day.",
+                      })
+                    : t('listing.price_drop_alert_watchers_many', {
+                        count: listing.watchers,
+                        defaultValue: "We'll alert the {{count}} members watching this whose target your new price meets — at most once a day each.",
+                      })
+                  : t('listing.price_drop_alert_future', {
+                      defaultValue: 'Members watching this item will be alerted if your new price meets their target — at most once a day each.',
+                    })}
               </Text>
             ) : (
               // reaches_target_hit false = no canonical identity, so no buyable

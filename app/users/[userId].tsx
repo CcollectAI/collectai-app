@@ -31,7 +31,7 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { PresenceIndicator } from '@/components/PresenceIndicator';
 import { useAsync } from '@/hooks/useAsync';
-import useAuth from '@/hooks/useAuth';
+import { useAuthContext } from '@/providers/useAuthContext';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
 import { UserStatsSection } from '@/components/users/UserStatsSection';
@@ -82,7 +82,13 @@ function UserProfileScreen() {
   const { userId } = useLocalSearchParams<{ userId?: string }>();
   const router = useRouter();
   const { colors } = useAppTheme();
-  const { user: currentUser } = useAuth();
+  // The app's ONE auth source. This used `src/hooks/useAuth`, a second copy of
+  // AuthProvider whose onAuthStateChange listener was `async` and awaited a
+  // profiles read INSIDE GoTrue's lock — the deadlock AuthProvider fixed with
+  // setTimeout(0). Every cold start into a profile (a shared link, a
+  // notification) stalled every Supabase request ~15 s and showed "Couldn't
+  // load this profile" (walked on Android 2026-09-24). The hook is deleted.
+  const { user: currentUser } = useAuthContext();
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [isUserBlocked, setIsUserBlocked] = useState(false);

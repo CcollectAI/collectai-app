@@ -49,7 +49,8 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { useAsync } from '@/hooks/useAsync';
 import { useSettings } from '@/lib/settings';
 import { dataProvider, type Item } from '@/data';
-import { fmtCurrency } from '@/lib/format';
+import { fmtCurrency, moneyInputValue } from '@/lib/format';
+import { convertEUR } from '@/lib/fx';
 import { categoryDisplayName } from '@/constants/categories';
 import { radius, text as textToken, fontWeight } from '@/theme/tokens';
 import { useTranslation } from 'react-i18next';
@@ -98,11 +99,13 @@ function SellPickScreen() {
         // Only a usable price seeds the box. `0` is the unpriced case (a
         // category with no sold-comp source), and a prefilled 0 would both read
         // as "worthless" and fail the server's `price > 0` on submit.
-        itemValue: item.price > 0 ? String(Math.round(item.price * 100) / 100) : '',
+        // item.price is the EUR valuation; the listing is created in the member's
+        // currency (sell/new sends settings.currency), so convert before seeding.
+        itemValue: item.price > 0 ? moneyInputValue(convertEUR(item.price, settings)) : '',
         itemCondition: item.condition ?? '',
       },
     } as Href);
-  }, [router, settings.hapticsEnabled]);
+  }, [router, settings]);
 
   const renderItem = useCallback(({ item }: { item: Item }) => {
     return (

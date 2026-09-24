@@ -168,7 +168,23 @@
     "helps_predictions": "Esto mejora las predicciones de precios para todos",
     "added_to_collection": "Añadido a tu colección",
     "change_category": "Cambiar categoría",
-    "saved_items_safe": "Tus artículos guardados están a salvo: solo no pudimos acceder a ellos. Comprueba tu conexión e inténtalo de nuevo."
+    "saved_items_safe": "Tus artículos guardados están a salvo: solo no pudimos acceder a ellos. Comprueba tu conexión e inténtalo de nuevo.",
+    "load_failed_pull": "No se pudo cargar tu lista de seguimiento. Desliza hacia abajo para reintentar.",
+    "enter_title": "Introduce un título.",
+    "choose_category": "Elige una categoría.",
+    "target_needed": "Fija un precio objetivo: es el precio al que te avisamos.",
+    "target_set": "Precio objetivo fijado: te avisaremos si se anuncia por debajo de {{price}}",
+    "target_updated": "Precio objetivo actualizado",
+    "add_failed": "No se pudo añadir este artículo.",
+    "remove_failed": "No se pudo quitar este artículo.",
+    "target_update_failed": "No se pudo actualizar el precio objetivo.",
+    "add_to_collection_failed": "No se pudo añadir a tu colección.",
+    "remove_title": "Quitar de la lista de seguimiento",
+    "remove_body": "¿Quitar «{{title}}» de tu lista de seguimiento?",
+    "remove": "Quitar",
+    "added": "Añadido a tu lista de seguimiento",
+    "added_named": "«{{title}}» añadido a tu lista de seguimiento",
+    "scan_no_title": "Este escaneo aún no tiene título para seguirlo"
   },
   "events": {
     "ticket_fee_hint": "Se aplica una comisión de plataforma del {{pct}}% a las entradas de pago.",
@@ -211,7 +227,9 @@
     "pull_to_retry": "Desliza hacia abajo para reintentar.",
     "nearby_events": "Eventos cerca de ti",
     "announcements_title": "Anuncios del evento",
-    "updates_from_host": "Novedades del organizador"
+    "updates_from_host": "Novedades del organizador",
+    "location_unavailable_title": "No pudimos encontrar tu ubicación",
+    "location_unavailable_body": "Activa los servicios de ubicación y vuelve a intentarlo."
   },
   "marketplace": {
     "find_collectors": "Encontrar coleccionistas",
@@ -227,7 +245,8 @@
     "regional_insights_sub": "Tendencia cerca de ti según la actividad de los coleccionistas",
     "prices_load_failed": "No se pudieron cargar los precios de mercado. Comprueba tu conexión e inténtalo de nuevo.",
     "upgrade_to_see": "Mejora tu plan para verlo",
-    "movers_explainer": "Los mayores movimientos de precio de 7 días en tus categorías: qué sube, qué baja y cuánto."
+    "movers_explainer": "Los mayores movimientos de precio de 7 días en tus categorías: qué sube, qué baja y cuánto.",
+    "sparrow_name": "Mercado de Sparrow Collect"
   },
   "search": {
     "placeholder": "Buscar artículos, coleccionistas, eventos...",
@@ -932,7 +951,45 @@
     "in_beta": "Estás en la beta de Sparrow",
     "plans_load_failed": "No se pudieron cargar los planes",
     "restore_purchases": "Restaurar compras",
-    "beta_pricing_note": "Todas las funciones Pro están desbloqueadas gratis mientras probamos. Los precios llegarán tras la beta: te avisaremos antes de cualquier cambio."
+    "beta_pricing_note": "Todas las funciones Pro están desbloqueadas gratis mientras probamos. Los precios llegarán tras la beta: te avisaremos antes de cualquier cambio.",
+    "title": "Suscripción",
+    "plan_free": "Gratis",
+    "plan_pro_monthly": "Pro mensual",
+    "plan_pro_yearly": "Pro anual",
+    "price_per_month": "{{price}}/mes",
+    "price_per_year": "{{price}}/año",
+    "price_yearly_saving": "{{price}} · ahorra ~33 %",
+    "recommended": "Recomendado",
+    "downgrade": "Bajar de plan",
+    "plan_a11y": "Plan {{name}}, {{price}}",
+    "plan_a11y_current": "plan actual",
+    "plan_a11y_recommended": "recomendado",
+    "select_plan_a11y": "Elegir el plan {{name}}",
+    "feature_mandates": "10 mandatos de compra",
+    "feature_watchlist_unlimited": "Lista de seguimiento ilimitada",
+    "feature_target_hit_unlimited": "Alertas Target Hit ilimitadas",
+    "feature_deal_discovery": "Búsqueda de ofertas",
+    "feature_set_completion": "Seguimiento de sets completos (sets de cartas coleccionables)",
+    "feature_advanced_analytics": "Análisis avanzados",
+    "feature_no_ads": "Sin anuncios",
+    "feature_watchlist_25": "25 artículos en la lista de seguimiento",
+    "feature_target_hit_daily": "1 alerta Target Hit al día",
+    "feature_basic_valuation": "Valoración básica",
+    "feature_community_events": "Eventos de la comunidad",
+    "store_unreachable_ios": "No pudimos conectar con la App Store para ver las suscripciones. Revisa tu conexión e inténtalo de nuevo. ¿Ya estás suscrito? Usa «Restaurar compras» más abajo.",
+    "store_unreachable_android": "No pudimos conectar con Google Play para ver las suscripciones. Revisa tu conexión e inténtalo de nuevo. ¿Ya estás suscrito? Usa «Restaurar compras» más abajo.",
+    "legal_renewal_ios": "Las suscripciones se renuevan automáticamente hasta que las canceles. Cancela cuando quieras en las suscripciones de tu Apple ID. El pago se carga en tu cuenta de Apple ID al confirmar.",
+    "legal_renewal_android": "Las suscripciones se renuevan automáticamente hasta que las canceles. Cancela cuando quieras en tus suscripciones de Google Play. El pago se carga en tu cuenta de Google Play al confirmar.",
+    "legal_agree": "Al suscribirte aceptas nuestros Términos de uso y nuestra Política de privacidad.",
+    "terms_link": "Términos de uso",
+    "privacy_link": "Política de privacidad",
+    "plan_unavailable": "Este plan no está disponible ahora mismo. Inténtalo más tarde.",
+    "welcome_pro": "¡Te damos la bienvenida a Sparrow Pro!",
+    "restore_unavailable": "No se pudo restaurar. Inténtalo de nuevo.",
+    "restore_none": "No se encontraron compras anteriores.",
+    "restored": "Restaurado: tienes {{plan}}.",
+    "manage_open_failed": "No se pudo abrir la página de suscripciones.",
+    "plans_load_error": "No se pudieron cargar los planes."
   },
   "mfa": {
     "title": "Autenticación en dos pasos",
@@ -948,7 +1005,9 @@
     "intro": "Añade una capa extra de seguridad a tu cuenta con una app de autenticación TOTP.",
     "scan_instruction": "Abre tu app de autenticación (Google Authenticator, Authy, etc.) y escanea este código:",
     "protected": "Tu cuenta está protegida con autenticación en dos pasos.",
-    "enable_prompt": "Protege tu cuenta activando la autenticación en dos pasos con una app de autenticación."
+    "enable_prompt": "Protege tu cuenta activando la autenticación en dos pasos con una app de autenticación.",
+    "manual_key_hint": "¿No puedes escanearlo porque el autenticador está en este teléfono? Introduce esta clave (mantén pulsado para copiar):",
+    "manual_key_a11y": "Clave para tu app de autenticación"
   },
   "event_detail": {
     "not_found": "Evento no encontrado",
@@ -958,7 +1017,9 @@
     "load_failed": "No se pudo cargar este evento",
     "cancelled": "Este evento se ha cancelado",
     "was_interested": "Estaba interesado",
-    "not_found_body": "Este evento todavía no existe. Intenta abrirlo de nuevo desde la pestaña Eventos."
+    "not_found_body": "Este evento todavía no existe. Intenta abrirlo de nuevo desde la pestaña Eventos.",
+    "manage": "Gestionar",
+    "manage_a11y": "Gestionar evento"
   },
   "user_profile": {
     "blocked_user": "Has bloqueado a este usuario",
@@ -1049,7 +1110,12 @@
     "feature_requires_premium": "{{feature}} requiere Premium",
     "feature_requires_plan": "{{feature}} requiere {{plan}}",
     "unlock_feature": "Mejora para desbloquear esta función",
-    "unlock_via_plan_feature": "Incluido en {{plan}} como «{{planFeature}}»"
+    "unlock_via_plan_feature": "Incluido en {{plan}} como «{{planFeature}}»",
+    "limit_watchlist_title": "Tu lista de seguimiento está llena",
+    "limit_watchlist_body": "El plan gratuito sigue hasta {{count}} artículos. Sparrow Pro sigue todos los que quieras.",
+    "limit_generic_title": "Incluido en Sparrow Pro",
+    "limit_generic_body": "Has alcanzado lo que incluye el plan gratuito. Sparrow Pro elimina el límite.",
+    "see_pro": "Ver Sparrow Pro"
   },
   "set_completion": {
     "title": "Progreso de la colección",
@@ -1111,7 +1177,7 @@
     "back_items": "Artículos",
     "back_settings": "Ajustes",
     "become_sponsor": "Conviértete en patrocinador",
-    "compose_announcement": "Redactar anuncio",
+    "compose_announcement": "Anunciar",
     "condition_guide": "Guía de estado",
     "ebay_defaults": "Valores por defecto de eBay",
     "edit_event": "Editar el evento",
@@ -1223,7 +1289,11 @@
     "sponsored_note": "Este evento se marcará como patrocinado y se destacará a los coleccionistas.",
     "invite_after_create": "Podrás invitar a amigos después de crear el evento.",
     "invite_via_chat": "Invitar a amigos por chat",
-    "available_after_creation": "Disponible tras crear el evento"
+    "available_after_creation": "Disponible tras crear el evento",
+    "visibility_public": "Público",
+    "visibility_private": "Privado",
+    "public_hint": "Cualquiera puede ver este evento y unirse",
+    "private_hint": "Solo tú puedes ver este evento. No aparece en la lista y su enlace no se abrirá para nadie más."
   },
   "listings": {
     "catalog_photo": "Foto del catálogo",
@@ -1271,7 +1341,16 @@
     "no_payment_handling": "Sparrow no gestiona el pago ni el envío. Los acuerdas directamente con el vendedor y no hay protección al comprador.",
     "unmatched_price_note": "Este anuncio no está vinculado a un artículo del catálogo, así que no puede avisar a nadie. El nuevo precio sí aparece en el marketplace.",
     "marketplace_intro": "Todo lo que hay aquí lo publican coleccionistas como tú. Escribe a un vendedor para acordar un precio: Sparrow no gestiona el pago ni el envío. Publica tus artículos y se avisará a los miembros que los siguen.",
-    "arrange_between_yourselves": "Compradores y vendedores acuerdan entre ellos el pago y el envío. Sparrow no gestiona el pago y no hay protección al comprador."
+    "arrange_between_yourselves": "Compradores y vendedores acuerdan entre ellos el pago y el envío. Sparrow no gestiona el pago y no hay protección al comprador.",
+    "mark_sold_title": "¿Marcar como vendido?",
+    "mark_sold_body": "El anuncio termina y el artículo sale de tu colección. La venta pasa a tus Ventas y beneficios. No se puede deshacer.",
+    "watchers_other_one": "1 miembro más sigue este artículo",
+    "gone_sold": "Este artículo se ha vendido.",
+    "gone_other": "Este anuncio ya no está disponible.",
+    "watchers_other_many": "{{count}} miembros más siguen este artículo",
+    "sold_for_label": "¿Por cuánto se vendió?",
+    "sold_for_a11y": "Precio de venta",
+    "marked_sold": "Marcado como vendido — ya está en tus Ventas."
   },
   "chat": {
     "collector_not_found": "Coleccionista no encontrado",
@@ -1372,7 +1451,31 @@
     "watch_note": "Vigilamos los marketplaces y te avisamos cuando se alcance tu precio.",
     "deal_discovery_pitch": "El descubrimiento de ofertas es una función de Sparrow Pro. Mejora tu plan y deja que Sparrow cace ofertas por ti.",
     "add_item_and_max": "Añade un artículo y tu precio máximo.",
-    "link_item_explainer": "Vincula la búsqueda a un artículo conocido para que podamos mostrarte lo que te ahorró una oferta. Si lo omites, la búsqueda funciona igual."
+    "link_item_explainer": "Vincula la búsqueda a un artículo conocido para que podamos mostrarte lo que te ahorró una oferta. Si lo omites, la búsqueda funciona igual.",
+    "mandate_active_a11y": "Búsqueda activa",
+    "mandate_delete_search": "Eliminar búsqueda",
+    "mandate_delete_title": "¿Eliminar esta búsqueda?",
+    "mandate_delete_body": "Sparrow deja de vigilarla y sale de tu lista. Las ofertas ya encontradas se quedan.",
+    "mandate_deleted": "Búsqueda eliminada",
+    "mandate_delete_failed": "No se pudo eliminar la búsqueda",
+    "why_match": "Por qué encaja",
+    "check_price_ok": "Dentro de tu límite de {{max}}",
+    "check_price_fail": "Por encima de tu límite de {{max}}",
+    "check_budget_ok": "Te quedan {{remaining}} de tu presupuesto total",
+    "check_budget_fail": "Por encima de tu presupuesto total",
+    "check_trust_ok": "El vendedor y el anuncio cumplen tu nivel de confianza",
+    "check_trust_fail": "Por debajo de tu nivel de confianza",
+    "check_source_ok": "De un mercado que elegiste",
+    "check_source_fail": "No es de un mercado que elegiste",
+    "check_keywords_ok": "Ninguna de las palabras excluidas",
+    "check_keywords_fail": "Contiene una palabra excluida",
+    "check_card_ok": "La carta que buscas (#{{number}})",
+    "check_card_fail": "Otra carta, no la #{{number}}",
+    "check_expired": "Tu búsqueda ha caducado",
+    "check_region": "No envía a tu región",
+    "shipping_estimated_range": "Envío no indicado — normalmente {{min}}–{{max}} hasta ti. Revisa el anuncio.",
+    "shipping_estimated": "Envío no indicado — revisa el anuncio.",
+    "shipping_stated": "Más {{amount}} de envío"
   },
   "edit_event": {
     "loading_event": "Cargando evento...",
@@ -1384,7 +1487,8 @@
     "danger_zone": "Zona de peligro",
     "a11y_cancel_event": "Cancelar evento",
     "cancel_event": "Cancelar evento",
-    "cancel_warning": "Cancelar este evento es definitivo. Se avisará a todos los asistentes."
+    "cancel_warning": "Cancelar este evento es definitivo. Se avisará a todos los asistentes.",
+    "publish": "Publicar evento"
   },
   "catalog": {
     "image_coming_soon": "Imagen próximamente",
@@ -1670,5 +1774,10 @@
     "discoverable_note": "Coleccionistas que eligieron ser visibles, ordenados por lo que tienen en esta categoría.",
     "load_failed": "No se pudo cargar la clasificación. Desliza hacia abajo para reintentar.",
     "empty": "Todavía no hay nadie en la clasificación."
+  },
+  "listing": {
+    "price_drop_alert_watchers_one": "Avisaremos al miembro que sigue esto si tu nuevo precio alcanza su objetivo — como mucho una vez al día.",
+    "price_drop_alert_future": "Los miembros que siguen este artículo recibirán un aviso si tu nuevo precio alcanza su objetivo — como mucho una vez al día cada uno.",
+    "price_drop_alert_watchers_many": "Avisaremos a los {{count}} miembros que siguen esto y cuyo objetivo alcanza tu nuevo precio — como mucho una vez al día cada uno."
   }
 }

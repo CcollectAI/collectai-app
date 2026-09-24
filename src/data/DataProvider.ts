@@ -40,7 +40,7 @@ import type {
   MarketplaceSale,
   MarketplaceFeeSchedule,
 } from './types';
-import type { CollectorsEvent, CreateEventInput, EventTemplate, EventAnnouncement, SponsorCompany } from './events';
+import type { CollectorsEvent, CreateEventInput, EventPatch, EventTemplate, EventAnnouncement, SponsorCompany } from './events';
 
 export interface DataProvider {
   /**
@@ -573,7 +573,7 @@ export interface DataProvider {
    * @param eventId - The event ID
    * @param patch - Partial event fields to update
    */
-  updateEvent(eventId: string, patch: Partial<CreateEventInput & { status?: string }>): Promise<CollectorsEvent>;
+  updateEvent(eventId: string, patch: EventPatch): Promise<CollectorsEvent>;
 
   /**
    * Cancel an event (soft-delete by setting status to 'cancelled').
@@ -792,7 +792,7 @@ export interface DataProvider {
   /** Unified search across items, catalog, users, events, and categories. */
   unifiedSearch(query: string, limit?: number): Promise<{
     items: { id: string; name: string; category: string; imageUrl?: string | null; price?: number }[];
-    catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; hasReferenceImage?: boolean; priceEur?: number | null }[];
+    catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; setCode?: string | null; hasReferenceImage?: boolean; priceEur?: number | null }[];
     users: { id: string; displayName: string; handle?: string; avatarUrl?: string | null }[];
     events: { id: string; title: string; startDate?: string; location?: string; category?: string }[];
     categories: { id: string; name: string }[];

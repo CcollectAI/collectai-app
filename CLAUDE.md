@@ -133,6 +133,115 @@ is a syntax error in JSX, so it could never be written; `False in (None, 0)`
 folding booleans in silently; a `//` comment inside Python; and a `package.json`
 edit whose anchor appeared twice, so it silently did not apply.
 
+## Decisions of 2026-09-24 (Merle) — built the same day
+
+- **Keep the DEMO listings** on the marketplace as demo content.
+- **Record off-platform sales:** Mark as sold asks the price; the server records
+  it like an in-app trade (realised P/L) and accrues DAC7. Verified on prod.
+- **Mandates include Sparrow member listings** (`_sparrow_hits`, source
+  `sparrow`); verified on prod with a real member listing becoming a deal.
+- **Deal screen:** plain translated checklist from `policy_checks` (no raw
+  engine text, no Scoring card); an estimated shipping cost is shown as a range
+  and never fails the limit. **"Sparrow Collect Marketplace"** replaces
+  "Sparrow P2P", translated per language (`marketplaceLabel`).
+
+## "Mark as sold" left the card in the collection (2026-09-24)
+
+The seller's manual "Mark as sold" was the second copy of settlement that never
+got the 2026-08-09 fix: status only, no `sold_at`, the card still in the
+collection and in portfolio value. One helper now (`retire_sold_item`), a
+confirmation in the app, and "My Listings" finally shows the seller's listings.
+`docs/CLASS_SWEEPS.md` class AJ — with the open question of recording a price
+for off-platform sales (realised P/L, DAC7).
+
+## The Smart Deal Agent could not produce a deal (2026-09-24)
+
+Walked with a real keyed mandate on Pro: **every scan crashed** the moment any
+marketplace source overran its 10 s budget — `spawn_bg(asyncio.gather(...))`
+hands `create_task` a future, the TypeError escaped `aggregate_search`, and the
+results that DID arrive were thrown away (81 times in one week of bake.log; the
+member marketplace search shared the path). After the fix the same mandate
+found deals — and showed that 4 of 6 were other cards with the same name, that
+the list served rejected candidates, that the deal screen crashed on open (a
+snake_case cast in a SCREEN, invisible to `check:cast-not-mapped`), and that the
+list never refreshed after creating a search. All fixed and DEPLOYED; details
+and the open decisions in `docs/CLASS_SWEEPS.md` class AI.
+
+**`spawn_bg` now takes any awaitable.** Anything else that passes it a future
+was one slow network call away from the same crash.
+
+## Target Hit, end to end with two real accounts — and the identity it nearly got wrong (2026-09-24)
+
+The paid alert was walked with no seeded rows: a buyer watched a card, a new
+seller added and listed it below the target, one forced `deal_discovery` run
+fired it, and the in-app notification opened the listing. It WORKS — and the
+walk found why it would have failed for real members:
+
+- **Catalog identity by title alone.** Five pokemon "Charizard ex" matched at
+  1.0 and the first won, so the seller's €5.54 promo would have been keyed (and
+  priced) as a €263.95 card and alerted the wrong watchers. Fixed inside
+  `_match_catalog_items` for all five callers (CLASS_SWEEPS AH).
+- **The cache outlived the member.** Global cache keys, never cleared on
+  sign-in/out: an empty pre-login read showed "No items in your watchlist" to a
+  member with six, and an account switch would serve the previous member's data.
+  `bindCacheOwner` in `offlineCache` (CLASS_SWEEPS AG).
+- **Writes that went around the cache** — add-manual's insert left Sell saying
+  "Nothing in your collection". `invalidateItemCaches()` + `check:cache-bypass`.
+- Money seeded into inputs as "5.535" / unconverted EUR (`moneyInputValue`),
+  push text "on sparrow", a DEBUG-level push failure, a 30-min window on a 30-min
+  schedule, "1 other member watching" shown to that member, help search matching
+  "ex" inside "export". All fixed; server DEPLOYED and verified on prod.
+
+Open decisions, not bugs: three **DEMO listings** (test account, 08-19) are the
+only listings on the public marketplace and carry other cards' photos; the
+watchlist form still lets a target be skipped; Android has no push (FCM) and no
+Pro purchase (RevenueCat Android key).
+
+## Every event button, and the paid doors that could not take money (2026-09-24)
+
+Walked every event control on Android as a host and as a throwaway attendee.
+Fixed and DEPLOYED (server hash-verified, 9 `ExecStartPre` gates run by hand,
+healthz 200) and verified against prod with real tokens:
+
+- **Every event edit 500'd** — `update_event` bound date/time strings into
+  DATE/TIME (asyncpg will not coerce). And `create_event` 500'd whenever the
+  time was typed the way the placeholder showed it, "19:30 CET". One parser now:
+  `events_helpers.parse_event_time` (400 on garbage).
+- **Edit dropped kind, category and coordinates** (no field on the request, no
+  mapping in the provider), and **could not clear** anything: the app "cleared"
+  with `undefined`, which JSON drops, and the server used `exclude_none`. Now
+  `null` clears `CLEARABLE_EVENT_COLUMNS` only.
+- **Cancel promised "all attendees will be notified" and notified nobody** —
+  and a cancelled event leaves every list, so an attendee just lost it. Now one
+  notification per attendee on the transition (verified: 1 row in
+  `notification_history`, 0 to the host, 0 on a repeat cancel). Class AF.
+- **Paid events are OFF** (`PAID_EVENTS_ENABLED`, server + app). Stripe on prod
+  is a TEST key, sponsor price ids are empty, one route had invented ids, and
+  ticket checkout pays the organiser nothing. 0 events were priced or
+  sponsored. Class AE has what must be true before turning it on.
+- **Every Stripe return URL was `collectai://`**, a scheme no build registers
+  — after paying, the member was stranded in the browser. `APP_URL_SCHEME`,
+  pinned to `app.json` by a test. The subscription URL carries Stripe's literal
+  `{CHECKOUT_SESSION_ID}`; making it an f-string needed `{{…}}`, or Python
+  would have evaluated the name.
+
+App: the date picker's first pick said "Date is required" (stale closure —
+`setValue`, not `onChange`+`onBlur`); create lands on the event; unsaved-changes
+guard on create/edit; host "Manage" replaces RSVP + the floating ⋯; detail and
+sponsor dashboard refresh on focus; drafts publish; Nearby says "couldn't find
+your location" instead of blaming the connection. The Month view said "8 events" for 20 — it summed distinct kinds per day. Rules in
+`docs/ui-playbook.md` ("Every event button"). Money-format class AD gated.
+
+**Retracted:** I reported Set Reminder as silent when notifications are
+denied. It is not — `calendar.scheduleReminder` raises "Notifications
+Required · Open Settings" (seen on device). I had read events.tsx skipping the
+error and not the function it calls.
+
+**My own miss:** commit acf414fc (2026-09-23) broke `verify:prebuild` — a
+docstring reading `p.user_id` tripped `check_sql_columns`, and I had not run the
+full chain before committing. Run `npm run verify:prebuild` before EVERY commit,
+not only the narrow checks.
+
 ## The Portfolio Tier could not award a rank, and the tests could not tell (2026-09-21)
 
 The Analytics "Portfolio Tier" card said **Unranked · Rarity 0 · Completeness
@@ -559,7 +668,9 @@ HEAD since May, unchanged by this diff.
 - **Walking is now a script: `npm run walk`** (`scripts/walk/`): all 79 routes in
   one run, machine checks (title, back, cluster, nav bar, raw text,
   untranslated, slow load > 5 s, crash), a contact sheet, states via
-  `--locale` / `--small` / an API-down round. Walks are ROUNDS — log everything,
+  `--locale` / `--small` / an API-down round. **Device = the one attached**
+  (`--serial` only when several are): a hard-coded `emulator-5560` outlived a
+  restart as 5554 and a whole run read NO_DUMP on every route (2026-09-24). Walks are ROUNDS — log everything,
   tag class/one-off/decision, fix the batch, one JS swap, re-sweep the flagged
   routes. Method + round log: `docs/ANDROID_LAUNCH.md` "Screen sweep". Round 1
   (API down): 20 flagged → two classes fixed at chokepoints

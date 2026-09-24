@@ -22,6 +22,32 @@ so the build is made to identify itself instead.
 must pin the flag false. It is not in `verify:prebuild`, because it fails on a
 configuration that may be intentional.
 
+## Money round on Android (2026-09-24)
+
+Walked free → cap → paywall, and Pro → paywall → Manage, on the emulator.
+Details in `docs/CLASS_SWEEPS.md` AK/AL/AM.
+
+- **Server gates hold.** Free gets 403 `PLAN_REQUIRED` on realised P/L,
+  deals, deal detail, demand heat and mandate create; Pro gets 200. The 26th
+  watch is 403 `PLAN_LIMIT_WATCHLIST`.
+- **A cap now sells.** The app turns those codes into "Your watchlist is
+  full… See Sparrow Pro" (`src/lib/planLimitPrompt.ts`) instead of "try
+  again".
+- **The paywall is translated** (all 7 locales). The feature lists are i18n
+  KEYS, and both paywall gates resolve them through the locale files.
+- **Free card no longer says "1 price alert a week"**: nothing in the app
+  creates a price alert. Put the bullet back with a screen that does.
+- **Downgrade on the Free card works** (opens store subscriptions); it was a
+  dead button.
+- **Android cannot take money yet:** no RevenueCat Android key, so "Plans
+  couldn't load" on every Android device. That's the console item, not code.
+- **Affiliate:** links resolve and clicks are recorded (`demand_signals`
+  `affiliate_click`, verified with a probe row, deleted). All
+  `*_AFFILIATE_*` ids are still empty on EC2, so no link is tagged and
+  earning is €0. The click handler's failure log is now WARNING, not debug.
+- `sell_timing_router` still requires `premium`, a tier nobody can buy. It
+  has no app caller, so nothing is live; decide before wiring it.
+
 ## What the subscription screen tells a paying member (2026-09-18)
 
 `app/subscription.tsx` renders one line under the plan cards, from
@@ -113,7 +139,7 @@ change looking plausible; it is `test_free_user_gets_0`.
 |--|------|-----------------------------|
 | **Watchlist items** | **25** | **Unlimited** |
 | **Target Hit alerts** | **1 / day** | **Unlimited** |
-| **Price alerts created** | **1 / week** | **Unlimited** |
+| **Price alerts created** | **1 / week** (server cap; **not on the Free card** — no screen creates one, 2026-09-24) | **Unlimited** |
 | Purchase mandates | 0 | 10 |
 | Deal discovery | No | Yes |
 | ~~Dossier PDF export~~ **SHELVED 2026-08-30** | — | — |
@@ -892,6 +918,13 @@ After scanning a barcode, a "Find on eBay" link appears below the Save/Watchlist
 ---
 
 ## 3. Sponsored Events (BUILT)
+
+> ⚠️ **2026-09-24: BUILT but NOT SELLABLE, and switched OFF.** "Done" below
+> means the code exists, not that money can be taken. On prod: Stripe is a TEST
+> key, `STRIPE_PRICE_ID_SPONSOR_*` are empty, and ticket sales have no organiser
+> payout. `PAID_EVENTS_ENABLED` (server + app) is off; ticket and sponsor
+> checkouts answer 503 `PAID_FEATURE_UNAVAILABLE`. Before turning it on:
+> `docs/CLASS_SWEEPS.md` class AE.
 
 Let brands, retailers, and event organizers pay to promote events to CollectAI users.
 

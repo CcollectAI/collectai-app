@@ -41,7 +41,7 @@ import type {
   OfferEvent,
   UserReputation,
 } from './types';
-import type { CollectorsEvent, CreateEventInput, EventTemplate, EventAnnouncement, SponsorCompany } from './events';
+import type { CollectorsEvent, CreateEventInput, EventPatch, EventTemplate, EventAnnouncement, SponsorCompany } from './events';
 import { cacheGet, cacheSet, cacheClear } from './offlineCache';
 import { clearProfileCache } from './providers/userProvider';
 import { followedCategoriesStore } from './followedCategoriesStore';
@@ -112,6 +112,27 @@ async function swr<T>(
  * "it didn't save", again. A prefix clear covers every member, which is what a
  * privacy change needs anyway (others' rows carry YOUR gated columns).
  */
+/**
+ * Forget every cached view an item write can change (2026-09-24).
+ *
+ * The provider's own item mutations call this. It is exported for the writes
+ * that go to Supabase DIRECTLY (add-manual's insert, the catalog refresh, the
+ * item detail patch): they never passed through this class, so the collection
+ * they changed stayed cached — a seller who had just added a card opened Sell
+ * and read "Nothing in your collection yet" for up to five minutes.
+ * `check:cache-bypass` fails on a direct write to a cached table that does not
+ * call this.
+ */
+export async function invalidateItemCaches(): Promise<void> {
+  await Promise.all([
+    cacheClear(CK.ITEMS_LIST),
+    cacheClear(CK.PORTFOLIO_SUMMARY),
+    cacheClear(CK.CATEGORY_SUMMARIES),
+    cacheClear(CK.CATEGORY_MISSING),
+    cacheClear(CK.ANALYTICS),
+  ]);
+}
+
 export async function clearProfileCaches(): Promise<void> {
   clearProfileCache();
   await cacheClear('profile:');
@@ -228,13 +249,7 @@ export class CachedDataProvider implements DataProvider {
    * CATEGORY_MISSING is a prefix, so one clear covers every category's entry.
    */
   private async invalidateForItemChange(): Promise<void> {
-    await Promise.all([
-      cacheClear(CK.ITEMS_LIST),
-      cacheClear(CK.PORTFOLIO_SUMMARY),
-      cacheClear(CK.CATEGORY_SUMMARIES),
-      cacheClear(CK.CATEGORY_MISSING),
-      cacheClear(CK.ANALYTICS),
-    ]);
+    await invalidateItemCaches();
   }
 
   async createItem(input: CreateItemInput): Promise<Item> {
@@ -583,7 +598,7 @@ export class CachedDataProvider implements DataProvider {
   }
 
   // Events — host actions (mutations, pass through with cache invalidation)
-  async updateEvent(eventId: string, patch: Partial<CreateEventInput & { status?: string }>): Promise<CollectorsEvent> {
+  async updateEvent(eventId: string, patch: EventPatch): Promise<CollectorsEvent> {
     const result = await this.inner.updateEvent(eventId, patch);
     await Promise.all([
       cacheClear(CK.EVENTS),

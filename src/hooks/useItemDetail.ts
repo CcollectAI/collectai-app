@@ -18,6 +18,7 @@ import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 import { parseMoney } from '@/lib/format';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { invalidateItemCaches } from '@/data/CachedDataProvider';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -496,6 +497,8 @@ export function useItemDetail(params: UseItemDetailParams) {
         // than throws, so the only way to notice is to look.
         const { error: patchError } = await supabase.from('items').update(extraPatch).eq('id', id);
         if (patchError) throw new Error(patchError.message);
+        // Direct write: drop the cached collection it changed.
+        await invalidateItemCaches();
       }
       // COST BASIS goes through the SERVER, not into `extraPatch`.
       //

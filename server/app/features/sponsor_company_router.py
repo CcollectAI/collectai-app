@@ -16,13 +16,18 @@ import asyncio
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.config import (
+    APP_URL_SCHEME,
+    PAID_EVENTS_ENABLED,
+    STRIPE_PRICE_ID_SPONSOR_FEATURED,
+    STRIPE_PRICE_ID_SPONSOR_PROMOTED,
+    STRIPE_PRICE_ID_SPONSOR_SPOTLIGHT,
     DEV_MODE,
     STRIPE_SECRET_KEY,
     STRIPE_PRICE_ID_SPONSOR_SUB_FEATURED,
@@ -31,6 +36,7 @@ from app.config import (
 )
 from app.auth import get_current_user_id
 from app.errors import error_response
+from app.features.events.events_helpers import parse_event_time
 from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 from app.rate_limit import per_user_rate_limit
@@ -101,10 +107,13 @@ class CreateSponsorSubscriptionRequest(BaseModel):
 _UPDATABLE_COLUMNS = {"name", "logo_url", "website_url", "contact_email", "description"}
 
 # Sponsor tier pricing (Stripe price IDs — placeholder until configured)
+# The one-off (per-event) sponsor prices. These were the literals
+# "price_sponsor_featured"/… — ids no Stripe account has, so every checkout
+# would have failed at Stripe. They read the same env vars as sponsor_router.
 _TIER_PRICES = {
-    "featured": "price_sponsor_featured",
-    "promoted": "price_sponsor_promoted",
-    "spotlight": "price_sponsor_spotlight",
+    "featured": STRIPE_PRICE_ID_SPONSOR_FEATURED,
+    "promoted": STRIPE_PRICE_ID_SPONSOR_PROMOTED,
+    "spotlight": STRIPE_PRICE_ID_SPONSOR_SPOTLIGHT,
 }
 
 
@@ -314,6 +323,10 @@ async def create_event_checkout(
         uuid.UUID(company_id)
     except ValueError:
         raise error_response(400, "Invalid company_id format", code=ErrorCode.VALIDATION_ERROR)
+    if not PAID_EVENTS_ENABLED:
+        raise error_response(
+            503, "Paid events are not available yet", code=ErrorCode.PAID_FEATURE_UNAVAILABLE,
+        )
 
     pool = get_db_pool()
     if pool is None:
@@ -340,9 +353,11 @@ async def create_event_checkout(
     if not STRIPE_SECRET_KEY:
         raise error_response(503, "Billing not configured")
 
-    price_id = _TIER_PRICES.get(request.tier)
-    if not price_id:
+    if request.tier not in _TIER_PRICES:
         raise error_response(400, f"Invalid tier: {request.tier}")
+    price_id = _TIER_PRICES[request.tier]
+    if not price_id:
+        raise error_response(503, f"Stripe price not configured for tier '{request.tier}'")
 
     stripe.api_key = STRIPE_SECRET_KEY
 
@@ -364,7 +379,11 @@ async def create_event_checkout(
                 RETURNING id
                 """,
                 request.event_title, request.event_kind, request.event_category_id,
-                request.event_date, request.event_time, request.event_end_date,
+                # DATE/TIME columns: asyncpg will not coerce a str (the same
+                # 500 update_event had, events_core.py).
+                date.fromisoformat(request.event_date),
+                parse_event_time(request.event_time),
+                date.fromisoformat(request.event_end_date) if request.event_end_date else None,
                 request.event_location, request.event_online_url, request.event_description,
                 request.event_image_url, request.event_format, request.event_max_attendees,
                 user_id, company_id,
@@ -382,8 +401,8 @@ async def create_event_checkout(
             # Auto-detect payment methods (card, iDEAL, SEPA, etc.) by region
             line_items=[{"price": price_id, "quantity": 1}],
             mode="payment",
-            success_url=f"collectai://sponsor/dashboard?checkout=success&event_id={event_id}",
-            cancel_url="collectai://sponsor/dashboard?checkout=cancel",
+            success_url=f"{APP_URL_SCHEME}://sponsor/dashboard?checkout=success&event_id={event_id}",
+            cancel_url=f"{APP_URL_SCHEME}://sponsor/dashboard?checkout=cancel",
             metadata={
                 "type": "event_sponsor",
                 "event_id": event_id,
@@ -468,7 +487,11 @@ async def create_event_demo(
                 RETURNING id
                 """,
                 request.event_title, request.event_kind, request.event_category_id,
-                request.event_date, request.event_time, request.event_end_date,
+                # DATE/TIME columns: asyncpg will not coerce a str (the same
+                # 500 update_event had, events_core.py).
+                date.fromisoformat(request.event_date),
+                parse_event_time(request.event_time),
+                date.fromisoformat(request.event_end_date) if request.event_end_date else None,
                 request.event_location, request.event_online_url, request.event_description,
                 request.event_image_url, request.event_format, request.event_max_attendees,
                 user_id, company_id,
@@ -497,6 +520,10 @@ async def create_subscription_checkout(
         uuid.UUID(company_id)
     except ValueError:
         raise error_response(400, "Invalid company_id format", code=ErrorCode.VALIDATION_ERROR)
+    if not PAID_EVENTS_ENABLED:
+        raise error_response(
+            503, "Paid events are not available yet", code=ErrorCode.PAID_FEATURE_UNAVAILABLE,
+        )
 
     pool = get_db_pool()
     if pool is None:
@@ -567,8 +594,8 @@ async def create_subscription_checkout(
             # Auto-detect payment methods (card, iDEAL, SEPA, etc.) by region
             line_items=[{"price": price_id, "quantity": 1}],
             mode="subscription",
-            success_url=f"collectai://sponsor/dashboard?checkout=success&type=subscription",
-            cancel_url="collectai://sponsor/dashboard?checkout=cancel",
+            success_url=f"{APP_URL_SCHEME}://sponsor/dashboard?checkout=success&type=subscription",
+            cancel_url=f"{APP_URL_SCHEME}://sponsor/dashboard?checkout=cancel",
             metadata={
                 "type": "sponsor_subscription",
                 "company_id": company_id,

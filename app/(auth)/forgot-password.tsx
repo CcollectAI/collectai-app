@@ -8,6 +8,7 @@ import {
   View,
   Text,
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
@@ -68,6 +69,10 @@ function ForgotPasswordScreen() {
   }, [cooldown]);
 
   async function handleReset() {
+    // Close the keyboard on submit: it stayed up over the NEXT screen
+    // (verify-email's Resend button, the reset "sent" message) — walked on
+    // Android 2026-09-24.
+    Keyboard.dismiss();
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
       showToast({ message: t('auth.errors.reset_email_required'), type: 'warning' });

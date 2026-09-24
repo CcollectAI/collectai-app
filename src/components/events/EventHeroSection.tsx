@@ -12,6 +12,7 @@ import { KIND_ICON, KIND_LABEL } from '@/constants/eventConstants';
 import { parseEventDate, getCountdown, formatEventWhen } from '@/lib/calendar';
 import type { CollectorsEvent } from '@/data/events';
 import { useTranslation } from 'react-i18next';
+import { formatPrice } from '@/lib/format';
 
 // Only sources a member can RECOGNISE get a badge. Measured 2026-09-13: live
 // events come from ticketmaster, seatgeek, rss, musicbrainz and newsletter, and
@@ -115,7 +116,7 @@ export const EventHeroSection = React.memo(function EventHeroSection({
         <View style={[styles.ticketBadge, { backgroundColor: colors.warningBg, borderColor: colors.warning + '40' }]}>
           <Ionicons name="ticket-outline" size={14} color={colors.warning} style={{ marginRight: 6 }} />
           <Text style={[styles.ticketText, { color: colors.warning }]}>
-            Ticket required · {(event.ticketPriceCents / 100).toFixed(2)}
+            Ticket required · {formatPrice(event.ticketPriceCents / 100, 'EUR')}
           </Text>
         </View>
       )}

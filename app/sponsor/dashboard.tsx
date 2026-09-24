@@ -21,7 +21,7 @@ import {
   ScrollView, View, Text, StyleSheet, ActivityIndicator, Animated, RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { dataProvider } from '@/data';
 import type { SponsorCompany, CollectorsEvent, SponsorTier, EventAnnouncement } from '@/data/events';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -161,7 +161,16 @@ const SponsorDashboardScreen: React.FC = () => {
     } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { loadCompany(); }, [loadCompany]);
+  // Load on focus, not only on mount: /sponsor/register returns here with
+  // dismissTo, and this screen (mounted in its "Start sponsoring" empty state
+  // before the company existed) must not keep showing that state to a sponsor
+  // who has just registered. Once a company is loaded, focus does not refetch —
+  // pull-to-refresh covers that, and a refetch would reset the edit form.
+  const companyLoadedRef = useRef(false);
+  companyLoadedRef.current = company !== null;
+  useFocusEffect(useCallback(() => {
+    if (!companyLoadedRef.current) loadCompany();
+  }, [loadCompany]));
 
   useEffect(() => {
     if (!loading && company) track({ name: 'sponsor_dashboard_viewed' });

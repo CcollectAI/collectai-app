@@ -28,6 +28,7 @@ from fastapi.responses import JSONResponse
 from app.auth import get_current_user_id
 from app.lib.money import platform_fee_cents
 from app.config import (
+    APP_URL_SCHEME,
     DB_ENABLED,
     DEV_MODE,
     STRIPE_PRICE_ID_PREMIUM,
@@ -470,8 +471,8 @@ async def create_checkout_session(
             # based on customer location and currency.
             line_items=[{"price": price_id, "quantity": 1}],
             mode="subscription",
-            success_url="collectai://subscription?checkout=success&session_id={CHECKOUT_SESSION_ID}",
-            cancel_url="collectai://subscription?checkout=cancel",
+            success_url=f"{APP_URL_SCHEME}://subscription?checkout=success&session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{APP_URL_SCHEME}://subscription?checkout=cancel",
             metadata={"user_id": user_id, "plan": plan},
         )
         return JSONResponse({"url": session.url, "session_id": session.id})
@@ -509,7 +510,7 @@ async def create_portal_session(
         session = await asyncio.to_thread(
             stripe_mod.billing_portal.Session.create,
             customer=sub["stripe_customer_id"],
-            return_url="collectai://settings",
+            return_url=f"{APP_URL_SCHEME}://settings",
         )
         return JSONResponse({"url": session.url})
     except stripe_mod.error.StripeError as exc:
@@ -890,6 +891,11 @@ async def _handle_sponsor_checkout_completed(pool: Any, session: dict):
                 """
                 UPDATE events SET
                     is_sponsored = true,
+                    -- create-event-checkout makes the event as a DRAFT until
+                    -- paid; nothing published it, so a paid sponsorship was an
+                    -- event nobody could see. An already-published event (the
+                    -- promote-existing path) is left as it is.
+                    status = CASE WHEN status = 'draft' THEN 'published' ELSE status END,
                     sponsor_name = $2,
                     sponsor_tier = $3,
                     sponsor_paid_at = $4,

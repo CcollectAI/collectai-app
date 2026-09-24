@@ -756,7 +756,7 @@ the last real release APK, zipaligns, and signs with `~/.android/debug.keystore`
 ```bash
 scripts/android_jsswap.sh bundle     # ~3 min
 scripts/android_jsswap.sh pack       # seconds → builds/sparrow-android-jsswap.apk
-scripts/android_jsswap.sh install    # uninstall + install on emulator-5560
+scripts/android_jsswap.sh install emulator-5554   # serial of the running emulator (`adb devices`)
 ```
 
 Proven 2026-09-15 by packing the base APK's OWN bundle back in (same CRC) and

@@ -287,6 +287,20 @@ confirmation email was sent to `admin@sparrowcollect.com` after the cutover.
 ⚠️ **Cloudflare's Activity Log lags ~2 minutes.** Do not read an empty log as a
 delivery failure in the first few minutes after sending.
 
+### An unconfirmed account signing in (fixed 2026-09-24)
+
+`signInWithPassword` for a never-confirmed account returns
+`400 {error_code: "email_not_confirmed"}` (measured on prod with an
+admin-created unconfirmed user). The login screen showed that as a toast, and
+`verify-email`, the only screen with Resend, was reachable only right after
+`signUp`. So a member who closed the app before confirming could never get the
+email again. Login now routes to `verify-email` with `from=login`, where
+Resend is available at once (after signup it still starts at the 60 s server
+cooldown). Verified on Android: tap Resend, and the confirmation email arrived
+in a mail.tm inbox within seconds. Tests: `__tests__/screens/unconfirmedLogin.test.ts`.
+All three auth forms now call `Keyboard.dismiss()` on submit; the keyboard used
+to stay up over verify-email's Resend button.
+
 ### The neighbouring trap: "I signed up and got no email"
 
 A signup for an address that **already has an account** returns HTTP 200,
@@ -387,6 +401,15 @@ the rewrite bug that deploy exposed.
 
 ## MFA (TOTP) — `app/mfa-setup.tsx`
 
+**Android could not enrol (fixed 2026-09-24).** Supabase returns the QR as an
+SVG data URI (`data:image/svg+xml;utf-8,<svg…>`, added by auth-js), and React
+Native's `<Image>` does not draw SVG. On Android the box was empty, and there
+was no setup key either. Now the QR renders with `SvgXml` (`qrSvgMarkup`,
+tested), and the base32 setup key is shown under it (selectable, grouped by
+4), because most members run the authenticator on the same phone, which
+cannot scan its own screen. The code field no longer auto-focuses over them.
+
+
 Entirely client-side via the Supabase SDK: `mfa.listFactors()` → `mfa.enroll()`
 → `mfa.challenge()` → `mfa.verify()` → `mfa.unenroll()`. No EC2 route involved.
 
@@ -424,7 +447,44 @@ Re-verified: the second enroll returns 200 where it previously returned 422.
 **If `friendlyName` is ever made user-editable, keep the cleanup** — the
 collision is on that name.
 
-## Observed 2026-09-13: the "brief logged-out flash" was not brief (NOT changed)
+## Cold start stalled every request ~15 s — a second auth listener (FIXED 2026-09-24)
+
+The 2026-09-13 note below blamed "the emulator's network". **That was wrong.**
+Measured on 2026-09-24 with diagnostics (they stay in the code):
+
+```
+secureStore getItem  2 chunks, ~0.3 s          <- storage is fine
+onAuthStateChange    TOKEN_REFRESHED at +3.5 s
+AuthProvider.getSession  timed out at 8 s       <- the lock is still held
+every from()/rpc()       timed out at 15 s      <- all queued behind it
+[useAuth] Failed to load profile — 15000ms      <- the culprit's own log
+```
+
+`src/hooks/useAuth.ts` was a second, older copy of AuthProvider. Its
+`onAuthStateChange` callback was `async` and awaited a `profiles` read, which
+**inside GoTrue's lock** is exactly the deadlock AuthProvider fixed with
+`setTimeout(0)` (see the comment at its listener). GoTrue waits for every
+subscriber before releasing the lock, so one bad listener stalls the whole app.
+Only `app/users/[userId]` used the hook, so every cold start into a profile (a
+shared link, a notification) showed "Couldn't load this profile".
+
+Fix: that screen reads `useAuthContext()`; the hook is deleted. After the fix,
+the same cold start logs **no** timeout, and the session arrives at +2.7 s.
+**Gate:** `npm run check:auth-listener-lock` (in `verify:prebuild`). It fails
+on an `async` listener, on an `await` outside a `setTimeout(...)`, or on a
+listener passed by name. Proven against the restored hook, an injected
+`await`, and a named listener.
+
+**Not changed, and correct as documented:** AuthProvider forces one
+`refreshSession()` whenever the app becomes active (the ~1h-idle 401 fix
+above). At launch that runs twice (mount + the first `active` event), serialized
+by `processLock`, so it is not the reuse race.
+
+**Measuring on the emulator:** a host load above ~15 makes the emulator drop
+keystrokes and freeze system_server ("Process system isn't responding"). Check
+`sysctl vm.loadavg` before trusting any timing.
+
+## Observed 2026-09-13: the "brief logged-out flash" was not brief (NOT changed — cause found 2026-09-24, see above)
 
 `AuthProvider.tsx` bounds `getSession()` at `AUTH_INIT_TIMEOUT_MS` (8s) and, on
 timeout, falls through with no session so the app is never stuck — documented

@@ -168,7 +168,23 @@
     "helps_predictions": "This helps improve price predictions for everyone",
     "added_to_collection": "Added to your collection",
     "change_category": "Change Category",
-    "saved_items_safe": "Your saved items are safe — we just couldn't reach them. Check your connection and try again."
+    "saved_items_safe": "Your saved items are safe — we just couldn't reach them. Check your connection and try again.",
+    "load_failed_pull": "Couldn't load your watchlist. Pull down to try again.",
+    "enter_title": "Please enter a title.",
+    "choose_category": "Please choose a category.",
+    "target_needed": "Set a target price — that's the price we alert you at.",
+    "target_set": "Target set — we'll alert you if it's listed below {{price}}",
+    "target_updated": "Target price updated",
+    "add_failed": "Could not add this item.",
+    "remove_failed": "Could not remove this item.",
+    "target_update_failed": "Could not update the target price.",
+    "add_to_collection_failed": "Could not add this to your collection.",
+    "remove_title": "Remove from watchlist",
+    "remove_body": "Remove “{{title}}” from your watchlist?",
+    "remove": "Remove",
+    "added": "Added to your watchlist",
+    "added_named": "“{{title}}” added to your watchlist",
+    "scan_no_title": "This scan has no title to watch yet"
   },
   "events": {
     "ticket_fee_hint": "A {{pct}}% platform fee applies to paid tickets.",
@@ -211,7 +227,9 @@
     "pull_to_retry": "Pull down to retry.",
     "nearby_events": "Nearby Events",
     "announcements_title": "Event Announcements",
-    "updates_from_host": "Updates from the host"
+    "updates_from_host": "Updates from the host",
+    "location_unavailable_title": "Couldn't find your location",
+    "location_unavailable_body": "Turn on location services, then try again."
   },
   "marketplace": {
     "find_collectors": "Find Collectors",
@@ -227,7 +245,8 @@
     "regional_insights_sub": "Trending near you based on collector activity",
     "prices_load_failed": "Could not load market prices. Check your connection and try again.",
     "upgrade_to_see": "Upgrade to see",
-    "movers_explainer": "The biggest 7-day price moves across your categories — what is climbing, what is falling, and by how much."
+    "movers_explainer": "The biggest 7-day price moves across your categories — what is climbing, what is falling, and by how much.",
+    "sparrow_name": "Sparrow Collect Marketplace"
   },
   "search": {
     "placeholder": "Search items, collectors, events...",
@@ -932,7 +951,45 @@
     "in_beta": "You're in the Sparrow beta",
     "plans_load_failed": "Plans couldn't load",
     "restore_purchases": "Restore Purchases",
-    "beta_pricing_note": "Every Pro feature is unlocked for free while we're testing. Pricing arrives after the beta — you'll get a heads-up before anything changes."
+    "beta_pricing_note": "Every Pro feature is unlocked for free while we're testing. Pricing arrives after the beta — you'll get a heads-up before anything changes.",
+    "title": "Subscription",
+    "plan_free": "Free",
+    "plan_pro_monthly": "Pro Monthly",
+    "plan_pro_yearly": "Pro Yearly",
+    "price_per_month": "{{price}}/mo",
+    "price_per_year": "{{price}}/yr",
+    "price_yearly_saving": "{{price}} · save ~33%",
+    "recommended": "Recommended",
+    "downgrade": "Downgrade",
+    "plan_a11y": "{{name}} plan, {{price}}",
+    "plan_a11y_current": "current plan",
+    "plan_a11y_recommended": "recommended",
+    "select_plan_a11y": "Select the {{name}} plan",
+    "feature_mandates": "10 purchase mandates",
+    "feature_watchlist_unlimited": "Unlimited watchlist",
+    "feature_target_hit_unlimited": "Unlimited Target Hit alerts",
+    "feature_deal_discovery": "Deal discovery",
+    "feature_set_completion": "Set completion tracker (trading-card sets)",
+    "feature_advanced_analytics": "Advanced analytics",
+    "feature_no_ads": "No ads",
+    "feature_watchlist_25": "25 watchlist items",
+    "feature_target_hit_daily": "1 Target Hit alert a day",
+    "feature_basic_valuation": "Basic valuation",
+    "feature_community_events": "Community events",
+    "store_unreachable_ios": "We couldn't reach the App Store for the subscription options. Check your connection and try again. Already subscribed? Use Restore Purchases below.",
+    "store_unreachable_android": "We couldn't reach Google Play for the subscription options. Check your connection and try again. Already subscribed? Use Restore Purchases below.",
+    "legal_renewal_ios": "Subscriptions auto-renew until cancelled. Cancel any time in your Apple ID subscriptions. Payment is charged to your Apple ID account on confirmation.",
+    "legal_renewal_android": "Subscriptions auto-renew until cancelled. Cancel any time in your Google Play subscriptions. Payment is charged to your Google Play account on confirmation.",
+    "legal_agree": "By subscribing you agree to our Terms of Use and Privacy Policy.",
+    "terms_link": "Terms of Use",
+    "privacy_link": "Privacy Policy",
+    "plan_unavailable": "This plan is not available right now. Please try again later.",
+    "welcome_pro": "Welcome to Sparrow Pro!",
+    "restore_unavailable": "Restore unavailable. Please try again.",
+    "restore_none": "No previous purchases found.",
+    "restored": "Restored — you're on {{plan}}.",
+    "manage_open_failed": "Could not open the subscriptions page.",
+    "plans_load_error": "Could not load plans."
   },
   "mfa": {
     "title": "Two-Factor Authentication",
@@ -948,7 +1005,9 @@
     "intro": "Add an extra layer of security to your account with TOTP authenticator app.",
     "scan_instruction": "Open your authenticator app (Google Authenticator, Authy, etc.) and scan this code:",
     "protected": "Your account is protected with two-factor authentication.",
-    "enable_prompt": "Protect your account by enabling two-factor authentication with an authenticator app."
+    "enable_prompt": "Protect your account by enabling two-factor authentication with an authenticator app.",
+    "manual_key_hint": "Can't scan it — authenticator on this phone? Enter this setup key instead (press and hold to copy):",
+    "manual_key_a11y": "Setup key for your authenticator app"
   },
   "event_detail": {
     "not_found": "Event not found",
@@ -958,7 +1017,9 @@
     "load_failed": "Couldn't load this event",
     "cancelled": "This event has been cancelled",
     "was_interested": "Was interested",
-    "not_found_body": "This event doesn't exist yet. Try opening it from the Events tab again."
+    "not_found_body": "This event doesn't exist yet. Try opening it from the Events tab again.",
+    "manage": "Manage",
+    "manage_a11y": "Manage event"
   },
   "user_profile": {
     "blocked_user": "You have blocked this user",
@@ -1049,7 +1110,12 @@
     "feature_requires_premium": "{{feature}} requires Premium",
     "feature_requires_plan": "{{feature}} requires {{plan}}",
     "unlock_feature": "Upgrade to unlock this feature",
-    "unlock_via_plan_feature": "Included in {{plan}} as “{{planFeature}}”"
+    "unlock_via_plan_feature": "Included in {{plan}} as “{{planFeature}}”",
+    "limit_watchlist_title": "Your watchlist is full",
+    "limit_watchlist_body": "The free plan watches up to {{count}} items. Sparrow Pro watches as many as you like.",
+    "limit_generic_title": "Part of Sparrow Pro",
+    "limit_generic_body": "You have reached what the free plan includes. Sparrow Pro lifts the limit.",
+    "see_pro": "See Sparrow Pro"
   },
   "set_completion": {
     "title": "Set progress",
@@ -1111,7 +1177,7 @@
     "back_items": "Items",
     "back_settings": "Settings",
     "become_sponsor": "Become a Sponsor",
-    "compose_announcement": "Compose Announcement",
+    "compose_announcement": "Announce",
     "condition_guide": "Condition Guide",
     "ebay_defaults": "eBay defaults",
     "edit_event": "Edit Event",
@@ -1223,7 +1289,11 @@
     "sponsored_note": "This event will be marked as sponsored and highlighted to collectors.",
     "invite_after_create": "You can invite friends after creating the event.",
     "invite_via_chat": "Invite Friends via Chat",
-    "available_after_creation": "Available after event creation"
+    "available_after_creation": "Available after event creation",
+    "visibility_public": "Public",
+    "visibility_private": "Private",
+    "public_hint": "Anyone can see and join this event",
+    "private_hint": "Only you can see this event. It isn't listed, and its link won't open for anyone else."
   },
   "listings": {
     "catalog_photo": "Catalog photo",
@@ -1271,7 +1341,16 @@
     "no_payment_handling": "Sparrow doesn't handle payment or delivery. You arrange those directly with the seller, and there is no buyer protection.",
     "unmatched_price_note": "This listing isn't matched to a catalogue item, so it can't alert watchers. The new price still shows in the marketplace.",
     "marketplace_intro": "Everything here is listed by collectors like you. Message a seller to agree a price — Sparrow doesn't handle payment or delivery. List your own items and members watching them get alerted.",
-    "arrange_between_yourselves": "Buyers and sellers arrange payment and delivery between themselves. Sparrow doesn't handle payment and there is no buyer protection."
+    "arrange_between_yourselves": "Buyers and sellers arrange payment and delivery between themselves. Sparrow doesn't handle payment and there is no buyer protection.",
+    "mark_sold_title": "Mark as sold?",
+    "mark_sold_body": "The listing ends and the item leaves your collection. The sale goes into your Sales and profit. This cannot be undone.",
+    "watchers_other_one": "1 other member watching this item",
+    "gone_sold": "This listing has sold.",
+    "gone_other": "This listing is no longer available.",
+    "watchers_other_many": "{{count}} other members watching this item",
+    "sold_for_label": "What did it sell for?",
+    "sold_for_a11y": "Sale price",
+    "marked_sold": "Marked as sold — it is in your Sales."
   },
   "chat": {
     "collector_not_found": "Collector not found",
@@ -1372,7 +1451,31 @@
     "watch_note": "We watch marketplaces and alert you when your price is hit.",
     "deal_discovery_pitch": "Deal discovery is a Sparrow Pro feature. Upgrade to let Sparrow hunt deals for you.",
     "add_item_and_max": "Add an item and your max price.",
-    "link_item_explainer": "Links the search to a known item so we can show what a deal saved you. Leave it out and the search still runs."
+    "link_item_explainer": "Links the search to a known item so we can show what a deal saved you. Leave it out and the search still runs.",
+    "mandate_active_a11y": "Search active",
+    "mandate_delete_search": "Delete Search",
+    "mandate_delete_title": "Delete this search?",
+    "mandate_delete_body": "Sparrow stops watching for it and it leaves your list. Deals it already found stay.",
+    "mandate_deleted": "Search deleted",
+    "mandate_delete_failed": "Couldn't delete the search",
+    "why_match": "Why it's a match",
+    "check_price_ok": "Within your {{max}} limit",
+    "check_price_fail": "Over your {{max}} limit",
+    "check_budget_ok": "{{remaining}} left in your total budget",
+    "check_budget_fail": "Over your total budget",
+    "check_trust_ok": "Seller and listing meet your trust setting",
+    "check_trust_fail": "Below your trust setting",
+    "check_source_ok": "From a marketplace you chose",
+    "check_source_fail": "Not from a marketplace you chose",
+    "check_keywords_ok": "None of the words you excluded",
+    "check_keywords_fail": "Contains a word you excluded",
+    "check_card_ok": "The card you want (#{{number}})",
+    "check_card_fail": "A different card, not #{{number}}",
+    "check_expired": "Your search has expired",
+    "check_region": "Doesn't ship to your region",
+    "shipping_estimated_range": "Shipping not stated — usually {{min}}–{{max}} to you. Check the listing.",
+    "shipping_estimated": "Shipping not stated — check the listing.",
+    "shipping_stated": "Plus {{amount}} shipping"
   },
   "edit_event": {
     "loading_event": "Loading event...",
@@ -1384,7 +1487,8 @@
     "danger_zone": "Danger Zone",
     "a11y_cancel_event": "Cancel event",
     "cancel_event": "Cancel Event",
-    "cancel_warning": "Cancelling this event is permanent. All attendees will be notified."
+    "cancel_warning": "Cancelling this event is permanent. All attendees will be notified.",
+    "publish": "Publish Event"
   },
   "catalog": {
     "image_coming_soon": "Image coming soon",
@@ -1670,5 +1774,10 @@
     "discoverable_note": "Collectors who chose to be discoverable, ranked by what they hold in this category.",
     "load_failed": "Couldn't load the leaderboard. Pull down to try again.",
     "empty": "Nobody is on the leaderboard yet."
+  },
+  "listing": {
+    "price_drop_alert_watchers_one": "We'll alert the member watching this if your new price meets their target — at most once a day.",
+    "price_drop_alert_future": "Members watching this item will be alerted if your new price meets their target — at most once a day each.",
+    "price_drop_alert_watchers_many": "We'll alert the {{count}} members watching this whose target your new price meets — at most once a day each."
   }
 }

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import math
 import re
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time as dt_time, timezone
 from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
@@ -41,7 +41,13 @@ ALLOWED_EVENT_FORMATS = {"in_person", "online", "hybrid"}
 ALLOWED_EVENT_STATUSES = {"draft", "published", "cancelled"}
 
 # Explicit whitelist of columns that can be updated via PATCH /{event_id}
-UPDATABLE_EVENT_COLUMNS = {"title", "status", "description", "location", "online_url", "image_url", "date", "time", "end_date", "format", "is_public", "max_attendees"}
+UPDATABLE_EVENT_COLUMNS = {"title", "status", "description", "location", "online_url", "image_url", "date", "time", "end_date", "format", "is_public", "max_attendees",
+                           "kind", "category_id", "latitude", "longitude"}
+# The optional fields a host can CLEAR by sending null. Everything else in
+# UPDATABLE_EVENT_COLUMNS ignores a null (it would blank a title, a date or a
+# kind the event cannot exist without).
+CLEARABLE_EVENT_COLUMNS = {"time", "end_date", "location", "online_url", "image_url", "category_id",
+                           "latitude", "longitude", "max_attendees"}
 
 TEMPLATE_FIELDS = {"title", "kind", "category_id", "format", "location", "online_url",
                    "description", "time", "image_url", "is_public", "max_attendees"}
@@ -58,6 +64,36 @@ EVENT_COLUMNS = (
 # ---------------------------------------------------------------------------
 # Request / Response models
 # ---------------------------------------------------------------------------
+
+_TIME_RE = re.compile(
+    r"^\s*(\d{1,2})(?:[:.](\d{2}))?(?::(\d{2}))?\s*(am|pm)?\s*(?:[A-Za-z]{2,5})?\s*$",
+    re.I,
+)
+
+
+def parse_event_time(value: Optional[str]) -> Optional[dt_time]:
+    """The ONE parser for an event's free-text time -> a TIME value.
+
+    The form's placeholder is "19:30 CET", and `time.fromisoformat` rejects
+    exactly that — so creating an event with the time typed the way the form
+    suggests answered 500 "Failed to create event". Accepts 19:30, 19:30:00,
+    19.30, 7pm, 7:30 pm; a trailing zone word (CET) is ignored, since the column
+    is a TIME without zone. Raises ValueError for anything else, which callers
+    turn into a 400.
+    """
+    if value is None or not str(value).strip():
+        return None
+    m = _TIME_RE.match(str(value))
+    if not m:
+        raise ValueError(f"Unrecognised time: {value!r}")
+    hour, minute, second = int(m.group(1)), int(m.group(2) or 0), int(m.group(3) or 0)
+    ampm = (m.group(4) or "").lower()
+    if ampm:
+        if not 1 <= hour <= 12:
+            raise ValueError(f"Unrecognised time: {value!r}")
+        hour = (hour % 12) + (12 if ampm == "pm" else 0)
+    return dt_time(hour, minute, second)  # raises ValueError when out of range
+
 
 class CreateEventRequest(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
@@ -98,6 +134,13 @@ class UpdateEventRequest(BaseModel):
     format: Optional[str] = Field(None, pattern=r"^(in_person|online|hybrid)$")
     is_public: Optional[bool] = None
     max_attendees: Optional[int] = Field(None, ge=1)
+    # The edit form offers all four; the request used to have no field for
+    # them, so a changed kind/category or "use my location" was silently
+    # dropped on save (walked on Android 2026-09-24).
+    kind: Optional[str] = Field(None, max_length=50, pattern=r"^(collection_drop|meetup|stream|convention|release)$")
+    category_id: Optional[str] = Field(None, max_length=64)
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
 
 
 class RsvpRequest(BaseModel):

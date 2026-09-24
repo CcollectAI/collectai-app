@@ -26,6 +26,7 @@ import { compose, required, maxLength, numeric } from "@/lib/validate";
 import logger from "@/utils/logger";
 import CatalogSuggestionModal from "@/components/CatalogSuggestionModal";
 import { matchCatalog, revalueItem } from "@/api/itemsApi";
+import { invalidateItemCaches } from "@/data/CachedDataProvider";
 import { checkDuplicate } from "@/lib/duplicateCheck";
 import { dataProvider } from "@/data";
 import { usePhotoUpload } from "@/hooks/usePhotoUpload";
@@ -411,7 +412,19 @@ const ManualAddScreen: React.FC = () => {
       const effectiveCat = categorySlug || category.trim();
       if (trimmedTitle && effectiveCat) {
         try {
-          const m = await matchCatalog(trimmedTitle, effectiveCat);
+          // The form's own Set and Card Number go with the title: a title
+          // alone matched "Charizard ex" to one of five cards at score 1.0,
+          // so the item was priced — and alerted on — as a different card
+          // (2026-09-24). An unresolved tie now comes back below 0.6, and the
+          // item saves without a key rather than with a guessed one.
+          const attrStr = (k: string) => {
+            const v = categoryAttrs[k];
+            return typeof v === 'string' ? v.trim() : '';
+          };
+          const m = await matchCatalog(trimmedTitle, effectiveCat, {
+            set_code: attrStr('set_code') || attrStr('set') || undefined,
+            number: attrStr('number') || attrStr('collector_no') || attrStr('card_number') || undefined,
+          });
           if (m.best && (m.best.match_score ?? 0) >= 0.6 && m.best.item_key) {
             canonicalKey = m.best.item_key;
           }
@@ -480,6 +493,10 @@ const ManualAddScreen: React.FC = () => {
         fireHaptic(HapticIntent.ALERT_TRIGGERED);
         return;
       }
+
+      // This insert bypasses CachedDataProvider, so drop the cached collection
+      // it just changed — or Items, Portfolio and Sell keep the old list.
+      await invalidateItemCaches();
 
       // Market valuation for the card (best-effort). This insert is client-side
       // so the server can't value it inline like POST /items does; when the

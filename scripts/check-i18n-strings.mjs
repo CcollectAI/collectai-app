@@ -162,6 +162,78 @@ function isPlainTextLine(t) {
     && !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*');
 }
 
+// The shapes that put a literal on screen from code. Matched on the WHOLE
+// file (comments blanked, newlines kept) — Alert.alert( with its arguments on
+// the next lines is the common layout, and a line scan saw none of them.
+const STR = String.raw`(['"\x60])((?:\\.|(?!\1)[^\\])+?)\1`;
+const CODE_STRING_RES = [
+  ['toast-message', new RegExp(String.raw`\bmessage:\s*` + STR, 'g')],
+  ['set-error', new RegExp(String.raw`\bset[A-Za-z]*(?:Error|Message|Notice|Status)\(\s*` + STR, 'g')],
+  ['error-fallback', new RegExp(String.raw`\buserErrorMessage\([^,()]+(?:\([^()]*\))?,\s*` + STR, 'g')],
+];
+// A template's `${…}` becomes a capitalised word, so `${title} added to
+// watchlist` reads as the sentence it renders ("Xx added to watchlist").
+const humanBody = (s) => s.replace(/\$\{[^}]*\}/g, 'Xx');
+const looksCopy = (val) => {
+  const body = humanBody(val).trim();
+  if (body.length < 3 || ALLOWLIST_STRINGS.has(val)) return false;
+  // Single capitalised words count here (button labels: "Cancel", "Remove"):
+  // unlike a prop value, a string handed to a toast or dialog is always copy.
+  return LOOKS_HUMAN.test(body) || /^[A-Z][a-z]+[.!?…]?$/.test(body);
+};
+const blankComments = (src) => src
+  .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+  .replace(/(^|[^:'"`])\/\/[^\n]*/g, (m, pre) => pre + ' '.repeat(m.length - pre.length));
+const ALERT_STYLE_WORDS = new Set(['cancel', 'destructive', 'default', 'plain-text', 'secure-text']);
+function scanCodeStrings(src, findings) {
+  const code = blankComments(src);
+  const lineOf = (idx) => code.slice(0, idx).split('\n').length;
+  for (const [kind, re] of CODE_STRING_RES) {
+    re.lastIndex = 0;
+    let m;
+    while ((m = re.exec(code)) !== null) {
+      if (looksCopy(m[2])) findings.push({ line: lineOf(m.index), col: 1, text: m[2], kind });
+    }
+  }
+  // Alert.alert / Alert.prompt: every literal in the call is copy (title,
+  // body, button labels) except the button style words.
+  const callRe = /\bAlert\.(?:alert|prompt)\(/g;
+  let c;
+  while ((c = callRe.exec(code)) !== null) {
+    let depth = 0; let end = c.index + c[0].length - 1;
+    for (let k = end; k < code.length && k < end + 4000; k++) {
+      const ch = code[k];
+      if (ch === '(') depth++;
+      else if (ch === ')') { depth--; if (depth === 0) { end = k; break; } }
+    }
+    // Only the dialog's OWN strings: a direct argument (paren depth 1, no
+    // brace open) or a button's `text:`. A literal inside an onPress body —
+    // a log label, a nested toast — belongs to that code, not the dialog.
+    const start = c.index + c[0].length;
+    let paren = 1; let brace = 0;
+    for (let k = start; k < end; k++) {
+      const ch = code[k];
+      if (ch === '(') paren++;
+      else if (ch === ')') paren--;
+      else if (ch === '{') brace++;
+      else if (ch === '}') brace--;
+      else if (ch === "'" || ch === '"' || ch === '`') {
+        const sm = new RegExp(STR, 'y');
+        sm.lastIndex = k;
+        const hit = sm.exec(code);
+        if (!hit) continue;
+        const direct = paren === 1 && brace === 0;
+        const buttonText = paren === 1 && brace === 1 && /\btext:\s*$/.test(code.slice(Math.max(0, k - 20), k));
+        const val = hit[2];
+        if ((direct || buttonText) && !ALERT_STYLE_WORDS.has(val) && looksCopy(val)) {
+          findings.push({ line: lineOf(k), col: 1, text: val, kind: 'alert' });
+        }
+        k = sm.lastIndex - 1;
+      }
+    }
+  }
+}
+
 /**
  * Scan one file for likely untranslated strings.
  * Returns an array of { line, col, text, context } findings.
@@ -170,6 +242,15 @@ function scanFile(path) {
   const src = readFileSync(path, 'utf8');
   const lines = src.split('\n');
   const findings = [];
+
+  // 0) Strings handed to the screen by CODE, not JSX. Blind spot until
+  //    2026-09-24: this lint read JSX text and five props, so every toast
+  //    (`showToast({ message: 'Welcome to Pro!' })`), every Alert.alert and
+  //    every `setError('…')` rendered English on a Dutch device while the lint
+  //    — and the record built on it — said "no live English left". ~200 sites,
+  //    the paywall's own purchase/restore toasts among them. Runs BEFORE the
+  //    JSX-file filter below: toasts are raised from hooks (.ts) too.
+  scanCodeStrings(src, findings);
 
   // Skip files that don't actually render React/JSX — helpers/config/etc.
   if (!/<[A-Z]/.test(src) && !/return\s*\(/.test(src)) return findings;

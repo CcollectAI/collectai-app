@@ -134,7 +134,7 @@ async def _check_not_blocked(
 async def _act_as_member(conn: asyncpg.Connection, user_id: str) -> None:
     """Make auth.uid() return `user_id` for the rest of the CURRENT transaction.
 
-    `v_chat_inbox_v1` filters `WHERE p.user_id = auth.uid()` (migration
+    `v_chat_inbox_v1` keeps only the rows whose member user_id = auth.uid() (migration
     20260917). This router reads it as `postgres`, where auth.uid() is NULL, so
     the view returned NO rows to the server at all: /chat/threads was always
     empty and /chat/unread-count always 0, for every member (measured

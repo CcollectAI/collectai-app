@@ -23,6 +23,8 @@ interface FormFieldState {
   touched: boolean;
   onChange: (text: string) => void;
   onBlur: () => void;
+  /** Set, mark touched and validate THIS value in one step (useFormField). */
+  setValue: (text: string) => void;
 }
 
 interface EventDateTimePickerProps {
@@ -54,8 +56,12 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
       if (which === 'end') {
         onEndDateChange(iso);
       } else {
-        dateField.onChange(iso);
-        dateField.onBlur();
+        // setValue validates the value it is GIVEN. It was onChange(iso) then
+        // onBlur(): onBlur validates `value` from the render before setValue
+        // landed — still "" — so the first date picked always showed "Date is
+        // required" under "30-09-2026" and Create Event stayed disabled
+        // (walked on Android 2026-09-24). A stale closure, not a bad date.
+        dateField.setValue(iso);
       }
     },
     [dateField, onEndDateChange],
@@ -115,7 +121,7 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
             <TextInput
               value={time}
               onChangeText={onTimeChange}
-              placeholder="19:30 CET"
+              placeholder="19:30"
               placeholderTextColor={colors.muted}
               style={[styles.input, { color: colors.text }]}
               accessibilityLabel={t('event_datetime.time_a11y')}

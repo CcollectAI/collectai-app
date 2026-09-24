@@ -123,7 +123,9 @@ const SponsorRegisterScreen: React.FC = () => {
       });
 
       track({ name: 'sponsor_company_registered' });
-      router.replace('/sponsor/dashboard');
+      // dismissTo pops back to the dashboard that opened this form (it refetches
+      // on focus) instead of stacking a second one above its stale empty state.
+      router.dismissTo('/sponsor/dashboard');
     } catch (err: unknown) {
       logger.error('[SponsorRegister] error:', err);
       showToast({ message: userErrorMessage(err, 'Failed to register company. Please try again.'), type: 'error' });

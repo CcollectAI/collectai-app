@@ -25,7 +25,7 @@ export const MARKETPLACE_BRAND_COLORS: Record<string, { label: string; color: st
   // the fee-schedule row all still said 'collectai' — the pre-rename brand
   // (CollectAI -> Sparrow Collect, 2026-05-04). It looked right only because
   // an undefined lookup fell back to this same entry.
-  sparrow: { label: 'Sparrow P2P', color: '#81D8D0' },
+  sparrow: { label: 'Sparrow Collect Marketplace', color: '#81D8D0' },
   ebay: { label: 'eBay', color: '#E53238' },
   mercari: { label: 'Mercari', color: '#4DC8F0' },
   cardmarket: { label: 'Cardmarket', color: '#1A3C7D' },

@@ -6,10 +6,9 @@
  *  - Format selector (In-Person / Online / Hybrid) with chip UI
  *  - Geolocation support for in-person/hybrid events
  *  - Public / Private toggle
- *  - Invite-friends placeholder (post-creation)
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useModal } from '@/hooks/useModal';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
@@ -27,7 +26,7 @@ import {
 } from 'react-native';
 import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack, type Href } from 'expo-router';
 import { dataProvider } from '@/data';
 import type { EventKind, EventTemplate } from '@/data/events';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -46,7 +45,8 @@ import { EventFormHeader } from '@/components/events/EventFormHeader';
 import { EventDateTimePicker } from '@/components/events/EventDateTimePicker';
 import { EventLocationSection } from '@/components/events/EventLocationSection';
 import { EventTicketingSection } from '@/components/events/EventTicketingSection';
-import { safeGoBack } from '@/lib/goBack';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { PAID_EVENTS_ENABLED } from '@/config/featureFlags';
 import { useTranslation } from 'react-i18next';
 import { userErrorMessage } from '@/lib/userErrorMessage';
 
@@ -82,6 +82,16 @@ const CreateEventScreen: React.FC = () => {
 
   /* ---- saving state ---- */
   const [saving, setSaving] = useState(false);
+
+  /* ---- leaving a half-filled form asks first ---- */
+  const leavingRef = useRef(false);
+  const isDirty =
+    form.titleField.value.trim().length > 0 ||
+    form.descriptionField.value.trim().length > 0 ||
+    form.dateField.value.trim().length > 0 ||
+    form.location.trim().length > 0 ||
+    detailDraft.trim().length > 0;
+  useUnsavedChanges({ isDirty, bypassRef: leavingRef });
 
   /* ---- template state ---- */
   const [templates, setTemplates] = useState<EventTemplate[]>([]);
@@ -159,7 +169,10 @@ const CreateEventScreen: React.FC = () => {
         });
       }
 
-      safeGoBack(router);
+      // Land on the new event, not back where you came from: the host's next
+      // steps (share, announce, manage) all live there.
+      leavingRef.current = true;
+      router.replace(`/events/${encodeURIComponent(created.id)}` as Href);
     } catch (err: any) {
       logger.error('[CreateEvent] error:', err);
       showToast({ message: userErrorMessage(err, 'Failed to create event. Please try again.'), type: 'error' });
@@ -400,8 +413,9 @@ const CreateEventScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Section: Ticket Price (meetup/convention only) */}
-          {(form.kind === 'meetup' || form.kind === 'convention') && (
+          {/* Section: Ticket Price (meetup/convention only) — off until paid
+              events can take money (featureFlags PAID_EVENTS_ENABLED) */}
+          {PAID_EVENTS_ENABLED && (form.kind === 'meetup' || form.kind === 'convention') && (
             <EventTicketingSection
               ticketPriceCents={form.ticketPriceCents}
               onTicketPriceChange={form.setTicketPriceCents}
@@ -451,12 +465,14 @@ const CreateEventScreen: React.FC = () => {
                   />
                   <View style={styles.toggleTextBlock}>
                     <Text style={[styles.toggleLabel, { color: colors.text }]}>
-                      {form.isPublic ? 'Public' : 'Private'}
+                      {form.isPublic
+                        ? t('create_event.visibility_public', { defaultValue: 'Public' })
+                        : t('create_event.visibility_private', { defaultValue: 'Private' })}
                     </Text>
                     <Text style={[styles.toggleHint, { color: colors.muted }]}>
                       {form.isPublic
-                        ? 'Anyone can see and join this event'
-                        : 'Only people you invite can see this event'}
+                        ? t('create_event.public_hint', { defaultValue: 'Anyone can see and join this event' })
+                        : t('create_event.private_hint', { defaultValue: "Only you can see this event. It isn't listed, and its link won't open for anyone else." })}
                     </Text>
                   </View>
                 </View>
@@ -532,39 +548,6 @@ const CreateEventScreen: React.FC = () => {
               </>
             )}
           </AnimatedPressable>
-
-          {/* ============================================================== */}
-          {/*  Invite Friends (post-creation placeholder)                     */}
-          {/* ============================================================== */}
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="chatbubble-ellipses-outline" size={16} color={colors.accent} />
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('create_event.invite_friends', { defaultValue: 'Invite Friends' })}</Text>
-            </View>
-
-            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.inviteNote, { color: colors.muted }]}>
-                {t('create_event.invite_after_create', { defaultValue: 'You can invite friends after creating the event.' })}
-              </Text>
-              <View
-                style={[
-                  styles.inviteButton,
-                  {
-                    backgroundColor: colors.border + '60',
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <Ionicons name="chatbubbles-outline" size={18} color={colors.muted} />
-                <Text style={[styles.inviteButtonText, { color: colors.muted }]}>
-                  {t('create_event.invite_via_chat', { defaultValue: 'Invite Friends via Chat' })}
-                </Text>
-              </View>
-              <Text style={[styles.inviteSubtext, { color: colors.muted }]}>
-                {t('create_event.available_after_creation', { defaultValue: 'Available after event creation' })}
-              </Text>
-            </View>
-          </View>
 
           <View style={{ height: 32 }} />
           </Animated.View>
@@ -734,28 +717,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  /* Invite friends placeholder */
   inviteNote: {
     fontSize: 13,
     marginBottom: 12,
-  },
-  inviteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  inviteButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  inviteSubtext: {
-    fontSize: 11,
-    textAlign: 'center',
-    marginTop: 6,
   },
   fieldError: {
     fontSize: 12,

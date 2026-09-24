@@ -79,7 +79,10 @@ function getFormatter(
   // minimumFractionDigits is part of the identity too: without it, a
   // {min:2,max:2} formatter and a {min:0,max:2} one share a cache entry and the
   // second caller silently gets the first one's decimals.
-  const key = `${locale}|${opts.style ?? 'decimal'}|${opts.currency ?? '-'}|${opts.minimumFractionDigits ?? ''}|${opts.maximumFractionDigits ?? ''}`;
+  // useGrouping too (2026-09-24): moneyInputValue asks for NO grouping, and
+  // sharing a key with a grouped {min:0,max:2} formatter would hand one of them
+  // the other's thousands separator.
+  const key = `${locale}|${opts.style ?? 'decimal'}|${opts.currency ?? '-'}|${opts.minimumFractionDigits ?? ''}|${opts.maximumFractionDigits ?? ''}|${String(opts.useGrouping ?? '')}`;
   let fmt = _fmtCache.get(key);
   if (!fmt) {
     fmt = new Intl.NumberFormat(locale, opts);
@@ -173,6 +176,41 @@ export function fmtCurrency(
 ) {
   const val = convertEUR(amountEUR, s);
   return money(val, s.currency, s.numberLocale, opts);
+}
+
+/**
+ * A money amount written INTO an input as its starting value: the member's
+ * decimal separator, no grouping, at most two decimals ("5,71", "1234,5").
+ * `String(x)` printed "5.71" to a comma-decimal member and "5.535" for an
+ * unrounded estimate (walked on Android 2026-09-24: Sell price, watchlist
+ * target). Round-trips through `parseMoney`, which every such field uses.
+ */
+export function moneyInputValue(amount: number | null | undefined, locale?: NumberLocale): string {
+  if (amount == null || !Number.isFinite(amount)) return '';
+  const fmt = getFormatter(locale ?? _activeNumberLocale ?? 'en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+    useGrouping: false,
+  } as Intl.NumberFormatOptions);
+  return fmt.format(amount);
+}
+
+/**
+ * `fmtCurrency`, shortened to thousands for a tight tile ("€1,3k", "$48k").
+ * Converts first, like fmtCurrency. Profile cards built this as `€${v/1000}k`,
+ * which printed euros for every member and never converted (2026-09-24).
+ * Below `from` it is exactly fmtCurrency.
+ */
+export function fmtCurrencyCompact(
+  amountEUR: number,
+  s: Pick<Settings,'currency'|'numberLocale'|'fxRates'>,
+  from = 1000,
+): string {
+  const val = convertEUR(amountEUR, s);
+  if (Math.abs(val) < from) return money(val, s.currency, s.numberLocale);
+  const fmt = getFormatter(s.numberLocale, { minimumFractionDigits: 0, maximumFractionDigits: 1 });
+  const neg = val < 0 ? '-' : '';
+  return `${neg}${getCurrencySymbol(s.currency)}${fmt.format(Math.abs(val) / 1000)}k`;
 }
 
 /**
@@ -282,6 +320,21 @@ export function formatNumber(value: number | null | undefined, locale?: NumberLo
   if (value == null || !Number.isFinite(value)) return '—';
   const fmt = getFormatter(locale ?? _activeNumberLocale ?? 'en-US', { maximumFractionDigits: 0 });
   return fmt.format(value);
+}
+
+/**
+ * The placeholder for a money INPUT: "0.00" or "0,00", in the member's number
+ * locale. A literal "0.00" told a Dutch or German member to type a dot, while
+ * `parseMoney` and every price on screen used their comma (walked on Android
+ * 2026-09-24, Create Event ticket price). Pair with `parseMoney`, which reads
+ * either separator.
+ */
+export function moneyInputPlaceholder(locale?: NumberLocale): string {
+  const fmt = getFormatter(locale ?? _activeNumberLocale ?? 'en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return fmt.format(0);
 }
 
 /**

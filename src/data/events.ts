@@ -170,3 +170,8 @@ export const EVENTS: CollectorsEvent[] = [
     sponsorCompanyId: 'sponsor-demo-1',
   },
 ];
+
+/** An event edit. A field set to `null` CLEARS it on the server; `undefined` leaves it as is. */
+export type EventPatch = {
+  [K in keyof (CreateEventInput & { status?: string })]?: (CreateEventInput & { status?: string })[K] | null;
+};

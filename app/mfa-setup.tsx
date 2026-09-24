@@ -18,8 +18,9 @@ import {
   Alert,
   StyleSheet,
   ScrollView,
-  Image,
+  Platform,
 } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 // SafeAreaView removed — Stack header handles safe area
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -31,7 +32,15 @@ import { useSettings } from '@/lib/settings';
 import { QuickNavBar } from '@/components/QuickNavBar';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { logger } from '@/lib/logger';
+
 import { userErrorMessage } from '@/lib/userErrorMessage';
+
+/** The SVG markup inside Supabase's QR URI. auth-js builds it as
+ *  `data:image/svg+xml;utf-8,${svg}` (raw markup, not encoded). */
+export function qrSvgMarkup(uri: string): string {
+  const comma = uri.indexOf(',');
+  return uri.startsWith('data:') && comma >= 0 ? uri.slice(comma + 1) : uri;
+}
 
 type MFAFactor = {
   id: string;
@@ -62,6 +71,10 @@ function MFASetupScreen() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [qrUri, setQrUri] = useState<string | null>(null);
+  // The key behind the QR, shown as text (2026-09-24). The screen offered ONLY
+  // the QR, and most members run the authenticator on the SAME phone, which
+  // cannot scan its own screen: enrolment was impossible for them.
+  const [secret, setSecret] = useState<string | null>(null);
   const [factorId, setFactorId] = useState<string | null>(null);
   const [totpCode, setTotpCode] = useState('');
   const [verifying, setVerifying] = useState(false);
@@ -116,6 +129,7 @@ function MFASetupScreen() {
       });
       if (error) throw error;
       setQrUri(data.totp.qr_code);
+      setSecret(data.totp.secret ?? null);
       setFactorId(data.id);
     } catch (e: unknown) {
       showToast({ message: userErrorMessage(e, 'Failed to start MFA enrollment.', 'MfaSetup'), type: 'error' });
@@ -147,6 +161,7 @@ function MFASetupScreen() {
 
       showToast({ message: 'Two-factor authentication has been enabled.', type: 'success' });
       setQrUri(null);
+      setSecret(null);
       setFactorId(null);
       setTotpCode('');
       await loadFactors();
@@ -219,12 +234,34 @@ function MFASetupScreen() {
               {t('mfa.scan_instruction', { defaultValue: 'Open your authenticator app (Google Authenticator, Authy, etc.) and scan this code:' })}
             </Text>
             <View style={[styles.qrContainer, { borderColor: BORDER }]}>
-              <Image
-                source={{ uri: qrUri }}
+              {/* SvgXml, not <Image>. Supabase returns the QR as an SVG data URI
+                  (`data:image/svg+xml;utf-8,<svg…>`, auth-js GoTrueClient) and
+                  React Native's Image does not render SVG: on Android the box
+                  was EMPTY, so with no setup key shown either, enrolment was
+                  impossible (walked 2026-09-24). */}
+              <View
                 style={styles.qrImage}
+                accessible
+                accessibilityRole="image"
                 accessibilityLabel={t('mfa.qr_code_a11y', { defaultValue: 'QR code for authenticator app' })}
-              />
+              >
+                <SvgXml xml={qrSvgMarkup(qrUri)} width="100%" height="100%" />
+              </View>
             </View>
+            {secret ? (
+              <>
+                <Text style={[styles.stepDesc, { color: MUTED, marginTop: 12 }]}>
+                  {t('mfa.manual_key_hint')}
+                </Text>
+                <Text
+                  selectable
+                  style={[styles.manualKey, { color: NAVY, borderColor: BORDER }]}
+                  accessibilityLabel={t('mfa.manual_key_a11y')}
+                >
+                  {secret.replace(/(.{4})/g, '$1 ').trim()}
+                </Text>
+              </>
+            ) : null}
 
             <Text style={[styles.stepTitle, { color: NAVY, marginTop: 24 }]}>2. Enter the 6-digit code</Text>
             <TextInput
@@ -235,7 +272,6 @@ function MFASetupScreen() {
               placeholderTextColor={MUTED}
               keyboardType="number-pad"
               maxLength={6}
-              autoFocus
               accessibilityLabel={t('mfa.totp_code_a11y', { defaultValue: 'TOTP verification code' })}
             />
 
@@ -258,6 +294,7 @@ function MFASetupScreen() {
               style={styles.cancelBtn}
               onPress={() => {
                 setQrUri(null);
+                setSecret(null);
                 setFactorId(null);
                 setTotpCode('');
               }}
@@ -420,6 +457,17 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  manualKey: {
+    fontSize: 16,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 1,
+    textAlign: 'center',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    marginTop: 8,
   },
   qrImage: {
     width: 200,

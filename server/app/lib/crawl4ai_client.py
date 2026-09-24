@@ -54,9 +54,14 @@ async def _get_crawler() -> Any:
     from crawl4ai import AsyncWebCrawler, BrowserConfig
 
     browser_cfg = BrowserConfig(headless=CRAWL4AI_HEADLESS)
-    _crawler = AsyncWebCrawler(config=browser_cfg)
-    await _crawler.start()
-    return _crawler
+    # Return the instance THIS call started, not the global: a close() running
+    # during `await start()` resets the global to None, and returning it gave
+    # the caller None -> "'NoneType' object has no attribute 'arun'" (bake.log
+    # 2026-09-24, twice, both right after a restart).
+    crawler = AsyncWebCrawler(config=browser_cfg)
+    _crawler = crawler
+    await crawler.start()
+    return crawler
 
 
 def configured() -> bool:

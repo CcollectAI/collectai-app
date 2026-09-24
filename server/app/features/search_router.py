@@ -191,6 +191,10 @@ async def unified_search(
             # items, which a keystroke-driven search cannot afford.
             catalog_rows = await conn.fetch(
                 """SELECT ci.id, ci.category, ci.item_key, ci.title, ci.brand,
+                          -- The set tells apart rows that share a title: five
+                          -- pokemon "Charizard ex" read as five identical
+                          -- results with nothing to choose by (2026-09-24).
+                          ci.set_code,
                           (ci.image_url IS NOT NULL) AS has_reference_image,
                           -- Rounded HERE, not on the client: price_eur is a
                           -- float and asyncpg hands back 642.6399999999999863

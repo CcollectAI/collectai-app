@@ -264,9 +264,16 @@ export const listWatchlistMatches = () =>
 export const updateListingPrice = (listingId: string, price: number) =>
   patch<P2PListing>(`/p2p/listings/${encodeURIComponent(listingId)}`, { price });
 
-export const delistListing = (listingId: string, status: 'sold' | 'delisted' = 'sold') =>
+// `salePrice` (listing currency) records the sale — realised P/L and DAC7 —
+// for a sale concluded outside an in-app offer (2026-09-24).
+export const delistListing = (
+  listingId: string,
+  status: 'sold' | 'delisted' = 'sold',
+  salePrice?: number,
+) =>
   post<{ ok: boolean; status: string }>(
-    `/p2p/listings/${encodeURIComponent(listingId)}/delist?status=${status}`,
+    `/p2p/listings/${encodeURIComponent(listingId)}/delist?status=${status}` +
+      (salePrice != null ? `&sale_price=${encodeURIComponent(String(salePrice))}` : ''),
     {},
   );
 

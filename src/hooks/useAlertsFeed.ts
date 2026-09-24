@@ -114,6 +114,7 @@ export function useAlertsFeed(
             itemCategory: item.category,
             itemImageUrl: item.imageUrl,
             description: `${item.name} price below Q10 threshold`,
+            // currency-ok: Alert.condition is never rendered (no reader in app/ or src/)
             condition: `Price \u20AC${item.price} < Q10 \u20AC${item.priceBand.q10}`,
             value: item.price,
             previousValue: item.priceBand.q10,
@@ -129,6 +130,7 @@ export function useAlertsFeed(
             itemCategory: item.category,
             itemImageUrl: item.imageUrl,
             description: `${item.name} price above Q90 threshold`,
+            // currency-ok: Alert.condition is never rendered (no reader in app/ or src/)
             condition: `Price \u20AC${item.price} > Q90 \u20AC${item.priceBand.q90}`,
             value: item.price,
             previousValue: item.priceBand.q90,

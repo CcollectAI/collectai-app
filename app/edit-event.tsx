@@ -11,7 +11,7 @@
  *  - "Cancel Event" destructive button at bottom
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   ScrollView,
@@ -27,9 +27,10 @@ import {
 } from 'react-native';
 import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack, type Href } from 'expo-router';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import { dataProvider } from '@/data';
-import type { CollectorsEvent, CreateEventInput } from '@/data/events';
+import type { CollectorsEvent, EventPatch } from '@/data/events';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
@@ -82,6 +83,26 @@ const EditEventScreen: React.FC = () => {
   /* ---- saving state ---- */
   const [saving, setSaving] = useState(false);
 
+  // A duplicated event arrives here as a DRAFT, and nothing else in the app can
+  // publish one — so Save on a draft publishes it, and says so.
+  const isDraft = originalEvent?.status === 'draft';
+
+  /* ---- leaving with unsaved edits asks first ---- */
+  const leavingRef = useRef(false);
+  const o = originalEvent;
+  const isDirty = !!o && (
+    form.titleField.value !== o.title ||
+    form.descriptionField.value !== (o.description ?? '') ||
+    form.dateField.value !== o.date ||
+    form.time !== (o.time ?? '') ||
+    form.endDate !== (o.endDate ?? '') ||
+    form.location !== (o.location ?? '') ||
+    form.kind !== o.kind ||
+    form.categoryId !== (o.categoryId ?? undefined) ||
+    form.isPublic !== (o.isPublic ?? true)
+  );
+  useUnsavedChanges({ isDirty, bypassRef: leavingRef });
+
   /* ---- load existing event ---- */
   useEffect(() => {
     if (!eventId) {
@@ -125,19 +146,32 @@ const EditEventScreen: React.FC = () => {
     setSaving(true);
 
     try {
-      const patch: Partial<CreateEventInput> = {
+      // A cleared optional field is sent as NULL. It was `undefined`, which
+      // JSON.stringify drops, so a removed end date or location was never sent
+      // and came back after Save. The server honours null only on its
+      // CLEARABLE_EVENT_COLUMNS.
+      const patch: EventPatch = {
         ...buildEventInput(form),
-        // For edit, explicitly set undefined for cleared optional fields
-        ...(form.categoryId ? { categoryId: form.categoryId } : { categoryId: undefined }),
-        ...(form.time.trim() ? { time: form.time.trim() } : { time: undefined }),
-        ...(form.endDate.trim() ? { endDate: form.endDate.trim() } : { endDate: undefined }),
-        ...(form.location.trim() ? { location: form.location.trim() } : { location: undefined }),
-        ...(form.onlineUrlField.value.trim() ? { onlineUrl: form.onlineUrlField.value.trim() } : { onlineUrl: undefined }),
-        ...(form.imageUrlField.value.trim() ? { imageUrl: form.imageUrlField.value.trim() } : { imageUrl: undefined }),
+        categoryId: form.categoryId || null,
+        time: form.time.trim() || null,
+        endDate: form.endDate.trim() || null,
+        location: form.location.trim() || null,
+        onlineUrl: form.onlineUrlField.value.trim() || null,
+        imageUrl: form.imageUrlField.value.trim() || null,
+        latitude: form.latitude ?? null,
+        longitude: form.longitude ?? null,
+        ...(isDraft ? { status: 'published' } : {}),
       };
 
       await dataProvider.updateEvent(eventId, patch);
-      safeGoBack(router);
+      leavingRef.current = true;
+      if (isDraft) {
+        // The draft came from Duplicate on ANOTHER event's screen; going back
+        // would land there. Show the event that was just published.
+        router.replace(`/events/${encodeURIComponent(eventId)}` as Href);
+      } else {
+        safeGoBack(router);
+      }
     } catch (err: unknown) {
       logger.error('[EditEvent] error:', err);
       showToast({ message: userErrorMessage(err, 'Failed to update event. Please try again.'), type: 'error' });
@@ -162,6 +196,7 @@ const EditEventScreen: React.FC = () => {
             try {
               await dataProvider.cancelEvent(eventId);
               fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
+              leavingRef.current = true;
               safeGoBack(router);
             } catch (err: unknown) {
               logger.error('[EditEvent] cancel error:', err);
@@ -387,12 +422,14 @@ const EditEventScreen: React.FC = () => {
                   />
                   <View style={styles.toggleTextBlock}>
                     <Text style={[styles.toggleLabel, { color: colors.text }]}>
-                      {form.isPublic ? 'Public' : 'Private'}
+                      {form.isPublic
+                        ? t('create_event.visibility_public', { defaultValue: 'Public' })
+                        : t('create_event.visibility_private', { defaultValue: 'Private' })}
                     </Text>
                     <Text style={[styles.toggleHint, { color: colors.muted }]}>
                       {form.isPublic
-                        ? 'Anyone can see and join this event'
-                        : 'Only people you invite can see this event'}
+                        ? t('create_event.public_hint', { defaultValue: 'Anyone can see and join this event' })
+                        : t('create_event.private_hint', { defaultValue: "Only you can see this event. It isn't listed, and its link won't open for anyone else." })}
                     </Text>
                   </View>
                 </View>
@@ -421,14 +458,20 @@ const EditEventScreen: React.FC = () => {
               },
             ]}
             accessibilityRole="button"
-            accessibilityLabel={t('edit_event.a11y_save_changes', { defaultValue: 'Save changes' })}
+            accessibilityLabel={isDraft
+              ? t('edit_event.publish', { defaultValue: 'Publish Event' })
+              : t('edit_event.a11y_save_changes', { defaultValue: 'Save changes' })}
           >
             {saving ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <>
                 <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
-                <Text style={styles.submitButtonText}>{t('edit_event.save_changes', { defaultValue: 'Save Changes' })}</Text>
+                <Text style={styles.submitButtonText}>
+                  {isDraft
+                    ? t('edit_event.publish', { defaultValue: 'Publish Event' })
+                    : t('edit_event.save_changes', { defaultValue: 'Save Changes' })}
+                </Text>
               </>
             )}
           </AnimatedPressable>

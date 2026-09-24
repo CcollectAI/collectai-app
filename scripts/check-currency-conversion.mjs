@@ -76,6 +76,29 @@ for (const abs of SCAN.flatMap((d) => walk(join(ROOT, d)))) {
   }
 }
 
+// Second shape, same defect, invisible to the formatPrice check above: a
+// currency SYMBOL typed into a template literal — `€${value}`. It prints euros
+// whatever the member chose, and never converts (found 2026-09-24 on profile
+// cards, the stats tile and derived alert text). Comments are blanked first so
+// prose quoting the pattern is not a finding.
+const HAND_BUILT = /(?:€|\\u20AC|£|¥)\$\{/;
+for (const abs of SCAN.flatMap((d) => walk(join(ROOT, d)))) {
+  const rel = relative(ROOT, abs);
+  if (rel === 'src/lib/format.ts') continue;
+  const src = readFileSync(abs, 'utf8');
+  if (!HAND_BUILT.test(src)) continue;
+  const lines = src.split('\n');
+  const code = src
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .split('\n')
+    .map((l) => l.replace(/(^|[^:'"`])\/\/.*$/, '$1'));
+  code.forEach((line, i) => {
+    if (!HAND_BUILT.test(line)) return;
+    if (/currency-ok:/.test(lines[i]) || /currency-ok:/.test(lines[i - 1] ?? '')) return;
+    findings.push(`${rel}:${i + 1}  hand-built currency string — ${lines[i].trim().slice(0, 70)}`);
+  });
+}
+
 if (findings.length) {
   console.error(`✗ currency conversion — ${findings.length} site(s) label an amount with the member's currency without converting it:`);
   for (const f of findings) console.error(`   ${f}`);

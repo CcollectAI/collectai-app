@@ -158,6 +158,40 @@ class TestScanMandate:
         assert len(deals) == 0
 
     @pytest.mark.asyncio
+    async def test_redecorated_ebay_url_is_the_same_listing(self, mock_conn):
+        """eBay re-issues the item URL with a new `amdata` token each search.
+        Raw-URL dedup stored one card as a new deal on every scan (2026-09-24)."""
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+        stored = "https://www.ebay.com/itm/137771382482?_skw=x&amdata=enc%3AAAA111"
+        mock_conn.fetch = AsyncMock(return_value=[{"listing_url": stored}])
+        again = "https://www.ebay.com/itm/137771382482?_skw=x&amdata=enc%3ABBB222"
+        result = _mock_result([_mock_hit(url=again, price=300)])
+
+        with patch.object(agent._marketplace, "aggregate_search", new=AsyncMock(return_value=result)):
+            with patch.object(agent._marketplace, "close", new=AsyncMock()):
+                deals = await agent.scan_mandate(_mandate(max_price=500), mock_conn)
+
+        assert deals == []
+
+    @pytest.mark.asyncio
+    async def test_same_item_twice_in_one_batch_is_one_deal(self, mock_conn):
+        from app.agents.deal_discovery_agent import DealDiscoveryAgent
+
+        agent = DealDiscoveryAgent()
+        result = _mock_result([
+            _mock_hit(url="https://www.ebay.com/itm/137771382482?amdata=one", price=300),
+            _mock_hit(url="https://www.ebay.com/itm/137771382482?amdata=two", price=300),
+        ])
+
+        with patch.object(agent._marketplace, "aggregate_search", new=AsyncMock(return_value=result)):
+            with patch.object(agent._marketplace, "close", new=AsyncMock()):
+                deals = await agent.scan_mandate(_mandate(max_price=500), mock_conn)
+
+        assert len(deals) == 1
+
+    @pytest.mark.asyncio
     async def test_empty_search_results(self, mock_conn):
         from app.agents.deal_discovery_agent import DealDiscoveryAgent
 
@@ -216,7 +250,10 @@ class TestScanAllActive:
 
         result = _mock_result([_mock_hit(price=200)])
 
-        with patch.object(agent._marketplace, "aggregate_search", new=AsyncMock(return_value=result)):
+        # _sparrow_hits (member listings, 2026-09-24) has its own test; stubbed
+        # here so it does not consume the positional fetch answers above.
+        with patch.object(agent._marketplace, "aggregate_search", new=AsyncMock(return_value=result)), \
+             patch.object(agent, "_sparrow_hits", new=AsyncMock(return_value=[])):
             with patch.object(agent._marketplace, "close", new=AsyncMock()):
                 deals = await agent.scan_all_active(_mock_pool(mock_conn))
 
@@ -477,9 +514,13 @@ class TestItemLevelCooldown:
 
         urls = await agent._get_user_recent_deal_urls(mock_conn, user_id, cooldown_hours=24)
 
+        # Listing KEYS, not raw URLs (app/lib/listing_identity.py): eBay
+        # re-decorates item URLs per request, so raw-URL dedup stored one item
+        # as a new deal every scan (2026-09-24).
+        from app.lib.listing_identity import listing_key
         assert len(urls) == 2
-        assert "https://ebay.com/itm/1" in urls
-        assert "https://ebay.com/itm/2" in urls
+        assert listing_key("https://ebay.com/itm/1") in urls
+        assert listing_key("https://ebay.com/itm/2") in urls
 
     @pytest.mark.asyncio
     async def test_empty_when_no_recent_deals(self, mock_conn):

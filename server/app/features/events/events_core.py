@@ -16,16 +16,20 @@ from fastapi import BackgroundTasks, Depends, HTTPException, Query
 
 from app.auth import get_current_user_id, get_optional_user_id
 from app.cache import cache_get, cache_set
-from app.config import STRIPE_SECRET_KEY
+from app.config import APP_URL_SCHEME, PAID_EVENTS_ENABLED, STRIPE_SECRET_KEY
 from app.errors import error_response
 from app.features.pagination import pagination_params
 from app.lib.db_helpers import get_db_pool
 from app.lib.money import platform_fee_cents
 from app.lib.error_codes import ErrorCode
+from app.lib.bg_tasks import spawn_bg
+from app.lib.notify import notify_user
 
 from .events_helpers import (
     ALLOWED_EVENT_FORMATS,
     ALLOWED_EVENT_KINDS,
+    CLEARABLE_EVENT_COLUMNS,
+    parse_event_time,
     ALLOWED_EVENT_STATUSES,
     CreateEventRequest,
     CreateTemplateRequest,
@@ -298,6 +302,19 @@ async def create_event(
             code=ErrorCode.VALIDATION_ERROR,
         )
 
+    # A priced event would show every attendee a "Buy Ticket" button whose
+    # checkout 503s while paid events are off (config.PAID_EVENTS_ENABLED).
+    if (request.ticket_price_cents or 0) > 0 and not PAID_EVENTS_ENABLED:
+        raise error_response(
+            400, "Paid tickets are not available yet — create the event as free",
+            code=ErrorCode.PAID_FEATURE_UNAVAILABLE,
+        )
+
+    try:
+        event_time = parse_event_time(request.time)
+    except ValueError:
+        raise error_response(400, "Time must look like 19:30", code=ErrorCode.VALIDATION_ERROR)
+
     if request.format not in ALLOWED_EVENT_FORMATS:
         raise error_response(
             400,
@@ -397,7 +414,7 @@ async def create_event(
                     # columns; the request validator keeps these as strings
                     # (YYYY-MM-DD / HH:MM). Parse here. 2026-04-22.
                     date.fromisoformat(request.date),
-                    dt_time.fromisoformat(request.time) if request.time else None,
+                    event_time,
                     date.fromisoformat(request.end_date) if request.end_date else None,
                     request.location,
                     request.online_url,
@@ -1177,7 +1194,14 @@ async def update_event(
     except ValueError:
         raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
 
-    updates = request.model_dump(exclude_none=True)
+    # exclude_unset, not exclude_none: the app clears an optional field by
+    # sending null, and exclude_none threw that away — a removed end date or
+    # location came straight back after "Save". A null is honoured only for
+    # CLEARABLE_EVENT_COLUMNS; on anything else it means "not sent".
+    updates = {
+        k: v for k, v in request.model_dump(exclude_unset=True).items()
+        if v is not None or k in CLEARABLE_EVENT_COLUMNS
+    }
     if not updates:
         raise error_response(400, "No fields to update", code=ErrorCode.VALIDATION_ERROR)
 
@@ -1185,6 +1209,12 @@ async def update_event(
     bad_keys = set(updates.keys()) - UPDATABLE_EVENT_COLUMNS
     if bad_keys:
         raise error_response(400, f"Cannot update fields: {', '.join(sorted(bad_keys))}", code=ErrorCode.VALIDATION_ERROR)
+
+    if updates.get("time"):
+        try:
+            parse_event_time(updates["time"])
+        except ValueError:
+            raise error_response(400, "Time must look like 19:30", code=ErrorCode.VALIDATION_ERROR)
 
     if request.status and request.status not in ALLOWED_EVENT_STATUSES:
         raise error_response(400, f"Invalid status: {request.status}", code=ErrorCode.VALIDATION_ERROR)
@@ -1202,12 +1232,23 @@ async def update_event(
                 if not row:
                     raise error_response(404, "Event not found or not owned by you", code=ErrorCode.NOT_FOUND)
 
+                # `date`/`end_date` are DATE and `time` is TIME, but the request
+                # carries them as strings — and asyncpg will not coerce a str
+                # into a date ("'str' object has no attribute 'toordinal'").
+                # EVERY edit from the app 500'd, because the form always sends
+                # the date (walked on Android 2026-09-24). create_event already
+                # converts these three with fromisoformat; this is the same rule.
+                _typed = {
+                    "date": date.fromisoformat,
+                    "end_date": date.fromisoformat,
+                    "time": parse_event_time,
+                }
                 set_parts = []
                 params = [event_id, user_id]
                 idx = 3
                 for key, val in updates.items():
                     set_parts.append(f"{key} = ${idx}")
-                    params.append(val)
+                    params.append(_typed[key](val) if key in _typed and isinstance(val, str) and val else val)
                     idx += 1
                 set_parts.append(f"updated_at = ${idx}")
                 params.append(datetime.now(timezone.utc))
@@ -1237,6 +1278,40 @@ async def update_event(
     return EventResponse(**ev)
 
 
+async def _notify_event_cancelled(event_id: str, title: str, host_id: str) -> None:
+    """Tell every going/interested attendee (never the host) that the event is off."""
+    pool = get_db_pool()
+    if pool is None:
+        return
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT DISTINCT user_id::text AS user_id FROM event_attendees
+            WHERE event_id::uuid = $1::uuid AND status IN ('going', 'interested')
+              AND user_id::text <> $2
+            """,
+            event_id, host_id,
+        )
+        failed = 0
+        for r in rows:
+            try:
+                await notify_user(
+                    conn, r["user_id"], "Event cancelled",
+                    f"{title} has been cancelled by the host.",
+                    category="event_announcements",
+                    data={"event_id": event_id, "type": "event_cancelled"},
+                    deep_link=f"/events/{event_id}",
+                    urgent=True,
+                )
+            except Exception as exc:  # noqa: BLE001 — one attendee must not stop the rest
+                failed += 1
+                logger.warning("[events] cancel notify failed for %s: %s", r["user_id"][:8], exc)
+        if rows and failed == len(rows):
+            logger.error("[events] cancel notify: sent=0 failed=%d event=%s", failed, event_id)
+        else:
+            logger.info("[events] cancel notify: attendees=%d failed=%d event=%s", len(rows), failed, event_id)
+
+
 @core_router.delete("/{event_id}", summary="Cancel an event")
 async def delete_event(
     event_id: str,
@@ -1253,16 +1328,28 @@ async def delete_event(
     if pool is not None:
         try:
             async with pool.acquire() as conn:
-                result = await conn.execute(
+                # Only the transition to 'cancelled' notifies: a repeated cancel
+                # (retry, double tap) is a no-op, not a second push to everyone.
+                row = await conn.fetchrow(
                     """
                     UPDATE events SET status = 'cancelled', updated_at = $3
-                    WHERE id = $1 AND created_by = $2
+                    WHERE id = $1 AND created_by = $2 AND status IS DISTINCT FROM 'cancelled'
+                    RETURNING title
                     """,
                     event_id, user_id, datetime.now(timezone.utc),
                 )
-                if result.endswith(" 0"):
-                    raise error_response(404, "Event not found or not owned by you", code=ErrorCode.NOT_FOUND)
+                if row is None:
+                    owned = await conn.fetchval(
+                        "SELECT 1 FROM events WHERE id = $1 AND created_by = $2", event_id, user_id,
+                    )
+                    if not owned:
+                        raise error_response(404, "Event not found or not owned by you", code=ErrorCode.NOT_FOUND)
+                    return {"success": True, "message": "Event cancelled"}
                 logger.info("[events] Soft-deleted event: id=%s, user=%s", event_id, user_id)
+                # The confirm dialog tells the host "all attendees will be
+                # notified". Nothing did, and a cancelled event also drops out of
+                # every list — so an attendee who was going simply lost it.
+                spawn_bg(_notify_event_cancelled(event_id, row["title"], user_id), "event_cancelled_notify")
                 return {"success": True, "message": "Event cancelled"}
 
         except HTTPException:
@@ -1295,6 +1382,10 @@ async def ticket_checkout(
         UUID(event_id)
     except ValueError:
         raise error_response(400, "Invalid event_id format", code=ErrorCode.VALIDATION_ERROR)
+    if not PAID_EVENTS_ENABLED:
+        raise error_response(
+            503, "Paid events are not available yet", code=ErrorCode.PAID_FEATURE_UNAVAILABLE,
+        )
 
     pool = get_db_pool()
     if pool is None:
@@ -1371,8 +1462,8 @@ async def ticket_checkout(
                 "quantity": 1,
             }],
             mode="payment",
-            success_url=f"collectai://events/{event_id}?checkout=success",
-            cancel_url=f"collectai://events/{event_id}?checkout=cancel",
+            success_url=f"{APP_URL_SCHEME}://events/{event_id}?checkout=success",
+            cancel_url=f"{APP_URL_SCHEME}://events/{event_id}?checkout=cancel",
             metadata={
                 "type": "event_ticket",
                 "event_id": event_id,

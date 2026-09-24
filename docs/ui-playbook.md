@@ -3880,3 +3880,44 @@ reason:
 All three guarantees are mutation-tested: removing the blur save, making it
 unconditional, and dropping the typed-vs-server distinction each turn exactly
 one test red.
+
+## Every event button, walked on Android (2026-09-24)
+
+Walking each control on the events surface found rules this playbook already
+had, broken again, plus four new ones:
+
+- **A screen you come BACK to must refresh on focus.** Event detail and the
+  sponsor dashboard loaded on mount only, so Save in Edit returned to the old
+  event, and a sponsor who had just registered saw "Start sponsoring".
+  `useFocusEffect(loadX)` — but only the FIRST load may show the skeleton; a
+  refocus refresh swaps the data in place (`hasEventRef`), and a screen that
+  holds an edit form must not refetch over it (the dashboard refetches only
+  while it has no company).
+- **After create, land on the thing.** `router.replace('/events/<id>')`, not
+  `safeGoBack` — the host's next actions (share, announce, manage) live there.
+  A duplicate opens as a draft; its Save button says "Publish Event" and
+  replaces to the published event.
+- **`router.replace` onto a route already in the stack stacks a second copy.**
+  Register → `router.replace('/sponsor/dashboard')` left the stale dashboard
+  under the new one. Use `router.dismissTo(route)`.
+- **A form that can be half-filled asks before it is thrown away.**
+  `useUnsavedChanges({ isDirty, bypassRef })`; set `bypassRef.current = true`
+  just before navigating away after a successful save, or the member is asked
+  to "discard" what they just saved (isDirty is still true in that tick).
+- **The host is not an attendee.** Don't offer Going/Interested on your own
+  event; the host's actions go in that row (`hostActions`), not on a floating
+  ⋯ in an empty band above the title — the band this playbook already removed
+  from profiles.
+- **Money typed into a string is a bug** — see `docs/CLASS_SWEEPS.md` AD:
+  `formatPrice`/`fmtCurrency`/`fmtCurrencyCompact` and `moneyInputPlaceholder()`,
+  never `` `€${x}` `` or `placeholder="0.00"`. Both are gated.
+- **A summary count counts the thing it names.** The month grid's "8 events"
+  summed its per-day list of distinct KINDS (the dots), so several conventions
+  on one day counted once; September held 20. Pinned by
+  `__tests__/components/calendarGridMonthCount.test.tsx`.
+- **A header title must fit beside the header cluster.** "Compose
+  Announcement" truncated behind bell · bubble · gear; a short verb
+  ("Announce") fits in every locale.
+- **A control for something that does not exist is removed, not labelled
+  "available later"** — "Invite Friends via Chat" had no feature behind it
+  (class AF). Its copy goes with it: Private said "people you invite".

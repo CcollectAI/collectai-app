@@ -40,6 +40,7 @@ import { fmtCurrency } from '@/lib/format';
 import { useSettings } from '@/lib/settings';
 import { safeGoBack } from '@/lib/goBack';
 import { formatCategoryName } from '@/constants/categories';
+import { catalogIdentityLabel } from '@/lib/catalogIdentity';
 
 // Recent searches removed 2026-08-07. The AsyncStorage key
 // '@sparrowcollect/recent_searches' is deliberately cleared once on mount
@@ -51,7 +52,7 @@ const LEGACY_RECENT_SEARCHES_KEY = '@sparrowcollect/recent_searches';
 
 type SearchResults = {
   items: { id: string; name: string; category: string; imageUrl?: string | null; price?: number }[];
-  catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; hasReferenceImage?: boolean; priceEur?: number | null }[];
+  catalog: { id: string; category: string; itemKey: string; title: string; brand?: string | null; setCode?: string | null; hasReferenceImage?: boolean; priceEur?: number | null }[];
   users: { id: string; displayName: string; handle?: string; avatarUrl?: string | null }[];
   events: { id: string; title: string; startDate?: string; location?: string; category?: string }[];
   categories: { id: string; name: string }[];
@@ -102,9 +103,11 @@ const CatalogSearchResult = React.memo(function CatalogSearchResult({ item, colo
       <View style={resultStyles.resultInfo}>
         <Text style={[resultStyles.resultTitle, { color: colors.text }]} numberOfLines={1}>{item.title}</Text>
         <Text style={[resultStyles.resultSubtitle, { color: colors.muted }]}>
-          {item.brand
-            ? `${item.brand} · ${formatCategoryName(item.category)}`
-            : formatCategoryName(item.category)}
+          {[
+            catalogIdentityLabel(item.setCode, item.itemKey),
+            item.brand,
+            formatCategoryName(item.category),
+          ].filter(Boolean).join(' · ')}
         </Text>
       </View>
       {/* Absent price is stated, never blank. A silent gap reads as a loading
@@ -612,8 +615,8 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
                  * the museum's own sibling rail) — one destination for "open a
                  * catalog row", not a second one that only search knows about.
                  *
-                 * Search returns no image_url (kept backend-only), no rarity and
-                 * no set_code, so those params go empty. The museum degrades
+                 * Search returns no image_url (kept backend-only) and no rarity,
+                 * so those params go empty; set_code is carried (2026-09-24). The museum degrades
                  * cleanly: it renders a placeholder thumbnail, skips the
                  * "from this set" rail, and re-fetches the price itself via
                  * getCatalogItemPrice(category, key) — so an unpriced row here
@@ -629,7 +632,7 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
                     brand: catItem.brand ?? '',
                     image_url: '',
                     rarity: '',
-                    set_code: '',
+                    set_code: catItem.setCode ?? '',
                     // Empty, never "0": the museum parses this with parseFloat
                     // and an unpriced watch must arrive as "no price", not as
                     // a EUR 0 valuation (unknown-as-zero).

@@ -27,7 +27,7 @@ import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
-import { formatPrice, getCurrencySymbol, parseMoney } from '@/lib/format';
+import { formatPrice, getCurrencySymbol, parseMoney, moneyInputPlaceholder } from '@/lib/format';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import {
@@ -40,6 +40,7 @@ import type { MarketplaceId } from '@/data/types';
 import type { ConditionLabel } from '@/hooks/useListForSale';
 import { radius, text as textToken, fontWeight as fw, shadow } from '@/theme/tokens';
 import { useTranslation } from 'react-i18next';
+import { marketplaceLabel } from '@/lib/marketplaceLabel';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -189,7 +190,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                       style={styles.mpRow}
                       accessibilityRole="checkbox"
                       accessibilityState={{ checked: isSelected }}
-                      accessibilityLabel={`${mp.label} marketplace`}
+                      accessibilityLabel={marketplaceLabel(mp.id, mp.label, t)}
                     >
                       <View
                         style={[
@@ -213,7 +214,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                           { color: isSelected ? colors.text : colors.muted },
                         ]}
                       >
-                        {mp.label}
+                        {marketplaceLabel(mp.id, mp.label, t)}
                       </Text>
                       <Text style={[styles.mpFeeBadge, { color: colors.muted }]}>
                         ~{mp.defaultFeePct}% fee
@@ -241,10 +242,10 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
                             value={priceStr}
                             onChangeText={(t) => setMarketplacePrice(mp.id, t)}
                             keyboardType="decimal-pad"
-                            placeholder="0.00"
+                            placeholder={moneyInputPlaceholder()}
                             placeholderTextColor={colors.muted}
                             returnKeyType="done"
-                            accessibilityLabel={`Price for ${mp.label}`}
+                            accessibilityLabel={`Price for ${marketplaceLabel(mp.id, mp.label, t)}`}
                           />
                         </View>
                         {priceErrors[mp.id] && (

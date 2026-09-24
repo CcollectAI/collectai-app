@@ -135,16 +135,18 @@ function CalendarGridInner({ events, selectedDate, onSelectDate }: CalendarGridP
     rows.push(grid.slice(i, i + 7));
   }
 
-  // Count events this month for the summary
+  // Count EVENTS this month for the summary. This used to sum eventsByDate,
+  // which holds the distinct KINDS per day (one dot per kind) — so three
+  // conventions on one day counted as 1, and September read "8 events" while
+  // the feed held 20 (walked on Android 2026-09-24).
   const monthEventCount = useMemo(() => {
+    const prefix = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
     let count = 0;
-    for (const key of Object.keys(eventsByDate)) {
-      if (key.startsWith(`${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`)) {
-        count += eventsByDate[key].length;
-      }
+    for (const evt of events) {
+      if (evt.date.slice(0, 10).startsWith(prefix)) count += 1;
     }
     return count;
-  }, [eventsByDate, viewYear, viewMonth]);
+  }, [events, viewYear, viewMonth]);
 
   return (
     <View

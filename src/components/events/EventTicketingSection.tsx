@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useTranslation } from 'react-i18next';
 import { PLATFORM_FEE_PCT } from '@/constants/fees';
+import { moneyInputPlaceholder } from '@/lib/format';
 
 interface EventTicketingSectionProps {
   ticketPriceCents: string;
@@ -38,7 +39,7 @@ export const EventTicketingSection = React.memo(function EventTicketingSection({
           <TextInput
             value={ticketPriceCents}
             onChangeText={onTicketPriceChange}
-            placeholder="0.00"
+            placeholder={moneyInputPlaceholder()}
             placeholderTextColor={colors.muted}
             style={[styles.input, { color: colors.text }]}
             keyboardType="decimal-pad"

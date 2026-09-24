@@ -2003,3 +2003,14 @@ see the query, which is the argument for keeping gates literal-scoped.
 - **Nothing renders at zero.** `TradeReputationSection` returns null until the
   member has a trade or a grade: on a pre-launch marketplace an
   always-rendered card would be an empty grey box on every profile in the app.
+
+## 10. Decisions of 2026-09-24
+
+- **DEMO listings stay.** The three `DEMO …` listings owned by the test account
+  (`simcheck@sparrowcollect.test`, created 2026-08-19, photos added 2026-08-22)
+  are kept as demo content on the public marketplace — Merle's call. Their
+  photos are other cards' (they were 8-photo gallery fixtures); if a DEMO
+  listing ever needs to look real, replace the photos rather than delist.
+- **An off-platform sale is recorded.** Mark as sold asks the price and records
+  it exactly as an in-app trade does, DAC7 included (`docs/CLASS_SWEEPS.md` AJ).
+- **Mandates include Sparrow listings** (`docs/CLASS_SWEEPS.md` AI).

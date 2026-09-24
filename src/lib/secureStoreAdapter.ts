@@ -64,25 +64,44 @@ export const secureStoreAdapter = {
     if (isWeb) {
       return globalThis.localStorage?.getItem(key) ?? null;
     }
+    // DIAG (2026-09-24). An Android cold start stalled every Supabase request
+    // ~15 s behind getSession(), which reads THIS under processLock. Storage
+    // turned out NOT to be the cause (2 chunks, ~0.3 s; the cause was an async
+    // onAuthStateChange listener — see scripts/check-auth-listener-lock.mjs),
+    // but it is the first thing to rule out next time, so it stays: silent
+    // unless a read takes over 1.5 s or is still pending after 3 s. Lands in
+    // Settings → Diagnostics (logger ring), not Sentry.
+    const t0 = Date.now();
+    let chunks = 0;
+    const slow = () => {
+      clearTimeout(pending);
+      const ms = Date.now() - t0;
+      if (ms > 1500) logger.error(`[DIAG secureStore] getItem ${key} took ${ms}ms (${chunks} chunk(s))`);
+    };
+    const pending = setTimeout(() => logger.error(`[DIAG secureStore] getItem ${key} STILL PENDING after 3000ms (${chunks} chunk(s) read)`), 3000);
     try {
       const head = await SecureStore.getItemAsync(key);
-      if (head == null) return null;
-      if (!head.startsWith(CHUNK_MARKER)) return head;
+      if (head == null) { slow(); return null; }
+      if (!head.startsWith(CHUNK_MARKER)) { slow(); return head; }
       const count = parseInt(head.slice(CHUNK_MARKER.length), 10);
-      if (!Number.isFinite(count) || count <= 0) return null;
+      if (!Number.isFinite(count) || count <= 0) { slow(); return null; }
       let out = "";
       for (let i = 0; i < count; i++) {
+        chunks = i + 1;
         const part = await SecureStore.getItemAsync(`${key}.${i}`);
         if (part == null) {
           // A missing chunk means a partial/corrupt write — treat the whole
           // value as absent rather than hand Supabase a truncated session.
           logger.warn(`[secureStore] missing chunk ${i + 1}/${count} for ${key}`);
+          slow();
           return null;
         }
         out += part;
       }
+      slow();
       return out;
     } catch (err) {
+      clearTimeout(pending);
       logger.error("[secureStore] getItem failed:", err);
       // empty-ok: this is supabase-js's auth storage. null = no stored session,
       // the contract its hydrate expects; a throw here breaks session restore

@@ -193,3 +193,16 @@ export const featureFlags = {
   // same lie facing the other way.
   FEATURE_WEEKLY_DIGEST: false,
 };
+
+/**
+ * Paid EVENT features: the ticket price field on Create Event and the
+ * "Promote This Event" (sponsorship) entry on an event you host.
+ *
+ * OFF, and the server refuses the same doors (server/app/config.py
+ * PAID_EVENTS_ENABLED) so older builds are covered too. Measured 2026-09-24:
+ * Stripe on prod is a TEST key, the sponsor price ids are empty, and ticket
+ * checkout has no payout to the organiser — the platform would have kept the
+ * whole ticket price. 0 events had a price or a sponsorship. Turn BOTH flags on
+ * together, and only with live Stripe prices and an organiser payout path.
+ */
+export const PAID_EVENTS_ENABLED = false;

@@ -13,6 +13,8 @@ Usage:
 
 from __future__ import annotations
 
+import re
+
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone, timedelta
@@ -28,6 +30,11 @@ class PolicyVerdict:
     reasons: list[str] = field(default_factory=list)
     deal_score: float = 0.0
     price_vs_q50_pct: float = 0.0
+    # One record per check the member can understand — {"code", "ok", ...numbers}.
+    # The app renders these as sentences in the member's language; `reasons`
+    # (engine strings like "total €28.13 … <= max €30.0") stay for the audit
+    # trail and are no longer shown (2026-09-24).
+    checks: list[dict] = field(default_factory=list)
 
 
 def evaluate(
@@ -48,11 +55,19 @@ def evaluate(
         and price_vs_q50_pct.
     """
     reasons: list[str] = []
+    checks: list[dict] = []
     failed = False
 
     price = float(hit.get("price", 0) or 0)
     shipping_cost = float(hit.get("shipping_cost", 0) or 0)
     total_cost = price + shipping_cost
+    # An ESTIMATED shipping cost is a guess (a regional midpoint), not the
+    # listing's. It used to be added to the price and fail the budget: a €12.27
+    # card "cost" €34.77 against a €30 limit because of €22.50 we invented —
+    # 6 of 39 rejections on one test mandate (2026-09-24). A guess now never
+    # decides the verdict; it is shown as a range for the member to check.
+    shipping_estimated = bool(hit.get("shipping_estimated"))
+    budget_cost = price if shipping_estimated else total_cost
     source = str(hit.get("source", ""))
     provenance = float(hit.get("provenance_score", 0) or 0)
     listing_region = hit.get("listing_region")
@@ -70,34 +85,42 @@ def evaluate(
 
     now = datetime.now(timezone.utc)
 
-    # ── Check 1: Total cost (price + shipping) within max_price ────────────
-    if total_cost <= max_price:
-        if shipping_cost > 0:
-            reasons.append(
-                f"total {_fmt_eur(total_cost)} (price {_fmt_eur(price)} + shipping {_fmt_eur(shipping_cost)}) <= max {_fmt_eur(max_price)}"
-            )
-        else:
-            reasons.append(f"price {_fmt_eur(price)} <= max {_fmt_eur(max_price)}")
+    # ── Check 1: Total cost (price + stated shipping) within max_price ─────
+    within = budget_cost <= max_price
+    if shipping_estimated:
+        reasons.append(
+            f"{'' if within else 'FAIL: '}price {_fmt_eur(price)} {'<=' if within else '>'} max {_fmt_eur(max_price)}"
+            f" (shipping not stated; estimate {_fmt_eur(shipping_cost)} not counted)"
+        )
+    elif shipping_cost > 0:
+        reasons.append(
+            f"{'' if within else 'FAIL: '}total {_fmt_eur(total_cost)} (price {_fmt_eur(price)} + shipping {_fmt_eur(shipping_cost)}) {'<=' if within else '>'} max {_fmt_eur(max_price)}"
+        )
     else:
-        if shipping_cost > 0:
-            reasons.append(
-                f"FAIL: total {_fmt_eur(total_cost)} (price {_fmt_eur(price)} + shipping {_fmt_eur(shipping_cost)}) > max {_fmt_eur(max_price)}"
-            )
-        else:
-            reasons.append(f"FAIL: price {_fmt_eur(price)} > max {_fmt_eur(max_price)}")
+        reasons.append(f"{'' if within else 'FAIL: '}price {_fmt_eur(price)} {'<=' if within else '>'} max {_fmt_eur(max_price)}")
+    if not within:
         failed = True
+    checks.append({
+        "code": "price", "ok": within, "price": round(price, 2), "max": round(max_price, 2),
+        "shipping": None if shipping_estimated else round(shipping_cost, 2),
+        "shipping_estimated": shipping_estimated,
+        "shipping_min": hit.get("shipping_min") if shipping_estimated else None,
+        "shipping_max": hit.get("shipping_max") if shipping_estimated else None,
+    })
 
     # ── Check 2: Budget not exceeded (using total cost) ────────────────────
     if max_budget is not None:
         max_budget_f = float(max_budget)
         remaining = max_budget_f - spent
-        if spent + total_cost <= max_budget_f:
+        budget_ok = spent + budget_cost <= max_budget_f
+        if budget_ok:
             reasons.append(f"budget OK: {_fmt_eur(remaining)} remaining")
         else:
             reasons.append(
-                f"FAIL: budget exceeded ({_fmt_eur(spent)} + {_fmt_eur(total_cost)} > {_fmt_eur(max_budget_f)})"
+                f"FAIL: budget exceeded ({_fmt_eur(spent)} + {_fmt_eur(budget_cost)} > {_fmt_eur(max_budget_f)})"
             )
             failed = True
+        checks.append({"code": "budget", "ok": budget_ok, "remaining": round(remaining, 2)})
 
     # ── Check 3: Cooldown respected ────────────────────────────────────────
     if last_deal_at is not None:
@@ -125,8 +148,14 @@ def evaluate(
                 # the agent (_get_existing_urls + _get_user_recent_deal_urls) and
                 # notification rate is capped in the worker, so this is now
                 # advisory only and no longer blocks the verdict.
-                hours_left = (cooldown_td - elapsed).total_seconds() / 3600
-                reasons.append(f"cooldown note: mandate last deal {hours_left:.1f}h ago (per-listing cooldown still applies)")
+                # Elapsed, not remaining: this printed the hours LEFT in the
+                # window as "last deal Xh ago" — 23.6h "ago" for a deal found
+                # 25 minutes earlier (2026-09-24).
+                hours_ago = elapsed.total_seconds() / 3600
+                reasons.append(
+                    f"cooldown note: mandate last deal {hours_ago:.1f}h ago, inside its "
+                    f"{cooldown_hours}h window (advisory; per-listing cooldown still applies)"
+                )
 
     # ── Check 4: Trust score ───────────────────────────────────────────────
     if provenance >= min_trust:
@@ -134,6 +163,7 @@ def evaluate(
     else:
         reasons.append(f"FAIL: provenance {provenance:.2f} < min {min_trust:.2f}")
         failed = True
+    checks.append({"code": "trust", "ok": provenance >= min_trust})
 
     # ── Check 5: Allowed sources ───────────────────────────────────────────
     if allowed_sources and len(allowed_sources) > 0:
@@ -142,6 +172,7 @@ def evaluate(
         else:
             reasons.append(f"FAIL: source '{source}' not in {allowed_sources}")
             failed = True
+        checks.append({"code": "source", "ok": source in allowed_sources, "source": source})
 
     # ── Check 6: Exclude keywords ────────────────────────────────────────
     exclude_keywords = mandate.get("exclude_keywords") or []
@@ -153,6 +184,25 @@ def evaluate(
             failed = True
         else:
             reasons.append("no excluded keywords found in title")
+        checks.append({"code": "keywords", "ok": not matched})
+
+    # ── Check 6b: Same card, when the mandate is keyed ─────────────────────
+    # A keyed mandate says WHICH card. The search query is the card's name, and
+    # names repeat: "Charizard ex" returned SVP #161 (the key) but also Paldean
+    # Fates #054 and Obsidian Flames #125, and all three passed as deals
+    # (walked 2026-09-24). A title that STATES a card number other than the
+    # key's is a different card. Only explicit forms count ("054/091", "#125",
+    # "SVP - 161"): bare numbers are too often a set ("151") or a year.
+    key_number = _key_card_number(mandate.get("canonical_ref"))
+    if key_number:
+        stated = _stated_card_numbers(str(hit.get("title", "")))
+        if stated and key_number not in stated:
+            reasons.append(f"FAIL: title states card #{'/#'.join(sorted(stated))}, not #{key_number}")
+            failed = True
+        elif stated:
+            reasons.append(f"card #{key_number} matches the title")
+        if stated:
+            checks.append({"code": "card", "ok": key_number in stated, "number": key_number})
 
     # ── Check 7: Not expired ───────────────────────────────────────────────
     if expires_at is not None:
@@ -172,6 +222,7 @@ def evaluate(
             else:
                 reasons.append("FAIL: mandate expired")
                 failed = True
+                checks.append({"code": "expired", "ok": False})
 
     # ── Check 8: Cross-border availability ─────────────────────────────────
     if is_domestic_only and listing_region and mandate_region and listing_region != mandate_region:
@@ -179,6 +230,7 @@ def evaluate(
             f"FAIL: domestic-only listing (ships from {listing_region}, user in {mandate_region})"
         )
         failed = True
+        checks.append({"code": "region", "ok": False})
 
     # ── Compute deal_score ─────────────────────────────────────────────────
     # deal_score = 0.35 * provenance + 0.30 * price_discount + 0.20 * recency + 0.15 * scarcity
@@ -231,6 +283,7 @@ def evaluate(
     return PolicyVerdict(
         passed=not failed,
         reasons=reasons,
+        checks=checks,
         deal_score=round(deal_score, 4),
         price_vs_q50_pct=round(price_vs_q50_pct, 1),
     )
@@ -239,3 +292,28 @@ def evaluate(
 def _fmt_eur(v: float) -> str:
     """Format a number as EUR string."""
     return f"\u20ac{v:,.2f}"
+
+_SLASH_NUM = re.compile(r"(?<![\d.])(\d{1,4})\s*/\s*\d{1,4}(?![\d])")
+_HASH_NUM = re.compile(r"#\s*(\d{1,4})\b")
+_CODE_NUM = re.compile(r"\b[A-Za-z]{2,6}\d{0,2}(?:pt\d)?\s*-\s*(\d{1,4})\b")
+
+
+def _norm_num(n: str) -> str:
+    return n.lstrip("0") or "0"
+
+
+def _key_card_number(canonical_ref: Optional[str]) -> Optional[str]:
+    """'pokemon:svp-svp-161' -> '161'; None when the key does not end in a number."""
+    if not canonical_ref:
+        return None
+    last = str(canonical_ref).rsplit(":", 1)[-1].rsplit("-", 1)[-1]
+    return _norm_num(last) if last.isdigit() else None
+
+
+def _stated_card_numbers(title: str) -> set[str]:
+    """Card numbers a listing title states explicitly."""
+    found = set()
+    for rx in (_SLASH_NUM, _HASH_NUM, _CODE_NUM):
+        for m in rx.finditer(title):
+            found.add(_norm_num(m.group(1)))
+    return found

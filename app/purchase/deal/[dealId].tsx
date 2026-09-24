@@ -31,7 +31,10 @@ import { useToast } from "@/components/Toast";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import logger from "@/utils/logger";
 import type { MandateDeal } from "@/data/types";
+import { policyCheckLine, shippingLine } from "@/lib/dealChecks";
+import { MARKETPLACE_BRAND_COLORS } from "@/constants/colors";
 import { useTranslation } from 'react-i18next';
+import { marketplaceLabel } from '@/lib/marketplaceLabel';
 
 export default function DealDetailScreenWithBoundary() {
   return (
@@ -233,7 +236,7 @@ function DealDetailScreen() {
         <Text style={[styles.dealTitle, { color: colors.text }]}>{deal.listingTitle}</Text>
         <View style={styles.metaRow}>
           <View style={[styles.sourceBadge, { backgroundColor: colors.accent + "15" }]}>
-            <Text style={[styles.sourceText, { color: colors.accent }]}>{deal.listingSource}</Text>
+            <Text style={[styles.sourceText, { color: colors.accent }]}>{marketplaceLabel(deal.listingSource, MARKETPLACE_BRAND_COLORS[deal.listingSource]?.label, t)}</Text>
           </View>
           {deal.listingSeller && (
             <Text style={[styles.sellerText, { color: colors.muted }]}>
@@ -295,32 +298,42 @@ function DealDetailScreen() {
           </View>
         )}
 
-        {/* Provenance + Deal Score */}
-        <View style={[styles.scoresCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Scoring</Text>
-          <View style={styles.scoreRow}>
-            <ScoreItem label="Provenance" value={deal.provenanceScore} colors={colors} />
-            <ScoreItem label={t('purchase.deal_score', { defaultValue: 'Deal Score' })} value={deal.dealScore} colors={colors} />
-          </View>
-        </View>
-
-        {/* Policy Checks */}
-        {deal.policyReasons.length > 0 && (
+        {/* Why it's a match. The server's own check results as sentences in
+            the member's language. This used to be two engine blocks: a
+            "Scoring" card of internal numbers (provenance 0.70, deal score
+            0.53) and "Policy Checks" printing audit strings verbatim —
+            "total €28.13 (price €5.63 + shipping €22.50) <= max €30.0",
+            "source 'ebay' in allowed list" — where the €22.50 was OUR guess,
+            shown as the listing's shipping (2026-09-24). Deals found before
+            then carry no structured checks; they show none rather than the
+            raw strings. */}
+        {(deal.policyChecks?.length ?? 0) > 0 && (
           <View style={[styles.policyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.cardTitle, { color: colors.text }]}>{t('purchase.policy_checks', { defaultValue: 'Policy Checks' })}</Text>
-            {deal.policyReasons.map((reason, idx) => {
-              const isFail = reason.startsWith("FAIL:");
+            <Text style={[styles.cardTitle, { color: colors.text }]}>{t('purchase.why_match', { defaultValue: "Why it's a match" })}</Text>
+            {deal.policyChecks!.map((c, idx) => {
+              const line = policyCheckLine(c, t);
+              if (!line) return null;
               return (
-                <View key={idx} style={styles.policyRow}>
+                <View key={`${c.code}-${idx}`} style={styles.policyRow}>
                   <Ionicons
-                    name={isFail ? "close-circle" : "checkmark-circle"}
+                    name={c.ok ? "checkmark-circle" : "close-circle"}
                     size={16}
-                    color={isFail ? colors.danger : colors.success}
+                    color={c.ok ? colors.success : colors.danger}
                   />
-                  <Text style={[styles.policyText, { color: colors.text }]}>{reason}</Text>
+                  <Text style={[styles.policyText, { color: colors.text }]}>{line}</Text>
                 </View>
               );
             })}
+            {(() => {
+              const p = deal.policyChecks!.find((c) => c.code === 'price');
+              const ship = p ? shippingLine(p, t) : null;
+              return ship ? (
+                <View style={styles.policyRow}>
+                  <Ionicons name="cube-outline" size={16} color={colors.muted} />
+                  <Text style={[styles.policyText, { color: colors.muted }]}>{ship}</Text>
+                </View>
+              ) : null;
+            })()}
           </View>
         )}
 
@@ -406,27 +419,6 @@ function PredBand({ label, value, colors, highlight }: {
   );
 }
 
-function ScoreItem({ label, value, colors }: {
-  label: string;
-  value?: number | null;
-  colors: Record<string, any>;
-}) {
-  const pct = value != null ? Math.round(value * 100) : 0;
-  const barColor = pct >= 70 ? colors.success : pct >= 40 ? colors.warning : colors.danger;
-
-  return (
-    <View style={styles.scoreItem}>
-      <Text style={[styles.scoreLabel, { color: colors.muted }]}>{label}</Text>
-      <Text style={[styles.scoreValue, { color: colors.text }]}>
-        {value != null ? value.toFixed(2) : "—"}
-      </Text>
-      <View style={[styles.scoreBar, { backgroundColor: colors.border }]}>
-        <View style={[styles.scoreFill, { backgroundColor: barColor, width: `${pct}%` }]} />
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   container: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24 },
@@ -458,7 +450,7 @@ const styles = StyleSheet.create({
   dealTitle: { fontSize: 18, fontWeight: "700", marginBottom: 8 },
   metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16, alignItems: "center" },
   sourceBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  sourceText: { fontSize: 12, fontWeight: "700", textTransform: "uppercase" },
+  sourceText: { fontSize: 12, fontWeight: "700" },
   sellerText: { fontSize: 12, fontWeight: "500" },
   conditionText: { fontSize: 12, fontWeight: "500" },
 
@@ -492,13 +484,6 @@ const styles = StyleSheet.create({
   barLabel: { fontSize: 10, textAlign: "center" },
 
   // Scores
-  scoresCard: { borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 12 },
-  scoreRow: { flexDirection: "row", gap: 16 },
-  scoreItem: { flex: 1 },
-  scoreLabel: { fontSize: 11, fontWeight: "600", marginBottom: 2 },
-  scoreValue: { fontSize: 16, fontWeight: "800", marginBottom: 4 },
-  scoreBar: { height: 4, borderRadius: 2, overflow: "hidden" },
-  scoreFill: { height: "100%", borderRadius: 2 },
 
   // Policy
   policyCard: { borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 12 },

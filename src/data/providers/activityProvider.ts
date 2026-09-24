@@ -61,6 +61,7 @@ export async function unifiedSearch(query: string, limit = 5) {
         itemKey: (c.item_key ?? c.itemKey) as string,
         title: c.title as string,
         brand: (c.brand ?? null) as string | null,
+        setCode: (c.set_code ?? null) as string | null,
         // R50k: catalog reference images backend-only
         hasReferenceImage: Boolean(c.has_reference_image ?? false),
         // The catalogue's own price (mv_catalog_item_price), already rounded

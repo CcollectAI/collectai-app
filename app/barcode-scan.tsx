@@ -39,6 +39,7 @@ import { PermissionScreen } from '@/components/quickscan/PermissionScreen';
 import { safeGoBack } from '@/lib/goBack';
 import { useTranslation } from 'react-i18next';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { offerProOnPlanLimit } from '@/lib/planLimitPrompt';
 
 /** Barcode types accepted by the scanner */
 const SUPPORTED_BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'isbn'] as const;
@@ -413,7 +414,7 @@ function BarcodeScanScreen() {
     const title = (lookupResult.title || '').trim();
     if (!title) {
       // A watchlist row keyed on an empty title is unmatchable and unreadable.
-      showToast({ message: 'This scan has no title to watch yet', type: 'warning' });
+      showToast({ message: t('wishlist.scan_no_title'), type: 'warning' });
       return;
     }
     setWatching(true);
@@ -427,17 +428,18 @@ function BarcodeScanScreen() {
       });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       setWatched(true);
-      showToast({ message: 'Added to your watchlist', type: 'success' });
+      showToast({ message: t('wishlist.added'), type: 'success' });
     } catch (err) {
+      if (offerProOnPlanLimit(err, t, () => router.push('/subscription'))) return;
       logger.error('[BarcodeScan] add to watchlist failed:', err);
       showToast({
-        message: userErrorMessage(err, 'Could not add to your watchlist'),
+        message: userErrorMessage(err, t('favorites.watch_failed')),
         type: 'error',
       });
     } finally {
       setWatching(false);
     }
-  }, [lookupResult, scannedCode, watching, watched, showToast, settings.hapticsEnabled]);
+  }, [lookupResult, scannedCode, watching, watched, showToast, settings.hapticsEnabled, t]);
 
   // Permission not determined yet
   if (!permission) {

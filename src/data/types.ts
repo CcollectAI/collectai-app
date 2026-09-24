@@ -761,7 +761,10 @@ export type MandateDeal = {
 
   // Policy
   policyPassed: boolean;
+  /** Engine audit text — NOT for display (2026-09-24). */
   policyReasons: string[];
+  /** Member-facing results, one per check; empty for deals found before 2026-09-24. */
+  policyChecks?: PolicyCheck[];
 
   // Affiliate
   affiliateSource?: string | null;
@@ -1040,4 +1043,19 @@ export type DetectedMultiItem = {
   categoryHint: string | null;
   suggestedName: string | null;
   confidence: number;
+};
+
+/** One policy check on a deal, as the server stores it (policy_engine.checks). */
+export type PolicyCheck = {
+  code: 'price' | 'budget' | 'trust' | 'source' | 'keywords' | 'card' | 'expired' | 'region' | string;
+  ok: boolean;
+  price?: number;
+  max?: number;
+  shipping?: number | null;
+  shippingEstimated?: boolean;
+  shippingMin?: number | null;
+  shippingMax?: number | null;
+  remaining?: number;
+  source?: string;
+  number?: string;
 };

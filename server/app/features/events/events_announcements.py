@@ -236,6 +236,8 @@ async def get_unread_announcement_count(
                     LEFT JOIN event_announcement_reads ear
                       ON ear.announcement_id = ea.id AND ear.user_id = $1::uuid
                     WHERE ear.user_id IS NULL
+                      -- your own announcement is not news to you
+                      AND ea.author_user_id IS DISTINCT FROM $1::uuid
                     """,
                     user_id,
                 )
@@ -376,7 +378,7 @@ async def list_announcements(
                 rows = await conn.fetch(
                     """
                     SELECT ea.*,
-                           (ear.user_id IS NOT NULL) AS is_read
+                           (ear.user_id IS NOT NULL OR ea.author_user_id = $2::uuid) AS is_read
                     FROM event_announcements ea
                     LEFT JOIN event_announcement_reads ear
                         ON ear.announcement_id = ea.id AND ear.user_id = $2::uuid

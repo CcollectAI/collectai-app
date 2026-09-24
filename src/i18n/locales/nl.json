@@ -168,7 +168,23 @@
     "helps_predictions": "Dit helpt de prijsvoorspellingen voor iedereen te verbeteren",
     "added_to_collection": "Toegevoegd aan je collectie",
     "change_category": "Categorie wijzigen",
-    "saved_items_safe": "Je opgeslagen items zijn veilig — we konden er alleen even niet bij. Controleer je verbinding en probeer het opnieuw."
+    "saved_items_safe": "Je opgeslagen items zijn veilig — we konden er alleen even niet bij. Controleer je verbinding en probeer het opnieuw.",
+    "load_failed_pull": "Je volglijst kon niet worden geladen. Trek omlaag om het opnieuw te proberen.",
+    "enter_title": "Vul een titel in.",
+    "choose_category": "Kies een categorie.",
+    "target_needed": "Stel een doelprijs in — bij die prijs sturen we je een melding.",
+    "target_set": "Doelprijs ingesteld — we laten het je weten als het onder {{price}} wordt aangeboden",
+    "target_updated": "Doelprijs bijgewerkt",
+    "add_failed": "Dit item kon niet worden toegevoegd.",
+    "remove_failed": "Dit item kon niet worden verwijderd.",
+    "target_update_failed": "De doelprijs kon niet worden bijgewerkt.",
+    "add_to_collection_failed": "Dit kon niet aan je collectie worden toegevoegd.",
+    "remove_title": "Verwijderen van volglijst",
+    "remove_body": "“{{title}}” van je volglijst verwijderen?",
+    "remove": "Verwijderen",
+    "added": "Toegevoegd aan je volglijst",
+    "added_named": "“{{title}}” toegevoegd aan je volglijst",
+    "scan_no_title": "Deze scan heeft nog geen titel om te volgen"
   },
   "events": {
     "ticket_fee_hint": "Bij betaalde tickets gelden platformkosten van {{pct}}%.",
@@ -211,7 +227,9 @@
     "pull_to_retry": "Trek omlaag om het opnieuw te proberen.",
     "nearby_events": "Evenementen in de buurt",
     "announcements_title": "Aankondigingen bij het evenement",
-    "updates_from_host": "Updates van de organisator"
+    "updates_from_host": "Updates van de organisator",
+    "location_unavailable_title": "Je locatie kon niet worden bepaald",
+    "location_unavailable_body": "Zet locatievoorzieningen aan en probeer het opnieuw."
   },
   "marketplace": {
     "find_collectors": "Verzamelaars vinden",
@@ -227,7 +245,8 @@
     "regional_insights_sub": "Populair bij jou in de buurt op basis van activiteit van verzamelaars",
     "prices_load_failed": "De marktprijzen konden niet worden geladen. Controleer je verbinding en probeer het opnieuw.",
     "upgrade_to_see": "Upgrade om te bekijken",
-    "movers_explainer": "De grootste prijsbewegingen van 7 dagen in jouw categorieën — wat stijgt, wat daalt en hoeveel."
+    "movers_explainer": "De grootste prijsbewegingen van 7 dagen in jouw categorieën — wat stijgt, wat daalt en hoeveel.",
+    "sparrow_name": "Sparrow Collect Marktplaats"
   },
   "search": {
     "placeholder": "Zoek items, verzamelaars, evenementen...",
@@ -932,7 +951,45 @@
     "in_beta": "Je zit in de Sparrow-bèta",
     "plans_load_failed": "De abonnementen konden niet worden geladen",
     "restore_purchases": "Aankopen herstellen",
-    "beta_pricing_note": "Alle Pro-functies zijn gratis beschikbaar zolang we testen. Prijzen volgen na de bèta — je krijgt bericht voordat er iets verandert."
+    "beta_pricing_note": "Alle Pro-functies zijn gratis beschikbaar zolang we testen. Prijzen volgen na de bèta — je krijgt bericht voordat er iets verandert.",
+    "title": "Abonnement",
+    "plan_free": "Gratis",
+    "plan_pro_monthly": "Pro per maand",
+    "plan_pro_yearly": "Pro per jaar",
+    "price_per_month": "{{price}}/mnd",
+    "price_per_year": "{{price}}/jaar",
+    "price_yearly_saving": "{{price}} · bespaar ~33%",
+    "recommended": "Aanbevolen",
+    "downgrade": "Verlagen",
+    "plan_a11y": "Abonnement {{name}}, {{price}}",
+    "plan_a11y_current": "huidig abonnement",
+    "plan_a11y_recommended": "aanbevolen",
+    "select_plan_a11y": "Kies het abonnement {{name}}",
+    "feature_mandates": "10 aankoopopdrachten",
+    "feature_watchlist_unlimited": "Onbeperkte volglijst",
+    "feature_target_hit_unlimited": "Onbeperkt Target Hit-meldingen",
+    "feature_deal_discovery": "Deals vinden",
+    "feature_set_completion": "Setvoortgang bijhouden (ruilkaartsets)",
+    "feature_advanced_analytics": "Uitgebreide analyses",
+    "feature_no_ads": "Geen advertenties",
+    "feature_watchlist_25": "25 items op je volglijst",
+    "feature_target_hit_daily": "1 Target Hit-melding per dag",
+    "feature_basic_valuation": "Basiswaardering",
+    "feature_community_events": "Community-evenementen",
+    "store_unreachable_ios": "We konden de App Store niet bereiken voor de abonnementen. Controleer je verbinding en probeer het opnieuw. Heb je al een abonnement? Gebruik hieronder Aankopen herstellen.",
+    "store_unreachable_android": "We konden Google Play niet bereiken voor de abonnementen. Controleer je verbinding en probeer het opnieuw. Heb je al een abonnement? Gebruik hieronder Aankopen herstellen.",
+    "legal_renewal_ios": "Abonnementen worden automatisch verlengd tot je opzegt. Opzeggen kan altijd via de abonnementen van je Apple ID. De betaling wordt bij bevestiging via je Apple ID-account afgeschreven.",
+    "legal_renewal_android": "Abonnementen worden automatisch verlengd tot je opzegt. Opzeggen kan altijd via je abonnementen in Google Play. De betaling wordt bij bevestiging via je Google Play-account afgeschreven.",
+    "legal_agree": "Door je te abonneren ga je akkoord met onze Gebruiksvoorwaarden en ons Privacybeleid.",
+    "terms_link": "Gebruiksvoorwaarden",
+    "privacy_link": "Privacybeleid",
+    "plan_unavailable": "Dit abonnement is nu niet beschikbaar. Probeer het later opnieuw.",
+    "welcome_pro": "Welkom bij Sparrow Pro!",
+    "restore_unavailable": "Herstellen lukt nu niet. Probeer het opnieuw.",
+    "restore_none": "Geen eerdere aankopen gevonden.",
+    "restored": "Hersteld — je hebt {{plan}}.",
+    "manage_open_failed": "De abonnementenpagina kon niet worden geopend.",
+    "plans_load_error": "De abonnementen konden niet worden geladen."
   },
   "mfa": {
     "title": "Tweestapsverificatie",
@@ -948,7 +1005,9 @@
     "intro": "Voeg een extra beveiligingslaag toe aan je account met een TOTP-authenticator-app.",
     "scan_instruction": "Open je authenticator-app (Google Authenticator, Authy, enzovoort) en scan deze code:",
     "protected": "Je account is beveiligd met tweefactorauthenticatie.",
-    "enable_prompt": "Beveilig je account door tweefactorauthenticatie in te schakelen met een authenticator-app."
+    "enable_prompt": "Beveilig je account door tweefactorauthenticatie in te schakelen met een authenticator-app.",
+    "manual_key_hint": "Kun je niet scannen, omdat de authenticator op deze telefoon staat? Voer dan deze sleutel in (lang indrukken om te kopiëren):",
+    "manual_key_a11y": "Sleutel voor je authenticator-app"
   },
   "event_detail": {
     "not_found": "Evenement niet gevonden",
@@ -958,7 +1017,9 @@
     "load_failed": "Dit evenement kon niet worden geladen",
     "cancelled": "Dit evenement is geannuleerd",
     "was_interested": "Was geïnteresseerd",
-    "not_found_body": "Dit evenement bestaat nog niet. Probeer het opnieuw te openen via het tabblad Evenementen."
+    "not_found_body": "Dit evenement bestaat nog niet. Probeer het opnieuw te openen via het tabblad Evenementen.",
+    "manage": "Beheren",
+    "manage_a11y": "Evenement beheren"
   },
   "user_profile": {
     "blocked_user": "Je hebt deze gebruiker geblokkeerd",
@@ -1049,7 +1110,12 @@
     "feature_requires_premium": "{{feature}} vereist Premium",
     "feature_requires_plan": "{{feature}} vereist {{plan}}",
     "unlock_feature": "Upgrade om deze functie te ontgrendelen",
-    "unlock_via_plan_feature": "Zit in {{plan}} onder “{{planFeature}}”"
+    "unlock_via_plan_feature": "Zit in {{plan}} onder “{{planFeature}}”",
+    "limit_watchlist_title": "Je volglijst is vol",
+    "limit_watchlist_body": "Met het gratis abonnement volg je tot {{count}} items. Met Sparrow Pro volg je er zoveel als je wilt.",
+    "limit_generic_title": "Onderdeel van Sparrow Pro",
+    "limit_generic_body": "Je hebt bereikt wat het gratis abonnement biedt. Sparrow Pro heft de limiet op.",
+    "see_pro": "Bekijk Sparrow Pro"
   },
   "set_completion": {
     "title": "Setvoortgang",
@@ -1111,7 +1177,7 @@
     "back_items": "Items",
     "back_settings": "Instellingen",
     "become_sponsor": "Word sponsor",
-    "compose_announcement": "Aankondiging opstellen",
+    "compose_announcement": "Aankondigen",
     "condition_guide": "Conditiegids",
     "ebay_defaults": "eBay-standaarden",
     "edit_event": "Evenement bewerken",
@@ -1223,7 +1289,11 @@
     "sponsored_note": "Dit evenement wordt gemarkeerd als gesponsord en extra getoond aan verzamelaars.",
     "invite_after_create": "Je kunt vrienden uitnodigen nadat je het evenement hebt aangemaakt.",
     "invite_via_chat": "Vrienden uitnodigen via chat",
-    "available_after_creation": "Beschikbaar nadat het evenement is aangemaakt"
+    "available_after_creation": "Beschikbaar nadat het evenement is aangemaakt",
+    "visibility_public": "Openbaar",
+    "visibility_private": "Privé",
+    "public_hint": "Iedereen kan dit evenement zien en eraan deelnemen",
+    "private_hint": "Alleen jij kunt dit evenement zien. Het staat niet in de lijst en de link werkt voor niemand anders."
   },
   "listings": {
     "catalog_photo": "Catalogusfoto",
@@ -1271,7 +1341,16 @@
     "no_payment_handling": "Sparrow regelt geen betaling of bezorging. Dat regel je rechtstreeks met de verkoper, en er is geen kopersbescherming.",
     "unmatched_price_note": "Deze advertentie is niet gekoppeld aan een catalogusitem, dus volgers krijgen geen melding. De nieuwe prijs is wel zichtbaar op de marktplaats.",
     "marketplace_intro": "Alles hier wordt aangeboden door verzamelaars zoals jij. Stuur een verkoper een bericht om een prijs af te spreken — Sparrow regelt geen betaling of bezorging. Bied je eigen items aan en leden die ze volgen krijgen een melding.",
-    "arrange_between_yourselves": "Kopers en verkopers regelen betaling en bezorging onderling. Sparrow regelt geen betaling en er is geen kopersbescherming."
+    "arrange_between_yourselves": "Kopers en verkopers regelen betaling en bezorging onderling. Sparrow regelt geen betaling en er is geen kopersbescherming.",
+    "mark_sold_title": "Markeren als verkocht?",
+    "mark_sold_body": "De advertentie stopt en het item verdwijnt uit je collectie. De verkoop komt in je Verkopen en winst. Dit kan niet ongedaan worden gemaakt.",
+    "watchers_other_one": "1 ander lid volgt dit item",
+    "gone_sold": "Dit item is verkocht.",
+    "gone_other": "Deze advertentie is niet meer beschikbaar.",
+    "watchers_other_many": "{{count}} andere leden volgen dit item",
+    "sold_for_label": "Voor hoeveel is het verkocht?",
+    "sold_for_a11y": "Verkoopprijs",
+    "marked_sold": "Gemarkeerd als verkocht — staat nu bij je Verkopen."
   },
   "chat": {
     "collector_not_found": "Verzamelaar niet gevonden",
@@ -1372,7 +1451,31 @@
     "watch_note": "Wij houden marktplaatsen in de gaten en waarschuwen je als je prijs wordt gehaald.",
     "deal_discovery_pitch": "Deals ontdekken is een functie van Sparrow Pro. Upgrade en laat Sparrow deals voor je zoeken.",
     "add_item_and_max": "Voeg een item toe en je maximumprijs.",
-    "link_item_explainer": "Koppelt de zoekopdracht aan een bekend item zodat we kunnen laten zien wat een deal je bespaarde. Laat je het weg, dan loopt de zoekopdracht gewoon door."
+    "link_item_explainer": "Koppelt de zoekopdracht aan een bekend item zodat we kunnen laten zien wat een deal je bespaarde. Laat je het weg, dan loopt de zoekopdracht gewoon door.",
+    "mandate_active_a11y": "Zoekopdracht actief",
+    "mandate_delete_search": "Zoekopdracht verwijderen",
+    "mandate_delete_title": "Deze zoekopdracht verwijderen?",
+    "mandate_delete_body": "Sparrow stopt met zoeken en hij verdwijnt uit je lijst. Gevonden deals blijven staan.",
+    "mandate_deleted": "Zoekopdracht verwijderd",
+    "mandate_delete_failed": "Zoekopdracht kon niet worden verwijderd",
+    "why_match": "Waarom dit past",
+    "check_price_ok": "Binnen je limiet van {{max}}",
+    "check_price_fail": "Boven je limiet van {{max}}",
+    "check_budget_ok": "Nog {{remaining}} over in je totale budget",
+    "check_budget_fail": "Boven je totale budget",
+    "check_trust_ok": "Verkoper en advertentie voldoen aan je vertrouwensinstelling",
+    "check_trust_fail": "Onder je vertrouwensinstelling",
+    "check_source_ok": "Van een marktplaats die je koos",
+    "check_source_fail": "Niet van een marktplaats die je koos",
+    "check_keywords_ok": "Geen van de woorden die je uitsloot",
+    "check_keywords_fail": "Bevat een woord dat je uitsloot",
+    "check_card_ok": "De kaart die je zoekt (#{{number}})",
+    "check_card_fail": "Een andere kaart, niet #{{number}}",
+    "check_expired": "Je zoekopdracht is verlopen",
+    "check_region": "Wordt niet naar jouw regio verzonden",
+    "shipping_estimated_range": "Verzendkosten niet vermeld — meestal {{min}}–{{max}} naar jou. Check de advertentie.",
+    "shipping_estimated": "Verzendkosten niet vermeld — check de advertentie.",
+    "shipping_stated": "Plus {{amount}} verzendkosten"
   },
   "edit_event": {
     "loading_event": "Evenement laden...",
@@ -1384,7 +1487,8 @@
     "danger_zone": "Gevarenzone",
     "a11y_cancel_event": "Evenement annuleren",
     "cancel_event": "Evenement annuleren",
-    "cancel_warning": "Dit evenement annuleren is definitief. Alle deelnemers krijgen bericht."
+    "cancel_warning": "Dit evenement annuleren is definitief. Alle deelnemers krijgen bericht.",
+    "publish": "Evenement publiceren"
   },
   "catalog": {
     "image_coming_soon": "Afbeelding volgt binnenkort",
@@ -1670,5 +1774,10 @@
     "discoverable_note": "Verzamelaars die zichtbaar willen zijn, gerangschikt op wat ze in deze categorie bezitten.",
     "load_failed": "Het klassement kon niet worden geladen. Trek omlaag om het opnieuw te proberen.",
     "empty": "Er staat nog niemand in het klassement."
+  },
+  "listing": {
+    "price_drop_alert_watchers_one": "We laten het lid dat dit volgt weten als je nieuwe prijs zijn doel haalt — hooguit één keer per dag.",
+    "price_drop_alert_future": "Leden die dit item volgen krijgen een melding als je nieuwe prijs hun doel haalt — hooguit één keer per dag per lid.",
+    "price_drop_alert_watchers_many": "We laten de {{count}} leden die dit volgen weten als je nieuwe prijs hun doel haalt — hooguit één keer per dag per lid."
   }
 }

@@ -41,6 +41,7 @@ import { colors as tokens } from '@/theme/tokens';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import logger from '@/utils/logger';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { offerProOnPlanLimit } from '@/lib/planLimitPrompt';
 import type { CatalogItemData } from '@/components/CatalogBrowseSection';
 import ScreenHeader from '@/components/ScreenHeader';
 import { useTranslation } from 'react-i18next';
@@ -239,13 +240,14 @@ function CatalogItemMuseumScreen() {
         // watchlist knows *what* it is watching (was NULL on every row).
         itemId: params.key ?? null,
       });
-      showToast({ message: `${title} added to watchlist`, type: 'success' });
+      showToast({ message: t('wishlist.added_named', { title }), type: 'success' });
     } catch (e) {
       // The status and path go to the log; the member gets the server's own
       // sentence when it wrote one (ui-playbook: err.message is for the log).
+      if (offerProOnPlanLimit(e, t, () => router.push('/subscription' as Href))) return;
       logger.error('[CatalogItem] add to watchlist failed:', e);
       const reason = userErrorMessage(e, '');
-      showToast({ message: `Couldn't add to watchlist — try again${reason ? ` (${reason})` : ''}`, type: 'error' });
+      showToast({ message: reason ? `${t('favorites.watch_failed')} (${reason})` : t('favorites.watch_failed'), type: 'error' });
     } finally {
       setAdding(false);
     }

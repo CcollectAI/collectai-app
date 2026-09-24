@@ -16,6 +16,8 @@ import type { PublicUserProfile } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { useTranslation } from 'react-i18next';
+import { useSettings } from '@/lib/settings';
+import { fmtCurrencyCompact } from '@/lib/format';
 
 type Props = {
   profile: PublicUserProfile | null;
@@ -63,6 +65,7 @@ export const PublicUserProfileCard: React.FC<Props> = ({
   onConnect,
 }) => {
   const { t } = useTranslation();
+  const { settings } = useSettings();
   const { colors } = useAppTheme();
 
   if (loading) {
@@ -80,12 +83,8 @@ export const PublicUserProfileCard: React.FC<Props> = ({
     return null;
   }
 
-  const formatValue = (value: number) => {
-    if (value >= 1000) {
-      return `€${(value / 1000).toFixed(1)}k`;
-    }
-    return `€${value}`;
-  };
+  // collectionValueEur is EUR from the server: convert to the viewer's currency.
+  const formatValue = (value: number) => fmtCurrencyCompact(value, settings);
 
   const CardWrapper = onPress ? AnimatedPressable : View;
   const cardProps = onPress ? { onPress } : {};

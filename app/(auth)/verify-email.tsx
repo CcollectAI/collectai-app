@@ -30,6 +30,13 @@ import { logger } from '@/lib/logger';
 /** Supabase's own cooldown between confirmation sends, in seconds. */
 export const RESEND_COOLDOWN_S = 60;
 
+/** Seconds before Resend is offered on arrival. After signUp the email was
+ *  just sent (60s server cooldown); from login (`from=login`, an unconfirmed
+ *  account) nothing was sent, so Resend is available at once. */
+export function initialResendCooldown(from?: string | string[]): number {
+  return from === 'login' ? 0 : RESEND_COOLDOWN_S;
+}
+
 /**
  * Seconds to wait, if `e` is Supabase's send-rate-limit error; otherwise null.
  *
@@ -56,17 +63,21 @@ function VerifyEmailScreen() {
   const { t } = useTranslation();
   const { settings } = useSettings();
   const { colors } = useAppTheme();
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const { email, from } = useLocalSearchParams<{ email: string; from?: string }>();
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
-  // Starts at 60, not 0. The ONLY route to this screen is a successful
-  // signUp in register.tsx, which has just sent the confirmation email — and
-  // Supabase enforces a 60s cooldown from that send. Starting at 0 rendered an
+  // Starts at 60, not 0, after signUp in register.tsx, which has just sent
+  // the confirmation email — and Supabase enforces a 60s cooldown from that
+  // send. Starting at 0 rendered an
   // enabled "Resend email" button whose every tap was guaranteed to 429 for
   // the first minute. Measured against prod 2026-09-05: resend at +0s said
   // "after 58 seconds", at +45s "after 13 seconds", and only succeeded past
   // 60s (then genuinely delivered a 2nd email).
-  const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_S);
+  //
+  // From LOGIN (`from=login`, an unconfirmed account signing in) nothing was
+  // just sent, so Resend is available at once. If the server still has a
+  // cooldown running, the 429 path below sets it from its own seconds.
+  const [cooldown, setCooldown] = useState(initialResendCooldown(from));
 
   const { animatedStyle: contentReveal } = useEnterReveal({ fromY: 16 });
 

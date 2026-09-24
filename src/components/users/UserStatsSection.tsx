@@ -14,7 +14,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
-import { formatPrice } from '@/lib/format';
+import { fmtCurrencyCompact } from '@/lib/format';
+import { useSettings } from '@/lib/settings';
 import { GAMIFICATION_UI_ENABLED } from '@/config/featureFlags';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 import type { PublicUserProfile } from '@/data';
@@ -29,6 +30,7 @@ export const UserStatsSection = React.memo(function UserStatsSection({
   gamProfile,
 }: UserStatsSectionProps) {
   const { colors } = useAppTheme();
+  const { settings } = useSettings();
 
   return (
     <>
@@ -52,9 +54,7 @@ export const UserStatsSection = React.memo(function UserStatsSection({
           <Text style={[styles.quickStatValue, { color: colors.text }]}>
             {profile.collectionValueEur == null
               ? '\u2014'
-              : profile.collectionValueEur >= 100000
-                ? `\u20AC${Math.round(profile.collectionValueEur / 1000)}k`
-                : formatPrice(profile.collectionValueEur, 'EUR')}
+              : fmtCurrencyCompact(profile.collectionValueEur, settings, 100000)}
           </Text>
           <Text style={[styles.quickStatLabel, { color: colors.muted }]}>Value</Text>
         </View>

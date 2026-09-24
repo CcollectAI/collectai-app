@@ -37,13 +37,17 @@ import type { PurchasesPackage } from 'react-native-purchases';
 import { useToast } from '@/components/Toast';
 import { track } from '@/analytics/track';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { formatPrice } from '@/lib/format';
 
 // Removed static SUCCESS/WARNING — use colors.success / colors.warning from theme
 
 interface PlanCardProps {
   name: string;
   price: string;
+  /** i18n KEYS, not copy — see PRO_FEATURES. */
   features: string[];
+  /** The free card's button is a DOWNGRADE, not a purchase. */
+  isFree?: boolean;
   current: boolean;
   recommended?: boolean;
   onSelect?: () => void;
@@ -51,7 +55,7 @@ interface PlanCardProps {
   colors: ReturnType<typeof useAppTheme>['colors'];
 }
 
-function PlanCard({ name, price, features, current, recommended, onSelect, loading, colors }: PlanCardProps) {
+function PlanCard({ name, price, features, current, recommended, onSelect, loading, colors, isFree }: PlanCardProps) {
   const { t } = useTranslation();
   return (
     <View
@@ -63,20 +67,24 @@ function PlanCard({ name, price, features, current, recommended, onSelect, loadi
       ]}
       accessible={true}
       accessibilityRole="summary"
-      accessibilityLabel={`${name} plan, ${price}${current ? ', current plan' : ''}${recommended ? ', recommended' : ''}`}
+      accessibilityLabel={[
+        t('subscription.plan_a11y', { name, price }),
+        current ? t('subscription.plan_a11y_current') : null,
+        recommended ? t('subscription.plan_a11y_recommended') : null,
+      ].filter(Boolean).join(', ')}
     >
       {recommended && (
         <View style={[styles.recommendedBadge, { backgroundColor: colors.brand.dark }]}>
-          <Text style={[styles.recommendedText, { color: colors.accentText }]}>RECOMMENDED</Text>
+          <Text style={[styles.recommendedText, { color: colors.accentText }]}>{t('subscription.recommended').toLocaleUpperCase()}</Text>
         </View>
       )}
       <Text style={[styles.planName, { color: colors.text }]}>{name}</Text>
       <Text style={[styles.planPrice, { color: colors.muted }]}>{price}</Text>
       <View style={styles.featureList} accessibilityRole="list" accessibilityLabel={t('subscription.features_a11y')}>
-        {features.map((f) => (
-          <View key={f} style={styles.featureRow} accessibilityLabel={f}>
+        {features.map((key) => (
+          <View key={key} style={styles.featureRow} accessibilityLabel={t(key)}>
             <Ionicons name="checkmark-circle" size={18} color={current ? colors.brand.dark : colors.muted} />
-            <Text style={[styles.featureText, { color: colors.text }]}>{f}</Text>
+            <Text style={[styles.featureText, { color: colors.text }]}>{t(key)}</Text>
           </View>
         ))}
       </View>
@@ -94,13 +102,13 @@ function PlanCard({ name, price, features, current, recommended, onSelect, loadi
           onPress={onSelect}
           disabled={loading}
           accessibilityRole="button"
-          accessibilityLabel={`Select ${name} plan`}
+          accessibilityLabel={t('subscription.select_plan_a11y', { name })}
         >
           {loading ? (
             <ActivityIndicator size="small" color={colors.accentText} />
           ) : (
             <Text style={[styles.selectBtnText, { color: colors.accentText }]}>
-              {name === 'Free' ? 'Downgrade' : 'Upgrade'}
+              {isFree ? t('subscription.downgrade') : t('billing.upgrade')}
             </Text>
           )}
         </AnimatedPressable>
@@ -193,7 +201,7 @@ function SubscriptionScreen() {
         }
       })
       .catch((err: unknown) => {
-        setFetchError(userErrorMessage(err, 'Could not load plans.', 'Subscription'));
+        setFetchError(userErrorMessage(err, t('subscription.plans_load_error'), 'Subscription'));
       })
       .finally(() => setLoading(false));
   }
@@ -211,7 +219,7 @@ function SubscriptionScreen() {
     const pkg = period === 'monthly' ? monthlyPkg : yearlyPkg;
     if (!pkg) {
       showToast({
-        message: 'This plan is not available right now. Please try again later.',
+        message: t('subscription.plan_unavailable'),
         type: 'error',
       });
       return;
@@ -233,7 +241,7 @@ function SubscriptionScreen() {
             ...(profile?.referred_by_code ? { affiliate_code: profile.referred_by_code } : {}),
           },
         });
-        showToast({ message: 'Welcome to Pro!', type: 'success' });
+        showToast({ message: t('subscription.welcome_pro'), type: 'success' });
       } else if (result.cancelled) {
         // User cancelled — silent.
       } else {
@@ -250,14 +258,15 @@ function SubscriptionScreen() {
     try {
       const info = await restorePurchases();
       if (!info) {
-        showToast({ message: 'Restore unavailable. Please try again.', type: 'error' });
+        showToast({ message: t('subscription.restore_unavailable'), type: 'error' });
         return;
       }
       const restoredPlan = planFromCustomerInfo(info);
       if (restoredPlan === 'free') {
-        showToast({ message: 'No previous purchases found.', type: 'info' });
+        showToast({ message: t('subscription.restore_none'), type: 'info' });
       } else {
-        showToast({ message: `Restored — you're on ${restoredPlan}.`, type: 'success' });
+        // The plan's display name ("Sparrow Pro"), not the raw id "pro" the toast used to print.
+        showToast({ message: t('subscription.restored', { plan: `Sparrow ${t(`billing.${restoredPlan}`)}` }), type: 'success' });
         track({ name: 'subscription_restored', properties: { plan: restoredPlan } });
       }
     } finally {
@@ -272,7 +281,7 @@ function SubscriptionScreen() {
         ? 'https://apps.apple.com/account/subscriptions'
         : 'https://play.google.com/store/account/subscriptions';
     Linking.openURL(url).catch(() => {
-      showToast({ message: 'Could not open subscriptions page.', type: 'error' });
+      showToast({ message: t('subscription.manage_open_failed'), type: 'error' });
     });
   }
 
@@ -307,11 +316,15 @@ function SubscriptionScreen() {
      alerts), so the page under-sold the tier, and "Priority support" was a
      support promise nothing implements — a written promise to a paying user is
      a spec, not copy. */
+  /* i18n KEYS (2026-09-24). This list was English literals and the whole
+     paywall rendered English in every locale. The two gates that read it —
+     check:paywall-claims and subscriptionPlanCards.test.ts — resolve each key
+     through the locale files, so a claim is now checked in all seven. */
   const PRO_FEATURES = [
-    '10 purchase mandates',
-    'Unlimited watchlist',
-    'Unlimited Target Hit alerts',
-    'Deal discovery',
+    'subscription.feature_mandates',
+    'subscription.feature_watchlist_unlimited',
+    'subscription.feature_target_hit_unlimited',
+    'subscription.feature_deal_discovery',
     /* 'Condition grading' REMOVED 2026-08-30 — it had been on this card for
        ~4 months while unreachable. The FE was SHELVED 2026-05-02 (see the
        comment in app/item/[id].tsx). `GradingSection` was imported there and
@@ -333,17 +346,21 @@ function SubscriptionScreen() {
     // and an unqualified claim sells a Pro feature that cannot work for a
     // whiskey or LEGO collector. Keep the words "set completion" — the plan-card
     // test matches on them.
-    'Set completion tracker (trading-card sets)',
-    'Advanced analytics',
-    'No ads',
+    'subscription.feature_set_completion',
+    'subscription.feature_advanced_analytics',
+    'subscription.feature_no_ads',
   ];
 
+  /* '1 price alert a week' REMOVED 2026-09-24. The cap is real on the server
+     (max_alerts_per_week, alerts_feature_router 403) but NOTHING in the app
+     creates a price alert — `createAlert` has no caller and prod holds 0
+     user_price_alerts rows. The free card was describing a feature no member
+     can reach. Put it back together with a screen that creates one. */
   const FREE_FEATURES = [
-    '25 watchlist items',
-    '1 Target Hit alert a day',
-    '1 price alert a week',
-    'Basic valuation',
-    'Community events',
+    'subscription.feature_watchlist_25',
+    'subscription.feature_target_hit_daily',
+    'subscription.feature_basic_valuation',
+    'subscription.feature_community_events',
   ];
 
   // Named the three causes apart so the __DEV__ hint below can say which one
@@ -363,8 +380,13 @@ function SubscriptionScreen() {
             'true on the Simulator. On a device, check the Paid Applications Agreement ' +
             'is Active and both subscriptions are out of Missing Metadata.';
 
-  const monthlyPriceLabel = monthlyPkg?.product.priceString ?? `${settings.currency} 4.99/mo`;
-  const yearlyPriceLabel = yearlyPkg?.product.priceString ?? `${settings.currency} 39.99/yr`;
+  // Fallbacks are the EUR list prices (docs/MONETIZATION.md). They were
+  // `${settings.currency} 4.99` — a USD member read "USD 4.99", a euro price
+  // relabelled as dollars. The store's own priceString wins whenever it exists.
+  const monthlyPriceLabel = monthlyPkg?.product.priceString
+    ?? t('subscription.price_per_month', { price: formatPrice(4.99, 'EUR', settings.numberLocale) });
+  const yearlyPriceLabel = yearlyPkg?.product.priceString
+    ?? t('subscription.price_per_year', { price: formatPrice(39.99, 'EUR', settings.numberLocale) });
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -372,7 +394,7 @@ function SubscriptionScreen() {
         style={[{ flex: 1 }, settings.animationsEnabled ? animatedStyle : undefined]}
       >
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={[styles.title, { color: colors.text }]}>Subscription</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('subscription.title')}</Text>
 
         {screenLoading ? (
           <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 40 }} />
@@ -414,10 +436,7 @@ function SubscriptionScreen() {
                   legal copy 130 lines below already did this correctly with the
                   same Platform check. Seen on an Android device 2026-09-12: one
                   screen naming two different stores. */}
-              We couldn&apos;t reach{' '}
-              {Platform.OS === 'ios' ? 'the App Store' : 'Google Play'} for the
-              subscription options. Check your connection and try again. Already
-              subscribed? Use Restore Purchases below.
+              {t(Platform.OS === 'ios' ? 'subscription.store_unreachable_ios' : 'subscription.store_unreachable_android')}
             </Text>
             <AnimatedPressable
               onPress={fetchOfferings}
@@ -444,15 +463,20 @@ function SubscriptionScreen() {
           </View>
         ) : (
           <View style={styles.plans}>
+            {/* onSelect was missing: a Pro member saw a "Downgrade" button
+                that did nothing. Downgrading IS cancelling in the store, so it
+                opens the same page as Manage. */}
             <PlanCard
-              name="Free"
-              price={`${settings.currency} 0/mo`}
+              name={t('subscription.plan_free')}
+              price={t('subscription.price_per_month', { price: formatPrice(0, 'EUR', settings.numberLocale) })}
               features={FREE_FEATURES}
               current={currentPlan === 'free'}
+              isFree
+              onSelect={handleManage}
               colors={colors}
             />
             <PlanCard
-              name="Pro Monthly"
+              name={t('subscription.plan_pro_monthly')}
               price={monthlyPriceLabel}
               features={PRO_FEATURES}
               current={isPaid}
@@ -462,8 +486,8 @@ function SubscriptionScreen() {
               colors={colors}
             />
             <PlanCard
-              name="Pro Yearly"
-              price={`${yearlyPriceLabel} · save ~33%`}
+              name={t('subscription.plan_pro_yearly')}
+              price={t('subscription.price_yearly_saving', { price: yearlyPriceLabel })}
               features={PRO_FEATURES}
               current={false}
               recommended={!isPaid}
@@ -572,25 +596,26 @@ function SubscriptionScreen() {
 
         {!isBetaUnlocked && (
         <Text style={[styles.legalText, { color: colors.muted }]}>
-          Subscriptions auto-renew until cancelled. Cancel any time in your{' '}
-          {Platform.OS === 'ios' ? 'Apple ID' : 'Google Play'} subscriptions. Payment is
-          charged to your{' '}
-          {Platform.OS === 'ios' ? 'Apple ID' : 'Google Play'} account on confirmation. By
-          subscribing you agree to our{' '}
+          {/* Sentences first, links after as their own tappable words: the
+              old inline "…agree to our Terms and Privacy Policy." fixed an
+              English word order no Japanese or Korean sentence can follow. */}
+          {t(Platform.OS === 'ios' ? 'subscription.legal_renewal_ios' : 'subscription.legal_renewal_android')}{' '}
+          {t('subscription.legal_agree')}{'\n'}
           <Text
             style={{ color: colors.accent }}
+            accessibilityRole="link"
             onPress={() => Linking.openURL('https://sparrowcollect.com/terms.html')}
           >
-            Terms
-          </Text>{' '}
-          and{' '}
+            {t('subscription.terms_link')}
+          </Text>
+          {'  ·  '}
           <Text
             style={{ color: colors.accent }}
+            accessibilityRole="link"
             onPress={() => Linking.openURL('https://sparrowcollect.com/privacy.html')}
           >
-            {t('auth.register.privacy_policy', { defaultValue: 'Privacy Policy' })}
+            {t('subscription.privacy_link')}
           </Text>
-          .
         </Text>
         )}
       </ScrollView>

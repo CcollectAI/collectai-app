@@ -65,7 +65,7 @@ export const MARKETPLACE_OPTIONS: MarketplaceOption[] = [
   // TICKETS. The server's fee schedule has always said 0 — this fallback said
   // 5 and was the number members actually saw, because the schedule could
   // never be matched (class U, docs/CLASS_SWEEPS.md).
-  { id: 'sparrow', label: 'Sparrow P2P', icon: 'people-outline',            color: '#81D8D0', defaultFeePct: 0 },
+  { id: 'sparrow', label: 'Sparrow Collect Marketplace', icon: 'people-outline',            color: '#81D8D0', defaultFeePct: 0 },
   { id: 'ebay',      label: 'eBay',          icon: 'cart-outline',            color: '#E53238', defaultFeePct: 12.9 },
   { id: 'mercari',   label: 'Mercari',       icon: 'storefront-outline',      color: '#4DC8F0', defaultFeePct: 10.0 },
   { id: 'cardmarket',label: 'Cardmarket',    icon: 'card-outline',            color: '#1A3C7D', defaultFeePct: 5.0 },

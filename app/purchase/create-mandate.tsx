@@ -20,6 +20,7 @@ import {
   Platform,
   Switch,
   KeyboardAvoidingView,
+  Alert,
 } from "react-native";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -42,10 +43,14 @@ import { MARKETPLACE_BRAND_COLORS } from '@/constants/colors';
 import { safeGoBack } from '@/lib/goBack';
 import type { CatalogMatchHit } from '@/api/itemsApi';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { catalogIdentityLabel } from '@/lib/catalogIdentity';
+import { marketplaceLabel } from '@/lib/marketplaceLabel';
 
 const CATEGORY_OPTIONS: SelectOption[] = [
   { label: 'Any', value: '' },
-  ...ALL_CATS.map((c) => ({ label: c.slug, value: c.slug })),
+  // The display name, not the slug: the picker read "POKEMON" / "MTG" and the
+  // chosen value "pokemon" (walked on Android 2026-09-24).
+  ...ALL_CATS.map((c) => ({ label: c.name, value: c.slug })),
 ];
 
 // `value` is what the policy engine compares: the `source` tag each caller
@@ -56,6 +61,10 @@ const CATEGORY_OPTIONS: SelectOption[] = [
 // (found 2026-09-14; 0 mandates in prod, so nobody was affected yet). The other
 // six were checked against their callers and match.
 const SOURCES: { value: string; brand: string }[] = [
+  // Sparrow's own members, first. `sparrow` is the source tag
+  // DealDiscoveryAgent._sparrow_hits stamps (2026-09-24): before it, mandates
+  // never saw a member listing at all.
+  { value: "sparrow", brand: "sparrow" },
   { value: "ebay", brand: "ebay" },
   { value: "tcgplayer", brand: "tcgplayer" },
   { value: "cardmarket", brand: "cardmarket" },
@@ -376,8 +385,13 @@ function CreateMandateScreen() {
                 <Text style={[styles.matchRowTitle, { color: colors.text }]} numberOfLines={1}>
                   {h.title ?? h.item_key}
                 </Text>
-                {h.brand ? (
-                  <Text style={[styles.matchRowMeta, { color: colors.muted }]}>{h.brand}</Text>
+                {/* Which card, not just which brand: five "Charizard ex · Pokemon
+                    TCG" rows could not be told apart, and the pick decides what
+                    the mandate is valued against (CLASS_SWEEPS AH). */}
+                {h.brand || h.set_code ? (
+                  <Text style={[styles.matchRowMeta, { color: colors.muted }]}>
+                    {[catalogIdentityLabel(h.set_code, h.item_key), h.brand].filter(Boolean).join(' · ')}
+                  </Text>
                 ) : null}
               </AnimatedPressable>
             ))}
@@ -422,10 +436,13 @@ function CreateMandateScreen() {
                   slug rendered "Ebay" and "Tcgplayer" (seen on Android
                   2026-09-13), and on the real label it would render "EBay". */}
               <Text style={[styles.sourceToggleLabel, { color: colors.text }]}>
-                {MARKETPLACE_BRAND_COLORS[brand]?.label ?? brand}
+                {marketplaceLabel(s, MARKETPLACE_BRAND_COLORS[brand]?.label ?? brand, t)}
               </Text>
               <Switch
                 value={active}
+                // Named: a screen reader announced seven bare "switch, off"
+                // (walked on Android 2026-09-24).
+                accessibilityLabel={marketplaceLabel(s, MARKETPLACE_BRAND_COLORS[brand]?.label ?? brand, t)}
                 onValueChange={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); toggleSource(s); }}
                 trackColor={{ false: colors.border, true: colors.accent + "80" }}
                 thumbColor={active ? colors.accent : colors.muted}
@@ -454,6 +471,7 @@ function CreateMandateScreen() {
             <Text style={[styles.label, { color: colors.muted, marginBottom: 0 }]}>ACTIVE</Text>
             <Switch
               value={status === "active"}
+              accessibilityLabel={t('purchase.mandate_active_a11y', { defaultValue: 'Search active' })}
               onValueChange={(v) => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setStatus(v ? "active" : "paused"); }}
               trackColor={{ false: colors.border, true: colors.accent + "80" }}
               thumbColor={status === "active" ? colors.accent : colors.muted}
@@ -483,20 +501,38 @@ function CreateMandateScreen() {
         {isEdit && (
           <AnimatedPressable
             style={[styles.deleteBtn, { borderColor: colors.danger }]}
-            onPress={async () => {
-              try {
-                await collectorsApi.deleteMandate(params.id!);
-                showToast({ message: "Search paused", type: "success" });
-                safeGoBack(router);
-              } catch {
-                showToast({ message: "Failed to pause", type: "error" });
-              }
+            // DELETE archives the search — it leaves the list. This button said
+            // "Pause Search" and toasted "Search paused" (walked on Android
+            // 2026-09-24) while the ACTIVE switch above is the real pause, so a
+            // member removing a search was told it was paused, and a member
+            // pausing one lost it. Named for what it does, and confirmed.
+            onPress={() => {
+              Alert.alert(
+                t('purchase.mandate_delete_title', { defaultValue: 'Delete this search?' }),
+                t('purchase.mandate_delete_body', { defaultValue: 'Sparrow stops watching for it and it leaves your list. Deals it already found stay.' }),
+                [
+                  { text: t('common.cancel', { defaultValue: 'Cancel' }), style: 'cancel' },
+                  {
+                    text: t('common.delete', { defaultValue: 'Delete' }),
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        await collectorsApi.deleteMandate(params.id!);
+                        showToast({ message: t('purchase.mandate_deleted', { defaultValue: 'Search deleted' }), type: "success" });
+                        safeGoBack(router);
+                      } catch {
+                        showToast({ message: t('purchase.mandate_delete_failed', { defaultValue: "Couldn't delete the search" }), type: "error" });
+                      }
+                    },
+                  },
+                ],
+              );
             }}
             accessibilityRole="button"
-            accessibilityLabel={t('purchase.mandate_a11y_pause', { defaultValue: 'Pause search' })}
+            accessibilityLabel={t('purchase.mandate_delete_search', { defaultValue: 'Delete Search' })}
           >
-            <Ionicons name="pause" size={16} color={colors.danger} />
-            <Text style={[styles.deleteBtnText, { color: colors.danger }]}>{t('purchase.mandate_pause_search', { defaultValue: 'Pause Search' })}</Text>
+            <Ionicons name="trash-outline" size={16} color={colors.danger} />
+            <Text style={[styles.deleteBtnText, { color: colors.danger }]}>{t('purchase.mandate_delete_search', { defaultValue: 'Delete Search' })}</Text>
           </AnimatedPressable>
         )}
 

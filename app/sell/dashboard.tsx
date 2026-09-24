@@ -60,7 +60,7 @@ import { dateLocale, DATE_SHORT_YEAR } from '@/constants/dateFormats';
 // ---------------------------------------------------------------------------
 
 const MARKETPLACE_CONFIG: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
-  sparrow: { label: 'Sparrow Collect P2P', icon: 'people-outline', color: MARKETPLACE_BRAND_COLORS.sparrow.color },
+  sparrow: { label: 'Sparrow Collect Marketplace', icon: 'people-outline', color: MARKETPLACE_BRAND_COLORS.sparrow.color },
   ebay: { label: 'eBay', icon: 'cart-outline', color: MARKETPLACE_BRAND_COLORS.ebay.color },
   mercari: { label: 'Mercari', icon: 'storefront-outline', color: MARKETPLACE_BRAND_COLORS.mercari.color },
   cardmarket: { label: 'Cardmarket', icon: 'card-outline', color: MARKETPLACE_BRAND_COLORS.cardmarket.color },

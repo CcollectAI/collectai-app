@@ -9,6 +9,7 @@ import {
   Text,
   TextInput,
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -123,6 +124,10 @@ function RegisterScreen() {
   };
 
   async function handleSignUp() {
+    // Close the keyboard on submit: it stayed up over the NEXT screen
+    // (verify-email's Resend button, the reset "sent" message) — walked on
+    // Android 2026-09-24.
+    Keyboard.dismiss();
     if (!termsAccepted) {
       showToast({ message: t('auth.errors.accept_terms'), type: 'warning' });
       return;

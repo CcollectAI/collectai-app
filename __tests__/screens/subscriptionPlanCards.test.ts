@@ -19,17 +19,36 @@
  * card. Prose is not verifiable, so this asserts the numbers and the presence
  * of each granted feature — not the wording.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 const REPO = path.resolve(__dirname, '../..');
 const SCREEN = path.join(REPO, 'app/subscription.tsx');
 const HOOK = path.join(REPO, 'src/hooks/useBillingLimits.ts');
 
-function featureList(src: string, name: string): string[] {
+// The lists hold i18n KEYS since 2026-09-24 (the paywall rendered English in
+// every locale). Each key resolves through a locale file, and every claim
+// below is checked against the English AND against each other locale — a
+// translator writing "20 aankoopopdrachten" is the same bug as the code
+// saying 20.
+const LOCALES_DIR = path.join(REPO, 'src/i18n/locales');
+const localeValue = (locale: string, key: string): string => {
+  const json = JSON.parse(readFileSync(path.join(LOCALES_DIR, `${locale}.json`), 'utf8'));
+  const v = key.split('.').reduce<unknown>((o, k) => (o as Record<string, unknown> | undefined)?.[k], json);
+  if (typeof v !== 'string') throw new Error(`${key} missing from ${locale}.json`);
+  return v;
+};
+const LOCALES = readdirSync(LOCALES_DIR).filter((f) => f.endsWith('.json')).map((f) => f.replace('.json', ''));
+
+function featureKeys(src: string, name: string): string[] {
   const m = new RegExp(`const ${name} = \\[(.*?)\\];`, 's').exec(src);
   if (!m) throw new Error(`${name} not found in app/subscription.tsx`);
-  return [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
+  const keys = [...m[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').matchAll(/'([^']+)'/g)].map((x) => x[1]);
+  if (keys.length === 0) throw new Error(`${name} parsed as EMPTY`);
+  return keys;
+}
+function featureList(src: string, name: string, locale = 'en'): string[] {
+  return featureKeys(src, name).map((k) => localeValue(locale, k));
 }
 
 function limitsBlock(src: string, marker: string): Record<string, string> {
@@ -74,6 +93,19 @@ describe('subscription plan cards match the limits they sell', () => {
     }
   });
 
+  it('every locale states the same numbers as the English card', () => {
+    for (const name of ['FREE_FEATURES', 'PRO_FEATURES']) {
+      const keys = featureKeys(screenSrc, name);
+      for (const locale of LOCALES) {
+        keys.forEach((key) => {
+          const digits = (s: string) => (s.match(/\d+/g) ?? []).join(',');
+          expect(`${locale} ${key}: ${digits(localeValue(locale, key))}`)
+            .toBe(`${locale} ${key}: ${digits(localeValue('en', key))}`);
+        });
+      }
+    }
+  });
+
   it('the Pro card states the real mandate count', () => {
     expect(proCard.some((f) => f.includes(String(Number(pro.max_mandates))))).toBe(true);
   });
@@ -98,10 +130,13 @@ describe('subscription plan cards match the limits they sell', () => {
     // definition, what the customer is paying for. If one is missing from the
     // card we are under-selling — which is how "unlimited watchlist" and
     // "unlimited deal alerts" went unmentioned until 2026-08-16.
+    // dossier_pdf and condition_grading are still true for pro in the limits
+    // tables but SHELVED (2026-08-30 / 2026-05-02, docs/MONETIZATION.md), so
+    // selling them is the bug. Until 2026-09-24 this test "found" both on the
+    // card — inside the /* 'Condition grading' REMOVED */ comment, which its
+    // quote regex read as bullets. Excluded by name now, not by accident.
     const wording: Record<string, RegExp> = {
       deal_discovery: /deal discovery/i,
-      dossier_pdf: /dossier/i,
-      condition_grading: /condition grading/i,
       set_completion: /set completion/i,
       advanced_analytics: /analytics/i,
     };

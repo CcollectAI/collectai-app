@@ -313,7 +313,13 @@ product decision rather than a bug.
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/events` | Optional | List events (filterable by category) |
-| POST | `/events` | JWT | Create event |
+| POST | `/events` | JWT | Create event. `time` is free text parsed by `parse_event_time` (19:30, 19:30 CET, 7pm; zone ignored — TIME column) → **400** if unparseable (it was a 500). A `ticket_price_cents > 0` → **400 `PAID_FEATURE_UNAVAILABLE`** while `PAID_EVENTS_ENABLED` is off |
+| PATCH | `/events/{event_id}` | JWT (creator) | Edit. Also takes `kind`, `category_id`, `latitude`, `longitude` (added 2026-09-24 — the form sent them and they were dropped). **`null` clears** `time`, `end_date`, `location`, `online_url`, `image_url`, `category_id`, `latitude`, `longitude`, `max_attendees` (`CLEARABLE_EVENT_COLUMNS`); a null on any other field is ignored. Send `status: "published"` to publish a draft (what Duplicate creates) |
+| DELETE | `/events/{event_id}` | JWT (creator) | Cancel (soft: `status='cancelled'`). On the transition only, notifies every going/interested attendee except the host (`notification_history`, type `event`, deep link `/events/{id}`); a repeat cancel is a no-op 200 |
+| POST | `/events/{event_id}/duplicate` | JWT (creator) | Copy as a **draft** dated today |
+| POST | `/events/sponsor-checkout` | JWT (creator) | Promote an existing event. **503 `PAID_FEATURE_UNAVAILABLE`** while paid events are off |
+| POST | `/sponsor-companies/{id}/create-event-checkout` · `/create-subscription-checkout` | JWT (company admin) | Sponsored new event / monthly sponsorship. Same 503 while off. Stripe return URLs use `APP_URL_SCHEME` (`sparrow://`) — they were `collectai://`, which no build handles |
+| POST | `/events/{event_id}/ticket-checkout` | JWT | **503 `PAID_FEATURE_UNAVAILABLE`** while `PAID_EVENTS_ENABLED` is off (`docs/CLASS_SWEEPS.md` AE) |
 | GET | `/events/{event_id}` | Optional | Event details |
 | POST | `/events/{event_id}/rsvp` | JWT | RSVP to event |
 | DELETE | `/events/{event_id}/rsvp` | JWT | Remove RSVP |
@@ -322,10 +328,10 @@ product decision rather than a bug.
 | DELETE | `/events/categories/{category_id}/follow` | JWT | Unfollow category |
 | GET | `/events/categories/{category_id}/following` | JWT | Check if following |
 | POST | `/events/{event_id}/announcements` | JWT + Rate Limit | Post an announcement. **403 unless host or sponsor admin.** Also DMs every going/interested attendee, in a background task. Returns 201 |
-| GET | `/events/{event_id}/announcements` | JWT | List announcements, with `is_read`. **403 for a non-attendee**, which the app renders as its own state |
+| GET | `/events/{event_id}/announcements` | JWT | List announcements, with `is_read` (your OWN announcement is always read). **403 for a non-attendee**, which the app renders as its own state |
 | POST | `/events/{event_id}/announcements/{announcement_id}/read` | JWT | Mark one announcement read |
 | POST | `/events/{event_id}/announcements/batch-read` | JWT | Mark a batch read |
-| GET | `/events/my-announcements/unread-count` | JWT | Unread count across every event the member attends |
+| GET | `/events/my-announcements/unread-count` | JWT | Unread count across every event the member attends, excluding your own announcements |
 
 ### The announcement DM had not delivered a single message since 2026-04-30
 
@@ -396,11 +402,11 @@ mutation-proven — with the skip removed, the unchanged template imports 3 rows
 | GET | `/purchase/mandates` | JWT | List mandates (paginated) |
 | GET | `/purchase/mandates/{mandate_id}` | JWT | Get mandate details |
 | PATCH | `/purchase/mandates/{mandate_id}` | JWT | Update mandate |
-| DELETE | `/purchase/mandates/{mandate_id}` | JWT | Deactivate mandate |
-| GET | `/purchase/deals` | JWT | List deals (paginated, filterable) |
-| GET | `/purchase/deals/{deal_id}` | JWT | Get deal details |
+| DELETE | `/purchase/mandates/{mandate_id}` | JWT | **Archive** the mandate (`status='archived'`, leaves every list). Pausing is `PATCH {status:'paused'}` — the app's button for this was labelled "Pause" until 2026-09-24 |
+| GET | `/purchase/deals` | JWT | List deals (paginated, filterable). Deals come from outside marketplaces AND Sparrow member listings (`listing_source='sparrow'`, since 2026-09-24). **Only `policy_passed` rows** — every candidate is stored for audit, and this used to list the rejected ones too (2026-09-24) |
+| GET | `/purchase/deals/{deal_id}` | JWT | Get deal details. **404 for a candidate the policy rejected** (like the list, since 2026-09-24). `policy_checks`: `[{code, ok, ...}]` — codes `price` (`price`, `max`, `shipping` or `shipping_estimated` + `shipping_min`/`shipping_max`), `budget`, `trust`, `source`, `keywords`, `card` (`number`), `expired`, `region`. Display these; `policy_reasons` is audit text. Empty for deals found before 2026-09-24 |
 | POST | `/purchase/deals/{deal_id}/click` | JWT | Track affiliate click |
-| POST | `/purchase/deals/{deal_id}/confirm` | JWT | Confirm purchase. 409 `MANDATE_MISMATCH` if the mandate's spend could not be recorded — **nothing is kept in that case** |
+| POST | `/purchase/deals/{deal_id}/confirm` | JWT | Confirm purchase (policy-passed deals only). 409 `MANDATE_MISMATCH` if the mandate's spend could not be recorded — **nothing is kept in that case** |
 | POST | `/purchase/deals/{deal_id}/decline` | JWT | Dismiss deal |
 | GET | `/purchase/stats` | JWT | Agent stats |
 
@@ -472,7 +478,7 @@ affected. Found by checking the help page's "pick which marketplaces" claim.
 |--------|------|------|-------------|
 | GET | `/catalog/{category_id}/items` | No (IP rate limit) | Browse the catalog. `sort=value\|newest\|set\|title` (`value` ranks by latest comp price and implies `priced_only`), `priced_only`, `q`, `rarity`, `limit`, `offset`. `total` is always the full category count. Drives the category-page overview rail. |
 | GET | `/catalog/{category_id}/collections` | No | Set_code-grouped discovery collections with cover art. `display_name` is the catalogue's own set name when it is unique in the category (`mv_catalog_collections.set_name`), else the code — humanised only if all-lowercase. ✅ `server/scripts/20260914_collection_set_names.sql` applied and the router deployed 2026-09-14, in that order — the reverse 500s the rail. Recreating the MV again? Same order, and check `relacl` came back |
-| POST | `/catalog/match` | JWT + Rate Limit | Match a manual (title, category) entry → best catalog item_key for canonical_key |
+| POST | `/catalog/match` | JWT + Rate Limit | Match a manual (title, category) entry → best catalog item_key for canonical_key. Optional `set_code` and `number` (card/collector no.) break ties between rows that share a title. **`ambiguous: true`** when different rows still tie — `best.match_score` is then capped at 0.5, below every writer's threshold, so no guessed key is written (2026-09-24, CLASS_SWEEPS AH) |
 
 ## Catalog Learning
 
@@ -884,3 +890,12 @@ Two exceptions, both written down at the line:
 
 Both carry `# raw-error-ok: <why>` above the line, and
 `server/scripts/check_error_copy.py` (in `verify:prebuild`) fails anything else.
+
+### `POST /p2p/listings/{listing_id}/delist` — marking sold (2026-09-24)
+
+`?status=sold|delisted`, optional `&sale_price=<number>` (listing currency).
+`sold`: stamps `sold_at`, retires the seller's item (`retire_sold_item` — archive,
+or decrement a stack), and — when `sale_price` is sent — writes the seller's
+`marketplace_sales` row (fees 0, postage NULL) and accrues DAC7. The app always
+sends it; without it no sale is recorded. `delisted`: ends the listing, keeps the
+item.

@@ -97,6 +97,361 @@ Two rules the tooling learned the hard way:
 | Z | A success message that is not conditional on success | swept 2026-09-19 | ✅ **2 fixed**: `useOptimisticMutation` swallowed so `await mutate()` was followed by a SUCCESS toast on failure ("Archived" in green, 5 call sites); and `setJSON` swallowed so "Following!" showed on a failed write with no server copy. 50 sites enumerated, the rest read and clean |
 | AA | One fact written to two tables, then counted twice downstream | **swept + DEPLOYED 2026-09-20** | ✅ **1 instance, fixed; no others.** Two-stage enumeration: 28 functions write 2+ real tables, but only ONE consumer reads a written-together pair and merges it — `_export_ground_truths` (the known case). Both `spawn_bg` candidates read and discarded. Limits written up below. |
 | AB | The server SENDS a field the client reads under another name | **swept + server DEPLOYED 2026-09-21** | ✅ **1 instance, fixed, and gated.** `collection` on the analytics item mapper read `it.collection ?? it.set_name`; `/portfolio/items` sends `collection_name`. Undefined for every item on every account for five weeks — it pinned the Portfolio Tier at "Unranked". Gate `check:phantom-response-fields`. The mirror of class V, which covers the REQUEST direction only |
+| AD | A money format typed into the UI instead of formatted | **swept + gated 2026-09-24** | ✅ **11 sites, fixed, 2 gates extended.** Hand-built `€${x}` (6: profile cards, stats tile, wishlist placeholder, 2 never-rendered alert strings marked `currency-ok`) and literal `"0.00"` money placeholders (5). Falsifier: `node scripts/check-currency-conversion.mjs` and `npm run check:percent-format` — both fail on the pre-fix files. See section AD |
+| AE | A paid door that cannot take money | **gated + DEPLOYED 2026-09-24** | ⚠️ **gated, not fixed — a decision.** Ticket sales and sponsorships: Stripe TEST key on prod, empty sponsor price ids, invented ids in one route, no organiser payout. `PAID_EVENTS_ENABLED` off on server AND app. Falsifier: `POST /events/{id}/ticket-checkout` → 503 `PAID_FEATURE_UNAVAILABLE`. See section AE |
+| AF | Copy that promises a side effect nothing performs | **found 2026-09-24, events only** | ✅ **4 fixed** (cancel "attendees will be notified", "Invite Friends via Chat", Private "people you invite", host own-announcement "unread"). ⚠️ Not swept app-wide — no gate. See section AF |
+| AG | A cache that outlives the member, or a write that goes around it | **swept + gated 2026-09-24** | ✅ **2 shapes fixed.** (1) cache keys are not per-user and nothing cleared them on sign-in/out → `offlineCache.bindCacheOwner` (reads wait for it). (2) 3 direct Supabase `items` writes skipped invalidation → `invalidateItemCaches()` + gate `check:cache-bypass`, proven on the 3 pre-fix files. Falsifier: sign out A, sign in B, open Watchlist → B's rows only. See section AG |
+| AH | A catalog identity chosen by title among rows that share it | **swept at the chokepoint + DEPLOYED 2026-09-24** | ✅ **fixed in `_match_catalog_items`** (5 callers: /catalog/match, POST /items, CSV import, intake router, QuickScan). Ties are broken by set/number or capped at 0.5 and flagged `ambiguous`. Falsifier: `POST /catalog/match {"title":"Charizard ex","category":"pokemon"}` → `ambiguous: true`, score 0.5; with `"number":"161"` → `svp-svp-161`, 1.0. See section AH |
+| AI | A paid agent that could not produce its product | **fixed + DEPLOYED 2026-09-24** | ✅ **5 defects on the Smart Deal Agent path, all fixed.** (1) every scan crashed when any source overran the budget — `spawn_bg(asyncio.gather(...))`, a future, not a coroutine (81 crashes in one week of bake.log; also broke member marketplace search) → `spawn_bg` accepts any awaitable; (2) a keyed mandate accepted other cards of the same name (4 of 6 "deals") → policy check 6b; (3) /purchase/deals listed rejected candidates (22 for 6 deals) → `policy_passed IS TRUE`; (4) the deal screen crashed on open — raw snake_case cast to camelCase (class U, in a SCREEN the cast gate cannot see); (5) the list never refreshed after creating a search. Falsifier: see section AI |
+| AJ | A sale that left the object behind | **fixed + DEPLOYED 2026-09-24** | ✅ "Mark as sold" set status only: `sold_at` NULL, the card stayed in the collection and in portfolio value — the leak the offer path fixed on 2026-08-09. One helper `retire_sold_item` now serves both; one-tap mark-sold now confirms. Falsifier: mark a live listing sold → `items.archived = true`, `sold_at` set. ✅ **Sale price now captured (Merle's call, 2026-09-24):** the Mark-as-sold sheet asks what it sold for; the server writes the same `marketplace_sales` row an in-app trade does and accrues DAC7 (verified on prod: €14 → sale row + `dac7_seller_year` 1/€14). See section AJ |
+| AK | A backlog gate blind to most of the backlog — strings set from CODE | **gate extended 2026-09-24; translation NOT started (Merle: not the priority)** | `i18n:check` read JSX text + 5 props and said 66 left; it could not see toast `message:`, `Alert.alert(...)` (multi-line), `set*Error('…')` or `userErrorMessage(err, '…')` fallbacks. Now it does: **443**. Paywall + Target Hit screens done; the rest is a ranked list in `docs/I18N_BACKLOG.md`. Falsifier: `node scripts/check-i18n-strings.mjs --file app/subscription.tsx` → 0; add `showToast({ message: 'Hello there' })` → 1 finding. See section AK |
+| AL | A free cap that ends in "try again" instead of an offer | **fixed 2026-09-24 (client; needs a JS build)** | The server returns coded 403s at every free cap (`PLAN_LIMIT_WATCHLIST`, `PLAN_LIMIT_ALERTS`, `PLAN_REQUIRED`); only the deal screen read the code, so the 26th watch said "Could not add to watchlist — try again". `src/lib/planLimitPrompt.ts` now offers Sparrow Pro from all 4 watch controls. Falsifier: free account with 25 watches → add a 26th on device → "Your watchlist is full" → See Sparrow Pro opens `/subscription` (verified on Android). See section AL |
+| AM | One listing, many URLs — dedup by a decorated link | **fixed + DEPLOYED 2026-09-24** | eBay re-issues every item URL with a fresh `amdata` token, and deal dedup compared raw URLs, so each scan stored the same card again (one item = 4 deals). Dedup now keys on `app/lib/listing_identity.listing_key` (eBay item id; tracking params dropped elsewhere), in-batch too. Only test accounts had duplicates (67 rows / 48 items). Falsifier: `pytest tests/test_deal_discovery_agent.py -k redecorated` → pass; set `hit_key = hit_url` → 3 red. See section AM |
+| AN | A fix that lived in one copy of a rule while a second copy kept the bug | **fixed + gated 2026-09-24 (client; needs a JS build)** | The auth-lock deadlock was fixed in AuthProvider (setTimeout(0)), and `src/hooks/useAuth.ts`, an older copy, kept an `async` onAuthStateChange listener awaiting a query. Every cold start into a profile stalled every Supabase request ~15 s. Hook deleted; gate `check:auth-listener-lock`. Falsifier: `git show acf414fc:src/hooks/useAuth.ts > src/hooks/useAuth.ts && npm run check:auth-listener-lock` → exit 1 (then delete the file again). See docs/AUTH_AND_WEB_DEPLOY.md "Cold start stalled every request" |
+
+## AD — a money format typed into the UI (2026-09-24)
+
+**Found** walking Create Event on Android: the ticket price placeholder read
+"0.00" to a member whose decimal is a comma, and the event hero printed
+`(cents/100).toFixed(2)` with no currency at all. Two shapes, one defect —
+the format is TYPED into the screen instead of coming from `src/lib/format.ts`:
+
+* `` `€${x}` `` — prints euros for every member and never converts. The
+  existing `check:currency-conversion` could not see it: it only inspects
+  `formatPrice(x, <member currency>)`. Now it also flags a currency symbol
+  (`€`, `\u20AC`, `£`, `¥`) directly before `${`.
+* `placeholder="0.00"` — `check:percent-format` now flags a decimal zero
+  placeholder; the fix is `moneyInputPlaceholder()`.
+
+Fixes: `fmtCurrencyCompact(amountEUR, settings)` (converts, then "€1,3k") for
+the profile card and stats tile; the wishlist placeholder formats the target in
+the ROW's own currency; the two `Alert.condition` strings are never rendered
+(no reader in `app/` or `src/`) and are marked `currency-ok` rather than
+converted. Pinned by `__tests__/lib/fmtCurrencyCompact.test.ts` (mutation:
+dropping `convertEUR` turns 2 of 5 red).
+
+**Third shape (same day, Target Hit walk):** a money INPUT seeded with
+`String(Math.round(x * 100) / 100)` or `x.toString()` — "5.71" to a comma member,
+"5.535" from an unrounded estimate, and on Sell the EUR valuation seeded under
+the member's currency symbol unconverted. `moneyInputValue()` + `convertEUR`;
+`check:percent-format` flags the `String(Math.round(…*100)/100)` form (proven on
+the 3 pre-fix sites, after a first regex missed the nested-paren one). Server
+side still open: the Target Hit push text is `€{x:.2f}`, EUR-only.
+
+**Re-run:** `node scripts/check-currency-conversion.mjs && npm run
+check:percent-format` → both PASS. Restore any one pre-fix file from
+`git show acf414fc:<file>` and the matching gate must FAIL.
+
+## AE — a paid door that cannot take money (2026-09-24)
+
+**Measured on prod, 2026-09-24:** `STRIPE_SECRET_KEY` is `sk_test_…` (a real
+card cannot pay); `STRIPE_PRICE_ID_SPONSOR_{FEATURED,PROMOTED,SPOTLIGHT}` are
+empty; `sponsor_company_router._TIER_PRICES` held invented ids
+(`"price_sponsor_featured"`); `ticket_checkout` has no Connect transfer, so the
+platform would keep the organiser's whole ticket price; and `0` events had a
+price or a sponsorship. Every door into it was reachable: the ticket field on
+Create Event, "Promote This Event" on any hosted event.
+
+Three more defects were waiting behind the gate, all fixed so turning it on is
+not a second discovery: the sponsored-event checkout bound `event_date` as a
+str (the asyncpg 500 `PATCH /events/{id}` had for every edit, fixed the same day), the payment webhook left a paid sponsored event as
+a `draft` nobody could see, and all ten Stripe return URLs used `collectai://`,
+a scheme no build registers (now `APP_URL_SCHEME`, pinned to `app.json` by
+`server/tests/test_app_url_scheme.py`).
+
+**The gate, not a fix:** `PAID_EVENTS_ENABLED` (server `app/config.py`, env,
+default off) makes ticket checkout and both sponsor checkouts answer 503
+`PAID_FEATURE_UNAVAILABLE` and `POST /events` refuse a price with 400 — which
+covers old builds. The app flag of the same name hides the ticket field and the
+Promote CTA. `server/tests/test_paid_events_gate.py` asserts the gate's own
+error CODE: a bare 503 passed with the gate ON, because without a DB the routes
+503 anyway.
+
+**To turn on:** live Stripe key + the three price ids + an organiser payout
+path, then BOTH flags. **Re-run:** `curl -X POST …/events/<id>/ticket-checkout`
+with a member token → 503 `PAID_FEATURE_UNAVAILABLE` while off.
+
+## AF — copy that promises a side effect nothing performs (2026-09-24)
+
+The mirror of class S: S is a success answer with no write; AF is member-facing
+copy describing an effect no code performs. Four on the events surface:
+
+| copy | truth | fix |
+|---|---|---|
+| Cancel dialog: "all attendees will be notified" | `DELETE /events/{id}` only set the status; 0 notifications; the event then drops out of every list | notifies going/interested attendees once, never the host (`_notify_event_cancelled`), verified on prod: 1 row in `notification_history` |
+| "Invite Friends via Chat — available after creation" | no invite feature exists | removed |
+| Private: "Only people you invite can see this event" | private = creator only (`_hidden_from_detail`) | copy says so, 7 locales |
+| Host sees own announcement as "1 unread" | reads keyed on the viewer, author included | author counts as read |
+
+⚠️ **Not swept beyond events and there is no gate** — the checker would need
+to pair copy with behaviour. Next step: grep member copy for "will be
+notified", "invite", "we'll email", "you'll get" and trace each to a writer.
+
+## AG — a cache that outlives the member, or a write that goes around it (2026-09-24)
+
+Found walking Target Hit on Android with two accounts on one emulator.
+
+1. **The watchlist said "No items in your watchlist yet" to a member with six.**
+   `CachedDataProvider` keys are global (`watchlist:list`, `items:list`,
+   `portfolio:summary` …) and nothing cleared them when the signed-in member
+   changed. A read made before sign-in completed (RLS → 0 rows, no error) was
+   cached and served; after an account switch the NEXT member was served the
+   previous one's collection until each TTL ran out. Fix: one chokepoint,
+   `offlineCache.bindCacheOwner(userId)`, called by `AuthProvider` on every
+   session change; the owner is persisted, so a cold start after a switch is
+   covered, and every `cacheGet`/`cacheSet` waits for the latest binding.
+   Pinned by `__tests__/data/offlineCache.test.ts` (mutation: dropping the wait
+   turns "a read issued right after the switch" red).
+2. **A seller who had just added a card read "Nothing in your collection yet"
+   on Sell.** `add-manual` inserts with supabase-js directly, so the cached
+   collection was never invalidated. Enumerated mechanically (a multi-line
+   scanner — a one-line grep missed `.from('items')\n.update(`): three direct
+   `items` writes outside `src/data/`. All three now call
+   `invalidateItemCaches()`; gate `check:cache-bypass` (in `verify:prebuild`)
+   flagged exactly those three on the pre-fix files.
+
+**Re-run:** `node scripts/check-cache-bypass.mjs` → PASS; on device, add an item
+and open Sell at once — it must be listed.
+
+## AH — a catalog identity chosen by title among rows that share it (2026-09-24)
+
+`/catalog/match` returned FIVE pokemon "Charizard ex" rows at score 1.0 and
+`best` was simply the first (`sv4pt5-sv4pt5-234`) — even with `set_code: "svp"`
+sent, because set_code was only read by a brand+set strategy that never runs
+after an exact title. A seller adding the SVP #161 promo (€5.54) would have got
+the key of a €263.95 card: priced 48x too high, and Target Hit would have
+alerted the WRONG watchers (the #161 watcher never, a #234 watcher falsely).
+The Add form collected Set and Card Number and nothing used them.
+
+Fixed at the chokepoint, `catalog_matching.resolve_title_ties`, called inside
+`_match_catalog_items` — so all five callers are covered: a tie between
+different rows is broken by card number (the key's last segment) and set code;
+an unresolved tie is capped at 0.5 (below every writer: 0.6 add-manual, 0.75
+items_router/import/intake) and flagged `ambiguous`. QuickScan still shows the
+tied rows as alternatives and routes the scan into its visual re-check. The app
+now sends the form's Set and Card Number, and search shows "SVP · #161" so the
+rows can be told apart before tapping. Tests: `server/tests/test_catalog_title_ties.py`.
+
+**Re-run:** the falsifier in the AH row above, against prod.
+
+## AI — a paid agent that could not produce its product (2026-09-24)
+
+Walked the Smart Deal Agent (Pro) on Android with a real keyed mandate
+("Charizard ex", SVP #161, €30, eBay + Cardmarket) and a forced
+`deal_discovery.run_once`:
+
+1. **Every scan crashed** — `TypeError: a coroutine was expected, got
+   <_GatheringFuture pending>`. `MarketplaceAgent.aggregate_search` reaped
+   over-budget stragglers with `spawn_bg(asyncio.gather(*pending))`;
+   `spawn_bg`'s `create_task` refuses a future, and the TypeError escaped the
+   whole search, discarding eBay's results with the slow Cardmarket scrape.
+   bake.log.2 (09-06..13) holds 81 of them; the cycle logged "0 new deals" as if
+   nothing matched. It also broke the member-facing marketplace search route and
+   three scrape-scheduler paths. Fix at the chokepoint: `spawn_bg` wraps any
+   awaitable. Test: `server/tests/test_marketplace_budget_reap.py` (both red with
+   the wrap removed). Prod after: "22 hits, 6 new deals".
+2. **A keyed mandate bought other cards.** 4 of the 6 passing deals were Paldean
+   Fates #054 / Obsidian Flames #125 — the query is the NAME. Policy check 6b
+   fails a title that STATES a different card number (`054/091`, `#125`,
+   `SVP - 161`; bare numbers are ignored — "MEW 151" is a set).
+   `server/tests/test_policy_card_identity.py`.
+3. **Rejected candidates listed as deals.** Every candidate is stored for audit;
+   `/purchase/deals` returned all 22 (a €96 price-guide row from a source the
+   member had switched off, badged "New"), and stats counted them as found.
+   Now `policy_passed IS TRUE` on list, count, confirm and stats.
+   `server/tests/test_deals_only_passed.py` (red on the pre-fix file).
+4. **The deal screen crashed on open** ("Deal Detail failed to load"):
+   `getDeal` returned the raw body while its siblings camelize, and the screen
+   cast it `as MandateDeal`. Class U — but in `app/`, where
+   `check:cast-not-mapped` does not look (it scans `src/data/providers` +
+   `src/api` against `src/data/types.ts` only). Mechanical scan of
+   `collectorsApi.X(...) as T` in app/src: this was the only instance.
+5. **Creating a search showed "Not watching anything yet"** — the list loaded on
+   mount only and create-mandate goes back to it. Now on focus; a failed
+   mandates read shows an error instead of the empty state (it was a stripped
+   `logger.warn` + empty list — class F, which `check:silent-failures` did not
+   flag because the failure branch simply leaves the initial `[]`).
+
+Also fixed: "Pause Search" archived the search (DELETE) while the Active switch
+is the real pause → "Delete Search" + confirm; category picker showed slugs;
+catalogue picker rows now show "SVP · #161"; 8 switches got labels; the cycle
+log printed the PUSH count as "mandate deals"; the cooldown note printed hours
+LEFT as "ago".
+
+**Decided and built (Merle, 2026-09-24): mandates include Sparrow's own
+listings.** `DealDiscoveryAgent._sparrow_hits` adds active member listings
+(exact catalogue key for a keyed mandate, title-in-category otherwise; never
+your own, never a blocked member's; price converted to EUR) as `source='sparrow'`
+hits through the same policy; an outside-marketplace failure no longer skips
+them. The mandate form gains a "Sparrow P2P" source toggle (a mandate restricted
+to other sources still excludes them — the existing allowed_sources rule).
+Verified on prod: a €15 member listing produced a policy-passed mandate deal
+linking to `/l/<id>`. Test: `server/tests/test_mandate_sparrow_hits.py`.
+
+**Decided and built (Merle, 2026-09-24): the deal screen speaks plainly, and a
+guessed shipping cost never decides a deal.** `policy_engine` now returns
+`checks` — one record per check (`{"code","ok",...numbers}`), stored in the new
+`mandate_deals.policy_checks jsonb` (migration
+`20260924_mandate_deals_policy_checks.sql`, applied) and served as
+`policy_checks`. The app renders them as translated sentences ("Within your €30
+limit", "From a marketplace you chose", "The card you want (#161)") via
+`src/lib/dealChecks.ts`; the internal Scoring card and the raw audit strings are
+gone (older deals simply show no checklist). An ESTIMATED shipping cost is no
+longer added to the price: the limit and budget checks use the price, and the
+screen says "Shipping not stated — usually €15–€30 to you. Check the listing."
+Measured before: 6 of 39 rejections on one mandate were within budget and failed
+only on our €22.50 guess. Tests: `server/tests/test_policy_checks_and_estimated_shipping.py`
+(mutation-checked), `__tests__/lib/dealChecks.test.ts`. Verified on device.
+Sparrow's marketplace is named **"Sparrow Collect Marketplace"** everywhere (was
+"Sparrow P2P"), translated per language via `src/lib/marketplaceLabel.ts`
+(`marketplace.sparrow_name`).
+
+**Still open:** policy reasons were
+shown raw ("total €28.13 … <= max €30.0", "source 'ebay' in allowed list") and
+the €22.50 shipping is an assumption shown as fact; at €5.63 the price analysis
+reads "€6 / €6 / €6" (whole-euro rule); "I got it" on a deal does not add the
+card to the collection (the watchlist's does).
+
+**Re-run:** create a keyed mandate on a Pro test account, force
+`run_once`, expect "N hits, M new deals" with no TypeError, only same-number
+titles among passing deals, and the deal screen opening.
+
+## AJ — a sale that left the object behind (2026-09-24)
+
+Walked the seller's side on Android. "Mark as sold" (`POST
+/p2p/listings/{id}/delist?status=sold`) only flipped the status: `sold_at`
+stayed NULL, and the card stayed in the seller's collection, still counted in
+portfolio value. `docs/P2P_MARKETPLACE_SPEC.md` "Settlement" had fixed exactly
+this for offer-completed trades on 2026-08-09 ("The seller kept what they had
+sold") — the manual path was the second copy that never got the fix.
+
+Fix: `p2p_offers_router.retire_sold_item` (archive, or decrement a stack) is the
+one rule; `_settle_completed_trade` and `delist(status='sold')` both call it,
+inside the delist transaction, and `sold_at` is stamped. The app confirms first
+("The listing ends and the item leaves your collection"). Tests:
+`server/tests/test_mark_sold_settles_item.py` (red on the pre-fix router).
+Verified on device: `items.archived = true`, `sold_at` set.
+
+Same walk, smaller: Settings' "My Listings & Offers — Manage items for sale"
+opened the offers screen, which shows no listings — a seller's own listing was
+reachable only through a checkbox in the filter sheet; it now opens
+`/listings?mine=1`. The price-drop sheet promised "We'll alert the member
+watching this" while Target Hit alerts each watcher at most once per 24 h (spec
+§8b) — copy corrected and translated. A sold listing still showed "1 other
+member watching"; the status line printed the raw slug "(sold)".
+
+**Decided and built (Merle, 2026-09-24): record the price.** `POST
+/p2p/listings/{id}/delist?status=sold&sale_price=…` writes the seller's sale with
+`_record_p2p_sale` (the in-app trade's writer: fees 0, postage NULL = not told
+yet, addable via /postage) and accrues DAC7 with `_dac7_accrue` after the commit.
+The app's Mark-as-sold is now a sheet ("What did it sell for?", seeded with the
+asking price, parsed with `parseMoney`). `sale_price` stays optional server-side
+only so an older build keeps working; without it nothing is recorded. Tests:
+`server/tests/test_mark_sold_settles_item.py` (4, mutation-checked). Verified on
+prod: sale row €14, `dac7_seller_year` 1 sale / €14, `sold_at` set.
+
+**Still open:** the Shop sheet on a watchlist item lists outside marketplaces
+only, never Sparrow's own members.
+
+## AK — a backlog gate blind to most of the backlog (2026-09-24)
+
+Found while walking the paywall for the money round: every toast on
+`app/subscription.tsx` ("Welcome to Pro!", "No previous purchases found.",
+"Restored — you're on pro.") was an English literal, and so were the plan
+names, both feature lists, the store-error paragraph and the legal text. The
+record said "no live English left". `scripts/check-i18n-strings.mjs` only
+read JSX text and five props, so a string handed to the screen by code never
+counted. Its third blindness this month, after the wrapped-paragraph one
+(`learning_a_backlog_gate_can_be_blind_to_most_of_the_backlog`).
+
+**Gate change.** Whole-file scan with comments blanked (multi-line calls are
+the normal layout) for: `message:` values, `Alert.alert/prompt` arguments and
+button `text:` (depth-1 only, so a log label inside an `onPress` is not
+counted), `set*Error|Message|Notice|Status('…')`, and the fallback argument of
+`userErrorMessage`. A template's `${…}` counts as a word, so
+`${title} added to watchlist` is seen. Count went from 66 to **443**.
+
+**Still blind:** array literals of copy (the paywall's feature lists were
+one; `label:`/`title:` object values are ~700 matches, mostly data, not
+measured). Not in `verify:prebuild`: the backlog is non-zero by decision.
+
+**Done:** the paywall (whole screen) and the Target Hit add/edit/remove path.
+The feature lists are i18n keys now; `check:paywall-claims` and
+`subscriptionPlanCards.test.ts` resolve them through the locale files, and the
+jest test checks **every locale states the same numbers as the English card**
+(mutation: nl "20 aankoopopdrachten" → red). The same test had been green
+only because its quote regex read `'Condition grading'` inside a comment.
+Everything else is listed in `docs/I18N_BACKLOG.md`, not started.
+
+## AL — a free cap that ends in "try again" instead of an offer (2026-09-24)
+
+`watchlist_router.add_to_watchlist` 403s the 26th watch with
+`PLAN_LIMIT_WATCHLIST`. `FavoriteWatchButtons`, the watchlist form,
+`catalog-item` and `barcode-scan` all caught it as a generic failure. The
+member at the one moment an upgrade means something was told to retry
+something that can never succeed. `offerProOnPlanLimit(err, t, openPaywall)`
+handles the three plan codes with a dialog ("Your watchlist is full / The
+free plan watches up to 25 items…", Not now / See Sparrow Pro) and returns
+false for everything else. Test: `__tests__/lib/planLimitPrompt.test.ts`
+(mutation: drop the watchlist code → red). Verified on Android as
+simseller@ (free, 25 watches).
+
+Same walk, paywall:
+- The Free card's "Downgrade" button had no `onSelect`, so a Pro member
+  tapped nothing. It now opens the store's subscription page (`handleManage`).
+- The fallback prices were `${settings.currency} 4.99`, a euro price
+  relabelled in the member's currency. They're now formatted EUR.
+- **"1 price alert a week" was removed from the Free card.** The cap is real
+  server-side, but nothing in the app creates a price alert (`createAlert`
+  has no caller; prod has 0 `user_price_alerts` rows).
+- The restore toast printed the raw plan id ("you're on pro").
+
+**Not fixed, Merle's console step:** Android has no RevenueCat key, so the
+paywall says "Plans couldn't load" on every Android device. A Pro member there
+also sees no line saying they are on Pro (no period end on the seeded
+subscription row, and no offerings to draw a current card).
+
+## AM — one listing, many URLs (2026-09-24)
+
+Seen on the Deal Agent list: "Charizard ex 056 … €11" four times. Prod had
+four rows with the same `/itm/137771382482` and four different `amdata`
+tokens. `_get_existing_urls` / `_get_user_recent_deal_urls` returned raw
+URLs, and the scan compared `hit_url in existing_urls`. Now both return
+`listing_key(url)`, and the scan adds each accepted key to the set, so two
+hits for one item in a batch are one deal. `listing_key` never replaces the
+stored or opened URL. Tests: `tests/test_listing_identity.py`,
+`tests/test_deal_discovery_agent.py::…redecorated…/…same_item_twice…`.
+
+Also from this walk (section AI's endpoint): `GET /purchase/deals/{id}` now
+filters `policy_passed IS TRUE` like the list. A direct link opened a
+rejected candidate (a price-guide page at €96 against a €6 prediction) with a
+Buy button. Verified on prod: rejected id → 404, passing id → 200. The list
+rows print the brand ("eBay", "Sparrow Collect Marketplace"), not the raw id.
+
+## AN — a fix that lived in one copy of a rule (2026-09-24)
+
+Walked a cold start into `users/[userId]` on Android: "Couldn't load this
+profile", and every Supabase request in the log timed out at 15 s. The
+diagnostics ruled out storage (2 chunks, ~0.3 s) and the clock, and named the
+culprit: `[useAuth] Failed to load profile`. `src/hooks/useAuth.ts` duplicated
+AuthProvider's session + profile logic, and its listener was `async` and awaited
+a `profiles` read inside GoTrue's lock, the deadlock AuthProvider's own comment
+describes and fixes. One screen used it. Same shape as
+`learning_duplicate_impl_silently_drops_the_fix`: the fix went into the copy
+people read, the other copy kept shipping the bug.
+
+Fixed at the chokepoint: the screen reads `useAuthContext()` and the hook is
+deleted. `scripts/check-auth-listener-lock.mjs` checks every
+`onAuthStateChange` in app/ and src/: no `async` callback, no `await` outside a
+`setTimeout(...)`, no listener passed by name (the gate could not read it).
+It exits 1 if it finds no listener at all. Mutation-proven three ways
+(restored hook, injected `await`, named listener). Verified on device: the same
+cold start logs no timeout, and the profile screen renders.
+
+Same round, auth screens: unconfirmed login had no Resend path (400
+`email_not_confirmed` → now routes to verify-email); 2FA enrolment was
+impossible on Android (SVG QR rendered blank, no setup key); the keyboard
+stayed up over the next screen. All in docs/AUTH_AND_WEB_DEPLOY.md.
 
 ## AC — a SECURITY DEFINER function anyone can call (2026-09-22)
 

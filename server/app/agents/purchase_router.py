@@ -170,6 +170,10 @@ class DealResponse(BaseModel):
     predicted_q90: Optional[float] = None
     policy_passed: bool = True
     policy_reasons: list = Field(default_factory=list)
+    # Structured, member-facing results — {"code","ok",...}. `policy_reasons`
+    # is the engine's audit text and is NOT for display (2026-09-24). Empty for
+    # deals found before 2026-09-24.
+    policy_checks: list = Field(default_factory=list)
     affiliate_source: Optional[str] = None
     affiliate_click: bool = False
     # D3: deliberately left unpopulated (always None) pre-launch. Real
@@ -228,7 +232,7 @@ _DEAL_COLUMNS = (
     "listing_title, listing_price, listing_currency, listing_condition, "
     "listing_image_url, listing_seller, listing_ended, provenance_score, deal_score, "
     "price_vs_q50_pct, predicted_q50, predicted_q10, predicted_q90, policy_passed, "
-    "policy_reasons, affiliate_source, affiliate_click, estimated_commission, "
+    "policy_reasons, policy_checks, affiliate_source, affiliate_click, estimated_commission, "
     "confirmed_price, added_item_id, discovered_at, notified_at, clicked_at, "
     "purchased_at, created_at"
 )
@@ -298,6 +302,14 @@ def _row_to_deal(row) -> dict:
             reasons = []
     elif reasons is None:
         reasons = []
+    checks = row.get("policy_checks")
+    if isinstance(checks, str):
+        try:
+            checks = json.loads(checks)
+        except (json.JSONDecodeError, TypeError):
+            checks = []
+    if not isinstance(checks, list):
+        checks = []
 
     return DealResponse(
         id=str(row["id"]),
@@ -321,6 +333,7 @@ def _row_to_deal(row) -> dict:
         predicted_q90=float(row["predicted_q90"]) if row.get("predicted_q90") is not None else None,
         policy_passed=bool(row.get("policy_passed", True)),
         policy_reasons=reasons,
+        policy_checks=checks,
         affiliate_source=row.get("affiliate_source"),
         affiliate_click=bool(row.get("affiliate_click", False)),
         estimated_commission=float(row["estimated_commission"]) if row.get("estimated_commission") is not None else None,
@@ -638,13 +651,13 @@ async def list_deals(
             if status not in _VALID_DEAL_STATUSES:
                 raise error_response(400, f"Invalid status filter: {status}")
             total = await conn.fetchval(
-                "SELECT count(*) FROM public.mandate_deals WHERE user_id = $1 AND status = $2",
+                "SELECT count(*) FROM public.mandate_deals WHERE user_id = $1 AND status = $2 AND policy_passed IS TRUE",
                 uid, status,
             )
             rows = await conn.fetch(
                 f"""
                 SELECT {_DEAL_COLUMNS} FROM public.mandate_deals
-                WHERE user_id = $1 AND status = $2
+                WHERE user_id = $1 AND status = $2 AND policy_passed IS TRUE
                 ORDER BY discovered_at DESC
                 LIMIT $3 OFFSET $4
                 """,
@@ -652,13 +665,18 @@ async def list_deals(
             )
         else:
             total = await conn.fetchval(
-                "SELECT count(*) FROM public.mandate_deals WHERE user_id = $1",
+                "SELECT count(*) FROM public.mandate_deals WHERE user_id = $1 AND policy_passed IS TRUE",
                 uid,
             )
             rows = await conn.fetch(
                 f"""
+                -- policy_passed: every CANDIDATE is stored for audit, including
+                -- the ones the policy engine rejected (over the member's max
+                -- price, a source they switched off, a different card). This
+                -- listed all of them as deals — a €96 price-guide row with a
+                -- "New" badge on a €30 mandate (walked 2026-09-24).
                 SELECT {_DEAL_COLUMNS} FROM public.mandate_deals
-                WHERE user_id = $1
+                WHERE user_id = $1 AND policy_passed IS TRUE
                 ORDER BY discovered_at DESC
                 LIMIT $2 OFFSET $3
                 """,
@@ -682,7 +700,12 @@ async def get_deal(
 
     async with get_conn() as conn:
         row = await conn.fetchrow(
-            f"SELECT {_DEAL_COLUMNS} FROM public.mandate_deals WHERE id = $1 AND user_id = $2",
+            # policy_passed, like the list: a rejected CANDIDATE is kept for
+            # audit, not shown. Without it a direct link opened a "deal" the
+            # policy had refused — €96 asking against a €6 prediction, from a
+            # price guide nobody can buy from (screen sweep, 2026-09-24).
+            f"SELECT {_DEAL_COLUMNS} FROM public.mandate_deals "
+            "WHERE id = $1 AND user_id = $2 AND policy_passed IS TRUE",
             _parse_uuid(deal_id, "deal_id"),
             uuid.UUID(user_id) if _is_uuid(user_id) else user_id,
         )
@@ -750,6 +773,7 @@ async def confirm_deal(
                 f"""
                 SELECT {_DEAL_COLUMNS} FROM public.mandate_deals
                 WHERE id = $1 AND user_id = $2 AND status = ANY($3::text[])
+                  AND policy_passed IS TRUE
                 """,
                 _parse_uuid(deal_id, "deal_id"),
                 uid,
@@ -886,7 +910,7 @@ async def get_stats(
         deal_stats = await conn.fetchrow(
             """
             SELECT
-                count(*) AS total_found,
+                count(*) FILTER (WHERE policy_passed IS TRUE) AS total_found,
                 count(*) FILTER (WHERE affiliate_click = true) AS total_clicked,
                 count(*) FILTER (WHERE status = 'purchased') AS total_purchased,
                 -- D3: clamp per-deal savings at 0 with GREATEST so a bad buy

@@ -35,6 +35,22 @@ const IS_WEB = Platform.OS === 'web';
 // ---------------------------------------------------------------------------
 
 let _db: any = null;
+
+/**
+ * WHOSE data this cache holds. Keys are not per-user (`watchlist:list`,
+ * `items:list`, `portfolio:summary` …), and nothing cleared them when the
+ * signed-in member changed — so the next account on the phone was served the
+ * previous one's watchlist, items and portfolio until each TTL ran out, and a
+ * read made before sign-in completed (0 rows under RLS, no error) kept
+ * answering "No items in your watchlist yet" to a member with six (walked on
+ * Android 2026-09-24). `bindCacheOwner` is the one place that decides; every
+ * read and write waits for the latest binding, so nothing can read the old
+ * member's rows between "user changed" and "cache cleared".
+ */
+const OWNER_KEY = '__cache_owner__';
+// Never rejects: bindCacheOwner's body catches everything and resolves false,
+// so awaiting it needs no .catch.
+let _ownerBinding: Promise<boolean> = Promise.resolve(false);
 let _initPromise: Promise<void> | null = null;
 
 async function getDb(): Promise<any> {
@@ -78,6 +94,7 @@ async function getDb(): Promise<any> {
  */
 export async function cacheGet<T = unknown>(key: string): Promise<T | null> {
   if (IS_WEB) return null;
+  await _ownerBinding;
   try {
     const db = await getDb();
     if (!db) return null;
@@ -119,6 +136,7 @@ export async function cacheSet(
   ttlMs: number = DEFAULT_TTL_MS,
 ): Promise<void> {
   if (IS_WEB) return;
+  await _ownerBinding;
   try {
     const db = await getDb();
     if (!db) return;
@@ -163,6 +181,39 @@ export async function cacheClear(prefix?: string): Promise<void> {
 }
 
 /**
+ * Bind the cache to the signed-in member (null = signed out). Wipes every entry
+ * when the owner differs from the one stored with the cache — including on a
+ * cold start after an account switch, since the owner is persisted. Resolves
+ * true when it wiped, so callers can reset their in-memory copies too.
+ */
+export function bindCacheOwner(userId: string | null): Promise<boolean> {
+  const previous = _ownerBinding;
+  _ownerBinding = (async () => {
+    await previous;
+    if (IS_WEB) return false;
+    try {
+      const db = await getDb();
+      if (!db) return false;
+      const row = await (db.getFirstAsync as any)('SELECT data FROM cache WHERE key = ?', [OWNER_KEY]);
+      const stored: string | null = row ? JSON.parse(row.data) : null;
+      const next = userId ?? null;
+      if (stored === next) return false;
+      await db.runAsync('DELETE FROM cache');
+      await db.runAsync(
+        'INSERT OR REPLACE INTO cache (key, data, expires_at) VALUES (?, ?, ?)',
+        [OWNER_KEY, JSON.stringify(next), Number.MAX_SAFE_INTEGER],
+      );
+      logger.info('[offlineCache] owner changed — cleared all entries');
+      return true;
+    } catch (err) {
+      logger.error('[offlineCache] bindCacheOwner error:', err);
+      return false;
+    }
+  })();
+  return _ownerBinding;
+}
+
+/**
  * Remove all expired entries.  Can be called periodically to keep the
  * database tidy, but is not required — expired entries are also pruned
  * lazily by `cacheGet`.
@@ -171,6 +222,7 @@ export async function cacheClear(prefix?: string): Promise<void> {
 export function __setDbForTesting(db: any): void {
   _db = db;
   _initPromise = Promise.resolve();
+  _ownerBinding = Promise.resolve(false);
 }
 
 export async function cacheEvictExpired(): Promise<number> {

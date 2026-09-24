@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useTranslation } from 'react-i18next';
+import { moneyInputPlaceholder } from '@/lib/format';
 
 const CONDITION_CHIPS = [
   { label: 'Mint', short: 'M' },
@@ -152,7 +153,7 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
                 onChangeText={purchasePriceField.onChange}
                 onBlur={purchasePriceField.onBlur}
                 keyboardType="decimal-pad"
-                placeholder="0.00"
+                placeholder={moneyInputPlaceholder()}
                 placeholderTextColor={colors.muted}
                 style={[styles.input, { color: colors.text }]}
                 accessibilityLabel={t('add_manual.purchase_price_a11y')}
@@ -172,7 +173,7 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
                 onChangeText={estimatedValueField.onChange}
                 onBlur={estimatedValueField.onBlur}
                 keyboardType="decimal-pad"
-                placeholder="0.00"
+                placeholder={moneyInputPlaceholder()}
                 placeholderTextColor={colors.muted}
                 style={[styles.input, { color: colors.text }]}
                 accessibilityLabel={t('add_manual.estimated_value_a11y')}

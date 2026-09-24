@@ -89,8 +89,12 @@ export const listDeals = (params?: { status?: string; limit?: number; offset?: n
   );
 };
 
-export const getDeal = (id: string) =>
-  get(`/purchase/deals/${encodeURIComponent(id)}`);
+// Camelized like listDeals. This returned the raw snake_case body, and the deal
+// screen casts it to the camelCase MandateDeal — so `policyReasons` (and every
+// other field) was undefined and the screen crashed on open: "Deal Detail
+// failed to load" on every deal (walked on Android 2026-09-24; class U).
+export const getDeal = async (id: string) =>
+  camelizeDeep(await get(`/purchase/deals/${encodeURIComponent(id)}`));
 
 export const clickDeal = (id: string) =>
   post(`/purchase/deals/${encodeURIComponent(id)}/click`);

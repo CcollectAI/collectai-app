@@ -215,6 +215,12 @@ const EventAnnouncementsScreen: React.FC = () => {
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerTitle: t('screen_titles.announcements') }} />
 
+      {/* The content AND the FAB live in one flex:1 area that ends ABOVE the
+          nav bar. The FAB was `absolute, bottom: 32` in the same container as
+          QuickNavBar, which renders after it — so the only way to post an
+          announcement sat under the nav bar, one sliver showing, and a tap
+          landed on "Explore" (walked on Android 2026-09-24). */}
+      <View style={styles.body}>
       {/* Loading */}
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -284,6 +290,7 @@ const EventAnnouncementsScreen: React.FC = () => {
           <Ionicons name="create-outline" size={24} color={colors.accentText}/>
         </AnimatedPressable>
       )}
+      </View>
       <QuickNavBar />
     </View>
   );
@@ -402,6 +409,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 20,
   },
+
+  body: { flex: 1 },
 
   /* FAB */
   fab: {

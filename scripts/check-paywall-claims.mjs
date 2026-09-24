@@ -79,7 +79,18 @@ if (!block) {
   console.error('[paywall-claims] FAIL — could not find PRO_FEATURES in app/subscription.tsx');
   process.exit(1);
 }
-const bullets = [...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+// The list holds i18n KEYS since 2026-09-24; the claim is the ENGLISH copy
+// each key resolves to (the plan-card jest test checks the other locales
+// carry the same numbers). A key with no English value is itself a failure.
+const EN = JSON.parse(readFileSync(join(ROOT, 'src/i18n/locales/en.json'), 'utf8'));
+const enValue = (key) => key.split('.').reduce((o, k) => o?.[k], EN);
+const bulletKeys = [...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+const unresolved = bulletKeys.filter((k) => typeof enValue(k) !== 'string');
+if (unresolved.length) {
+  console.error(`[paywall-claims] FAIL — PRO_FEATURES keys with no en.json value: ${unresolved.join(', ')}`);
+  process.exit(1);
+}
+const bullets = bulletKeys.map(enValue);
 if (bullets.length === 0) {
   console.error('[paywall-claims] FAIL — PRO_FEATURES parsed as EMPTY. Refusing to pass: an\n' +
                 '  empty parse is indistinguishable from a clean card, which is the exact\n' +

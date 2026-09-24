@@ -413,7 +413,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
 
             <AnimatedPressable
               style={styles.settingRow}
-              onPress={() => router.push('/offers')}
+              onPress={() => router.push('/listings?mine=1' as Href)}
               accessibilityRole="link"
               accessibilityLabel={t('account.my_listings_a11y')}
             >

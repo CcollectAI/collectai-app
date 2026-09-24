@@ -21,7 +21,8 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
-import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { PAID_EVENTS_ENABLED } from '@/config/featureFlags';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type PublicUserProfile } from '@/data';
 import type { CollectorsEvent } from '@/data/events';
@@ -87,12 +88,16 @@ function EventDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // Load event data
+  // Only the FIRST load shows the skeleton; a refocus refresh keeps the event
+  // on screen and swaps it in place.
+  const hasEventRef = useRef(false);
   const loadEvent = useCallback(async () => {
     if (!eventId) return;
-    setLoading(true);
+    if (!hasEventRef.current) setLoading(true);
     try {
       const eventData = await dataProvider.getEventById(eventId);
       setEvent(eventData);
+      hasEventRef.current = eventData != null;
       setLoadFailed(false);
     } catch (err) {
       // A failed REFRESH keeps the event already on screen (setEvent is not
@@ -104,9 +109,14 @@ function EventDetailScreen() {
     }
   }, [eventId]);
 
-  useEffect(() => {
-    loadEvent();
-  }, [loadEvent]);
+  // On focus, not only on mount: Edit Event and the announcements screen
+  // return here, and a mount-only load kept showing the pre-edit event (and
+  // the pre-read unread badge) until a manual pull-to-refresh.
+  useFocusEffect(
+    useCallback(() => {
+      loadEvent();
+    }, [loadEvent]),
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -174,7 +184,9 @@ function EventDetailScreen() {
         if (!cancelled) setUnreadAnnouncementCount(0);
       });
     return () => { cancelled = true; };
-  }, [eventId, isCommunityEvent]);
+    // `event` re-runs this on every focus refresh (a new object each load), so
+    // the badge drops after reading the announcements and coming back.
+  }, [eventId, isCommunityEvent, event]);
 
   /* ---- derived values ---- */
   const isCreator = !!(
@@ -509,25 +521,10 @@ function EventDetailScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
-        {/* Creator menu (3-dot) */}
-        {isCreator && (
-          <View style={styles.topRow}>
-            <View style={{ flex: 1 }} />
-            <AnimatedPressable
-              onPress={() => setShowMenu(true)}
-              style={styles.menuBtn}
-              accessibilityRole="button"
-              accessibilityLabel={t('common.more_options_a11y')}
-            >
-              <Ionicons name="ellipsis-horizontal" size={22} color={colors.text} />
-            </AnimatedPressable>
-          </View>
-        )}
-
         <EventHeroSection event={event} />
 
         {/* Promote CTA for creators of non-sponsored events */}
-        {isCreator && !event.isSponsored && (
+        {PAID_EVENTS_ENABLED && isCreator && !event.isSponsored && (
           <AnimatedPressable
             onPress={() => router.push('/sponsor/dashboard' as Href)}
             style={[styles.promoteCta, { backgroundColor: colors.accent + '10', borderColor: colors.accent + '40' }]}
@@ -550,6 +547,21 @@ function EventDetailScreen() {
           leadingActions={
             <EventActionBar event={event} hapticsEnabled={settings.hapticsEnabled} />
           }
+          hostActions={isCreator ? (
+            // The host's Edit / Duplicate / Cancel used to hang off a floating
+            // ⋯ in an empty band above the title — the pattern removed from
+            // profiles on 2026-09-22. They sit in the action row instead, where
+            // the host was otherwise offered an RSVP to their own event.
+            <AnimatedPressable
+              onPress={() => setShowMenu(true)}
+              style={[styles.manageBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel={t('event_detail.manage_a11y', { defaultValue: 'Manage event' })}
+            >
+              <Ionicons name="create-outline" size={16} color={colors.text} style={{ marginRight: 6 }} />
+              <Text style={[styles.manageBtnText, { color: colors.text }]}>{t('event_detail.manage', { defaultValue: 'Manage' })}</Text>
+            </AnimatedPressable>
+          ) : undefined}
           event={event}
           rsvpStatus={rsvpStatus}
           isPastEvent={isPastEvent}
@@ -662,14 +674,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
   },
-  topRow: {
+  // Matches EventRsvpSection's actionBtn — it sits in that row.
+  manageBtn: {
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
   },
-  menuBtn: {
-    padding: 8,
+  manageBtnText: {
+    fontSize: 13,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   promoteCta: {
     flexDirection: 'row',

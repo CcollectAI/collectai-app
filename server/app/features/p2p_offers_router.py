@@ -583,6 +583,43 @@ async def _record_p2p_sale(conn, listing_id: str, seller_id: str,
     )
 
 
+async def retire_sold_item(conn, item_id: str, seller_id: str, quantity: int) -> None:
+    """Take a sold item out of the seller's collection — ONE rule, two callers.
+
+    Used by `_settle_completed_trade` (an offer completed in the app) and by
+    `p2p_listing_router.delist(status='sold')` (the seller marked it sold after
+    selling off-platform). The second used to leave the card in the collection,
+    still counted in portfolio value — the exact leak this function was written
+    to close for offers on 2026-08-09 (walked again 2026-09-24).
+
+    A seller holding several decrements instead: archiving the row would delete
+    the copies they still own. Archive, never delete — 29 tables FK to items.id
+    (docs/P2P_MARKETPLACE_SPEC.md "Settlement").
+    """
+    if quantity > 1:
+        await conn.execute(
+            """
+            UPDATE public.items
+               SET quantity = GREATEST(COALESCE(quantity, 1) - 1, 0),
+                   updated_at = now()
+             WHERE id = $1::uuid AND user_id = $2::uuid
+            """,
+            item_id, seller_id,
+        )
+    else:
+        # Safe to archive unconditionally: p2p_listing_router enforces one
+        # active listing per item, so there is no sibling listing left
+        # pointing at a row we just retired.
+        await conn.execute(
+            """
+            UPDATE public.items
+               SET archived = TRUE, updated_at = now()
+             WHERE id = $1::uuid AND user_id = $2::uuid
+            """,
+            item_id, seller_id,
+        )
+
+
 async def _settle_completed_trade(conn, offer_id: str, listing_id: str,
                                   buyer_id: str, seller_id: str,
                                   amount: float, currency: str) -> None:
@@ -665,28 +702,7 @@ async def _settle_completed_trade(conn, offer_id: str, listing_id: str,
         #    here would be a second, narrower implementation of that rule — it
         #    omits the 'sparrow' scope — and the two would drift.
         if l["item_id"]:
-            if int(l["quantity"]) > 1:
-                await conn.execute(
-                    """
-                    UPDATE public.items
-                       SET quantity = GREATEST(COALESCE(quantity, 1) - 1, 0),
-                           updated_at = now()
-                     WHERE id = $1::uuid AND user_id = $2::uuid
-                    """,
-                    str(l["item_id"]), seller_id,
-                )
-            else:
-                # Safe to archive unconditionally: p2p_listing_router enforces one
-                # active listing per item, so there is no sibling listing left
-                # pointing at a row we just retired.
-                await conn.execute(
-                    """
-                    UPDATE public.items
-                       SET archived = TRUE, updated_at = now()
-                     WHERE id = $1::uuid AND user_id = $2::uuid
-                    """,
-                    str(l["item_id"]), seller_id,
-                )
+            await retire_sold_item(conn, str(l["item_id"]), seller_id, int(l["quantity"]))
 
         # 2. Give the buyer their own row. `acquired_from` doubles as the
         #    idempotency key: re-running a settled trade must not mint a second

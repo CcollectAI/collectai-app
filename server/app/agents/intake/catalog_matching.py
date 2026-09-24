@@ -124,6 +124,73 @@ async def _match_by_attributes(
     return results
 
 
+_AMBIGUOUS_SCORE_CAP = 0.5
+
+
+def _norm_number(value: Optional[str]) -> Optional[str]:
+    """'4/102' -> '4', '#161' -> '161', '007' -> '7', 'LOB-001' -> 'lob-1'."""
+    if not value:
+        return None
+    v = value.strip().lower().lstrip("#").split("/")[0].strip()
+    if not v:
+        return None
+    head, sep, tail = v.rpartition("-")
+    tail = tail.lstrip("0") or "0"
+    return f"{head}{sep}{tail}" if sep else tail
+
+
+def _key_number(item_key: Optional[str]) -> Optional[str]:
+    """The number a catalog key ends with: 'svp-svp-161' -> '161'."""
+    if not item_key:
+        return None
+    last = item_key.lower().rsplit("-", 1)[-1]
+    return (last.lstrip("0") or "0") if last else None
+
+
+def resolve_title_ties(matches: list[dict], set_code: Optional[str], number: Optional[str]) -> tuple[list[dict], bool]:
+    """Resolve a tie at the top between DIFFERENT catalog rows.
+
+    The pipeline scores an exact title 1.0, so "Charizard ex" in `pokemon`
+    returned FIVE rows at 1.0 and `best` was simply the first — a confident,
+    arbitrary identity (measured 2026-09-24: sv4pt5-234 for a member holding
+    the SVP #161 promo, even with set_code "svp" sent). That key decides the
+    item's price and which Target Hit watchers are alerted, and a wrong key is
+    worse than none (items_router `_resolve_canonical_key`).
+
+    When the tie cannot be resolved, EVERY tied row's score is capped at
+    _AMBIGUOUS_SCORE_CAP (below every caller's write threshold: 0.6 add-manual,
+    0.75 items_router) and marked `ambiguous`, so no caller can auto-assign a
+    guessed identity. Returns (matches, ambiguous?).
+    """
+    if not matches:
+        return matches, False
+    top = float(matches[0].get("match_score", 0.0))
+    tied = [m for m in matches if float(m.get("match_score", 0.0)) >= top - 1e-9]
+    if len({m.get("item_key") for m in tied}) < 2:
+        return matches, False
+    pool = tied
+    want_num = _norm_number(number)
+    if want_num:
+        by_num = [m for m in pool if _key_number(m.get("item_key")) == want_num.rsplit("-", 1)[-1]]
+        if by_num:
+            pool = by_num
+    if set_code:
+        sc = set_code.strip().lower()
+        by_set = [m for m in pool if (m.get("set_code") or "").lower() == sc]
+        if by_set:
+            pool = by_set
+    if len({m.get("item_key") for m in pool}) == 1:
+        chosen = pool[0]
+        rest = [m for m in matches if m is not chosen]
+        return [chosen, *rest], False
+    capped = []
+    for m in matches:
+        if m in tied:
+            m = {**m, "match_score": min(float(m.get("match_score", 0.0)), _AMBIGUOUS_SCORE_CAP), "ambiguous": True}
+        capped.append(m)
+    return capped, True
+
+
 async def _match_catalog_items(
     category_id: Optional[str],
     suggested_name: Optional[str],
@@ -363,6 +430,10 @@ async def _match_catalog_items(
 
     # Sort by match_score descending, return top 5
     matches.sort(key=lambda m: m["match_score"], reverse=True)
+    attrs = extracted_attributes or {}
+    matches, _ = resolve_title_ties(
+        matches, set_code, attrs.get("card_number") or attrs.get("number"),
+    )
     return matches[:5]
 
 

@@ -930,6 +930,9 @@ class CatalogMatchRequest(BaseModel):
     # Optional hints from the FE form to improve match accuracy
     brand: Optional[str] = Field(None, max_length=128)
     set_code: Optional[str] = Field(None, max_length=64)
+    # Card / collector number as the member typed it ("161", "4/102",
+    # "LOB-001"). Breaks ties between catalog rows that share a title.
+    number: Optional[str] = Field(None, max_length=32)
 
 
 class CatalogMatchHit(BaseModel):
@@ -948,6 +951,12 @@ class CatalogMatchResponse(BaseModel):
     # null when no match (FE writes canonical_key=null).
     best: Optional[CatalogMatchHit] = None
     alternatives: list[CatalogMatchHit] = Field(default_factory=list)
+    # True when several DIFFERENT catalog rows tie for the top score and
+    # nothing sent (set_code, number) tells them apart. `best` then carries a
+    # score capped below every writer's threshold (0.6) — see catalog_matching.resolve_title_ties.
+    ambiguous: bool = False
+
+
 
 
 @router.post(
@@ -982,7 +991,7 @@ async def match_catalog(
             brand=payload.brand,
             set_code=payload.set_code,
             pool=pool,
-            extracted_attributes=None,
+            extracted_attributes={"card_number": payload.number} if payload.number else None,
         )
     except Exception as e:
         # Don't fail the form save just because matching errored. The FE
@@ -1006,7 +1015,10 @@ async def match_catalog(
             image_url=m.get("image_url"),
         )
 
+    # Ties between different rows are resolved (or flagged and capped) inside
+    # _match_catalog_items — see catalog_matching.resolve_title_ties.
     return CatalogMatchResponse(
         best=_to_hit(matches[0]),
         alternatives=[_to_hit(m) for m in matches[1:5]],
+        ambiguous=bool(matches[0].get("ambiguous")),
     )

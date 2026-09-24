@@ -36,7 +36,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter, type Href } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -364,7 +364,12 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   // Seller view. Without this a seller lists something and then cannot find
   // it — the API had a `mine` filter with no way to reach it.
-  const [mineOnly, setMineOnly] = useState(false);
+  // `?mine=1` opens straight on the seller's own listings. Settings' "My
+  // Listings & Offers — Manage items for sale" went to the offers screen, which
+  // shows no listings at all, so the only way to find your own listing was a
+  // checkbox inside this screen's filter sheet (walked on Android 2026-09-24).
+  const { mine: mineParam } = useLocalSearchParams<{ mine?: string }>();
+  const [mineOnly, setMineOnly] = useState(mineParam === '1');
   const [filterOpen, setFilterOpen] = useState(false);
   const [sort, setSort] = useState<P2PSort>('newest');
   // Price bounds. Server-side, like `sort`: filtering the loaded page only

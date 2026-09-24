@@ -255,14 +255,24 @@ export type CatalogMatchHit = {
 export type CatalogMatchResponse = {
   best: CatalogMatchHit | null;
   alternatives: CatalogMatchHit[];
+  /** Several different catalog rows share this title and nothing sent told
+   *  them apart — `best` is then capped below every write threshold. */
+  ambiguous?: boolean;
 };
 
-export const matchCatalog = (title: string, category: string, opts?: { brand?: string; set_code?: string }) =>
+export const matchCatalog = (
+  title: string,
+  category: string,
+  opts?: { brand?: string; set_code?: string; number?: string },
+) =>
   post<CatalogMatchResponse>("/catalog/match", {
     title,
     category,
     ...(opts?.brand ? { brand: opts.brand } : {}),
     ...(opts?.set_code ? { set_code: opts.set_code } : {}),
+    // Card / collector number: the one field that tells five "Charizard ex"
+    // apart (server catalog_matching.resolve_title_ties).
+    ...(opts?.number ? { number: opts.number } : {}),
   });
 
 /**

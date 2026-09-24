@@ -209,8 +209,13 @@ async def add_to_watchlist(payload: WatchlistCreate, user_id: str = Depends(get_
                         (id, user_id, item_id, title, category,
                          created_at, predicted_value, currency,
                          target_price, priority, notes)
-                    VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8,
-                            $9, $10, $11)
+                    VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6,
+                            -- float8 bound into NUMERIC keeps its binary noise:
+                            -- a 5.535 estimate was stored as
+                            -- 5.53500000000000014210854715… (2026-09-24). Money
+                            -- is two decimals, rounded here, where it is written.
+                            round($7::numeric, 2), $8,
+                            round($9::numeric, 2), $10, $11)
                     """,
                     item.id, user_id, payload.item_id,
                     # watchlist_items.title is NOT NULL — fallback keeps INSERTs valid

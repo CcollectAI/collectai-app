@@ -4,7 +4,7 @@
 
 import { API_LIMITS } from '@/constants/apiLimits';
 import type { PaginationParams } from '../types';
-import type { CollectorsEvent, CreateEventInput, EventTemplate, EventAnnouncement, SponsorCompany } from '../events';
+import type { CollectorsEvent, CreateEventInput, EventPatch, EventTemplate, EventAnnouncement, SponsorCompany } from '../events';
 import {
   collectorsApi,
   searchEvents as apiSearchEvents,
@@ -257,8 +257,14 @@ export { mapEventApiResponse, mapSponsorCompany };
 
 // ── Event Host Actions ─────────────────────────────────────────────────────────
 
-export async function updateEvent(eventId: string, patch: Partial<CreateEventInput & { status?: string }>): Promise<CollectorsEvent> {
+export async function updateEvent(eventId: string, patch: EventPatch): Promise<CollectorsEvent> {
   const snakePatch: Record<string, unknown> = {};
+  // kind/category/coords are editable in the form and were never mapped here,
+  // so a changed kind, category or "use my location" silently did not save.
+  if (patch.kind !== undefined) snakePatch.kind = patch.kind;
+  if (patch.categoryId !== undefined) snakePatch.category_id = patch.categoryId;
+  if (patch.latitude !== undefined) snakePatch.latitude = patch.latitude;
+  if (patch.longitude !== undefined) snakePatch.longitude = patch.longitude;
   if (patch.title !== undefined) snakePatch.title = patch.title;
   if (patch.description !== undefined) snakePatch.description = patch.description;
   if (patch.location !== undefined) snakePatch.location = patch.location;

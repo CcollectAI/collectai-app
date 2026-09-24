@@ -19,14 +19,15 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { collectorsApi } from '@/api/collectorsApi';
 import logger from '@/utils/logger';
-import { formatPrice, getCurrencySymbol, parseMoney } from '@/lib/format';
+import { formatPrice, getCurrencySymbol, parseMoney, moneyInputPlaceholder } from '@/lib/format';
 import { radius, text, fontWeight, gap } from '@/theme/tokens';
 import type { useFormField } from '@/hooks/useFormField';
 import type { MarketplaceId, MarketplaceFeeSchedule, CurrencyCode } from '@/data/types';
 import { useTranslation } from 'react-i18next';
+import { marketplaceLabel } from '@/lib/marketplaceLabel';
 
 const MARKETPLACE_CONFIG: Record<string, { label: string; icon: keyof typeof Ionicons.glyphMap; color: string }> = {
-  collectai: { label: 'Sparrow P2P', icon: 'people-outline', color: '#81D8D0' },
+  collectai: { label: 'Sparrow Collect Marketplace', icon: 'people-outline', color: '#81D8D0' },
   ebay: { label: 'eBay', icon: 'cart-outline', color: '#E53238' },
   mercari: { label: 'Mercari', icon: 'storefront-outline', color: '#4DC8F0' },
   cardmarket: { label: 'Cardmarket', icon: 'card-outline', color: '#1A3C7D' },
@@ -124,7 +125,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
             value={priceField.value}
             onChangeText={priceField.onChange}
             onBlur={priceField.onBlur}
-            placeholder={`${getCurrencySymbol(currency)} 0.00`}
+            placeholder={`${getCurrencySymbol(currency)} ${moneyInputPlaceholder()}`}
             placeholderTextColor={colors.muted}
             keyboardType="decimal-pad"
             returnKeyType="done"
@@ -142,7 +143,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
                   onPress={() => onMarketplaceChange(mp)}
                   style={[styles.mpChip, { borderColor: isActive ? cfg?.color ?? colors.accent : colors.border }, isActive && { backgroundColor: (cfg?.color ?? colors.accent) + '15' }]}
                 >
-                  <Text style={[styles.mpChipText, { color: isActive ? cfg?.color ?? colors.accent : colors.muted }]}>{cfg?.label ?? mp}</Text>
+                  <Text style={[styles.mpChipText, { color: isActive ? cfg?.color ?? colors.accent : colors.muted }]}>{marketplaceLabel(mp, cfg?.label, t)}</Text>
                 </Pressable>
               );
             })}

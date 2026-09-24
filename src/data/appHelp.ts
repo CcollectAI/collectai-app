@@ -501,11 +501,18 @@ export function searchAppHelp(query: string): HelpTopic[] {
     const title = topic.title.toLowerCase();
     const summary = topic.summary.toLowerCase();
     const keys = topic.keywords.join(' ').toLowerCase();
+    // WORD matches, not substrings. `includes` let "ex" (from "Charizard ex")
+    // hit "export" in the privacy topic's keywords, so a card search offered
+    // "What do you know about me, and can I delete it?" (2026-09-24). A term of
+    // 3+ letters matches the START of a word ("deliv" -> "delivery"); a shorter
+    // one must BE a word.
+    const hits = (text: string, term: string) =>
+      text.split(/[^\p{L}\p{N}]+/u).some((w) => (term.length < 3 ? w === term : w.startsWith(term)));
     let score = 0;
     for (const term of terms) {
-      if (title.includes(term)) score += 3;
-      else if (keys.includes(term)) score += 2;
-      else if (summary.includes(term)) score += 1;
+      if (hits(title, term)) score += 3;
+      else if (hits(keys, term)) score += 2;
+      else if (hits(summary, term)) score += 1;
     }
     return { topic, score };
   })

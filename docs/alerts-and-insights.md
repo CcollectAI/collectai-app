@@ -16,6 +16,36 @@ Data-driven portfolio insights and smart alerts for Sparrow Collect.
 > `:308`) and write `user_alert_preferences` — a table with **one writer and
 > zero readers**. See "Two preference stores" below.
 
+## ✅ Target Hit verified end to end with a real member listing (2026-09-24)
+
+Walked on Android with two accounts, no seeded rows: the buyer watched
+"Charizard ex" (SVP #161) from its catalogue card and set a €30 target; a new
+seller added the same card through Add manually (Card Number 161 → key
+`svp-svp-161`) and listed it at €25; the supply hook wrote
+`market_hits(pokemon:svp-svp-161, is_listing, https /l/<id>)`; one forced
+`deal_discovery.run_once` wrote the `alert_trigger_history` row and the
+`notification_history` row ("Target hit", deep link to the listing); the
+buyer's Notifications screen showed it and the tap opened the listing IN the
+app. **Re-run:** the same four steps; expect exactly one alert per watchlist row
+per 24 h.
+
+What the walk found and fixed (DEPLOYED 2026-09-24):
+- the seller's card would have been keyed as a different card — `/catalog/match`
+  broke a five-way title tie arbitrarily (CLASS_SWEEPS AH);
+- push text said "on sparrow" → "from a Sparrow member" / "on eBay";
+- a failed push logged at DEBUG (never reaches bake.log) → WARNING;
+- the query looked back 30 min on a 1800 s schedule, so any start delay could
+  skip a listing that writes its row ONCE → 35 min (the 24 h dedupe stops
+  doubles);
+- the buyer saw "1 other member watching" about themselves;
+- the watchlist rendered empty after sign-in, and Sell rendered an empty
+  collection after an add (CLASS_SWEEPS AG).
+
+Still true, not code: **Android has no push** (the buyer had no push token —
+FCM is a console item, `project_2026_07_31_android_readiness`), so on Android
+the in-app feed is the only delivery. The push body is EUR-only with a dot
+decimal (`€{x:.2f}`).
+
 ## ⛔ `watchlist_monitor_worker` — verified working, deliberately still OFF
 
 Dry-run 2026-07-31 (one bounded cycle, `WATCHLIST_MONITOR_BATCH=1`, never

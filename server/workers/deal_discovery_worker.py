@@ -79,6 +79,30 @@ _TITLE_MATCH_THRESHOLD = 0.55
 _UNUSABLE_TITLES = ("(unnamed)", "")
 
 
+# Display names for the push text. `market_hits.provider` is a slug, and the
+# message used to print it raw: "Charizard ex — €25.00 on sparrow" (walked on
+# Android 2026-09-24). A member listing is not a shop, so it gets its own
+# phrase rather than "on Sparrow".
+_PROVIDER_LABELS = {
+    "ebay": "eBay", "cardmarket": "Cardmarket", "tcgplayer": "TCGplayer",
+    "mercari": "Mercari", "vinted": "Vinted", "discogs": "Discogs",
+    "catawiki": "Catawiki", "bricklink": "BrickLink",
+}
+_MEMBER_PROVIDERS = {"sparrow", "sparrow_p2p"}
+
+
+def _provider_label(provider: str) -> str:
+    if provider in _MEMBER_PROVIDERS:
+        return "Sparrow Collect Marketplace"
+    return _PROVIDER_LABELS.get(provider, provider.replace("_", " ").title())
+
+
+def _provider_phrase(provider: str) -> str:
+    if provider in _MEMBER_PROVIDERS:
+        return "from a Sparrow member"
+    return f"on {_provider_label(provider)}"
+
+
 async def _check_watchlist_snipes(conn) -> int:
     """Check recent market_hits for *buyable* listings below watchlist targets.
 
@@ -130,7 +154,11 @@ async def _check_watchlist_snipes(conn) -> int:
         LEFT JOIN unnest($3::text[], $4::numeric[]) AS fxw(code, rate)
                ON fxw.code = w.currency
         JOIN public.market_hits mh
-          ON mh.seen_at > now() - interval '30 minutes'
+          -- 35, not 30: the worker runs every 1800 s, and any start delay
+          -- opened a gap in which a listing was never checked — and a member
+          -- listing writes its market_hits row ONCE. The 24 h dedupe below
+          -- stops the overlap from alerting twice.
+          ON mh.seen_at > now() - interval '35 minutes'
           AND mh.price_eur IS NOT NULL
           AND mh.price_eur > 0
           AND mh.price_eur <= w.target_price * COALESCE(fxw.rate, 1)
@@ -218,7 +246,7 @@ async def _check_watchlist_snipes(conn) -> int:
             )
 
         message = (
-            f"{listing_title[:60]} — \u20ac{listing_price:.2f} on {provider} "
+            f"{listing_title[:60]} — \u20ac{listing_price:.2f} {_provider_phrase(provider)} "
             f"({discount_pct:.0f}% below your target of \u20ac{target_price:.2f})"
         )
 
@@ -233,7 +261,7 @@ async def _check_watchlist_snipes(conn) -> int:
             # app/alerts.tsx reads `listing_source` for the button label and
             # falls back to the literal word "Marketplace". Only `provider` was
             # ever written, so every snipe alert said "View on Marketplace".
-            "listing_source": provider,
+            "listing_source": _provider_label(provider),
         })
 
         item_key = f"watchlist_snipe:{row['watchlist_id']}"
@@ -277,7 +305,11 @@ async def _check_watchlist_snipes(conn) -> int:
                 },
             )
         except Exception as push_err:
-            logger.debug("Watchlist snipe push failed: %s", push_err)
+            # WARNING, not debug: debug never reaches bake.log, so a Target Hit
+            # (the paid feature) whose notification failed left no trace. The
+            # alert row above is already written, so the in-app card still
+            # shows — this is the push half only.
+            logger.warning("Watchlist snipe push failed for user=%s: %s", user_id[:8], push_err)
 
         user_counts[user_id] = user_counts.get(user_id, 0) + 1
         notified += 1
@@ -401,9 +433,12 @@ async def run_once():
         except Exception as wl_exc:
             logger.warning("[deal_discovery] Watchlist snipe check failed: %s", wl_exc)
 
+        # Found vs pushed, not one number under the other's name: this printed
+        # the PUSH count as "mandate deals", so 6 deals with no push token read
+        # "0 mandate deals" one line after "6 new deals" (2026-09-24).
         logger.info(
-            "Deal discovery cycle total: %d mandate deals, %d watchlist snipes",
-            notified, watchlist_notified,
+            "Deal discovery cycle total: %d mandate deals found (%d pushed), %d watchlist snipes",
+            len(new_deals), notified, watchlist_notified,
         )
 
     except Exception:

@@ -11,6 +11,8 @@ import { AppState, type AppStateStatus } from 'react-native';
 import * as Linking from 'expo-linking';
 import { router, type Href } from 'expo-router';
 import { Session, User } from '@supabase/supabase-js';
+import { bindCacheOwner } from '@/data/offlineCache';
+import { clearProfileCache } from '@/data/providers/userProvider';
 import { supabase } from '@/lib/supabase';
 import { captureReferralFromUrl } from '@/lib/referral';
 import { logger } from '@/lib/logger';
@@ -268,6 +270,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) throw error;
         if (!active) return;
 
+        // Before loading ends, so no screen's first read can see another
+        // member's cached rows (offlineCache.bindCacheOwner). Local SQLite, not
+        // an auth call — none of the refresh-token hazards below apply.
+        if (await bindCacheOwner(data.session?.user?.id ?? null)) clearProfileCache();
+        if (!active) return;
+
         setSession(data.session ?? null);
         setUser(data.session?.user ?? null);
         if (Sentry?.setUser) {
@@ -300,6 +308,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!active) return;
+      // DIAG (2026-09-24). Kept: which auth events fire, and when, is what
+      // separated the real cause (src/hooks/useAuth's async listener holding
+      // the lock) from a refresh loop. One line per event, into Settings →
+      // Diagnostics (logger ring, not Sentry).
+      logger.error(`[DIAG auth] onAuthStateChange ${_event} session=${newSession ? 'yes' : 'no'} exp=${newSession?.expires_at ?? '-'}`);
+      // Started synchronously, before setUser re-renders anything: every cache
+      // read waits for this binding. Not awaited — this callback runs inside
+      // GoTrue's lock (see below), and the bind touches only local SQLite.
+      void bindCacheOwner(newSession?.user?.id ?? null).then((wiped) => {
+        if (wiped) clearProfileCache();
+      });
       setSession(newSession);
       setUser(newSession?.user ?? null);
       if (Sentry?.setUser) {

@@ -45,7 +45,7 @@ import { collectorsApi } from "@/api/collectorsApi";
 import { enrichOnDemand } from "@/api/marketplaceApi";
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import logger from "@/utils/logger";
-import { formatPrice, getCurrencySymbol, isUnpriced, parseMoney, UNPRICED_LABEL, formatPercent } from "@/lib/format";
+import { formatPrice, getCurrencySymbol, isUnpriced, parseMoney, UNPRICED_LABEL, formatPercent, moneyInputValue } from '@/lib/format';
 import { computeItemDelta } from '@/lib/portfolioAnalytics';
 import { ValueSourceChip } from "@/components/ValueSourceChip";
 import type { CurrencyCode } from "@/data/types";
@@ -386,7 +386,7 @@ function ItemDetailScreen() {
   // number under the member's symbol, and the typed number was filed as EUR.
   const toMemberNumber = useCallback(
     (eur: number | null | undefined): string =>
-      eur == null || !Number.isFinite(eur) ? '' : String(Math.round(convertEUR(eur, settings) * 100) / 100),
+      eur == null || !Number.isFinite(eur) ? '' : moneyInputValue(convertEUR(eur, settings)),
     [settings],
   );
 
@@ -1201,7 +1201,7 @@ function ItemDetailScreen() {
                     itemName: editableName,
                     itemCategory: editableCategory === 'Not set' ? '' : editableCategory,
                     itemImage: imageUri ?? '',
-                    itemValue: numeric > 0 ? String(Math.round(numeric * 100) / 100) : '',
+                    itemValue: numeric > 0 ? moneyInputValue(numeric) : '',
                     itemCondition: editableCondition === 'Not set' ? '' : editableCondition,
                   },
                 });
