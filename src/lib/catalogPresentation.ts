@@ -142,7 +142,13 @@ export function cleanCatalogItem(input: {
 
   const platform = platformLabel(brandRaw) ?? platformLabel(setRaw);
   const brand = platformLabel(brandRaw) ? null : brandRaw;
-  const setCode = platformLabel(setRaw) || isNoise(setRaw) ? null : setRaw;
+  // The set is dropped when it is only the brand again, as a slug or in any
+  // case: "pokemon-tcg" beside "Pokemon TCG", "wotc" beside "WOTC". Both
+  // showed as chips and as Brand/Set rows on the catalogue page (2026-09-25).
+  const key = (v: string | null) => (v ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const setCode = platformLabel(setRaw) || isNoise(setRaw) || (!!setRaw && !!brandRaw && key(setRaw) === key(brandRaw))
+    ? null
+    : setRaw;
   // Drop pure noise everywhere; drop "Common" only for video games (it's a real
   // TCG rarity), so Pokémon/MTG commons keep their tier.
   const rarityUp = rarityRaw?.toUpperCase();

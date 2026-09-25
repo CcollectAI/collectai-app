@@ -65,3 +65,14 @@ describe('cleanCatalogItem', () => {
     expect(cleanCatalogTitle('Metroid Prime')).toBe('Metroid Prime');
   });
 });
+
+describe('set that only restates the brand (2026-09-25)', () => {
+  it('drops "pokemon-tcg" beside "Pokemon TCG" from tags and details', () => {
+    const c = cleanCatalogItem({ title: '151 Charizard ex SAR #185', brand: 'Pokemon TCG', setCode: 'pokemon-tcg' });
+    expect(c.setCode).toBeNull();
+    expect(c.tags).toEqual(['Pokemon TCG']);
+  });
+  it('keeps a real set code', () => {
+    expect(cleanCatalogItem({ title: 'x', brand: 'Pokemon TCG', setCode: 'svp' }).setCode).toBe('svp');
+  });
+});

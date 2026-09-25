@@ -316,27 +316,37 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
               which made both unreadable. Anchored to the dot it also answers the
               question the user is actually asking while scrubbing: "what was it
               worth HERE?" Clamped so it never leaves the canvas at either end. */}
-          {showValueHeader && (
+          {showValueHeader && (() => {
+            // When the box is clamped at an edge, the TEXT goes to the dot's
+            // side too. Centred in a clamped box, the value at the latest
+            // point (the default position) floated well left of its dot
+            // (walked 2026-09-25).
+            const rawLeft = hoverX - VALUE_LABEL_W / 2;
+            const left = Math.min(Math.max(rawLeft, 0), Math.max(width - VALUE_LABEL_W, 0));
+            const edge = left < rawLeft ? 'right' : left > rawLeft ? 'left' : 'center';
+            return (
             <View
               pointerEvents="none"
               style={[
                 styles.floatingValue,
                 {
-                  left: Math.min(Math.max(hoverX - VALUE_LABEL_W / 2, 0), Math.max(width - VALUE_LABEL_W, 0)),
+                  left,
                   top: Math.min(Math.max(hoverY - 30, 0), height - 20),
                   width: VALUE_LABEL_W,
                   backgroundColor: dotFillColor,
+                  alignItems: edge === 'right' ? 'flex-end' : edge === 'left' ? 'flex-start' : 'center',
                 },
               ]}
             >
               <Text
                 numberOfLines={1}
-                style={[styles.valueText, { color: textColor }]}
+                style={[styles.valueText, { color: textColor, textAlign: edge }]}
               >
                 {formatPrice(currentPoint.v)}
               </Text>
             </View>
-          )}
+            );
+          })()}
 
           {showAxisLabels && (
             <View pointerEvents="none" style={styles.xLabels}>
