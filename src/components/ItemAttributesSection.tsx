@@ -134,7 +134,9 @@ const KNOWN_LABELS: Record<string, string> = {
  * that prompt without this blocklist means the answer becomes a visible row on
  * the item it was answered about.
  */
-const INTERNAL_KEYS = new Set(['value_choice', 'intake_timestamp', 'source']);
+// value_entry and scan are provenance the app writes (who set the value; the
+// QuickScan price band) — shown as "Value Entry: user" until 2026-09-25.
+const INTERNAL_KEYS = new Set(['value_choice', 'intake_timestamp', 'source', 'value_entry', 'scan']);
 
 function formatLabel(key: string, catLabels?: Record<string, string>): string {
   if (catLabels?.[key]) return catLabels[key];

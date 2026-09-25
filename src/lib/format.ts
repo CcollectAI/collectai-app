@@ -221,14 +221,14 @@ export function fmtCurrencyCompact(
  * @param currency - ISO currency code (default EUR)
  * @param locale  - explicit locale override (auto-detected from currency if omitted)
  */
-export function formatPrice(amount: number | null | undefined, currency: Currency = 'EUR', locale?: NumberLocale): string {
+export function formatPrice(amount: number | null | undefined, currency: Currency = 'EUR', locale?: NumberLocale, opts?: MoneyOpts): string {
   if (amount == null || !Number.isFinite(amount)) return '—';
   // Explicit argument wins, then the UI language, then the currency's own
   // fallback. The middle step is what makes the 148 call sites that pass no
   // locale render in the language the user is actually reading.
   const loc = locale ?? _activeNumberLocale ?? CURRENCY_LOCALE[currency] ?? 'en-US';
   try {
-    return money(amount, currency, loc);
+    return money(amount, currency, loc, opts);
   } catch (e) {
     logger.error('[silent-catch] format.ts:86:', e);
     // Fallback also leads with the symbol, so a formatter failure does not

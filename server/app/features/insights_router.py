@@ -128,7 +128,9 @@ async def get_personalized_insights(
                     COUNT(*)::float AS cnt,
                     SUM(COUNT(*)) OVER ()::float AS total
                 FROM items
-                WHERE user_id = $1
+                -- NOT archived: an archived or sold card is not exposure
+                -- (same rule as the portfolio total and breakdown, 2026-09-25).
+                WHERE user_id = $1 AND NOT archived
                 GROUP BY COALESCE(NULLIF(category, ''), 'uncategorized')
                 ORDER BY cnt DESC
                 """,

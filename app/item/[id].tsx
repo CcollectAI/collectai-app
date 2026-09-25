@@ -1434,11 +1434,13 @@ function ItemDetailScreen() {
                 return (
                   <Text style={[styles.valuationDelta, { color: tone }]}>
                     {/* currency-ok: both legs converted above, so this is already in settings.currency */}
-                    {sign}{formatPrice(Math.abs(delta.pl), settings.currency)}
+                    {/* cents: the member typed "12,50 paid" and read "€13" (2026-09-25) — a
+                        figure they entered is settled, like realised P/L. */}
+                    {sign}{formatPrice(Math.abs(delta.pl), settings.currency, undefined, { cents: true })}
                     {' ('}{sign}{formatPercent(Math.abs(delta.pct))}{') '}
                     <Text style={{ color: theme.muted }}>
                       {/* currency-ok: paidInMemberCurrency is converted above */}
-                      on {formatPrice(paidInMemberCurrency ?? null, settings.currency)} paid
+                      on {formatPrice(paidInMemberCurrency ?? null, settings.currency, undefined, { cents: true })} paid
                     </Text>
                   </Text>
                 );

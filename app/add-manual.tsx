@@ -48,6 +48,7 @@ import {
 import { CATEGORY_NAME_TO_SLUG } from '@/constants/categories';
 import { CUSTOM_CATEGORY_SENTINEL } from '@/components/add-manual/CategoryPickerModal';
 import { getCategoryFields } from '@/constants/categoryFields';
+import { setAttrs } from '@/lib/itemSetAttrs';
 import { dmyToIso } from '@/lib/eventDate';
 import { getCurrencySymbol, parseMoney } from '@/lib/format';
 import { withTimeout, TimeoutError } from '@/lib/withTimeout';
@@ -225,6 +226,7 @@ const ManualAddScreen: React.FC = () => {
     return CATEGORY_NAME_TO_SLUG[category] ?? '';
   }, [category, isCustomCategory, customCategoryText]);
   const categoryFields = useMemo(() => getCategoryFields(categorySlug), [categorySlug]);
+  const categoryHasSetField = categoryFields.some((f) => f.key === 'set' || f.key === 'series');
 
   // Catalog auto-fill: when the user has typed a title + chosen a category
   // and we get a strong (>=0.75) catalog match, populate empty
@@ -372,7 +374,7 @@ const ManualAddScreen: React.FC = () => {
       // reads `purchase_date` (items_export_router.py:198). Write both halves
       // of each pair.
       // Merge category-specific attrs with user-defined custom fields
-      const mergedAttrs: Record<string, unknown> = { ...attrs };
+      const mergedAttrs: Record<string, unknown> = { ...setAttrs(attrs, gameOrSeries) };
       for (const cf of customFields) {
         const k = cf.key.trim();
         const v = cf.value.trim();
@@ -644,6 +646,7 @@ const ManualAddScreen: React.FC = () => {
               onCustomCategoryTextChange={setCustomCategoryText}
               gameOrSeries={gameOrSeries}
               onGameOrSeriesChange={setGameOrSeries}
+              showSetSeries={!categoryHasSetField}
               categoryPickerOpen={categoryPickerOpen}
               onOpenCategoryPicker={() => setCategoryPickerOpen(true)}
               onCloseCategoryPicker={() => setCategoryPickerOpen(false)}
@@ -717,6 +720,7 @@ const styles = StyleSheet.create({
   // section, sectionHeader, sectionTitle, card, fieldBlock, fieldLabel, inputWrap, inputIcon, input, fieldError, dropdownTrigger, dropdownText moved to AddManualBasicInfoSection
   // submitButton, submitButtonText, footerHint, footerHintText moved to AddManualSubmitSection
 });
+
 
 export default function ManualAddScreenWithBoundary() {
   return (

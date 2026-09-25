@@ -25,6 +25,8 @@ interface AddManualBasicInfoSectionProps {
   onCustomCategoryTextChange: (text: string) => void;
   gameOrSeries: string;
   onGameOrSeriesChange: (text: string) => void;
+  /** False when the category has its own Set/Series field — one field, not two. */
+  showSetSeries?: boolean;
   categoryPickerOpen: boolean;
   onOpenCategoryPicker: () => void;
   onCloseCategoryPicker: () => void;
@@ -40,6 +42,7 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
   onCustomCategoryTextChange,
   gameOrSeries,
   onGameOrSeriesChange,
+  showSetSeries = true,
   categoryPickerOpen,
   onOpenCategoryPicker,
   onCloseCategoryPicker,
@@ -132,7 +135,10 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
           onSuggestNew={onSuggestNew}
         />
 
-        {/* Game / Series */}
+        {/* Game / Series. Hidden when the category's own fields carry a Set or
+            Series (2026-09-25): Pokémon showed "Set / Series" AND "Set", and
+            this one was never saved at all. */}
+        {showSetSeries ? (
         <View style={styles.fieldBlock}>
           <Text style={[styles.fieldLabel, { color: colors.text }]}>{t('add_manual_basic.set_series')}</Text>
           <View style={[styles.inputWrap, { borderColor: colors.border, backgroundColor: colors.background }]}>
@@ -148,6 +154,7 @@ export const AddManualBasicInfoSection = React.memo(function AddManualBasicInfoS
             />
           </View>
         </View>
+        ) : null}
       </View>
     </View>
   );

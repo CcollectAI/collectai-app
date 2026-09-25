@@ -170,7 +170,7 @@ async def get_collection_trends(
                             -- USD 100 and a EUR 100 each contributed 100.
                             SUM(i.purchase_price_eur) AS day_cost
                         FROM items i
-                        WHERE i.user_id = $1 AND NOT i.archived
+                        WHERE i.user_id = $1
                           AND i.purchase_price_eur IS NOT NULL
                           AND COALESCE(i.purchased_at, i.created_at) >= $2
                         GROUP BY 1
@@ -379,7 +379,12 @@ async def get_portfolio_category_breakdown(
                 LEFT JOIN LATERAL public.item_value_v1(i) iv ON TRUE
                 LEFT JOIN latest_qp lq ON lq.item_id = i.id
                 LEFT JOIN earliest_qp eq ON eq.item_id = i.id
-                WHERE i.user_id = $1
+                WHERE i.user_id = $1 AND NOT i.archived
+                  -- `NOT i.archived` was added 2026-08-09 (69cbdc6e) and LOST in
+                  -- the Stage 2 rewrite of this query, while the note below kept
+                  -- claiming it. Home's "Portfolio" stat and bars counted an
+                  -- archived card, €35 above Collection Value on the same
+                  -- screen (walked 2026-09-25).
                   -- `AND i.category IS NOT NULL` USED TO BE HERE. It silently
                   -- dropped every item saved without a category — and Category
                   -- is OPTIONAL on the Add-Manually form, so this is a normal
