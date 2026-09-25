@@ -61,11 +61,20 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
 
   const handleAddRecipe = () => {
     if (!newRecipeName.trim()) return;
+    // A paint typed into the row but not yet "added" is kept, not dropped:
+    // Save used to discard it, so "Citadel / Leadbelcher" + Save stored a
+    // recipe with no paints (walked 2026-09-26).
+    const pending = newPaintBrand.trim() || newPaintColor.trim()
+      ? [{ brand: newPaintBrand.trim(), color: newPaintColor.trim(), type: newPaintType }]
+      : [];
     const recipe: PaintRecipe = {
       name: newRecipeName.trim(),
-      paints: newRecipePaints,
+      paints: [...newRecipePaints, ...pending],
       notes: newRecipeNotes.trim(),
     };
+    setNewPaintBrand("");
+    setNewPaintColor("");
+    setNewPaintType("base");
     onSaveRecipes([...paintRecipes, recipe]);
     setNewRecipeName("");
     setNewRecipePaints([]);
@@ -93,18 +102,21 @@ export const PaintRecipesCard = React.memo(function PaintRecipesCard({
     setNewRecipeName("");
     setNewRecipePaints([]);
     setNewRecipeNotes("");
+    setNewPaintBrand("");
+    setNewPaintColor("");
+    setNewPaintType("base");
   };
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.cardHeader}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>{t('projects.paint_recipes')}</Text>
-        <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{paintRecipes.length} recipes</Text>
+        <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{t(paintRecipes.length === 1 ? 'projects.paint_projects_count_one' : 'projects.paint_projects_count_many', { count: paintRecipes.length })}</Text>
       </View>
 
       {paintRecipes.length === 0 && !addingRecipe ? (
         <Text style={[styles.emptyText, { color: colors.muted }]}>
-          {t('projects.no_paint_recipes', { defaultValue: 'No paint recipes yet. Add your paint lists and technique notes.' })}
+          {t('projects.no_paint_recipes', { defaultValue: 'No paint projects yet. Add your paint lists and technique notes.' })}
         </Text>
       ) : (
         <View style={styles.recipesList}>

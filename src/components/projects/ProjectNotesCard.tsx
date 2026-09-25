@@ -51,7 +51,7 @@ export const ProjectNotesCard = React.memo(function ProjectNotesCard({
     <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.cardHeader}>
         <Text style={[styles.cardTitle, { color: colors.text }]}>{t('projects.progress_notes', { defaultValue: 'Progress Notes' })}</Text>
-        <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{notes.length} entries</Text>
+        <Text style={[styles.cardSubtitle, { color: colors.muted }]}>{t(notes.length === 1 ? 'projects.notes_count_one' : 'projects.notes_count_many', { count: notes.length })}</Text>
       </View>
 
       {notes.length === 0 ? (

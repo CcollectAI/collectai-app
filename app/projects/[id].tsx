@@ -237,9 +237,9 @@ function ProjectDetailScreen() {
       try {
         await dataProvider.updateBuildPaintProject(project.id, { paintRecipes: recipes });
         setPaintRecipes(recipes);
-        showToast({ message: "Paint recipes saved", type: "success" });
+        showToast({ message: "Paint project saved", type: "success" });
       } catch (err: unknown) {
-        showToast({ message: userErrorMessage(err, "Failed to save recipes", "Projects"), type: "error" });
+        showToast({ message: userErrorMessage(err, "Could not save the paint project", "Projects"), type: "error" });
       } finally {
         setSavingRecipes(false);
       }
