@@ -128,6 +128,31 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
     }
   };
 
+  // The report is fetched WITH the token and shared as a file. It was opened
+  // in the browser, which has no session: every member got a 401 page
+  // (walked 2026-09-25). The member prints or saves it to PDF from there.
+  const [exportingInsurance, setExportingInsurance] = useState(false);
+  const handleExportInsuranceReport = async () => {
+    if (exportingInsurance) return;
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    setExportingInsurance(true);
+    try {
+      const html = await collectorsApi.downloadInsuranceReportHtml(settings.currency);
+      if (!FileSystem.documentDirectory) throw new Error('No document directory');
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filePath = `${FileSystem.documentDirectory}Sparrow_Collect_Insurance_Report_${dateStr}.html`;
+      await FileSystem.writeAsStringAsync(filePath, html);
+      if (Platform.OS !== 'web' && (await Sharing.isAvailableAsync())) {
+        await Sharing.shareAsync(filePath, { mimeType: 'text/html', UTI: 'public.html' });
+      }
+    } catch (e) {
+      logger.error('[Settings] insurance report export failed:', e);
+      showToast({ message: userErrorMessage(e, t('account.export_failed', { defaultValue: 'Could not create the report. Try again.' }), 'InsuranceReport'), type: 'error' });
+    } finally {
+      setExportingInsurance(false);
+    }
+  };
+
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -445,12 +470,10 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
 
         <AnimatedPressable
           style={styles.settingRow}
-          onPress={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            const url = collectorsApi.getInsuranceReportUrl('html', settings.currency);
-            Linking.openURL(url);
-          }}
-          accessibilityRole="link"
+          onPress={handleExportInsuranceReport}
+          disabled={exportingInsurance}
+          accessibilityState={{ busy: exportingInsurance }}
+          accessibilityRole="button"
           accessibilityLabel={t('account.export_insurance_a11y')}
         >
           <View style={styles.settingInfo}>

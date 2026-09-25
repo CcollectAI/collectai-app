@@ -1094,7 +1094,8 @@
     "blocked_empty": "Geen geblokkeerde gebruikers",
     "blocked_empty_hint": "Je hebt nog niemand geblokkeerd. Geblokkeerde gebruikers kunnen je geen berichten sturen.",
     "export_description": "Volledig overzicht met 30 kolommen — elk detail van elk item, in jouw valuta. Voor verzekering, boekhouder of een compleet collectiearchief.",
-    "delete_warning": "Hiermee verwijder je je account en al je gegevens definitief. Dit kan niet ongedaan worden gemaakt."
+    "delete_warning": "Hiermee verwijder je je account en al je gegevens definitief. Dit kan niet ongedaan worden gemaakt.",
+    "export_failed": "Het rapport kon niet worden gemaakt. Probeer het opnieuw."
   },
   "billing": {
     "free": "Gratis",

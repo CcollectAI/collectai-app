@@ -1094,7 +1094,8 @@
     "blocked_empty": "No hay usuarios bloqueados",
     "blocked_empty_hint": "No has bloqueado a nadie. Los usuarios bloqueados no pueden enviarte mensajes.",
     "export_description": "Instantánea completa de 30 columnas: cada detalle de cada artículo, en tu moneda. Para seguros, contabilidad o un archivo completo de la colección.",
-    "delete_warning": "Esto eliminará permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer."
+    "delete_warning": "Esto eliminará permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer.",
+    "export_failed": "No se pudo crear el informe. Inténtalo de nuevo."
   },
   "billing": {
     "free": "Gratis",

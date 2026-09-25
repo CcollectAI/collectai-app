@@ -1094,7 +1094,8 @@
     "blocked_empty": "Aucun utilisateur bloqué",
     "blocked_empty_hint": "Vous n’avez bloqué personne. Les utilisateurs bloqués ne peuvent pas vous envoyer de messages.",
     "export_description": "Instantané complet de 30 colonnes — chaque détail de chaque objet, dans votre devise. Pour l'assurance, la comptabilité ou un archivage complet.",
-    "delete_warning": "Cela supprimera définitivement votre compte et toutes vos données. Cette action est irréversible."
+    "delete_warning": "Cela supprimera définitivement votre compte et toutes vos données. Cette action est irréversible.",
+    "export_failed": "Impossible de créer le rapport. Réessayez."
   },
   "billing": {
     "free": "Gratuit",

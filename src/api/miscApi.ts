@@ -2,7 +2,7 @@
  * Miscellaneous API methods: barcode, geo, FX, feedback, build-paint, task queue,
  * watchlist, insights, export, account, billing, activity, search, quickscan feedback.
  */
-import { get, post, del, patch, postMultipart, LONG_REQUEST_TIMEOUT_MS } from "./httpClient";
+import { get, post, del, patch, postMultipart, LONG_REQUEST_TIMEOUT_MS, getAuthHeaders, fetchWithTimeout, parseErrorResponse } from "./httpClient";
 import { API_BASE } from "./httpClient";
 import type { CurrencyCode } from "@/data/types";
 import type { BillingStatus, IntakeResultResponse, NotificationHistoryResponse } from "./types";
@@ -86,6 +86,19 @@ export const getInsuranceReportUrl = (format: 'html' | 'json' = 'html', currency
   if (currency) params.set('currency', currency);
   return `${API_BASE}/export/insurance-report?${params.toString()}`;
 };
+
+/**
+ * The insurance report's HTML, fetched WITH the member's token (2026-09-25).
+ * Settings used to hand `getInsuranceReportUrl()` to Linking.openURL: the
+ * browser has no session, so every member got {"detail":"Authentication
+ * required"} instead of a report. Callers save this to a file and share it.
+ */
+export async function downloadInsuranceReportHtml(currency?: string): Promise<string> {
+  const url = getInsuranceReportUrl('html', currency);
+  const res = await fetchWithTimeout(url, { headers: { ...(await getAuthHeaders()), Accept: 'text/html' } }, LONG_REQUEST_TIMEOUT_MS);
+  if (!res.ok) throw await parseErrorResponse('GET', '/export/insurance-report', res);
+  return res.text();
+}
 
 // Build & Paint Step Templates
 export const getStepTemplates = (categoryId?: string) =>

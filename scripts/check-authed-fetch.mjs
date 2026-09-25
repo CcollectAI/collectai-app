@@ -94,6 +94,42 @@ for (const file of ROOTS.flatMap((d) => walk(d))) {
   });
 }
 
+// ── Rule 2: our API handed to the BROWSER (2026-09-25) ──────────────────────
+// Settings opened `getInsuranceReportUrl()` with Linking.openURL. A browser has
+// no session, so "Export Insurance Report" showed every member a 401 page. The
+// rule above only saw `fetch(`${API_BASE}…`)`. Here: every src/api builder that
+// returns a `${API_BASE}` URL, and any file that passes one to Linking.openURL /
+// WebBrowser.openBrowserAsync within WINDOW lines. Public paths stay allowed.
+const builders = new Map(); // name -> path
+for (const file of walk(join(ROOT, 'src', 'api'))) {
+  const src = readFileSync(file, 'utf8');
+  // One chunk per export. A single lazy regex from `export` to `${API_BASE}`
+  // started at the FIRST export and ran past the real builder, which the
+  // first version of this rule therefore never saw (mutation-proven).
+  const starts = [...src.matchAll(/export\s+(?:async\s+)?(?:const|function)\s+(\w+)/g)];
+  starts.forEach((m, k) => {
+    const chunk = src.slice(m.index, k + 1 < starts.length ? starts[k + 1].index : src.length);
+    const url = chunk.match(/\$\{API_BASE\}([^`]*)`/);
+    if (!url) return;
+    if (/\bfetch(?:WithTimeout|WithRetry)?\(/.test(chunk)) return; // a request, covered by rule 1
+    builders.set(m[1], url[1]);
+  });
+}
+for (const file of ROOTS.flatMap((d) => walk(d))) {
+  const rel = relative(ROOT, file);
+  if (rel.includes('__tests__') || rel.startsWith('src/api/')) continue;
+  const lines = readFileSync(file, 'utf8').split('\n');
+  lines.forEach((line, i) => {
+    if (!/\b(?:Linking\.openURL|openBrowserAsync)\s*\(/.test(line)) return;
+    const before = lines.slice(Math.max(0, i - WINDOW), i + 1).join('\n');
+    for (const [name, path] of builders) {
+      if (!new RegExp(`\\b${name}\\s*\\(`).test(before)) continue;
+      if ([...PUBLIC_PATHS.keys()].some((p) => path.startsWith(p))) continue;
+      findings.push({ at: `${rel}:${i + 1}`, path: `${path || '(dynamic)'} via ${name}() opened in the browser`, line: line.trim() });
+    }
+  });
+}
+
 if (findings.length === 0) {
   console.log('[authed-fetch] PASS — every direct call to our API attaches a bearer ' +
               `(or is one of ${PUBLIC_PATHS.size} documented public path(s)).`);

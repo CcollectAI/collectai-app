@@ -281,6 +281,7 @@ export const collectorsApi = {
 
   // Insurance Valuation Export
   getInsuranceReportUrl: miscApi.getInsuranceReportUrl,
+  downloadInsuranceReportHtml: miscApi.downloadInsuranceReportHtml,
 
   // Social
   searchUsers: socialApi.searchUsers,

@@ -1094,7 +1094,8 @@
     "blocked_empty": "No blocked users",
     "blocked_empty_hint": "You haven't blocked anyone. Blocked users can't send you messages.",
     "export_description": "Comprehensive 30-column snapshot — every detail of every item, in your currency. For insurance, accountants, or full collection records.",
-    "delete_warning": "This will permanently delete your account and all your data. This action cannot be undone."
+    "delete_warning": "This will permanently delete your account and all your data. This action cannot be undone.",
+    "export_failed": "Could not create the report. Try again."
   },
   "billing": {
     "free": "Free",

@@ -1094,7 +1094,8 @@
     "blocked_empty": "Keine blockierten Nutzer",
     "blocked_empty_hint": "Du hast niemanden blockiert. Blockierte Nutzer können dir keine Nachrichten senden.",
     "export_description": "Umfassende Übersicht mit 30 Spalten — jedes Detail jedes Objekts, in deiner Währung. Für Versicherung, Buchhaltung oder ein vollständiges Sammlungsarchiv.",
-    "delete_warning": "Damit werden dein Konto und alle deine Daten endgültig gelöscht. Das lässt sich nicht rückgängig machen."
+    "delete_warning": "Damit werden dein Konto und alle deine Daten endgültig gelöscht. Das lässt sich nicht rückgängig machen.",
+    "export_failed": "Der Bericht konnte nicht erstellt werden. Versuche es erneut."
   },
   "billing": {
     "free": "Kostenlos",
