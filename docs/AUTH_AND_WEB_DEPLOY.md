@@ -401,6 +401,26 @@ the rewrite bug that deploy exposed.
 
 ## MFA (TOTP) — `app/mfa-setup.tsx`
 
+**2FA was never asked for at sign-in (fixed 2026-09-25).** Enrolment worked
+and Settings said "Your account is protected", but a password sign-in gives an
+`aal1` session and the app went straight in; no code was ever requested.
+Now `src/auth/mfaGate.ts` (`owesSecondFactor`: next `aal2`, current not;
+tested) is checked in two places: login routes straight to
+`/(auth)/mfa-challenge` when a factor is owed (replacing to `/(tabs)` raced
+the gate and sometimes won), and the root gate in `app/_layout.tsx` sends any
+owing session there on every route change and cold start. It fails closed if
+the level can't be read. The screen verifies with `mfa.challengeAndVerify`;
+Sign Out returns to login (the gate now also redirects a signed-out user off
+that screen). Verified on Android: cold start → code screen; wrong code
+refused (422 `mfa_verification_failed`); right code → Portfolio; Sign Out →
+login.
+
+⚠️ **Still open — server-side enforcement.** The EC2 API and Supabase RLS
+accept an `aal1` token for a member with 2FA, so someone with the password can
+call the API directly without the code. Closing that means rejecting `aal1`
+for users with verified factors (`auth.py` + an RLS `auth.jwt()->>'aal'`
+check). It's a decision, not done here.
+
 **Android could not enrol (fixed 2026-09-24).** Supabase returns the QR as an
 SVG data URI (`data:image/svg+xml;utf-8,<svg…>`, added by auth-js), and React
 Native's `<Image>` does not draw SVG. On Android the box was empty, and there

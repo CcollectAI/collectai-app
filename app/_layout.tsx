@@ -27,6 +27,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { enableFreeze } from "react-native-screens";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { isRecoveryPending } from "@/auth/recoveryState";
+import { needsMfaChallenge } from "@/auth/mfaGate";
 import { DebugOverlay } from "@/components/DebugOverlay";
 import { ExternalTabBar } from "@/components/ExternalTabBar";
 import { pushDebugLog } from "@/lib/debugLog";
@@ -306,7 +307,11 @@ function useProtectedRoute() {
     if (!user) {
       setOnboardingComplete(false);
       setOnboardingChecked(true);
-      if (!inAuthGroup) router.replace('/(auth)/login');
+      // mfa-challenge is in (auth) but means nothing without a session: its
+      // Sign out left the member on a code screen for an account they had
+      // just left (walked 2026-09-25).
+      const onMfa = (segments as string[])[1] === 'mfa-challenge';
+      if (!inAuthGroup || onMfa) router.replace('/(auth)/login');
       return;
     }
 
@@ -319,19 +324,27 @@ function useProtectedRoute() {
       return;
     }
 
-    AsyncStorage.getItem(ONBOARDING_KEY)
-      .then((val) => {
-        const complete = val === 'true';
-        setOnboardingComplete(complete);
+    // 2FA before anything else (2026-09-24): a session that owes its second
+    // factor goes to the code screen, on sign-in and on every cold start —
+    // until then the app let an aal1 session straight in and 2FA protected
+    // nothing. Checked on every route change, so no deep link skips it.
+    const onMfaScreen = (segments as string[])[1] === 'mfa-challenge';
+    (async () => {
+      if (await needsMfaChallenge()) {
         setOnboardingChecked(true);
+        if (!onMfaScreen) router.replace('/(auth)/mfa-challenge' as Href);
+        return;
+      }
+      const complete = (await AsyncStorage.getItem(ONBOARDING_KEY)) === 'true';
+      setOnboardingComplete(complete);
+      setOnboardingChecked(true);
 
-        if (!complete && !onOnboardingScreen && !onResetScreen) {
-          router.replace('/(auth)/onboarding');
-        } else if (complete && inAuthGroup && !onResetScreen) {
-          router.replace('/(tabs)');
-        }
-      })
-      .catch(() => setOnboardingChecked(true));
+      if (!complete && !onOnboardingScreen && !onResetScreen) {
+        router.replace('/(auth)/onboarding');
+      } else if (complete && inAuthGroup && !onResetScreen) {
+        router.replace('/(tabs)');
+      }
+    })().catch(() => setOnboardingChecked(true));
   }, [loading, user, segPath]);
 
   return { loading, onboardingChecked, splashFade, splashHidden };

@@ -27,7 +27,7 @@ import {
 } from 'react-native';
 import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
@@ -49,6 +49,7 @@ import { AuthTextInput } from '@/components/auth/AuthTextInput';
 import { fonts } from '@/theme/tokens';
 import { SOCIAL_LOGIN_ENABLED } from '@/config/featureFlags';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { needsMfaChallenge } from '@/auth/mfaGate';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -187,7 +188,10 @@ function LoginScreen() {
       });
       if (error) throw error;
       track({ name: 'user_logged_in', properties: { method: 'email' } });
-      router.replace('/(tabs)');
+      // Straight to the 2FA step when one is owed. Replacing to /(tabs) raced
+      // the root gate's async check and sometimes won: a member with 2FA got
+      // in with the password alone (walked 2026-09-25).
+      router.replace((await needsMfaChallenge()) ? ('/(auth)/mfa-challenge' as Href) : '/(tabs)');
     } catch (e: unknown) {
       // An account that signed up but never confirmed: Supabase answers 400
       // `email_not_confirmed`. This was a toast reading "Email not confirmed"

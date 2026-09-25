@@ -1779,5 +1779,13 @@
     "price_drop_alert_watchers_one": "Wir benachrichtigen das Mitglied, das dies beobachtet, wenn dein neuer Preis sein Ziel erreicht — höchstens einmal am Tag.",
     "price_drop_alert_future": "Mitglieder, die diesen Artikel beobachten, werden benachrichtigt, wenn dein neuer Preis ihr Ziel erreicht — höchstens einmal am Tag pro Mitglied.",
     "price_drop_alert_watchers_many": "Wir benachrichtigen die {{count}} Mitglieder, die dies beobachten und deren Ziel dein neuer Preis erreicht — höchstens einmal am Tag pro Mitglied."
+  },
+  "mfa_challenge": {
+    "title": "Gib deinen 2FA-Code ein",
+    "body": "Öffne deine Authenticator-App und gib den 6-stelligen Code für Sparrow Collect ein.",
+    "code_label": "6-stelliger Code",
+    "verify": "Bestätigen",
+    "code_required": "Gib den 6-stelligen Code aus deiner Authenticator-App ein.",
+    "code_rejected": "Dieser Code hat nicht funktioniert. Prüfe deine Authenticator-App und versuche es erneut."
   }
 }

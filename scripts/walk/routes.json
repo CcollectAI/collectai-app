@@ -79,6 +79,11 @@
       "url": "sparrow://forgot-password"
     },
     {
+      "route": "(auth)/mfa-challenge",
+      "skip": "needs a session that owes its second factor (2FA enabled, signed in with password only)",
+      "url": "sparrow://mfa-challenge"
+    },
+    {
       "route": "(auth)/reset-password",
       "skip": "needs a recovery link",
       "url": "sparrow://reset-password"

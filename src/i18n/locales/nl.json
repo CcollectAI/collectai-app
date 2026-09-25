@@ -1779,5 +1779,13 @@
     "price_drop_alert_watchers_one": "We laten het lid dat dit volgt weten als je nieuwe prijs zijn doel haalt — hooguit één keer per dag.",
     "price_drop_alert_future": "Leden die dit item volgen krijgen een melding als je nieuwe prijs hun doel haalt — hooguit één keer per dag per lid.",
     "price_drop_alert_watchers_many": "We laten de {{count}} leden die dit volgen weten als je nieuwe prijs hun doel haalt — hooguit één keer per dag per lid."
+  },
+  "mfa_challenge": {
+    "title": "Voer je 2FA-code in",
+    "body": "Open je authenticator-app en voer de 6-cijferige code voor Sparrow Collect in.",
+    "code_label": "6-cijferige code",
+    "verify": "Bevestigen",
+    "code_required": "Voer de 6-cijferige code uit je authenticator-app in.",
+    "code_rejected": "Die code werkte niet. Controleer je authenticator-app en probeer het opnieuw."
   }
 }
