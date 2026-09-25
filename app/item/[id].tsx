@@ -1433,9 +1433,9 @@ function ItemDetailScreen() {
                 const sign = delta.pl > 0 ? '+' : delta.pl < 0 ? '-' : '';
                 return (
                   <Text style={[styles.valuationDelta, { color: tone }]}>
-                    {/* currency-ok: both legs converted above, so this is already in settings.currency */}
                     {/* cents: the member typed "12,50 paid" and read "€13" (2026-09-25) — a
                         figure they entered is settled, like realised P/L. */}
+                    {/* currency-ok: both legs converted above, so this is already in settings.currency */}
                     {sign}{formatPrice(Math.abs(delta.pl), settings.currency, undefined, { cents: true })}
                     {' ('}{sign}{formatPercent(Math.abs(delta.pct))}{') '}
                     <Text style={{ color: theme.muted }}>
