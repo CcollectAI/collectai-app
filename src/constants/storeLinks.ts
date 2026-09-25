@@ -8,9 +8,8 @@
  * ⚠️ THESE LISTINGS ARE NOT PUBLIC YET.
  * The App Store id is real (ascAppId 6767359453 in eas.json) but the app is on
  * TestFlight, not sale, and Play enrolment has not happened at all — so the
- * Android URL resolves to nothing today. Until both are live an invite link is
- * a dead link, which is why `WEBSITE_URL` is kept here: swap `inviteMessage()`
- * back to it if invites go out before launch.
+ * Android URL resolves to nothing today. Until both are live, invites use
+ * `WEBSITE_URL` (STORE_LISTINGS_LIVE below).
  */
 import { Platform } from 'react-native';
 
@@ -35,7 +34,14 @@ export function storeUrl(): string {
   return Platform.OS === 'android' ? PLAY_STORE_URL : APP_STORE_URL;
 }
 
+/**
+ * Whether the store listings are public. false until launch: both URLs above
+ * returned 404 on 2026-09-26, so every invite sent until now was a dead link.
+ * Flip to true once both listings resolve — check both URLs return 200 when you do.
+ */
+export const STORE_LISTINGS_LIVE = false;
+
 /** The one invite message, used by every "Invite friends" control. */
 export function inviteMessage(): string {
-  return `Track and value your collection with me on Sparrow Collect — ${storeUrl()}`;
+  return `Track and value your collection with me on Sparrow Collect — ${STORE_LISTINGS_LIVE ? storeUrl() : WEBSITE_URL}`;
 }

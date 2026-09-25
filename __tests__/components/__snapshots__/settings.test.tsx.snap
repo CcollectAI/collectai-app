@@ -2331,12 +2331,12 @@ exports[`ProfileEditSection matches snapshot 1`] = `
   />
   <View
     accessibilityLabel="Export insurance valuation report"
-    accessibilityRole="link"
+    accessibilityRole="button"
     accessibilityState={
       {
-        "busy": undefined,
+        "busy": false,
         "checked": undefined,
-        "disabled": undefined,
+        "disabled": false,
         "expanded": undefined,
         "selected": undefined,
       }
