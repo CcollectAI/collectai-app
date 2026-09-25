@@ -40,7 +40,7 @@ import { fmtCurrency } from '@/lib/format';
 import { useSettings } from '@/lib/settings';
 import { safeGoBack } from '@/lib/goBack';
 import { formatCategoryName } from '@/constants/categories';
-import { catalogIdentityLabel } from '@/lib/catalogIdentity';
+import { catalogIdentityWithBrand } from '@/lib/catalogIdentity';
 
 // Recent searches removed 2026-08-07. The AsyncStorage key
 // '@sparrowcollect/recent_searches' is deliberately cleared once on mount
@@ -104,10 +104,9 @@ const CatalogSearchResult = React.memo(function CatalogSearchResult({ item, colo
         <Text style={[resultStyles.resultTitle, { color: colors.text }]} numberOfLines={1}>{item.title}</Text>
         <Text style={[resultStyles.resultSubtitle, { color: colors.muted }]}>
           {[
-            catalogIdentityLabel(item.setCode, item.itemKey),
-            item.brand,
+            ...catalogIdentityWithBrand(item.setCode, item.itemKey, item.title, item.brand),
             formatCategoryName(item.category),
-          ].filter(Boolean).join(' · ')}
+          ].join(' · ')}
         </Text>
       </View>
       {/* Absent price is stated, never blank. A silent gap reads as a loading

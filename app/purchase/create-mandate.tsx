@@ -43,7 +43,7 @@ import { MARKETPLACE_BRAND_COLORS } from '@/constants/colors';
 import { safeGoBack } from '@/lib/goBack';
 import type { CatalogMatchHit } from '@/api/itemsApi';
 import { userErrorMessage } from '@/lib/userErrorMessage';
-import { catalogIdentityLabel } from '@/lib/catalogIdentity';
+import { catalogIdentityWithBrand } from '@/lib/catalogIdentity';
 import { marketplaceLabel } from '@/lib/marketplaceLabel';
 
 const CATEGORY_OPTIONS: SelectOption[] = [
@@ -390,7 +390,7 @@ function CreateMandateScreen() {
                     the mandate is valued against (CLASS_SWEEPS AH). */}
                 {h.brand || h.set_code ? (
                   <Text style={[styles.matchRowMeta, { color: colors.muted }]}>
-                    {[catalogIdentityLabel(h.set_code, h.item_key), h.brand].filter(Boolean).join(' · ')}
+                    {catalogIdentityWithBrand(h.set_code, h.item_key, h.title, h.brand).join(' · ')}
                   </Text>
                 ) : null}
               </AnimatedPressable>
