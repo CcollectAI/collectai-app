@@ -236,7 +236,11 @@ const ItemsScreen: React.FC = () => {
   const exportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshRef = useRef(paginatedRefresh);
   refreshRef.current = paginatedRefresh;
-  const stableReload = useCallback(() => { refreshRef.current(); }, []);
+  // The header total is reloaded WITH the rows: archiving a card left the
+  // "Portfolio value" still counting it (walked 2026-09-25). A ref, because
+  // the total's hook is declared further down.
+  const overviewRefetchRef = useRef<() => void>(() => {});
+  const stableReload = useCallback(() => { refreshRef.current(); overviewRefetchRef.current(); }, []);
 
   // Auto-refresh on tab focus so items saved from QuickScan / Add appear immediately
   // without the user having to pull-to-refresh.
@@ -265,6 +269,7 @@ const ItemsScreen: React.FC = () => {
   const handleSwipeArchive = useCallback(async (id: string) => {
     try {
       await optimisticArchive.mutate(id);
+      overviewRefetchRef.current(); // the header total drops the card too
       showToast({ message: 'Archived', type: 'success', duration: 2000 });
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
     } catch (err: unknown) {
@@ -285,6 +290,7 @@ const ItemsScreen: React.FC = () => {
           onPress: async () => {
             try {
               await optimisticDelete.mutate(id);
+              overviewRefetchRef.current(); // the header total drops the card too
               fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
             } catch (err: unknown) {
               showToast({ message: userErrorMessage(err, 'Failed to delete', 'Items'), type: 'error' });
@@ -425,6 +431,7 @@ const ItemsScreen: React.FC = () => {
             // Optimistic: removes items from list immediately, reverts on error
             try {
               await optimisticBulkArchive.mutate(ids);
+              overviewRefetchRef.current(); // the header total drops the card too
               fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
             } catch (err: unknown) {
               showToast({ message: userErrorMessage(err, 'Failed to archive items', 'Items'), type: 'error' });
@@ -455,6 +462,7 @@ const ItemsScreen: React.FC = () => {
             // Optimistic: removes items from list immediately, reverts on error
             try {
               await optimisticBulkDelete.mutate(ids);
+              overviewRefetchRef.current(); // the header total drops the card too
               fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
             } catch (err: unknown) {
               showToast({ message: userErrorMessage(err, 'Failed to delete items', 'Items'), type: 'error' });
@@ -661,6 +669,7 @@ const ItemsScreen: React.FC = () => {
   // (class sweep, 2026-09-16). `/portfolio/overview` is the same source Home
   // uses, so the two screens now answer with one number.
   const { data: overview, retry: refetchOverview } = useAsync(() => collectorsApi.getPortfolioOverview(), []);
+  overviewRefetchRef.current = refetchOverview;
   // Refetch on focus, like the rows above. A tab stays mounted, so a fetch on
   // mount alone kept the first total: after adding a card this read €1.288
   // while Home read €1.313 for the same collection (walked 2026-09-25).
@@ -802,50 +811,54 @@ const ItemsScreen: React.FC = () => {
     );
   }
 
+  const bulkToolbar = isMultiSelectMode ? (
+    <BulkActionsToolbar
+            theme={{ text: colors.text, muted: colors.muted, accent: colors.accent, border: colors.border, card: colors.card }}
+            selectedCount={selectedCount}
+            totalCount={providerItems.length}
+            isAllSelected={selectedCount === providerItems.length}
+            loading={bulkActionLoading || optimisticBulkArchive.isLoading || optimisticBulkDelete.isLoading}
+            disabled={bulkActionLoading || optimisticBulkArchive.isLoading || optimisticBulkDelete.isLoading}
+            onExit={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              exitMultiSelectMode();
+            }}
+            onSelectAll={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              selectAll();
+            }}
+            onDeselectAll={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              deselectAll();
+            }}
+            onChangeCategory={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              openCategoryModal();
+            }}
+            onExport={() => {
+              fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
+              handleBulkExport();
+            }}
+            onArchive={() => {
+              fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+              handleBulkArchive();
+            }}
+            onDelete={() => {
+              fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
+              handleBulkDelete();
+            }}
+          />
+  ) : null;
+
   // Shared header element for both gallery ScrollView and list SectionList
   const headerElement = (
     <Animated.View style={settings.animationsEnabled ? animatedStyle : undefined}>
       {/* Header row - switches between normal and multi-select mode */}
-      {isMultiSelectMode ? (
-        <BulkActionsToolbar
-          theme={{ text: colors.text, muted: colors.muted, accent: colors.accent, border: colors.border, card: colors.card }}
-          selectedCount={selectedCount}
-          totalCount={providerItems.length}
-          isAllSelected={selectedCount === providerItems.length}
-          loading={bulkActionLoading || optimisticBulkArchive.isLoading || optimisticBulkDelete.isLoading}
-          disabled={bulkActionLoading || optimisticBulkArchive.isLoading || optimisticBulkDelete.isLoading}
-          onExit={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            exitMultiSelectMode();
-          }}
-          onSelectAll={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            selectAll();
-          }}
-          onDeselectAll={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            deselectAll();
-          }}
-          onChangeCategory={() => {
-            fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-            openCategoryModal();
-          }}
-          onExport={() => {
-            fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-            handleBulkExport();
-          }}
-          onArchive={() => {
-            fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
-            handleBulkArchive();
-          }}
-          onDelete={() => {
-            fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
-            handleBulkDelete();
-          }}
-        />
-      ) : (
-        <ItemsGridHeader portfolioTotalLabel={totalLabel} />
-      )}
+      {/* Title row only. The select-mode toolbar is rendered ABOVE the list
+          (bulkToolbar), not here: this header scrolls, so selecting a card
+          further down left Archive/Delete off-screen with nothing visible
+          to act on (walked 2026-09-25). */}
+      {isMultiSelectMode ? null : <ItemsGridHeader portfolioTotalLabel={totalLabel} />}
 
       <ItemsListHeader
         theme={{ text: colors.text, muted: colors.muted, accent: colors.accent, border: colors.border, card: colors.card }}
@@ -965,6 +978,7 @@ const ItemsScreen: React.FC = () => {
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
       >
+      {bulkToolbar ? <View style={styles.bulkToolbarWrap}>{bulkToolbar}</View> : null}
       {viewMode === 'gallery' ? (
         <ScrollView
           style={styles.scroll}
@@ -1097,6 +1111,8 @@ const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
+  // Same gutter as `content`: the pinned toolbar sits outside the list.
+  bulkToolbarWrap: { paddingHorizontal: 16, paddingTop: 12 },
   content: {
     paddingHorizontal: 16,
     paddingTop: 12,
