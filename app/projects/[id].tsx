@@ -40,6 +40,7 @@ import { PaintRecipesCard } from "@/components/projects/PaintRecipesCard";
 import { safeGoBack } from '@/lib/goBack';
 import { useTranslation } from 'react-i18next';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { stepsProgressPercent } from '@/lib/projectProgress';
 
 const PAINT_CATEGORIES = ["warhammer", "gunpla", "scale_models"] as const;
 
@@ -185,6 +186,16 @@ function ProjectDetailScreen() {
       await dataProvider.toggleBuildPaintStep(stepId, !currentIsDone);
       const stepsData = await dataProvider.listBuildPaintSteps(projectId);
       setSteps(stepsData);
+      // Steps DRIVE progress when a project has them (2026-09-25): ticking 3
+      // of 12 left the bar, the list ("0% complete") and the status at zero,
+      // because only the manual +5/+10 buttons ever wrote a percentage.
+      if (project && stepsData.length > 0) {
+        const pct = stepsProgressPercent(stepsData);
+        const status = pct >= 100 ? "completed" : pct > 0 ? "active" : "backlog";
+        await dataProvider.setBuildPaintProgress(project.id, pct, status);
+        setPendingPercent(pct);
+        await loadProject();
+      }
     } catch (err: unknown) {
       showToast({ message: userErrorMessage(err, "Failed to toggle step", "Projects"), type: "error" });
     }
@@ -372,6 +383,7 @@ function ProjectDetailScreen() {
     </>
   );
 }
+
 
 export default function ProjectDetailScreenWithBoundary() {
   return (

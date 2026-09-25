@@ -9,6 +9,7 @@ import type {
   BuildPaintStep,
   BuildPaintNote,
   PaintRecipe,
+  PaintEntry,
   CreateBuildPaintProjectInput,
 } from '../types';
 import { supabase } from '../../lib/supabase';
@@ -79,12 +80,32 @@ export async function getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
   };
 }
 
+/** paint_recipes JSONB -> PaintRecipe[], MAPPED not cast: anything that is not
+ *  {name, paints[], notes} is dropped rather than handed to the screen. */
+export function toPaintRecipes(v: unknown): PaintRecipe[] {
+  if (!Array.isArray(v)) return [];
+  return v.flatMap((r): PaintRecipe[] => {
+    if (!r || typeof r !== 'object') return [];
+    const o = r as Record<string, unknown>;
+    if (typeof o.name !== 'string') return [];
+    const paints = Array.isArray(o.paints)
+      ? o.paints.flatMap((p): PaintEntry[] => {
+          if (!p || typeof p !== 'object') return [];
+          const q = p as Record<string, unknown>;
+          return [{ brand: String(q.brand ?? ''), color: String(q.color ?? ''), type: String(q.type ?? 'base') } as PaintEntry];
+        })
+      : [];
+    return [{ name: o.name, paints, notes: typeof o.notes === 'string' ? o.notes : '' }];
+  });
+}
+
 export async function listBuildPaintProjects(): Promise<BuildPaintProject[]> {
   // build_paint_projects real columns: name (no separate title), image_url
   // (no cover_image_url), last_updated (no updated_at), progress_pct (no
-  // percent_complete). paint_recipes never existed on the table — recipes
-  // live elsewhere if/when reintroduced.
-  const bpCols = 'id, name, category, category_id, item_id, status, progress_pct, image_url, notes, created_at, last_updated';
+  // percent_complete). paint_recipes EXISTS since 2026-09-26
+  // (20260926_build_paint_recipes.sql): it was in a repo migration that never
+  // reached prod, so saving failed (PGRST204) and this read hard-coded [].
+  const bpCols = 'id, name, category, category_id, item_id, status, progress_pct, image_url, notes, paint_recipes, created_at, last_updated';
   const { data, error } = await supabase
     .from('build_paint_projects')
     .select(bpCols)
@@ -116,7 +137,7 @@ export async function listBuildPaintProjects(): Promise<BuildPaintProject[]> {
     isCompleted: ['finished', 'completed', 'displayed'].includes(((row.status as string) || '').toLowerCase()),
     notes: row.notes as string | undefined,
     imageUrl: (row.image_url as string) ?? undefined,
-    paintRecipes: [],
+    paintRecipes: toPaintRecipes(row.paint_recipes),
     createdAt: (row.created_at as string) ?? new Date().toISOString(),
     updatedAt: (row.last_updated as string) ?? new Date().toISOString(),
   }));
