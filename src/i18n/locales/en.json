@@ -787,7 +787,11 @@
     "paint_projects_count_one": "{{count}} project",
     "paint_projects_count_many": "{{count}} projects",
     "notes_count_one": "{{count}} entry",
-    "notes_count_many": "{{count}} entries"
+    "notes_count_many": "{{count}} entries",
+    "delete_project": "Delete project",
+    "delete_project_title": "Delete this project?",
+    "delete_project_body": "“{{name}}”, its steps, notes and paint projects will be removed. This cannot be undone.",
+    "delete_project_failed": "Could not delete the project. Try again."
   },
   "watchlist": {
     "add_title": "Add to Watchlist",

@@ -136,6 +136,7 @@ export class MockDataProvider implements DataProvider {
   listBuildPaintProjectsByItem = buildPaintProvider.listBuildPaintProjectsByItem;
   applyStepTemplate = buildPaintProvider.applyStepTemplate;
   updateBuildPaintProject = buildPaintProvider.updateBuildPaintProject;
+  deleteBuildPaintProject = buildPaintProvider.deleteBuildPaintProject;
 
   // ─── Feedback ───────────────────────────────────────────────────────────────
   submitFeedback = feedbackProvider.submitFeedback;

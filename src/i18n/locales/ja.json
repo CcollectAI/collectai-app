@@ -787,7 +787,11 @@
     "paint_projects_count_one": "{{count}} 件",
     "paint_projects_count_many": "{{count}} 件",
     "notes_count_one": "{{count}} 件",
-    "notes_count_many": "{{count}} 件"
+    "notes_count_many": "{{count}} 件",
+    "delete_project": "プロジェクトを削除",
+    "delete_project_title": "このプロジェクトを削除しますか？",
+    "delete_project_body": "「{{name}}」とそのステップ、メモ、ペイントプロジェクトが削除されます。元に戻せません。",
+    "delete_project_failed": "プロジェクトを削除できませんでした。もう一度お試しください。"
   },
   "watchlist": {
     "add_title": "ウォッチリストに追加",

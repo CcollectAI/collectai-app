@@ -441,3 +441,30 @@ export async function updateBuildPaintProject(projectId: string, patch: { paintR
     throw new Error(error.message || 'Failed to update project');
   }
 }
+
+/**
+ * Delete a project and what hangs off it (2026-09-26). There was no delete
+ * path at all. Steps and notes have no ON DELETE CASCADE, so they go first,
+ * each under its own owner DELETE policy; the project last, under
+ * delete_own_build_projects (20260926_build_paint_project_delete.sql).
+ * supabase-js returns {error} rather than throwing, so each is checked.
+ */
+export async function deleteBuildPaintProject(projectId: string): Promise<void> {
+  for (const table of ['build_paint_steps', 'build_paint_notes'] as const) {
+    const { error } = await supabase.from(table).delete().eq('project_id', projectId);
+    if (error) {
+      logger.error(`[SupabaseDataProvider] deleteBuildPaintProject ${table} error:`, error);
+      throw new Error(error.message || 'Failed to delete project');
+    }
+  }
+  const { error, count } = await supabase
+    .from('build_paint_projects')
+    .delete({ count: 'exact' })
+    .eq('id', projectId);
+  if (error) {
+    logger.error('[SupabaseDataProvider] deleteBuildPaintProject error:', error);
+    throw new Error(error.message || 'Failed to delete project');
+  }
+  // RLS filters instead of refusing: 0 rows means it was not deleted.
+  if (count === 0) throw new Error('Project could not be deleted');
+}

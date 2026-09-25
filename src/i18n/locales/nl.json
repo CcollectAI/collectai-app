@@ -787,7 +787,11 @@
     "paint_projects_count_one": "{{count}} project",
     "paint_projects_count_many": "{{count}} projecten",
     "notes_count_one": "{{count}} notitie",
-    "notes_count_many": "{{count}} notities"
+    "notes_count_many": "{{count}} notities",
+    "delete_project": "Project verwijderen",
+    "delete_project_title": "Dit project verwijderen?",
+    "delete_project_body": "“{{name}}”, de stappen, notities en verfprojecten worden verwijderd. Dit kan niet ongedaan worden gemaakt.",
+    "delete_project_failed": "Het project kon niet worden verwijderd. Probeer het opnieuw."
   },
   "watchlist": {
     "add_title": "Toevoegen aan volglijst",

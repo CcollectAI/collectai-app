@@ -188,3 +188,7 @@ export async function updateBuildPaintProject(projectId: string, patch: { paintR
     (project as Record<string, unknown>).paintRecipes = patch.paintRecipes;
   }
 }
+
+export async function deleteBuildPaintProject(projectId: string): Promise<void> {
+  mockBuildPaintProjects.delete(projectId);
+}

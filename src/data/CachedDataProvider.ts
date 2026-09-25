@@ -529,6 +529,11 @@ export class CachedDataProvider implements DataProvider {
     await cacheClear(CK.BUILD_PAINT_PROJECTS);
   }
 
+  async deleteBuildPaintProject(projectId: string): Promise<void> {
+    await this.inner.deleteBuildPaintProject(projectId);
+    await cacheClear(CK.BUILD_PAINT_PROJECTS);
+  }
+
   // Feedback — pass through
   submitFeedback(
     itemId: string,

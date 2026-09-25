@@ -787,7 +787,11 @@
     "paint_projects_count_one": "{{count}} projet",
     "paint_projects_count_many": "{{count}} projets",
     "notes_count_one": "{{count}} note",
-    "notes_count_many": "{{count}} notes"
+    "notes_count_many": "{{count}} notes",
+    "delete_project": "Supprimer le projet",
+    "delete_project_title": "Supprimer ce projet ?",
+    "delete_project_body": "« {{name}} », ses étapes, notes et projets de peinture seront supprimés. Cette action est irréversible.",
+    "delete_project_failed": "Impossible de supprimer le projet. Réessayez."
   },
   "watchlist": {
     "add_title": "Ajouter à la liste de suivi",

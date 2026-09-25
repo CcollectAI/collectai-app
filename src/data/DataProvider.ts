@@ -404,6 +404,7 @@ export interface DataProvider {
    * Update build/paint project metadata (paint recipes, etc).
    */
   updateBuildPaintProject(projectId: string, patch: { paintRecipes?: unknown[] }): Promise<void>;
+  deleteBuildPaintProject(projectId: string): Promise<void>;
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Feedback

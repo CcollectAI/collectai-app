@@ -787,7 +787,11 @@
     "paint_projects_count_one": "{{count}} Projekt",
     "paint_projects_count_many": "{{count}} Projekte",
     "notes_count_one": "{{count}} Eintrag",
-    "notes_count_many": "{{count}} Einträge"
+    "notes_count_many": "{{count}} Einträge",
+    "delete_project": "Projekt löschen",
+    "delete_project_title": "Dieses Projekt löschen?",
+    "delete_project_body": "„{{name}}“ samt Schritten, Notizen und Malprojekten wird gelöscht. Das lässt sich nicht rückgängig machen.",
+    "delete_project_failed": "Das Projekt konnte nicht gelöscht werden. Versuche es erneut."
   },
   "watchlist": {
     "add_title": "Zur Merkliste hinzufügen",

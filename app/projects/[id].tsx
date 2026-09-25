@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { KEYBOARD_AVOIDING_BEHAVIOR } from '@/lib/keyboardAvoiding';
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -151,6 +152,29 @@ function ProjectDetailScreen() {
     } finally {
       setSavingProgress(false);
     }
+  };
+
+  const [deletingProject, setDeletingProject] = useState(false);
+  const handleDeleteProject = () => {
+    if (!project || deletingProject) return;
+    Alert.alert(t('projects.delete_project_title'), t('projects.delete_project_body', { name: project.title }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('projects.delete_project'),
+        style: 'destructive',
+        onPress: async () => {
+          setDeletingProject(true);
+          try {
+            await dataProvider.deleteBuildPaintProject(project.id);
+            safeGoBack(router);
+          } catch (err: unknown) {
+            showToast({ message: userErrorMessage(err, t('projects.delete_project_failed'), 'Projects'), type: 'error' });
+          } finally {
+            setDeletingProject(false);
+          }
+        },
+      },
+    ]);
   };
 
   const handleToggleComplete = async () => {
@@ -375,6 +399,21 @@ function ProjectDetailScreen() {
               />
             )}
 
+            {/* Delete (2026-09-26): there was no way to remove a project. */}
+            <AnimatedPressable
+              onPress={handleDeleteProject}
+              disabled={deletingProject}
+              style={styles.deleteProjectBtn}
+              accessibilityRole="button"
+              accessibilityLabel={t('projects.delete_project')}
+            >
+              {deletingProject ? (
+                <ActivityIndicator size="small" color={colors.danger} />
+              ) : (
+                <Text style={[styles.deleteProjectText, { color: colors.danger }]}>{t('projects.delete_project')}</Text>
+              )}
+            </AnimatedPressable>
+
             <View style={{ height: 32 }} />
           </ScrollView>
         </KeyboardAvoidingView>
@@ -394,6 +433,8 @@ export default function ProjectDetailScreenWithBoundary() {
 }
 
 const styles = StyleSheet.create({
+  deleteProjectBtn: { alignItems: 'center', paddingVertical: 16, marginTop: 8 },
+  deleteProjectText: { fontSize: 15, fontWeight: '600' },
   safe: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: {

@@ -787,7 +787,11 @@
     "paint_projects_count_one": "{{count}} proyecto",
     "paint_projects_count_many": "{{count}} proyectos",
     "notes_count_one": "{{count}} nota",
-    "notes_count_many": "{{count}} notas"
+    "notes_count_many": "{{count}} notas",
+    "delete_project": "Eliminar proyecto",
+    "delete_project_title": "¿Eliminar este proyecto?",
+    "delete_project_body": "Se eliminarán «{{name}}», sus pasos, notas y proyectos de pintura. No se puede deshacer.",
+    "delete_project_failed": "No se pudo eliminar el proyecto. Inténtalo de nuevo."
   },
   "watchlist": {
     "add_title": "Añadir a la lista de seguimiento",
