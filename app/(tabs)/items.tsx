@@ -660,7 +660,15 @@ const ItemsScreen: React.FC = () => {
   // scrolled: the €1.288-vs-€1.348 bug of 2026-09-12 re-created client-side
   // (class sweep, 2026-09-16). `/portfolio/overview` is the same source Home
   // uses, so the two screens now answer with one number.
-  const { data: overview } = useAsync(() => collectorsApi.getPortfolioOverview(), []);
+  const { data: overview, retry: refetchOverview } = useAsync(() => collectorsApi.getPortfolioOverview(), []);
+  // Refetch on focus, like the rows above. A tab stays mounted, so a fetch on
+  // mount alone kept the first total: after adding a card this read €1.288
+  // while Home read €1.313 for the same collection (walked 2026-09-25).
+  useFocusEffect(
+    useCallback(() => {
+      refetchOverview();
+    }, [refetchOverview]),
+  );
   const serverTotalEur = useMemo(() => {
     const v = (overview as { total_value?: unknown } | null)?.total_value;
     return typeof v === 'number' && Number.isFinite(v) ? v : null;
