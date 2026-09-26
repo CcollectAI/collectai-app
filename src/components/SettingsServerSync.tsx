@@ -45,6 +45,25 @@ export function settingsFromServer(
   return patch;
 }
 
+/**
+ * Pure: may onboarding's region step write its region? Exported for tests.
+ *
+ * Onboarding shows again after a reinstall, and its Skip / Get Started used to
+ * write the DETECTED region to the server unconditionally — overwriting a
+ * member's saved USD with a guess (simcheck, 2026-09-26). A region the member
+ * PICKED here is a choice and is written. A detected one is written only when
+ * the server has nothing saved; when the server could not be asked, it is
+ * applied on this phone only, never over an answer we could not see.
+ */
+export function detectedRegionWrite(
+  picked: boolean,
+  server: { saved?: boolean } | null | 'unknown',
+): 'local+server' | 'local' | 'none' {
+  if (picked) return 'local+server';
+  if (server === 'unknown') return 'local';
+  return server?.saved ? 'none' : 'local+server';
+}
+
 export function SettingsServerSync() {
   const { user } = useAuthContext();
   const { settings, updateSettings, ready } = useSettings();

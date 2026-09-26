@@ -31,7 +31,8 @@ import { useSettings, REGION_DEFAULTS, type Region, type SkillLevel } from '@/li
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { collectorsApi, logActivity } from '@/api/collectorsApi';
-import { updateUserSettings, saveFollowedCategories } from '@/api/settingsApi';
+import { updateUserSettings, saveFollowedCategories, getUserSettings } from '@/api/settingsApi';
+import { detectedRegionWrite } from '@/components/SettingsServerSync';
 import { supabase } from '@/lib/supabase';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { CATEGORY_VISUAL, type CategoryId } from '@/data/categories';
@@ -254,6 +255,8 @@ function OnboardingScreen() {
   const [detectedRegion, setDetectedRegion] = useState<Region>('europe');
   const [detecting, setDetecting] = useState(false);
   const [regionPickerVisible, setRegionPickerVisible] = useState(false);
+  // True once the member picks a region themselves (vs. the detected guess).
+  const regionPickedRef = useRef(false);
   // Both steps are OPTIONAL. Skipping leaves followed categories empty and
   // skill level null, which is exactly the state every member was in before
   // these steps existed — no feature depends on an answer.
@@ -327,10 +330,18 @@ function OnboardingScreen() {
 
   const confirmRegion = useCallback(async (region: Region) => {
     const defaults = REGION_DEFAULTS[region];
-    updateSettings({ region, currency: defaults.currency, numberLocale: defaults.numberLocale });
     try {
       const auth = await supabase.auth.getSession();
-      if (auth.data?.session) {
+      // A reinstall shows onboarding to an existing member: a DETECTED region
+      // must not overwrite what they saved (detectedRegionWrite).
+      let server: { saved?: boolean } | null | 'unknown' = null;
+      if (!regionPickedRef.current && auth.data?.session) {
+        server = await getUserSettings().catch(() => 'unknown' as const);
+      }
+      const write = detectedRegionWrite(regionPickedRef.current, server);
+      if (write === 'none') return;
+      updateSettings({ region, currency: defaults.currency, numberLocale: defaults.numberLocale });
+      if (write === 'local+server' && auth.data?.session) {
         // Via settingsApi (not a raw fetch): `put` throws on a non-2xx, so this
         // catch actually fires. The hand-rolled fetch here never read res.ok,
         // and fetch resolves on 5xx — so a rejected region/currency/locale was
@@ -390,7 +401,8 @@ function OnboardingScreen() {
     persistPicks();
 
     // Fire-and-forget the server syncs — they must never block leaving onboarding.
-    // (confirmRegion applies region/currency locally and synchronously before its fetch.)
+    // (confirmRegion applies a PICKED region at once; a detected one only after
+    // checking the member has no saved region — see detectedRegionWrite.)
     confirmRegion(detectedRegion).catch(() => {});
 
     track({ name: 'onboarding_completed' });
@@ -725,6 +737,7 @@ function OnboardingScreen() {
                   opt.value === detectedRegion && { backgroundColor: colors.brand.base + '15' },
                 ]}
                 onPress={() => {
+                  regionPickedRef.current = true;
                   setDetectedRegion(opt.value);
                   setRegionPickerVisible(false);
                 }}

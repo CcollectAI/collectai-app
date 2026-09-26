@@ -3,7 +3,7 @@
  * saved as USD, reopened in EUR because nothing read the server copy back.
  */
 jest.mock('../../src/providers/useAuthContext', () => ({ useAuthContext: () => ({ user: null }) }));
-import { settingsFromServer } from '../../src/components/SettingsServerSync';
+import { settingsFromServer, detectedRegionWrite } from '../../src/components/SettingsServerSync';
 
 const local = { currency: 'EUR', region: 'europe', numberLocale: 'de-DE', skillLevel: null } as const;
 
@@ -18,4 +18,11 @@ it('ignores an unsaved copy — those are server defaults, not a choice', () => 
 
 it('ignores values the app does not know, and what already matches', () => {
   expect(settingsFromServer({ currency: 'CHF', region: 'europe', locale: 'fr-CH', skill_level: 'guru', saved: true }, local as never)).toEqual({});
+});
+
+it("onboarding's detected region never overwrites a saved one; a picked region does", () => {
+  expect(detectedRegionWrite(false, { saved: true })).toBe('none');
+  expect(detectedRegionWrite(false, { saved: false })).toBe('local+server');
+  expect(detectedRegionWrite(false, 'unknown')).toBe('local');
+  expect(detectedRegionWrite(true, { saved: true })).toBe('local+server');
 });
