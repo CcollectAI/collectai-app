@@ -499,10 +499,15 @@ needed): `/intake/image-only`, then `process_intake` directly on EC2.
 The vision model was NOT the fault: called alone it read "Base Set, 4/102"
 three times out of three. Every defect was downstream of it.
 
-Found on the way and still open: vision reports `edition: "1st Edition"` for an
-unlimited card, and condition wear + a PSA 7 for a clean digital scan (condition
-grading is SHELVED per MONETIZATION.md — check whether the scan result renders
-it before trusting either).
+~~Found on the way: vision reports "1st Edition" for an unlimited card.~~
+**RETRACTED 2026-09-26** — cropped the test image: `images.pokemontcg.io/base1/4_hires.png`
+carries the black "Edition 1" stamp. Vision was right; I had assumed the scan was
+unlimited without looking. The same scan is a photo of a real card, so its
+"minor wear" is not evidence of hallucination either. What did change: the
+scan result now labels its grade "≈ PSA … AI condition estimate" (924542ce),
+which is right whatever the model's accuracy. Note for pricing: base1-base1-4
+is ONE catalogue row for both printings, so its EUR 1,159 median mixes 1st
+Edition and unlimited sales.
 ## AC — a SECURITY DEFINER function anyone can call (2026-09-22)
 
 **How it was found.** Re-running the Security Advisor's RLS lints by hand
