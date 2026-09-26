@@ -226,12 +226,12 @@ export const APP_HELP: HelpTopic[] = [
       {
         action: 'Currency and region: Settings → Region & Currency.',
         detail:
-          'Change your currency and every price in the app converts, including your collection total. Language and display options are under Preferences.',
+          'Change your currency and every price in the app converts, including your collection total. Language is in the same section; dark mode and display options are under Preferences.',
       },
       {
         action: 'Notifications: choose what is worth interrupting you for.',
         detail:
-          'Each kind is its own switch — Price alerts, Target Hit, Portfolio value, Messages and more — so you can keep the alert you set a target price for and silence the rest.',
+          'Each kind is its own switch — Price alerts, Target Hit & Deal Agent, Portfolio value, Messages and more — so you can keep the alert you set a target price for and silence the rest.',
       },
       {
         action: 'Payment handles: how a buyer pays you.',

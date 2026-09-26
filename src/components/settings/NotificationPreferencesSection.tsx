@@ -66,10 +66,12 @@ const TOGGLE_ITEMS: { key: keyof NotificationPrefs; label: string; hint: string 
   // deal_discovery_worker passes to notify_user — renaming it would orphan
   // every existing preference row, the same reason Target Hit's stored
   // notification type is still `watchlist_snipe`.
-  // The hint used to name the Smart Deal Agent, which is a different product
-  // (purchase mandates). This toggle governs `_check_watchlist_snipes`, whose
-  // push already ships with the title "Target hit".
-  { key: 'deal_alerts', label: 'Target Hit', hint: 'When a watched item is listed for sale below your target price' },
+  // It governs BOTH senders in deal_discovery_worker: `_check_watchlist_snipes`
+  // (Target Hit, via notify_user) AND the Deal Agent's mandate pushes
+  // (`should_notify(..., "deal_alerts")` in run_once). This comment used to say
+  // only the first; switching Target Hit off silenced Deal Agent finds too,
+  // which the hint never said (walked 2026-09-26).
+  { key: 'deal_alerts', label: 'Target Hit & Deal Agent', hint: 'When a watched item, or a deal your agent finds, is listed below your target price' },
   { key: 'value_changes', label: 'Portfolio value', hint: 'Summaries when your collection value moves' },
   { key: 'item_value_changes', label: 'Item value changes', hint: 'When a single item you own changes in value' },
   { key: 'chat_messages', label: 'Messages', hint: 'New direct messages from other collectors' },
