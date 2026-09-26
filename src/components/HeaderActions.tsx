@@ -64,7 +64,8 @@ const UNREAD_TTL_MS = 60_000;
 // Shared, with ONE in-flight request (2026-09-14). The old cache was written
 // only when a response landed, so five tab headers mounting together sent five
 // requests before any of them could fill it — see src/lib/sharedCount.ts.
-const notificationCount = createSharedCount(
+// Exported so app/notifications.tsx can hand it the count after a mark-read.
+export const notificationCount = createSharedCount(
   () => getNotificationHistory({ limit: 1, offset: 0 }).then((d) => d.unread_count),
   UNREAD_TTL_MS,
   // error, not warn: warn is stripped in release builds.

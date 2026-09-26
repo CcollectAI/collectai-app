@@ -39,6 +39,8 @@ import { inAppListingHref } from "@/lib/ids";
 import { MS_PER_WEEK } from "@/constants/time";
 import { dateLocale, DATE_SHORT_YEAR } from '@/constants/dateFormats';
 import { useTranslation } from 'react-i18next';
+import { notificationCount } from '@/components/HeaderActions';
+import { useAuthContext } from '@/providers/useAuthContext';
 
 const PAGE_SIZE = 20;
 
@@ -79,12 +81,30 @@ function getTypeIcon(type: string): keyof typeof Ionicons.glyphMap {
  *  and leaving it — and leaving it is the one a user wants warning about. */
 function ctaLabel(deepLink: string): string {
   if (inAppListingHref(deepLink)) return 'View listing';
+  if (deepLink.startsWith('/purchase/deal/')) return 'View deal';
   const m = /^https?:\/\/(?:www\.)?([^/]+)/i.exec(deepLink);
   if (!m) return 'Open';
   // eBay stays "eBay", cardmarket.com stays "cardmarket" — the registrable
   // name is what a seller recognises, not the full host.
   const host = m[1].split('.')[0];
   return `View on ${host.charAt(0).toUpperCase()}${host.slice(1)}`;
+}
+
+/** Where a tap on this row goes, or null when there is nowhere.
+ *
+ *  `deep_link` is the answer when the sender set it. The Deal Agent's mandate
+ *  pushes (deal_discovery_worker, type `deal_alert`) never did until
+ *  2026-09-26 — every one of those rows reached this screen with deep_link
+ *  NULL and a `data.deal_id` + `data.url` beside it, so the tap only marked it
+ *  read. Rows already written stay that way, so read the destination out of
+ *  `data` too: the deal screen first (it is where Buy It / Decline live, and
+ *  what the push tap opens for a deal_id), the raw listing URL last. */
+function destinationOf(item: NotificationItem): string | null {
+  if (item.deep_link) return item.deep_link;
+  const d = item.data ?? {};
+  if (typeof d.deal_id === 'string' && d.deal_id) return `/purchase/deal/${d.deal_id}`;
+  if (typeof d.url === 'string' && /^https?:\/\//i.test(d.url)) return d.url;
+  return null;
 }
 
 function relativeTime(iso: string): string {
@@ -114,6 +134,14 @@ function NotificationsScreen() {
   // with an unread count of 0 — an outage read as an empty, all-read inbox.
   const [loadFailed, setLoadFailed] = useState(false);
   const loadedRef = useRef(false);
+  // The bell badge (HeaderActions) keeps its own cached count. Hand it ours
+  // whenever it changes — but only once a page has LOADED, or the initial 0
+  // would clear the badge before we know anything.
+  const { user } = useAuthContext();
+  const [countKnown, setCountKnown] = useState(false);
+  useEffect(() => {
+    if (countKnown) notificationCount.set(user?.id ?? null, unreadCount);
+  }, [countKnown, unreadCount, user?.id]);
 
   const fetchPage = useCallback(
     async (offset: number, replace: boolean) => {
@@ -129,6 +157,7 @@ function NotificationsScreen() {
         }
         setTotalCount(data.total_count);
         setUnreadCount(data.unread_count);
+        setCountKnown(true);
         if (replace) setLoadFailed(false);
       } catch (err) {
         // logger.error, not .warn — warn is stripped from TestFlight builds.
@@ -191,7 +220,8 @@ function NotificationsScreen() {
     (item: NotificationItem) => {
       handleMarkRead(item);
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-      if (!item.deep_link) return;
+      const dest = destinationOf(item);
+      if (!dest) return;
 
       // A deal notification's destination is the marketplace listing, which is
       // an https URL — router.push would treat it as an in-app route and go
@@ -201,18 +231,18 @@ function NotificationsScreen() {
       // resolve to a screen in this app. Checked BEFORE the https branch below,
       // which would otherwise hand a member Target Hit to the browser and land
       // on a 404. See inAppListingHref.
-      const internal = inAppListingHref(item.deep_link);
+      const internal = inAppListingHref(dest);
       if (internal) { router.push(internal); return; }
 
-      if (/^https?:\/\//i.test(item.deep_link)) {
+      if (/^https?:\/\//i.test(dest)) {
         // No `category` — openAffiliateUrl forwards it to record_demand_signal,
         // whose `category` column holds a COLLECTIBLE slug (pokemon, lego).
         // `item.type` is a notification type ('deal_alert'), so passing it would
         // quietly poison the demand-signal category dimension.
-        openAffiliateUrl(item.deep_link);
+        openAffiliateUrl(dest);
         return;
       }
-      router.push(item.deep_link as Href);
+      router.push(dest as Href);
     },
     [handleMarkRead, router],
   );
@@ -247,6 +277,7 @@ function NotificationsScreen() {
   const renderItem = useCallback(
     ({ item }: { item: NotificationItem }) => {
       const isUnread = !item.read_at;
+      const dest = destinationOf(item);
       return (
         <Pressable
           onPress={() => handleTap(item)}
@@ -314,15 +345,15 @@ function NotificationsScreen() {
                 Rendered only when there IS somewhere to go, and it names the
                 destination, because "View" on a row that opens eBay and "View"
                 on one that opens our own listing are different promises. */}
-            {item.deep_link ? (
+            {dest ? (
               <View style={s.ctaRow}>
                 <Ionicons
-                  name={inAppListingHref(item.deep_link) ? 'pricetag-outline' : 'open-outline'}
+                  name={/^https?:/i.test(dest) && !inAppListingHref(dest) ? 'open-outline' : 'pricetag-outline'}
                   size={13}
                   color={theme.accent}
                 />
                 <Text style={[s.ctaText, { color: theme.accent }]} numberOfLines={1}>
-                  {ctaLabel(item.deep_link)}
+                  {ctaLabel(dest)}
                 </Text>
               </View>
             ) : null}

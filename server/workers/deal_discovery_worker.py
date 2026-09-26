@@ -394,7 +394,10 @@ async def run_once():
                     sent = await send_push_to_user(
                         conn,
                         deal["user_id"],
-                        title="Target hit",
+                        # NOT "Target hit" — that is the watchlist feature's
+                        # name (the snipe push above). This is a Deal Agent
+                        # mandate match, and its home is the deal screen.
+                        title="Deal found",
                         body=(
                             f"{deal['listing_title'][:60]} \u2014 \u20ac{deal['listing_price']:.2f}"
                             + (f" ({deal.get('discount_pct', 0):.0f}% below market)" if deal.get('discount_pct') else "")
@@ -404,6 +407,11 @@ async def run_once():
                             "deal_id": deal["id"],
                             "url": deal.get("affiliate_url") or deal.get("listing_url", ""),
                         },
+                        # Without it the feed row (app/notifications.tsx) was a
+                        # dead tap: handleTap routes on deep_link, and this push
+                        # was the one deal sender that never set it.
+                        deep_link=f"/purchase/deal/{deal['id']}",
+                        notification_type="deal_alert",
                     )
                     if sent > 0:
                         # Mark deal as notified

@@ -28,6 +28,11 @@ export type SharedCount = {
   /** Fetch unless a fresh value or an in-flight request already covers it. */
   refreshIfStale(userId: string | null): Promise<void>;
   subscribe(listener: Listener): () => void;
+  /** Take a value the caller KNOWS — e.g. the Notifications screen after a
+   *  mark-read. Without it the bell held its old count for the whole TTL
+   *  (seen 2026-09-26: 13 after reading one). A request already in flight
+   *  started before this change, so its answer is dropped. */
+  set(userId: string | null, n: number): void;
 };
 
 export function createSharedCount(
@@ -77,6 +82,14 @@ export function createSharedCount(
         });
       inFlight = request;
       return request;
+    },
+    set(userId, n) {
+      claim(userId);
+      if (!userId) return;
+      inFlight = null;
+      value = n;
+      at = Date.now();
+      emit();
     },
     subscribe(listener) {
       listeners.add(listener);

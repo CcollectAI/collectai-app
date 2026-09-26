@@ -163,6 +163,13 @@ class TestRunOnceWithDealsAndPush:
             assert "notified" in sql
             assert "mandate_deals" in sql
 
+        # The feed row is a dead tap without a deep_link (app/notifications.tsx
+        # routes on it) — found 2026-09-26: every mandate deal row was NULL.
+        # And it is a Deal Agent find, not the watchlist's "Target hit".
+        for c, deal in zip(mock_send.await_args_list, new_deals):
+            assert c.kwargs["deep_link"] == f"/purchase/deal/{deal['id']}"
+            assert c.kwargs["title"] != "Target hit"
+
         mock_agent.close.assert_awaited_once()
         mock_pool.close.assert_awaited_once()
 
