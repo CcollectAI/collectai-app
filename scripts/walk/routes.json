@@ -64,19 +64,40 @@
       "route": "(auth)/login",
       "skip": "signed-in sweep: auth screens redirect away; run with --signed-out",
       "signedOut": true,
-      "url": "sparrow://login"
+      "url": "sparrow://login",
+      "expect": {
+        "title": false,
+        "back": false,
+        "cluster": false,
+        "navbar": false
+      },
+      "why": "signed-out auth screen: its heading is in the body and it has no header, tab bar or bell/gear by design (walked 2026-09-27: login, register, reset rendered)"
     },
     {
       "route": "(auth)/register",
       "skip": "signed-in sweep",
       "signedOut": true,
-      "url": "sparrow://register"
+      "url": "sparrow://register",
+      "expect": {
+        "title": false,
+        "back": false,
+        "cluster": false,
+        "navbar": false
+      },
+      "why": "signed-out auth screen: its heading is in the body and it has no header, tab bar or bell/gear by design (walked 2026-09-27: login, register, reset rendered)"
     },
     {
       "route": "(auth)/forgot-password",
       "skip": "signed-in sweep",
       "signedOut": true,
-      "url": "sparrow://forgot-password"
+      "url": "sparrow://forgot-password",
+      "expect": {
+        "title": false,
+        "back": false,
+        "cluster": false,
+        "navbar": false
+      },
+      "why": "signed-out auth screen: its heading is in the body and it has no header, tab bar or bell/gear by design (walked 2026-09-27: login, register, reset rendered)"
     },
     {
       "route": "(auth)/mfa-challenge",
