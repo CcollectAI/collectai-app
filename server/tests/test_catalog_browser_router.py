@@ -136,6 +136,31 @@ class TestBrowseCatalog:
         assert len(data["items"]) == 2
         assert data["items"][0]["title"] == "Charizard Base Set"
 
+    # 2026-09-26: a set page listed Abra, Alakazam, Arcanine… — the "set" sort
+    # fell back to title inside a set. It orders by the key's card number now,
+    # except on a brand grid, where trailing digits are reference numbers.
+    @patch("app.features.catalog_browser_router.get_pool")
+    def test_set_sort_orders_a_set_by_card_number(self, mock_get_pool):
+        pool = _mock_pool()
+        mock_get_pool.return_value = pool
+        pool.fetch = AsyncMock(side_effect=[[], []])
+        resp = client.get("/catalog/pokemon/items?set_code=base1&sort=set")
+        assert resp.status_code == 200
+        sql = pool.fetch.await_args_list[0].args[0]
+        order = sql[sql.index("ORDER BY"):]
+        assert "substring(ci.item_key" in order
+        assert order.index("substring(ci.item_key") < order.index("ci.title")
+
+    @patch("app.features.catalog_browser_router.get_pool")
+    def test_set_sort_on_a_brand_grid_stays_by_title(self, mock_get_pool):
+        pool = _mock_pool()
+        mock_get_pool.return_value = pool
+        pool.fetch = AsyncMock(side_effect=[[], []])
+        resp = client.get("/catalog/watches/items?brand=Rolex&sort=set")
+        assert resp.status_code == 200
+        sql = pool.fetch.await_args_list[0].args[0]
+        assert "substring(ci.item_key" not in sql[sql.index("ORDER BY"):]
+
     @patch("app.features.catalog_browser_router.get_pool")
     def test_browse_with_search_query(self, mock_get_pool):
         pool = _mock_pool()

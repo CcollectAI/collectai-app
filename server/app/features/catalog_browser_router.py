@@ -222,9 +222,22 @@ async def browse_catalog_items(
     _ci_order = {
         "title": "ci.title ASC",
         "newest": "ci.created_at DESC NULLS LAST, ci.title ASC",
-        "set": "ci.set_code ASC NULLS LAST, ci.title ASC",
+        # Card number before title: a set page read Abra, Alakazam, Arcanine…
+        # instead of 1/102, 2/102 (walked 2026-09-26). The number is the key's
+        # trailing digits (`base1-base1-43`) — 99% of pokemon keys; keys
+        # without one sort after, by title, as before. Same plan and cost
+        # (incremental sort on idx_category_items_category_set_code: 5.9 ms).
+        "set": (
+            "ci.set_code ASC NULLS LAST, "
+            "substring(ci.item_key from '(\\d+)$')::numeric ASC NULLS LAST, "
+            "ci.title ASC"
+        ),
     }
     order_by = _ci_order.get(sort or "title", "ci.title ASC")
+    # A BRAND grid (watches) keeps title order: there the trailing digits are
+    # reference numbers, which no one browses by.
+    if sort == "set" and brand:
+        order_by = "ci.set_code ASC NULLS LAST, ci.title ASC"
 
     # Build query conditions (all qualified with the `ci` alias so the
     # priced_only branch below can join market_hits on the same predicate set).
