@@ -53,6 +53,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useSettings } from "@/lib/settings";
 import { useTranslation } from "react-i18next";
 import { fmtCurrency, formatPercent } from '@/lib/format';
+import { convertEUR } from '@/lib/fx';
 import { useToast } from "@/components/Toast";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
 import { collectorsApi } from "@/api/collectorsApi";
@@ -778,6 +779,8 @@ function PortfolioScreen() {
                   textColor={colors.text}
                   dotFillColor={colors.card}
                   onScrubChange={setScrubPoint}
+                  currency={settings.currency}
+                  fxRate={convertEUR(1, settings)}
                 />
               )}
             </View>

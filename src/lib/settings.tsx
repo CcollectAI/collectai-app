@@ -6,7 +6,7 @@ import type { CurrencyCode } from '@/data/types';
 import logger from '@/utils/logger';
 import i18n, { SUPPORTED_LOCALES, type SupportedLocale } from '@/i18n';
 import { setActiveDateLocale } from '@/constants/dateFormats';
-import { setActiveNumberLocale } from '@/lib/format';
+import { setActiveNumberLocale, setActiveDisplayCurrency } from '@/lib/format';
 
 export type ChartRange = '1D'|'7D'|'30D';
 /** @deprecated Use CurrencyCode from '@/data/types' for new code */
@@ -171,6 +171,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setActiveNumberLocale(settings.numberLocale ?? null);
   }, [settings.numberLocale]);
+
+  // During render, not in an effect: an effect runs AFTER the children have
+  // rendered, so the first frame after a currency change would still print
+  // the old one — and a memoised row would keep it. Idempotent, module-level.
+  setActiveDisplayCurrency({ currency: settings.currency, fxRates: settings.fxRates });
 
   // DATES follow the UI language, not the number locale — the comment above
   // says why those are different sets.

@@ -23,7 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { fireHaptic, HapticIntent } from '@/haptics';
-import { useSettings } from '@/lib/settings';
+import { useSettings, type Currency } from '@/lib/settings';
 import { collectorsApi } from '@/api/collectorsApi';
 import { openAffiliateUrl } from '@/utils/affiliateHelpers';
 import { formatPrice } from '@/lib/format';
@@ -110,7 +110,7 @@ export default function MarketplacePickerSheet({
             </Text>
             {maxPrice && maxPrice > 0 ? (
               <Text style={[styles.subtitle, { color: colors.muted }]} numberOfLines={1}>
-                Buy It Now under {formatPrice(maxPrice)}, cheapest first
+                Buy It Now under {formatPrice(maxPrice, maxPriceCurrency as Currency | undefined)}, cheapest first
               </Text>
             ) : null}
           </View>

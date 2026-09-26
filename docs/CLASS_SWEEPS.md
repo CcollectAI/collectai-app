@@ -108,6 +108,7 @@ Two rules the tooling learned the hard way:
 | AL | A free cap that ends in "try again" instead of an offer | **fixed 2026-09-24 (client; needs a JS build)** | The server returns coded 403s at every free cap (`PLAN_LIMIT_WATCHLIST`, `PLAN_LIMIT_ALERTS`, `PLAN_REQUIRED`); only the deal screen read the code, so the 26th watch said "Could not add to watchlist — try again". `src/lib/planLimitPrompt.ts` now offers Sparrow Pro from all 4 watch controls. Falsifier: free account with 25 watches → add a 26th on device → "Your watchlist is full" → See Sparrow Pro opens `/subscription` (verified on Android). See section AL |
 | AM | One listing, many URLs — dedup by a decorated link | **fixed + DEPLOYED 2026-09-24** | eBay re-issues every item URL with a fresh `amdata` token, and deal dedup compared raw URLs, so each scan stored the same card again (one item = 4 deals). Dedup now keys on `app/lib/listing_identity.listing_key` (eBay item id; tracking params dropped elsewhere), in-batch too. Only test accounts had duplicates (67 rows / 48 items). Falsifier: `pytest tests/test_deal_discovery_agent.py -k redecorated` → pass; set `hit_key = hit_url` → 3 red. See section AM |
 | AN | A fix that lived in one copy of a rule while a second copy kept the bug | **fixed + gated 2026-09-24 (client; needs a JS build)** | The auth-lock deadlock was fixed in AuthProvider (setTimeout(0)), and `src/hooks/useAuth.ts`, an older copy, kept an `async` onAuthStateChange listener awaiting a query. Every cold start into a profile stalled every Supabase request ~15 s. Hook deleted; gate `check:auth-listener-lock`. Falsifier: `git show acf414fc:src/hooks/useAuth.ts > src/hooks/useAuth.ts && npm run check:auth-listener-lock` → exit 1 (then delete the file again). See docs/AUTH_AND_WEB_DEPLOY.md "Cold start stalled every request" |
+| AO | An EUR amount formatted with NO currency — printed euros to every member | **fixed at the chokepoint 2026-09-26 (client; needs a JS build)** | `formatPrice(x)` defaulted to EUR, and ~45 sites in 22 files passed backend EUR amounts that way (portfolio chart, catalogue, deal/mandate screens, movers, item ranges). `check:currency-conversion` skipped them: it only inspects calls that NAME a member currency — AD's blind spot one shape over. Walked on Android as USD: header "$1.429", chart under it "€1.253". Fix: SettingsProvider pushes `setActiveDisplayCurrency()` (during render), and an OMITTED currency now means "EUR, show it converted"; an explicit currency is as given. Chart takes `currency` + `fxRate` so its ticks stay round (it is `React.memo`). Two riders found by the sweep: the mandate form typed `max_price` in the member's currency and stored it raw (policy_engine compares it in EUR) → `memberAmountToEUR` on save, `convertEUR` on edit; the shop picker labelled a watchlist target (row currency) as €. ⚠️ Residual risk: a one-arg call on an amount ALREADY in the member's currency now double-converts — the 22 files were read for this, none found. Falsifier: `npx jest __tests__/lib/formatPriceDisplayCurrency.test.ts` (mutation-proven: drop the conversion → 1 fails); on device, Settings → USD → Portfolio chart axis reads `$`. |
 
 ## AD — a money format typed into the UI (2026-09-24)
 
@@ -453,6 +454,35 @@ Same round, auth screens: unconfirmed login had no Resend path (400
 impossible on Android (SVG QR rendered blank, no setup key); the keyboard
 stayed up over the next screen. All in docs/AUTH_AND_WEB_DEPLOY.md.
 
+
+## AO — an EUR amount formatted with no currency (2026-09-26)
+
+**Found** on the Android walk: Settings → Currency → USD, Portfolio. Header
+`$1.429` (converting formatter), chart axis and floating label `€1.253`
+(`formatPrice(tick)`, no currency). The EUR walk account can never see it.
+
+**Why the gate missed it**: `check-currency-conversion.mjs` flags only
+`formatPrice(x, <member currency>)`; a call with no currency argument was
+`continue`d. Enumerated with a balanced-paren scan: 56 one-arg calls, of which
+~45 in 22 files use the RAW import (the rest are local converting props).
+
+**Fix at the chokepoint** (`src/lib/format.ts`): `setActiveDisplayCurrency()`,
+pushed by SettingsProvider during render; an OMITTED currency means "EUR amount,
+show converted"; explicit currencies are untouched; `null` keeps EUR (tests).
+
+**Riders from reading the 22 files**:
+- `app/purchase/create-mandate.tsx` — field labelled `MAX PRICE PER ITEM (USD)`,
+  stored raw; `policy_engine.py` compares it with EUR prices. Now
+  `memberAmountToEUR` on save, `convertEUR` + `moneyInputValue` on edit.
+  Existing prod mandates by non-EUR members were NOT migrated — check below.
+- `MarketplacePickerSheet` — "Buy It Now under €X" for a target in the row's
+  own currency; now passes `maxPriceCurrency`.
+- `PortfolioLineChart` — takes `currency` + `fxRate`, scales before choosing
+  ticks (round axis in the member's currency), still hands EUR to
+  `onScrubChange` (the header converts it).
+
+**Falsifier**: `npx jest __tests__/lib/formatPriceDisplayCurrency.test.ts` —
+replace the conversion with `amount = amount` and test 1 fails.
 ## AC — a SECURITY DEFINER function anyone can call (2026-09-22)
 
 **How it was found.** Re-running the Security Advisor's RLS lints by hand

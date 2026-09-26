@@ -17,6 +17,12 @@
  * Found 2026-09-16 by a class sweep, after five device rounds missed it: the
  * walk account is EUR, where the two formatters agree.
  *
+ * A ONE-argument `formatPrice(x)` is not flagged, and since 2026-09-26 need not
+ * be: an omitted currency converts EUR → the member's currency at the
+ * chokepoint (setActiveDisplayCurrency, CLASS_SWEEPS AO). Its failure is the
+ * mirror image — an amount already in the member's currency passed with no
+ * currency is converted twice — so pass the row's currency explicitly.
+ *
  * This gate flags `formatPrice(x, <member currency>)` — the currency argument
  * coming from settings/preferences rather than from the row being rendered.
  * Exempt a genuinely-already-converted site with a reason on the line above or

@@ -8,7 +8,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 // parseMoney: a member typing "12,50" on a nl/de keyboard had their
 // buying threshold stored as 12 (class sweep, 2026-09-16).
-import { parseMoney } from '@/lib/format';
+import { parseMoney, moneyInputValue } from '@/lib/format';
+import { convertEUR, memberAmountToEUR } from '@/lib/fx';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import {
   View,
@@ -150,7 +151,9 @@ function CreateMandateScreen() {
         const m = await collectorsApi.getMandate(params.id!) as { name?: string; category?: string; maxPrice?: number; minTrustScore?: number; allowedSources?: string[]; region?: string; status?: string; canonicalRef?: string | null };
         nameField.setValue(m.name ?? '');
         setCategory(m.category ?? null);
-        maxPriceField.setValue(m.maxPrice != null ? String(m.maxPrice) : '');
+        // Stored in EUR (policy_engine compares it with EUR listing prices);
+        // the field is labelled and typed in the member's currency.
+        maxPriceField.setValue(m.maxPrice != null ? moneyInputValue(convertEUR(m.maxPrice, settings)) : '');
         setMinTrust(m.minTrustScore ?? 0.6);
         setSelectedSources((m.allowedSources ?? []).map((s) => LEGACY_SOURCE_VALUES[s] ?? s));
         setRegion(m.region ?? "");
@@ -199,6 +202,9 @@ function CreateMandateScreen() {
     // Explicit null on edit CLEARS the key server-side; undefined would be
     // dropped by model_dump(exclude_none=True) and read as "not sent".
     const keyPayload = canonicalKey ?? null;
+    // Typed in the member's currency (the label says so); stored in EUR. Written
+    // raw, a USD member's "100" became a €100 ceiling (walked 2026-09-26).
+    const maxPriceEur = memberAmountToEUR(parseMoney(maxPriceField.value) ?? 0, settings);
 
     try {
       if (isEdit && params.id) {
@@ -206,7 +212,7 @@ function CreateMandateScreen() {
           name: nameField.value.trim(),
           status,
           category: category || undefined,
-          max_price: parseMoney(maxPriceField.value) ?? 0,
+          max_price: maxPriceEur,
           min_trust_score: minTrust,
           allowed_sources: selectedSources.length ? selectedSources : undefined,
           region: region || undefined,
@@ -218,7 +224,7 @@ function CreateMandateScreen() {
           name: nameField.value.trim(),
           search_query: nameField.value.trim(),
           category: category || undefined,
-          max_price: parseMoney(maxPriceField.value) ?? 0,
+          max_price: maxPriceEur,
           min_trust_score: minTrust,
           allowed_sources: selectedSources.length ? selectedSources : undefined,
           region: region || undefined,
@@ -233,7 +239,7 @@ function CreateMandateScreen() {
     } finally {
       setSaving(false);
     }
-  }, [nameField, maxPriceField, minTrust, selectedSources, region, category, status, isEdit, params.id, canonicalKey]);
+  }, [nameField, maxPriceField, minTrust, selectedSources, region, category, status, isEdit, params.id, canonicalKey, settings]);
 
   // Look the typed name up in the catalogue. Requires a category: /catalog/match
   // scopes by it, and an unscoped match would return a Pokemon card for

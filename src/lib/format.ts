@@ -214,15 +214,45 @@ export function fmtCurrencyCompact(
 }
 
 /**
- * Standalone price formatter — use when you already have the amount in the
- * correct currency and just need display formatting.
+ * The member's display currency + rates, pushed in by SettingsProvider — the
+ * same chokepoint as `_activeNumberLocale`, for the same reason.
  *
- * @param amount  - numeric value in the given currency
- * @param currency - ISO currency code (default EUR)
+ * A `formatPrice(amount)` with NO currency meant "this is EUR, label it EUR",
+ * and ~45 sites across 22 files did exactly that with backend EUR amounts
+ * (portfolio chart, catalogue prices, deal screens, movers, item ranges). A
+ * member on USD read "$1.429" in the header and "€1.253" on the chart under it
+ * (walked on Android 2026-09-26). check-currency-conversion.mjs skipped them:
+ * it only looked at calls that NAME a member currency.
+ *
+ * So an omitted currency now means "EUR amount, show it in the member's
+ * currency", converted. An explicit currency is still formatted as given.
+ * `null` (tests, pre-mount) keeps the old EUR behaviour.
+ */
+let _activeDisplay: Pick<Settings, 'currency' | 'fxRates'> | null = null;
+
+/** Called by SettingsProvider during render, so children read the new value on the same pass. */
+export function setActiveDisplayCurrency(s: Pick<Settings, 'currency' | 'fxRates'> | null): void {
+  _activeDisplay = s;
+}
+
+/**
+ * Standalone price formatter.
+ *
+ * @param amount  - numeric value in `currency`; when `currency` is OMITTED, a
+ *                  EUR amount, converted to the member's display currency
+ * @param currency - ISO code the amount is ALREADY in (formatted as given)
  * @param locale  - explicit locale override (auto-detected from currency if omitted)
  */
-export function formatPrice(amount: number | null | undefined, currency: Currency = 'EUR', locale?: NumberLocale, opts?: MoneyOpts): string {
+export function formatPrice(amount: number | null | undefined, currency?: Currency, locale?: NumberLocale, opts?: MoneyOpts): string {
   if (amount == null || !Number.isFinite(amount)) return '—';
+  if (currency === undefined) {
+    if (_activeDisplay) {
+      amount = convertEUR(amount, _activeDisplay);
+      currency = _activeDisplay.currency;
+    } else {
+      currency = 'EUR';
+    }
+  }
   // Explicit argument wins, then the UI language, then the currency's own
   // fallback. The middle step is what makes the 148 call sites that pass no
   // locale render in the language the user is actually reading.

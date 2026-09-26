@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Line, Path, Text as SvgText } from "react-native-svg";
 import { formatPrice } from "@/lib/format";
+import type { Currency } from "@/lib/settings";
 import { dateLocale } from '@/constants/dateFormats';
 import { useTranslation } from 'react-i18next';
 
@@ -11,7 +12,18 @@ export type TimeSeriesPoint = {
 };
 
 export type PortfolioLineChartProps = {
+  /** Values in EUR (what /portfolio/timeseries returns). */
   series: TimeSeriesPoint[];
+
+  /**
+   * The member's display currency and the EUR→currency rate. The axis and the
+   * floating label printed raw EUR under a header that converted: "$1.429"
+   * above "€1.253" (walked 2026-09-26). The plot is scaled BEFORE the ticks
+   * are chosen, so the axis stays on round numbers in the member's currency.
+   * `onScrubChange` still hands back the EUR point — its reader converts.
+   */
+  currency?: Currency;
+  fxRate?: number;
   accentColor?: string;
 
   /** If false, removes internal "value header" inside chart */
@@ -130,17 +142,24 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
   loadFailed = false,
   onRetry,
   onScrubChange,
+  currency = 'EUR',
+  fxRate = 1,
 }) => {
   const { t } = useTranslation();
   const [width, setWidth] = useState(0);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
-  const sorted = useMemo(
+  const sortedEur = useMemo(
     () =>
       [...series].sort(
         (a, b) => new Date(a.t).getTime() - new Date(b.t).getTime()
       ),
     [series]
+  );
+  // Plotted and labelled in the display currency; see `currency` above.
+  const sorted = useMemo(
+    () => (fxRate === 1 ? sortedEur : sortedEur.map((p) => ({ ...p, v: p.v * fxRate }))),
+    [sortedEur, fxRate]
   );
 
   const height = 190; // taller = more "real chart"
@@ -189,7 +208,7 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
     const idx = Math.round(ratio * (n - 1));
     const safeIdx = Math.min(Math.max(idx, 0), n - 1);
     setHoverIndex(safeIdx);
-    onScrubChange?.(sorted[safeIdx] ?? null);
+    onScrubChange?.(sortedEur[safeIdx] ?? null);
   };
 
   const handleRelease = () => {
@@ -286,7 +305,7 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
                       fontSize={10}
                       fontWeight="600"
                     >
-                      {formatPrice(tick)}
+                      {formatPrice(tick, currency)}
                     </SvgText>
                   )}
                 </React.Fragment>
@@ -342,7 +361,7 @@ export const PortfolioLineChart: React.FC<PortfolioLineChartProps> = React.memo(
                 numberOfLines={1}
                 style={[styles.valueText, { color: textColor, textAlign: edge }]}
               >
-                {formatPrice(currentPoint.v)}
+                {formatPrice(currentPoint.v, currency)}
               </Text>
             </View>
             );
