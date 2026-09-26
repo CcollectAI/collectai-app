@@ -16,6 +16,9 @@
 --            where user_id = '03d1b2fd-33bd-4168-95a0-f63c23136353';
 --            expect 'Test account for the app walk'.
 
+-- rls-ok: PUBLIC on purpose — how one collector sees another. Same body as
+-- 20260804_privacy_settings_enforcement (privacy CASEs gate count and value);
+-- bio is text the member wrote for other collectors to read.
 CREATE OR REPLACE VIEW public.user_public_profile_v1 AS
  SELECT id AS user_id,
     COALESCE(display_name, username) AS display_handle,
