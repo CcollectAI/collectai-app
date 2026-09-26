@@ -366,19 +366,40 @@ async def get_auto_set_progress(
 
             rows = await conn.fetch(
                 f"""
-                WITH user_sets AS (
+                -- The set comes from the item, ELSE from its catalogue card
+                -- (2026-09-26). Only attrs.set_name was read, and almost no
+                -- item carries one: on prod 2 of 10 catalogue-linked items
+                -- did while the catalogue named the set for 8, so "Finish a
+                -- set" was empty for nearly every member. canonical_key is
+                -- the BARE catalogue key, the same vocabulary as item_key.
+                -- Distinct cards, so two copies of one card are not "2 of".
+                WITH user_items AS (
                     SELECT
                         items.category,
-                        items.attrs ->> 'set_name' AS set_name,
-                        COUNT(*) AS owned_count,
-                        ARRAY_AGG(items.title ORDER BY items.created_at DESC) AS titles
+                        items.title,
+                        items.created_at,
+                        COALESCE(items.canonical_key, items.title) AS card,
+                        COALESCE(
+                            NULLIF(items.attrs ->> 'set_name', ''),
+                            NULLIF(ci.attributes_json ->> 'set_name', '')
+                        ) AS set_name
                     FROM items
+                    LEFT JOIN category_items ci
+                        ON ci.category = items.category
+                       AND ci.item_key = items.canonical_key
                     WHERE items.user_id = $1 AND NOT items.archived
-                      AND items.attrs ->> 'set_name' IS NOT NULL
-                      AND items.attrs ->> 'set_name' != ''
                       {cat_clause}
-                    GROUP BY items.category, items.attrs ->> 'set_name'
-                    HAVING COUNT(*) >= $2
+                ),
+                user_sets AS (
+                    SELECT
+                        category,
+                        set_name,
+                        COUNT(DISTINCT card) AS owned_count,
+                        ARRAY_AGG(title ORDER BY created_at DESC) AS titles
+                    FROM user_items
+                    WHERE set_name IS NOT NULL
+                    GROUP BY category, set_name
+                    HAVING COUNT(DISTINCT card) >= $2
                 ),
                 catalog_totals AS (
                     SELECT
