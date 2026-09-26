@@ -829,7 +829,7 @@
     "sent_as_dm": "Als DM an alle Teilnehmenden gesendet"
   },
   "project_header": {
-    "mark_complete_a11y": "Projekt als abgeschlossen markieren",
+    "complete_switch_a11y": "Project complete",
     "decrease_5_a11y": "Fortschritt um 5 Prozent verringern",
     "increase_5_a11y": "Fortschritt um 5 Prozent erhöhen",
     "increase_10_a11y": "Fortschritt um 10 Prozent erhöhen",

@@ -829,7 +829,7 @@
     "sent_as_dm": "모든 참가자에게 DM으로 전송됩니다"
   },
   "project_header": {
-    "mark_complete_a11y": "프로젝트를 완료로 표시",
+    "complete_switch_a11y": "Project complete",
     "decrease_5_a11y": "진행률 5퍼센트 감소",
     "increase_5_a11y": "진행률 5퍼센트 증가",
     "increase_10_a11y": "진행률 10퍼센트 증가",

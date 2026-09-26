@@ -120,6 +120,7 @@ jest.mock('../../src/theme/tokens', () => ({
 import { ProjectCard } from '../../src/components/projects/ProjectCard';
 import { CreateProjectModal } from '../../src/components/projects/CreateProjectModal';
 import { ProjectFilters } from '../../src/components/projects/ProjectFilters';
+import { ProjectHeaderCard } from '../../src/components/projects/ProjectHeaderCard';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -310,3 +311,24 @@ describe('ProjectFilters', () => {
     expect(tree.toJSON()).toMatchSnapshot();
   });
 });
+
+// 2026-09-25: the Complete switch read "Mark project as complete" even for a
+// finished project, where toggling it UN-completes. It names the setting and
+// carries its state.
+describe('ProjectHeaderCard complete switch', () => {
+  const props = (isCompleted: boolean) => ({
+    project: makeProject({ isCompleted, percent: isCompleted ? 100 : 45 }),
+    categoryName: 'Warhammer', accentColor: '#000', pendingPercent: isCompleted ? 100 : 45,
+    savingProgress: false, togglingComplete: false,
+    onDecrease: jest.fn(), onIncrease5: jest.fn(), onIncrease10: jest.fn(),
+    onSaveProgress: jest.fn(), onToggleComplete: jest.fn(),
+  });
+
+  it.each([false, true])('names the setting and reports checked=%s', (done) => {
+    render(<ProjectHeaderCard {...(props(done) as any)} />);
+    const sw = screen.getByLabelText('Project complete');
+    expect(sw.props.accessibilityState?.checked).toBe(done);
+    expect(screen.queryByLabelText('Mark project as complete')).toBeNull();
+  });
+});
+

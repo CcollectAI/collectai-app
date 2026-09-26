@@ -829,7 +829,7 @@
     "sent_as_dm": "Verstuurd als DM naar alle deelnemers"
   },
   "project_header": {
-    "mark_complete_a11y": "Project markeren als voltooid",
+    "complete_switch_a11y": "Project complete",
     "decrease_5_a11y": "Voortgang met 5 procent verlagen",
     "increase_5_a11y": "Voortgang met 5 procent verhogen",
     "increase_10_a11y": "Voortgang met 10 procent verhogen",

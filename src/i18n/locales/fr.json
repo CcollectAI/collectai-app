@@ -829,7 +829,7 @@
     "sent_as_dm": "Envoyé en message privé à tous les participants"
   },
   "project_header": {
-    "mark_complete_a11y": "Marquer le projet comme terminé",
+    "complete_switch_a11y": "Project complete",
     "decrease_5_a11y": "Diminuer la progression de 5 pour cent",
     "increase_5_a11y": "Augmenter la progression de 5 pour cent",
     "increase_10_a11y": "Augmenter la progression de 10 pour cent",

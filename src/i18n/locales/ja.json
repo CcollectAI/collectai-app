@@ -829,7 +829,7 @@
     "sent_as_dm": "参加者全員にDMで送信されます"
   },
   "project_header": {
-    "mark_complete_a11y": "プロジェクトを完了にする",
+    "complete_switch_a11y": "Project complete",
     "decrease_5_a11y": "進捗を5パーセント下げる",
     "increase_5_a11y": "進捗を5パーセント上げる",
     "increase_10_a11y": "進捗を10パーセント上げる",

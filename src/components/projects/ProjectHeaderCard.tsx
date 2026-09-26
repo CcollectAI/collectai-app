@@ -74,7 +74,11 @@ export const ProjectHeaderCard = React.memo(function ProjectHeaderCard({
               }}
               trackColor={{ false: colors.border, true: colors.success }}
               thumbColor={colors.accentText}
-              accessibilityLabel={t('project_header.mark_complete_a11y')}
+              // Names the setting, not an action: the reader already says
+              // on/off, and "Mark project as complete" was read out for a
+              // project that WAS complete, where toggling un-completes it.
+              accessibilityLabel={t('project_header.complete_switch_a11y', { defaultValue: 'Project complete' })}
+              accessibilityState={{ checked: project.isCompleted }}
             />
           )}
         </View>

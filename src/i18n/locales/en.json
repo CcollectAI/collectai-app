@@ -829,7 +829,7 @@
     "sent_as_dm": "Sent as a DM to all attendees"
   },
   "project_header": {
-    "mark_complete_a11y": "Mark project as complete",
+    "complete_switch_a11y": "Project complete",
     "decrease_5_a11y": "Decrease progress by 5 percent",
     "increase_5_a11y": "Increase progress by 5 percent",
     "increase_10_a11y": "Increase progress by 10 percent",
