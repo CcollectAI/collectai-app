@@ -2,6 +2,26 @@
 
 This document describes the barcode scanning feature for quick item entry.
 
+> ⚠️ **Status measured 2026-09-26: only BOOKS resolve.** The overview below
+> promises music albums and boxed products; nothing backs them.
+> - Tier 1, local catalogue: `category_items.barcode` is empty in **every**
+>   category (`select count(*) from category_items where barcode <> ''` → 0).
+> - Tiers 2–3 are Open Library and Google Books — ISBN only.
+> - Probed as a member via `/intake/barcode-only`: LEGO 75192's EAN
+>   `5702015869935` → name null, catalog_miss; the ISBN `9780439708180` →
+>   "Harry Potter and the sorcerer's stone", **category null** (the classifier
+>   does not map it to a category).
+> So scanning a LEGO box, a Funko Pop or a sealed TCG product always ends in
+> the "suggest to catalogue" modal.
+>
+> **Decision open:** UPCitemdb's keyless trial (`api.upcitemdb.com/prod/trial/
+> lookup?upc=`) resolved the LEGO EAN to "Lego 75192 Millennium Falcon" from
+> EC2 — but the trial is 100 lookups/day/IP and meant for evaluation, so
+> production use means their paid plan (or another EAN source), i.e. a cost
+> and a third-party dependency. The resolved title would then go through the
+> same catalogue title match QuickScan uses to land on `lego:75192-1-…`.
+> Falsifier for "fixed": the LEGO EAN above returns a name and category_id.
+
 ## Overview
 
 The barcode scanner provides a fast entry method for items with barcodes:
