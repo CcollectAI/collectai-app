@@ -33,7 +33,7 @@ _FRIENDLY_CATEGORY_MAP = {
     "sportscards": "Sports Cards", "designer_toys": "Designer & Art Toys",
     "anime_figures": "Anime Figures", "hot_toys": "Hot Toys",
     "gunpla": "Gunpla & Model Kits", "scale_models": "Scale Models",
-    "keycaps": "Artisan Keycaps", "bluray_steelbook": "Blu-ray Steelbooks",
+    "keycaps": "Custom Keycaps", "bluray_steelbook": "Blu-ray Steelbooks",
     "anime_bluray": "Anime Blu-ray", "nintendo_merch": "Nintendo Merch",
     "one_piece": "One Piece", "retro_pokemon": "Retro Pokémon",
     "diecast": "Diecast & Hot Wheels", "kpop_merch": "K-pop Merch",

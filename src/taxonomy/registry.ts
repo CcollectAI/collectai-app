@@ -244,7 +244,10 @@ const PHASE2_CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: 'keycaps',
-    name: 'Artisan Keycaps',
+    // Not 'Artisan Keycaps': the category also holds GMK sets (subtype below),
+    // and the Explore page already named it 'Custom Keycaps' with an
+    // 'Artisan Keycaps' collection inside — two names for one slug (2026-09-26).
+    name: 'Custom Keycaps',
     wave: 'phase2',
     keywords: ['keycap', 'artisan', 'mechanical keyboard'],
     subtypes: [

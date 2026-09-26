@@ -34,7 +34,7 @@ export const CATEGORIES: Category[] = [
   { slug: 'marvel_legends', name: 'Marvel Legends', tint: '#ED1D24' },
   { slug: 'gunpla', name: 'Gunpla & Model Kits', tint: '#3498DB' },
   { slug: 'scale_models', name: 'Scale Models', tint: '#7F8C8D' },
-  { slug: 'keycaps', name: 'Artisan Keycaps', tint: '#9B59B6' },
+  { slug: 'keycaps', name: 'Custom Keycaps', tint: '#9B59B6' },
   { slug: 'bluray_steelbook', name: 'Blu-ray Steelbooks', tint: '#2C3E50' },
   { slug: 'anime_bluray', name: 'Anime Blu-ray', tint: '#E74C3C' },
   { slug: 'nintendo_merch', name: 'Nintendo Merch', tint: '#E60012' },
