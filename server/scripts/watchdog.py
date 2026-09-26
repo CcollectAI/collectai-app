@@ -440,6 +440,44 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
             healthy.append({"check": "every anon-callable SECURITY DEFINER function is reviewed",
                             "detail": "%d callable, all on the 20260922d list" % len(rows)})
 
+    with guard("2FA enforced by the database"):
+        # 20260926b/c: a password-only (aal1) session of a member with a
+        # verified factor may not read or write through PostgREST. That holds
+        # only while EVERY RLS table carries the restrictive `mfa_required`
+        # policy and every app-callable DEFINER rpc_* carries the guard — a
+        # table or RPC created later has neither unless someone adds it.
+        missing = await c.fetch("""
+            SELECT c.relname tbl FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+            WHERE n.nspname='public' AND c.relkind IN ('r','p') AND c.relrowsecurity
+              AND NOT EXISTS (SELECT 1 FROM pg_policies p WHERE p.schemaname='public'
+                              AND p.tablename=c.relname AND p.policyname='mfa_required')
+            ORDER BY 1
+        """)
+        for r in missing:
+            bug("high", "RLS table without the 2FA policy: %s" % r["tbl"],
+                "A password-only session of a member with 2FA can read/write this table. "
+                "Re-run the policy loop in supabase/migrations/20260926b_mfa_required.sql.",
+                sql_link(),
+                "SELECT policyname FROM pg_policies WHERE tablename = '%s';" % r["tbl"],
+                "CREATE POLICY mfa_required ON public.%s AS RESTRICTIVE FOR ALL TO authenticated "
+                "USING ((SELECT public.mfa_satisfied())) WITH CHECK ((SELECT public.mfa_satisfied()));" % r["tbl"])
+        unguarded = await c.fetch("""
+            SELECT p.proname fn FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+            WHERE n.nspname='public' AND p.prosecdef AND p.proname LIKE 'rpc\\_%'
+              AND has_function_privilege('authenticated', p.oid, 'EXECUTE')
+              AND p.prosrc NOT ILIKE '%mfa_satisfied%'
+              AND p.proname <> 'rpc_user_relevant_events_v1'
+            ORDER BY 1
+        """)
+        for r in unguarded:
+            bug("high", "App-callable DEFINER RPC without the 2FA guard: %s" % r["fn"],
+                "Runs past RLS, so the mfa_required policies do not cover it. Add the "
+                "`IF NOT public.mfa_satisfied()` block (see 20260926c).",
+                sql_link(), "SELECT prosrc FROM pg_proc WHERE proname = '%s';" % r["fn"], "")
+        if not missing and not unguarded:
+            healthy.append({"check": "2FA enforced by the database",
+                            "detail": "every RLS table has mfa_required; every app RPC is guarded"})
+
     # --- worker health ---
     #
     # Scoped to runs THIS machine recorded. `worker_runs` is a prod table on the

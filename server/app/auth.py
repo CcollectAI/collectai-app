@@ -7,6 +7,55 @@ from app.config import DEV_MODE, DEV_USER_ID, JWT_SECRET, JWT_ISSUER, OPS_API_KE
 
 logger = logging.getLogger(__name__)
 
+# ── Second factor, enforced on the SERVER (2026-09-26) ────────────────────────
+# The app sent an aal1 session to the code screen, but the API accepted that
+# token, so the password alone reached every endpoint. A token that is not
+# aal2 is refused for a member with a VERIFIED factor. Members without 2FA are
+# untouched. The Supabase side is the restrictive RLS policy `mfa_required`
+# (supabase/migrations/20260926b_mfa_required.sql) — same rule, same table.
+import time as _time
+
+_MFA_CACHE: dict[str, tuple[bool, float]] = {}
+_MFA_CACHE_TTL_S = 60.0
+
+
+async def _has_verified_factor(user_id: str) -> bool | None:
+    """True/False from auth.mfa_factors; None when it cannot be read."""
+    hit = _MFA_CACHE.get(user_id)
+    if hit and hit[1] > _time.monotonic():
+        return hit[0]
+    try:
+        from app.db import get_pool
+        pool = get_pool()
+        if pool is None:
+            return None
+        has = bool(await pool.fetchval(
+            "SELECT EXISTS (SELECT 1 FROM auth.mfa_factors "
+            "WHERE user_id = $1::uuid AND status = 'verified')",
+            user_id,
+        ))
+    except Exception as exc:
+        logger.error("[auth] MFA factor lookup failed: %s", exc)
+        return None
+    _MFA_CACHE[user_id] = (has, _time.monotonic() + _MFA_CACHE_TTL_S)
+    return has
+
+
+async def _require_second_factor(payload: dict, user_id: str) -> None:
+    if payload.get("aal") == "aal2":
+        return
+    has = await _has_verified_factor(user_id)
+    # None = unreadable: let it through (and it is logged). Refusing every
+    # request while the DB is down would lock out all members; RLS still
+    # guards the direct Supabase path.
+    if has:
+        # 403, not 401: the app answers a 401 by refreshing the token and
+        # retrying, which cannot raise aal. The code screen is what can.
+        raise HTTPException(
+            status_code=403,
+            detail={"message": "Two-factor code required", "code": "MFA_REQUIRED"},
+        )
+
 
 async def get_current_user_id(request: Request) -> str:
     """
@@ -38,9 +87,14 @@ async def get_current_user_id(request: Request) -> str:
             payload = _jwt.decode(token, JWT_SECRET, **decode_opts)
             user_id = payload.get("sub", "")
             if user_id:
+                await _require_second_factor(payload, user_id)
                 set_user_id(user_id)
                 return user_id
             logger.warning("JWT decoded but 'sub' claim is empty")
+        except HTTPException:
+            # The MFA refusal above — the generic handler below would turn it
+            # into a 401 and send the app into a refresh-and-retry.
+            raise
         except ImportError:
             logger.error("PyJWT not installed — cannot validate tokens")
             raise HTTPException(status_code=500, detail="Auth module misconfigured")

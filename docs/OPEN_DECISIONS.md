@@ -81,7 +81,7 @@ _Opened 2026-09-26 from the Android walk rounds._
 - **2026-09-26 — #3 one name per category: DONE.** `src/constants/categories.ts` is canonical; the registry (13 names) and the Explore data (18) now match it, plus two stray labels. Gate: `__tests__/lib/categoryNameParity.test.ts` (all four lists incl. the server scan map; mutation-proven).
 - **2026-09-26 — #4 single-sale prices: KEEP as they are** until there is more
   data or a better eBay replacement (Merle). No change.
-- **2026-09-26 — #5 server-side 2FA: fix it** (Merle). In progress.
+- **2026-09-26 — #5 server-side 2FA: DONE** — API 403 + restrictive RLS policy on 314 tables + guard in 16 DEFINER RPCs + watchdog check; verified as zz-lifecycle. See `docs/AUTH_AND_WEB_DEPLOY.md` → MFA.
 - **2026-09-26 — #6 concerts shown as conventions: DONE** — `concert` kind from the providers' own classification, admission tickets skipped, 498 rows backfilled; see `docs/EVENT_QUALITY_PLAN.md`.
 - **2026-09-26 — #1 barcode: no paid source** — limited resources (Merle).
   Free alternatives proposed; see #1.

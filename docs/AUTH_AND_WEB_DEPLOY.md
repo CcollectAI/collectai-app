@@ -415,11 +415,26 @@ that screen). Verified on Android: cold start → code screen; wrong code
 refused (422 `mfa_verification_failed`); right code → Portfolio; Sign Out →
 login.
 
-⚠️ **Still open — server-side enforcement.** The EC2 API and Supabase RLS
-accept an `aal1` token for a member with 2FA, so someone with the password can
-call the API directly without the code. Closing that means rejecting `aal1`
-for users with verified factors (`auth.py` + an RLS `auth.jwt()->>'aal'`
-check). It's a decision, not done here.
+✅ **Server-side enforcement — DONE 2026-09-26 (Merle's call).** Rule
+everywhere: allowed when the JWT is `aal2` OR the member has no VERIFIED
+factor, so members without 2FA are untouched.
+- **API:** `server/app/auth.py::_require_second_factor` → **403
+  `MFA_REQUIRED`** (not 401: the app answers 401 with refresh-and-retry, which
+  cannot raise aal). Factor lookup cached 60 s; unreadable → allowed + logged.
+- **PostgREST:** `20260926b_mfa_required.sql` — `public.mfa_satisfied()` and a
+  RESTRICTIVE `mfa_required` policy `TO authenticated` on all 314 RLS tables
+  (AND-ed with the permissive ones: can only take access away).
+- **DEFINER RPCs:** `20260926c` — the 16 app-callable `rpc_*` functions run past
+  RLS, so each starts with the same check (42501, hint `MFA_REQUIRED`).
+- **Watchdog:** "2FA enforced by the database" flags a table without the
+  policy or an app RPC without the guard.
+
+Verified on prod as `zz-lifecycle` (the only account with a verified factor)
+against a baseline taken BEFORE applying: password token → profiles 0,
+settings 0, API 403, RPC 403; aal2 token → 5 / 1 / 200 / 204; simcheck (no 2FA)
+unchanged. Tests: `server/tests/test_auth_mfa_required.py` (mutation-proven,
+incl. the 403 being swallowed into a 401). Re-run: `/tmp/mfaprobe.py` shape in
+the 2026-09-26 session notes.
 
 **Android could not enrol (fixed 2026-09-24).** Supabase returns the QR as an
 SVG data URI (`data:image/svg+xml;utf-8,<svg…>`, added by auth-js), and React
