@@ -15,6 +15,7 @@ from datetime import datetime, timezone, timedelta
 import asyncpg
 
 from app.worker_registry import record_run
+from app.lib.money import member_money
 from workers.retry import with_async_retry, log_dead_letter
 
 logging.basicConfig(
@@ -132,7 +133,8 @@ async def run_once():
             end_time = row["end_time"]
             end_time_str = end_time.isoformat() if end_time else None
 
-            price_str = f" at \u20ac{price:.2f}" if price else ""
+            # The member's currency and separators (member_money, 2026-09-26).
+            price_str = f" at {await member_money(conn, user_id, price)}" if price else ""
             body = (
                 f"{listing_title[:60]}{price_str} on {provider} "
                 f"\u2014 ending in ~{ALERT_WINDOW_MINUTES} min!"

@@ -78,3 +78,49 @@ def test_missing_amount_is_empty_not_zero():
     # 'withdrew from the  trade' reads as the bug it is. 'withdrew from the
     # €0.00 trade' tells a member their trade was for nothing.
     assert format_money(None, "EUR") == ""
+
+
+# ---------------------------------------------------------------------------
+# member_money (2026-09-26): notification money in the member's own currency and
+# number format. Target Hit bodies read "€13.15" to a USD member and a dot to a
+# Dutch one, while the app showed them "$15" / "€13,15".
+# ---------------------------------------------------------------------------
+import asyncio  # noqa: E402
+from unittest.mock import patch  # noqa: E402
+
+from app.lib.money import member_money, format_money  # noqa: E402
+
+
+class _Conn:
+    def __init__(self, row):
+        self.row = row
+
+    async def fetchrow(self, sql, *args):
+        return self.row
+
+
+def _run(row, amount, rates=None):
+    async def fake_rates():
+        return rates or {"EUR": 1.0, "USD": 1.1}
+    with patch("app.lib.fx_service.get_rates_from_eur", fake_rates):
+        return asyncio.run(member_money(_Conn(row), "u1", amount))
+
+
+def test_converts_to_the_members_currency():
+    assert _run({"currency": "USD", "locale": "en-US"}, 10.0) == "$11.00"
+
+
+def test_uses_the_members_separators():
+    assert _run({"currency": "EUR", "locale": "nl-NL"}, 1253.5) == "€1.253,50"
+
+
+def test_no_settings_row_is_plain_eur():
+    assert _run(None, 13.15) == "€13.15"
+
+
+def test_unknown_rate_stays_in_eur_rather_than_guessing():
+    assert _run({"currency": "USD", "locale": "de-DE"}, 13.15, rates={"EUR": 1.0}) == "€13,15"
+
+
+def test_sign_leads_the_symbol():
+    assert format_money(-42.75, "EUR", "de-DE") == "-€42,75"

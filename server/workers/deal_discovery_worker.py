@@ -202,6 +202,7 @@ async def _check_watchlist_snipes(conn) -> int:
     # Deferred import, like the notify_user one below: `app.*` modules pull in
     # config/DB at import time, and this worker must stay importable standalone.
     from app.lib.affiliate import build_affiliate_url
+    from app.lib.money import member_money
 
     notified = 0
     user_counts: dict[str, int] = {}
@@ -245,9 +246,12 @@ async def _check_watchlist_snipes(conn) -> int:
                 listing_url, provider, subid=str(row["watchlist_id"])
             )
 
+        # In the member's currency and number format (member_money): this
+        # printed "€13.15" to a USD member and a dot to a Dutch one (2026-09-26).
         message = (
-            f"{listing_title[:60]} — \u20ac{listing_price:.2f} {_provider_phrase(provider)} "
-            f"({discount_pct:.0f}% below your target of \u20ac{target_price:.2f})"
+            f"{listing_title[:60]} — {await member_money(conn, user_id, listing_price)} "
+            f"{_provider_phrase(provider)} "
+            f"({discount_pct:.0f}% below your target of {await member_money(conn, user_id, target_price)})"
         )
 
         trigger_value = json.dumps({
@@ -353,6 +357,7 @@ async def run_once():
     # every helper shared between them. If another worker grows its own pool,
     # it gets this init too.
     from app.db import _init_conn
+    from app.lib.money import member_money
 
     pool = await asyncpg.create_pool(DSN, min_size=2, max_size=5, init=_init_conn)
     logger.info("Connected to DB pool — starting deal discovery cycle")
@@ -399,7 +404,8 @@ async def run_once():
                         # mandate match, and its home is the deal screen.
                         title="Deal found",
                         body=(
-                            f"{deal['listing_title'][:60]} \u2014 \u20ac{deal['listing_price']:.2f}"
+                            f"{deal['listing_title'][:60]} \u2014 "
+                            f"{await member_money(conn, deal['user_id'], deal['listing_price'])}"
                             + (f" ({deal.get('discount_pct', 0):.0f}% below market)" if deal.get('discount_pct') else "")
                         ),
                         data={
