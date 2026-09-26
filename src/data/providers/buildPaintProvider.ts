@@ -217,12 +217,22 @@ export async function setBuildPaintProgress(projectId: string, percent: number, 
   }
 }
 
-export async function markBuildPaintProjectComplete(projectId: string, isCompleted: boolean): Promise<void> {
+/**
+ * `openPercent` is the progress a REOPENED project goes back to — the caller
+ * passes its steps' percent. Un-completing used to write `progress_pct: null`
+ * into a NOT NULL column, so switching Complete off failed every time (device
+ * walk, 2026-09-26: the switch snapped back on with an error toast).
+ */
+export async function markBuildPaintProjectComplete(
+  projectId: string,
+  isCompleted: boolean,
+  openPercent = 0,
+): Promise<void> {
   const { error } = await supabase
     .from('build_paint_projects')
     .update({
       status: isCompleted ? 'finished' : 'in_progress',
-      progress_pct: isCompleted ? 100 : null,
+      progress_pct: isCompleted ? 100 : Math.max(0, Math.min(100, Math.round(openPercent))),
       last_updated: today(),
     })
     .eq('id', projectId);

@@ -210,6 +210,7 @@ async function executeMutation(type: MutationType, args: unknown[]): Promise<voi
       await dataProvider.markBuildPaintProjectComplete(
         args[0] as string,
         args[1] as boolean,
+        args[2] as number | undefined,
       );
       break;
     case 'addBuildPaintStep':

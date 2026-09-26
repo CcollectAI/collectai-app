@@ -367,8 +367,8 @@ export class CachedDataProvider implements DataProvider {
     await cacheClear(CK.BUILD_PAINT_PROJECTS);
   }
 
-  async markBuildPaintProjectComplete(projectId: string, isCompleted: boolean): Promise<void> {
-    await this.inner.markBuildPaintProjectComplete(projectId, isCompleted);
+  async markBuildPaintProjectComplete(projectId: string, isCompleted: boolean, openPercent?: number): Promise<void> {
+    await this.inner.markBuildPaintProjectComplete(projectId, isCompleted, openPercent);
     await Promise.all([
       cacheClear(CK.BUILD_PAINT_PROJECTS),
       cacheClear(CK.ANALYTICS),

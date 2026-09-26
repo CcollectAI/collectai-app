@@ -344,7 +344,8 @@ export interface DataProvider {
    * Mock: updates in-memory.
    * Real: calls rpc_mark_build_paint_project_complete_v1.
    */
-  markBuildPaintProjectComplete(projectId: string, isCompleted: boolean): Promise<void>;
+  /** `openPercent`: the progress a reopened project returns to (its steps' percent). */
+  markBuildPaintProjectComplete(projectId: string, isCompleted: boolean, openPercent?: number): Promise<void>;
 
   /**
    * List steps for a project.

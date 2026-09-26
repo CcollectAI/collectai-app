@@ -181,7 +181,10 @@ function ProjectDetailScreen() {
     if (!project || togglingComplete) return;
     setTogglingComplete(true);
     try {
-      await dataProvider.markBuildPaintProjectComplete(project.id, !project.isCompleted);
+      // Reopening goes back to the steps' progress (not 100, not NULL).
+      await dataProvider.markBuildPaintProjectComplete(
+        project.id, !project.isCompleted, stepsProgressPercent(steps),
+      );
       await loadProject();
     } catch (err: unknown) {
       showToast({ message: userErrorMessage(err, "Failed to toggle complete", "Projects"), type: "error" });

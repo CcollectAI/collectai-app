@@ -80,7 +80,7 @@ export async function setBuildPaintProgress(projectId: string, percent: number, 
   logger.info('[MockDataProvider] setBuildPaintProgress', { projectId, percent, status });
 }
 
-export async function markBuildPaintProjectComplete(projectId: string, isCompleted: boolean): Promise<void> {
+export async function markBuildPaintProjectComplete(projectId: string, isCompleted: boolean, _openPercent = 0): Promise<void> {
   const project = mockBuildPaintProjects.get(projectId);
   if (!project) return;
 
