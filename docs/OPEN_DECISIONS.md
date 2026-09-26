@@ -77,4 +77,11 @@ _Opened 2026-09-26 from the Android walk rounds._
 
 ## Decided
 
-_(none yet)_
+- **2026-09-26 — #2 catalogue price range & trend: BUILD IT** (Merle). In progress.
+- **2026-09-26 — #3 one name per category: fix it** (Merle). In progress.
+- **2026-09-26 — #4 single-sale prices: KEEP as they are** until there is more
+  data or a better eBay replacement (Merle). No change.
+- **2026-09-26 — #5 server-side 2FA: fix it** (Merle). In progress.
+- **2026-09-26 — #6 concerts shown as conventions: fix it** (Merle). In progress.
+- **2026-09-26 — #1 barcode: no paid source** — limited resources (Merle).
+  Free alternatives proposed; see #1.
