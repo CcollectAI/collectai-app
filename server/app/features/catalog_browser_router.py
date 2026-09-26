@@ -21,6 +21,7 @@ from app.auth import get_current_user_id
 from app.db import get_pool
 from app.errors import error_response
 from app.rate_limit import per_user_rate_limit
+from app.subscription import require_plan
 
 logger = logging.getLogger(__name__)
 
@@ -578,6 +579,77 @@ async def get_catalog_item_price(category_id: str, item_key: str) -> dict:
         "latest_price": latest,
         "comps_count": comps,
         "set_name": set_name,
+    }
+
+
+@router.get(
+    "/catalog/{category_id}/items/{item_key}/price-range",
+    summary="PRO: 90-day price range and weekly trend for one catalog item",
+)
+async def get_catalog_item_price_range(
+    category_id: str,
+    item_key: str,
+    _plan: str = Depends(require_plan("pro")),
+) -> dict:
+    """The catalogue page's Pro block (2026-09-26, Merle's call).
+
+    The page sold "Full price range & 90-day trend — Sparrow Pro" while no
+    screen showed either; the teaser was removed, then this was decided as a
+    Pro feature. Same source as the free median (`market_hits_daily`, exact
+    item_ref), so the two numbers on one screen cannot disagree about which
+    sales they describe:
+
+      p10 / p50 / p90  — of the DAILY medians over 90 days (a day with many
+                         sales counts once, so one busy day cannot drag it)
+      series           — weekly median of those daily medians, oldest first
+      comps_count      — the sales behind it
+
+    PRO enforced here, not only in the app (a paywall only the client enforces
+    is not one — docs/MONETIZATION.md).
+    """
+    pool = get_pool()
+    if pool is None:
+        raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
+    item_ref = f"{category_id}:{item_key}"
+    summary = await pool.fetchrow(
+        """
+        SELECT COALESCE(SUM(comps_count), 0) AS comps_count,
+               COUNT(*) AS days,
+               percentile_cont(0.1) WITHIN GROUP (ORDER BY median_price) AS p10,
+               percentile_cont(0.5) WITHIN GROUP (ORDER BY median_price) AS p50,
+               percentile_cont(0.9) WITHIN GROUP (ORDER BY median_price) AS p90
+        FROM market_hits_daily
+        WHERE item_ref = $1
+          AND day > (current_date - interval '90 days')
+          AND median_price IS NOT NULL
+        """,
+        item_ref,
+    )
+    weeks = await pool.fetch(
+        """
+        SELECT date_trunc('week', day)::date AS week,
+               percentile_cont(0.5) WITHIN GROUP (ORDER BY median_price) AS median
+        FROM market_hits_daily
+        WHERE item_ref = $1
+          AND day > (current_date - interval '90 days')
+          AND median_price IS NOT NULL
+        GROUP BY 1
+        ORDER BY 1
+        """,
+        item_ref,
+    )
+    days = int(summary["days"]) if summary and summary["days"] else 0
+    num = lambda v: round(float(v), 2) if v is not None else None  # noqa: E731
+    return {
+        "category": category_id,
+        "item_key": item_key,
+        "range_days": 90,
+        "days_with_data": days,
+        "comps_count": int(summary["comps_count"]) if summary else 0,
+        "p10": num(summary["p10"]) if days else None,
+        "p50": num(summary["p50"]) if days else None,
+        "p90": num(summary["p90"]) if days else None,
+        "series": [{"t": w["week"].isoformat(), "v": num(w["median"])} for w in weeks],
     }
 
 

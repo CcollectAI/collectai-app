@@ -209,6 +209,21 @@ export const getCatalogItemPrice = (categoryId: string, itemKey: string) =>
     `/catalog/${encodeURIComponent(categoryId)}/items/${encodeURIComponent(itemKey)}/price`,
   );
 
+/** PRO: 90-day range (p10/p50/p90 of daily medians) + weekly median series for
+ *  one catalog item. 403 PLAN_REQUIRED for a free member (2026-09-26). */
+export const getCatalogItemPriceRange = (categoryId: string, itemKey: string) =>
+  get<{
+    range_days: number;
+    days_with_data: number;
+    comps_count: number;
+    p10: number | null;
+    p50: number | null;
+    p90: number | null;
+    series: { t: string; v: number }[];
+  }>(
+    `/catalog/${encodeURIComponent(categoryId)}/items/${encodeURIComponent(itemKey)}/price-range`,
+  );
+
 // Catalog Collections — discovery "Featured Collections" for a category,
 // grouped by set_code from the curated catalog (NOT user ownership).
 export const getCatalogCollections = (

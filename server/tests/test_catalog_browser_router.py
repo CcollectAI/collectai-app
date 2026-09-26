@@ -503,3 +503,52 @@ class TestCatalogItemPriceSetName:
         resp = client.get("/catalog/pokemon/items/x/price")
         assert resp.json()["set_name"] is None
         assert resp.json()["estimated_price"] == 100.0
+
+
+# ---------------------------------------------------------------------------
+# GET /catalog/{category}/items/{key}/price-range — PRO (2026-09-26)
+# ---------------------------------------------------------------------------
+import datetime as _dt  # noqa: E402
+
+
+class TestCatalogItemPriceRange:
+    def setup_method(self):
+        _auth_override()
+
+    def teardown_method(self):
+        app.dependency_overrides.clear()
+
+    @patch("app.subscription.get_user_plan", AsyncMock(return_value="free"))
+    @patch("app.features.catalog_browser_router.get_pool")
+    def test_free_member_is_refused(self, mock_get_pool):
+        mock_get_pool.return_value = _mock_pool()
+        resp = client.get("/catalog/pokemon/items/base1-base1-4/price-range")
+        assert resp.status_code == 403
+        assert "PLAN_REQUIRED" in resp.text
+
+    @patch("app.subscription.get_user_plan", AsyncMock(return_value="pro"))
+    @patch("app.features.catalog_browser_router.get_pool")
+    def test_pro_gets_range_and_weekly_series(self, mock_get_pool):
+        pool = _mock_pool()
+        mock_get_pool.return_value = pool
+        pool.fetchrow = AsyncMock(return_value={"comps_count": 108, "days": 54, "p10": 700.0, "p50": 1159.04, "p90": 1500.0})
+        pool.fetch = AsyncMock(return_value=[
+            {"week": _dt.date(2026, 7, 6), "median": 1100.0},
+            {"week": _dt.date(2026, 7, 13), "median": 1180.5},
+        ])
+        resp = client.get("/catalog/pokemon/items/base1-base1-4/price-range")
+        assert resp.status_code == 200
+        d = resp.json()
+        assert (d["p10"], d["p50"], d["p90"], d["comps_count"]) == (700.0, 1159.04, 1500.0, 108)
+        assert d["series"] == [{"t": "2026-07-06", "v": 1100.0}, {"t": "2026-07-13", "v": 1180.5}]
+        assert pool.fetchrow.await_args.args[1] == "pokemon:base1-base1-4"
+
+    @patch("app.subscription.get_user_plan", AsyncMock(return_value="pro"))
+    @patch("app.features.catalog_browser_router.get_pool")
+    def test_no_sales_is_empty_not_zero(self, mock_get_pool):
+        pool = _mock_pool()
+        mock_get_pool.return_value = pool
+        pool.fetchrow = AsyncMock(return_value={"comps_count": 0, "days": 0, "p10": None, "p50": None, "p90": None})
+        pool.fetch = AsyncMock(return_value=[])
+        d = client.get("/catalog/pokemon/items/x/price-range").json()
+        assert d["p50"] is None and d["series"] == []

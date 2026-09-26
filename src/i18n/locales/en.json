@@ -1502,6 +1502,13 @@
   "catalog": {
     "image_coming_soon": "Image coming soon",
     "no_recent_sales": "No recent sales data",
+    "range_label": "90-day range",
+    "range_caption_one": "Middle 80% of daily prices · {{count}} sale",
+    "range_caption_many": "Middle 80% of daily prices · {{count}} sales",
+    "range_none": "No sales in the last 90 days.",
+    "range_failed": "Couldn't load the 90-day range.",
+    "pro_teaser": "Full price range & 90-day trend — Sparrow Pro",
+    "a11y_unlock_pro": "Unlock the price range and trend with Pro",
     "marketplaces_load_failed": "Couldn't load marketplaces.",
     "a11y_retry_marketplaces": "Try loading marketplaces again",
     "no_marketplaces": "No marketplaces available for this item.",

@@ -41,6 +41,9 @@ import type { CatalogItemData } from '@/components/CatalogBrowseSection';
 import ScreenHeader from '@/components/ScreenHeader';
 import { useTranslation } from 'react-i18next';
 import { QuickNavBar } from '@/components/QuickNavBar';
+import { useBillingLimits } from '@/hooks/useBillingLimits';
+import { CatalogPriceRangeBlock, type CatalogPriceRange } from '@/components/catalog/CatalogPriceRangeBlock';
+import { convertEUR } from '@/lib/fx';
 
 type AffiliateLink = { source: string; url: string; affiliate_url: string; label: string };
 
@@ -118,6 +121,12 @@ function CatalogItemMuseumScreen() {
   // fetch (no key or category) counts as answered.
   const [priceLoading, setPriceLoading] = useState<boolean>(!!(params.key && category));
   const [priceFailed, setPriceFailed] = useState(false);
+  // PRO: 90-day range + weekly trend (2026-09-26). `rangeState` 'locked' covers
+  // a free member AND a server 403 (the client's plan read can lag the server's).
+  const { limits } = useBillingLimits();
+  const isPro = !!limits?.advanced_analytics;
+  const [range, setRange] = useState<CatalogPriceRange | null>(null);
+  const [rangeState, setRangeState] = useState<'idle' | 'loading' | 'ok' | 'failed' | 'locked'>('idle');
   const [priceNonce, setPriceNonce] = useState(0);
 
   // Where-to-buy: public affiliate-tagged links (monetized).
@@ -185,6 +194,23 @@ function CatalogItemMuseumScreen() {
     })();
     return () => { cancelled = true; };
   }, [setCode, category, params.key]);
+
+  useEffect(() => {
+    if (!params.key || !category) return;
+    if (!isPro) { setRangeState('locked'); return; }
+    let cancelled = false;
+    setRangeState('loading');
+    collectorsApi.getCatalogItemPriceRange(category, params.key as string)
+      .then((r) => { if (!cancelled) { setRange(r); setRangeState('ok'); } })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        const status = (e as { status?: number })?.status;
+        if (status === 403) { setRangeState('locked'); return; }
+        logger.error('[museum] price range fetch failed:', e);
+        setRangeState('failed');
+      });
+    return () => { cancelled = true; };
+  }, [params.key, category, isPro]);
 
   // Market value: always fetch the detail so we get the comp COUNT (and a
   // robust median) for the credibility line — the nav param only carries a bare
@@ -372,12 +398,16 @@ function CatalogItemMuseumScreen() {
                 : 'Estimated from the latest market observation'}
           </Text>
           )}
-          {/* No Pro teaser here (2026-09-26). It sold "Full price range & 90-day
-              trend — Sparrow Pro", and this screen showed neither to a Pro
-              member: the price endpoint returns a median and a count only, and
-              docs/MONETIZATION.md has the price trend SHELVED. Upgrading from
-              here bought nothing here. Unshelving it is a product call —
-              market_hits_daily already holds the daily medians it would need. */}
+          {/* PRO: the 90-day range and weekly trend (2026-09-26, Merle's call).
+              The teaser was removed earlier the same day because a Pro member
+              got neither; /price-range now backs it, server-gated. */}
+          <CatalogPriceRangeBlock
+            state={rangeState}
+            range={range}
+            currency={settings.currency}
+            fxRate={convertEUR(1, settings)}
+            onUnlock={() => router.push('/subscription' as Href)}
+          />
         </View>
 
         {/* Details (from the public catalog fields, cleaned for presentation) */}
@@ -515,8 +545,6 @@ const styles = StyleSheet.create({
   price: { fontSize: 30, fontWeight: '900', marginTop: 6 },
   priceMuted: { fontSize: 18, fontWeight: '600', marginTop: 6 },
   priceSub: { fontSize: 12, marginTop: 2 },
-  proRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1 },
-  proText: { flex: 1, fontSize: 13, fontWeight: '500' },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
   detailLabel: { fontSize: 13 },
   detailValue: { fontSize: 13, fontWeight: '600', maxWidth: '60%' },
