@@ -35,13 +35,17 @@ export function ConditionGradeSection({ defects, grade }: Props) {
     return null;
   }
 
-  const scaleLabel = grade?.scale?.toUpperCase() ?? 'GRADE';
+  // "≈": this is the model's reading of one photo on that scale, not a grade
+  // from the grading company. A bare "PSA 7" under a shield icon read as an
+  // official result — and it was produced for a flawless digital scan
+  // (probed 2026-09-26), which a member could have listed as graded.
+  const scaleLabel = grade?.scale ? `≈ ${grade.scale.toUpperCase()}` : 'GRADE';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={styles.header}>
         <Ionicons name="shield-checkmark-outline" size={18} color={colors.brand.dark} />
-        <Text style={[styles.title, { color: colors.text }]}>{t('item_details.condition_assessment', { defaultValue: 'Condition Assessment' })}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('item_details.condition_estimate', { defaultValue: 'AI condition estimate' })}</Text>
       </View>
 
       {/* Grade badge */}
@@ -67,6 +71,12 @@ export function ConditionGradeSection({ defects, grade }: Props) {
             </Text>
           </AnimatedPressable>
         </View>
+      )}
+
+      {grade && (
+        <Text style={[styles.reasoning, { color: colors.muted }]}>
+          {t('item_details.condition_estimate_caveat', { defaultValue: 'An estimate from one photo — not a graded result. Only a graded slab carries a PSA or CGC grade.' })}
+        </Text>
       )}
 
       {/* Grade reasoning */}

@@ -1563,6 +1563,8 @@
     "notes_a11y": "Notizen zum Objekt",
     "refresh_all_a11y": "Alle Marktdaten aktualisieren",
     "condition_assessment": "Zustandsbewertung",
+    "condition_estimate": "AI condition estimate",
+    "condition_estimate_caveat": "An estimate from one photo — not a graded result. Only a graded slab carries a PSA or CGC grade.",
     "price_trend": "Preisentwicklung",
     "loading_price_data": "Preisdaten werden geladen...",
     "current_estimate": "Aktuelle Schätzung",

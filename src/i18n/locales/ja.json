@@ -1563,6 +1563,8 @@
     "notes_a11y": "アイテムのメモ",
     "refresh_all_a11y": "すべての市場データを更新",
     "condition_assessment": "コンディション評価",
+    "condition_estimate": "AI condition estimate",
+    "condition_estimate_caveat": "An estimate from one photo — not a graded result. Only a graded slab carries a PSA or CGC grade.",
     "price_trend": "価格の推移",
     "loading_price_data": "価格データを読み込み中...",
     "current_estimate": "現在の推定価値",

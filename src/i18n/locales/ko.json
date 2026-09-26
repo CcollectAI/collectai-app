@@ -1563,6 +1563,8 @@
     "notes_a11y": "아이템 메모",
     "refresh_all_a11y": "모든 마켓 데이터 새로고침",
     "condition_assessment": "상태 평가",
+    "condition_estimate": "AI condition estimate",
+    "condition_estimate_caveat": "An estimate from one photo — not a graded result. Only a graded slab carries a PSA or CGC grade.",
     "price_trend": "가격 추이",
     "loading_price_data": "가격 데이터를 불러오는 중...",
     "current_estimate": "현재 추정치",

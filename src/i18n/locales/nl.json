@@ -1563,6 +1563,8 @@
     "notes_a11y": "Notities bij item",
     "refresh_all_a11y": "Alle marktinformatie vernieuwen",
     "condition_assessment": "Conditiebeoordeling",
+    "condition_estimate": "AI condition estimate",
+    "condition_estimate_caveat": "An estimate from one photo — not a graded result. Only a graded slab carries a PSA or CGC grade.",
     "price_trend": "Prijsontwikkeling",
     "loading_price_data": "Prijsgegevens laden...",
     "current_estimate": "Huidige schatting",
