@@ -16,6 +16,7 @@ export const KIND_ICON: Record<EventKind, keyof typeof Ionicons.glyphMap> = {
   stream: 'logo-twitch',
   convention: 'map-outline',
   release: 'rocket-outline',
+  concert: 'musical-notes-outline',
 };
 
 /**
@@ -28,4 +29,5 @@ export const KIND_LABEL: Record<EventKind, string> = {
   stream: 'Twitch stream',
   convention: 'Convention',
   release: 'New release',
+  concert: 'Concert',
 };

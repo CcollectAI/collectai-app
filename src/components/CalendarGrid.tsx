@@ -20,6 +20,7 @@ function getKindDotColor(themeColors: { info: string; success: string; warning: 
     release: themeColors.warning,
     stream: themeColors.danger,
     convention: '#A855F7',
+    concert: '#EC4899',
   };
 }
 

@@ -78,6 +78,17 @@ def _keyword_matches_event(event: dict[str, Any], keyword: str) -> bool:
     return _normalise(keyword) in _normalise(" ".join(p for p in parts if p))
 
 
+def _event_kind(event: dict[str, Any], kind_default: str) -> str:
+    """SeatGeek's own type/taxonomy decides a concert, not our keyword
+    (2026-09-26; twin of ticketmaster_events._event_kind)."""
+    if (event.get("type") or "").strip().lower() == "concert":
+        return "concert"
+    for tax in (event.get("taxonomies") or []):
+        if (tax.get("name") or "").strip().lower() == "concert":
+            return "concert"
+    return kind_default
+
+
 def _event_to_scraped(
     event: dict[str, Any],
     category_id: str,
@@ -102,7 +113,7 @@ def _event_to_scraped(
 
     return ScrapedEvent(
         title=event.get("title") or event.get("short_title") or "",
-        kind=kind_default,
+        kind=_event_kind(event, kind_default),
         category_id=category_id,
         date=date,
         time=time_str,

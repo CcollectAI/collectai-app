@@ -419,7 +419,7 @@ export type CategoryStoreData = {
   upcomingEvents: {
     id: string;
     title: string;
-    kind: 'collection_drop' | 'meetup' | 'stream' | 'convention' | 'release';
+    kind: 'collection_drop' | 'meetup' | 'stream' | 'convention' | 'release' | 'concert';
     date: string;
     time?: string;
   }[];

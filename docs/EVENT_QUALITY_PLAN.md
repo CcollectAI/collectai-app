@@ -322,7 +322,25 @@ copies are unpinned; write it before the next change to the predicate.
 DEFINER and has **no `is_public` filter** — `list_events` drops private rows in
 Python afterwards. Any new direct caller of the RPC would leak them.
 
-## ⛔ Half the feed is concerts labelled "Convention" (measured 2026-09-14, not fixed)
+## ✅ Half the feed is concerts labelled "Convention" — FIXED 2026-09-26 (Merle's call)
+
+> **Done.** A `concert` kind (app `EventKind`, label "Concert", music icon,
+> calendar colour; the Events filter chip appears by itself because chips come
+> from the data). The kind now comes from the provider: Ticketmaster
+> `classifications[].segment == "Music"`, SeatGeek `type`/taxonomy `concert`
+> (`_event_kind` in both pipelines) — not from our search keyword. Members still
+> cannot CREATE a concert (`ALLOWED_EVENT_KINDS` unchanged). Also found: the
+> LEGO "conventions" were mostly **"Legoland Windsor - Daily Entry"**, one per
+> calendar day — admission tickets are now skipped (`_is_admission_ticket`).
+> Backfill on prod: 498 rows -> `concert`, 119 admission rows -> `rejected`.
+> Live `GET /events`: 128 concert, 48 convention, 2 release, 0 daily entries.
+> There was no `events.kind` CHECK constraint on prod after all.
+> Falsifier: `tests/test_event_kind_concert.py` (mutation-proven); count
+> `kind` over the feed gate. ⚠️ Builds older than this JS show "concert" raw
+> (no label/icon) until updated.
+
+Original record:
+
 
 Walked on Android: Taylor Swift's category page listed "Candlelight - A Tribute
 to Taylor Swift" and "Steve Hackman conducts Taylor Swift: The Symphony Era",

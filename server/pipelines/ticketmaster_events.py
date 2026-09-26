@@ -116,6 +116,30 @@ def _keyword_matches_event(event: dict[str, Any], keyword: str) -> bool:
     return _normalise(keyword) in _normalise(_event_identity_text(event))
 
 
+def _event_kind(event: dict[str, Any], kind_default: str) -> str:
+    """Ticketmaster's own classification decides a concert, not our keyword.
+
+    The query table stamped every music keyword ("bts", "taylor swift") with
+    'convention', so 54% of the feed was concerts labelled Convention
+    (docs/EVENT_QUALITY_PLAN.md, measured 2026-09-14). A classification whose
+    SEGMENT is "Music" is a concert whatever we searched for.
+    """
+    for cls in (event.get("classifications") or []):
+        if ((cls.get("segment") or {}).get("name") or "").strip().lower() == "music":
+            return "concert"
+    return kind_default
+
+
+# A park or attraction's day ticket is not an event: "Legoland Windsor - Daily
+# Entry" came back once per calendar day and filled the LEGO feed as
+# "conventions" (2026-09-26). A convention's own "3 Day VIP Pass" is kept.
+_ADMISSION_TICKET = re.compile(r"\b(daily entry|general admission|annual pass|day ticket)\b", re.I)
+
+
+def _is_admission_ticket(event: dict[str, Any]) -> bool:
+    return bool(_ADMISSION_TICKET.search(event.get("name") or ""))
+
+
 def _compose_location(*parts: Optional[str]) -> Optional[str]:
     """Join venue, city and country into one display string.
 
@@ -155,6 +179,8 @@ def _event_to_scraped(
     date = start.get("localDate")
     if not date:
         return None
+    if _is_admission_ticket(event):
+        return None
 
     time_str = start.get("localTime")
 
@@ -174,7 +200,7 @@ def _event_to_scraped(
 
     return ScrapedEvent(
         title=event.get("name") or "",
-        kind=kind_default,
+        kind=_event_kind(event, kind_default),
         category_id=category_id,
         date=date,
         time=time_str,

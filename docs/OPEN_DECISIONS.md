@@ -82,6 +82,6 @@ _Opened 2026-09-26 from the Android walk rounds._
 - **2026-09-26 — #4 single-sale prices: KEEP as they are** until there is more
   data or a better eBay replacement (Merle). No change.
 - **2026-09-26 — #5 server-side 2FA: fix it** (Merle). In progress.
-- **2026-09-26 — #6 concerts shown as conventions: fix it** (Merle). In progress.
+- **2026-09-26 — #6 concerts shown as conventions: DONE** — `concert` kind from the providers' own classification, admission tickets skipped, 498 rows backfilled; see `docs/EVENT_QUALITY_PLAN.md`.
 - **2026-09-26 — #1 barcode: no paid source** — limited resources (Merle).
   Free alternatives proposed; see #1.

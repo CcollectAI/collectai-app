@@ -1,7 +1,10 @@
 import type { CategoryId } from './categories';
 import type { UserId } from './users';
 
-export type EventKind = 'collection_drop' | 'meetup' | 'stream' | 'convention' | 'release';
+// `concert` (2026-09-26): ticket-feed music events were stored as 'convention'
+// — 54% of the feed. Only the feeds write it; members cannot create one
+// (server ALLOWED_EVENT_KINDS is unchanged).
+export type EventKind = 'collection_drop' | 'meetup' | 'stream' | 'convention' | 'release' | 'concert';
 export type EventStatus = 'draft' | 'published' | 'cancelled';
 
 export type SponsorTier = 'featured' | 'promoted' | 'spotlight';
