@@ -435,8 +435,9 @@ export const CATEGORIES: Category[] = [
     id: 'vintage_toys',
     name: 'Vintage Toys',
     tagline: 'Kenner, Hasbro, and TOMY treasures from the golden age.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/3662630/pexels-photo-3662630.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY (2026-09-26): the photo was a child drawing with markers — every banner was
+    // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
+    bannerImageUrl: '',
     accentColor: '#D4A017',
     iconName: 'time',
     collections: [
@@ -454,8 +455,9 @@ export const CATEGORIES: Category[] = [
     id: 'marvel_legends',
     name: 'Marvel Legends',
     tagline: 'Every wave, every BAF, every chase — assemble the collection.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/4588065/pexels-photo-4588065.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY (2026-09-26): the photo was a rabbit in yellow sunglasses — every banner was
+    // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
+    bannerImageUrl: '',
     accentColor: '#ED1D24',
     iconName: 'shield-half',
     collections: [
@@ -473,8 +475,9 @@ export const CATEGORIES: Category[] = [
     id: 'lego',
     name: 'LEGO',
     tagline: 'UCS sets, retired exclusives, and minifigure collections.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/298825/pexels-photo-298825.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY (2026-09-26): the photo was cardboard toy blocks, not LEGO — every banner was
+    // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
+    bannerImageUrl: '',
     accentColor: '#FFC107',
     iconName: 'cube',
     collections: [
@@ -588,8 +591,9 @@ export const CATEGORIES: Category[] = [
     id: 'warhammer',
     name: 'Warhammer Minis',
     tagline: 'Painted squads with provenance and pedigree.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/69378/pexels-photo-69378.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY (2026-09-26): the photo was an anime cosplay doll, not a miniature — every banner was
+    // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
+    bannerImageUrl: '',
     accentColor: '#8D0226',
     iconName: 'skull',
     collections: [
@@ -969,8 +973,9 @@ export const CATEGORIES: Category[] = [
     id: 'ghibli',
     name: 'Studio Ghibli',
     tagline: 'Museum-exclusive cels, Donguri Republic goods, and Miyazaki art books.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/245914/pexels-photo-245914.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY (2026-09-26): the photo was a generic teddy bear — every banner was
+    // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
+    bannerImageUrl: '',
     accentColor: '#66BB6A',
     iconName: 'leaf',
     collections: [
@@ -995,8 +1000,9 @@ export const CATEGORIES: Category[] = [
     id: 'bandai_premium',
     name: 'Bandai Premium',
     tagline: 'P-Bandai web-shop exclusives, limited Gundam kits, and SHF reissues.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/4502978/pexels-photo-4502978.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY (2026-09-26): the photo was a Super Nintendo console (Nintendo, not Bandai) — every banner was
+    // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
+    bannerImageUrl: '',
     accentColor: '#E53935',
     iconName: 'diamond',
     collections: [
@@ -1021,8 +1027,9 @@ export const CATEGORIES: Category[] = [
     id: 'jp_magazine',
     name: 'Japanese Magazines',
     tagline: 'Mooks with exclusive figures, vintage issues, and appendix-heavy collector editions.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/6664/pexels-photo-6664.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY (2026-09-26): the photo was the URL no longer loads — every banner was
+    // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
+    bannerImageUrl: '',
     accentColor: '#FF8A65',
     iconName: 'newspaper',
     collections: [
@@ -1137,8 +1144,9 @@ export const CATEGORIES: Category[] = [
     id: 'one_piece',
     name: 'One Piece',
     tagline: 'Portrait of Pirates statues, Ichiban Kuji prizes, and Grand Ship collection kits.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/31089960/pexels-photo-31089960.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY (2026-09-26): the photo was a Madoka Magica cosplayer — every banner was
+    // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
+    bannerImageUrl: '',
     accentColor: '#D32F2F',
     iconName: 'boat',
     collections: [
@@ -1215,8 +1223,9 @@ export const CATEGORIES: Category[] = [
     id: 'loungefly',
     name: 'Loungefly',
     tagline: 'Convention exclusives, Disney collabs, and vaulted bags that sell for triple.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/174662/pexels-photo-174662.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY (2026-09-26): the photo was a Herschel backpack, not Loungefly — every banner was
+    // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
+    bannerImageUrl: '',
     accentColor: '#F48FB1',
     iconName: 'bag',
     collections: [
@@ -1395,8 +1404,9 @@ export const CATEGORIES: Category[] = [
     id: 'digimon',
     name: 'Digimon TCG',
     tagline: 'Alternate arts, secret rares, and competitive staples.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/7708411/pexels-photo-7708411.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY (2026-09-26): the photo was POKEMON energy cards — another game under this name — every banner was
+    // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
+    bannerImageUrl: '',
     accentColor: '#3B82F6',
     iconName: 'flash',
     collections: [
@@ -1426,8 +1436,9 @@ export const CATEGORIES: Category[] = [
     id: 'one_piece_tcg',
     name: 'One Piece TCG',
     tagline: 'Leader cards, manga art parallels, and tournament promos.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/26891742/pexels-photo-26891742.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY (2026-09-26): the photo was a tarot spread, not One Piece cards — every banner was
+    // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
+    bannerImageUrl: '',
     accentColor: '#DC2626',
     iconName: 'boat',
     collections: [
@@ -1581,8 +1592,9 @@ export const CATEGORIES: Category[] = [
     id: 'pens',
     name: 'Fountain Pens & Writing',
     tagline: 'Montblanc limited editions, Pelikan Souverans, and vintage flex nibs worth writing home about.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/51326/pexels-photo-51326.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    // EMPTY (2026-09-26): the photo was the URL no longer loads — every banner was
+    // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
+    bannerImageUrl: '',
     accentColor: '#065F46',
     iconName: 'create',
     collections: [
