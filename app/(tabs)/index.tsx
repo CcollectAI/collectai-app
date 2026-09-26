@@ -8,7 +8,7 @@
  * - Watchlist section with price targets
  */
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import {
   View,
@@ -246,6 +246,8 @@ function PortfolioScreen() {
   // the API returns points for every range (1d=2 … all=3651), so an empty
   // series on this screen is a transport failure, not absent data.
   const [seriesFailed, setSeriesFailed] = useState(false);
+  // Which range `series` currently holds, so a failed refetch can keep it.
+  const seriesRangeRef = useRef<RangeKey | null>(null);
   const [items, setItems] = useState<ItemRow[]>([]);
   /**
    * How much of the headline is NOT comp-backed (decided 2026-08-19:
@@ -349,13 +351,31 @@ function PortfolioScreen() {
       if (USE_REAL_BACKEND) {
         try {
           const rangeParam = range.toLowerCase() as "1d" | "7d" | "30d" | "90d" | "1y" | "all";
-          const timeseriesData = await collectorsApi.getPortfolioTimeseries(rangeParam);
-          const extractedSeries = extractSeries(timeseriesData);
-          setSeries(extractedSeries);
-          // The call succeeded. An empty result here really is "no history".
-          setSeriesFailed(false);
-
-          const overviewData = await collectorsApi.getPortfolioOverview();
+          // In PARALLEL (2026-09-26). They are independent, and each can take
+          // tens of seconds when the API or the token is misbehaving (token
+          // wait 2+8 s, three 5 s attempts, a 401 refresh and a replay), so
+          // awaiting them in turn left Home on skeletons for minutes after a
+          // server restart. And an overview failure used to throw away a
+          // timeseries that had loaded fine — each result now stands alone.
+          const [tsRes, ovRes] = await Promise.allSettled([
+            collectorsApi.getPortfolioTimeseries(rangeParam),
+            collectorsApi.getPortfolioOverview(),
+          ]);
+          if (tsRes.status === "fulfilled") {
+            setSeries(extractSeries(tsRes.value));
+            seriesRangeRef.current = range;
+            // The call succeeded. An empty result here really is "no history".
+            setSeriesFailed(false);
+          } else {
+            logger.error("[Portfolio] timeseries failed:", tsRes.reason);
+            // A failed REFETCH keeps the chart it already had for this range —
+            // the chart only shows its failure state when it has no points.
+            // A different range's points would be mislabelled, so those go.
+            if (seriesRangeRef.current !== range) setSeries([]);
+            setSeriesFailed(true);
+          }
+          if (ovRes.status === "rejected") throw ovRes.reason;
+          const overviewData = ovRes.value;
           const extractedItems = extractItems(overviewData);
           if (extractedItems.length) {
             setItems(extractedItems.sort((a, b) => b.value - a.value));
@@ -375,9 +395,9 @@ function PortfolioScreen() {
             }
           }
         } catch (realErr: unknown) {
+          // Only the overview (or the fallback) can land here now; the series
+          // has already been set from its own result above.
           logger.error("[Portfolio] Real backend error, falling back:", realErr);
-          setSeries([]);
-          setSeriesFailed(true);
           // Same fallback on a hard failure. Only surface an error if the
           // collection genuinely cannot be read either way — otherwise Home
           // showed "Could not load portfolio data" over a collection the Items
@@ -764,7 +784,12 @@ function PortfolioScreen() {
                   : `Portfolio chart: current value ${fmtCurrency(total, settings)}, ${isPositive ? 'up' : 'down'} ${formatPct(deltaPct)} over ${range}`
               }
             >
-              {loading ? (
+              {/* Skeleton on the FIRST load only (docs/ui-playbook.md: "only the
+                  FIRST load may show the skeleton; a refocus refresh swaps the
+                  data in place"). Home refetches on every focus, and the chart
+                  it already had was hidden behind a skeleton for as long as a
+                  slow refetch took — minutes, after a server restart. */}
+              {loading && series.length === 0 ? (
                 <SkeletonPortfolioHeader />
               ) : (
                 <PortfolioLineChart

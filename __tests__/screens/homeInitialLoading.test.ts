@@ -27,4 +27,15 @@ describe('Home initial loading state', () => {
   it('still gates the first load on auth — the reason the flag must start true', () => {
     expect(HOME).toMatch(/if \(authLoading\) return;\s*loadData\(\);/);
   });
+
+  // 2026-09-26: after a server restart Home sat on skeletons for minutes — every
+  // refocus refetch hid the chart it already had, and the two API calls ran
+  // one after the other.
+  it('shows the chart skeleton on the FIRST load only, not over data it already has', () => {
+    expect(HOME).toMatch(/\{loading && series\.length === 0 \? \(\s*<SkeletonPortfolioHeader/);
+  });
+
+  it('fetches timeseries and overview in parallel, each result standing alone', () => {
+    expect(HOME).toMatch(/Promise\.allSettled\(\[\s*collectorsApi\.getPortfolioTimeseries\(rangeParam\),\s*collectorsApi\.getPortfolioOverview\(\),?\s*\]\)/);
+  });
 });

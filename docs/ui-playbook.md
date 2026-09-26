@@ -3893,6 +3893,12 @@ had, broken again, plus four new ones:
   refocus refresh swaps the data in place (`hasEventRef`), and a screen that
   holds an edit form must not refetch over it (the dashboard refetches only
   while it has no company).
+  **Home broke it too (2026-09-26):** `{loading ? <SkeletonPortfolioHeader/>}`
+  hid a chart it already had on every focus refetch, and its two API calls ran
+  in series — after a server restart the tab sat on skeletons for minutes. Now
+  `loading && series.length === 0`, `Promise.allSettled` for the pair, and a
+  failed refetch keeps the same range's points
+  (`__tests__/screens/homeInitialLoading.test.ts`).
 - **After create, land on the thing.** `router.replace('/events/<id>')`, not
   `safeGoBack` — the host's next actions (share, announce, manage) live there.
   A duplicate opens as a draft; its Save button says "Publish Event" and
