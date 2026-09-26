@@ -834,6 +834,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
               { borderColor: activeFilterCount > 0 ? colors.accent : colors.border,
                 backgroundColor: activeFilterCount > 0 ? colors.accent + '14' : colors.card },
             ]}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
             accessibilityRole="button"
             accessibilityLabel={activeFilterCount > 0 ? `Filters, ${activeFilterCount} active` : 'Filter and sort'}
           >
