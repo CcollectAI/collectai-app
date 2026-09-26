@@ -602,6 +602,19 @@ export function offerNeedsMyAction(o: P2POffer): boolean {
   return false;
 }
 
+/**
+ * What the move IS, for the pill on a card offerNeedsMyAction flags.
+ *
+ * Same branch order as offerNeedsMyAction. The pill said "YOUR MOVE" for all of
+ * them, so a COMPLETED trade whose only open step was a rating read as a trade
+ * still in progress (walked 2026-09-25). Words match the card's own buttons.
+ */
+export function myMoveLabel(o: P2POffer): string {
+  if (o.can_confirm) return o.i_am_buyer ? 'MARK RECEIVED' : 'MARK SENT';
+  if (o.can_grade && !o.already_graded) return o.i_am_buyer ? 'RATE THE SELLER' : 'RATE THE BUYER';
+  return 'YOUR MOVE';
+}
+
 /** How many offers are waiting on the caller. */
 export const countOffersNeedingAction = (offers: P2POffer[]): number =>
   offers.reduce((n, o) => (offerNeedsMyAction(o) ? n + 1 : n), 0);

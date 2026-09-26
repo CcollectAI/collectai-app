@@ -45,7 +45,7 @@ import { formatPrice, parseMoney, formatPercent } from '@/lib/format';
 import { convertCurrency } from '@/lib/fx';
 import type { CurrencyCode } from '@/data/types';
 import { collectorsApi } from '@/api/collectorsApi';
-import { offerNeedsMyAction, type P2POffer, type P2PCarrier } from '@/api/p2pApi';
+import { offerNeedsMyAction, myMoveLabel, type P2POffer, type P2PCarrier } from '@/api/p2pApi';
 import { timeAgo } from '@/lib/timeAgo';
 import { groupCompetingOffers } from '@/lib/offerGrouping';
 import { radius, text as textToken, fontWeight, shadow } from '@/theme/tokens';
@@ -1166,7 +1166,7 @@ function OffersScreen() {
               button that moves it" being one colour is the point. */}
           {mine ? (
             <View style={[styles.movePill, { backgroundColor: colors.accent }]}>
-              <Text style={[styles.movePillText, { color: colors.accentText }]}>YOUR MOVE</Text>
+              <Text style={[styles.movePillText, { color: colors.accentText }]}>{myMoveLabel(o)}</Text>
             </View>
           ) : null}
           {/* Takes the slot YOUR MOVE used to occupy on exactly these cards,

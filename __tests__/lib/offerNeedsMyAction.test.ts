@@ -8,7 +8,7 @@
  * rather than a re-implementation, so a change here changes all three at once
  * and this is the only place that can pin it.
  */
-import { offerNeedsMyAction, countOffersNeedingAction, type P2POffer } from '@/api/p2pApi';
+import { offerNeedsMyAction, countOffersNeedingAction, myMoveLabel, type P2POffer } from '@/api/p2pApi';
 
 const offer = (o: Partial<P2POffer>): P2POffer => ({
   id: 'o1',
@@ -155,5 +155,23 @@ describe('needs-me vs may-answer', () => {
     for (const status of ['accepted', 'completed', 'declined', 'cancelled']) {
       expect(mayRespond(offer({ status, i_am_buyer: false }))).toBe(false);
     }
+  });
+});
+
+// 2026-09-25: a COMPLETED trade whose only open step was a rating was stamped
+// "YOUR MOVE", reading as a trade still in progress. The pill names the move.
+
+describe('myMoveLabel', () => {
+  const base = { status: 'completed', i_am_buyer: true } as unknown as Parameters<typeof myMoveLabel>[0];
+  it('names the rating on a completed trade', () => {
+    expect(myMoveLabel({ ...base, can_grade: true, already_graded: false })).toBe('RATE THE SELLER');
+    expect(myMoveLabel({ ...base, i_am_buyer: false, can_grade: true, already_graded: false })).toBe('RATE THE BUYER');
+  });
+  it('names the confirmation step', () => {
+    expect(myMoveLabel({ ...base, status: 'accepted', can_confirm: true })).toBe('MARK RECEIVED');
+    expect(myMoveLabel({ ...base, status: 'accepted', i_am_buyer: false, can_confirm: true })).toBe('MARK SENT');
+  });
+  it('keeps YOUR MOVE for answering an offer', () => {
+    expect(myMoveLabel({ ...base, status: 'countered' })).toBe('YOUR MOVE');
   });
 });
