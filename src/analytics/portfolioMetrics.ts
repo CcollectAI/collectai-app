@@ -11,6 +11,7 @@
  * No React / no network calls. This is reused by the store layer.
  */
 
+import { changeBasis } from '@/lib/portfolioChange';
 import { type Tier, tierFromComposite } from './tier';
 import {
   computeCollectionStatusScores,
@@ -191,8 +192,11 @@ export function computePLFromSeries(
     (a, b) => new Date(a.t).getTime() - new Date(b.t).getTime(),
   );
 
-  const startValue = sorted[0].v;
   const currentValue = sorted[sorted.length - 1].v;
+  // With market_change, the baseline is what the items were worth when they
+  // entered the range (changeBasis) — not the chart's first point, which is
+  // EUR 0 whenever the items were added inside the range.
+  const startValue = changeBasis(sorted[0].v, currentValue, marketChange);
 
   /**
    * A portfolio whose series STARTS at zero has no baseline to measure against.
