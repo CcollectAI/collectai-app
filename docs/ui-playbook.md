@@ -3940,3 +3940,14 @@ had, broken again, plus four new ones:
   Gathering" mid-word. Bound the PILL by its row (`maxWidth: '100%'`) and let
   the text be as wide as its name.
 
+## Narrowing controls sit with search; the action row holds actions (2026-09-26)
+
+The Marketplace filter button sat alone at the LEFT of the row that also held
+Open bids and Sell, with a flexible spacer between them. Walked, it read as
+belonging to neither: not with the search it refines, not with the things you
+do. Same rule as "Three equal controls" above, one level up: group controls by
+KIND. Search, filter & sort and Favourites all narrow what you see — one row.
+Open bids and Sell are actions — their own row. A "Clear" belongs next to the
+thing it clears (the applied-filter chips), not next to the button that opened
+the panel. `app/listings.tsx`.
+

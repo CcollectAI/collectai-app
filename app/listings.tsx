@@ -820,6 +820,32 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
             ) : null}
           </View>
 
+          {/* Filter & sort — narrows the list, so it lives with search. It
+              carries a count so the member can always see how much is being
+              hidden — an invisible active filter is the classic "why are there
+              no results" trap. */}
+          <AnimatedPressable
+            onPress={() => {
+              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+              setFilterOpen(true);
+            }}
+            style={[
+              styles.iconBtn, styles.filterBtn,
+              { borderColor: activeFilterCount > 0 ? colors.accent : colors.border,
+                backgroundColor: activeFilterCount > 0 ? colors.accent + '14' : colors.card },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={activeFilterCount > 0 ? `Filters, ${activeFilterCount} active` : 'Filter and sort'}
+          >
+            {/* Icon only. The count still shows when filters are on — dropping
+                that would hide the "why are there no results" answer, which is
+                the whole reason this button carries a number. */}
+            <Ionicons name="options-outline" size={17} color={activeFilterCount > 0 ? colors.accent : colors.text} />
+            {activeFilterCount > 0 ? (
+              <Text style={[styles.filterBtnText, { color: colors.accent }]}>{activeFilterCount}</Text>
+            ) : null}
+          </AnimatedPressable>
+
           {/* Favourites. The heart on each tile writes to a list, and a list
               with no way in is capture-without-consume — the shape this
               codebase keeps deleting. This is that way in. */}
@@ -838,43 +864,11 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
 
         </View>
 
-        {/* ONE control row. The filter button carries a count so the user can
-            always see how much is being hidden from them — an invisible active
-            filter is the classic "why are there no results" trap. */}
+        {/* The ACTION row: the two things you DO on a marketplace. The filter
+            button used to sit alone at its left edge, where it read as neither
+            search nor action (walk 2026-09-26, OPEN_DECISIONS #7); it now sits
+            in the search row, beside the other ways of narrowing the list. */}
         <View style={styles.filterRow}>
-          <AnimatedPressable
-            onPress={() => {
-              fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-              setFilterOpen(true);
-            }}
-            style={[
-              styles.filterBtn,
-              { borderColor: activeFilterCount > 0 ? colors.accent : colors.border,
-                backgroundColor: activeFilterCount > 0 ? colors.accent + '14' : colors.card },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={activeFilterCount > 0 ? `Filters, ${activeFilterCount} active` : 'Filter and sort'}
-          >
-            {/* Icon only. The count still shows when filters are on — dropping
-                that would hide the "why are there no results" answer, which is
-                the whole reason this button carries a number. */}
-            <Ionicons name="options-outline" size={17} color={activeFilterCount > 0 ? colors.accent : colors.text} />
-            {activeFilterCount > 0 ? (
-              <Text style={[styles.filterBtnText, { color: colors.accent }]}>{activeFilterCount}</Text>
-            ) : null}
-          </AnimatedPressable>
-
-          {activeFilterCount > 0 ? (
-            <AnimatedPressable
-              onPress={clearFilters}
-              style={styles.clearBtn}
-              accessibilityRole="button"
-              accessibilityLabel={t('listings.a11y_clear_filters', { defaultValue: 'Clear all filters' })}
-            >
-              <Text style={[styles.clearBtnText, { color: colors.accent }]}>Clear</Text>
-            </AnimatedPressable>
-          ) : null}
-
           <View style={styles.grow} />
 
           {/* Open bids, beside Sell: the two things you DO on a marketplace sit
@@ -972,6 +966,17 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
               <Ionicons name="close" size={13} color={colors.accent} />
             </AnimatedPressable>
           ))}
+          {activeFilterCount > 0 ? (
+            <AnimatedPressable
+              onPress={clearFilters}
+              style={styles.clearBtn}
+              accessibilityRole="button"
+              accessibilityLabel={t('listings.a11y_clear_filters', { defaultValue: 'Clear all filters' })}
+            >
+              <Text style={[styles.clearBtnText, { color: colors.accent }]}>Clear</Text>
+            </AnimatedPressable>
+          ) : null}
+
         </View>
       ) : null}
 
@@ -1293,13 +1298,12 @@ const styles = StyleSheet.create({
   appliedChipText: { fontSize: textToken.sm, fontWeight: fontWeight.semibold, flexShrink: 1 },
   footerLoading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   filterRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
-  // Square-ish icon button now the label is gone. Kept at 36pt so it lines up
-  // with the Offers pill and Sell button on the same row, and stays a legal
-  // touch target with the glyph at 17.
+  // Layered on iconBtn: the same 40pt box as the heart beside it in the search
+  // row; grows past 40 only when a count shows. Border 1 (not hairline) so the
+  // accent border reads when filters are active.
   filterBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
-    borderWidth: 1, borderRadius: radius.md,
-    height: 36, minWidth: 40, paddingHorizontal: 10,
+    flexDirection: 'row', gap: 4,
+    borderWidth: 1, width: undefined, minWidth: 40, paddingHorizontal: 10,
   },
   filterBtnText: { fontSize: textToken.sm, fontWeight: fontWeight.semibold },
   clearBtn: { paddingHorizontal: 4, paddingVertical: 7 },
