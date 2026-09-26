@@ -416,8 +416,7 @@ export const CATEGORIES: Category[] = [
     id: 'action_figures',
     name: 'Action Figures',
     tagline: 'From shelf to grail — every line, every wave, every exclusive.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/3661193/pexels-photo-3661193.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    bannerImageUrl: '',
     accentColor: '#1565C0',
     iconName: 'man',
     collections: [
@@ -517,8 +516,7 @@ export const CATEGORIES: Category[] = [
     id: 'dnd',
     name: 'Dungeons & Dragons',
     tagline: 'Rulebooks, artisan dice and campaign miniatures.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/4691567/pexels-photo-4691567.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    bannerImageUrl: '',
     accentColor: '#7A1F2B',
     iconName: 'dice',
     collections: [
@@ -534,8 +532,7 @@ export const CATEGORIES: Category[] = [
     id: 'gunpla',
     name: 'Gunpla & Model Kits',
     tagline: 'HG, MG, PG builds tracked like art pieces.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/185725/pexels-photo-185725.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    bannerImageUrl: '',
     accentColor: '#1E88E5',
     iconName: 'rocket',
     collections: [
@@ -1171,8 +1168,7 @@ export const CATEGORIES: Category[] = [
     id: 'vtuber',
     name: 'VTuber',
     tagline: 'Hololive birthday merch, Nijisanji voice packs, and Booth.pm indie drops.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/29901237/pexels-photo-29901237.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    bannerImageUrl: '',
     accentColor: '#7C4DFF',
     iconName: 'videocam',
     collections: [
@@ -1290,8 +1286,7 @@ export const CATEGORIES: Category[] = [
     id: 'sportscards',
     name: 'Sports Cards',
     tagline: 'PSA 10 rookies, vintage Topps, and wax-era investment-grade slabs.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/5184684/pexels-photo-5184684.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    bannerImageUrl: '',
     accentColor: '#43A047',
     iconName: 'trophy',
     collections: [
@@ -1468,8 +1463,7 @@ export const CATEGORIES: Category[] = [
     id: 'blind_box',
     name: 'Blind Box Figures',
     tagline: 'Pop Mart, Sonny Angel, and chase-worthy mystery pulls.',
-    bannerImageUrl:
-      'https://images.pexels.com/photos/1007533/pexels-photo-1007533.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
+    bannerImageUrl: '',
     accentColor: '#EC4899',
     iconName: 'gift',
     collections: [
