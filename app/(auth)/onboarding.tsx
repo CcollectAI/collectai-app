@@ -931,16 +931,21 @@ const styles = StyleSheet.create({
   categoryPill: {
     flexDirection: 'row',
     alignItems: 'center',
+    maxWidth: '100%',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1.5,
     gap: 6,
   },
+  // No maxWidth on the text (2026-09-26): it was 100, and with numberOfLines={1}
+  // it cut "Magic: The Gathering", "Designer & Art Toys" and the rest of the
+  // longer names to "Magic: The G…". The grid wraps, so a chip may be as wide
+  // as its name; the pill's maxWidth only stops one exceeding its row.
   categoryPillText: {
     fontSize: 13,
     fontWeight: '600',
-    maxWidth: 100,
+    flexShrink: 1,
   },
   categoryCountText: {
     width: '100%',
