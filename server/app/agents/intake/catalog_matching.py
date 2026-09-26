@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import logging
 from typing import Any, Optional
 
@@ -147,6 +148,48 @@ def _key_number(item_key: Optional[str]) -> Optional[str]:
     return (last.lstrip("0") or "0") if last else None
 
 
+# A title match whose catalogue NUMBER contradicts the number read off the
+# item is not an identity. Capped below the orchestrator's adopt threshold
+# (0.75) and the writers' (0.6 add-manual) so it can only be an alternative.
+_NUMBER_CONFLICT_CAP = 0.55
+# Printed number + all title words (Strategy 0b): the floor is above the
+# orchestrator's adopt threshold (0.75); an exact title reaches 1.0.
+_PRINTED_NUMBER_TITLE_FLOOR = 0.8
+
+
+def norm_printed(value: Optional[str]) -> str:
+    """'006/165' -> '6/165', 'TG03/30' -> 'tg3/30'. Leading zeros dropped on each
+    side of the slash: vision reads the card's zero-padded print, the catalogue
+    stores '6/165' (2026-09-26: an exact compare capped the right row).
+    Mirrored in SQL by _PRINTED_SQL — keep the two identical."""
+    return re.sub(r"(^|/|[a-z])0+(\d)", r"\1\2", (value or "").strip().lower())
+
+
+# SQL twin of norm_printed, applied to the catalogue's `number`.
+_PRINTED_SQL = "regexp_replace(lower(attributes_json ->> 'number'), '(^|/|[a-z])0+([0-9])', '\\1\\2', 'g')"
+
+
+def number_agrees(read: Optional[str], printed: Optional[str], card_no: Optional[str]) -> Optional[bool]:
+    """Does a catalogue row's number agree with the number read off the item?
+
+    None = cannot tell (nothing read, or the row stores no number).
+    The PRINTED form ("4/102", catalogue key `number`) is compared whole when
+    both sides have it: it is what separates Base Set Charizard 4/102 from the
+    Celebrations reprint 4/25 — the same "4" in `card_number`. Otherwise the
+    heads are compared through _norm_number ('4/102' -> '4', 'BT5-087' -> 'bt5-87').
+    """
+    raw = (read or "").strip()
+    if not raw:
+        return None
+    if "/" in raw and printed and "/" in printed:
+        return norm_printed(printed) == norm_printed(raw)
+    want = _norm_number(raw)
+    for v in (card_no, printed):
+        if v and str(v).strip():
+            return _norm_number(str(v)) == want
+    return None
+
+
 def resolve_title_ties(matches: list[dict], set_code: Optional[str], number: Optional[str]) -> tuple[list[dict], bool]:
     """Resolve a tie at the top between DIFFERENT catalog rows.
 
@@ -169,6 +212,9 @@ def resolve_title_ties(matches: list[dict], set_code: Optional[str], number: Opt
     if len({m.get("item_key") for m in tied}) < 2:
         return matches, False
     pool = tied
+    agreeing = [m for m in pool if m.get("number_agrees") is True]
+    if agreeing:
+        pool = agreeing
     want_num = _norm_number(number)
     if want_num:
         by_num = [m for m in pool if _key_number(m.get("item_key")) == want_num.rsplit("-", 1)[-1]]
@@ -215,6 +261,9 @@ async def _match_catalog_items(
     if not pool or not category_id:
         return []
 
+    _attrs = extracted_attributes or {}
+    read_number = str(_attrs.get("card_number") or _attrs.get("number") or "").strip()
+
     seen_ids: set[str] = set()
     matches: list[dict[str, Any]] = []
 
@@ -243,6 +292,55 @@ async def _match_catalog_items(
                             "match_score": row["_score"],
                             "match_reason": row["_reason"],
                         })
+            # Strategy 0b: the PRINTED number read off the item ("4/102") plus
+            # every word of the catalogue title present in the name that was
+            # read (2026-09-26). Vision often decorates the name — "Charizard
+            # 1st Edition" — which no title strategy matches, so Base Set 4/102
+            # never became a candidate. The printed number alone is not an
+            # identity (4/102 is also HGSS Drapion), the title words alone are
+            # 28 Charizards; together they are one card.
+            if suggested_name and "/" in read_number:
+                name_tokens = set(_normalize_for_search(suggested_name).split())
+                rows = await conn.fetch(
+                    """
+                    SELECT id, category, item_key, title, brand, rarity,
+                           set_code, image_url, notes
+                    FROM category_items
+                    WHERE category = $1
+                      AND """ + _PRINTED_SQL + """ = $2
+                    LIMIT 20
+                    """,
+                    category_id,
+                    norm_printed(read_number),
+                )
+                for row in rows:
+                    rid = str(row["id"])
+                    title_tokens = set(_normalize_for_search(row["title"] or "").split())
+                    if rid in seen_ids or not title_tokens or not title_tokens <= name_tokens:
+                        continue
+                    seen_ids.add(rid)
+                    matches.append({
+                        "catalog_item_id": rid,
+                        "item_key": row["item_key"],
+                        "title": row["title"],
+                        "category": row["category"],
+                        "brand": row["brand"],
+                        "rarity": row["rarity"],
+                        "set_code": row["set_code"],
+                        "image_url": row["image_url"],
+                        # Scaled by how much of the name the title covers: two
+                        # rows can share a printed number AND fit inside the
+                        # name — 151 "Charizard ex" 6/165 and Expedition
+                        # "Charizard" 6/165 — and the fuller title is the card.
+                        "match_score": round(
+                            _PRINTED_NUMBER_TITLE_FLOOR
+                            + (1.0 - _PRINTED_NUMBER_TITLE_FLOOR)
+                            * _text_similarity(suggested_name, row["title"] or ""),
+                            4,
+                        ),
+                        "match_reason": "printed_number+title",
+                    })
+
             # Strategy 1: Exact item_key match (highest confidence)
             if suggested_name:
                 normalized = _normalize_for_search(suggested_name)
@@ -314,6 +412,13 @@ async def _match_catalog_items(
                 words = _normalize_for_search(suggested_name).split()[:4]
                 title_query = " ".join(words)
                 if title_query:
+                    # Ranked by the number read off the item BEFORE the LIMIT
+                    # (2026-09-26). It was an unordered LIMIT 5: "Charizard" has
+                    # 28 exact-title rows in pokemon, the five returned were
+                    # arbitrary, and a QuickScan of Base Set 4/102 adopted the
+                    # Celebrations reprint 4/25 at score 1.00 and priced it at
+                    # EUR 154 against the card's EUR 1,159 — base1-4 was never
+                    # even a candidate.
                     rows = await conn.fetch(
                         """
                         SELECT id, category, item_key, title, brand, rarity,
@@ -324,10 +429,14 @@ async def _match_catalog_items(
                                 regexp_replace(lower(title), '[^a-z0-9[:space:]]', '', 'g'),
                                 '\\s+', ' ', 'g'
                               ) LIKE $2
+                        ORDER BY (""" + _PRINTED_SQL + """ = $3) DESC NULLS LAST,
+                                 (lower(attributes_json ->> 'card_number') = lower($4)) DESC NULLS LAST
                         LIMIT 5
                         """,
                         category_id,
                         f"%{title_query}%",
+                        norm_printed(read_number),
+                        read_number.split("/")[0].strip(),
                     )
                     for row in rows:
                         rid = str(row["id"])
@@ -427,6 +536,31 @@ async def _match_catalog_items(
         from app.ml.openai_vision import record_scan_degradation
         record_scan_degradation("catalog_match", "match_query_error", detail=str(e))
         return []
+
+    # Number agreement, for EVERY candidate whatever strategy found it: one
+    # lookup of the catalogue's own numbers. A contradicting row keeps its place
+    # as an alternative but can no longer be adopted (_NUMBER_CONFLICT_CAP).
+    if read_number and matches:
+        try:
+            num_rows = await pool.fetch(
+                """
+                SELECT id::text AS id,
+                       attributes_json ->> 'number' AS printed,
+                       attributes_json ->> 'card_number' AS card_no
+                FROM category_items
+                WHERE id = ANY($1::uuid[])
+                """,
+                [m["catalog_item_id"] for m in matches],
+            )
+            nums = {r["id"]: (r["printed"], r["card_no"]) for r in num_rows}
+            for m in matches:
+                printed, card_no = nums.get(m["catalog_item_id"], (None, None))
+                agrees = number_agrees(read_number, printed, card_no)
+                m["number_agrees"] = agrees
+                if agrees is False:
+                    m["match_score"] = min(float(m["match_score"]), _NUMBER_CONFLICT_CAP)
+        except Exception as e:
+            logger.warning("[catalog_match] number check failed: %s", e)
 
     # Sort by match_score descending, return top 5
     matches.sort(key=lambda m: m["match_score"], reverse=True)

@@ -109,6 +109,7 @@ Two rules the tooling learned the hard way:
 | AM | One listing, many URLs — dedup by a decorated link | **fixed + DEPLOYED 2026-09-24** | eBay re-issues every item URL with a fresh `amdata` token, and deal dedup compared raw URLs, so each scan stored the same card again (one item = 4 deals). Dedup now keys on `app/lib/listing_identity.listing_key` (eBay item id; tracking params dropped elsewhere), in-batch too. Only test accounts had duplicates (67 rows / 48 items). Falsifier: `pytest tests/test_deal_discovery_agent.py -k redecorated` → pass; set `hit_key = hit_url` → 3 red. See section AM |
 | AN | A fix that lived in one copy of a rule while a second copy kept the bug | **fixed + gated 2026-09-24 (client; needs a JS build)** | The auth-lock deadlock was fixed in AuthProvider (setTimeout(0)), and `src/hooks/useAuth.ts`, an older copy, kept an `async` onAuthStateChange listener awaiting a query. Every cold start into a profile stalled every Supabase request ~15 s. Hook deleted; gate `check:auth-listener-lock`. Falsifier: `git show acf414fc:src/hooks/useAuth.ts > src/hooks/useAuth.ts && npm run check:auth-listener-lock` → exit 1 (then delete the file again). See docs/AUTH_AND_WEB_DEPLOY.md "Cold start stalled every request" |
 | AO | An EUR amount formatted with NO currency — printed euros to every member | **fixed at the chokepoint 2026-09-26 (client; needs a JS build)** | `formatPrice(x)` defaulted to EUR, and ~45 sites in 22 files passed backend EUR amounts that way (portfolio chart, catalogue, deal/mandate screens, movers, item ranges). `check:currency-conversion` skipped them: it only inspects calls that NAME a member currency — AD's blind spot one shape over. Walked on Android as USD: header "$1.429", chart under it "€1.253". Fix: SettingsProvider pushes `setActiveDisplayCurrency()` (during render), and an OMITTED currency now means "EUR, show it converted"; an explicit currency is as given. Chart takes `currency` + `fxRate` so its ticks stay round (it is `React.memo`). Two riders found by the sweep: the mandate form typed `max_price` in the member's currency and stored it raw (policy_engine compares it in EUR) → `memberAmountToEUR` on save, `convertEUR` on edit; the shop picker labelled a watchlist target (row currency) as €. ⚠️ Residual risk: a one-arg call on an amount ALREADY in the member's currency now double-converts — the 22 files were read for this, none found. Falsifier: `npx jest __tests__/lib/formatPriceDisplayCurrency.test.ts` (mutation-proven: drop the conversion → 1 fails); on device, Settings → USD → Portfolio chart axis reads `$`. |
+| AP | A scan identity chosen by an arbitrary LIMIT, then priced by a key SUBSTRING | **fixed + DEPLOYED 2026-09-26** | QuickScan of Base Set Charizard (EUR 1,159 on its catalogue page) adopted the Celebrations reprint at score 1.00 and quoted EUR 154; with the identity fixed it then quoted EUR 2.97. Three defects: (1) the attribute strategy queried `card_number = '4/102'` but the catalogue's printed form is `number` ('4/102'; `card_number` is '4'), so it never matched; (2) the title strategy was an UNORDERED `LIMIT 5` over 28 exact "Charizard" rows; (3) the price step ran `normalized_key ILIKE '%base1-base1-4%'`, which matches base1-base1-40..49. Fixed: printed number (zero-pad normalised, SQL twin) + title containment as strategy 0b, number-first ORDER BY before the LIMIT, a number-conflict cap (0.55) at one chokepoint for every candidate, and pricing from `market_hits_daily` by exact item_ref — the catalogue screen's source. Falsifier: on EC2 `python /tmp/vx3.py <base1/4_hires.png>` → KEY base1-base1-4, EUR 1159.04; pytest `test_catalog_title_ties.py`, `test_intake_price_exact_key.py` (5 mutations, all caught). |
 
 ## AD — a money format typed into the UI (2026-09-24)
 
@@ -483,6 +484,25 @@ show converted"; explicit currencies are untouched; `null` keeps EUR (tests).
 
 **Falsifier**: `npx jest __tests__/lib/formatPriceDisplayCurrency.test.ts` —
 replace the conversion with `amount = amount` and test 1 fails.
+
+## AP — a scan identity chosen by an arbitrary LIMIT, priced by a key substring (2026-09-26)
+
+Probed as a member on prod with the pokemontcg.io scans (no device camera
+needed): `/intake/image-only`, then `process_intake` directly on EC2.
+
+| card | before | after |
+|---|---|---|
+| Base Set Charizard 4/102 | cel25c-4-a, 1.00, EUR 154 → (key fixed) EUR 2.97 | base1-base1-4, 0.87, EUR 1,159.04 |
+| Base Set Blastoise 2/102 | — | base1-base1-2, 1.00, EUR 174.99 |
+| 151 Charizard ex 006/165 | (first fix) capped 0.55: '006/165' ≠ '6/165' | sv3pt5-sv3pt5-6, 1.00, EUR 7.42 |
+
+The vision model was NOT the fault: called alone it read "Base Set, 4/102"
+three times out of three. Every defect was downstream of it.
+
+Found on the way and still open: vision reports `edition: "1st Edition"` for an
+unlimited card, and condition wear + a PSA 7 for a clean digital scan (condition
+grading is SHELVED per MONETIZATION.md — check whether the scan result renders
+it before trusting either).
 ## AC — a SECURITY DEFINER function anyone can call (2026-09-22)
 
 **How it was found.** Re-running the Security Advisor's RLS lints by hand

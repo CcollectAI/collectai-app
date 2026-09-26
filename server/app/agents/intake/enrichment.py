@@ -42,17 +42,56 @@ async def _estimate_price(
     if not pool or not category_id or not name:
         return None, None, None
 
-    # Use catalog_match_key for precise lookup, fall back to fuzzy name
-    search_key = catalog_match_key if catalog_match_key else name[:40]
+    # Source 0: the matched catalogue item, priced exactly as the catalogue
+    # screen prices it (catalog_browser_router.get_catalog_item_price): the
+    # market_hits_daily rollup by EXACT item_ref over 180 days. Before
+    # 2026-09-26 the matched key went into the ILIKE below as '%key%', a
+    # SUBSTRING — 'base1-base1-4' also matched base1-base1-40..49 — so a
+    # QuickScan of Base Set Charizard (EUR 1,159 on its catalogue page) was
+    # quoted EUR 2.97 from commons. Band = p10/p50/p90 of the daily medians.
+    if catalog_match_key:
+        try:
+            async with pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    """
+                    SELECT COALESCE(SUM(comps_count), 0) AS n,
+                           percentile_cont(0.1) WITHIN GROUP (ORDER BY median_price) AS q10,
+                           percentile_cont(0.5) WITHIN GROUP (ORDER BY median_price) AS q50,
+                           percentile_cont(0.9) WITHIN GROUP (ORDER BY median_price) AS q90
+                    FROM market_hits_daily
+                    WHERE item_ref = $1
+                      AND day > (current_date - interval '180 days')
+                      AND median_price IS NOT NULL
+                    """,
+                    f"{category_id}:{catalog_match_key}",
+                )
+            n = int(row["n"]) if row and row["n"] else 0
+            if n >= 3 and row["q50"] is not None:
+                band = {
+                    "q10": round(float(row["q10"]), 2),
+                    "q50": round(float(row["q50"]), 2),
+                    "q90": round(float(row["q90"]), 2),
+                    "confidence": min(0.9, 0.3 + n * 0.01),
+                    "currency": "EUR",
+                }
+                return band["q50"], "market_hits_daily", band
+        except Exception as e:
+            logger.warning("market_hits_daily price lookup error: %s", e)
 
-    # Source 1: market_hits (recent sold prices)
+    # Source 1: market_hits (recent sold prices). With a matched key the match
+    # is EXACT — a substring of one catalogue key is a prefix of its siblings.
+    # Chosen here, not with a CASE in SQL, so the exact path stays a plain `=`.
+    if catalog_match_key:
+        key_predicate, key_param = "normalized_key = $1", catalog_match_key
+    else:
+        key_predicate, key_param = "normalized_key ILIKE $1", f"%{name[:40]}%"
     try:
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 """
                 SELECT price, currency
                 FROM market_hits
-                WHERE normalized_key ILIKE $1
+                WHERE """ + key_predicate + """
                   AND price IS NOT NULL
                   AND price > 0
                   AND (is_listing IS NOT TRUE)
@@ -64,7 +103,7 @@ async def _estimate_price(
                 ORDER BY ended_at DESC NULLS LAST
                 LIMIT 20
                 """,
-                f"%{search_key}%",
+                key_param,
             )
 
             if rows and len(rows) >= 3:
