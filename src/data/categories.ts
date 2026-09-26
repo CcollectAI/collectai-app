@@ -151,7 +151,7 @@ export const CATEGORY_VISUAL: Record<CategoryId, { accentColor: string; iconName
 export const CATEGORIES: Category[] = [
   {
     id: 'pokemon',
-    name: 'Pokémon Cards',
+    name: 'Pokémon',
     tagline: 'Modern & vintage Pokémon TCG, tracked like a real portfolio.',
     bannerImageUrl:
       'https://images.pexels.com/photos/7708408/pexels-photo-7708408.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -295,7 +295,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'funko',
-    name: 'Funko Pops',
+    name: 'Funko Pop',
     tagline: 'Vaulted Pops, con exclusives, and chase variants.',
     bannerImageUrl:
       'https://images.pexels.com/photos/4061668/pexels-photo-4061668.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -589,7 +589,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'warhammer',
-    name: 'Warhammer Minis',
+    name: 'Warhammer',
     tagline: 'Painted squads with provenance and pedigree.',
     // EMPTY (2026-09-26): the photo was an anime cosplay doll, not a miniature — every banner was
     // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
@@ -710,7 +710,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'anime_bluray',
-    name: 'Anime Blu-rays',
+    name: 'Anime Blu-ray',
     tagline: 'Aniplex exclusives, Japanese imports, and rare box sets worth the hunt.',
     bannerImageUrl:
       'https://images.pexels.com/photos/2249224/pexels-photo-2249224.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -736,7 +736,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'anime_soundtrack',
-    name: 'Anime Soundtracks',
+    name: 'Anime Soundtrack',
     tagline: 'Hisaishi scores, character song CDs, and first-press OSTs with bonus tracks.',
     bannerImageUrl:
       'https://images.pexels.com/photos/4734714/pexels-photo-4734714.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -904,7 +904,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'disney',
-    name: 'Disney Collectibles',
+    name: 'Disney',
     tagline: 'Pin trading grails, WDCC sculptures, and castle-exclusive merch.',
     bannerImageUrl:
       'https://images.pexels.com/photos/17978912/pexels-photo-17978912.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -940,7 +940,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'theme_park',
-    name: 'Theme Park Collectibles',
+    name: 'Theme Park',
     tagline: 'Haunted Mansion memorabilia, vintage pennants, and ride vehicle replicas.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1336429/pexels-photo-1336429.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -1025,7 +1025,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'jp_magazine',
-    name: 'Japanese Magazines',
+    name: 'JP Magazines',
     tagline: 'Mooks with exclusive figures, vintage issues, and appendix-heavy collector editions.',
     // EMPTY (2026-09-26): the photo was the URL no longer loads — every banner was
     // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
@@ -1052,7 +1052,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'jp_event',
-    name: 'Japan Event Exclusives',
+    name: 'JP Event Exclusives',
     tagline: 'Comiket circle goods, Wonder Festival garage kits, and event-day-only drops.',
     bannerImageUrl:
       'https://images.pexels.com/photos/29901247/pexels-photo-29901247.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -1078,7 +1078,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'nintendo_merch',
-    name: 'Nintendo Merchandise',
+    name: 'Nintendo Merch',
     tagline: 'Amiibo waves, Nintendo Tokyo exclusives, and Club Nintendo relics.',
     bannerImageUrl:
       'https://images.pexels.com/photos/17122728/pexels-photo-17122728.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -1116,7 +1116,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'retro_pokemon',
-    name: 'Retro Pokémon Merchandise',
+    name: 'Retro Pokémon',
     tagline: 'TOMY figures, Pokémon Center originals, and 90s promo treasures.',
     bannerImageUrl:
       'https://images.pexels.com/photos/9343494/pexels-photo-9343494.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -1169,7 +1169,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'vtuber',
-    name: 'VTuber Merchandise',
+    name: 'VTuber',
     tagline: 'Hololive birthday merch, Nijisanji voice packs, and Booth.pm indie drops.',
     bannerImageUrl:
       'https://images.pexels.com/photos/29901237/pexels-photo-29901237.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -1253,7 +1253,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'diecast',
-    name: 'Diecast & Model Cars',
+    name: 'Diecast & Hot Wheels',
     tagline: '1:64, 1:24, and premium diecast with real comps.',
     bannerImageUrl:
       'https://images.pexels.com/photos/15679405/pexels-photo-15679405.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -1345,7 +1345,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'comic_books',
-    name: 'Comic Books & Graphic Novels',
+    name: 'Comic Books',
     tagline: 'CGC-slabbed key issues, first appearances, and indie gems worth discovering.',
     bannerImageUrl:
       'https://images.pexels.com/photos/20085947/pexels-photo-20085947.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -1590,7 +1590,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'pens',
-    name: 'Fountain Pens & Writing',
+    name: 'Fountain Pens',
     tagline: 'Montblanc limited editions, Pelikan Souverans, and vintage flex nibs worth writing home about.',
     // EMPTY (2026-09-26): the photo was the URL no longer loads — every banner was
     // downloaded and looked at. Same rule as the Magic tile: no photo beats a wrong one.
@@ -1695,7 +1695,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'sneakers',
-    name: 'Sneakers & Kicks',
+    name: 'Sneakers',
     tagline: 'Off-White collabs, Travis Scott drops, and Jordan OGs that never lose their sole.',
     bannerImageUrl:
       'https://images.pexels.com/photos/19294576/pexels-photo-19294576.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -1726,7 +1726,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'oop_board_games',
-    name: 'OOP Board Games & KS Exclusives',
+    name: 'OOP Board Games',
     tagline: 'Grail-tier Kickstarters, out-of-print euros, and sealed legacy games that only climb in value.',
     bannerImageUrl:
       'https://images.pexels.com/photos/776654/pexels-photo-776654.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',
@@ -1757,7 +1757,7 @@ export const CATEGORIES: Category[] = [
   },
   {
     id: 'city_pop_vinyl',
-    name: 'City Pop & Future Funk Vinyl',
+    name: 'City Pop Vinyl',
     tagline: 'OG Japanese pressings, City Pop reissues, and future funk wax from the neon-lit golden age.',
     bannerImageUrl:
       'https://images.pexels.com/photos/1389429/pexels-photo-1389429.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop',

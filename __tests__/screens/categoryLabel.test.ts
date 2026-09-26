@@ -59,20 +59,20 @@ describe('categoryLabel over the live 54 prod slugs', () => {
   it('prefers the curated name over title-casing the slug', () => {
     // These have curated entries in @/data/categories and must not be
     // title-cased into "Pokemon" / "Lorcana".
-    expect(categoryLabel('pokemon')).toBe('Pokémon Cards');
+    expect(categoryLabel('pokemon')).toBe('Pokémon');
     expect(categoryLabel('manga')).toBe('Manga');
   });
 
   it('title-cases the uncurated tail rather than dropping it', () => {
-    // `anime_bluray` is NOT in this group — it has a curated 'Anime Blu-rays'.
+    // `anime_bluray` is NOT in this group — it has a curated 'Anime Blu-ray'.
     expect(categoryLabel('action_figures')).toBe('Action Figures');
     expect(categoryLabel('vintage_cameras')).toBe('Vintage Cameras');
   });
 
   it('curated names win over title-casing wherever one exists', () => {
     // Regression guard: a curated entry must never be flattened by the
-    // slug fallback. 'Anime Blu-rays' would become 'Anime Bluray'.
-    expect(categoryLabel('anime_bluray')).toBe('Anime Blu-rays');
+    // slug fallback. 'Anime Blu-ray' would become 'Anime Bluray'.
+    expect(categoryLabel('anime_bluray')).toBe('Anime Blu-ray');
   });
 
   it('is safe on empty / unknown input', () => {

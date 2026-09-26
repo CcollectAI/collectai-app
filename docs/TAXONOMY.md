@@ -360,7 +360,8 @@ pickers, onboarding), `src/taxonomy/registry.ts` (`formatCategoryName`), the
 Explore page data `src/data/categories.ts`, and the server's scan map
 (`quickscan_proxy_router._FRIENDLY_CATEGORY_MAP`). Keycaps was two names
 ("Artisan Keycaps" / "Custom Keycaps") for one slug and is now "Custom Keycaps"
-everywhere (0b4c6093; items store the slug, so a rename is safe). **21 other
-slugs still differ** — listed in `docs/OPEN_DECISIONS.md` #3 as a naming call.
-`check-category-parity` compares slugs only; it cannot see this.
+everywhere (0b4c6093; items store the slug, so a rename is safe). **Unified 2026-09-26** (Merle's call): the constants list is canonical and
+`__tests__/lib/categoryNameParity.test.ts` fails if the registry, the Explore
+data or the server map names any slug differently. `check-category-parity`
+compares slugs only; this test covers names.
 

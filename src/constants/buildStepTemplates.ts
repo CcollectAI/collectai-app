@@ -172,7 +172,7 @@ export const BUILD_STEP_TEMPLATES: Record<string, BuildStepTemplate> = {
   },
   gunpla: {
     id: 'gunpla',
-    displayName: 'Gunpla / Model Kits',
+    displayName: 'Gunpla & Model Kits',
     steps: [
       { id: 'gp-1', label: 'Unbox & organize runners', order: 1 },
       { id: 'gp-2', label: 'Nub removal & cleanup', order: 2 },

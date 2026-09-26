@@ -41,7 +41,7 @@ export type SubtypeDefinition = {
 const PHASE1_CATEGORIES: CategoryDefinition[] = [
   {
     id: 'pokemon',
-    name: 'Pokémon TCG',
+    name: 'Pokémon',
     wave: 'phase1',
     keywords: ['pokemon', 'pokémon', 'pikachu', 'charizard'],
     subtypes: [
@@ -85,7 +85,7 @@ const PHASE1_CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: 'funko',
-    name: 'Funko Pop!',
+    name: 'Funko Pop',
     wave: 'phase1',
     keywords: ['funko', 'pop', 'vinyl'],
     subtypes: [
@@ -130,7 +130,7 @@ const PHASE1_CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: 'retro_games',
-    name: 'Retro Video Games',
+    name: 'Retro Games',
     wave: 'phase1',
     keywords: ['retro', 'vintage', 'classic', 'cib', 'sealed'],
     subtypes: [
@@ -172,7 +172,7 @@ const PHASE1_CATEGORIES: CategoryDefinition[] = [
 const PHASE2_CATEGORIES: CategoryDefinition[] = [
   {
     id: 'designer_toys',
-    name: 'Designer Toys',
+    name: 'Designer & Art Toys',
     wave: 'phase2',
     keywords: ['designer', 'art toy'],
     subtypes: [
@@ -221,7 +221,7 @@ const PHASE2_CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: 'gunpla',
-    name: 'Gunpla / Model Kits',
+    name: 'Gunpla & Model Kits',
     wave: 'phase2',
     keywords: ['gunpla', 'gundam', 'model kit', 'bandai'],
     subtypes: [
@@ -280,7 +280,7 @@ const PHASE2_CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: 'nintendo_merch',
-    name: 'Nintendo Merchandise',
+    name: 'Nintendo Merch',
     wave: 'phase2',
     keywords: ['nintendo', 'mario', 'zelda', 'pokemon'],
     subtypes: [
@@ -331,7 +331,7 @@ const PHASE2_CATEGORIES: CategoryDefinition[] = [
 const PHASE3_CATEGORIES: CategoryDefinition[] = [
   {
     id: 'kpop_merch',
-    name: 'K-pop Merchandise',
+    name: 'K-pop Merch',
     wave: 'phase3',
     keywords: ['kpop', 'k-pop', 'korean pop'],
     subtypes: [
@@ -374,7 +374,7 @@ const PHASE3_CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: 'anime_soundtrack',
-    name: 'Anime Soundtracks',
+    name: 'Anime Soundtrack',
     wave: 'phase3',
     keywords: ['anime', 'soundtrack', 'ost', 'cd'],
     subtypes: [
@@ -394,7 +394,7 @@ const PHASE3_CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: 'disney',
-    name: 'Disney Collectibles',
+    name: 'Disney',
     wave: 'phase3',
     keywords: ['disney', 'mickey', 'minnie'],
     subtypes: [
@@ -405,7 +405,7 @@ const PHASE3_CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: 'theme_park',
-    name: 'Theme Park Merch',
+    name: 'Theme Park',
     wave: 'phase3',
     keywords: ['theme park', 'disneyland', 'disney world', 'universal'],
     subtypes: [
@@ -438,7 +438,7 @@ const PHASE3_CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: 'vtuber',
-    name: 'VTuber Merch',
+    name: 'VTuber',
     wave: 'phase3',
     keywords: ['vtuber', 'hololive', 'nijisanji', 'virtual youtuber'],
     subtypes: [
@@ -449,7 +449,7 @@ const PHASE3_CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: 'jp_magazine',
-    name: 'Japanese Magazines',
+    name: 'JP Magazines',
     wave: 'phase3',
     keywords: ['magazine', 'japanese', 'dengeki', 'famitsu'],
     subtypes: [
@@ -460,7 +460,7 @@ const PHASE3_CATEGORIES: CategoryDefinition[] = [
   },
   {
     id: 'jp_event',
-    name: 'Japanese Event Items',
+    name: 'JP Event Exclusives',
     wave: 'phase3',
     keywords: ['event', 'japan', 'exclusive'],
     subtypes: [
