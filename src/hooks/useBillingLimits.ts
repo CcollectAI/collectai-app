@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
+import { AuthContext } from '@/providers/authContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getBillingStatus, type BillingStatus } from '@/api/collectorsApi';
 import { logger } from '@/lib/logger';
@@ -136,16 +137,34 @@ function resolveForced(envVal: string, storageVal: string, webVal: string): 'pro
   return null;
 }
 
+/**
+ * The last plan the server or RevenueCat CONFIRMED, per user (2026-09-26).
+ *
+ * Every mount started on DEFAULT_LIMITS (free) and fetched again, and most
+ * consumers read `limits` without `loading` — so a Pro member met the free
+ * gate for the length of a round trip on every screen: "Full price range —
+ * Sparrow Pro" on the catalogue page, an UpgradePrompt on analytics, walked on
+ * Android with a paid account. The first mount of a session still starts on
+ * free (nothing is known yet); every later one starts on the known plan and
+ * refetches behind it. Keyed by user id, so a sign-out cannot hand the next
+ * account the previous one's plan.
+ */
+let lastKnown: { userId: string; plan: BillingStatus['plan']; limits: BillingStatus['limits'] } | null = null;
+
 export function useBillingLimits() {
   // Beta-unlock short-circuit. Pro limits + 'pro' tier for every install, no
   // RevenueCat / BE calls. Distinct from FORCE_PLAN so beta builds can ship
   // without inheriting the dev-override semantics or storage lookups.
   const initialForced = resolveForced(ENV_FORCE_PLAN, '', getWebLocalStorageOverride());
+  // useContext, not useAuthContext: that throws outside <AuthProvider>, and
+  // component tests render billing consumers without one.
+  const userId = useContext(AuthContext)?.user?.id ?? null;
+  const known = userId && lastKnown?.userId === userId ? lastKnown : null;
   const [plan, setPlan] = useState<BillingStatus['plan']>(
-    BETA_UNLOCK_ALL ? 'pro' : (initialForced ?? 'free'),
+    BETA_UNLOCK_ALL ? 'pro' : (initialForced ?? known?.plan ?? 'free'),
   );
   const [limits, setLimits] = useState<BillingStatus['limits']>(
-    BETA_UNLOCK_ALL ? FORCED_LIMITS.pro : (initialForced ? FORCED_LIMITS[initialForced] : DEFAULT_LIMITS),
+    BETA_UNLOCK_ALL ? FORCED_LIMITS.pro : (initialForced ? FORCED_LIMITS[initialForced] : known?.limits ?? DEFAULT_LIMITS),
   );
   const [loading, setLoading] = useState(BETA_UNLOCK_ALL ? false : !initialForced);
   const [isForced, setIsForced] = useState(Boolean(initialForced));
@@ -181,6 +200,7 @@ export function useBillingLimits() {
       if (rcPlan === 'free') return; // don't downgrade FE if BE says otherwise
       setPlan(rcPlan);
       setLimits(FORCED_LIMITS[rcPlan]);
+      if (userId) lastKnown = { userId, plan: rcPlan, limits: FORCED_LIMITS[rcPlan] };
       setLoading(false);
       setIsForced(false);
     });
@@ -207,6 +227,7 @@ export function useBillingLimits() {
           if (rcPlan !== 'free') {
             setPlan(rcPlan);
             setLimits(FORCED_LIMITS[rcPlan]);
+            if (userId) lastKnown = { userId, plan: rcPlan, limits: FORCED_LIMITS[rcPlan] };
             setLoading(false);
             return;
           }
@@ -220,6 +241,7 @@ export function useBillingLimits() {
             if (!mounted) return;
             setPlan(status.plan);
             setLimits(status.limits);
+            if (userId) lastKnown = { userId, plan: status.plan, limits: status.limits };
             setBillingState({
               status: status.status ?? null,
               periodEnd: status.current_period_end ?? null,

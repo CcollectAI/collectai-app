@@ -6,7 +6,8 @@
  * user's profile row from the `profiles` table.
  */
 
-import React, { createContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { AuthContext } from './authContext';
 import { AppState, type AppStateStatus } from 'react-native';
 import * as Linking from 'expo-linking';
 import { router, type Href } from 'expo-router';
@@ -97,7 +98,8 @@ export type AuthContextValue = {
   refreshProfile: () => Promise<void>;
 };
 
-export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+// Defined in ./authContext (a light module hooks can import); re-exported here.
+export { AuthContext };
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
