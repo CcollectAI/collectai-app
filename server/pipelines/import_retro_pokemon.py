@@ -17,6 +17,7 @@ Usage:
 
 from __future__ import annotations
 
+import re
 import argparse
 import sys
 from pathlib import Path
@@ -1372,6 +1373,18 @@ def get_curated_catalog() -> list[dict]:
     return _deduped
 
 
+# A price in a catalogue TITLE is a claim the app then prints next to its own,
+# different price: "(PSA 10 ~$420K)" sat on a catalogue page reading ~EUR 367
+# (walked 2026-09-25). Stripped from the display title only — the key is still
+# slugify(brand-name), so existing keys (and what references them) are unchanged.
+_PRICE_CLAIM = re.compile(r"\s*,?\s*~?\$\s?[0-9][0-9.,]*\s?[KkMm]?(\s+card)?(?=\))")
+
+
+def display_title(name: str) -> str:
+    """'X (PSA 10 ~$420K)' -> 'X (PSA 10)'; 'Y (1998 CoroCoro, ~$5.2M card)' -> 'Y (1998 CoroCoro)'."""
+    return _PRICE_CLAIM.sub("", name)
+
+
 def item_to_catalog_item(item: dict) -> CatalogItem:
     brand = item["brand"]
     name = item["name"]
@@ -1379,7 +1392,7 @@ def item_to_catalog_item(item: dict) -> CatalogItem:
     return CatalogItem(
         category=CATEGORY,
         item_key=slugify(f"{brand}-{name}"),
-        title=name,
+        title=display_title(name),
         set_code=brand.lower().replace(" ", "-"),
         brand=brand,
         rarity=item["rarity_tier"].title(),

@@ -745,7 +745,7 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
 ON CONFLICT (category, item_key) DO NOTHING;
 
 INSERT INTO public.category_items (category, set_code, item_key, title, brand, rarity, notes) VALUES
-  ('retro_pokemon', 'wotc', 'wotc-base-set-1st-edition-charizard-holo-4-psa-10-420k', 'Base Set 1st Edition Charizard Holo #4 (PSA 10 ~$420K)', 'WOTC', 'Grail', 'WOTC | Mint'),
+  ('retro_pokemon', 'wotc', 'wotc-base-set-1st-edition-charizard-holo-4-psa-10-420k', 'Base Set 1st Edition Charizard Holo #4 (PSA 10)', 'WOTC', 'Grail', 'WOTC | Mint'),
   ('retro_pokemon', 'wotc', 'wotc-base-set-1st-edition-blastoise-holo-2', 'Base Set 1st Edition Blastoise Holo #2', 'WOTC', 'Grail', 'WOTC | Near Mint'),
   ('retro_pokemon', 'wotc', 'wotc-base-set-1st-edition-venusaur-holo-15', 'Base Set 1st Edition Venusaur Holo #15', 'WOTC', 'Grail', 'WOTC | Near Mint'),
   ('retro_pokemon', 'wotc', 'wotc-base-set-1st-edition-alakazam-holo-1', 'Base Set 1st Edition Alakazam Holo #1', 'WOTC', 'Grail', 'WOTC | Near Mint'),
@@ -829,7 +829,7 @@ INSERT INTO public.category_items (category, set_code, item_key, title, brand, r
   ('retro_pokemon', 'pokemon-usa', 'pokemon-usa-latias-gold-star-ex-deoxys-105', 'Latias Gold Star (EX Deoxys #105)', 'Pokemon USA', 'Grail', 'Pokemon USA | Near Mint'),
   ('retro_pokemon', 'pokemon-usa', 'pokemon-usa-latios-gold-star-ex-deoxys-106', 'Latios Gold Star (EX Deoxys #106)', 'Pokemon USA', 'Grail', 'Pokemon USA | Near Mint'),
   ('retro_pokemon', 'pokemon-usa', 'pokemon-usa-gyarados-gold-star-ex-holon-phantoms-102', 'Gyarados Gold Star (EX Holon Phantoms #102)', 'Pokemon USA', 'Grail', 'Pokemon USA | Near Mint'),
-  ('retro_pokemon', 'wotc-jp', 'wotc-jp-illustrator-pikachu-1998-corocoro-52m-card', 'Illustrator Pikachu (1998 CoroCoro, ~$5.2M card)', 'WOTC JP', 'Grail', 'WOTC JP | Mint'),
+  ('retro_pokemon', 'wotc-jp', 'wotc-jp-illustrator-pikachu-1998-corocoro-52m-card', 'Illustrator Pikachu (1998 CoroCoro)', 'WOTC JP', 'Grail', 'WOTC JP | Mint'),
   ('retro_pokemon', 'wotc-jp', 'wotc-jp-tropical-mega-battle-tropical-wind-promo-tmb-1999', 'Tropical Mega Battle Tropical Wind Promo (TMB 1999)', 'WOTC JP', 'Grail', 'WOTC JP | Near Mint'),
   ('retro_pokemon', 'wotc-jp', 'wotc-jp-no-1-trainer-promo-1999-secret-super-battle', 'No. 1 Trainer Promo (1999 Secret Super Battle)', 'WOTC JP', 'Grail', 'WOTC JP | Near Mint'),
   ('retro_pokemon', 'wotc-jp', 'wotc-jp-lucky-stadium-magikarp-promo', 'Lucky Stadium Magikarp (Promo)', 'WOTC JP', 'Grail', 'WOTC JP | Near Mint'),
