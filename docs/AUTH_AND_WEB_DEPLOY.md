@@ -505,6 +505,14 @@ with tokens an hour from expiry. It now refreshes only within
 `FOREGROUND_REFRESH_MARGIN_MS` (5 min) of expiry, which still covers the idle
 case; `getSession()` itself refreshes inside 90 s (auth-js 2.86 `__loadSession`).
 Fewer refreshes can only reduce reuse risk.
+Same day, `src/lib/secureStoreAdapter.ts` got a **write-through memory copy**:
+supabase-js reads storage on every `getSession()` (every authed request), and
+each read was a head + N chunk decrypts in series. Chunks now read in
+parallel; repeat reads come from memory. Safety rules, each pinned by
+`__tests__/lib/secureStoreMemory.test.ts` (mutation-proven): memory is set only
+after a successful keystore read/write, dropped on a failed one, and a
+per-key generation stops a slow read of the OLD session from overwriting a
+newer write — a rotated refresh token handed back to GoTrue revokes the session.
 Falsifier: `npx jest __tests__/hooks/authForegroundRefresh.test.tsx` (it forces
 `AppState.currentState = 'active'` — the preset's value is a mock function, and
 without it the "no refresh" case passes vacuously).

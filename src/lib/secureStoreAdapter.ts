@@ -31,6 +31,30 @@ const CHUNK_MARKER = "__sczk__:";
 
 const isWeb = Platform.OS === "web";
 
+// Write-through memory copy of what this process last read or wrote (2026-09-26).
+// supabase-js reads storage on EVERY getSession() — so on every authed API
+// request, via getAuthHeaders — and each read here was a head plus N chunk
+// decrypts from the keystore, one after another: ~0.3 s normally, 2.6-3.6 s
+// measured under load on the emulator, all while holding GoTrue's lock. Only
+// this process writes these keys, so the copy is the stored bytes. Entries are
+// set only after a SUCCESSFUL read/write and dropped on a failed one, so a
+// write that did not persist is never reported back as persisted.
+const memory = new Map<string, string | null>();
+// Bumped by every write/remove. A read only records what it read if no write
+// started while it was in flight — otherwise a slow read of the OLD session
+// could land after the new one and hand out a rotated refresh token, which
+// Supabase answers by revoking the session (docs/AUTH_AND_WEB_DEPLOY.md).
+const generation = new Map<string, number>();
+const bump = (key: string) => generation.set(key, (generation.get(key) ?? 0) + 1);
+const remember = (key: string, gen: number, value: string | null) => {
+  if ((generation.get(key) ?? 0) === gen) memory.set(key, value);
+};
+
+/** Tests only: forget the memory copy. */
+export function __resetSecureStoreMemory(): void {
+  memory.clear();
+}
+
 // Remove any chunk tail left over from a previous oversized write for `key`.
 async function clearChunks(key: string): Promise<void> {
   try {
@@ -64,6 +88,8 @@ export const secureStoreAdapter = {
     if (isWeb) {
       return globalThis.localStorage?.getItem(key) ?? null;
     }
+    if (memory.has(key)) return memory.get(key) ?? null;
+    const gen = generation.get(key) ?? 0;
     // DIAG (2026-09-24). An Android cold start stalled every Supabase request
     // ~15 s behind getSession(), which reads THIS under processLock. Storage
     // turned out NOT to be the cause (2 chunks, ~0.3 s; the cause was an async
@@ -81,24 +107,27 @@ export const secureStoreAdapter = {
     const pending = setTimeout(() => logger.error(`[DIAG secureStore] getItem ${key} STILL PENDING after 3000ms (${chunks} chunk(s) read)`), 3000);
     try {
       const head = await SecureStore.getItemAsync(key);
-      if (head == null) { slow(); return null; }
-      if (!head.startsWith(CHUNK_MARKER)) { slow(); return head; }
+      if (head == null) { slow(); remember(key, gen, null); return null; }
+      if (!head.startsWith(CHUNK_MARKER)) { slow(); remember(key, gen, head); return head; }
       const count = parseInt(head.slice(CHUNK_MARKER.length), 10);
       if (!Number.isFinite(count) || count <= 0) { slow(); return null; }
-      let out = "";
-      for (let i = 0; i < count; i++) {
-        chunks = i + 1;
-        const part = await SecureStore.getItemAsync(`${key}.${i}`);
-        if (part == null) {
-          // A missing chunk means a partial/corrupt write — treat the whole
-          // value as absent rather than hand Supabase a truncated session.
-          logger.warn(`[secureStore] missing chunk ${i + 1}/${count} for ${key}`);
-          slow();
-          return null;
-        }
-        out += part;
+      // In parallel: the chunks are independent keys, and reading them one
+      // after another multiplied the keystore latency by the chunk count.
+      const parts = await Promise.all(
+        Array.from({ length: count }, (_, i) => SecureStore.getItemAsync(`${key}.${i}`)),
+      );
+      chunks = count;
+      const missing = parts.findIndex((p) => p == null);
+      if (missing >= 0) {
+        // A missing chunk means a partial/corrupt write — treat the whole
+        // value as absent rather than hand Supabase a truncated session.
+        logger.warn(`[secureStore] missing chunk ${missing + 1}/${count} for ${key}`);
+        slow();
+        return null;
       }
+      const out = parts.join("");
       slow();
+      remember(key, gen, out);
       return out;
     } catch (err) {
       clearTimeout(pending);
@@ -115,11 +144,15 @@ export const secureStoreAdapter = {
       globalThis.localStorage?.setItem(key, value);
       return;
     }
+    bump(key);
+    const myGen = generation.get(key) ?? 0;
+    memory.delete(key); // until this write lands, the store is the only truth
     try {
       // Clear any previous chunk tail first so we never leave a stale chunk.
       await clearChunks(key);
       if (value.length <= CHUNK_LIMIT) {
         await SecureStore.setItemAsync(key, value);
+        remember(key, myGen, value); // a later write wins, even if it finished first
         return;
       }
       const count = Math.ceil(value.length / CHUNK_LIMIT);
@@ -132,7 +165,9 @@ export const secureStoreAdapter = {
       // Write the marker LAST: a crash mid-write then leaves the old value or
       // nothing, never a marker pointing at missing chunks.
       await SecureStore.setItemAsync(key, `${CHUNK_MARKER}${count}`);
+      remember(key, myGen, value);
     } catch (err) {
+      memory.delete(key); // the next read must ask the store what actually persisted
       logger.error("[secureStore] setItem failed — session will not persist:", err);
     }
   },
@@ -142,10 +177,15 @@ export const secureStoreAdapter = {
       globalThis.localStorage?.removeItem(key);
       return;
     }
+    bump(key);
+    const myGen = generation.get(key) ?? 0;
+    memory.delete(key);
     try {
       await clearChunks(key);
       await SecureStore.deleteItemAsync(key);
+      remember(key, myGen, null);
     } catch (err) {
+      memory.delete(key);
       logger.error("[secureStore] removeItem failed:", err);
     }
   },
