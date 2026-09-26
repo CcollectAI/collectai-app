@@ -473,7 +473,10 @@ const LeaderboardScreen: React.FC = () => {
   if (!GAMIFICATION_UI_ENABLED) {
     return (
       <View style={[styles.safe, { backgroundColor: colors.background }]}>
-        <Stack.Screen options={{ headerTitle: '' }} />
+        {/* A title, unlike category mode: the body here is a notice, not a
+            heading for a board, and a bar with no title reads as a broken
+            screen (walk NO_TITLE, 2026-09-27). */}
+        <Stack.Screen options={{ headerTitle: t('screen_titles.leaderboard') }} />
         <View style={styles.emptyWrap}>
           <Ionicons name="trophy-outline" size={44} color={colors.muted} />
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
