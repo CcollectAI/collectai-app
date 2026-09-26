@@ -151,6 +151,14 @@ change looking plausible; it is `test_free_user_gets_0`.
 | Community events | Yes | Yes |
 | Ads | Yes | No |
 
+> **Catalogue detail teaser removed 2026-09-26 — decision open.** `app/catalog-item/[key].tsx`
+> showed free members "Full price range & 90-day trend — Sparrow Pro", and a Pro
+> member got neither there (the price endpoint returns a median + count only;
+> the trend is shelved above). If you want it as a Pro feature: the data exists —
+> `market_hits_daily` holds a daily median per `item_ref`, so p10/p90 over 90 d
+> and a weekly series are one query behind `require_plan("pro")`. Until then no
+> screen sells it. Falsifier: `grep -rn "90-day trend" app src` → nothing.
+
 > ⚠️ **The purchase-price field itself is still FREE, and that is deliberate.**
 > Only the FEES row and the realised P/L are gated (`limits.advanced_analytics`,
 > 2026-08-31). "What you paid" has shipped free since the item card had a
