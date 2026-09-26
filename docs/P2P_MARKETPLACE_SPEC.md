@@ -1551,7 +1551,7 @@ the last of them is the bug this work exists to fix:
 
 | module | outcome |
 |---|---|
-| Market Movers | moved to the Market tab, under the grid, `!query` only |
+| Market Movers | moved to the Market tab, under the grid, `!query` only; **moved again to Analytics 2026-09-26** (Pro market data lives there — Merle) |
 | Regional insights | moved **with its loader** (`src/hooks/useRegionalDemand.ts`) |
 | Demand heat | **deliberately not moved** — `app/analytics.tsx` renders it behind `advanced_analytics`; a free copy would have given the paid feature away |
 | Open bids | deleted. A summary card whose only job was to link to `/offers`; the Market tab already carries the labelled Offers pill with a needs-you badge |

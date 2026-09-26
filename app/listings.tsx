@@ -56,7 +56,6 @@ import { FavoriteWatchButtons } from '@/components/marketplace/FavoriteWatchButt
 // DemandHeatBanner is deliberately NOT among them: app/analytics.tsx already
 // renders DemandHeatSection behind `advanced_analytics` as "Hot Right Now", and
 // putting the same data on a free tab would give the paid feature away.
-import { MarketMoversSection } from '@/components/marketplace/MarketMoversSection';
 import { RegionalInsightsSection } from '@/components/marketplace/RegionalInsightsSection';
 import { useRegionalDemand } from '@/hooks/useRegionalDemand';
 import { usePaginatedList } from '@/hooks/usePaginatedList';
@@ -1127,11 +1126,10 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
                     fetch that lived on the hub — moving the component without
                     the fetch would ship a section that is permanently blank.
                     It stays on the hub until its loader moves with it. */}
+                {/* Market Movers moved to Analytics (Merle, 2026-09-26): it is
+                    Pro market data, and Analytics is where Pro data lives. */}
                 {!debouncedQuery ? (
-                  <>
-                    <RegionalInsightsSection items={regionalDemand} onSearchItem={setQuery} />
-                    <MarketMoversSection />
-                  </>
+                  <RegionalInsightsSection items={regionalDemand} onSearchItem={setQuery} />
                 ) : null}
                 {/* Paging state, ABOVE the legal note. A grid that silently
                     stops looks identical to a grid that has run out; saying

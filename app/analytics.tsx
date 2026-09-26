@@ -61,6 +61,7 @@ import { radius, spacing, text, fontWeight, shadow, gap } from '@/theme/tokens';
 import { CategoryPerformanceSection } from '@/components/CategoryPerformanceSection';
 import { PortfolioTierBadge } from '@/components/analytics/PortfolioTierBadge';
 import { PredictionAccuracySection } from '@/components/analytics/PredictionAccuracySection';
+import { MarketMoversSection } from '@/components/marketplace/MarketMoversSection';
 import { DemandHeatSection } from '@/components/home/DemandHeatSection';
 import { useTranslation } from 'react-i18next';
 import { categoryDisplayName } from '@/constants/categories';
@@ -510,6 +511,11 @@ function AnalyticsScreen() {
 
         {/* Hot Right Now (moved from home 2026-04-18, Pro-gated) */}
         {limits.advanced_analytics ? <DemandHeatSection /> : null}
+
+        {/* Market Movers — market-wide gainers/losers in the categories you
+            follow. Moved here from the Marketplace tab (Merle, 2026-09-26);
+            the "Movers" card further down is YOUR items, a different list. */}
+        {limits.advanced_analytics ? <MarketMoversSection /> : null}
 
         {/* Preview banner when the dev plan override is active and we're
             falling back to mock analytics data (real fetch failed/empty). */}

@@ -1,10 +1,11 @@
 /**
  * Market Movers — full "see all" screen for the biggest market price movers.
  *
- * Reached from the MarketMoversSection "See all" on the Marketplace tab. Adds
+ * Reached from the MarketMoversSection "See all" on Analytics (moved from the
+ * Marketplace tab 2026-09-26). Adds
  * window (7d/30d), direction (gainers/losers) and scope (followed/all) toggles
  * on top of the same GET /catalog/top-movers feed. Rows deep-link to the catalog
- * museum detail. Read-only market data — no gating.
+ * museum detail. Pro: gated on limits.advanced_analytics like Analytics.
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
