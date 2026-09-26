@@ -33,7 +33,9 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
   }
 
   // user_public_profile_v1 columns: user_id, display_handle, avatar_url,
-  // created_at, updated_at, collection_count, collection_value_eur. Earlier
+  // created_at, updated_at, collection_count, collection_value_eur, bio
+  // (bio added by 20260926_public_profile_bio — before it, Edit Profile saved a
+  // bio that no screen could ever show). Earlier
   // code selected display_name, username, bio, level, total_xp etc. that don't
   // exist on the view — they 400'd silently. The mapper falls back gracefully
   // when a field isn't present.
@@ -44,7 +46,7 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
   // not here — a check in this file would be advisory, since the app reads the
   // view directly over PostgREST.
   const profileCols =
-    'user_id, display_handle, avatar_url, created_at, collection_count, collection_value_eur';
+    'user_id, display_handle, avatar_url, created_at, collection_count, collection_value_eur, bio';
   const { data, error } = await supabase
     .from('user_public_profile_v1')
     .select(profileCols)
@@ -93,7 +95,7 @@ export async function getPublicUserProfile(userId: string): Promise<PublicUserPr
      */
     handle: null,
     avatarUrl: (row.avatar_url ?? null) as string | null,
-    bio: null,
+    bio: (row.bio as string | null) ?? null,
     /**
      * NULL means NOT ASKED — and the caller must not render it as zero.
      * `user_public_profile_v1` carries no interests column, so this has always

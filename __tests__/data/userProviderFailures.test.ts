@@ -72,6 +72,13 @@ describe('getPublicUserProfile', () => {
     await expect(getPublicUserProfile('u1')).resolves.toMatchObject({ id: 'u1' });
   });
 
+  // 2026-09-26: the view had no bio column and the mapper hardcoded null, so a
+  // bio saved in Edit Profile was shown nowhere.
+  it('carries the bio the view returns', async () => {
+    mockMaybeSingle.mockResolvedValue({ data: { user_id: 'u1', display_handle: 'Lena', bio: 'Vintage LEGO' }, error: null });
+    await expect(getPublicUserProfile('u1')).resolves.toMatchObject({ bio: 'Vintage LEGO' });
+  });
+
   it('resolves null for a member with no public profile (no row)', async () => {
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
     await expect(getPublicUserProfile('u1')).resolves.toBeNull();
