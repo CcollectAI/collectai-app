@@ -1,0 +1,80 @@
+# Open decisions
+
+Product calls queued for Merle. Each entry carries the measurement it rests on
+and how to re-check it — a decision taken on a stale number is a new bug.
+When one is decided, move it to **Decided** with the date and the commit that
+carried it out; do not delete it.
+
+_Opened 2026-09-26 from the Android walk rounds._
+
+## Open
+
+### 1. Barcode scanning resolves books only
+- **State:** `category_items.barcode` is empty in every category; the lookup
+  cascade after the catalogue is Open Library + Google Books (ISBN only). LEGO
+  75192's EAN `5702015869935` → nothing.
+- **Option:** UPCitemdb resolved that EAN to "Lego 75192 Millennium Falcon"
+  from EC2, but its keyless tier is a 100/day trial — production means a paid
+  plan (or another EAN source) and a third-party dependency.
+- **Detail:** `docs/BARCODE.md` (status block at the top).
+- **Re-check:** `POST /intake/barcode-only {"barcode":"5702015869935"}` as a member.
+
+### 2. Catalogue "full price range & 90-day trend" as a Pro feature
+- **State:** the teaser was removed (a Pro member saw neither; the trend is
+  SHELVED in `docs/MONETIZATION.md`). `market_hits_daily` already holds a daily
+  median per `item_ref`, so p10/p90 over 90 d + a weekly series is one query
+  behind `require_plan("pro")`.
+- **Detail:** `docs/MONETIZATION.md` → "Catalogue detail teaser removed".
+
+### 3. One name per category
+- **State:** 21 categories are named differently across four sources — pills
+  and pickers (`src/constants/categories.ts`), the taxonomy registry, the
+  Explore page (`src/data/categories.ts`) and the server's scan map. E.g.
+  Pokémon / Pokémon TCG / Pokémon Cards; Funko Pop / Funko Pop! / Funko Pops.
+  Keycaps was unified to "Custom Keycaps" (0b4c6093).
+- **Question:** which name per slug; is a longer Explore page title allowed
+  ("Comic Books & Graphic Novels") beside a short pill name?
+- **Re-check:** `node /tmp/names.mjs`-style comparison — list every slug whose
+  names differ across the four files.
+
+### 4. Catalogue prices resting on a single sale
+- **State (2026-09-26):** of priced `item_ref`s in the 180-day
+  `market_hits_daily` window — **268,621 rest on ONE comp** (266,810 of them
+  older than 60 days), 8,847 on two, 127,594 on three or more. Example: the
+  PSA 10 1st Edition Charizard read ~EUR 367 from one comp dated 2026-07-04.
+- **Question:** hide, flag ("based on 1 sale, 3 months ago") or keep? Hiding
+  un-prices roughly two thirds of the catalogue.
+- **Note:** base1-base1-4 is one row for BOTH printings, so its median mixes
+  1st Edition and unlimited sales.
+- **Re-check:** the count query is in the 2026-09-26 session notes; group
+  `market_hits_daily` by `item_ref`, `SUM(comps_count)` over 180 d.
+
+### 5. Server-side 2FA enforcement
+- **State:** 2FA is enforced in the app only. The EC2 API and Supabase RLS
+  accept an `aal1` token for a member with a verified factor.
+- **Scope measured:** member-facing RLS covers **272 tables / 456 policies**.
+  One restrictive policy per table calling a single `mfa_satisfied()` function
+  (evaluated once per statement), generated mechanically, plus an `aal` check
+  in `server/app/auth.py`.
+- **Detail:** `docs/AUTH_AND_WEB_DEPLOY.md` → MFA section.
+
+### 6. Concerts labelled "Convention" in Events
+- **State:** Ticketmaster queries (kpop_merch / taylor_swift) bring in
+  concerts and tribute acts, shown to all members as conventions.
+
+### 7. Market tab filter-chip placement
+- Walk note: placement reads ambiguously; a design call.
+
+### 8. Throwaway test accounts
+- `simseller@sparrowcollect.test`, `zz-lifecycle@sparrowcollect.test` (2FA
+  enrolled), `sparrowtest72uyt7m3@uberip.com` (unconfirmed, mail.tm inbox).
+  Deleting users is irreversible; they are also useful for future walks.
+  Their probe DATA was deleted 2026-09-26.
+
+### 9. simcheck back to Free + EUR
+- simcheck (the walk account) is Pro and on **USD**, left so for the class AO
+  device check. Revert after the verification build?
+
+## Decided
+
+_(none yet)_

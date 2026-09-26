@@ -352,3 +352,15 @@ Removing it from browse is a product decision, not a data-quality fix.
 **Before widening `_ACCESSORY_TERMS`, re-measure.** Run the candidate regex
 against `category_items` per category and read every match — the term that looks
 obviously safe is the one that eats a card name.
+
+## Display names across four sources (2026-09-26)
+
+A category's name lives in four places: `src/constants/categories.ts` (pills,
+pickers, onboarding), `src/taxonomy/registry.ts` (`formatCategoryName`), the
+Explore page data `src/data/categories.ts`, and the server's scan map
+(`quickscan_proxy_router._FRIENDLY_CATEGORY_MAP`). Keycaps was two names
+("Artisan Keycaps" / "Custom Keycaps") for one slug and is now "Custom Keycaps"
+everywhere (0b4c6093; items store the slug, so a rename is safe). **21 other
+slugs still differ** — listed in `docs/OPEN_DECISIONS.md` #3 as a naming call.
+`check-category-parity` compares slugs only; it cannot see this.
+

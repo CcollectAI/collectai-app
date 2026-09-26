@@ -236,6 +236,13 @@ decides, and the role pill says `You buy` / `You sell` rather than naming a
 category. Counter count renders only from the second round on — at one, the
 status line has already said it.
 
+**The pill names the move (2026-09-26).** `YOUR MOVE` was stamped on every card
+`offerNeedsMyAction` flags, including a COMPLETED trade whose only open step was
+a rating — it read as a trade still in progress. `myMoveLabel()` in
+`src/api/p2pApi.ts` follows the same branch order and uses the card's own button
+words: `MARK RECEIVED` / `MARK SENT`, `RATE THE SELLER` / `RATE THE BUYER`,
+else `YOUR MOVE` (answering an offer).
+
 ### The buyer answers a counter (fixed 2026-08-15)
 
 `counter` overwrites `p2p_offers.amount` with the seller's figure, so a

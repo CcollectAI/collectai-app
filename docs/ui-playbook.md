@@ -3927,3 +3927,16 @@ had, broken again, plus four new ones:
 - **A control for something that does not exist is removed, not labelled
   "available later"** — "Invite Friends via Chat" had no feature behind it
   (class AF). Its copy goes with it: Private said "people you invite".
+
+## Two small rules from the 2026-09-26 open-list round
+
+- **A switch's label names the setting, not an action.** The projects header
+  read "Mark project as complete" for a finished project, where toggling it
+  UN-completes it. Label the thing ("Project complete") and pass
+  `accessibilityState={{ checked }}` — the reader says on/off. House examples:
+  "Search active", "Dark mode".
+- **A wrapping grid does not need a text width cap.** Onboarding's category
+  chips had `maxWidth: 100` with `numberOfLines={1}` and cut "Magic: The
+  Gathering" mid-word. Bound the PILL by its row (`maxWidth: '100%'`) and let
+  the text be as wide as its name.
+

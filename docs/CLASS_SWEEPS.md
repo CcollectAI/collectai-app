@@ -110,6 +110,8 @@ Two rules the tooling learned the hard way:
 | AN | A fix that lived in one copy of a rule while a second copy kept the bug | **fixed + gated 2026-09-24 (client; needs a JS build)** | The auth-lock deadlock was fixed in AuthProvider (setTimeout(0)), and `src/hooks/useAuth.ts`, an older copy, kept an `async` onAuthStateChange listener awaiting a query. Every cold start into a profile stalled every Supabase request ~15 s. Hook deleted; gate `check:auth-listener-lock`. Falsifier: `git show acf414fc:src/hooks/useAuth.ts > src/hooks/useAuth.ts && npm run check:auth-listener-lock` → exit 1 (then delete the file again). See docs/AUTH_AND_WEB_DEPLOY.md "Cold start stalled every request" |
 | AO | An EUR amount formatted with NO currency — printed euros to every member | **fixed at the chokepoint 2026-09-26 (client; needs a JS build)** | `formatPrice(x)` defaulted to EUR, and ~45 sites in 22 files passed backend EUR amounts that way (portfolio chart, catalogue, deal/mandate screens, movers, item ranges). `check:currency-conversion` skipped them: it only inspects calls that NAME a member currency — AD's blind spot one shape over. Walked on Android as USD: header "$1.429", chart under it "€1.253". Fix: SettingsProvider pushes `setActiveDisplayCurrency()` (during render), and an OMITTED currency now means "EUR, show it converted"; an explicit currency is as given. Chart takes `currency` + `fxRate` so its ticks stay round (it is `React.memo`). Two riders found by the sweep: the mandate form typed `max_price` in the member's currency and stored it raw (policy_engine compares it in EUR) → `memberAmountToEUR` on save, `convertEUR` on edit; the shop picker labelled a watchlist target (row currency) as €. ⚠️ Residual risk: a one-arg call on an amount ALREADY in the member's currency now double-converts — the 22 files were read for this, none found. Falsifier: `npx jest __tests__/lib/formatPriceDisplayCurrency.test.ts` (mutation-proven: drop the conversion → 1 fails); on device, Settings → USD → Portfolio chart axis reads `$`. |
 | AP | A scan identity chosen by an arbitrary LIMIT, then priced by a key SUBSTRING | **fixed + DEPLOYED 2026-09-26** | QuickScan of Base Set Charizard (EUR 1,159 on its catalogue page) adopted the Celebrations reprint at score 1.00 and quoted EUR 154; with the identity fixed it then quoted EUR 2.97. Three defects: (1) the attribute strategy queried `card_number = '4/102'` but the catalogue's printed form is `number` ('4/102'; `card_number` is '4'), so it never matched; (2) the title strategy was an UNORDERED `LIMIT 5` over 28 exact "Charizard" rows; (3) the price step ran `normalized_key ILIKE '%base1-base1-4%'`, which matches base1-base1-40..49. Fixed: printed number (zero-pad normalised, SQL twin) + title containment as strategy 0b, number-first ORDER BY before the LIMIT, a number-conflict cap (0.55) at one chokepoint for every candidate, and pricing from `market_hits_daily` by exact item_ref — the catalogue screen's source. Falsifier: on EC2 `python /tmp/vx3.py <base1/4_hires.png>` → KEY base1-base1-4, EUR 1159.04; pytest `test_catalog_title_ties.py`, `test_intake_price_exact_key.py` (5 mutations, all caught). |
+| AQ | A "gain" that counts what the member ADDED | **fixed 2026-09-26 (server DEPLOYED; client needs a JS build)** | Home's headline and Analytics' "Unrealized P/L" were last point minus first of the value series, so a EUR 25 item added this week read as +EUR 25 of gain; on 30D it MASKED a real fall (raw -10.29, market -35.29). `/portfolio/timeseries` now returns `market_change` (value change of the items already held when the range opened; one LATERAL value per item-day, summed twice — daily totals byte-identical to the old query, same timing). Home (`src/lib/portfolioChange.ts`) and Analytics (`computePLFromSeries`) prefer it. Falsifier: prod simcheck 7D `market_change` 0.0 while points go 1228 -> 1253; tests `portfolioChange`, `computePLMarketChange`, `test_portfolio_router` (mutation-proven). |
+| AR | A stock photo that shows a different subject than its label | **swept 2026-09-26** | Explore banners: all 53 downloaded onto labelled contact sheets and looked at. 10 wrong (Marvel Legends = a rabbit, Digimon = Pokemon energy cards, One Piece TCG = tarot, Bandai = a Super Nintendo, ...), 2 not loading -> emptied (icon fallback), same rule as the Magic/Lorcana tiles. 8 weak-but-plausible kept and listed in ed64737b. No gate can see a photo's subject: re-run = download every `bannerImageUrl` and look. |
 
 ## AD — a money format typed into the UI (2026-09-24)
 
@@ -482,6 +484,12 @@ show converted"; explicit currencies are untouched; `null` keeps EUR (tests).
   ticks (round axis in the member's currency), still hands EUR to
   `onScrubChange` (the header converts it).
 
+**Server half (2026-09-26, DEPLOYED):** notification bodies (Target Hit, Deal
+Agent, auction ending) printed "€13.15" to every member. `member_money(conn,
+user_id, amount_eur)` in `server/app/lib/money.py` converts to the member's
+currency and uses their number locale; prod probe for simcheck (USD, de-DE):
+EUR 13.15 -> "$14,99". Tests in `test_currency_symbol_parity.py`.
+
 **Falsifier**: `npx jest __tests__/lib/formatPriceDisplayCurrency.test.ts` —
 replace the conversion with `amount = amount` and test 1 fails.
 
@@ -508,6 +516,26 @@ scan result now labels its grade "≈ PSA … AI condition estimate" (924542ce),
 which is right whatever the model's accuracy. Note for pricing: base1-base1-4
 is ONE catalogue row for both printings, so its EUR 1,159 median mixes 1st
 Edition and unlimited sales.
+
+## AQ — a "gain" that counts what the member added (2026-09-26)
+
+Walk finding: Portfolio read "+EUR 25" the day an item was added. The series
+values each item from the day it entered the collection, so the curve rises by
+every addition, and last-minus-first called that a gain.
+
+Enumerated the consumers of `/portfolio/timeseries`: Home's headline and the
+Analytics hero (`portfolioAnalyticsStore` -> `computePLFromSeries`). Both now
+use the server's `market_change`. The zero-baseline rule in
+`computePLFromSeries` (no "gain" equal to everything you own) is unchanged.
+
+Prod, simcheck, before/after: 7D raw +25.00 -> market 0.00; 30D raw -10.29 ->
+market -35.29.
+
+## AR — a stock photo that shows a different subject than its label (2026-09-26)
+
+See the row. The method is the finding: the earlier fix (Magic tile carrying
+Yu-Gi-Oh! cards, 2026-09-09) looked at the ONE tile reported; looking at all 53
+found twelve more.
 ## AC — a SECURITY DEFINER function anyone can call (2026-09-22)
 
 **How it was found.** Re-running the Security Advisor's RLS lints by hand
