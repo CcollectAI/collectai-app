@@ -495,10 +495,19 @@ on an `async` listener, on an `await` outside a `setTimeout(...)`, or on a
 listener passed by name. Proven against the restored hook, an injected
 `await`, and a named listener.
 
-**Not changed, and correct as documented:** AuthProvider forces one
-`refreshSession()` whenever the app becomes active (the ~1h-idle 401 fix
-above). At launch that runs twice (mount + the first `active` event), serialized
-by `processLock`, so it is not the reuse race.
+**Changed 2026-09-26:** AuthProvider forced one `refreshSession()` whenever the
+app became active (the ~1h-idle 401 fix above) — serialized by `processLock`, so
+not the reuse race, but paid on EVERY foreground however fresh the token. Each
+one holds the lock through a chunked secure-store write (2.6–3.6 s measured on
+the emulator); in that window `getAuthHeaders` gives up, requests go tokenless,
+401, and the 401 recovery refreshes again — ~25 `TOKEN_REFRESHED` in one walk
+with tokens an hour from expiry. It now refreshes only within
+`FOREGROUND_REFRESH_MARGIN_MS` (5 min) of expiry, which still covers the idle
+case; `getSession()` itself refreshes inside 90 s (auth-js 2.86 `__loadSession`).
+Fewer refreshes can only reduce reuse risk.
+Falsifier: `npx jest __tests__/hooks/authForegroundRefresh.test.tsx` (it forces
+`AppState.currentState = 'active'` — the preset's value is a mock function, and
+without it the "no refresh" case passes vacuously).
 
 **Measuring on the emulator:** a host load above ~15 makes the emulator drop
 keystrokes and freeze system_server ("Process system isn't responding"). Check

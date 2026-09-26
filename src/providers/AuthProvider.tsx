@@ -58,6 +58,8 @@ import { withTimeout, TimeoutError } from '@/lib/withTimeout';
 // always emits once initialize settles, with a ceiling so it cannot hang.
 const AUTH_INIT_TIMEOUT_MS = 8_000;
 const AUTH_FIRST_EVENT_CEILING_MS = 45_000;
+// Foreground refresh only inside this window before expiry (see the AppState effect).
+const FOREGROUND_REFRESH_MARGIN_MS = 5 * 60_000;
 const PROFILE_READ_TIMEOUT_MS = 6_000;
 let Sentry: SentryModule | null = null;
 try {
@@ -254,7 +256,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // A single forced refreshSession() (serialized by processLock, so it
         // can't refresh-storm and trip reuse detection) makes a fresh token
         // available within ~1-2s of foreground. No-ops harmlessly when logged out.
-        void supabase.auth.refreshSession().catch(() => {});
+        //
+        // ONLY when the token is near expiry (2026-09-26). This refreshed on
+        // EVERY foreground, however fresh the token — every app switch, every
+        // deep link. Each refresh rotates the refresh token, holds GoTrue's lock
+        // and writes the chunked session to secure storage (measured 2.6-3.6 s
+        // on the emulator); for that window getAuthHeaders' 2 s + 8 s read gives
+        // up, requests go out tokenless, 401, and the 401 recovery refreshes
+        // AGAIN — ~25 TOKEN_REFRESHED in one walk, tokens an hour from expiry.
+        // The ~1h-idle case this exists for is exactly "near/after expiry".
+        // (getSession() itself refreshes inside its 90 s margin — auth-js 2.86
+        // __loadSession — so this only widens that margin to a few minutes.)
+        void (async () => {
+          const { data } = await supabase.auth.getSession();
+          const exp = data.session?.expires_at;
+          if (exp && exp * 1000 - Date.now() < FOREGROUND_REFRESH_MARGIN_MS) {
+            await supabase.auth.refreshSession();
+          }
+        })().catch(() => {});
       } else {
         void supabase.auth.stopAutoRefresh();
       }
