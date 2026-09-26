@@ -20,6 +20,8 @@ from fastapi.responses import StreamingResponse
 
 from app.auth import get_current_user_id
 from app.errors import error_response
+from decimal import Decimal
+
 from app.lib.fx_service import convert_to_eur
 from app.rate_limit import per_user_rate_limit
 
@@ -329,8 +331,13 @@ async def import_collection(
         # legitimately use both (bought in USD, valued in EUR).
         value_currency = str(r.get("currency", "") or "").strip().upper() or None
         est_val_raw = _num(r.get("estimated_value") or r.get("price") or r.get("value"))
+        # Bound as a cents Decimal: `estimated_value` is unconstrained numeric,
+        # and asyncpg encodes a Python float into numeric by its EXACT binary
+        # expansion — so even round(x, 2) landed as 105.2399999999999948840923…
+        # (probe import 2026-09-26; rounding alone was deployed and did not fix
+        # it). purchase_price_eur is numeric(12,2), which rounds on its own.
         est_val = (
-            await convert_to_eur(est_val_raw, value_currency or "EUR")
+            Decimal(str(round(await convert_to_eur(est_val_raw, value_currency or "EUR"), 2)))
             if est_val_raw is not None
             else None
         )
