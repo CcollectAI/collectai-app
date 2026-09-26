@@ -91,10 +91,11 @@ class TestPortfolioTimeseries:
     def test_timeseries_with_db(self):
         import datetime
         mock_rows = [
-            # base_value = items already held when the window opened. Day 2
-            # holds a EUR 3 item added in the window: 105 total, 102 base.
-            {"day": datetime.date(2025, 1, 1), "total_value": 100.50, "base_value": 100.50},
-            {"day": datetime.date(2025, 1, 2), "total_value": 105.00, "base_value": 102.00},
+            # entry_value = each item's value on its entry day into the
+            # window. Day 1: the held items enter at 100.50. Day 2: a EUR 3
+            # item is added (enters at 3); the held ones rose to 102.
+            {"day": datetime.date(2025, 1, 1), "total_value": 100.50, "entry_value": 100.50},
+            {"day": datetime.date(2025, 1, 2), "total_value": 105.00, "entry_value": 3.00},
         ]
         mock_conn = AsyncMock()
         mock_conn.fetch = AsyncMock(return_value=mock_rows)
@@ -109,8 +110,26 @@ class TestPortfolioTimeseries:
         assert len(data["points"]) == 2
         assert data["points"][0]["v"] == 100.5
         assert data["points"][1]["v"] == 105.0
-        # 2026-09-26: the added item is not a gain — 102 - 100.5, not 105 - 100.5.
+        # 2026-09-26: the added item is not a gain — 105 - (100.5 + 3), not 105 - 100.5.
         assert data["market_change"] == 1.5
+
+    def test_timeseries_a_fall_after_adding_is_still_a_fall(self):
+        """90D on prod: nothing held on day 1, items added later, then fell EUR 35.
+        The first market_change (held-at-start only) read EUR 0."""
+        import datetime
+        mock_rows = [
+            {"day": datetime.date(2025, 1, 1), "total_value": 0.0, "entry_value": 0.0},
+            {"day": datetime.date(2025, 1, 2), "total_value": 1263.29, "entry_value": 1263.29},
+            {"day": datetime.date(2025, 1, 3), "total_value": 1228.00, "entry_value": 0.0},
+        ]
+        mock_conn = AsyncMock()
+        mock_conn.fetch = AsyncMock(return_value=mock_rows)
+        mock_pool = MagicMock()
+        mock_pool.acquire.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
+        mock_pool.acquire.return_value.__aexit__ = AsyncMock(return_value=False)
+        with patch("app.routes.portfolio_router.get_db_pool", return_value=mock_pool):
+            r = client.get("/portfolio/timeseries?range=90d", headers=_AUTH_HEADERS)
+        assert r.json()["market_change"] == -35.29
 
 
 # ---- Overview endpoint ----

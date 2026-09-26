@@ -531,6 +531,16 @@ use the server's `market_change`. The zero-baseline rule in
 Prod, simcheck, before/after: 7D raw +25.00 -> market 0.00; 30D raw -10.29 ->
 market -35.29.
 
+**Corrected the same night (device walk, Portfolio 90D).** The first
+`market_change` counted only items held on the window's FIRST day. On 90D/1Y/ALL
+nothing was held on day 1, so a EUR 35 fall after the items were added read
+**+EUR 0**. Now each item is measured from its ENTRY into the window (window
+start, or the day it was added): `entry_value` per day, `market_change =
+total(last) - SUM(entry_value)`. DEPLOYED. Falsifier, prod simcheck: 7d 0.0,
+30d -35.29, 90d/1y/all -35.29 (were 0.0). Test
+`test_timeseries_a_fall_after_adding_is_still_a_fall` (mutation to day-1-only
+fails it).
+
 ## AR — a stock photo that shows a different subject than its label (2026-09-26)
 
 See the row. The method is the finding: the earlier fix (Magic tile carrying

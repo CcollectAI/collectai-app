@@ -237,16 +237,19 @@ async def portfolio_timeseries(
                     ORDER BY o.id, pp.generated_at DESC)
                 )
                 -- Each item's value on each day is computed ONCE (the LATERAL)
-                -- and summed twice: every item held that day, and only the
-                -- items already held when the window opened (2026-09-26).
-                -- `base_value` exists because the headline change was
-                -- last point - first point, so ADDING a EUR 25 item read as
-                -- "+EUR 25" of gain. market_change = base_value(last day) -
-                -- total_value(first day): the same items, then and now.
+                -- and summed twice: every item held that day, and each item's
+                -- value on its ENTRY day into the window — the window start,
+                -- or the day it was added if later (2026-09-26). The headline
+                -- change was last point - first point, so ADDING a EUR 25 item
+                -- read as "+EUR 25" of gain. market_change = total_value(last
+                -- day) - SUM(entry_value): every item's own move since it
+                -- entered. (The first version counted only items held at the
+                -- window start, so on 90D — nothing held on day 1 — a EUR 35
+                -- fall after purchase read as EUR 0.)
                 SELECT
                     d.day AS day,
                     COALESCE(SUM(v.val), 0) AS total_value,
-                    COALESCE(SUM(v.val) FILTER (WHERE v.since <= $2::date), 0) AS base_value
+                    COALESCE(SUM(v.val) FILTER (WHERE GREATEST(v.since, $2::date) = d.day), 0) AS entry_value
                 FROM days d
                 LEFT JOIN LATERAL (
                     SELECT o.since,
@@ -271,11 +274,12 @@ async def portfolio_timeseries(
                 {"t": row["day"].isoformat(), "v": round(float(row["total_value"]), 2)}
                 for row in rows
             ]
-            # Change in value of what was already owned at the window start —
-            # excludes items added (their cost is not a gain). None when there
-            # is no day grid to read it from.
+            # Each item's change since it entered the window — the window
+            # start, or the day it was added. Adding an item is not a gain,
+            # and a fall after adding it is still a fall. None when there is
+            # no day grid to read it from.
             market_change = (
-                round(float(rows[-1]["base_value"]) - float(rows[0]["total_value"]), 2)
+                round(float(rows[-1]["total_value"]) - sum(float(r["entry_value"]) for r in rows), 2)
                 if rows else None
             )
 
