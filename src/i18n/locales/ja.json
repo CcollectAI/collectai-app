@@ -323,6 +323,8 @@
     "scan_barcode_a11y": "バーコードをスキャン"
   },
   "barcode": {
+    "identify_by_photo": "Identify from a photo",
+    "identify_by_photo_a11y": "Identify this item from a photo instead",
     "product_found": "製品が見つかりました",
     "estimated_price": "推定価格",
     "scan_another_a11y": "別のバーコードをスキャン",

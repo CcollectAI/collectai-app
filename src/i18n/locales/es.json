@@ -323,6 +323,8 @@
     "scan_barcode_a11y": "Escanear un código de barras"
   },
   "barcode": {
+    "identify_by_photo": "Identify from a photo",
+    "identify_by_photo_a11y": "Identify this item from a photo instead",
     "product_found": "Producto encontrado",
     "estimated_price": "Precio estimado",
     "scan_another_a11y": "Escanear otro código de barras",

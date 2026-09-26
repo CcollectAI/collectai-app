@@ -12,7 +12,7 @@ import {
   Animated,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { dataProvider } from '@/data';
 import { featureFlags } from '@/config/featureFlags';
 import { fireHaptic, HapticIntent, confidenceToIntent } from '@/haptics';
@@ -82,6 +82,15 @@ type ScanPhase =
   | 'comparison_result';
 
 function QuickScanScreen() {
+  // Opened from the barcode scanner when a code was not recognised
+  // (2026-09-26): the code rides along into whatever this scan saves, so the
+  // server learns what it was (server/app/lib/barcode_learning.py).
+  const { barcode: scannedBarcode } = useLocalSearchParams<{ barcode?: string }>();
+  const withBarcode = React.useCallback(
+    (attrs?: Record<string, unknown> | null): Record<string, unknown> | null =>
+      scannedBarcode ? { ...(attrs ?? {}), barcode: scannedBarcode } : (attrs ?? null),
+    [scannedBarcode],
+  );
   // The whole QuickScan flow sits on the black camera viewfinder, so it forces
   // the black palette instead of following the app's light/dark setting —
   // otherwise capture (black) → analyzing/result (white) flashes mid-scan.
@@ -292,6 +301,7 @@ function QuickScanScreen() {
           ? CATEGORY_SLUG_TO_NAME[sr.attributes.category]
           : undefined;
         const extracted = sr.attributes.extractedDetails;
+        const handoffAttrs = withBarcode(extracted);
         router.push({
           pathname: '/add-manual',
           params: {
@@ -299,7 +309,7 @@ function QuickScanScreen() {
             ...(visionCategory ? { category: visionCategory } : null),
             ...(sr.prediction.name ? { name: sr.prediction.name } : null),
             ...(sr.attributes.conditionGuess ? { condition: sr.attributes.conditionGuess } : null),
-            ...(extracted && Object.keys(extracted).length ? { attrs: JSON.stringify(extracted) } : null),
+            ...(handoffAttrs && Object.keys(handoffAttrs).length ? { attrs: JSON.stringify(handoffAttrs) } : null),
           },
         });
         setPhase('camera');
@@ -315,7 +325,7 @@ function QuickScanScreen() {
       showToast({ message: 'Screenshot analysis failed', type: 'error' });
       setPhase('camera');
     }
-  }, [showToast, settings.hapticsEnabled]);
+  }, [showToast, settings.hapticsEnabled, withBarcode]);
 
   const handleSaveBatchItem = useCallback(async () => {
     if (!currentBatchResult || savingBatchItem) return;
@@ -478,7 +488,11 @@ function QuickScanScreen() {
           });
           router.push({
             pathname: '/add-manual',
-            params: { imageUri: photo.uri, ...(guessedCategory ? { category: guessedCategory } : null) },
+            params: {
+              imageUri: photo.uri,
+              ...(guessedCategory ? { category: guessedCategory } : null),
+              ...(scannedBarcode ? { attrs: JSON.stringify({ barcode: scannedBarcode }) } : null),
+            },
           });
           setPhase('camera');
           setCapturedUri(null);
@@ -505,6 +519,7 @@ function QuickScanScreen() {
           ? CATEGORY_SLUG_TO_NAME[sr.attributes.category]
           : undefined;
         const extracted = sr.attributes.extractedDetails;
+        const handoffAttrs = withBarcode(extracted);
         router.push({
           pathname: '/add-manual',
           params: {
@@ -512,7 +527,7 @@ function QuickScanScreen() {
             ...((visionCategory ?? guessedCategory) ? { category: (visionCategory ?? guessedCategory) as string } : null),
             ...(sr.prediction.name ? { name: sr.prediction.name } : null),
             ...(sr.attributes.conditionGuess ? { condition: sr.attributes.conditionGuess } : null),
-            ...(extracted && Object.keys(extracted).length ? { attrs: JSON.stringify(extracted) } : null),
+            ...(handoffAttrs && Object.keys(handoffAttrs).length ? { attrs: JSON.stringify(handoffAttrs) } : null),
           },
         });
         setPhase('camera');
@@ -568,7 +583,7 @@ function QuickScanScreen() {
       setPhase('camera');
       setCapturedUri(null);
     }
-  }, [settings.hapticsEnabled, showToast, batchMode, multiMode, compareMode, comparisonA, userCategoryDist, edgeHint]);
+  }, [settings.hapticsEnabled, showToast, batchMode, multiMode, compareMode, comparisonA, userCategoryDist, edgeHint, scannedBarcode, withBarcode]);
 
   // Handle selecting an alternative from the "Did you mean?" list
   const handleSelectAlternative = useCallback((alt: CatalogAlternative) => {
@@ -611,7 +626,7 @@ function QuickScanScreen() {
 
     // Pass extracted details as structured JSON so they can be persisted
     // to items.attributes_json (not flattened into free-text notes).
-    const details = scanResult.attributes.extractedDetails;
+    const details = withBarcode(scanResult.attributes.extractedDetails);
     const attributesJson = details ? JSON.stringify(details) : '';
 
     router.replace({
@@ -632,7 +647,7 @@ function QuickScanScreen() {
         ...(scanResult.catalogMatchKey ? { catalogKey: scanResult.catalogMatchKey } : {}),
       },
     });
-  }, [scanResult, capturedUri, settings.hapticsEnabled, recordAdAction, tryShowAd]);
+  }, [scanResult, capturedUri, settings.hapticsEnabled, recordAdAction, tryShowAd, withBarcode]);
 
   const handleCancel = useCallback(() => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });

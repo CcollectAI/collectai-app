@@ -221,6 +221,7 @@ export const collectorsApi = {
   browseCatalogItems: intakeApi.browseCatalogItems,
   getCatalogItemPrice: intakeApi.getCatalogItemPrice,
   getCatalogItemPriceRange: intakeApi.getCatalogItemPriceRange,
+  recordBarcodeObservation: intakeApi.recordBarcodeObservation,
   getCatalogCollections: intakeApi.getCatalogCollections,
 
   // Progress Tracking

@@ -14,13 +14,29 @@ This document describes the barcode scanning feature for quick item entry.
 > So scanning a LEGO box, a Funko Pop or a sealed TCG product always ends in
 > the "suggest to catalogue" modal.
 >
-> **Decision open:** UPCitemdb's keyless trial (`api.upcitemdb.com/prod/trial/
-> lookup?upc=`) resolved the LEGO EAN to "Lego 75192 Millennium Falcon" from
-> EC2 — but the trial is 100 lookups/day/IP and meant for evaluation, so
-> production use means their paid plan (or another EAN source), i.e. a cost
-> and a third-party dependency. The resolved title would then go through the
-> same catalogue title match QuickScan uses to land on `lego:75192-1-…`.
-> Falsifier for "fixed": the LEGO EAN above returns a name and category_id.
+> **Decided 2026-09-26: no paid source (Merle).** Built instead, both free:
+> 1. **Learned barcodes** — every save that began as a scan records what the
+>    code turned out to be (`public.barcode_observations`, one row per member;
+>    `server/app/lib/barcode_learning.py`). Written by `/intake/save` (it used
+>    to accept `barcode` and drop it) and by `POST /intake/barcode-observation`
+>    from manual add and QuickScan's draft save. The catalogue link is resolved
+>    by the SERVER from the title, never taken from the client. A new cascade
+>    tier after the catalogue reads it: a catalogue-linked answer is shared
+>    with anyone (public data); a member's free-typed title only with that
+>    member, or with others once TWO members agree. Product codes only
+>    (EAN-8/UPC-A/EAN-13/GTIN-14) — a Code 128 serial names one object.
+> 2. **Photo fallback** — an unrecognised scan offers "Identify from a photo";
+>    QuickScan carries the barcode into whatever it saves, so the photo's
+>    answer is learned for the code.
+> Verified on prod: simcheck scans LEGO `5702015869935` → miss; saves it as
+> "LEGO Millennium Falcon" → `{"recorded":true,"catalogue_match":true}`;
+> simseller (another member) scans → "LEGO Millennium Falcon", lego,
+> `75192-1-millennium-falcon`, `identification_method: barcode_learned`.
+> Tests: `test_barcode_learning.py`, `barcodeResultCardPhoto.test.tsx`
+> (privacy rule and the fallback button mutation-proven).
+> ⚠️ The Falcon's PRICE (EUR 124.78, same as its catalogue page) is wrong
+> data, not a lookup bug: its daily comps are EUR 74 / 175 with a latest of
+> 20.77 — parts/minifigs matched as the set. See docs/OPEN_DECISIONS.md #4.
 
 ## Overview
 

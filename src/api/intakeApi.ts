@@ -224,6 +224,12 @@ export const getCatalogItemPriceRange = (categoryId: string, itemKey: string) =>
     `/catalog/${encodeURIComponent(categoryId)}/items/${encodeURIComponent(itemKey)}/price-range`,
   );
 
+/** Tell the server what a scanned barcode turned out to be, for a save that did
+ *  not go through /intake/save (manual add, QuickScan's add). The server resolves
+ *  the catalogue link itself (2026-09-26, barcode learning). */
+export const recordBarcodeObservation = (body: { barcode: string; title: string; category?: string }) =>
+  post<{ recorded: boolean; catalogue_match: boolean }>("/intake/barcode-observation", body);
+
 // Catalog Collections — discovery "Featured Collections" for a category,
 // grouped by set_code from the curated catalog (NOT user ownership).
 export const getCatalogCollections = (

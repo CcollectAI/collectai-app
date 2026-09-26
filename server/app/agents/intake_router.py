@@ -792,6 +792,14 @@ async def intake_save(
             payload.estimated_price,
             canonical_key,
         )
+        # The scan's barcode used to be accepted here and dropped. Record what
+        # it turned out to be, so the next scan of this code resolves
+        # (app/lib/barcode_learning.py). Never fails the save.
+        if payload.barcode:
+            from app.lib.barcode_learning import record_observation
+            await record_observation(
+                conn, user_id, payload.barcode, payload.title, payload.category, canonical_key,
+            )
 
     logger.info(
         "[intake/save] Created item %s for user %s (category=%s)",
@@ -858,6 +866,40 @@ async def intake_save(
         logger.warning("[intake/save] demand signal failed (non-critical)", exc_info=True)
 
     return IntakeSaveResponse(id=item_id, title=payload.title, category=payload.category)
+
+
+class BarcodeObservationRequest(BaseModel):
+    """A save made OUTSIDE /intake/save (manual add, QuickScan's add) that began
+    as a barcode scan. Only title + category are taken from the client; the
+    catalogue link is resolved here, so a client cannot plant a wrong key."""
+    barcode: str = Field(..., min_length=1, max_length=50)
+    title: str = Field(..., min_length=1, max_length=500)
+    category: Optional[str] = Field(None, max_length=64)
+
+
+_barcode_obs_limit = per_user_rate_limit(30, scope="barcode_observation")
+
+
+@router.post(
+    "/barcode-observation",
+    dependencies=[Depends(_barcode_obs_limit)],
+    summary="Record what a scanned barcode turned out to be",
+)
+async def barcode_observation(
+    payload: BarcodeObservationRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    if not is_valid_barcode(payload.barcode.strip()):
+        raise error_response(400, "Invalid barcode format")
+    if not db_configured():
+        return {"recorded": False}
+    canonical_key = await _resolve_canonical_key(payload.title, payload.category)
+    from app.lib.barcode_learning import record_observation
+    async with get_conn() as conn:
+        ok = await record_observation(
+            conn, user_id, payload.barcode, payload.title, payload.category, canonical_key,
+        )
+    return {"recorded": ok, "catalogue_match": bool(canonical_key)}
 
 
 # ---------------------------------------------------------------------------

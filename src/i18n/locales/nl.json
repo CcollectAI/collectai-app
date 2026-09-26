@@ -323,6 +323,8 @@
     "scan_barcode_a11y": "Een streepjescode scannen"
   },
   "barcode": {
+    "identify_by_photo": "Identify from a photo",
+    "identify_by_photo_a11y": "Identify this item from a photo instead",
     "product_found": "Product gevonden",
     "estimated_price": "Geschatte prijs",
     "scan_another_a11y": "Nog een streepjescode scannen",

@@ -34,6 +34,9 @@ interface BarcodeResultCardProps {
   /** Handoff when the barcode was not recognised — mirrors QuickScan's low-confidence path. */
   onAddManually: () => void;
   onAddToWatchlist: () => void;
+  /** Not recognised: identify it from a photo instead (2026-09-26). The screen
+   *  passes the barcode along so what the photo finds is learned for it. */
+  onIdentifyByPhoto?: () => void;
   /** 'idle' | 'saving' | 'done'. The watchlist add is a real write now (it used
    *  to navigate away, so the screen unmounting WAS the feedback). A button that
    *  performs a network write and looks identical before, during and after it
@@ -53,6 +56,7 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
   onSave,
   onAddManually,
   onAddToWatchlist,
+  onIdentifyByPhoto,
   watchlistState = 'idle',
 }: BarcodeResultCardProps) {
   const { colors } = useScannerTheme();
@@ -195,6 +199,20 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
             )}
           </AnimatedPressable>
       </View>
+
+      {!recognised && onIdentifyByPhoto ? (
+        <AnimatedPressable
+          style={[styles.watchlistButton, { borderColor: colors.accent }]}
+          onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled }); onIdentifyByPhoto(); }}
+          accessibilityRole="button"
+          accessibilityLabel={t('barcode.identify_by_photo_a11y', { defaultValue: 'Identify this item from a photo instead' })}
+        >
+          <Ionicons name="camera-outline" size={18} color={colors.accent} />
+          <Text style={[styles.secondaryButtonText, { color: colors.accent }]}>
+            {t('barcode.identify_by_photo', { defaultValue: 'Identify from a photo' })}
+          </Text>
+        </AnimatedPressable>
+      ) : null}
 
       <AnimatedPressable
         style={[styles.watchlistButton, { borderColor: watchlistState === 'done' ? colors.accent : colors.border }]}

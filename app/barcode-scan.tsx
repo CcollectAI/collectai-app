@@ -319,6 +319,14 @@ function BarcodeScanScreen() {
     });
   }, [router, scannedCode, lookupResult]);
 
+  // Option 3 of the free barcode plan (2026-09-26): the code was not found, so
+  // identify the item from a photo — and carry the code, so whatever the photo
+  // identifies is learned for it (QuickScan forwards it into the save).
+  const handleIdentifyByPhoto = useCallback(() => {
+    const code = scannedCode?.value;
+    router.push({ pathname: '/quickscan', params: code ? { barcode: code } : {} });
+  }, [router, scannedCode]);
+
   // Save item to collection
   const [isSaving, setIsSaving] = useState(false);
 
@@ -539,6 +547,7 @@ function BarcodeScanScreen() {
           onRescan={handleRescan}
           onSave={handleSaveToCollection}
           onAddManually={handleAddManually}
+          onIdentifyByPhoto={handleIdentifyByPhoto}
           onAddToWatchlist={handleAddToWatchlist}
           watchlistState={watched ? 'done' : watching ? 'saving' : 'idle'}
         />

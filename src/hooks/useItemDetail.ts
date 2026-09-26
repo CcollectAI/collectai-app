@@ -382,6 +382,17 @@ export function useItemDetail(params: UseItemDetailParams) {
           confidence: num(confidence) != null ? num(confidence)! / 100 : null,
         },
       });
+      // Began as a barcode the scanner could not name, identified from a photo
+      // (QuickScan's barcode fallback): tell the server what the code was, so
+      // the next scan of it resolves. Fire-and-forget — never costs the save.
+      const scannedCode = typeof initialAttributes?.barcode === 'string' ? initialAttributes.barcode : null;
+      if (scannedCode) {
+        collectorsApi.recordBarcodeObservation({
+          barcode: scannedCode,
+          title: persisted.title,
+          category: persisted.categoryId || undefined,
+        }).catch((e: unknown) => logger.error('[ItemDetail] barcode observation failed:', e));
+      }
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
       showToast({ message: 'Item saved to collection', type: 'success' });
       router.replace({

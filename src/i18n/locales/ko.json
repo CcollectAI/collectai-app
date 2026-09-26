@@ -323,6 +323,8 @@
     "scan_barcode_a11y": "바코드 스캔"
   },
   "barcode": {
+    "identify_by_photo": "Identify from a photo",
+    "identify_by_photo_a11y": "Identify this item from a photo instead",
     "product_found": "제품 발견",
     "estimated_price": "예상 가격",
     "scan_another_a11y": "다른 바코드 스캔",

@@ -21,6 +21,7 @@ async def _barcode_lookup_internal(
     barcode: str,
     barcode_type: Optional[str],
     pool,
+    user_id: Optional[str] = None,
 ) -> Optional[dict[str, Any]]:
     """
     Run the 3-tier barcode lookup cascade without going through HTTP.
@@ -67,6 +68,46 @@ async def _barcode_lookup_internal(
             "rationale": rationale,
             "price_band": _price_band_to_dict(price_band) if price_band else None,
             "identification_method": "barcode_catalog",
+        }
+
+    # --- Step 1b: learned from members' saves (2026-09-26) ---
+    # See app/lib/barcode_learning.py for who may see what. A catalogue-linked
+    # answer comes back as that catalogue row, so its price is the row's price.
+    learned = None
+    if pool is not None:
+        try:
+            from app.lib.barcode_learning import lookup_learned
+            async with pool.acquire() as conn:
+                learned = await lookup_learned(conn, barcode_clean, user_id)
+                row = None
+                if learned and learned.get("canonical_key"):
+                    row = await conn.fetchrow(
+                        """
+                        SELECT item_key, title, brand, rarity, image_url
+                        FROM category_items WHERE category = $1 AND item_key = $2
+                        """,
+                        learned["category"], learned["canonical_key"],
+                    )
+        except Exception as e:
+            logger.warning("[barcode] learned lookup failed: %s", e)
+            learned, row = None, None
+    if learned:
+        who = "members" if learned.get("members", 1) > 1 else "a member"
+        rationale.append(f"Recognised from what {who} saved for this barcode")
+        return {
+            "title": (row["title"] if row else None) or learned.get("title"),
+            "category_id": learned.get("category"),
+            "subtype_id": row["rarity"] if row else None,
+            "attributes": {
+                "brand": row["brand"] if row else None,
+                "item_key": learned.get("canonical_key"),
+                "source": learned.get("source"),
+            },
+            "image_url": row["image_url"] if row else None,
+            "rationale": rationale,
+            "price_band": None,
+            "catalog_match_key": learned.get("canonical_key"),
+            "identification_method": "barcode_learned",
         }
 
     # --- Step 2 & 3: External ISBN lookup ---

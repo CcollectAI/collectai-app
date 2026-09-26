@@ -26,6 +26,7 @@ import { compose, required, maxLength, numeric } from "@/lib/validate";
 import logger from "@/utils/logger";
 import CatalogSuggestionModal from "@/components/CatalogSuggestionModal";
 import { matchCatalog, revalueItem } from "@/api/itemsApi";
+import { recordBarcodeObservation } from "@/api/intakeApi";
 import { invalidateItemCaches } from "@/data/CachedDataProvider";
 import { checkDuplicate } from "@/lib/duplicateCheck";
 import { dataProvider } from "@/data";
@@ -506,6 +507,20 @@ const ManualAddScreen: React.FC = () => {
       // quick_predictions row so its card shows a value. Fire-and-forget.
       if (canonicalKey && inserted?.id) {
         revalueItem(inserted.id).catch(() => { /* non-critical */ });
+      }
+
+      // This item began as a barcode scan the app could not name (scanner
+      // "Add manually", or QuickScan's photo fallback). Tell the server what the
+      // code turned out to be, so the next scan of it resolves — for anyone,
+      // once it is catalogue-linked (server/app/lib/barcode_learning.py).
+      // Fire-and-forget: learning must never cost the member their save.
+      const scannedCode = typeof mergedAttrs.barcode === 'string' ? mergedAttrs.barcode : null;
+      if (scannedCode) {
+        recordBarcodeObservation({
+          barcode: scannedCode,
+          title: trimmedTitle,
+          category: categorySlug || undefined,
+        }).catch((e: unknown) => logger.error('[ManualAdd] barcode observation failed:', e));
       }
 
       track({ name: 'item_added', properties: { source: 'manual', category: categorySlug || category } });

@@ -148,7 +148,7 @@ async def process_intake(
         if barcode:
             result.rationale.append(f"Barcode provided: {barcode} (type: {barcode_type or 'auto'})")
 
-            barcode_result = await _barcode_lookup_internal(barcode, barcode_type, pool)
+            barcode_result = await _barcode_lookup_internal(barcode, barcode_type, pool, user_id)
             if barcode_result:
                 result.name = barcode_result.get("title")
                 result.category_id = barcode_result.get("category_id")
@@ -159,6 +159,10 @@ async def process_intake(
                     "identification_method", "barcode_catalog"
                 )
                 result.rationale.extend(barcode_result.get("rationale", []))
+                # A learned catalogue match names the exact row: price THAT
+                # row (Step 4 uses catalog_match_key), not a title search.
+                if barcode_result.get("catalog_match_key"):
+                    result.catalog_match_key = barcode_result["catalog_match_key"]
 
                 if barcode_result.get("price_band"):
                     result.price_band = barcode_result["price_band"]
