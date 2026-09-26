@@ -77,7 +77,7 @@ _Opened 2026-09-26 from the Android walk rounds._
 
 ## Decided
 
-- **2026-09-26 — #2 catalogue price range & trend: BUILD IT** (Merle). In progress.
+- **2026-09-26 — #2 catalogue price range & trend: DONE** — Pro endpoint + `CatalogPriceRangeBlock`; teaser for free. See `docs/MONETIZATION.md`.
 - **2026-09-26 — #3 one name per category: DONE.** `src/constants/categories.ts` is canonical; the registry (13 names) and the Explore data (18) now match it, plus two stray labels. Gate: `__tests__/lib/categoryNameParity.test.ts` (all four lists incl. the server scan map; mutation-proven).
 - **2026-09-26 — #4 single-sale prices: KEEP as they are** until there is more
   data or a better eBay replacement (Merle). No change.

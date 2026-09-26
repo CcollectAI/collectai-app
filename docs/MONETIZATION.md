@@ -146,18 +146,21 @@ change looking plausible; it is `test_free_user_gets_0`.
 | ~~Condition Grading (item card)~~ **SHELVED 2026-05-02** | — | — |
 | Set Completion — **trading-card sets only**, see note | No | Yes |
 | Advanced analytics — **market prices only** (price trend shelved, history removed) | No | Yes |
+| Catalogue item: 90-day price range + weekly trend (`/catalog/…/price-range`, server-gated) — **added 2026-09-26** | No (teaser) | Yes |
 | Acquisition fees & realised P/L (item card + `/portfolio/realised-pl`) | No | Yes |
 | Basic valuation | Yes | Yes |
 | Community events | Yes | Yes |
 | Ads | Yes | No |
 
-> **Catalogue detail teaser removed 2026-09-26 — decision open.** `app/catalog-item/[key].tsx`
-> showed free members "Full price range & 90-day trend — Sparrow Pro", and a Pro
-> member got neither there (the price endpoint returns a median + count only;
-> the trend is shelved above). If you want it as a Pro feature: the data exists —
-> `market_hits_daily` holds a daily median per `item_ref`, so p10/p90 over 90 d
-> and a weekly series are one query behind `require_plan("pro")`. Until then no
-> screen sells it. Falsifier: `grep -rn "90-day trend" app src` → nothing.
+> **Catalogue range & trend — BUILT 2026-09-26 (Merle's call).** Earlier the
+> same day the teaser was removed because a Pro member got nothing. Now
+> `GET /catalog/{cat}/items/{key}/price-range` (`require_plan("pro")`) returns
+> p10/p50/p90 of the daily medians over 90 days + a weekly median series, from
+> the same `market_hits_daily` rows as the free median. The screen renders
+> `CatalogPriceRangeBlock`: range + chart for Pro, the teaser for free (and on a
+> server 403). Prod: free → 403 PLAN_REQUIRED; Pro → base1-base1-4
+> EUR 1,096.86–1,159.04 over 60 sales. Tests: `catalogPriceRangeBlock.test.tsx`,
+> `test_catalog_browser_router.py::TestCatalogItemPriceRange` (mutation-proven).
 
 > ⚠️ **The purchase-price field itself is still FREE, and that is deliberate.**
 > Only the FEES row and the realised P/L are gated (`limits.advanced_analytics`,
