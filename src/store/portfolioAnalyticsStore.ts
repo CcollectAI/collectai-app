@@ -14,6 +14,7 @@
  *   - Uses src/analytics/portfolioMetrics.ts for all computations.
  */
 
+import { extractMarketChange } from '@/lib/portfolioChange';
 import {
   computeAllocationsFromItems,
   computePLFromSeries,
@@ -149,13 +150,20 @@ const DEMO_ITEMS: PortfolioItemSnapshot[] = [
  *  - { points: [{ timestamp: '...', value: 123 }, ...] }
  *  - [{ t: '...', v: 123 }, ...]
  */
+// `market_change` from the last successful /portfolio/timeseries read, beside
+// the series it describes (see src/lib/portfolioChange.ts). Reset on every load
+// so a stale value never outlives its series.
+let lastMarketChange: number | null = null;
+
 async function loadSeriesFromBackend(): Promise<TimeSeriesPoint[] | null> {
+  lastMarketChange = null;
   try {
     // A range is REQUIRED: the old call passed none, so the duplicate client
     // built `?range=undefined`.
     const raw = await getPortfolioTimeseries('30d');
 
     if (!raw) return null;
+    lastMarketChange = extractMarketChange(raw);
 
     const points: RawPortfolioTimeseriesPoint[] = Array.isArray(raw)
       ? raw
@@ -328,7 +336,7 @@ export async function fetchPortfolioSeries(): Promise<TimeSeriesPoint[]> {
  */
 export async function fetchPortfolioPL(): Promise<PortfolioPLSummary> {
   const series = await fetchPortfolioSeries();
-  return computePLFromSeries(series);
+  return computePLFromSeries(series, lastMarketChange);
 }
 
 /**
@@ -378,6 +386,7 @@ export async function fetchPortfolioSnapshot(): Promise<PortfolioSnapshot> {
   const snapshot = computePortfolioSnapshot({
     series,
     items,
+    marketChange: lastMarketChange,
   });
 
   cachedSnapshot = snapshot;

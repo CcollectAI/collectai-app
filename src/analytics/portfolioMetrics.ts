@@ -169,7 +169,13 @@ function clamp(value: number, min: number, max: number): number {
 /**
  * Compute basic P/L metrics and max drawdown from a portfolio timeseries.
  */
-export function computePLFromSeries(series: TimeSeriesPoint[]): PortfolioPLSummary {
+export function computePLFromSeries(
+  series: TimeSeriesPoint[],
+  /** /portfolio/timeseries `market_change`: the change of what was already held
+   *  when the range opened. Items ADDED in the window are not a gain
+   *  (2026-09-26); null = not sent, fall back to last minus first. */
+  marketChange: number | null = null,
+): PortfolioPLSummary {
   if (!series.length) {
     return {
       startValue: 0,
@@ -203,7 +209,7 @@ export function computePLFromSeries(series: TimeSeriesPoint[]): PortfolioPLSumma
   // Zero rather than currentValue when there is no baseline. A "gain" equal to
   // everything you own is not a gain, and a trader acting on it is acting on
   // nothing.
-  const deltaAbs = hasBaseline ? currentValue - startValue : 0;
+  const deltaAbs = hasBaseline ? (marketChange ?? currentValue - startValue) : 0;
   const deltaPct = hasBaseline ? deltaAbs / startValue : 0;
 
   let peak = startValue;
@@ -462,6 +468,8 @@ export function computePortfolioSnapshot(args: {
   series: TimeSeriesPoint[];
   items: PortfolioItemSnapshot[];
   sets?: SetCompletion[];
+  /** See computePLFromSeries. */
+  marketChange?: number | null;
 }): PortfolioSnapshot {
   const { series, items } = args;
   // DERIVED from the items unless a caller insists otherwise.
@@ -472,7 +480,7 @@ export function computePortfolioSnapshot(args: {
   // to have fixed, so the safe thing is what happens when you say nothing.
   const sets = args.sets ?? setsFromItems(items);
 
-  const pl = computePLFromSeries(series);
+  const pl = computePLFromSeries(series, args.marketChange ?? null);
   const allocations = computeAllocationsFromItems(items);
   const winnersLosers = computeWinnersAndLosers(items);
   const completenessScore = computeCompletenessScore(sets);
