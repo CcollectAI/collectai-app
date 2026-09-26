@@ -504,7 +504,29 @@ by `processLock`, so it is not the reuse race.
 keystrokes and freeze system_server ("Process system isn't responding"). Check
 `sysctl vm.loadavg` before trusting any timing.
 
-## Observed 2026-09-13: the "brief logged-out flash" was not brief (NOT changed — cause found 2026-09-24, see above)
+## Observed 2026-09-13: the "brief logged-out flash" was not brief — ✅ CHANGED 2026-09-26
+
+> **2026-09-26 — reproduced offline, and changed.** Network off (`svc wifi
+> disable; svc data disable`), cold start as a signed-in member: getSession
+> timed out at 8 s, loading ended with user=null, the gate replaced the route
+> with **Login**, and ~20 s later `INITIAL_SESSION session=yes` arrived and
+> pulled the member into the app. Any member opening the app without signal
+> once their access token has expired hits this.
+>
+> The change, reasoned against the rules at the top of this file: on a
+> **TimeoutError** AuthProvider no longer ends loading with no session — it
+> waits for the first `onAuthStateChange` event (GoTrue emits INITIAL_SESSION
+> once `initialize()` settles), with `AUTH_FIRST_EVENT_CEILING_MS` (45 s) as the
+> backstop. It adds **no auth call, no retry and no refresh** — it only moves
+> *when* `setLoading(false)` runs — so the refresh-token reuse revocation cannot
+> be triggered by it. A non-timeout error still ends loading as before. While
+> loading, the root gate returns early (no redirect) and the offline banner +
+> cached data show under the splash.
+> Falsifier: `npx jest __tests__/hooks/authOfflineColdStart.test.tsx`
+> (mutation-proven both ways); on device, network off + cold start → no Login.
+
+The original record, kept:
+
 
 `AuthProvider.tsx` bounds `getSession()` at `AUTH_INIT_TIMEOUT_MS` (8s) and, on
 timeout, falls through with no session so the app is never stuck — documented

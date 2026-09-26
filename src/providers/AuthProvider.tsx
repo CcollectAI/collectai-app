@@ -28,7 +28,7 @@ import {
 
 /* ---------- Sentry (guarded) ---------- */
 import type { SentryModule } from '@/../types/api';
-import { withTimeout } from '@/lib/withTimeout';
+import { withTimeout, TimeoutError } from '@/lib/withTimeout';
 
 // `loading` gates the whole app: the router waits on it, and Home/Items now
 // defer their first fetch until it clears. supabase-js has no per-request
@@ -47,10 +47,17 @@ import { withTimeout } from '@/lib/withTimeout';
 // cached session. httpClient.readAccessToken already races getSession the same
 // way for the same reason.
 //
-// On timeout we fall through to `finally { setLoading(false) }` with no session,
-// and the onAuthStateChange listener below sets it unconditionally once the lock
-// releases — so a slow session is a brief logged-out flash, never a logout.
+// On timeout we do NOT end loading with no session (2026-09-26). That was the
+// old contract — "a brief logged-out flash" — and offline it was not brief: an
+// expired access token makes GoTrue retry the refresh for ~30 s, getSession
+// times out at 8 s, loading ended with user=null, and the root gate REPLACED
+// the route with the login screen. A signed-in member opening the app without
+// signal sat on "Welcome back / Sign in" for ~20 s and was then yanked into the
+// app when INITIAL_SESSION (session=yes) finally arrived. A timed-out read is
+// not "signed out". Loading now waits for that first auth event, which GoTrue
+// always emits once initialize settles, with a ceiling so it cannot hang.
 const AUTH_INIT_TIMEOUT_MS = 8_000;
+const AUTH_FIRST_EVENT_CEILING_MS = 45_000;
 const PROFILE_READ_TIMEOUT_MS = 6_000;
 let Sentry: SentryModule | null = null;
 try {
@@ -259,6 +266,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let active = true;
+    // Set when getSession timed out: loading then ends on the first auth event
+    // (or the ceiling), not with user=null. See AUTH_INIT_TIMEOUT_MS.
+    let awaitingFirstEvent = false;
+    let sawAuthEvent = false; // the event can land before the timeout fires
+    let ceiling: ReturnType<typeof setTimeout> | null = null;
 
     initPurchases();
 
@@ -301,8 +313,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         void loadProfile(data.session?.user ?? null, 'getSession');
       } catch (e) {
         logger.error('[AuthProvider] getSession error:', e);
+        if (e instanceof TimeoutError && !sawAuthEvent) {
+          awaitingFirstEvent = true;
+          ceiling = setTimeout(() => {
+            if (!active || !awaitingFirstEvent) return;
+            awaitingFirstEvent = false;
+            logger.error('[AuthProvider] no auth event within the ceiling — treating as signed out');
+            setLoading(false);
+          }, AUTH_FIRST_EVENT_CEILING_MS);
+          return;
+        }
       } finally {
-        if (active) setLoading(false);
+        if (active && !awaitingFirstEvent) setLoading(false);
       }
     })();
 
@@ -323,6 +345,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       setSession(newSession);
       setUser(newSession?.user ?? null);
+      sawAuthEvent = true;
+      if (awaitingFirstEvent) {
+        awaitingFirstEvent = false;
+        if (ceiling) clearTimeout(ceiling);
+        setLoading(false);
+      }
       if (Sentry?.setUser) {
         Sentry.setUser(newSession?.user ? { id: newSession.user.id } : null);
       }
@@ -370,6 +398,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       active = false;
+      if (ceiling) clearTimeout(ceiling);
       subscription.unsubscribe();
     };
   }, [loadProfile]);
