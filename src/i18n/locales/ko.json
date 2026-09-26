@@ -1502,8 +1502,6 @@
   "catalog": {
     "image_coming_soon": "이미지 준비 중",
     "no_recent_sales": "최근 판매 데이터 없음",
-    "a11y_unlock_pro": "Pro로 전체 시장 분석 잠금 해제",
-    "pro_teaser": "전체 가격 범위 및 90일 추세 — Sparrow Pro",
     "marketplaces_load_failed": "마켓플레이스를 불러오지 못했습니다.",
     "a11y_retry_marketplaces": "마켓플레이스 다시 불러오기",
     "no_marketplaces": "이 아이템에 사용할 수 있는 마켓플레이스가 없습니다.",

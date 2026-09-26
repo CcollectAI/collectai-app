@@ -548,6 +548,28 @@ async def get_catalog_item_price(category_id: str, item_key: str) -> dict:
     latest = float(row["latest_price"]) if row and row["latest_price"] is not None else None
     # Prefer the robust median once enough comps back it; else the latest comp.
     estimated = median if (comps >= 3 and median is not None) else latest
+
+    # The set's display name, named exactly as the collections rail names it
+    # (_collection_display_name). The detail screen only had the raw code from
+    # its route params and printed "Set: base1" (walked 2026-09-26). One lookup
+    # on uq_mv_catalog_collections (category, dim, grp).
+    set_row = await pool.fetchrow(
+        """
+        SELECT ci.set_code, mc.set_name
+        FROM category_items ci
+        LEFT JOIN mv_catalog_collections mc
+          ON mc.category = ci.category AND mc.dim = 'set' AND mc.grp = ci.set_code
+        WHERE ci.category = $1 AND ci.item_key = $2
+        LIMIT 1
+        """,
+        category_id,
+        item_key,
+    )
+    set_name = (
+        _collection_display_name(set_row["set_code"], set_row["set_name"], "set")
+        if set_row and set_row["set_code"]
+        else None
+    )
     return {
         "category": category_id,
         "item_key": item_key,
@@ -555,6 +577,7 @@ async def get_catalog_item_price(category_id: str, item_key: str) -> dict:
         "median_price": median,
         "latest_price": latest,
         "comps_count": comps,
+        "set_name": set_name,
     }
 
 

@@ -1502,8 +1502,6 @@
   "catalog": {
     "image_coming_soon": "Afbeelding volgt binnenkort",
     "no_recent_sales": "Geen recente verkoopgegevens",
-    "a11y_unlock_pro": "Ontgrendel de volledige marktanalyse met Pro",
-    "pro_teaser": "Volledige prijsrange & 90-daagse trend — Sparrow Pro",
     "marketplaces_load_failed": "Marktplaatsen konden niet worden geladen.",
     "a11y_retry_marketplaces": "Marktplaatsen opnieuw laden",
     "no_marketplaces": "Geen marktplaatsen beschikbaar voor dit item.",

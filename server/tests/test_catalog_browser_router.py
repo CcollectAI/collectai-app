@@ -467,3 +467,39 @@ class TestAccessoryFilter:
         for cat in ("retro_pokemon", "nintendo_merch", "pop_fandom", "disney",
                     "theme_park", "loungefly", "kpop_merch"):
             assert cat not in _ACCESSORY_FILTERED_CATEGORIES
+
+
+# ---------------------------------------------------------------------------
+# GET /catalog/{category}/items/{key}/price — set_name (2026-09-26)
+# The detail screen printed "Set: base1": it only had the raw code. The price
+# endpoint now names the set the way the collections rail does.
+# ---------------------------------------------------------------------------
+
+class TestCatalogItemPriceSetName:
+    _PRICE = {"comps_count": 5, "median_price": 100.0, "latest_price": 90.0}
+
+    @patch("app.features.catalog_browser_router.get_pool")
+    def test_uses_the_catalogue_set_name(self, mock_get_pool):
+        pool = _mock_pool()
+        mock_get_pool.return_value = pool
+        pool.fetchrow = AsyncMock(side_effect=[self._PRICE, {"set_code": "base1", "set_name": "Base"}])
+        resp = client.get("/catalog/pokemon/items/base1-base1-4/price")
+        assert resp.status_code == 200
+        assert resp.json()["set_name"] == "Base"
+
+    @patch("app.features.catalog_browser_router.get_pool")
+    def test_falls_back_to_the_humanised_code(self, mock_get_pool):
+        pool = _mock_pool()
+        mock_get_pool.return_value = pool
+        pool.fetchrow = AsyncMock(side_effect=[self._PRICE, {"set_code": "swsh8", "set_name": None}])
+        resp = client.get("/catalog/pokemon/items/swsh8-1/price")
+        assert resp.json()["set_name"] not in (None, "swsh8")
+
+    @patch("app.features.catalog_browser_router.get_pool")
+    def test_no_set_means_no_name(self, mock_get_pool):
+        pool = _mock_pool()
+        mock_get_pool.return_value = pool
+        pool.fetchrow = AsyncMock(side_effect=[self._PRICE, None])
+        resp = client.get("/catalog/pokemon/items/x/price")
+        assert resp.json()["set_name"] is None
+        assert resp.json()["estimated_price"] == 100.0

@@ -202,6 +202,9 @@ export const getCatalogItemPrice = (categoryId: string, itemKey: string) =>
     median_price: number | null;
     latest_price: number | null;
     comps_count: number;
+    /** The set's display name ("Base"), null when the item has no set. Added
+     *  2026-09-26 — the detail screen printed the raw code ("base1"). */
+    set_name?: string | null;
   }>(
     `/catalog/${encodeURIComponent(categoryId)}/items/${encodeURIComponent(itemKey)}/price`,
   );

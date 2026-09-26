@@ -1502,8 +1502,6 @@
   "catalog": {
     "image_coming_soon": "Bild folgt in Kürze",
     "no_recent_sales": "Keine aktuellen Verkaufsdaten",
-    "a11y_unlock_pro": "Vollständige Marktanalyse mit Pro freischalten",
-    "pro_teaser": "Volle Preisspanne & 90-Tage-Trend — Sparrow Pro",
     "marketplaces_load_failed": "Marktplätze konnten nicht geladen werden.",
     "a11y_retry_marketplaces": "Marktplätze erneut laden",
     "no_marketplaces": "Keine Marktplätze für dieses Objekt verfügbar.",

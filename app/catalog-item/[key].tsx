@@ -6,14 +6,10 @@
  * Deliberately carries NO ownership UI (no purchase price, condition you set,
  * edit/delete) and is keyed by the CATALOG item_key, never a user items row.
  *
- * Gating (verified 2026-06-04): the single `estimated_price` (latest comp,
- * public/free) IS shown. The q10/q50/q90 bands + trend are Pro-gated
- * (`limits.advanced_analytics`, line 233 — this comment said
- * `limits.detailed_valuation` until 2026-07-28, a key the FE's limits tables
- * do not even define; the code has always read advanced_analytics)
- * — this screen does NOT fetch or render them for
- * free users; it shows a single locked teaser row instead, so no gated data
- * leaks onto a public catalog screen.
+ * Gating: the single `estimated_price` (180d median, public/free) IS shown,
+ * and that is all the price endpoint returns — no bands, no trend, for anyone.
+ * The locked "Full price range & 90-day trend" teaser that used to sit here
+ * was removed 2026-09-26: a Pro member saw neither (see the MARKET VALUE card).
  *
  * "Where to buy" uses the public, affiliate-tagged /marketplace/affiliate-links
  * so every buy tap is monetized.
@@ -27,7 +23,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
 import { useToast } from '@/components/Toast';
-import { useBillingLimits } from '@/hooks/useBillingLimits';
 import { useFavorites } from '@/hooks/useFavorites';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { AnimatedPressable } from '@/motion';
@@ -54,7 +49,6 @@ function CatalogItemMuseumScreen() {
   const { colors } = useAppTheme();
   const { settings } = useSettings();
   const { showToast } = useToast();
-  const { limits } = useBillingLimits();
   const router = useRouter();
 
   const params = useLocalSearchParams<{
@@ -116,6 +110,8 @@ function CatalogItemMuseumScreen() {
   // line ("Based on N recent comps"). Fetched on mount; the nav param shows
   // instantly meanwhile.
   const [priceDetail, setPriceDetail] = useState<{ estimated_price: number | null; comps_count: number } | null>(null);
+  // From the price endpoint; the route params only carry the raw set code.
+  const [setName, setSetName] = useState<string | null>(null);
   // Whether the price-detail read has answered. With no price in the route,
   // "No recent sales data" is only true once it has — before, a pending OR
   // failed read printed that sentence for items that do have sales. Nothing to
@@ -204,6 +200,7 @@ function CatalogItemMuseumScreen() {
         if (cancelled) return;
         if (res) {
           setPriceDetail({ estimated_price: res.estimated_price, comps_count: res.comps_count });
+          setSetName(res.set_name ?? null);
           if (res.estimated_price != null) setEstPrice(res.estimated_price);
         }
       } catch (e) {
@@ -325,7 +322,7 @@ function CatalogItemMuseumScreen() {
             {clean.tags.map((b) => (
               <View key={b} style={[styles.badge, { backgroundColor: colors.accent + '20' }]}>
                 {/* Deep tiffany (mockup --tiffDark): base accent washes out on its own 20% tint */}
-                <Text style={[styles.badgeText, { color: tokens.brand.deep }]} numberOfLines={1}>{b}</Text>
+                <Text style={[styles.badgeText, { color: tokens.brand.deep }]} numberOfLines={1}>{b === clean.setCode && setName ? setName : b}</Text>
               </View>
             ))}
           </View>
@@ -375,17 +372,12 @@ function CatalogItemMuseumScreen() {
                 : 'Estimated from the latest market observation'}
           </Text>
           )}
-          {!limits?.advanced_analytics && (
-            <AnimatedPressable
-              style={[styles.proRow, { borderColor: colors.border }]}
-              onPress={() => router.push('/subscription' as Href)}
-              accessibilityRole="button" accessibilityLabel={t('catalog.a11y_unlock_pro', { defaultValue: 'Unlock full market analysis with Pro' })}
-            >
-              <Ionicons name="lock-closed" size={14} color={colors.muted} />
-              <Text style={[styles.proText, { color: colors.muted }]}>{t('catalog.pro_teaser', { defaultValue: 'Full price range & 90-day trend — Sparrow Pro' })}</Text>
-              <Ionicons name="chevron-forward" size={14} color={colors.muted} />
-            </AnimatedPressable>
-          )}
+          {/* No Pro teaser here (2026-09-26). It sold "Full price range & 90-day
+              trend — Sparrow Pro", and this screen showed neither to a Pro
+              member: the price endpoint returns a median and a count only, and
+              docs/MONETIZATION.md has the price trend SHELVED. Upgrading from
+              here bought nothing here. Unshelving it is a product call —
+              market_hits_daily already holds the daily medians it would need. */}
         </View>
 
         {/* Details (from the public catalog fields, cleaned for presentation) */}
@@ -394,7 +386,7 @@ function CatalogItemMuseumScreen() {
             <Text style={[styles.sectionLabel, { color: colors.muted }]}>DETAILS</Text>
             {clean.platform && <Detail label="Platform" value={clean.platform} colors={colors} />}
             {clean.brand && <Detail label="Brand" value={clean.brand} colors={colors} />}
-            {clean.setCode && <Detail label="Set" value={clean.setCode} colors={colors} />}
+            {clean.setCode && <Detail label="Set" value={setName ?? clean.setCode} colors={colors} />}
             {clean.condition && <Detail label="Condition" value={clean.condition} colors={colors} />}
             {clean.rarity && <Detail label="Rarity" value={clean.rarity} colors={colors} />}
           </View>

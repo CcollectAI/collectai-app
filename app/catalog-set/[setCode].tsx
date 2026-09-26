@@ -178,6 +178,10 @@ function CatalogSetScreen() {
         rarity: item.rarity,
         setCode: item.set_code,
       });
+      // Not the set: this whole page IS the set, and the tag was its raw code —
+      // "base1" under a page titled "Base Set" (walked 2026-09-26). The code
+      // still goes in above, where it strips the set from the title.
+      const pageTags = clean.tags.filter((tag) => tag !== item.set_code);
       return (
         <ScrollView
           style={{ width }}
@@ -192,9 +196,9 @@ function CatalogSetScreen() {
             </View>
           )}
           <Text style={[styles.viewerTitle, { color: colors.text }]}>{clean.title}</Text>
-          {clean.tags.length > 0 && (
+          {pageTags.length > 0 && (
             <View style={styles.badgeRow}>
-              {clean.tags.map((b) => (
+              {pageTags.map((b) => (
                 <View key={b} style={[styles.badge, { backgroundColor: colors.accent + "20" }]}>
                   <Text style={[styles.badgeText, { color: tokens.brand.deep }]} numberOfLines={1}>{b}</Text>
                 </View>

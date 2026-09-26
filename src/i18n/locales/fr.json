@@ -1502,8 +1502,6 @@
   "catalog": {
     "image_coming_soon": "Image bientôt disponible",
     "no_recent_sales": "Aucune vente récente",
-    "a11y_unlock_pro": "Débloquez l’analyse de marché complète avec Pro",
-    "pro_teaser": "Fourchette de prix complète & tendance sur 90 jours — Sparrow Pro",
     "marketplaces_load_failed": "Impossible de charger les places de marché.",
     "a11y_retry_marketplaces": "Réessayer de charger les places de marché",
     "no_marketplaces": "Aucune place de marché disponible pour cet article.",

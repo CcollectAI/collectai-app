@@ -1502,8 +1502,6 @@
   "catalog": {
     "image_coming_soon": "画像は近日公開",
     "no_recent_sales": "最近の販売データはありません",
-    "a11y_unlock_pro": "Proで完全な市場分析を解除",
-    "pro_teaser": "全価格帯と90日トレンド — Sparrow Pro",
     "marketplaces_load_failed": "マーケットプレイスを読み込めませんでした。",
     "a11y_retry_marketplaces": "マーケットプレイスを再読み込み",
     "no_marketplaces": "このアイテムに利用できるマーケットプレイスはありません。",

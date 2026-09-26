@@ -1502,8 +1502,6 @@
   "catalog": {
     "image_coming_soon": "Image coming soon",
     "no_recent_sales": "No recent sales data",
-    "a11y_unlock_pro": "Unlock full market analysis with Pro",
-    "pro_teaser": "Full price range & 90-day trend — Sparrow Pro",
     "marketplaces_load_failed": "Couldn't load marketplaces.",
     "a11y_retry_marketplaces": "Try loading marketplaces again",
     "no_marketplaces": "No marketplaces available for this item.",
