@@ -383,6 +383,19 @@ Migrations `20260730_user_settings_currency_seven.sql` and
 `20260730_user_settings_region_locale_korea_oceania.sql`. All 7 currencies, 6
 regions and 6 locales now return 200; illegal values still 400 with the valid list.
 
+**Read-back (2026-09-26).** Settings live in AsyncStorage and every change is
+also `PUT` to the server — but until 2026-09-26 nothing read the server copy
+back, so a reinstall or a second phone started on the local defaults (a member
+saved as USD reopened in EUR). `GET /settings` now returns `saved` (a row
+exists; the server's defaults for an unsaved member are not a choice), and
+`src/components/SettingsServerSync.tsx` (mounted inside `AuthProvider` in
+`app/_layout.tsx`) applies the saved, known values once per signed-in user,
+after the local blob has loaded. Onboarding shows again after a reinstall; its
+region step writes only a region the member PICKS — a detected one only when
+nothing is saved (`detectedRegionWrite`). The app's value sets there are a 4th
+copy of this contract; `__tests__/lib/settingsFromServer.test.ts` parses the
+router's `VALID_*` sets and fails on drift.
+
 `user_settings.locale` is the **number-format** locale (`NumberLocale`). The UI
 language is a different set — `SUPPORTED_LOCALES` in `src/i18n/index.ts`
 (`en,nl,de,fr,es,ja,ko`). Don't merge them.

@@ -2189,6 +2189,30 @@ walks provider mappings and is the natural place to extend. Until that exists,
 this class stays a starting list and **no number from it should be quoted as a
 finding count.**
 
+### T, mirrored — the app writes its copy to the server and never reads it back (2026-09-26)
+
+Settings: every change was `PUT /settings`, and nothing ever `GET`-ed it, so a
+reinstall or a second phone started on local defaults (a member saved as USD
+reopened in EUR), while server-written notifications kept using USD. Worse,
+onboarding re-ran on the reinstall and `PUT` its DETECTED region, erasing the
+saved one. Fixed: `GET /settings` returns `saved`; `SettingsServerSync.tsx`
+restores; onboarding writes only a picked region (`docs/ARCHITECTURE.md` →
+user_settings → Read-back). Test: `__tests__/lib/settingsFromServer.test.ts`
+(the `saved` guard, the region rule and the value-set parity are each
+mutation-proven).
+
+**Probe for other instances:** exported `src/api` readers (`get*`) with no
+caller outside `src/api`, paired with a same-named writer that IS called.
+Two hits, **both false**: `getDeliveryAddress` is read through the
+`collectorsApi.p2pGetDeliveryAddress` alias (SettleUpSheet), and
+`getSponsorCompany` through `dataProvider`. Blind spot, stated so no one quotes
+this as "none left": the probe matches NAMES, so any reader reached through an
+alias or a data provider looks uncalled, and a reader under a different name
+than its writer (`listX` vs `saveX`) is never paired. Run it again with:
+`grep -rhoE "export (const|async function|function) [a-zA-Z0-9_]+" src/api/*.ts`,
+drop the ones with a caller outside `src/api`, then pair `get<X>` with
+`update|set|save|put|upsert|submit<X>` — expect 2 hits, both the aliases above.
+
 ## U — a provider casts a snake_case payload to a camelCase type (2026-09-18)
 
 Found by writing the first `marketplace_sales` row into a table that had always

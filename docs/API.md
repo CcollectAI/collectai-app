@@ -621,7 +621,7 @@ Valid `ground` values: `illegal_content`, `terms_breach`, `counterfeit`,
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/settings` | JWT | Get user settings |
+| GET | `/settings` | JWT | Get user settings; `saved: true` when the member has a stored row (the app restores only those — `SettingsServerSync`) |
 | PUT | `/settings` | JWT | Upsert user settings |
 
 ## Operations

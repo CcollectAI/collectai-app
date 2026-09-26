@@ -18,10 +18,14 @@ import { useSettings, REGION_DEFAULTS, type Settings } from '@/lib/settings';
 import { getUserSettings } from '@/api/settingsApi';
 import { logger } from '@/lib/logger';
 
-const CURRENCIES = new Set(['EUR', 'USD', 'GBP', 'JPY', 'KRW', 'AUD', 'CAD']);
-const REGIONS = new Set(Object.keys(REGION_DEFAULTS));
-const LOCALES = new Set(['en-US', 'de-DE', 'ja-JP', 'nl-NL', 'ko-KR', 'en-AU']);
-const SKILLS = new Set(['beginner', 'intermediate', 'advanced']);
+// The values this app can apply. Must equal the server's VALID_* sets in
+// user_settings_router.py (and so the CHECKs — docs/ARCHITECTURE.md
+// "code and CHECK must agree"); __tests__/lib/settingsFromServer.test.ts
+// parses the router and fails on any drift.
+export const CURRENCIES = new Set(['EUR', 'USD', 'GBP', 'JPY', 'KRW', 'AUD', 'CAD']);
+export const REGIONS = new Set(Object.keys(REGION_DEFAULTS));
+export const LOCALES = new Set(['en-US', 'de-DE', 'ja-JP', 'nl-NL', 'ko-KR', 'en-AU']);
+export const SKILLS = new Set(['beginner', 'intermediate', 'advanced']);
 
 /** Pure: which local settings the server's saved copy changes. Exported for tests. */
 export function settingsFromServer(

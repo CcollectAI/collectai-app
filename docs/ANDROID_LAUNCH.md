@@ -355,7 +355,7 @@ Two things make it hard to reach with adb:
 - Swiping down the CENTRE of the screen drags across switch rows and opens
   sub-modals (Region picker, etc). **Swipe in the left margin (x≈60)** instead.
 
-### Open performance finding — `v_category_summaries_v1` (NOT Android-specific)
+### Performance finding (FIXED 2026-08-02) — `v_category_summaries_v1` (NOT Android-specific)
 
 Analytics logs `code: '57014' — canceling statement due to statement timeout`
 from `listCategorySummaries` (`categoryProvider.ts:120`). Measured on prod:
