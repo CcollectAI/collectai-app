@@ -9,10 +9,20 @@ _Opened 2026-09-26 from the Android walk rounds._
 
 ## Open
 
-_None. All nine from the 2026-09-26 walk are decided; each entry as it was opened is kept under **As opened** at the end._
+### 10. The offline banner covers the screen header
+- **Seen:** device walk 2026-09-26, airplane mode, Portfolio. `OfflineBanner`
+  (`src/components/OfflineBanner.tsx`, mounted in `app/_layout.tsx`) is an
+  absolute overlay: while offline it hides the screen title and the
+  bell / chat / settings icons (taps pass through — `pointerEvents: 'none'`).
+- **Why a decision, not a fix:** making it push content down changes the layout
+  of every screen; alternatives are a slimmer status-bar-only strip or a pill
+  above the tab bar. Re-check: airplane mode on, cold start, look at the header.
+
+_#1–#9 from the 2026-09-26 walk are decided; each entry as opened is kept under **As opened** at the end._
 
 ## Decided
 
+- **2026-09-26 — walk items 1–7 (Pro, emulator):** all seen working except as noted. Found and FIXED on the way: Portfolio 90D read +EUR 0 over a EUR 35 fall (`market_change` counted only items held on day 1 — server DEPLOYED) and then "(0,00%)" (percent against the chart's EUR 0 start); switching a project's Complete OFF always failed (NULL into NOT NULL `progress_pct`). Noted, not bugs: Sets to complete is empty for simcheck because none of its items is linked to a catalogue set (server `/sets/auto-progress` → `[]`); a hand-typed `sparrow://catalog-set/<code>` without `name` titles the page "Set" (in-app navigation passes it); one "Deal found" row opens "Deal not found" — its deal was in the probe data deleted earlier today. simcheck back to Free.
 - **2026-09-26 — #7 Market filter placement: FIXED.** The filter & sort button sat alone at the left edge of the action row, reading as neither search nor action. It now sits in the search row beside Favourites (same 40pt box); the action row holds only Open bids + Sell, and "Clear" moved to the end of the applied-filter chips it clears. `app/listings.tsx`. Verified on the emulator: layout + the button still opens Filters & Sort.
 - **2026-09-26 — #9 simcheck reverted: DONE.** `subscriptions.plan` pro → free (the row had no Stripe ids — a hand grant) and settings EUR / europe / de-DE. Falsifier: `GET /catalog/pokemon/items/base1-base1-4/price-range` as simcheck → 403.
 - **2026-09-26 — item page "renders partially on first open": NOT reproduced.** Fresh install, first open of an item: complete at 1.5 s and identical at 7.5 s. Re-open only with a screenshot.
