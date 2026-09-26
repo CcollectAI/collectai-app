@@ -385,12 +385,34 @@ async def run_once():
                     logger.warning("[deal_discovery] Invalid deal UUID %r: %s", deal.get("id"), exc)
                     continue
 
-                # Check user preference before sending (P8)
+                # Composed ONCE, used by both paths below. NOT "Target hit" —
+                # that is the watchlist feature's name (the snipe push above).
+                # This is a Deal Agent mandate match, and its home is the deal
+                # screen; without deep_link the feed row was a dead tap.
+                title = "Deal found"
+                body = (
+                    f"{deal['listing_title'][:60]} \u2014 "
+                    f"{await member_money(conn, deal['user_id'], deal['listing_price'])}"
+                    + (f" ({deal.get('discount_pct', 0):.0f}% below market)" if deal.get('discount_pct') else "")
+                )
+                data = {
+                    "type": "deal_alert",
+                    "deal_id": deal["id"],
+                    "url": deal.get("affiliate_url") or deal.get("listing_url", ""),
+                }
+                deep_link = f"/purchase/deal/{deal['id']}"
+
+                # Check user preference before sending (P8). Muting "deal
+                # alerts" silences the PUSH, not the record (2026-09-26): this
+                # used to `continue` with nothing written, so a member who had
+                # muted pushes never saw the find in the Notifications feed —
+                # the same shape notify_user's muted branch fixed on 2026-08-08.
                 try:
-                    from app.lib.notify import should_notify
+                    from app.lib.notify import should_notify, _persist_only
                     allowed, reason = await should_notify(conn, deal["user_id"], "deal_alerts")
                     if not allowed:
                         logger.debug("Deal push skipped for user %s: %s", deal["user_id"][:8], reason)
+                        await _persist_only(conn, deal["user_id"], title, body, "deal_alerts", data, deep_link)
                         continue
                 except Exception:
                     pass  # Fallback: send anyway if check fails
@@ -399,24 +421,10 @@ async def run_once():
                     sent = await send_push_to_user(
                         conn,
                         deal["user_id"],
-                        # NOT "Target hit" — that is the watchlist feature's
-                        # name (the snipe push above). This is a Deal Agent
-                        # mandate match, and its home is the deal screen.
-                        title="Deal found",
-                        body=(
-                            f"{deal['listing_title'][:60]} \u2014 "
-                            f"{await member_money(conn, deal['user_id'], deal['listing_price'])}"
-                            + (f" ({deal.get('discount_pct', 0):.0f}% below market)" if deal.get('discount_pct') else "")
-                        ),
-                        data={
-                            "type": "deal_alert",
-                            "deal_id": deal["id"],
-                            "url": deal.get("affiliate_url") or deal.get("listing_url", ""),
-                        },
-                        # Without it the feed row (app/notifications.tsx) was a
-                        # dead tap: handleTap routes on deep_link, and this push
-                        # was the one deal sender that never set it.
-                        deep_link=f"/purchase/deal/{deal['id']}",
+                        title=title,
+                        body=body,
+                        data=data,
+                        deep_link=deep_link,
                         notification_type="deal_alert",
                     )
                     if sent > 0:

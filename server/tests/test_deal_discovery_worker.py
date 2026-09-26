@@ -174,6 +174,37 @@ class TestRunOnceWithDealsAndPush:
         mock_pool.close.assert_awaited_once()
 
 
+class TestRunOnceMutedStillRecords:
+    """Muting deal alerts silences the PUSH, not the record (2026-09-26): the
+    muted branch used to `continue` with nothing written, so the find never
+    reached the Notifications feed."""
+
+    @pytest.mark.asyncio
+    async def test_muted_member_gets_a_feed_row_and_no_push(self, _patch_retry):
+        mod = _patch_retry
+        mock_pool, _ = _build_pool_and_conn()
+        deal = _make_deal()
+        mock_agent = MagicMock()
+        mock_agent.scan_all_active = AsyncMock(return_value=[deal])
+        mock_agent.close = AsyncMock()
+        mock_send = AsyncMock(return_value=1)
+        mock_persist = AsyncMock()
+
+        with patch.object(mod, "DSN", "mock://dsn"):
+            with patch("asyncpg.create_pool", AsyncMock(return_value=mock_pool)):
+                with patch("app.agents.deal_discovery_agent.DealDiscoveryAgent", return_value=mock_agent):
+                    with patch("app.push.send_push_to_user", mock_send):
+                        with patch("app.lib.notify.should_notify", AsyncMock(return_value=(False, "muted"))):
+                            with patch("app.lib.notify._persist_only", mock_persist):
+                                await mod.run_once()
+
+        mock_send.assert_not_awaited()
+        mock_persist.assert_awaited_once()
+        args = mock_persist.await_args.args
+        assert args[4] == "deal_alerts"
+        assert args[6] == f"/purchase/deal/{deal['id']}"
+
+
 class TestRunOncePushFailureContinues:
     """If push raises for the first deal, the worker should continue to the second."""
 
