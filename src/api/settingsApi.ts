@@ -4,6 +4,11 @@
 import { get, put, patch, post, del } from "./httpClient";
 import { followedCategoriesStore } from "@/data/followedCategoriesStore";
 
+/** The member's saved region / currency / locale / skill level. `saved` is
+ *  false when nothing was ever saved (the other fields are then defaults). */
+export const getUserSettings = () =>
+  get<{ currency: string; region: string; locale: string; skill_level: string | null; saved?: boolean }>('/settings');
+
 /**
  * Persist the user's region / currency / number-format locale.
  *

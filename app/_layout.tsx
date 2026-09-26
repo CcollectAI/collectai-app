@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { SettingsServerSync } from '@/components/SettingsServerSync';
 import { View, Pressable, ActivityIndicator, Text, TextInput, Animated as RNAnimated } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { Stack, useRouter, useSegments, usePathname, type Href } from "expo-router";
@@ -630,6 +631,7 @@ function RootLayout() {
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <SettingsProvider>
           <AuthProvider>
+            <SettingsServerSync />
             <FeatureTourProvider>
               <ToastProvider>
                 <SellerAgeGateProvider>

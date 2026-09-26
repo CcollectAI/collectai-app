@@ -77,6 +77,8 @@ _Opened 2026-09-26 from the Android walk rounds._
 
 ## Decided
 
+- **2026-09-26 — found on the device check, FIXED: settings were never read back from the server.** A reinstall showed EUR to a member saved as USD: the client only ever PUT `/settings`. `GET /settings` now returns `saved` (a row exists) and `src/components/SettingsServerSync.tsx` applies the saved, valid values once per signed-in user after the local settings load (`__tests__/lib/settingsFromServer.test.ts`; mutation of the `saved` guard fails it). Server DEPLOYED; client needs the next build. Note: onboarding's region step still re-asks on a reinstall and writes its answer to the server — that is a member's choice, and is why simcheck now reads EUR.
+
 - **2026-09-26 — #8 throwaway accounts: CLOSED** (Merle: close the open items). Deleted the unconfirmed `sparrowtest72uyt7m3@uberip.com` (auth user via the admin API — it could not sign in, so `DELETE /account` was not available; its profile cascaded, it owned no items) and its mail.tm inbox. **Kept as test fixtures**, with their probe data already deleted: `zz-lifecycle` — the only account with a verified factor, needed to re-prove server-side 2FA (`docs/AUTH_AND_WEB_DEPLOY.md`); `simseller` — the free-plan counterpart for P2P and paywall checks.
 
 - **2026-09-26 — #2 catalogue price range & trend: DONE** — Pro endpoint + `CatalogPriceRangeBlock`; teaser for free. See `docs/MONETIZATION.md`.

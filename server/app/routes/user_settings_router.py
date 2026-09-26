@@ -60,6 +60,10 @@ class UserSettingsResponse(BaseModel):
     #: None means NEVER ASKED, and is not the same as "beginner". Members who
     #: onboarded before this existed must not be shown first-timer surfaces.
     skill_level: str | None = Field(None, description="beginner | intermediate | advanced")
+    #: True only when a row exists. The defaults above are ALSO what an unsaved
+    #: member gets, so without this a client restoring settings on a new
+    #: install could not tell "chose EUR" from "never saved" (2026-09-26).
+    saved: bool = Field(False, description="True when the member has saved settings")
 
 
 class UserSettingsUpdateRequest(BaseModel):
@@ -124,6 +128,7 @@ async def get_user_settings(user_id: str = Depends(get_current_user_id)):
             region=row["region"],
             locale=row["locale"],
             skill_level=row["skill_level"],
+            saved=True,
         )
 
     except asyncpg.PostgresError as e:
@@ -236,6 +241,7 @@ async def update_user_settings(
                 region=row["region"],
                 locale=row["locale"],
                 skill_level=row["skill_level"],
+                saved=True,
             ),
         )
 

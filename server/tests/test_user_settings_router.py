@@ -91,6 +91,8 @@ class TestGetSettingsWithDB:
         assert data["currency"] == "EUR"
         assert data["region"] == "europe"
         assert data["locale"] == "de-DE"
+        # Defaults are not a saved choice — a new install must not adopt them.
+        assert data["saved"] is False
 
     def test_returns_stored_values_when_row_exists(self):
         """If a user_settings row exists, return its values."""
@@ -114,6 +116,7 @@ class TestGetSettingsWithDB:
         assert data["region"] == "americas"
         assert data["locale"] == "en-US"
         assert data["skill_level"] is None
+        assert data["saved"] is True
 
     def test_returns_stored_jpy_japan(self):
         """Verify non-default stored values (JPY / japan / ja-JP) round-trip."""
