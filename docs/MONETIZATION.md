@@ -278,6 +278,14 @@ vision grading, which is a different system that happens to share the word.
 >   obvious next step — it changes what a paid screen shows, so it is a
 >   deliberate decision, not a refactor.
 >
+>   ✅ **DONE 2026-09-26 (Merle: "yes repoint").** `app/sets-to-complete.tsx`
+>   now reads `useAutoSetProgress` — one source for Home and the paid screen.
+>   The same day `/sets/auto-progress` learned to take the set from the
+>   item's catalogue card when the item carries none (it read only
+>   `attrs.set_name`; 2 of 10 linked items on prod had one, the catalogue
+>   named 8). The 40–95% band was dropped (TCG sets are 100–300 cards) and
+>   the value pill went with the portfolio source that supplied it.
+>
 > * The original note, kept because its mechanism is still correct:
 >   **Set Completion works**, despite `sets`, `set_items` and `set_registry`
 >   being effectively EMPTY. It is served by `GET /sets/auto-progress`, which computes

@@ -17,12 +17,8 @@ import type {
 } from "@/../types/api";
 import {
   CollectionStatusInput,
-  computeCollectionStatusScores,
-  SizedCollectionScore,
-  hasKnownSetSize,
 } from "@/utils/statusScoring";
 import logger from "@/utils/logger";
-import { formatPrice } from "@/lib/format";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
 import { useSettings } from "@/lib/settings";
@@ -36,19 +32,23 @@ import { AnimatedPressable } from "@/motion";
 import { fireHaptic, HapticIntent } from "@/haptics";
 import { categoryDisplayName } from '@/constants/categories';
 import { useTranslation } from 'react-i18next';
+import { useAutoSetProgress } from "@/hooks/useAutoSetProgress";
 
-const MIN_COMPLETENESS = 0.4;
-const MAX_COMPLETENESS = 0.95;
+/** A set as this screen shows it — one row of /sets/auto-progress. */
+type SetCandidate = {
+  key: string;
+  category: string;
+  ownedCount: number;
+  expectedCount: number;
+  completenessRatio: number;
+};
 
 type Bucket = {
   key: "almost" | "progress" | "starting";
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   iconTint: string;
-  // Sized, not plain: everything in a bucket has already passed
-  // `hasKnownSetSize`, and the rows below render a percentage and an
-  // "owned of expected" count that only exist for those.
-  items: SizedCollectionScore[];
+  items: SetCandidate[];
 };
 
 const SetsToCompleteScreen: React.FC = () => {
@@ -181,34 +181,35 @@ const SetsToCompleteScreen: React.FC = () => {
   /** Nothing owned HERE — distinct from "owned, but no set is near done". */
   const ownsNothingInScope = Boolean(categoryId) && scopedItems.length === 0 && items.length >= 0;
 
-  const candidates: SizedCollectionScore[] = useMemo(() => {
-    if (!items.length) return [];
-    const scores = computeCollectionStatusScores(items);
-    return (
-      scores
-        // A set whose size we do not know cannot be reported as partly finished,
-        // so it is not a candidate at all. This is a real filter now: until
-        // 2026-08-15 an unknown size defaulted to "expected = what you own",
-        // every set scored exactly 1.0, and the band below then removed ALL of
-        // them — the screen was empty for every account. See `hasKnownSetSize`.
-        .filter(hasKnownSetSize)
-        .filter(
-          (s) =>
-            // Category scope, when one was passed. A set whose category is null
-            // is dropped from a scoped view rather than kept: "unknown" is not
-            // "this one", and showing it under a category heading would assert
-            // something we do not know.
-            (!categoryId || s.category === categoryId) &&
-            s.completenessRatio >= MIN_COMPLETENESS &&
-            s.completenessRatio <= MAX_COMPLETENESS,
-        )
-        .sort(
-          (a, b) =>
-            b.completenessRatio - a.completenessRatio ||
-            b.valueTotal - a.valueTotal,
-        )
-    );
-  }, [items, categoryId]);
+  /*
+   * REPOINTED 2026-09-26 (Merle). This screen built its sets from
+   * /portfolio/items joined to the `sets` table — 3 hand-seeded Pokémon rows —
+   * so the paid "Sets to complete" was empty for every member while the Home
+   * rail used the catalogue. One source now: /sets/auto-progress, which reads
+   * the set from the item or its catalogue card (set_router.py).
+   *
+   * No 40–95% band any more: TCG sets run 100–300 cards, so that band emptied
+   * the screen again. Every started set shows, bucketed; finished ones do not.
+   */
+  const autoSets = useAutoSetProgress(categoryId || undefined);
+  // The screen is busy/failed if EITHER source is (items still drive the
+  // empty-state wording; the sets themselves come from autoSets).
+  const busy = loading || autoSets.loading;
+  const loadError = error ?? autoSets.error;
+  const candidates: SetCandidate[] = useMemo(
+    () =>
+      autoSets.sets
+        .map((st) => ({
+          key: st.setName,
+          category: st.category,
+          ownedCount: st.ownedCount,
+          expectedCount: st.catalogTotal,
+          completenessRatio: Math.min(1, st.completionPct / 100),
+        }))
+        .filter((c) => c.completenessRatio < 1)
+        .sort((a, b) => b.completenessRatio - a.completenessRatio || b.ownedCount - a.ownedCount),
+    [autoSets.sets],
+  );
 
   const summary = useMemo(
     () => ({
@@ -217,7 +218,6 @@ const SetsToCompleteScreen: React.FC = () => {
         (s, c) => s + Math.max(0, c.expectedCount - c.ownedCount),
         0,
       ),
-      value: candidates.reduce((s, c) => s + c.valueTotal, 0),
     }),
     [candidates],
   );
@@ -251,17 +251,16 @@ const SetsToCompleteScreen: React.FC = () => {
     [candidates, colors.accent, colors.muted],
   );
 
-  const openCollection = (collectionName: string) => {
+  // Your items in the set's category. Items reads `{ category?,
+  // collectionName? }`; these catalogue-derived sets have no collection name,
+  // so the category is the filter that finds them (2026-09-26).
+  const openCollection = (category: string) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, {
       enabled: settings.hapticsEnabled,
     });
     router.push({
-      // `collectionName`, not `collection`. app/(tabs)/items.tsx reads
-      // `{ category?, collectionName? }`, so the old key was dropped in transit
-      // and the screen opened unfiltered — silently, because expo-router types
-      // params as an open record and accepts any key (check-route-param-handoff).
       pathname: "/(tabs)/items",
-      params: { collectionName },
+      params: { category },
     });
   };
 
@@ -279,8 +278,8 @@ const SetsToCompleteScreen: React.FC = () => {
         </Text>
 
         {/* Summary card — only shown when we have candidates to summarise */}
-        {!loading &&
-          !error &&
+        {!busy &&
+          !loadError &&
           limits.set_completion &&
           candidates.length > 0 && (
             <View
@@ -305,35 +304,24 @@ const SetsToCompleteScreen: React.FC = () => {
                 value={String(summary.missing)}
                 tint={colors.warning}
               />
-              <View
-                style={[
-                  styles.summaryDivider,
-                  { backgroundColor: colors.border },
-                ]}
-              />
-              <SummaryStat
-                label={t('set_completion.est_value', { defaultValue: 'Est. value' })}
-                value={formatPrice(summary.value)}
-                tint={colors.accent}
-              />
             </View>
           )}
 
-        {loading && (
+        {busy && (
           <View style={styles.center}>
             <ActivityIndicator />
           </View>
         )}
 
-        {!loading && error && (
+        {!busy && loadError && (
           <View style={styles.center}>
             <Text style={[styles.error, { color: colors.danger }]}>
-              {error}
+              {loadError}
             </Text>
           </View>
         )}
 
-        {!loading && !error && !limits.set_completion && (
+        {!busy && !loadError && !limits.set_completion && (
           <View style={styles.gatedWrap}>
             <UpgradePrompt
               feature="Set Completion Tracking"
@@ -342,8 +330,8 @@ const SetsToCompleteScreen: React.FC = () => {
           </View>
         )}
 
-        {!loading &&
-          !error &&
+        {!busy &&
+          !loadError &&
           limits.set_completion &&
           candidates.length === 0 && (
             <View style={styles.emptyCard}>
@@ -368,8 +356,8 @@ const SetsToCompleteScreen: React.FC = () => {
             </View>
           )}
 
-        {!loading &&
-          !error &&
+        {!busy &&
+          !loadError &&
           limits.set_completion &&
           buckets.map((bucket) => {
             if (bucket.items.length === 0) return null;
@@ -406,7 +394,7 @@ const SetsToCompleteScreen: React.FC = () => {
                   return (
                     <AnimatedPressable
                       key={s.key}
-                      onPress={() => openCollection(s.key)}
+                      onPress={() => openCollection(s.category)}
                       style={[
                         styles.card,
                         {
@@ -450,21 +438,6 @@ const SetsToCompleteScreen: React.FC = () => {
                               ]}
                             >
                               {missing} missing
-                            </Text>
-                          </View>
-                          <View
-                            style={[
-                              styles.pill,
-                              { backgroundColor: colors.accent + "15" },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.pillText,
-                                { color: colors.accent },
-                              ]}
-                            >
-                              {formatPrice(s.valueTotal)}
                             </Text>
                           </View>
                         </View>
