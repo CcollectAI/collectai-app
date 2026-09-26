@@ -236,19 +236,30 @@ async def portfolio_timeseries(
                     WHERE pp.generated_at < $2
                     ORDER BY o.id, pp.generated_at DESC)
                 )
+                -- Each item's value on each day is computed ONCE (the LATERAL)
+                -- and summed twice: every item held that day, and only the
+                -- items already held when the window opened (2026-09-26).
+                -- `base_value` exists because the headline change was
+                -- last point - first point, so ADDING a EUR 25 item read as
+                -- "+EUR 25" of gain. market_change = base_value(last day) -
+                -- total_value(first day): the same items, then and now.
                 SELECT
                     d.day AS day,
-                    COALESCE(SUM(
-                        COALESCE(
-                            o.user_override,
-                            (SELECT p.q50 FROM per_day p
-                              WHERE p.id = o.id AND p.day <= d.day
-                              ORDER BY p.day DESC, p.src_rank ASC LIMIT 1),
-                            o.stored_value
-                        )
-                    ), 0) AS total_value
+                    COALESCE(SUM(v.val), 0) AS total_value,
+                    COALESCE(SUM(v.val) FILTER (WHERE v.since <= $2::date), 0) AS base_value
                 FROM days d
-                LEFT JOIN owned o ON o.since <= d.day
+                LEFT JOIN LATERAL (
+                    SELECT o.since,
+                           COALESCE(
+                               o.user_override,
+                               (SELECT p.q50 FROM per_day p
+                                 WHERE p.id = o.id AND p.day <= d.day
+                                 ORDER BY p.day DESC, p.src_rank ASC LIMIT 1),
+                               o.stored_value
+                           ) AS val
+                    FROM owned o
+                    WHERE o.since <= d.day
+                ) v ON TRUE
                 GROUP BY d.day
                 ORDER BY d.day ASC
                 """,
@@ -260,6 +271,13 @@ async def portfolio_timeseries(
                 {"t": row["day"].isoformat(), "v": round(float(row["total_value"]), 2)}
                 for row in rows
             ]
+            # Change in value of what was already owned at the window start —
+            # excludes items added (their cost is not a gain). None when there
+            # is no day grid to read it from.
+            market_change = (
+                round(float(rows[-1]["base_value"]) - float(rows[0]["total_value"]), 2)
+                if rows else None
+            )
 
             # The day grid always emits a row per day, so an empty portfolio
             # would now draw a flat line along zero instead of the honest "No
@@ -306,8 +324,9 @@ async def portfolio_timeseries(
                         {"t": since.date().isoformat(), "v": cur_v},
                         {"t": today.date().isoformat(), "v": cur_v},
                     ]
+                    market_change = 0.0  # a flat synthetic line: no movement
 
-            return {"points": points}
+            return {"points": points, "market_change": market_change if points else None}
     except Exception as e:
         _logger.error("[portfolio/timeseries] DB error: %s", e)
         try:

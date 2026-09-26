@@ -54,6 +54,7 @@ import { useSettings } from "@/lib/settings";
 import { useTranslation } from "react-i18next";
 import { fmtCurrency, formatPercent } from '@/lib/format';
 import { convertEUR } from '@/lib/fx';
+import { extractMarketChange, portfolioChange } from '@/lib/portfolioChange';
 import { useToast } from "@/components/Toast";
 import { useBillingLimits } from "@/hooks/useBillingLimits";
 import { collectorsApi } from "@/api/collectorsApi";
@@ -246,6 +247,7 @@ function PortfolioScreen() {
   // the API returns points for every range (1d=2 … all=3651), so an empty
   // series on this screen is a transport failure, not absent data.
   const [seriesFailed, setSeriesFailed] = useState(false);
+  const [marketChange, setMarketChange] = useState<number | null>(null);
   // Which range `series` currently holds, so a failed refetch can keep it.
   const seriesRangeRef = useRef<RangeKey | null>(null);
   const [items, setItems] = useState<ItemRow[]>([]);
@@ -317,19 +319,10 @@ function PortfolioScreen() {
 
 
   // Compute totals from series
-  const { total, delta, deltaPct } = useMemo(() => {
-    if (!series.length) {
-      return { total: 0, delta: 0, deltaPct: 0 };
-    }
-    const sorted = [...series].sort(
-      (a, b) => new Date(a.t).getTime() - new Date(b.t).getTime()
-    );
-    const startVal = sorted[0].v;
-    const endVal = sorted[sorted.length - 1].v;
-    const d = endVal - startVal;
-    const pct = startVal > 0 ? d / startVal : 0;
-    return { total: endVal, delta: d, deltaPct: pct };
-  }, [series]);
+  const { total, delta, deltaPct } = useMemo(
+    () => portfolioChange(series, marketChange),
+    [series, marketChange],
+  );
   // `total` is derived from `series`, so an empty series computes €0 — the same
   // lie `seriesFailed` exists to stop the chart telling. With no series AND a
   // load still pending or failed, we do not know the value. ONE constant for
@@ -363,6 +356,7 @@ function PortfolioScreen() {
           ]);
           if (tsRes.status === "fulfilled") {
             setSeries(extractSeries(tsRes.value));
+            setMarketChange(extractMarketChange(tsRes.value));
             seriesRangeRef.current = range;
             // The call succeeded. An empty result here really is "no history".
             setSeriesFailed(false);
@@ -371,7 +365,7 @@ function PortfolioScreen() {
             // A failed REFETCH keeps the chart it already had for this range —
             // the chart only shows its failure state when it has no points.
             // A different range's points would be mislabelled, so those go.
-            if (seriesRangeRef.current !== range) setSeries([]);
+            if (seriesRangeRef.current !== range) { setSeries([]); setMarketChange(null); }
             setSeriesFailed(true);
           }
           if (ovRes.status === "rejected") throw ovRes.reason;

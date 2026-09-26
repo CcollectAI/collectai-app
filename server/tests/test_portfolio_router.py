@@ -91,8 +91,10 @@ class TestPortfolioTimeseries:
     def test_timeseries_with_db(self):
         import datetime
         mock_rows = [
-            {"day": datetime.date(2025, 1, 1), "total_value": 100.50},
-            {"day": datetime.date(2025, 1, 2), "total_value": 105.00},
+            # base_value = items already held when the window opened. Day 2
+            # holds a EUR 3 item added in the window: 105 total, 102 base.
+            {"day": datetime.date(2025, 1, 1), "total_value": 100.50, "base_value": 100.50},
+            {"day": datetime.date(2025, 1, 2), "total_value": 105.00, "base_value": 102.00},
         ]
         mock_conn = AsyncMock()
         mock_conn.fetch = AsyncMock(return_value=mock_rows)
@@ -107,6 +109,8 @@ class TestPortfolioTimeseries:
         assert len(data["points"]) == 2
         assert data["points"][0]["v"] == 100.5
         assert data["points"][1]["v"] == 105.0
+        # 2026-09-26: the added item is not a gain — 102 - 100.5, not 105 - 100.5.
+        assert data["market_change"] == 1.5
 
 
 # ---- Overview endpoint ----
