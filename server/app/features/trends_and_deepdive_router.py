@@ -170,7 +170,10 @@ async def get_collection_trends(
                             -- USD 100 and a EUR 100 each contributed 100.
                             SUM(i.purchase_price_eur) AS day_cost
                         FROM items i
-                        WHERE i.user_id = $1
+                        -- NOT archived: lost 2026-09-25 when a mutation test on
+                        -- the breakdown query below was reverted onto THIS line
+                        -- (4c2e0a4d); check-archived-filter caught it a day on.
+                        WHERE i.user_id = $1 AND NOT i.archived
                           AND i.purchase_price_eur IS NOT NULL
                           AND COALESCE(i.purchased_at, i.created_at) >= $2
                         GROUP BY 1

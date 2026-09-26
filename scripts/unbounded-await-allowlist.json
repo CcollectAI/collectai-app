@@ -1,5 +1,5 @@
 {
-  "_comment": "Auth call sites deliberately NOT bounded. Everything else (.from/.rpc) is bounded centrally by installRequestTimeouts() in src/lib/supabase.ts. To add an entry you must state WHY racing it is unsafe \u2014 that requirement is the point of this file.",
+  "_comment": "Auth call sites deliberately NOT bounded. Everything else (.from/.rpc) is bounded centrally by installRequestTimeouts() in src/lib/supabase.ts. To add an entry you must state WHY racing it is unsafe — that requirement is the point of this file.",
   "entries": [
     {
       "file": "app/(auth)/login.tsx",
@@ -85,6 +85,16 @@
       "file": "src/utils/diagnostics.ts",
       "symbol": "auth",
       "reason": "Reads the current uid via supabase.auth.getUser()/getSession() before a query. Still an auth op serialized by processLock, so it is not raced for the reason above. The query that follows IS bounded by the client-wide wrapper."
+    },
+    {
+      "file": "app/(auth)/mfa-challenge.tsx",
+      "symbol": "auth",
+      "reason": "Auth operation (mfa.listFactors / challengeAndVerify). Same as login.tsx: withTimeout abandons rather than cancels, so racing it can leave a second concurrent auth op running and trip refresh-token reuse detection (docs/AUTH_AND_WEB_DEPLOY.md). A stall spins the Verify button, which the member can retry, and the screen offers Sign out."
+    },
+    {
+      "file": "src/auth/mfaGate.ts",
+      "symbol": "auth",
+      "reason": "mfa.getAuthenticatorAssuranceLevel reads the session under GoTrue's lock (it may wait on a refresh). Bounding it would be WORSE, not safer: needsMfaChallenge fails CLOSED, so a timeout would send members with no 2FA to the code screen whenever the session is slow (e.g. offline, where the lock is held ~30 s). Unbounded, the root gate simply decides a little later. Added 2026-09-26; the gate had been red on this since the 2FA commit 7d6fe7aa."
     }
   ]
 }
