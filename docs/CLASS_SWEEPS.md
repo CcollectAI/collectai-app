@@ -588,6 +588,23 @@ of the heavy gate"):**
   run after it logs far fewer "vinyl_records: N items to probe" than ~790.
 - Gate: `server/tests/test_discogs_snapshot_and_gate.py` (3 mutations caught).
 
+**The first deploy of the fix had its own instance of the class (21:50).** Each
+of ~20 loops read its last run on its own connection in the same millisecond;
+the Supavisor session pooler (`pool_size: 15` — while `DB_POOL_MAX_SIZE=30`)
+refused 6 with `EMAXCONNSESSION`, and "unknown → run" re-ran lorcast and
+seatgeek on that restart; the retrain and a matview refresh failed on the same
+error. All 16 `EMAXCONNSESSION` lines across three log files are from those
+75 s. Fixed in 76b45087: one grouped query before the loops start (retried 3x),
+consumed once; fallback reads capped at 2. Verified on the 21:58 restart: 20/20
+workers logged their wait, 0 `EMAXCONNSESSION`, 0 worker_runs rows after it.
+
+Still latent, for Merle: `DB_POOL_MAX_SIZE=30` against a pooler that admits 15
+means the 16th concurrent acquire FAILS instead of queueing. It needs a burst to
+show — nothing in normal running has hit it in the logs kept (09-24..09-27) —
+but the preflights also connect through that pooler, and at 21:58 two of them
+could not connect while bake held all 15. Setting the pool max to ~12 would
+make excess acquires wait instead of error.
+
 ## AS — a substring search where an exact, indexed key exists (2026-09-27)
 
 Found by PROFILING, not reading: `/intake/image-only` timed stage by stage on
