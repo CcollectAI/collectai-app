@@ -113,6 +113,7 @@ Two rules the tooling learned the hard way:
 | AQ | A "gain" that counts what the member ADDED | **fixed 2026-09-26 (server DEPLOYED; client needs a JS build)** | Home's headline and Analytics' "Unrealized P/L" were last point minus first of the value series, so a EUR 25 item added this week read as +EUR 25 of gain; on 30D it MASKED a real fall (raw -10.29, market -35.29). `/portfolio/timeseries` now returns `market_change` (value change of the items already held when the range opened; one LATERAL value per item-day, summed twice — daily totals byte-identical to the old query, same timing). Home (`src/lib/portfolioChange.ts`) and Analytics (`computePLFromSeries`) prefer it. Falsifier: prod simcheck 7D `market_change` 0.0 while points go 1228 -> 1253; tests `portfolioChange`, `computePLMarketChange`, `test_portfolio_router` (mutation-proven). |
 | AR | A stock photo that shows a different subject than its label | **swept 2026-09-26** | Explore banners: all 53 downloaded onto labelled contact sheets and looked at. 10 wrong (Marvel Legends = a rabbit, Digimon = Pokemon energy cards, One Piece TCG = tarot, Bandai = a Super Nintendo, ...), 2 not loading -> emptied (icon fallback), same rule as the Magic/Lorcana tiles. 8 weak-but-plausible kept and listed in ed64737b — then, walked at full tile size on the emulator the same night, **6 of those 8 were wrong too** (Action Figures = wooden toy dinosaurs, D&D = Ticket to Ride, Gunpla = a giant robot statue, VTuber = con cosplayers, Sports Cards = bat and balls, Blind Box = a gift-wrapped box) -> emptied; retro_pokemon and oop_board_games kept. A thumbnail contact sheet was too small to judge subject — look at tile size. No gate can see a photo's subject: re-run = download every `bannerImageUrl` and look. |
 | AS | A `'%key%'` substring search where an exact, indexed key exists | **swept 2026-09-27, DEPLOYED** | Three `market_hits` reads used `normalized_key ILIKE '%…%'`: QuickScan social proof (3.2M-row seq scan, 2.2-4.5 s per scan, and `%base1-base1-4%` matched base1-base1-40..49 — other cards' sales), barcode pricing and dossier comps (a TITLE against dash slugs: 9.6-14.1 s, 0 rows, always). All now `item_ref = category:key` (index, ~5 ms) and skip without a catalogue key. Falsifier: `grep -rn "normalized_key ILIKE" server/app` → only the comment in intake_social_proof/barcode_lookup; tests assert `item_ref = $1` and no ILIKE (mutation-proven). |
+| AT | A schedule that lives only in memory — every restart runs every worker | **swept 2026-09-27** | `_run_worker_loop` slept a <=60 s stagger and ran, with no persisted last run. 7 days: 43 bake restarts; calibration (daily) 44 runs, lorcast 26, discogs 25, ticketmaster/seatgeek (12 h) 50 each; model_retrain (weekly) 40 in 30 days at 25-30 min on the heavy gate, two killed at the 1800 s cap. The one existing guard (`should_skip_recent_run`, discogs + tcgcsv) reset its own clock: its skip was recorded `ok`, so discogs did no real run 09-24..09-27. Fix: the loop waits out the interval from the worker's newest worker_runs row (`_first_cycle_delay`); a guard skip returns `SKIPPED` and writes no row; retrain cap 3600 s. Falsifier: after a restart, `grep "ran .*s ago — first cycle in" bake.log` lists the slow workers, and `select count(*) from worker_runs where worker_name='calibration_worker' and finished_at > <restart>` stays 0 until 24 h after its previous row. |
 
 ## AD — a money format typed into the UI (2026-09-24)
 
@@ -541,6 +542,37 @@ total(last) - SUM(entry_value)`. DEPLOYED. Falsifier, prod simcheck: 7d 0.0,
 30d -35.29, 90d/1y/all -35.29 (were 0.0). Test
 `test_timeseries_a_fall_after_adding_is_still_a_fall` (mutation to day-1-only
 fails it).
+
+## AT — a schedule that lives only in memory (2026-09-27)
+
+Found by counting `worker_runs` rows against restarts, not by reading the
+loop: `calibration_worker`'s 44 rows in 7 days had the same timestamps (+ its
+stagger) as the 43 `collectai-bake` restarts. `SCHEDULES` is the sleep
+BETWEEN cycles; nothing remembered when a cycle last ran, so a deploy day with
+9 restarts ran a daily worker 9 times and the weekly retrain 9 x 25-30 min —
+serialised on the heavy gate, so ingest waited behind it.
+
+The class had been fixed ONCE before (07-29, after tcgcsv banned us) — inside
+two workers, not in the loop — and that fix had its own defect: the skip
+returned like a run, the orchestrator wrote an `ok` row for it, and the guard
+read that row as "ran recently". Real discogs runs (log: `completed in` > 60 s)
+were every 1-2 days until 09-23, then none; 25 skip rows over 09-24..09-26.
+
+Rule: cadence belongs to the scheduler, persisted where it survives the
+process. A worker that declines a cycle must say so (`return SKIPPED`) rather
+than look like it worked — the same shape as class S (`{"ok": true}` with no
+write).
+
+Gate: `server/tests/test_worker_first_cycle_delay.py` — drives the real loop
+(first sleep = remaining interval; a skip writes no row; a real cycle does),
+and ENUMERATES every `await should_skip_recent_run(` call site for
+`return SKIPPED`. Mutation-proven: 4 mutations, each caught.
+
+Not changed, for Merle: discogs holds the HEAVY gate for its whole 1.5-2.25 h
+run (5,489-8,188 s measured), almost all of it rate-limited HTTP waits, and
+`marketplace_scrape_worker` (ingest) queues behind it — the monitor logs
+"ingest idle 30min but heavy gate held by discogs_worker … benign". Moving it
+out of `_HEAVY_WORKERS` needs its write pattern measured first.
 
 ## AS — a substring search where an exact, indexed key exists (2026-09-27)
 

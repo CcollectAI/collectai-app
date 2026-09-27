@@ -208,6 +208,23 @@ def record_run(
         logger.debug("[worker_registry] Failed to trigger DB persist for %s", worker_name)
 
 
+def seed_last_run(worker_name: str, epoch: float) -> None:
+    """Carry a worker's last run across a restart, in memory only.
+
+    The orchestrator waits out the rest of a worker's interval after a restart
+    (bake_orchestrator._first_cycle_delay), so a daily worker may not run for
+    up to a day — and this in-memory registry, which starts empty, would call
+    it `never_run` on the admin health page all that time. Seeded from the
+    worker_runs row the orchestrator already read. Never overwrites a real
+    record_run(), never counts as a run, writes nothing to the DB.
+    """
+    entry = _registry.setdefault(
+        worker_name,
+        {"runs": 0, "errors": 0, "total_duration_s": 0.0, "duration_count": 0},
+    )
+    entry.setdefault("last_run", epoch)
+
+
 def last_recorded_at(worker_name: str) -> float:
     """Epoch seconds of this worker's most recent `record_run()`, or 0.0.
 
@@ -529,14 +546,30 @@ async def seconds_since_last_ok(worker_name: str) -> Optional[float]:
         return None
 
 
+# Returned by a run_once() that decided NOT to work this cycle (see
+# should_skip_recent_run). bake_orchestrator records NO worker_runs row for it.
+#
+# It used to return None like a real run, so the orchestrator wrote an `ok` row
+# for the skip — and seconds_since_last_ok() then read that row as the last
+# run. Every restart within 20h of the previous SKIP skipped again: discogs
+# ran for real every 1-2 days until 09-23 and not once from 09-24 to 09-27
+# (25 skip rows over 43 restarts). The guard reset its own clock.
+SKIPPED = object()
+
+
 async def should_skip_recent_run(worker_name: str, min_gap_s: float) -> bool:
     """True when this worker ran successfully less than `min_gap_s` ago.
 
-    `SCHEDULES` sets the sleep BETWEEN cycles, but `_run_worker_loop` runs a
-    worker immediately on start and the interval lives only in memory. So every
-    restart of collectai-bake re-triggers every worker regardless of when it
-    last ran. With 9-12 restarts on a busy day, a worker scheduled `24 * 3600`
-    actually ran 9-12 times.
+    Callers must `return SKIPPED` (not a bare `return`) when this is True —
+    see SKIPPED above.
+
+    HISTORY: `_run_worker_loop` used to run a worker immediately on start with
+    the interval held only in memory, so every restart of collectai-bake
+    re-triggered every worker. Since 2026-09-27 the loop itself waits out the
+    remaining interval from worker_runs (bake_orchestrator._first_cycle_delay),
+    so this is the second line of defence: it still holds when the loop could
+    not read the DB at startup, and for a hand-started run. With 9-12 restarts
+    on a busy day, a worker scheduled `24 * 3600` used to run 9-12 times.
 
     That is how tcgcsv_worker reached ~14k requests/day against tcgcsv.com and
     got the application blocked for overuse on 2026-07-29

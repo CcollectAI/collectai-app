@@ -210,7 +210,8 @@ _WORKER_MANIFEST: list[tuple[str, str, str, bool]] = [
     #   that workflow's artifacts never leave the runner. The sentence is
     #   edited rather than annotated, because a wrong claim left in place is
     #   how it gets believed a second time.
-    # task_worker — polls every 5s, handled separately in main.py
+    # task_worker — polls every 5s, started in start_all_workers() only when
+    #   TASK_WORKER_ENABLED=true (prod .env: false; task_queue has 0 rows).
 ]
 
 # Weekly workers — disabled for pre-launch. Re-enable post-launch.
@@ -512,7 +513,71 @@ _WORKER_CYCLE_TIMEOUTS = {
     # headroom and still bounded; per-request 30s HTTP timeouts prevent a
     # true hang from running the full 4h.
     "discogs_worker": 14400,  # 4h — rate-limited, ~24h interval
+    # Measured on prod: 1517s (09-26), 1542s (09-26), 1743s (09-27) — rising
+    # with the training set — and killed at the 1800s default on 09-26 23:46
+    # and 09-27 20:00, which throws the whole retrain away. Weekly, so 1h is
+    # headroom, not a licence to hang.
+    "model_retrain_worker": 3600,
 }
+
+
+def _first_cycle_delay(
+    interval_s: int, stagger: float, since_last_s: float | None,
+) -> float:
+    """Seconds to wait before a worker's FIRST cycle after the loop starts.
+
+    The loop used to sleep only `stagger` (<= 60s) and then run, whatever the
+    interval. Nothing persisted "when did this last run", so EVERY bake restart
+    ran every daily and weekly worker again. Measured 2026-09-27 over 7 days:
+    43 restarts, calibration_worker 44 runs (daily), discogs 25, lorcast 26,
+    ticketmaster/seatgeek 50 each (twice daily = 14), model_retrain_worker 40
+    runs in 30 days (weekly = ~4) — each retrain 25-30 min holding the heavy
+    gate, two of them killed at the 1800s cap. Third-party workers re-running
+    on every deploy is the mechanism that got tcgcsv to ban us
+    (learning_third_party_rate_bans_and_schedule_drift).
+
+    `since_last_s` is the age of this worker's newest worker_runs row on THIS
+    host (any status — the loop sleeps a full interval after an error or a
+    skip too, so this reproduces what an uninterrupted loop would have done).
+    None = unknown (no pool, no row, query failed) → the old behaviour, so a
+    new worker or a DB outage never keeps a worker from running.
+    """
+    if since_last_s is None or since_last_s < 0:
+        return float(stagger)
+    return max(float(stagger), float(interval_s) - since_last_s)
+
+
+async def _seconds_since_last_run(name: str) -> float | None:
+    """Age in seconds of `name`'s newest worker_runs row recorded by this host.
+
+    Host-scoped because worker_runs is a prod table a laptop can write to
+    (see worker_registry._HOST) — a local run must not postpone prod's cycle.
+    Uses idx_worker_runs_name_time (worker_name, finished_at); <1 ms on prod.
+    """
+    from app.lib.db_helpers import get_db_pool
+    from app.worker_registry import _HOST
+
+    pool = get_db_pool()
+    if pool is None:
+        return None
+    try:
+        async with pool.acquire() as conn:
+            age = await asyncio.wait_for(
+                conn.fetchval(
+                    "SELECT EXTRACT(EPOCH FROM now() - max(finished_at))::float8 "
+                    "FROM public.worker_runs "
+                    "WHERE worker_name = $1 AND metadata->>'host' = $2",
+                    name, _HOST,
+                ),
+                timeout=10,
+            )
+    except Exception as e:
+        logger.warning(
+            "[bake_orchestrator] %s: could not read last run (%r) — "
+            "running on the start stagger", name, e,
+        )
+        return None
+    return float(age) if age is not None else None
 
 
 async def _run_worker_loop(
@@ -523,7 +588,7 @@ async def _run_worker_loop(
     needs_db_dsn: bool,
 ) -> None:
     """Run a single worker's run_once() in a loop with sleep(interval)."""
-    from app.worker_registry import last_recorded_at, record_run
+    from app.worker_registry import SKIPPED, last_recorded_at, record_run, seed_last_run
 
     def _already_recorded(since_wall: float) -> bool:
         """Did this worker's own run_once() already record this cycle?
@@ -571,9 +636,20 @@ async def _run_worker_loop(
         name, interval_s, module_path,
     )
 
-    # Stagger start: sleep a fraction to avoid all workers hitting DB at once
+    # Stagger start: sleep a fraction to avoid all workers hitting DB at once,
+    # or — when this worker already ran within its interval before the restart
+    # — until that interval is up. See _first_cycle_delay.
     stagger = hash(name) % min(60, interval_s // 2 + 1)
-    await asyncio.sleep(stagger)
+    since_last = await _seconds_since_last_run(name)
+    first_delay = _first_cycle_delay(interval_s, stagger, since_last)
+    if since_last is not None and since_last >= 0:
+        seed_last_run(name, time.time() - since_last)
+    if first_delay > stagger:
+        logger.info(
+            "[bake_orchestrator] %s ran %.0fs ago — first cycle in %.0fs",
+            name, since_last, first_delay,
+        )
+    await asyncio.sleep(first_delay)
 
     while True:
         # Circuit breaker: when Supabase is in a DB-degraded window, *all*
@@ -628,10 +704,14 @@ async def _run_worker_loop(
                 # Bounded by wait_for so a hung cycle can't stall the loop forever.
                 _cap = _WORKER_CYCLE_TIMEOUTS.get(name, _DEFAULT_WORKER_CYCLE_TIMEOUT_S)
                 _coro = run_fn(dry_run=False) if name == "aggregate_catalog_attributes" else run_fn()
-                await asyncio.wait_for(_coro, timeout=_cap)
+                result = await asyncio.wait_for(_coro, timeout=_cap)
 
                 duration = time.monotonic() - t0
-                if not _already_recorded(t0_wall):
+                if result is SKIPPED:
+                    # The worker declined this cycle. No row: an `ok` row here
+                    # is what reset should_skip_recent_run's clock.
+                    logger.info("[bake_orchestrator] %s skipped this cycle", name)
+                elif not _already_recorded(t0_wall):
                     record_run(name, "ok", duration_s=duration)
                 _worker_last_ok[name] = time.time()
                 _worker_errors.pop(name, None)

@@ -477,7 +477,7 @@ def run_pipeline(
     return summary
 
 
-async def run_once() -> None:
+async def run_once() -> object:
     import asyncio
     try:
         from app.worker_registry import record_run
@@ -485,14 +485,16 @@ async def run_once() -> None:
         def record_run(*_a, **_kw): pass
 
     # Same restart-triggered over-polling that got tcgcsv.com to block us on
-    # 2026-07-29: SCHEDULES says 24h, but _run_worker_loop runs immediately on
-    # start and the interval is in-memory, so each bake restart re-ran this.
+    # 2026-07-29: SCHEDULES says 24h, but until 2026-09-27 _run_worker_loop ran
+    # immediately on start with the interval in memory, so each bake restart
+    # re-ran this (the loop now waits out the interval; this guard is the
+    # second line of defence).
     # Measured before the guard: ~19k requests/day to api.discogs.com across
     # 4-6 runs. See learning_third_party_rate_bans_and_schedule_drift.
     try:
-        from app.worker_registry import should_skip_recent_run
+        from app.worker_registry import SKIPPED, should_skip_recent_run
         if await should_skip_recent_run("discogs_worker", 20 * 3600):
-            return
+            return SKIPPED  # no worker_runs row — see worker_registry.SKIPPED
     except ImportError:
         pass
 

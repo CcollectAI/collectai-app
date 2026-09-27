@@ -581,7 +581,7 @@ def run_pipeline(only_game: Optional[str] = None, dry_run: bool = False,
 # ---------------------------------------------------------------------------
 
 
-async def run_once() -> None:
+async def run_once() -> object:
     """Async wrapper so bake_orchestrator can call this like a worker."""
     import asyncio
     # run_pipeline is sync + uses httpx.Client; delegate to a thread so we
@@ -592,17 +592,18 @@ async def run_once() -> None:
         def record_run(*_a, **_kw):  # fallback if registry missing
             pass
 
-    # Cadence guard. SCHEDULES already says 24h, but _run_worker_loop runs a
-    # worker immediately on start and the interval is in-memory only, so every
-    # bake restart re-triggered this. On 2026-07-27/28 the service restarted
+    # Cadence guard (second line of defence since 2026-09-27, when
+    # _run_worker_loop started waiting out the interval from worker_runs).
+    # Before that the loop ran a worker immediately on start with the interval
+    # in memory only, so every bake restart re-triggered this. On 2026-07-27/28 the service restarted
     # 9 and 12 times, so a "daily" import ran 9-12x — ~1,800 requests each,
     # ~14k/day — and tcgcsv.com blocked the application for overuse on 07-29.
     # 20h (not 24h) so a restart near the usual slot does not push the run to
     # the following day.
     try:
-        from app.worker_registry import should_skip_recent_run
+        from app.worker_registry import SKIPPED, should_skip_recent_run
         if await should_skip_recent_run("tcgcsv_worker", 20 * 3600):
-            return
+            return SKIPPED  # no worker_runs row — see worker_registry.SKIPPED
     except ImportError:
         pass
 
