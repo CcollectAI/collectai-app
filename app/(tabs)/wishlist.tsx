@@ -28,6 +28,7 @@ import { dataProvider, type WatchlistItem } from '@/data';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { useAuthContext } from '@/providers/useAuthContext';
+import { mayLoadSignedInData } from '@/lib/signedInLoad';
 import { GATE_MAX_WAIT_MS } from '@/hooks/usePaginatedList';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { formatPrice, parseMoney, moneyInputValue } from '@/lib/format';
@@ -225,10 +226,12 @@ function WatchlistTabScreen() {
   }, [authLoading]);
 
   useEffect(() => {
-    if (authLoading && !authGateExpired) return;
+    // Not for a signed-out member (src/lib/signedInLoad.ts): reruns when the
+    // user id arrives, because loadItems depends on it.
+    if (!mayLoadSignedInData(authLoading, authGateExpired, Boolean(user))) return;
     loadItems();
     loadMatches();
-  }, [loadItems, loadMatches, authLoading, authGateExpired]);
+  }, [loadItems, loadMatches, authLoading, authGateExpired, user]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
