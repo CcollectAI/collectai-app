@@ -1,6 +1,13 @@
+# ⛔ NOT WIRED — schedule disabled 2026-09-27. Its only step is an `echo`.
+#
+# "If you expose RPC, call it here." — a placeholder that pruned nothing and
+# reported success every night. Pruning is done on EC2 by
+# partition_drop_worker (daily; server/app/worker_registry.py). Re-enable only
+# with a real prune call. See docs/INGEST.md.
+
 name: Nightly Prune
 on:
-  schedule: [{ cron: "29 1 * * *" }]
+  # schedule: [{ cron: "29 1 * * *" }]   # disabled 2026-09-27 — see the note at the top
   workflow_dispatch: {}
 jobs:
   prune:

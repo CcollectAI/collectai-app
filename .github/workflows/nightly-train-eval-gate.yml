@@ -44,7 +44,11 @@ jobs:
       - name: Install dependencies
         if: env.HAS_SECRETS == 'true'
         working-directory: server
-        run: pip install -r requirements.txt || pip install scikit-learn numpy httpx pyyaml asyncpg
+        # ../ — requirements.txt is at the repo root, not in server/. Since at
+        # least 2026-09 `-r requirements.txt` failed every night ("Could not open
+        # requirements file") and the `||` fallback installed UNPINNED packages
+        # instead, silently (2026-09-27).
+        run: pip install -r ../requirements.txt || pip install scikit-learn numpy httpx pyyaml asyncpg
 
       - name: Export user feedback for retraining
         working-directory: server

@@ -1,6 +1,14 @@
+# ⛔ NOT WIRED — schedule disabled 2026-09-27. It exported and trained nothing.
+#
+# Every run logged `No dataset rows; exiting`: `S3_DATA_BUCKET` and
+# `TRAIN_LAMBDA_URL` are empty, so the export has nowhere to go and the
+# trainer is never called — success every night (run 36300486539). Models are
+# trained on EC2 (valuation / retrain workers). Re-enable once both are set.
+# See docs/INGEST.md.
+
 name: Nightly Training Export + Trigger
 on:
-  schedule: [{ cron: "07 1 * * *" }]
+  # schedule: [{ cron: "07 1 * * *" }]   # disabled 2026-09-27 — see the note at the top
   workflow_dispatch: {}
 jobs:
   export-train:

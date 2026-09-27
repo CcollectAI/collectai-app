@@ -90,12 +90,20 @@ done
 # ── 4. Valuation freshness — check latest prediction is < 24h old ─────────
 echo ""
 echo "=== VALUATION FRESHNESS ==="
-LATEST_PRED=$(curl -sS "${SUPABASE_URL}/rest/v1/price_predictions?select=generated_at&order=generated_at.desc&limit=1" \
+# A failed READ is not "no predictions" (2026-09-27): the 09-27 nightly said
+# "valuation worker may be dead" while 57k predictions had been written that
+# day — the request had failed and the empty result was read as an empty
+# table. Status and body are kept, and the two cases are told apart.
+PRED_STATUS=$(curl -sS -m 60 -o /tmp/latest_pred.json -w "%{http_code}" \
+  "${SUPABASE_URL}/rest/v1/price_predictions?select=generated_at&order=generated_at.desc&limit=1" \
   -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
-  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" 2>/dev/null)
+  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" 2>/dev/null || echo "000")
+LATEST_PRED=$(cat /tmp/latest_pred.json 2>/dev/null || true)
 
 LATEST_TS=$(echo "$LATEST_PRED" | jq -r '.[0].generated_at // empty' 2>/dev/null || true)
-if [ -z "$LATEST_TS" ]; then
+if [ "$PRED_STATUS" != "200" ] || ! echo "$LATEST_PRED" | jq -e 'type == "array"' >/dev/null 2>&1; then
+  fail "Could not read price_predictions (HTTP ${PRED_STATUS}): $(echo "$LATEST_PRED" | head -c 200) — a failed read, NOT evidence the valuation worker is dead"
+elif [ -z "$LATEST_TS" ]; then
   fail "No price_predictions found (valuation worker may be dead)"
 else
   # Check if prediction is within last 24 hours

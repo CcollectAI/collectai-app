@@ -1,6 +1,15 @@
+# ⛔ NOT WIRED — schedule disabled 2026-09-27. It did nothing, 48 times a day.
+#
+# Every run logged `Set RAPIDAPI_KEY or EBAY_OAUTH_TOKEN` (neither secret is
+# set) and returned success — green every 30 minutes while writing nothing
+# (run 36335865383). eBay data does not depend on it: prod's marketplace
+# scrape on EC2 writes eBay rows daily (market_hits provider='ebay').
+# Re-enable only with a credential AND a reason this legacy 50-item Pokémon
+# script is still needed next to the EC2 scrape. See docs/INGEST.md.
+
 name: Ingest eBay
 on:
-  schedule: [{ cron: "*/30 * * * *" }]
+  # schedule: [{ cron: "*/30 * * * *" }]   # disabled 2026-09-27 — see the note at the top
   workflow_dispatch: {}
 jobs:
   run:

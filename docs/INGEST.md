@@ -288,6 +288,25 @@ message: **a green checkmark is a claim about the job's exit code, never about
 whether it did anything.** For any job that can skip itself, the check is
 "which steps actually executed", and that question has to be asked on purpose.
 
+### Second sweep of all 12 workflows (2026-09-27)
+
+Same method as above — the steps that ran and what their logs SAY, never the
+checkmark — started from the Pokémon finding (a run that said "Import
+Complete" while skipping 57 of 176 sets every night).
+
+| workflow | verdict | done |
+|---|---|---|
+| `ci-min` (the push gate) | ⛔ **red since 2026-09-18, 58 runs**: 791 of 4,255 server tests failed with "There is no current event loop" — CI pinned pytest-asyncio **0.24.0**, local dev runs **1.3.0**. Reproduced locally by installing 0.24.0 (exactly 791 failed); 1.3.0 passes all. Behind it, the FE api-drift gate had a real finding nobody saw: 3 routes missing from `scripts/api.lock.json` | pinned 1.3.0 (`cc4af47a`), lock regenerated (+5 pairs, 0 removed, `fd0922e1`) → **green**, first time since 09-08 |
+| `nightly-ingest` | ⛔ Pokémon: newest-first order + circuit breaker skipped the same oldest sets every night | set-order rotation (`916c30aa`), section above |
+| `ingest-ebay` | ⛔ **every 30 min**, `Set RAPIDAPI_KEY or EBAY_OAUTH_TOKEN`, wrote nothing, green | schedule disabled with the reason in the file; EC2's scrape writes eBay rows |
+| `nightly-prune` | ⛔ its only step is `echo 'If you expose RPC, call it here'` | schedule disabled; EC2 `partition_drop_worker` prunes |
+| `nightly-training` | ⛔ `No dataset rows; exiting` — `S3_DATA_BUCKET` / `TRAIN_LAMBDA_URL` empty | schedule disabled |
+| `nightly-train-eval-gate` | ⚠️ still trains and discards (known, above); its install step failed nightly (`-r requirements.txt` from `server/`) and `||` fell back to UNPINNED packages | path fixed to `../requirements.txt` |
+| `nightly-sanity` | ⚠️ 09-27 failed "No price_predictions found (valuation worker may be dead)" while 57k were written that day: a failed REST read was read as an empty table | the check now tells a failed read (HTTP + body) from an empty table |
+| `sentry-release` | ⚠️ never tagged a release: its last run (08-12) skipped "Sentry secrets not configured", and it only triggers on `main` / `feature/all-enhancements`, not the working branch | **Merle:** set SENTRY_AUTH_TOKEN/ORG/PROJECT as repo secrets and add the branch — or delete it |
+| `ci.yml` | ⚠️ 10/10 failed, PR-only, last 08-21 (no PRs since) | none — noted |
+| `nightly-eval`, `sanity`, `sanity-e2e` | as recorded above / genuinely run | — |
+
 ### A step can execute, log, exit 0 — and still not have run (2026-09-05)
 
 The sweep above asked *which steps executed*. That question is necessary and
