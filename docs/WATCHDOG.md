@@ -751,6 +751,9 @@ Models tab reads the same thing serving loads — every
 `model_promotion_log` decision (`GET /admin/models`,
 `server/app/lib/model_summary.py`). Before that date it showed dead
 `model_metrics` rows (clip-v1.0.0, April) and could not have shown this finding.
+Old version folders are pruned to `active` + the 3 newest others after every
+retrain (`server/app/ml/model_versions.py`); a revert target therefore survives,
+but a revert to anything OLDER than that is no longer possible from disk.
 
 ### Why this is ONE medium and not 53 highs
 

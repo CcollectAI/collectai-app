@@ -592,7 +592,12 @@ and worker health tabs too"):**
 - Measured on prod while doing it: 54 categories fitted 2026-09-27, every one
   promoted on `holdout_n = 0` (no verified sales yet — docs/WATCHDOG.md), and
   **pokemon has 50 model versions on disk, lorcana 43** — one per
-  restart-triggered retrain (class AT, fixed today). Nothing prunes them.
+  restart-triggered retrain (class AT, fixed today). **Pruned the same night
+  (Merle: "keep active plus last 3")**: `server/app/ml/model_versions.py` keeps
+  whatever a pointer targets (`active`, a future `canary`) + the 3 newest
+  others, prunes nothing when no pointer resolves, and runs in
+  model_retrain_worker AFTER the promotion decision (so a revert target
+  survives). One-off: `python -m app.ml.model_versions [--apply]`.
 - Worker Health: the registry now knows which workers the orchestrator started
   (`mark_enabled`); the other 15 SCHEDULES entries report `disabled`, not
   `never_run`, and are never "overdue". "Run Count" is labelled "runs since

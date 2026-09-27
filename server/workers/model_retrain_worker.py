@@ -668,6 +668,18 @@ def _retrain_category(category: str) -> dict:
         old_mae, new_mae, len(holdout_records), promoted, reason,
     )
 
+    # ── Prune old versions (after the decision, so a revert target survives) ──
+    # Keeps whatever a pointer targets (`active`) + the 3 newest others. Prod
+    # held 2,219 versions for 54 categories on 2026-09-27 (app/ml/model_versions).
+    if artifacts_root:
+        try:
+            from app.ml.model_versions import prune_category
+            pruned = prune_category(artifacts_root / category, apply=True)
+            if pruned:
+                logger.info("[model_retrain] %s: pruned %d old versions", category, len(pruned))
+        except Exception as e:  # pruning must never fail a retrain
+            logger.warning("[model_retrain] %s: version prune failed: %s", category, e)
+
     return {
         "category": category,
         "status": "ok" if promoted else "skipped_regression",
