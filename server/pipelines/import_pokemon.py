@@ -230,6 +230,30 @@ def set_to_collection_row(tcg_set: dict) -> dict:
     }
 
 
+def rotate_sets(sets: list[dict], day_ordinal: int) -> list[dict]:
+    """The night's set order: the API's list, started at a different point each day.
+
+    WHY (2026-09-27). `fetch_sets` returns newest-first, and pokemontcg.io is
+    degraded (65-75% of calls 5xx, with or without a key — measured from EC2).
+    Since 2026-09-05 the outbound circuit breaker (`fetch_json`, 8 consecutive
+    5xx) stops calling the host for the rest of the run — correctly, we have
+    been banned for overuse before. But in a fixed newest-first order the sets
+    AFTER the trip point are the same every night: the oldest. Base, Jungle,
+    Fossil, Neo, e-Card, EX — every vintage set — went 22 days without a price
+    (Base Set Charizard frozen since 09-05) while the log said
+    "Import Complete" and the run exited 0.
+
+    Rotating the start by a third of the list per day means that over any three
+    nights every set runs in the first third — long before a typical trip — at
+    no extra cost to the upstream: same calls, different order.
+    """
+    n = len(sets)
+    if n < 2:
+        return list(sets)
+    offset = (day_ordinal * (n // 3 + 1)) % n
+    return sets[offset:] + sets[:offset]
+
+
 def main():
     parser = argparse.ArgumentParser(description="Import Pokemon TCG catalog + prices")
     parser.add_argument("--limit-sets", type=int, default=None,
@@ -245,8 +269,11 @@ def main():
     if args.dry_run:
         ingest.enabled = False
 
-    # Fetch all sets
-    sets = fetch_sets(limit=args.limit_sets)
+    # Fetch all sets, then rotate the night's order (see rotate_sets).
+    import datetime as _dt
+    sets = rotate_sets(fetch_sets(limit=args.limit_sets), _dt.datetime.now(_dt.timezone.utc).date().toordinal())
+    if sets:
+        logger.info(f"Starting at set {sets[0].get('id', '?')} (rotated order)")
 
     all_items: list[CatalogItem] = []
     all_observations: list[PriceObservation] = []
@@ -273,7 +300,9 @@ def main():
         time.sleep(0.5)  # rate limit courtesy
 
     if failed_sets:
-        logger.warning(f"Failed sets ({len(failed_sets)}): {', '.join(failed_sets)}")
+        # ERROR, not WARNING: 57 of 176 sets failing a night was logged one
+        # level below what anyone greps for, for three weeks.
+        logger.error(f"Failed sets ({len(failed_sets)}/{len(sets)}): {', '.join(failed_sets)}")
 
     # In-memory dedup on item_key (the DB unique constraint catches dupes too,
     # but only after wasting a network roundtrip per duplicate batch row).

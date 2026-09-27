@@ -167,3 +167,30 @@ class TestSetToCollectionRow:
     def test_notes_contains_series(self):
         row = set_to_collection_row(SAMPLE_SET)
         assert "Base" in row["notes"]
+
+
+# ---- rotate_sets: the breaker must not starve the same (oldest) sets every night (2026-09-27) ----
+
+def test_rotation_keeps_every_set_exactly_once():
+    from pipelines.import_pokemon import rotate_sets
+    sets = [{"id": f"s{i}"} for i in range(176)]
+    for day in range(10):
+        out = rotate_sets(sets, 739_000 + day)
+        assert sorted(x["id"] for x in out) == sorted(x["id"] for x in sets)
+
+
+def test_every_set_runs_in_the_first_third_within_three_nights():
+    from pipelines.import_pokemon import rotate_sets
+    sets = [{"id": f"s{i}"} for i in range(176)]
+    first_third = set()
+    for day in range(3):
+        first_third |= {x["id"] for x in rotate_sets(sets, 739_000 + day)[: 176 // 3 + 1]}
+    assert first_third == {x["id"] for x in sets}
+
+
+def test_the_oldest_set_is_not_always_last():
+    """base1 is the last of the API's newest-first list; it must not stay there."""
+    from pipelines.import_pokemon import rotate_sets
+    sets = [{"id": f"s{i}"} for i in range(175)] + [{"id": "base1"}]
+    positions = {[x["id"] for x in rotate_sets(sets, 739_000 + d)].index("base1") for d in range(3)}
+    assert min(positions) < 176 // 3 + 1

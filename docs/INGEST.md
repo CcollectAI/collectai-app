@@ -447,6 +447,36 @@ Verify it yourself with `./scripts/check_nightly_ingest.sh`, which names the
 run and sha it is judging and refuses to give a verdict on one that predates
 the fix.
 
+### ⚠️ Correction (2026-09-27): the breaker + newest-first order starved the SAME sets every night
+
+The note above says *"the Pokémon catalogue still is not refreshing — that is
+their outage"*. Only half true, and the other half was ours. Measured:
+
+- `market_hits` for pokemon: 9-13k DIFFERENT cards priced per night from each
+  of tcgplayer/cardmarket — the feed was alive.
+- Last seen per set: **every vintage set** (base1-6, basep, neo1-4, gym1-2,
+  ecard1-3, ex1-6, …) on 2026-09-04/05 and never since; 129 newer sets within
+  the week. Base Set Charizard's price froze on 09-05.
+- The 09-27 nightly: 57 of 176 sets failed; the circuit opened around set 76
+  (and again ~148); **all 18 of the oldest sets** failed — "Import Complete",
+  exit 0.
+
+Mechanism: `fetch_sets` is `orderBy=-releaseDate`. pokemontcg.io fails 65-75 %
+of calls (20 calls from EC2 on 09-27: keyless 7/20 OK, with the key 5/20 — the
+key still does not help, and the workflow does not even pass the secret). So
+the breaker trips somewhere mid-list every night, and everything after the trip
+point — always the oldest sets — is skipped, every night, forever.
+
+**Fix (`import_pokemon.rotate_sets`):** the night's order starts a third of the
+list further on each day, so over any three nights every set runs in the first
+third, before a typical trip. Same calls, same budget, different order. Base
+Set lands at position 64 on 09-29 and 5 on 09-30 (it was 176 of 176). Failed
+sets are now logged at ERROR with the count, not WARNING.
+Tests: `test_import_pokemon.py` (a fixed order fails two of them).
+Re-check: last-seen per set —
+`select split_part(split_part(item_ref,':',2),'-',1), max(seen_at)::date from market_hits where category='pokemon' and provider='tcgplayer' group by 1 order by 2 limit 15;`
+expect nothing older than ~3 days once the rotation has run three nights.
+
 ### The read side: the opposite retry rule, and an outbound budget
 
 The pokemontcg 5xx were real even though they were not the failure. Three
