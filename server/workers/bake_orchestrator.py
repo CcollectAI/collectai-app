@@ -306,7 +306,14 @@ _HEAVY_WORKERS: frozenset[str] = frozenset({
     # the same way the asyncpg-direct heavies do. Treat them as heavy too.
     "marketplace_scrape_worker",
     "tcgcsv_worker",
-    "discogs_worker",
+    # discogs_worker REMOVED 2026-09-27 — measured, not heavy. Its whole DB
+    # footprint per run is one stale-items read per category (8 ms, index
+    # scans, ~1k buffers; EXPLAIN ANALYZE on prod) plus one
+    # upsert_market_hits_batch call per 50 hits (8.7 ms mean / 135 ms max over
+    # 1,167 calls, pg_stat_statements) — under 2 s of DB time in a 5,500-8,200 s
+    # run that is almost entirely Discogs' rate limit. Holding the gate for
+    # that parked marketplace_scrape_worker (ingest) behind it ~2 h a day
+    # ("ingest idle 30min but heavy gate held by discogs_worker").
     # Bulk asyncpg upserts into category_items + market_hits on the direct DSN
     # — same pressure profile as tcgcsv/discogs, so serialize it through the
     # same gate rather than letting it land mid-valuation-cycle.

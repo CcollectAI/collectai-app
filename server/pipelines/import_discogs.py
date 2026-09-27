@@ -11,9 +11,11 @@ Data produced per catalog item:
   - price        = release.lowest_price (USD)
   - condition    = "listing"  (distinguishes from NM/sold grades)
   - provider     = "discogs_listing"
+  - listing_id   = "discogs:<release>:<UTC date>" — a dated snapshot, see
+                   snapshot_listing_id()
   - features_json.is_sold = false
   - features_json.listing_type = "min_asking"
-  - features_json.num_for_sale = current stock count
+  (num_for_sale is NOT stored — this line used to say it was.)
 
 Target categories (all currently at 0% market-hit coverage):
   vinyl_records, anime_ost_vinyl, anime_soundtrack, anime_bluray,
@@ -38,6 +40,7 @@ import logging
 import os
 import sys
 import time
+from datetime import date, datetime, timezone
 from typing import Optional
 
 import httpx
@@ -267,6 +270,25 @@ def _release_stats(client: httpx.Client, release_id: int) -> Optional[dict]:
 # ---------------------------------------------------------------------------
 
 
+def snapshot_listing_id(release_id, today: Optional[date] = None) -> str:
+    """`discogs:<release>:<UTC date>` — one row per release per observation.
+
+    A release's lowest asking price is a TIME SERIES, not a listing. Keyed as
+    `discogs:<release>` (until 2026-09-27) the first observation was the only
+    one ever stored: upsert_market_hits_batch inserts only when
+    (provider, listing_id) is absent from EVERY partition and never refreshes
+    a row. So seen_at never moved, the 7-day "stale" filter below re-selected
+    the same items every day, and each ~2 h run re-fetched prices it then
+    dropped — 724 listed / 0 upserted for vinyl_records on 09-27. Rows came
+    back only when the monthly partition drop deleted the old one.
+
+    With the date in the key a run stores what it saw, the stale filter then
+    skips that item for 7 days, and a changed price reaches deal discovery.
+    """
+    d = today or datetime.now(timezone.utc).date()
+    return f"discogs:{release_id}:{d.isoformat()}"
+
+
 def _upsert(hits: list[MarketHit], stats: IngestStats) -> int:
     """POST hits via the upsert_market_hits_batch RPC.
 
@@ -386,7 +408,7 @@ def process_category(
 
             hit = MarketHit(
                 provider="discogs_listing",
-                listing_id=f"discogs:{rid}",
+                listing_id=snapshot_listing_id(rid),
                 title=(rstats["title"] or title)[:500],
                 price=float(price),
                 currency="USD",
@@ -462,8 +484,20 @@ def run_pipeline(
             )
 
     elapsed = time.monotonic() - started
+    listed = sum(r["with_listings"] for r in results)
+    upserted = sum(r["upserted"] for r in results)
+    # Found prices and stored none = the run did nothing, whatever the HTTP
+    # codes said. That is how 09-27's "724 listed, 0 upserted" passed as `ok`
+    # (class S: ok without a write). Not in dry_run, which never writes.
+    wrote_nothing = (not dry_run) and listed > 0 and upserted == 0
+    if wrote_nothing:
+        logger.error(
+            "discogs: %d releases with a price, 0 rows stored — the upsert "
+            "is dropping them (listing_id collision?)", listed,
+        )
     summary = {
-        "ok": stats.market_hits_errors == 0,
+        "ok": stats.market_hits_errors == 0 and not wrote_nothing,
+        "listed": listed,
         "elapsed_s": round(elapsed, 1),
         "dry_run": dry_run,
         "per_category": results,

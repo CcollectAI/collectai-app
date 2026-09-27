@@ -113,7 +113,7 @@ Two rules the tooling learned the hard way:
 | AQ | A "gain" that counts what the member ADDED | **fixed 2026-09-26 (server DEPLOYED; client needs a JS build)** | Home's headline and Analytics' "Unrealized P/L" were last point minus first of the value series, so a EUR 25 item added this week read as +EUR 25 of gain; on 30D it MASKED a real fall (raw -10.29, market -35.29). `/portfolio/timeseries` now returns `market_change` (value change of the items already held when the range opened; one LATERAL value per item-day, summed twice — daily totals byte-identical to the old query, same timing). Home (`src/lib/portfolioChange.ts`) and Analytics (`computePLFromSeries`) prefer it. Falsifier: prod simcheck 7D `market_change` 0.0 while points go 1228 -> 1253; tests `portfolioChange`, `computePLMarketChange`, `test_portfolio_router` (mutation-proven). |
 | AR | A stock photo that shows a different subject than its label | **swept 2026-09-26** | Explore banners: all 53 downloaded onto labelled contact sheets and looked at. 10 wrong (Marvel Legends = a rabbit, Digimon = Pokemon energy cards, One Piece TCG = tarot, Bandai = a Super Nintendo, ...), 2 not loading -> emptied (icon fallback), same rule as the Magic/Lorcana tiles. 8 weak-but-plausible kept and listed in ed64737b — then, walked at full tile size on the emulator the same night, **6 of those 8 were wrong too** (Action Figures = wooden toy dinosaurs, D&D = Ticket to Ride, Gunpla = a giant robot statue, VTuber = con cosplayers, Sports Cards = bat and balls, Blind Box = a gift-wrapped box) -> emptied; retro_pokemon and oop_board_games kept. A thumbnail contact sheet was too small to judge subject — look at tile size. No gate can see a photo's subject: re-run = download every `bannerImageUrl` and look. |
 | AS | A `'%key%'` substring search where an exact, indexed key exists | **swept 2026-09-27, DEPLOYED** | Three `market_hits` reads used `normalized_key ILIKE '%…%'`: QuickScan social proof (3.2M-row seq scan, 2.2-4.5 s per scan, and `%base1-base1-4%` matched base1-base1-40..49 — other cards' sales), barcode pricing and dossier comps (a TITLE against dash slugs: 9.6-14.1 s, 0 rows, always). All now `item_ref = category:key` (index, ~5 ms) and skip without a catalogue key. Falsifier: `grep -rn "normalized_key ILIKE" server/app` → only the comment in intake_social_proof/barcode_lookup; tests assert `item_ref = $1` and no ILIKE (mutation-proven). |
-| AT | A schedule that lives only in memory — every restart runs every worker | **swept 2026-09-27** | `_run_worker_loop` slept a <=60 s stagger and ran, with no persisted last run. 7 days: 43 bake restarts; calibration (daily) 44 runs, lorcast 26, discogs 25, ticketmaster/seatgeek (12 h) 50 each; model_retrain (weekly) 40 in 30 days at 25-30 min on the heavy gate, two killed at the 1800 s cap. The one existing guard (`should_skip_recent_run`, discogs + tcgcsv) reset its own clock: its skip was recorded `ok`, so discogs did no real run 09-24..09-27. Fix: the loop waits out the interval from the worker's newest worker_runs row (`_first_cycle_delay`); a guard skip returns `SKIPPED` and writes no row; retrain cap 3600 s. Falsifier: after a restart, `grep "ran .*s ago — first cycle in" bake.log` lists the slow workers, and `select count(*) from worker_runs where worker_name='calibration_worker' and finished_at > <restart>` stays 0 until 24 h after its previous row. |
+| AT | A schedule that lives only in memory — every restart runs every worker | **swept 2026-09-27** | `_run_worker_loop` slept a <=60 s stagger and ran, with no persisted last run. 7 days: 43 bake restarts; calibration (daily) 44 runs, lorcast 26, discogs 25, ticketmaster/seatgeek (12 h) 50 each; model_retrain (weekly) 40 in 30 days at 25-30 min on the heavy gate, two killed at the 1800 s cap. The one existing guard (`should_skip_recent_run`, discogs + tcgcsv) reset its own clock: its skip was recorded `ok`, so discogs did no real run 09-24..09-27. Fix: the loop waits out the interval from the worker's newest worker_runs row (`_first_cycle_delay`); a guard skip returns `SKIPPED` and writes no row; retrain cap 3600 s. Discogs then measured (<2 s DB per run) and moved out of the heavy gate; its writes were silently dropped (0 of 724 stored) → dated snapshot key. Falsifier: after a restart, `grep "ran .*s ago — first cycle in" bake.log` lists the slow workers, and `select count(*) from worker_runs where worker_name='calibration_worker' and finished_at > <restart>` stays 0 until 24 h after its previous row. |
 
 ## AD — a money format typed into the UI (2026-09-24)
 
@@ -568,11 +568,25 @@ Gate: `server/tests/test_worker_first_cycle_delay.py` — drives the real loop
 and ENUMERATES every `await should_skip_recent_run(` call site for
 `return SKIPPED`. Mutation-proven: 4 mutations, each caught.
 
-Not changed, for Merle: discogs holds the HEAVY gate for its whole 1.5-2.25 h
-run (5,489-8,188 s measured), almost all of it rate-limited HTTP waits, and
-`marketplace_scrape_worker` (ingest) queues behind it — the monitor logs
-"ingest idle 30min but heavy gate held by discogs_worker … benign". Moving it
-out of `_HEAVY_WORKERS` needs its write pattern measured first.
+**Discogs, done the same night (Merle: "measure discogs writes and move it out
+of the heavy gate"):**
+- **Measured DB cost per run:** the stale-items read 8 ms per category
+  (EXPLAIN ANALYZE on prod, index scans) + one `upsert_market_hits_batch` per
+  50 hits (8.7 ms mean / 135 ms max, pg_stat_statements) = under 2 s of DB time
+  in a 5,489-8,188 s run. Removed from `_HEAVY_WORKERS`; ingest no longer
+  waits ~2 h behind it.
+- **The measurement found the writes were not happening:** 724 releases priced,
+  **0 stored**, run `ok`. `listing_id = discogs:<release>` collided with the
+  first row ever written — the RPC inserts only when (provider, listing_id) is
+  absent from every partition and never refreshes. seen_at never moved, so the
+  7-day stale filter re-selected the same ~790 vinyl items daily. Now
+  `discogs:<release>:<UTC date>` (`snapshot_listing_id`); proven on prod in a
+  rolled-back transaction (old key → 0 inserted, dated key → 1). A run that
+  prices releases and stores none now fails with a reason (class S).
+- Falsifier: after the next run, `select count(*) from market_hits where
+  provider='discogs_listing' and listing_id like 'discogs:%:%'` > 0, and the
+  run after it logs far fewer "vinyl_records: N items to probe" than ~790.
+- Gate: `server/tests/test_discogs_snapshot_and_gate.py` (3 mutations caught).
 
 ## AS — a substring search where an exact, indexed key exists (2026-09-27)
 
