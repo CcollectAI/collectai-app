@@ -34,6 +34,16 @@ This document describes the barcode scanning feature for quick item entry.
 > `75192-1-millennium-falcon`, `identification_method: barcode_learned`.
 > Tests: `test_barcode_learning.py`, `barcodeResultCardPhoto.test.tsx`
 > (privacy rule and the fallback button mutation-proven).
+> **Walked through the emulator's CAMERA 2026-09-27** (generated EAN-13 as a
+> virtual-scene poster — method in `docs/ANDROID_LAUNCH.md`): LEGO
+> `5702015869935` → "Product Found · barcode learned", EUR 125, "Find on
+> BrickLink" opens `bricklink.com/v2/search.page?q=…` (untagged: no affiliate
+> ID); ISBN `9780439708180` → "Harry Potter…" via Open Library; unknown
+> `4006381333931` → "Not recognised" + "Identify from a photo". Fixed on the
+> way: "Identified via: manual" under "Not recognised"; the catalogue sheet
+> said "We don't recognize this item yet" under "Product Found" for the ISBN
+> (now "Not in our catalogue yet"); an old Add-manually draft overwrote the
+> photo fallback's hand-off, dropping the barcode (so nothing was learned).
 > ⚠️ The Falcon's PRICE (EUR 124.78, same as its catalogue page) is wrong
 > data, not a lookup bug: its daily comps are EUR 74 / 175 with a latest of
 > 20.77 — parts/minifigs matched as the set. See docs/OPEN_DECISIONS.md #4.

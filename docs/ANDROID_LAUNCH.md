@@ -858,6 +858,37 @@ npm run walk -- --only 'settings,notifications' --timeout 20   # a subset
 5. Record per round: findings by tag. The walk is done when a round has zero
    gated-class findings, zero new classes, and the decision list is closed.
 
+### Camera screens on the emulator — barcode scan and QuickScan (2026-09-27)
+
+The sweep skips `barcode-scan` and `quickscan` (camera permission). They CAN be
+walked end to end on the emulator with generated images:
+
+- **Gallery path (QuickScan):** `adb push card.png /sdcard/Pictures/` + a
+  `MEDIA_SCANNER_SCAN_FILE` broadcast, then QuickScan → gallery button. The
+  system photo picker is FLAG_SECURE (screenshots come out as the camera
+  behind it) and lists photos newest-first by content-desc only — **leave ONE
+  photo in the library** or you will scan the wrong one (happened: a barcode
+  scanned as "Nintendo Merch, 0.00").
+- **Camera path (both screens):** start the emulator with
+  `-camera-back virtualscene -virtualscene-poster wall=<png>`. The poster file
+  `emulator/resources/Toren1BD.posters` puts the wall poster BEHIND the default
+  camera; for testing it was moved to `position 0 0.05 -1.2`, `size 1 0.55`
+  (straight ahead, ~1.2 m) — original saved beside the scratch files and
+  restored after. One poster per boot, so one barcode per restart (~2 min).
+- **Barcodes:** a pure-Python EAN-13 → PNG generator (no PIL on this Mac):
+  modules 8 px, 15-module quiet zone, check digit asserted.
+- **Real card images:** the catalogue's own `category_items.image_url`
+  (pokemontcg.io `_hires.png`).
+
+Proven 2026-09-27: LEGO EAN `5702015869935` read from the virtual camera →
+"Product Found — LEGO Millennium Falcon · barcode learned"; unknown EAN
+`4006381333931` → "Not recognised" + "Identify from a photo"; Base Set
+Charizard from the gallery → 88 %, EUR 1.159, saved with `base1-base1-4`.
+The same session found four bugs on these screens (scan photo dropped on
+save, an old draft overwriting a fresh scan, a 0 %-confidence category
+pre-filled, "Identified via: manual" on an unrecognised code) — none of which
+a render test had caught.
+
 **Speed.** `uiautomator dump` waits for the UI to go IDLE, so a spinning screen
 makes each dump slow (7 s measured; one route took 102 s before the cap). The
 wait loop dumps once at `--spinner-budget` (5 s) — anything still loading there
