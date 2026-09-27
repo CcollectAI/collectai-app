@@ -78,13 +78,20 @@ export const EventCreatorMenu = React.memo(function EventCreatorMenu({
 
           <View style={[styles.menuDivider, { backgroundColor: colors.border }]} />
 
+          {/* Dismiss: centred like ContextMenu's, not an icon-less menu row —
+              as a row its label started under the icons, out of line with
+              every label above it (Merle, 2026-09-27). "Close", not "Cancel":
+              directly under the red "Cancel Event", two Cancels read as the
+              same action. */}
           <AnimatedPressable
-            style={styles.menuItem}
+            style={[styles.menuItem, styles.dismissItem]}
             onPress={onClose}
             accessibilityRole="button"
-            accessibilityLabel={t('common.cancel', { defaultValue: 'Cancel' })}
+            accessibilityLabel={t('common.close', { defaultValue: 'Close' })}
           >
-            <Text style={[styles.menuItemText, { color: colors.muted }]}>Cancel</Text>
+            <Text style={[styles.menuItemText, { color: colors.muted }]}>
+              {t('common.close', { defaultValue: 'Close' })}
+            </Text>
           </AnimatedPressable>
         </View>
       </AnimatedPressable>
@@ -112,6 +119,9 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 14,
     paddingHorizontal: 20,
+  },
+  dismissItem: {
+    justifyContent: 'center',
   },
   menuItemText: {
     fontSize: 16,
