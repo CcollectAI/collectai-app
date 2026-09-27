@@ -258,12 +258,10 @@ npx vercel
 - VascoApp: `admin.vasco.eu`
 - CollectAI: `admin.collectai.app`
 
-Set environment variables in Vercel:
-```
-NEXT_PUBLIC_ADMIN_PIN=your-pin
-NEXT_PUBLIC_SUPABASE_URL=your-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-key
-```
+Set environment variables in Vercel — the full list, and which are server-only,
+is in README.md "Environment Variables". The PIN is `ADMIN_PIN` (server-only);
+`NEXT_PUBLIC_ADMIN_PIN` no longer exists (2026-09-27: it shipped the login PIN
+to every browser).
 
 ---
 

@@ -1,11 +1,10 @@
 /**
  * Server-side admin gate.
  *
- * The existing PIN check (AdminShell.tsx) reads NEXT_PUBLIC_ADMIN_PIN, which is
- * inlined into the client bundle, compares it in the browser, and remembers the
- * result in sessionStorage. That is fine for keeping a casual visitor out of the
- * UI, but it authenticates nothing — anyone can read the PIN from the bundle or
- * set the sessionStorage key directly.
+ * This is the ONLY gate (since 2026-09-27). AdminShell used to compare the PIN
+ * in the browser against NEXT_PUBLIC_ADMIN_PIN — inlined into the client bundle
+ * and holding the same value as ADMIN_PIN — so the PIN could be read out of the
+ * page's JS. The UI now asks GET /api/admin/session.
  *
  * The service-role key must never sit behind a gate like that, because it
  * bypasses RLS on the production database. This module is the server-only half:

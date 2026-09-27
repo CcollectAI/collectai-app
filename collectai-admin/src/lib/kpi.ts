@@ -945,7 +945,9 @@ export async function fetchUGCDashboardData(days: number = 30): Promise<UGCDashb
     );
   }
   if (!rows || rows.length === 0) {
-    return noteDemoSource("ugc", "no videos in ugc_videos yet — showing sample data", getUGCDemoData(days));
+    // "yet" was wrong: ugc_videos held 15 rows (06-26..07-19) — just none in
+    // the window. Say which window.
+    return noteDemoSource("ugc", `no videos posted in the last ${days} days (ugc_videos) — showing sample data`, getUGCDemoData(days));
   }
 
   const videos: UGCVideo[] = rows.map((r: Record<string, unknown>) => ({
@@ -1200,6 +1202,12 @@ function computeAccountAnalytics(
     followerMap[handle] = m.followers;
   }
 
+  // Every REGISTERED account, not just those with videos in the period: with
+  // none posted in the last 30 days the tab listed 0 accounts while
+  // ugc_accounts held 3 (2026-09-27). Videos from an unregistered handle still
+  // appear.
+  for (const handle of Object.keys(meta)) accountMap[handle] ??= [];
+
   const accounts: TikTokAccount[] = Object.entries(accountMap).map(([handle, vids]) => {
     const totalViews = vids.reduce((s, v) => s + v.viewsTotal, 0);
     const hits = vids.filter((v) => v.classification === "hit").length;
@@ -1223,7 +1231,8 @@ function computeAccountAnalytics(
       platform: "tiktok",
       language: langMap[handle] ?? "EN",
       description: `${langMap[handle] ?? "EN"} market account`,
-      followers: followerMap[handle] ?? 1000,
+      // 0, not an invented 1000, when ugc_accounts has no row for the handle.
+      followers: followerMap[handle] ?? 0,
       isActive: true,
       totalVideos: vids.length,
       totalViews,
@@ -1376,7 +1385,7 @@ export async function fetchBoostMetrics(videos: UGCVideo[]): Promise<BoostMetric
     );
   }
   if (!rows || rows.length === 0) {
-    return noteDemoSource("boost", "no boosted videos yet — showing sample data",
+    return noteDemoSource("boost", "no boosted videos (ugc_videos.is_boosted) — showing sample data",
       getDemoBoostData(videos));
   }
 

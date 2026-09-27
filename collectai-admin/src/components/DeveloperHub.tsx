@@ -1,13 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar, Cell,
-} from "recharts";
-import { MetricCard } from "@/components/ui/MetricCard";
 import { getSupabase } from "@/lib/supabase";
-import { APP_CONFIG } from "../../admin.config";
 
 /* ───────────────────────── Types ───────────────────────── */
 
@@ -35,30 +29,12 @@ interface Feedback {
   notes: string;
 }
 
-interface Deploy {
-  version: string;
-  date: string;
-  status: string;
-  duration: string;
-  changes: string;
-}
-
-interface ErrorRatePoint {
-  day: string;
-  rate: number;
-}
-
 /* ───────────────────────── Constants ───────────────────── */
 
 const TIFFANY = "#81D8D0";
 const LS_ISSUES = "dev-issues";
 const LS_FEEDBACK = "dev-feedback";
 
-const API = APP_CONFIG.api.baseUrl;
-const API_HEADERS: Record<string, string> = {
-  "X-Ops-Key": APP_CONFIG.api.opsKey,
-  "Content-Type": "application/json",
-};
 
 const PRIORITY_COLOR: Record<Issue["priority"], string> = {
   critical: "bg-red-500", high: "bg-amber-500", medium: "bg-blue-500", low: "bg-gray-400",
@@ -88,35 +64,6 @@ const now = () => new Date().toISOString();
 const fmtDate = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 /* ───────────────────────── Seed Data ────────────────────── */
-
-const SEED_ISSUES: Issue[] = [
-  { id: uid(), title: "Push notification delivery fails on iOS 17.4", description: "APNs returns InvalidProviderToken for ~12% of iOS 17.4 devices after token refresh.", priority: "critical", status: "open", reporter: "ops-monitor", assignee: "Backend", created_at: "2026-03-26T09:15:00Z", updated_at: "2026-03-26T09:15:00Z", source: "internal" },
-  { id: uid(), title: "Dark mode contrast issue on collection grid", description: "Card text on collection grid is hard to read in dark mode when item has no image.", priority: "medium", status: "in_progress", reporter: "sarah.k@outlook.com", assignee: "Frontend", created_at: "2026-03-25T14:30:00Z", updated_at: "2026-03-26T10:00:00Z", source: "user_report" },
-  { id: uid(), title: "Price prediction timeout for watches > $10K", description: "Ridge regression inference exceeds 5s timeout for luxury watches with sparse comps.", priority: "high", status: "open", reporter: "ml-pipeline", assignee: "ML Team", created_at: "2026-03-24T08:00:00Z", updated_at: "2026-03-24T08:00:00Z", source: "automated" },
-  { id: uid(), title: "Duplicate barcode scan results", description: "QuickScan returns 2-3 duplicate entries when scanning barcodes under low light.", priority: "high", status: "resolved", reporter: "pokefan99@gmail.com", assignee: "Frontend", created_at: "2026-03-22T11:45:00Z", updated_at: "2026-03-25T16:20:00Z", source: "user_report" },
-  { id: uid(), title: "Marketplace adapter StockX rate limit", description: "StockX adapter hitting 429s after ~200 requests/min. Need to implement backoff.", priority: "medium", status: "open", reporter: "adapter-health", assignee: "Backend", created_at: "2026-03-21T07:30:00Z", updated_at: "2026-03-21T07:30:00Z", source: "automated" },
-  { id: uid(), title: "Export CSV missing currency symbol", description: "CSV export omits currency prefix for non-USD currencies.", priority: "low", status: "closed", reporter: "numis.collector@yahoo.com", assignee: "Frontend", created_at: "2026-03-18T10:00:00Z", updated_at: "2026-03-20T09:00:00Z", source: "user_report" },
-];
-
-const SEED_FEEDBACK: Feedback[] = [
-  { id: uid(), user_email: "collector42@gmail.com", subject: "Would love a wishlist sharing feature", message: "It would be awesome if I could share my wishlist with friends so they know what to get me for my birthday. Maybe a public link or QR code?", category: "feature_request", status: "new", created_at: "2026-03-27T10:00:00Z", notes: "" },
-  { id: uid(), user_email: "sarah.k@outlook.com", subject: "App crashes when adding 50+ photos to one item", message: "I tried to add 60 photos of my vintage watch from different angles and the app crashed. iPhone 15 Pro, iOS 17.4. Happened 3 times.", category: "bug", status: "reviewed", created_at: "2026-03-26T15:30:00Z", notes: "Likely memory pressure from full-res loading. Needs image downsample before gallery insert." },
-  { id: uid(), user_email: "pokefan99@gmail.com", subject: "Love the QuickScan! Works great for Pokemon cards", message: "Just wanted to say the QuickScan feature is incredible. I scanned my entire binder of 200 cards in under 30 minutes. Keep up the great work!", category: "praise", status: "archived", created_at: "2026-03-25T08:00:00Z", notes: "" },
-  { id: uid(), user_email: "numis.collector@yahoo.com", subject: "Can you add support for coin grading (NGC/PCGS)?", message: "I collect graded coins and would love to input NGC/PCGS grades and have the app factor that into valuations. Slab photos would be great too.", category: "feature_request", status: "new", created_at: "2026-03-24T12:45:00Z", notes: "" },
-];
-
-const FALLBACK_ERROR_RATE_DATA: ErrorRatePoint[] = Array.from({ length: 14 }, (_, i) => ({
-  day: `Mar ${15 + i}`,
-  rate: +(0.05 + Math.random() * 0.2).toFixed(3),
-}));
-
-const FALLBACK_DEPLOYS: Deploy[] = [
-  { version: "v2.4.1", date: "Today", status: "Success", duration: "3m 42s", changes: "Fix push notification iOS 17.4" },
-  { version: "v2.4.0", date: "Yesterday", status: "Success", duration: "4m 15s", changes: "Pro-grade admin dashboard" },
-  { version: "v2.3.9", date: "3 days ago", status: "Success", duration: "3m 58s", changes: "Notification overhaul" },
-  { version: "v2.3.8", date: "5 days ago", status: "Failed", duration: "1m 22s", changes: "ML model retrain pipeline" },
-  { version: "v2.3.7", date: "7 days ago", status: "Success", duration: "4m 01s", changes: "Category expansion round 3" },
-];
 
 /* ───────────────────────── Helpers ───────────────────────── */
 
@@ -202,13 +149,9 @@ function useSupabasePersisted<T extends { id: string }>(
           }
         } catch { /* use seed */ }
 
-        // 3) Both empty — use seed and persist
+        // 3) Both empty — show empty. Never write a seed anywhere.
         setDataRaw(seed);
         initialized.current = true;
-        try { localStorage.setItem(lsKey, JSON.stringify(seed)); } catch { /* noop */ }
-        if (supabaseOk.current && sb) {
-          _syncAllToSupabase(sb, itemType, seed).catch(() => {});
-        }
       }
     }
 
@@ -292,45 +235,11 @@ async function _diffAndSync<T extends { id: string }>(
 /* ═══════════════════════ COMPONENT ══════════════════════ */
 
 export function DeveloperHub() {
-  const [issues, setIssues] = useSupabasePersisted<Issue>("issue", LS_ISSUES, SEED_ISSUES);
-  const [feedback, setFeedback] = useSupabasePersisted<Feedback>("feedback", LS_FEEDBACK, SEED_FEEDBACK);
-
-  /* ---- Backend-fetched data with fallback ---- */
-  const [errorRateData, setErrorRateData] = useState<ErrorRatePoint[]>(FALLBACK_ERROR_RATE_DATA);
-  const [deploys, setDeploys] = useState<Deploy[]>(FALLBACK_DEPLOYS);
-
-  useEffect(() => {
-    async function fetchErrorRate() {
-      try {
-        const res = await fetch(`${API}/admin/error-rate`, { headers: API_HEADERS });
-        if (res.ok) {
-          const json = await res.json();
-          if (Array.isArray(json) && json.length > 0) {
-            setErrorRateData(json);
-          }
-        }
-      } catch {
-        // Fallback already set
-      }
-    }
-
-    async function fetchDeploys() {
-      try {
-        const res = await fetch(`${API}/admin/deploy-history`, { headers: API_HEADERS });
-        if (res.ok) {
-          const json = await res.json();
-          if (Array.isArray(json) && json.length > 0) {
-            setDeploys(json);
-          }
-        }
-      } catch {
-        // Fallback already set
-      }
-    }
-
-    fetchErrorRate();
-    fetchDeploys();
-  }, []);
+  // No seeds (2026-09-27): the hook used to show SEED_ISSUES / SEED_FEEDBACK —
+  // invented users and bugs — when the table was empty, AND write them into
+  // prod's admin_dev_hub, where all 10 were found as if real.
+  const [issues, setIssues] = useSupabasePersisted<Issue>("issue", LS_ISSUES, []);
+  const [feedback, setFeedback] = useSupabasePersisted<Feedback>("feedback", LS_FEEDBACK, []);
 
   /* ---- Issue state ---- */
   const [showIssueForm, setShowIssueForm] = useState(false);
@@ -420,32 +329,14 @@ export function DeveloperHub() {
         <p className="text-sm text-gray-500 dark:text-gray-400">Bugs, feedback &amp; engineering metrics</p>
       </div>
 
-      {/* S1: KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <MetricCard label="Backend Tests" value={3194} trend={3.8} sparklineData={[2800,2900,2950,3000,3078,3194]} subtitle="+116 this round" />
-        <MetricCard label="Frontend Tests" value={476} trend={9.7} sparklineData={[380,400,420,434,458,476]} subtitle="+42 this round" />
-        <MetricCard label="TS Errors" value={0} trend={0} subtitle="Clean build" />
-        <MetricCard label="API Endpoints" value={95} suffix="+" subtitle="43 routers" />
-        <MetricCard label="Avg API Latency" value={142} suffix="ms" trend={-5.3} subtitle="-8ms vs last week" />
-        <MetricCard label="Error Rate (24h)" value={0.12} suffix="%" trend={-20} subtitle="-0.03% vs yesterday" />
-        <MetricCard label="Build Time" value={4.6} suffix="s" subtitle="EAS Build" />
-        <MetricCard label="Uptime (30d)" value={99.97} suffix="%" subtitle="99.97% SLA" />
-      </div>
-
-      {/* S2: Error Rate Trend */}
+      {/* S1 (2026-09-27): eight hard-coded cards used to sit here — "3,194
+          backend tests", "142 ms latency", "99.97% uptime", "0.12% error rate" —
+          constants typed into this file, not measurements. */}
       <div className={cardCls}>
-        <h2 className={headCls}>Error Rate Trend (14d)</h2>
-        <div className="h-48 mt-3">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={errorRateData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="day" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-              <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" unit="%" />
-              <Tooltip formatter={(v) => `${Number(v).toFixed(3)}%`} />
-              <Area type="monotone" dataKey="rate" stroke={TIFFANY} fill={TIFFANY} fillOpacity={0.25} strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Engineering metrics are not connected: the server has no metrics, error-rate or deploy-history
+          endpoint. Test counts live in CI; server errors in <code>/opt/collectors/bake.log</code> and the daily watchdog.
+        </p>
       </div>
 
       {/* S3: Bug Tracker */}
@@ -602,30 +493,6 @@ export function DeveloperHub() {
         </div>
       </div>
 
-      {/* S5: Deploy History */}
-      <div className={cardCls}>
-        <h2 className={`${headCls} mb-3`}>Deploy History</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead><tr className="text-left text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-slate-700">
-              <th className="py-2 pr-3">Version</th><th className="py-2 pr-3">Date</th><th className="py-2 pr-3">Status</th><th className="py-2 pr-3">Duration</th><th className="py-2">Changes</th>
-            </tr></thead>
-            <tbody>
-              {deploys.map(d => (
-                <tr key={d.version} className="border-b border-gray-100 dark:border-slate-700/50">
-                  <td className="py-2 pr-3 font-mono text-gray-900 dark:text-white">{d.version}</td>
-                  <td className="py-2 pr-3 text-gray-500 dark:text-gray-400">{d.date}</td>
-                  <td className="py-2 pr-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${d.status === "Success" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>{d.status}</span>
-                  </td>
-                  <td className="py-2 pr-3 text-gray-500 dark:text-gray-400 font-mono">{d.duration}</td>
-                  <td className="py-2 text-gray-700 dark:text-gray-300">{d.changes}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 }

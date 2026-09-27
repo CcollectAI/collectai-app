@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { APP_CONFIG } from "../../admin.config";
+import { apiFetch } from "@/lib/collectai-api";
 
 interface ProviderSpend {
   provider: string;
@@ -22,11 +22,17 @@ interface SpendSummary {
   recent_calls: { provider: string; cost_eur: number; timestamp: string; running_total: number }[];
 }
 
-const API = APP_CONFIG.api.baseUrl;
-const headers: Record<string, string> = {
-  "X-Ops-Key": APP_CONFIG.api.opsKey,
-  "Content-Type": "application/json",
-};
+/** POST through the proxy and fail on a non-2xx — the toasts used to say
+ *  "Budget updated" / "Counters reset" whatever the server answered. */
+async function postOrThrow(path: string, body?: unknown): Promise<void> {
+  const res = await apiFetch(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    let detail = text.slice(0, 200);
+    try { detail = String((JSON.parse(text) as { detail?: unknown }).detail ?? detail); } catch { /* not JSON */ }
+    throw new Error(`HTTP ${res.status}${detail ? `: ${detail}` : ""}`);
+  }
+}
 
 export function AdminSpendMonitor() {
   const [data, setData] = useState<SpendSummary | null>(null);
@@ -38,8 +44,13 @@ export function AdminSpendMonitor() {
 
   const fetchData = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/admin/spend-summary`, { headers });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const res = await apiFetch("/admin/spend-summary");
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        let detail = text.slice(0, 200);
+        try { detail = String((JSON.parse(text) as { detail?: unknown }).detail ?? detail); } catch { /* not JSON */ }
+        throw new Error(`/admin/spend-summary — HTTP ${res.status}${detail ? `: ${detail}` : ""}`);
+      }
       const json = await res.json();
       setData(json);
       setBudgetInput(String(json.budget_eur));
@@ -67,15 +78,11 @@ export function AdminSpendMonitor() {
     if (isNaN(val) || val < 0) return;
     setSaving(true);
     try {
-      await fetch(`${API}/admin/spend-budget`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ budget_eur: val }),
-      });
+      await postOrThrow("/admin/spend-budget", { budget_eur: val });
       showToast(`Budget updated to \u20ac${val}`);
       fetchData();
-    } catch {
-      showToast("Failed to update budget");
+    } catch (e) {
+      showToast(`Failed to update budget: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setSaving(false);
     }
@@ -83,26 +90,22 @@ export function AdminSpendMonitor() {
 
   const togglePause = async (provider: string, currentlyPaused: boolean) => {
     try {
-      await fetch(`${API}/admin/spend-pause`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ provider, paused: !currentlyPaused }),
-      });
+      await postOrThrow("/admin/spend-pause", { provider, paused: !currentlyPaused });
       showToast(`${provider} ${!currentlyPaused ? "paused" : "resumed"}`);
       fetchData();
-    } catch {
-      showToast("Failed to toggle provider");
+    } catch (e) {
+      showToast(`Failed to toggle ${provider}: ${e instanceof Error ? e.message : String(e)}`);
     }
   };
 
   const resetCounters = async () => {
     if (!confirm("Reset all spend counters? This cannot be undone.")) return;
     try {
-      await fetch(`${API}/admin/spend-reset`, { method: "POST", headers });
+      await postOrThrow("/admin/spend-reset");
       showToast("Counters reset");
       fetchData();
-    } catch {
-      showToast("Failed to reset");
+    } catch (e) {
+      showToast(`Failed to reset: ${e instanceof Error ? e.message : String(e)}`);
     }
   };
 

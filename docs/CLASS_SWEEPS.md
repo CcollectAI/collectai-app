@@ -114,6 +114,7 @@ Two rules the tooling learned the hard way:
 | AR | A stock photo that shows a different subject than its label | **swept 2026-09-26** | Explore banners: all 53 downloaded onto labelled contact sheets and looked at. 10 wrong (Marvel Legends = a rabbit, Digimon = Pokemon energy cards, One Piece TCG = tarot, Bandai = a Super Nintendo, ...), 2 not loading -> emptied (icon fallback), same rule as the Magic/Lorcana tiles. 8 weak-but-plausible kept and listed in ed64737b — then, walked at full tile size on the emulator the same night, **6 of those 8 were wrong too** (Action Figures = wooden toy dinosaurs, D&D = Ticket to Ride, Gunpla = a giant robot statue, VTuber = con cosplayers, Sports Cards = bat and balls, Blind Box = a gift-wrapped box) -> emptied; retro_pokemon and oop_board_games kept. A thumbnail contact sheet was too small to judge subject — look at tile size. No gate can see a photo's subject: re-run = download every `bannerImageUrl` and look. |
 | AS | A `'%key%'` substring search where an exact, indexed key exists | **swept 2026-09-27, DEPLOYED** | Three `market_hits` reads used `normalized_key ILIKE '%…%'`: QuickScan social proof (3.2M-row seq scan, 2.2-4.5 s per scan, and `%base1-base1-4%` matched base1-base1-40..49 — other cards' sales), barcode pricing and dossier comps (a TITLE against dash slugs: 9.6-14.1 s, 0 rows, always). All now `item_ref = category:key` (index, ~5 ms) and skip without a catalogue key. Falsifier: `grep -rn "normalized_key ILIKE" server/app` → only the comment in intake_social_proof/barcode_lookup; tests assert `item_ref = $1` and no ILIKE (mutation-proven). |
 | AT | A schedule that lives only in memory — every restart runs every worker | **swept 2026-09-27** | `_run_worker_loop` slept a <=60 s stagger and ran, with no persisted last run. 7 days: 43 bake restarts; calibration (daily) 44 runs, lorcast 26, discogs 25, ticketmaster/seatgeek (12 h) 50 each; model_retrain (weekly) 40 in 30 days at 25-30 min on the heavy gate, two killed at the 1800 s cap. The one existing guard (`should_skip_recent_run`, discogs + tcgcsv) reset its own clock: its skip was recorded `ok`, so discogs did no real run 09-24..09-27. Fix: the loop waits out the interval from the worker's newest worker_runs row (`_first_cycle_delay`); a guard skip returns `SKIPPED` and writes no row; retrain cap 3600 s. Discogs then measured (<2 s DB per run) and moved out of the heavy gate; its writes were silently dropped (0 of 724 stored) → dated snapshot key. Falsifier: after a restart, `grep "ran .*s ago — first cycle in" bake.log` lists the slow workers, and `select count(*) from worker_runs where worker_name='calibration_worker' and finished_at > <restart>` stays 0 until 24 h after its previous row. |
+| AU | An admin screen that invents numbers when it cannot read real ones | **swept 2026-09-27 (all 26 tabs, local walk)** | collectai-admin called the prod API from the browser: CORS refused every call and `tryFetchJSON` returned demo data under a green LIVE / "DB: connected" (2,847 users vs 10, 187,432 items vs 21 member items). Same class: "Waiting for data — will appear once users start using the app" for a FAILED request (KPI Funnel, Intelligence); "no videos yet → sample data" when 15 existed outside the window; Developer Hub = 8 typed-in metric cards, a Math.random() chart, 5 fictional deploys, and seed issues/feedback that the page WROTE into prod (10 rows, deleted with backup); 6 of 19 called endpoints do not exist (ML train/activate/reload = dead prod-write buttons). Also: ops key + login PIN shipped to the browser (NEXT_PUBLIC_*). Fixed: server proxy `/api/admin/api` (cookie + path allowlist + key server-side), server-session gate + 5-try PIN limiter, demo only with NEXT_PUBLIC_ADMIN_DEMO, `noteDemo` chokepoint returns zeros + reason, 2 list-shape casts now checked, Pipeline crash on an unknown status, Intelligence read nonexistent columns → gate `npm run check:columns` (collectai-admin). Falsifier: log in at localhost:3000/admin → Overview Total users = `select count(*) from profiles`; the served JS contains no OPS_API_KEY / ADMIN_PIN (scan with a positive control on the anon key). |
 
 ## AD — a money format typed into the UI (2026-09-24)
 
@@ -542,6 +543,44 @@ total(last) - SUM(entry_value)`. DEPLOYED. Falsifier, prod simcheck: 7d 0.0,
 30d -35.29, 90d/1y/all -35.29 (were 0.0). Test
 `test_timeseries_a_fall_after_adding_is_still_a_fall` (mutation to day-1-only
 fails it).
+
+## AU — an admin screen that invents numbers when it cannot read real ones (2026-09-27)
+
+Found by walking collectai-admin locally (headless Chromium; the Chrome
+extension was not connected) and checking every number against prod with psql.
+The Overview said 2,847 users, 187,432 items, 342 events, with a green LIVE and
+"DB: connected"; prod had 10, 21 and 3,442.
+
+One cause under most of it: the dashboard called https://api.sparrowcollect.com
+from the BROWSER. The API's CORS allowlist is the sparrowcollect.com sites, so
+every call failed, and `tryFetchJSON` answered every failure with a demo value.
+All seven callers already had an error state; it could never fire. The same
+design put the ops key and the login PIN into `NEXT_PUBLIC_*` variables, which
+Next.js inlines into the client bundle.
+
+Once the requests worked, what CORS had been hiding surfaced one after another:
+- two list endpoints return `{models: [...]}` / `{workers: [...]}` but were
+  typed as bare arrays, and the first real response crashed the page;
+- the Pipeline tab crashed on a real row whose status ("scheduled") is not one of
+  its 7 stages (no CHECK constraint, and the mapper casts);
+- Intelligence selected three columns that do not exist and ignored the error;
+- 6 of 19 called endpoints do not exist on the server.
+
+Rule: a dashboard number is either measured or absent. Absent says why: the
+error, "no rows in the last 30 days", or "not provisioned". Sample data only on
+purpose (`NEXT_PUBLIC_ADMIN_DEMO=true`), under the amber banner. Same family as
+rule F (a failed read = none) and [[learning_silent_fallbacks_hide_dead_features]].
+
+Gates: `npm run check:columns` in collectai-admin (every Supabase column named
+exists in scripts/schema.lock.json; mutation on an embedded column caught). The
+secret scan (served JS contains no OPS_API_KEY / ADMIN_PIN / service role /
+session secret) was run by hand with a positive control, the public anon key,
+and is not automated.
+
+Not changed, for Merle: ML Models reads `model_registry`, which holds stale
+CLIP rows from April and test rows ("Demo", "TestCat"). The real weekly Ridge
+retrains are logged in `model_promotion_log`. Worker Health lists the 15
+deliberately disabled SCHEDULES workers as "never run".
 
 ## AT — a schedule that lives only in memory (2026-09-27)
 

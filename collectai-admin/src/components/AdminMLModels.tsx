@@ -4,9 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import {
   fetchModels,
   fetchMetrics,
-  activateBest,
-  reloadCategory,
-  trainNow,
 } from "@/lib/collectai-api";
 import type { ModelRow, MaeRow, CountsRow } from "@/lib/collectai-api";
 
@@ -16,7 +13,6 @@ export function AdminMLModels() {
   const [counts, setCounts] = useState<CountsRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,20 +58,6 @@ export function AdminMLModels() {
     return models.find((m) => m.category === cat && m.status === "active");
   };
 
-  // Actions
-  const handleAction = async (label: string, fn: () => Promise<unknown>) => {
-    setStatus(`Running: ${label}...`);
-    try {
-      await fn();
-      setStatus(`Done: ${label}`);
-      await load();
-    } catch (err) {
-      setStatus(
-        `Error (${label}): ${err instanceof Error ? err.message : "unknown"}`
-      );
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -112,35 +94,15 @@ export function AdminMLModels() {
         </button>
       </div>
 
-      {/* Status banner */}
-      {status && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-          <p className="text-sm text-amber-800">{status}</p>
-        </div>
-      )}
-
-      {/* Actions bar */}
+      {/* Retraining (2026-09-27): the Train / Retrain / Reload / Activate buttons
+          that sat here POSTed to /admin/train_now, /admin/reload and
+          /admin/activate_best — none of which exists on the server (checked
+          against scripts/api.lock.json). They could only ever fail. */}
       <div className="bg-white rounded-2xl shadow-sm p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => handleAction("Retrain All", () => trainNow())}
-            className="rounded-lg px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700"
-          >
-            Retrain All
-          </button>
-          <span className="text-gray-300 mx-1">|</span>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() =>
-                handleAction(`Train ${cat}`, () => trainNow(cat))
-              }
-              className="rounded-lg px-3 py-1.5 bg-gray-200 text-gray-700 text-sm hover:bg-gray-300"
-            >
-              Train {cat}
-            </button>
-          ))}
-        </div>
+        <p className="text-sm text-gray-600">
+          Models retrain on the server once a week (<code>model_retrain_worker</code>),
+          which also decides promotion. There is no retrain or activate endpoint to call from here.
+        </p>
       </div>
 
       {/* Active Models table */}
@@ -167,7 +129,7 @@ export function AdminMLModels() {
                   7d Prediction Count
                 </th>
                 <th className="px-4 py-2 text-right font-semibold text-gray-600">
-                  Actions
+                  Retrains
                 </th>
               </tr>
             </thead>
@@ -197,30 +159,7 @@ export function AdminMLModels() {
                       {catCount.toLocaleString()}
                     </td>
                     <td className="px-4 py-2 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() =>
-                            handleAction(
-                              `Reload ${cat}`,
-                              () => reloadCategory(cat)
-                            )
-                          }
-                          className="rounded-lg px-3 py-1.5 bg-gray-200 text-gray-700 text-xs hover:bg-gray-300"
-                        >
-                          Reload Cache
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleAction(
-                              `Activate best ${cat}`,
-                              () => activateBest(cat)
-                            )
-                          }
-                          className="rounded-lg px-3 py-1.5 bg-indigo-600 text-white text-xs hover:bg-indigo-700"
-                        >
-                          Activate Best
-                        </button>
-                      </div>
+                      <span className="text-xs text-gray-400">weekly, on the server</span>
                     </td>
                   </tr>
                 );

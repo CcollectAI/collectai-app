@@ -13,7 +13,8 @@
     "test:admin-endpoints": "tsx --env-file=.env.local scripts/e2e-admin-endpoints.mts",
     "test:creators-crud": "tsx --env-file=.env.local scripts/e2e-creators-crud.mts",
     "walkthrough": "tsx --env-file=.env.local scripts/full-walkthrough.mts",
-    "test:tabs-real": "tsx --env-file=.env.local scripts/e2e-tabs-real.mts"
+    "test:tabs-real": "tsx --env-file=.env.local scripts/e2e-tabs-real.mts",
+    "check:columns": "node scripts/check-admin-columns.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.0",

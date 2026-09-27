@@ -3,6 +3,7 @@
 import {
   getDemoReason,
   getUnprovisionedTables,
+  getZeroReason,
   isUsingDemoData,
   type DemoSource,
 } from "@/lib/demoState";
@@ -18,9 +19,10 @@ import {
 export function AdminDemoBanner({ source }: { source: DemoSource }) {
   const demo = isUsingDemoData(source);
   const missing = getUnprovisionedTables(source);
+  const zeroReason = getZeroReason(source);
 
-  // Nothing fabricated and nothing missing — say nothing.
-  if (!demo && missing.length === 0) return null;
+  // Nothing fabricated, nothing missing, nothing zeroed — say nothing.
+  if (!demo && missing.length === 0 && !zeroReason) return null;
 
   const reason = getDemoReason(source);
 
@@ -35,9 +37,16 @@ export function AdminDemoBanner({ source }: { source: DemoSource }) {
         <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
           Showing zeros — no data source
         </p>
-        <p className="mt-0.5 font-mono text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
-          not provisioned: {missing.join(", ")}
-        </p>
+        {missing.length > 0 && (
+          <p className="mt-0.5 font-mono text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
+            not provisioned: {missing.join(", ")}
+          </p>
+        )}
+        {zeroReason && (
+          <p className="mt-0.5 font-mono text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
+            {zeroReason}
+          </p>
+        )}
       </div>
     );
   }

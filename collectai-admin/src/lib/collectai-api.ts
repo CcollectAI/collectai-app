@@ -6,56 +6,80 @@
 import { APP_CONFIG } from "../../admin.config";
 import { noteDemo, clearDemo, getDemoReason, isUsingDemoData as isDemoSource } from "@/lib/demoState";
 
-const BASE = APP_CONFIG.api.baseUrl;
+const BASE = APP_CONFIG.api.baseUrl; // "/api/admin/api" — the same-origin proxy
 
-function headers(): Record<string, string> {
-  const h: Record<string, string> = { "Content-Type": "application/json" };
-  if (APP_CONFIG.api.opsKey) h["X-Ops-Key"] = APP_CONFIG.api.opsKey;
-  if (APP_CONFIG.api.adminSecret) h["x-admin-secret"] = APP_CONFIG.api.adminSecret;
-  return h;
+/**
+ * Demo data is OPT-IN. Until 2026-09-27 every failed request silently returned
+ * invented numbers: the API refused the browser's origin (CORS), so the
+ * Overview showed 2,847 users / 187,432 items with a green "LIVE" and
+ * "DB: connected" while prod had 10 users and 21 items — and each tab's own
+ * error state (which all seven callers already had) could never fire.
+ * Now a failure throws with the server's reason; set NEXT_PUBLIC_ADMIN_DEMO=true
+ * to browse sample data on purpose (the demo banner then says so).
+ */
+const DEMO_MODE = process.env.NEXT_PUBLIC_ADMIN_DEMO === "true";
+
+/** Shared by every backend call, including the components that fetch directly. */
+export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  return fetch(`${BASE}${path}`, {
+    ...init,
+    headers: { ...headers, ...(init.headers as Record<string, string> | undefined) },
+    credentials: "same-origin",
+    cache: "no-store",
+    signal: init.signal ?? AbortSignal.timeout(25000),
+  });
 }
 
-// ─── Demo-aware fetch helper ────────────────────────────────────────────────
-
-let _apiAvailable: boolean | null = null;
-
-async function tryFetchJSON<T>(path: string, fallback: T): Promise<T> {
+/** The server's own reason ({"detail": ...}) when there is one, else the status. */
+async function failureReason(res: Response): Promise<string> {
+  const text = await res.text().catch(() => "");
   try {
-    const res = await fetch(`${BASE}${path}`, { headers: headers(), signal: AbortSignal.timeout(5000) });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    _apiAvailable = true;
-    // A reachable endpoint clears any stale "api" demo flag from an earlier
-    // failure, so the banner cannot keep crying wolf after the backend recovers.
-    clearDemo("api");
-    return res.json();
-  } catch (err) {
-    _apiAvailable = false;
-    // Record WHICH endpoint failed and why. This used to only console.warn,
-    // so six tabs rendered fabricated numbers with no on-screen indication —
-    // and their own `error` state could never be set, because the throw was
-    // swallowed here rather than reaching the caller.
-    const detail = err instanceof Error ? err.message : String(err);
-    noteDemo("api", `${BASE}${path} unavailable (${detail}) — showing sample data`, fallback);
-    // eslint-disable-next-line no-console
-    console.warn(`[collectai-api] using demo fallback for ${path}:`, err);
+    const body = JSON.parse(text) as { detail?: unknown; error?: unknown };
+    const d = body.detail ?? body.error;
+    if (d) return `${path(res)} — HTTP ${res.status}: ${typeof d === "string" ? d : JSON.stringify(d)}`;
+  } catch { /* not JSON */ }
+  return `${path(res)} — HTTP ${res.status}${text ? `: ${text.slice(0, 200)}` : ""}`;
+}
+
+function path(res: Response): string {
+  try { return new URL(res.url).pathname.replace(BASE, ""); } catch { return res.url; }
+}
+
+async function tryFetchJSON<T>(p: string, fallback: T): Promise<T> {
+  if (DEMO_MODE) {
+    noteDemo("api", "NEXT_PUBLIC_ADMIN_DEMO=true — sample data", fallback);
     return fallback;
   }
+  const res = await apiFetch(p);
+  if (!res.ok) throw new Error(await failureReason(res));
+  clearDemo("api");
+  return res.json() as Promise<T>;
+}
+
+/**
+ * Unwrap `{ <key>: [...] }` and FAIL if the shape is not that. /admin/models
+ * returns {"models": [...]} and /admin/worker-health {"workers": [...], ...},
+ * but both were typed as bare arrays — a cast, not a check. Hidden while every
+ * request fell back to demo arrays; the first real response crashed ML Models
+ * ("models.map is not a function") and took the whole page down (2026-09-27).
+ */
+async function fetchList<T>(p: string, key: string, fallback: T[]): Promise<T[]> {
+  const body = await tryFetchJSON<unknown>(p, { [key]: fallback });
+  const list = Array.isArray(body) ? body : (body as Record<string, unknown> | null)?.[key];
+  if (!Array.isArray(list)) {
+    throw new Error(`${p} — unexpected response shape: expected an array under "${key}"`);
+  }
+  return list as T[];
 }
 
 export function isUsingDemoData(): boolean {
-  return _apiAvailable === false || isDemoSource("api");
+  return DEMO_MODE || isDemoSource("api");
 }
 
 /** Which endpoint failed, for the banner to name rather than hand-wave. */
 export function getApiDemoReason(): string | null {
   return getDemoReason("api");
-}
-
-async function postJSON<T = unknown>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, { method: "POST", headers: headers() });
-  const text = await res.text();
-  if (!res.ok) throw new Error(text || `${res.status} ${res.statusText}`);
-  try { return JSON.parse(text); } catch { return { ok: true, raw: text } as T; }
 }
 
 // ─── Time helpers for demo data ─────────────────────────────────────────────
@@ -178,7 +202,7 @@ function getDemoWorkers(): WorkerStatus[] {
 }
 
 export function fetchWorkerHealth(): Promise<WorkerStatus[]> {
-  return tryFetchJSON("/admin/worker-health", getDemoWorkers());
+  return fetchList<WorkerStatus>("/admin/worker-health", "workers", getDemoWorkers());
 }
 
 // ─── Demand Signals ──────────────────────────────────────────────────────────
@@ -420,35 +444,15 @@ function getDemoMetrics(): MetricsResponse {
 }
 
 export function fetchModels(): Promise<ModelRow[]> {
-  return tryFetchJSON("/admin/models", [...DEMO_MODELS]);
+  return fetchList<ModelRow>("/admin/models", "models", [...DEMO_MODELS]);
 }
 
 export function fetchMetrics(): Promise<MetricsResponse> {
   return tryFetchJSON("/admin/metrics", getDemoMetrics());
 }
 
-export function activateBest(category: string) {
-  return postJSON(`/admin/activate_best?category=${encodeURIComponent(category)}`);
-}
 
-export function reloadCategory(category: string) {
-  return postJSON(`/admin/reload?category=${encodeURIComponent(category)}`);
-}
 
-export function trainNow(category?: string) {
-  const q = category
-    ? `?category=${encodeURIComponent(category)}&min_rows=150`
-    : "?min_rows=150";
-  return postJSON(`/admin/train_now${q}`);
-}
 
 // ─── API availability check ─────────────────────────────────────────────────
 
-export async function isApiAvailable(): Promise<boolean> {
-  try {
-    const res = await fetch(`${BASE}/health`, { signal: AbortSignal.timeout(5000) });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}

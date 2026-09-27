@@ -23,15 +23,16 @@ export const APP_CONFIG = {
   },
 
   // ─── Auth ──────────────────────────────────────────────────────────────
-  // No fallback: if NEXT_PUBLIC_ADMIN_PIN is unset the PIN check below fails closed.
-  // In production builds a missing PIN also throws at module load (see check further down).
-  adminPin: process.env.NEXT_PUBLIC_ADMIN_PIN || "",
+  // (adminPin removed 2026-09-27: the PIN is checked only on the server, against
+  // the server-only ADMIN_PIN — see src/lib/adminAuth.ts and AdminShell.tsx.)
 
   // ─── Backend API ───────────────────────────────────────────────────────
+  // The browser never calls the backend itself: every request goes to this
+  // same-origin route, which adds the ops key server-side
+  // (src/app/api/admin/api/[...path]/route.ts; backend URL = COLLECTAI_API_BASE
+  // or NEXT_PUBLIC_API_BASE, read on the server).
   api: {
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE || "http://51.21.210.195:8000",
-    opsKey: process.env.NEXT_PUBLIC_OPS_KEY || "",
-    adminSecret: process.env.NEXT_PUBLIC_ADMIN_SECRET || "",
+    baseUrl: "/api/admin/api",
   },
 
   // ─── Supabase ──────────────────────────────────────────────────────────
@@ -137,11 +138,5 @@ export const APP_CONFIG = {
   },
 };
 
-// Fail-fast in production if the admin PIN was not provided at build time.
-if (process.env.NODE_ENV === "production" && !APP_CONFIG.adminPin) {
-  throw new Error(
-    "NEXT_PUBLIC_ADMIN_PIN must be set for production builds of collectai-admin"
-  );
-}
 
 export type AppConfig = typeof APP_CONFIG;

@@ -11,7 +11,9 @@ npm install
 npm run dev        # http://localhost:3000
 ```
 
-Default PIN: `2026` (override with `NEXT_PUBLIC_ADMIN_PIN` env var).
+Log in with the PIN in the server-only `ADMIN_PIN` (see Environment below). There is no
+default PIN and no client-side PIN: the browser asks `GET /api/admin/session`, and
+`POST /api/admin/login` sets an 8-hour httpOnly cookie (5 wrong PINs → 15-minute lock).
 
 ## Features
 
@@ -116,29 +118,53 @@ Additional features:
 
 ## Backend API Endpoints
 
+The browser never calls the backend. Every call goes to the same-origin proxy
+`/api/admin/api/<path>` (`src/app/api/admin/api/[...path]/route.ts`), which checks the
+admin cookie, allows only the paths below, and adds `X-Ops-Key` on the server.
+Supabase reads go through `/api/admin/sb/...` the same way (table allowlist, service role).
+
 | Endpoint | Dashboard Tab |
 |----------|--------------|
 | `GET /ops/dashboard/stats` | Overview |
-| `GET /ops/dashboard/users` | User Manager |
-| `GET /ops/dashboard/sponsor-analytics` | Sponsor Analytics |
-| `GET /admin/worker-health` | Worker Health |
+| `GET /ops/dashboard/users` | Users |
+| `GET /ops/dashboard/sponsor-analytics` | Sponsors |
+| `GET /ops/dashboard/intel-summary` | Intelligence Data |
+| `GET /admin/worker-health` | Worker Health, Overview |
 | `GET /admin/demand-summary` | Demand Signals |
-| `GET /admin/models` | ML Models |
-| `GET /admin/metrics` | ML Models |
-| `POST /admin/train_now` | ML Models (retrain) |
-| `POST /admin/activate_best` | ML Models (activate) |
-| `POST /admin/reload` | ML Models (reload cache) |
+| `GET /admin/models`, `GET /admin/metrics` | ML Models (read-only) |
+| `GET /admin/kpi-summary` | KPI Funnel |
+| `GET /admin/spend-summary`, `POST /admin/spend-budget` · `spend-pause` · `spend-reset` | Spend Monitor |
+
+Not on the server (checked against `scripts/api.lock.json`, 2026-09-27), so not called:
+`/admin/train_now`, `/admin/activate_best`, `/admin/reload` (models retrain weekly in
+`model_retrain_worker`), `/admin/intelligence-summary`, `/admin/error-rate`, `/admin/deploy-history`.
+
+**No invented numbers.** A failed request shows its error; an empty result shows zeros
+with the reason ("Showing zeros — no videos posted in the last 30 days"). Sample data only
+with `NEXT_PUBLIC_ADMIN_DEMO=true`, under an amber "Demo Mode" banner. Until 2026-09-27
+every failure silently rendered demo numbers (2,847 users against a real 10).
+
+`npm run check:columns` — every column a Supabase query names must exist in
+`../scripts/schema.lock.json`.
 
 ## Environment Variables
 
 ```env
-NEXT_PUBLIC_ADMIN_PIN=2026
-NEXT_PUBLIC_API_BASE=https://api.sparrowcollect.com
-NEXT_PUBLIC_OPS_KEY=your-ops-key
-NEXT_PUBLIC_ADMIN_SECRET=your-admin-secret
+# Public (inlined into the browser bundle — never put a secret here)
+NEXT_PUBLIC_API_BASE=https://api.sparrowcollect.com   # read server-side by the proxy
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+# NEXT_PUBLIC_ADMIN_DEMO=true                          # opt-in sample data
+
+# Server-only
+ADMIN_PIN=...
+ADMIN_SESSION_SECRET=...           # random string, signs the session cookie
+SUPABASE_SERVICE_ROLE_KEY=...
+OPS_API_KEY=...                    # same value as OPS_API_KEY on the API server
 ```
+
+⛔ Never `NEXT_PUBLIC_OPS_KEY` / `NEXT_PUBLIC_ADMIN_PIN` / `NEXT_PUBLIC_ADMIN_SECRET`:
+until 2026-09-27 those three shipped the ops key and the login PIN to every browser.
 
 ## Deploy
 

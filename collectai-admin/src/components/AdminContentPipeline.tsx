@@ -38,6 +38,20 @@ const STAGE_COUNT_PILL: Record<PipelineStatus, string> = {
   tracking: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
 };
 
+/**
+ * A column per status actually present. ugc_content_pipeline.status has no
+ * CHECK constraint and the mapper casts it (pod-planner.ts), so a row can carry
+ * a status outside PIPELINE_STAGES — prod has one "scheduled" row, and
+ * `columns["scheduled"].push` crashed the whole tab (2026-09-27). Unknown
+ * statuses get their own column, labelled with the raw value, rather than a
+ * crash or a silent re-map into "idea".
+ */
+type Stage = { id: string; label: string; color: string };
+
+function styleOf(map: Record<PipelineStatus, string>, id: string, fallback: string): string {
+  return (map as Record<string, string>)[id] ?? fallback;
+}
+
 const PRIORITY_DOT: Record<Priority, string> = {
   urgent: "bg-red-500",
   high: "bg-amber-500",
@@ -150,7 +164,7 @@ function PipelineCard({ item }: { item: PipelineItem }) {
 
 /* ───────────────────────── Progress Bar ───────────────────────── */
 
-function StageProgressBar({ columns, total }: { columns: Record<PipelineStatus, PipelineItem[]>; total: number }) {
+function StageProgressBar({ columns, stages, total }: { columns: Record<string, PipelineItem[]>; stages: Stage[]; total: number }) {
   if (total === 0) return null;
 
   return (
@@ -158,13 +172,13 @@ function StageProgressBar({ columns, total }: { columns: Record<PipelineStatus, 
       <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Stage Distribution</h2>
       <div className="flex items-center gap-3">
         <div className="flex h-3 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-slate-700">
-          {PIPELINE_STAGES.map((stage) => {
+          {stages.map((stage) => {
             const pct = (columns[stage.id].length / total) * 100;
             if (pct === 0) return null;
             return (
               <div
                 key={stage.id}
-                className={`${STAGE_BAR_COLOR[stage.id]} transition-all duration-300`}
+                className={`${styleOf(STAGE_BAR_COLOR, stage.id, "bg-gray-300")} transition-all duration-300`}
                 style={{ width: `${pct}%` }}
                 title={`${stage.label}: ${columns[stage.id].length} (${Math.round(pct)}%)`}
               />
@@ -173,9 +187,9 @@ function StageProgressBar({ columns, total }: { columns: Record<PipelineStatus, 
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
-        {PIPELINE_STAGES.map((stage) => (
+        {stages.map((stage) => (
           <span key={stage.id} className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-            <span className={`inline-block h-2.5 w-2.5 rounded-full ${STAGE_BAR_COLOR[stage.id]}`} />
+            <span className={`inline-block h-2.5 w-2.5 rounded-full ${styleOf(STAGE_BAR_COLOR, stage.id, "bg-gray-300")}`} />
             {stage.label}
             <span className="font-semibold text-gray-700 dark:text-gray-300">{columns[stage.id].length}</span>
             <span className="text-gray-400 dark:text-gray-500">({Math.round((columns[stage.id].length / total) * 100)}%)</span>
@@ -220,12 +234,18 @@ export function AdminContentPipeline() {
   });
 
   // Group by status
-  const columns: Record<PipelineStatus, PipelineItem[]> = {
-    idea: [], scripted: [], filming: [], editing: [], ready: [], posted: [], tracking: [],
-  };
+  const columns: Record<string, PipelineItem[]> = Object.fromEntries(
+    PIPELINE_STAGES.map((st) => [st.id, [] as PipelineItem[]]),
+  );
   for (const item of filtered) {
-    columns[item.status].push(item);
+    (columns[item.status] ??= []).push(item);
   }
+  const stages: Stage[] = [
+    ...PIPELINE_STAGES,
+    ...Object.keys(columns)
+      .filter((id) => !PIPELINE_STAGES.some((st) => st.id === id))
+      .map((id) => ({ id, label: `${id} (unrecognised status)`, color: "bg-gray-100 text-gray-600" })),
+  ];
 
   // Unique creators for filter
   const creators = [...new Map(pipeline.map((p) => [p.creatorId, { id: p.creatorId, name: p.creatorName }])).values()].filter((c) => c.name);
@@ -258,7 +278,7 @@ export function AdminContentPipeline() {
       </div>
 
       {/* Stage Progress Bar */}
-      <StageProgressBar columns={columns} total={filtered.length} />
+      <StageProgressBar columns={columns} stages={stages} total={filtered.length} />
 
       {/* Filter Bar */}
       <div className={cardCls}>
@@ -292,17 +312,17 @@ export function AdminContentPipeline() {
 
       {/* Kanban Board */}
       <div className="flex gap-3 overflow-x-auto pb-4">
-        {PIPELINE_STAGES.map((stage) => (
+        {stages.map((stage) => (
           <div
             key={stage.id}
-            className={`w-56 flex-shrink-0 bg-gray-50/50 dark:bg-slate-800/50 rounded-xl p-2 border-t-[3px] ${STAGE_ACCENT[stage.id]} min-h-[200px]`}
+            className={`w-56 flex-shrink-0 bg-gray-50/50 dark:bg-slate-800/50 rounded-xl p-2 border-t-[3px] ${styleOf(STAGE_ACCENT, stage.id, "border-gray-300")} min-h-[200px]`}
           >
             {/* Column header */}
             <div className="mb-2.5 flex items-center justify-between px-1">
               <span className="text-xs font-bold text-gray-700 dark:text-gray-200">
                 {stage.label}
               </span>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums ${STAGE_COUNT_PILL[stage.id]}`}>
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums ${styleOf(STAGE_COUNT_PILL, stage.id, "bg-gray-100 text-gray-600")}`}>
                 {columns[stage.id].length}
               </span>
             </div>

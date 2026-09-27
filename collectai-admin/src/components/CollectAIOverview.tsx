@@ -214,7 +214,10 @@ export function CollectAIOverview() {
               subtitle={`+${stats.recent_signups} last 7 days`}
               trend={stats.recent_signups > 0 ? (stats.recent_signups / Math.max(stats.total_users - stats.recent_signups, 1)) * 100 : 0}
             />
-            <MetricCard label="Total Items" value={stats.total_items} />
+            {/* total_items is the CATALOGUE (category_items, a planner estimate —
+                admin_dashboard.py), not members' saved items: 239k vs 21 on
+                2026-09-27. Labelled for what it counts. */}
+            <MetricCard label="Catalogue items" value={stats.total_items} subtitle="estimate · category_items" />
             <MetricCard label="Total Events" value={stats.total_events} />
             <MetricCard label="Beta Signups" value={stats.beta_signups} />
           </div>

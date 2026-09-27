@@ -5,55 +5,59 @@ import { AdminTabs } from "./AdminTabs";
 import { APP_CONFIG } from "../../../admin.config";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
-const ADMIN_PIN_KEY = "admin_dashboard_auth";
-
-function getAdminPin(): string {
-  return process.env.NEXT_PUBLIC_ADMIN_PIN ?? APP_CONFIG.adminPin;
-}
+// The gate is the SERVER session (httpOnly cookie from /api/admin/login).
+// Until 2026-09-27 this compared the typed PIN against NEXT_PUBLIC_ADMIN_PIN in
+// the browser and remembered it in sessionStorage — that variable is inlined
+// into the client bundle and held the same value as the server's ADMIN_PIN,
+// so the PIN that mints a real session could be read out of the page's JS.
 
 export function AdminShell({ kits }: { kits: unknown[] }) {
   const [authenticated, setAuthenticated] = useState(false);
   const [pin, setPin] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem(ADMIN_PIN_KEY);
-    if (stored === getAdminPin()) {
-      setAuthenticated(true);
-    }
-    setChecking(false);
+    fetch("/api/admin/session", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((s: { authenticated?: boolean; configured?: boolean; missing?: string[] }) => {
+        if (s.authenticated) setAuthenticated(true);
+        else if (s.configured === false) {
+          setError(`Admin login is not configured on this server. Missing: ${(s.missing ?? []).join(", ")}`);
+        }
+      })
+      .catch((e) => setError(`Could not reach the dashboard server: ${e instanceof Error ? e.message : String(e)}`))
+      .finally(() => setChecking(false));
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    // Client-side check first — it is what gates the UI, and it keeps the
-    // dashboard usable when the server-side vars are not configured yet.
-    if (pin !== getAdminPin()) {
-      setError(true);
-      setPin("");
-      return;
-    }
-
-    // Then exchange the PIN for an httpOnly session cookie. This is the real
-    // gate: the service-role write routes (/api/creators) trust only the
-    // cookie, never NEXT_PUBLIC_ADMIN_PIN, which ships in the client bundle.
-    // A 503 means the server-only vars are unset — reads still work, writes
-    // will 401, and the Creators tab surfaces that when you try to save.
+    let res: Response;
     try {
-      await fetch("/api/admin/login", {
+      res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pin }),
       });
-    } catch {
-      // Network failure here must not lock you out of the read-only dashboard.
+    } catch (err) {
+      setError(`Could not reach the dashboard server: ${err instanceof Error ? err.message : String(err)}`);
+      return;
     }
+    if (res.ok) {
+      setAuthenticated(true);
+      setError(null);
+      setPin("");
+      return;
+    }
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    setError(res.status === 401 ? "Incorrect PIN" : body.error ?? `Login failed (HTTP ${res.status})`);
+    setPin("");
+  }
 
-    sessionStorage.setItem(ADMIN_PIN_KEY, pin);
-    setAuthenticated(true);
-    setError(false);
+  async function lock() {
+    await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
+    setAuthenticated(false);
+    setPin("");
   }
 
   if (checking) return null;
@@ -78,7 +82,7 @@ export function AdminShell({ kits }: { kits: unknown[] }) {
                 type="password"
                 maxLength={16}
                 value={pin}
-                onChange={(e) => { setPin(e.target.value); setError(false); }}
+                onChange={(e) => { setPin(e.target.value); setError(null); }}
                 placeholder="PIN"
                 autoFocus
                 className={`w-full rounded-xl border bg-gray-50 dark:bg-slate-700 px-4 py-3 text-center text-lg font-bold tracking-[0.3em] text-gray-900 dark:text-white outline-none transition ${
@@ -86,7 +90,7 @@ export function AdminShell({ kits }: { kits: unknown[] }) {
                 }`}
               />
               {error && (
-                <p className="mt-2 text-center text-xs text-red-500">Incorrect PIN</p>
+                <p role="alert" className="mt-2 text-center text-xs text-red-500">{error}</p>
               )}
               <button
                 type="submit"
@@ -126,11 +130,7 @@ export function AdminShell({ kits }: { kits: unknown[] }) {
             </span>
             <ThemeToggle />
             <button
-              onClick={() => {
-                sessionStorage.removeItem(ADMIN_PIN_KEY);
-                setAuthenticated(false);
-                setPin("");
-              }}
+              onClick={lock}
               className="rounded-lg bg-gray-100 dark:bg-slate-700 px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 transition hover:bg-gray-200 dark:hover:bg-slate-600"
             >
               Lock

@@ -6,14 +6,8 @@ import { CohortHeatmap } from "@/components/charts/CohortHeatmap";
 import { PostingTimeHeatmap } from "@/components/charts/PostingTimeHeatmap";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Skeleton, SkeletonCard } from "@/components/ui/Skeleton";
-import { APP_CONFIG } from "../../admin.config";
 import { getSupabase } from "@/lib/supabase";
 
-const API = APP_CONFIG.api.baseUrl;
-const headers: Record<string, string> = {
-  "X-Ops-Key": APP_CONFIG.api.opsKey,
-  "Content-Type": "application/json",
-};
 
 // ---------- Types ----------
 
@@ -117,103 +111,89 @@ function IntelligenceLoadingSkeleton() {
 
 // ---------- Fetch ----------
 
-async function fetchIntelligenceFromAPI(): Promise<IntelligenceData | null> {
-  try {
-    const res = await fetch(`${API}/admin/intelligence-summary`, { headers });
-    if (!res.ok) return null;
-    const json = await res.json();
-    if (!json || typeof json !== "object") return null;
-    return json as IntelligenceData;
-  } catch {
-    return null;
-  }
-}
+// Loaded from Supabase only. (There is no /admin/intelligence-summary endpoint
+// on the server — checked against scripts/api.lock.json 2026-09-27 — so the
+// API call that used to come first could only ever fail.)
+//
+// Until 2026-09-27 this selected ugc_tiktok_metrics.posted_at and
+// ugc_video_scripts.creator_handle / engagement_score — none of which exist —
+// and ignored the error, so 6 real metric rows rendered as "Waiting for data".
+// Gate: collectai-admin/scripts/check-admin-columns.mjs.
 
-async function fetchIntelligenceFromSupabase(): Promise<IntelligenceData | null> {
+type IntelligenceLoad =
+  | { kind: "data"; data: IntelligenceData }
+  | { kind: "empty"; reason: string }
+  | { kind: "error"; reason: string };
+
+async function fetchIntelligenceData(): Promise<IntelligenceLoad> {
   const sb = getSupabase();
-  if (!sb) return null;
+  if (!sb) return { kind: "error", reason: "Supabase is not configured for the dashboard" };
 
-  try {
-    // Try to query ugc_tiktok_metrics for posting time data
-    const { data: metrics } = await sb
-      .from("ugc_tiktok_metrics")
-      .select("posted_at, views, shares, likes, comments")
-      .order("posted_at", { ascending: false })
-      .limit(500);
+  const { data: metrics, error } = await sb
+    .from("ugc_tiktok_metrics")
+    .select("snapshot_at, views, shares, likes, comments, ugc_video_scripts(posted_at, creator_id)")
+    .order("snapshot_at", { ascending: false })
+    .limit(500);
+  if (error) return { kind: "error", reason: `ugc_tiktok_metrics: ${error.message}` };
+  if (!metrics || metrics.length === 0) {
+    return { kind: "empty", reason: "No TikTok metrics recorded yet (ugc_tiktok_metrics is empty)." };
+  }
 
-    if (!metrics || metrics.length === 0) return null;
+  type Row = {
+    snapshot_at: string; views: number | null; shares: number | null; likes: number | null; comments: number | null;
+    ugc_video_scripts: { posted_at: string | null; creator_id: string | null } | null;
+  };
+  const rows = metrics as unknown as Row[];
 
-    // Build posting time heatmap from real data
-    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const postingBuckets: Record<string, { total: number; count: number }> = {};
+  // Posting-time heatmap: by when the VIDEO was posted (the script's
+  // posted_at), not when a metric snapshot was taken.
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const buckets: Record<string, { total: number; count: number }> = {};
+  let postedKnown = 0;
+  for (const r of rows) {
+    const posted = r.ugc_video_scripts?.posted_at;
+    if (!posted) continue;
+    postedKnown++;
+    const dt = new Date(posted);
+    const dayIdx = dt.getDay();
+    const key = `${days[dayIdx === 0 ? 6 : dayIdx - 1]}-${dt.getHours()}`;
+    const b = (buckets[key] ??= { total: 0, count: 0 });
+    b.total += r.views ?? 0;
+    b.count += 1;
+  }
+  const posting_times: PostingTimePoint[] = [];
+  if (postedKnown > 0) {
     for (const day of days) {
       for (let h = 0; h < 24; h++) {
-        postingBuckets[`${day}-${h}`] = { total: 0, count: 0 };
+        const b = buckets[`${day}-${h}`];
+        posting_times.push({ hour: h, day, avgViews: b ? Math.round(b.total / b.count) : 0 });
       }
     }
+  }
 
-    for (const m of metrics) {
-      if (!m.posted_at) continue;
-      const dt = new Date(m.posted_at);
-      const dayIdx = dt.getDay(); // 0=Sun
-      const day = days[dayIdx === 0 ? 6 : dayIdx - 1];
-      const hour = dt.getHours();
-      const key = `${day}-${hour}`;
-      if (postingBuckets[key]) {
-        postingBuckets[key].total += m.views || 0;
-        postingBuckets[key].count += 1;
-      }
-    }
+  // Creator cohorts need scripts tied to a creator; averaged views per 4 slices.
+  const byCreator: Record<string, number[]> = {};
+  for (const r of rows) {
+    const c = r.ugc_video_scripts?.creator_id;
+    if (c) (byCreator[c] ??= []).push(r.views ?? 0);
+  }
+  const cohort_data: CohortRow[] = Object.entries(byCreator).map(([creator, views]) => {
+    const size = Math.ceil(views.length / 4);
+    const weeks = [0, 1, 2, 3].map((w) => {
+      const chunk = views.slice(w * size, (w + 1) * size);
+      return chunk.length ? Math.round(chunk.reduce((a, b) => a + b, 0) / chunk.length) : 0;
+    });
+    return { creator, weeks };
+  });
 
-    const posting_times: PostingTimePoint[] = [];
-    for (const day of days) {
-      for (let h = 0; h < 24; h++) {
-        const bucket = postingBuckets[`${day}-${h}`];
-        posting_times.push({
-          hour: h,
-          day,
-          avgViews: bucket.count > 0 ? Math.round(bucket.total / bucket.count) : 0,
-        });
-      }
-    }
+  const totalViews = rows.reduce((s, r) => s + (r.views ?? 0), 0);
+  const totalEngagement = rows.reduce((s, r) => s + (r.likes ?? 0) + (r.comments ?? 0) + (r.shares ?? 0), 0);
 
-    // Query ugc_video_scripts for cohort data
-    const { data: scripts } = await sb
-      .from("ugc_video_scripts")
-      .select("creator_handle, created_at, engagement_score")
-      .order("created_at", { ascending: false })
-      .limit(200);
-
-    const cohort_data: CohortRow[] = [];
-    if (scripts && scripts.length > 0) {
-      // Group by creator, compute weekly engagement scores
-      const creatorMap: Record<string, number[]> = {};
-      for (const s of scripts) {
-        const handle = s.creator_handle || "Unknown";
-        if (!creatorMap[handle]) creatorMap[handle] = [];
-        creatorMap[handle].push(s.engagement_score || 0);
-      }
-      for (const [creator, scores] of Object.entries(creatorMap)) {
-        // Split into 4-week buckets
-        const weekSize = Math.ceil(scores.length / 4);
-        const weeks: number[] = [];
-        for (let w = 0; w < 4; w++) {
-          const chunk = scores.slice(w * weekSize, (w + 1) * weekSize);
-          weeks.push(chunk.length > 0 ? Math.round(chunk.reduce((a, b) => a + b, 0) / chunk.length) : 0);
-        }
-        cohort_data.push({ creator, weeks });
-      }
-    }
-
-    // Aggregate quick insights from metrics
-    const totalViews = metrics.reduce((s, m) => s + (m.views || 0), 0);
-    const avgViews = Math.round(totalViews / metrics.length);
-    const totalEngagement = metrics.reduce((s, m) => s + (m.likes || 0) + (m.comments || 0) + (m.shares || 0), 0);
-    const avgEngagement = metrics.length > 0 ? parseFloat(((totalEngagement / totalViews) * 100).toFixed(1)) : 0;
-
-    return {
+  return {
+    kind: "data",
+    data: {
       insights: {
-        avg_views: avgViews,
+        avg_views: Math.round(totalViews / rows.length),
         avg_views_trend: 0,
         avg_views_sparkline: [],
         hit_rate: 0,
@@ -222,7 +202,7 @@ async function fetchIntelligenceFromSupabase(): Promise<IntelligenceData | null>
         revenue: 0,
         revenue_trend: 0,
         revenue_sparkline: [],
-        engagement: avgEngagement,
+        engagement: totalViews > 0 ? parseFloat(((totalEngagement / totalViews) * 100).toFixed(1)) : 0,
         engagement_trend: 0,
         engagement_sparkline: [],
       },
@@ -230,33 +210,23 @@ async function fetchIntelligenceFromSupabase(): Promise<IntelligenceData | null>
       cohort_data,
       cohort_week_labels: ["W1", "W2", "W3", "W4"],
       posting_times,
-    };
-  } catch {
-    return null;
-  }
-}
-
-async function fetchIntelligenceData(): Promise<IntelligenceData | null> {
-  // Try backend API first (most complete data)
-  const apiData = await fetchIntelligenceFromAPI();
-  if (apiData) return apiData;
-
-  // Fallback: try Supabase direct queries
-  const sbData = await fetchIntelligenceFromSupabase();
-  if (sbData) return sbData;
-
-  return null;
+    },
+  };
 }
 
 // ---------- Component ----------
 
 export function IntelligenceTab() {
   const [data, setData] = useState<IntelligenceData | null>(null);
+  const [problem, setProblem] = useState<{ kind: "empty" | "error"; reason: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    const result = await fetchIntelligenceData();
-    setData(result);
+    const result = await fetchIntelligenceData().catch(
+      (e): IntelligenceLoad => ({ kind: "error", reason: e instanceof Error ? e.message : String(e) }),
+    );
+    if (result.kind === "data") { setData(result.data); setProblem(null); }
+    else { setData(null); setProblem(result); }
     setLoading(false);
   }, []);
 
@@ -267,7 +237,11 @@ export function IntelligenceTab() {
   }, [load]);
 
   if (loading) return <IntelligenceLoadingSkeleton />;
-  if (!data) return <EmptyState />;
+  if (!data) {
+    return problem?.kind === "error"
+      ? <EmptyState title="Could not load intelligence data" message={problem.reason} />
+      : <EmptyState title="No data yet" message={problem?.reason ?? "No TikTok metrics recorded yet."} />;
+  }
 
   const { insights, revenue_forecast, cohort_data, cohort_week_labels, posting_times } = data;
 
