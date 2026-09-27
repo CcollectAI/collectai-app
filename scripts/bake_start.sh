@@ -85,8 +85,11 @@ export EVENT_SCRAPER_ENABLED="${EVENT_SCRAPER_ENABLED:-false}"  # not needed pre
 export VALUATION_ENABLED="${VALUATION_ENABLED:-true}"
 export CATALOG_CRAWLER_ENABLED="${CATALOG_CRAWLER_ENABLED:-true}"
 
-# ── G7: DB pool sizing for the bake (7 schedulers + uvicorn workers + admin) ──
-# Bumped from 30 → 35 in R50f to account for valuation + catalog_crawler schedulers
+# ── G7: DB pool sizing ──
+# ⛔ INERT (2026-09-27): the code reads DB_POOL_MAX_SIZE / DB_POOL_MIN_SIZE
+# (server/app/config.py), not these names, and prod runs from systemd with
+# /opt/collectors/.env, not this script. The real ceiling is the Supavisor
+# session pooler's 15 clients; prod sets DB_POOL_MAX_SIZE=12. See BAKE_README G7.
 export DB_POOL_MIN="${DB_POOL_MIN:-5}"
 export DB_POOL_MAX="${DB_POOL_MAX:-35}"
 

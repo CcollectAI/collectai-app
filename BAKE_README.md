@@ -73,7 +73,7 @@ After 7-14 days the bake is "done" when `bake_status.sh` shows:
 | **G4** | **Missing API credentials silently no-op** — eBay, TCGPlayer, StockX, etc | Enumerates all configured paid sources and logs the active list. Bake still works on the always-on free sources (Crawl4AI, eBay-html, Mercari-US, Vinted, Mavin.io, Google Shopping). |
 | **G5** | **Spend ramps fast** in first 48h of cold cache | Confirms `MONTHLY_BUDGET_EUR` is set (default €150). Telegram alerts at 75/90/100% are wired in `spend_tracker.py` (R41). Circuit breaker auto-pauses paid providers at 100%. |
 | **G6** | **Stale Ridge model** — predictions drift if `model_retrain_scheduler` isn't running | Forces `MODEL_RETRAIN_ENABLED=true` so the model auto-retrains weekly during the bake. |
-| **G7** | **Postgres connection pool exhaustion** — 5 schedulers + uvicorn workers + admin queries | Bumps `DB_POOL_MAX=30` (default is 20) for the bake. Override with the env var if you've already raised it. |
+| **G7** | **Postgres connection pool exhaustion** — 5 schedulers + uvicorn workers + admin queries | ⛔ Corrected 2026-09-27. The variable the code reads is `DB_POOL_MAX_SIZE` (`server/app/config.py`), not `DB_POOL_MAX`. And the ceiling is Supabase's: `DB_DSN` goes through the Supavisor SESSION pooler, which admits **15** clients (`EMAXCONNSESSION … pool_size: 15`). A pool max above that does not add capacity — the 16th acquire ERRORS instead of waiting. Prod `.env` is `DB_POOL_MAX_SIZE=12` (3 left for preflights and scripts). |
 | **G8** | **Schema drift between code and DB** — over months of dev, code expects columns the DB doesn't have. PostgREST returns `PGRST204: column not found` and asyncpg returns `column does not exist`, causing **silent write failures** that look like the bake is "running fine" but no rows actually land. | Runs `scripts/schema_drift_check.py` before catalog import. Aborts the bake if any of the 10 bake-critical tables is missing any column the code is known to write. Run with `--fix-suggest` to print ALTER TABLE statements. |
 
 ---
@@ -96,7 +96,7 @@ After 7-14 days the bake is "done" when `bake_status.sh` shows:
 | `market_hits_24h = 0` after day 2 | All workers crashed or paused | `./scripts/bake_tail.sh 500`, look for stack traces; restart with `./scripts/bake_stop.sh && ./scripts/bake_start.sh` |
 | Spend hit 100% before day 7 | Cold cache hit a paid provider too hard | Telegram circuit breaker already paused it. Bake continues on free sources. Bump budget if needed: `curl -X POST -H "X-Ops-Key: $OPS_API_KEY" http://51.21.210.195:8000/admin/spend-budget -d '{"budget_eur": 250}'` |
 | `catalog_items_total = 0` | Import failed or DB empty | `./scripts/bake_start.sh --force-reimport` |
-| `pool exhausted` in logs | Workers competing for DB connections | Stop bake, edit `.env` → `DB_POOL_MAX=40`, restart |
+| `pool exhausted` / `EMAXCONNSESSION` in logs | More concurrent connections than the Supavisor session pooler's 15 | Do NOT raise the pool max past 15 — that turns waiting into errors. Find the burst (2026-09-27: ~20 loops each opening a connection at startup) or raise the pooler's pool size in the Supabase dashboard first. |
 | Healthz returns 503 after start | Module import error (e.g. R43-style decorator bug) | `./scripts/bake_tail.sh 200`, fix in code, redeploy |
 
 ---

@@ -598,7 +598,7 @@ error. All 16 `EMAXCONNSESSION` lines across three log files are from those
 consumed once; fallback reads capped at 2. Verified on the 21:58 restart: 20/20
 workers logged their wait, 0 `EMAXCONNSESSION`, 0 worker_runs rows after it.
 
-Still latent, for Merle: `DB_POOL_MAX_SIZE=30` against a pooler that admits 15
+**DONE 22:07 (Merle: "set the pool max to 12"):** prod `.env` `DB_POOL_MAX_SIZE=12` (backup `backups/env_20260927_220459.bak`), confirmed in `/proc/<pid>/environ`; 0 `EMAXCONNSESSION` after the restart. Was: `DB_POOL_MAX_SIZE=30` against a pooler that admits 15
 means the 16th concurrent acquire FAILS instead of queueing. It needs a burst to
 show — nothing in normal running has hit it in the logs kept (09-24..09-27) —
 but the preflights also connect through that pooler, and at 21:58 two of them
