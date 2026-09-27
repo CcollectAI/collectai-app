@@ -154,11 +154,18 @@ function CatalogSuggestionModalInner({
           <View style={styles.header}>
             <Ionicons name="help-circle-outline" size={28} color={colors.accent} />
             <View style={styles.headerText}>
+              {/* A found NAME (e.g. an ISBN from Open Library) is not "unrecognised":
+                  the item is known, it is only missing from our catalogue. Under a
+                  "Product Found" card the old heading contradicted it (walk 2026-09-27). */}
               <Text style={[styles.title, { color: colors.text }]}>
-                {t('catalog.unrecognized_item', { defaultValue: "We don't recognize this item yet" })}
+                {prefillName
+                  ? t('catalog.not_in_catalogue', { defaultValue: 'Not in our catalogue yet' })
+                  : t('catalog.unrecognized_item', { defaultValue: "We don't recognize this item yet" })}
               </Text>
               <Text style={[styles.subtitle, { color: colors.muted }]}>
-                {t('catalog.help_us_improve', { defaultValue: 'Help us improve Sparrow Collect by telling us what this is.' })}
+                {prefillName
+                  ? t('catalog.help_us_file', { defaultValue: 'Pick its category so the next scan of it lands in the right place.' })
+                  : t('catalog.help_us_improve', { defaultValue: 'Help us improve Sparrow Collect by telling us what this is.' })}
               </Text>
             </View>
           </View>

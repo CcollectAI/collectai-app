@@ -1536,7 +1536,9 @@
     "help_us_improve": "Aidez-nous à améliorer Sparrow Collect en nous disant de quoi il s'agit.",
     "suggest_new_category": "Ou proposez une nouvelle catégorie",
     "suggestions_explainer": "Quand vous scannez ou ajoutez des objets que nous ne reconnaissons pas, ils apparaissent ici pour que vous puissiez suivre leur statut.",
-    "no_categories_match": "Aucune catégorie ne correspond à \"{{query}}\""
+    "no_categories_match": "Aucune catégorie ne correspond à \"{{query}}\"",
+    "not_in_catalogue": "Not in our catalogue yet",
+    "help_us_file": "Pick its category so the next scan of it lands in the right place."
   },
   "inbox": {
     "sent_requests": "Demandes envoyées",

@@ -1536,7 +1536,9 @@
     "help_us_improve": "これが何かを教えて、Sparrow Collect の改善にご協力ください。",
     "suggest_new_category": "または新しいカテゴリーを提案",
     "suggestions_explainer": "認識できないアイテムをスキャンまたは追加すると、ここに表示され状況を追跡できます。",
-    "no_categories_match": "「{{query}}」に一致するカテゴリーはありません"
+    "no_categories_match": "「{{query}}」に一致するカテゴリーはありません",
+    "not_in_catalogue": "Not in our catalogue yet",
+    "help_us_file": "Pick its category so the next scan of it lands in the right place."
   },
   "inbox": {
     "sent_requests": "送信したリクエスト",
