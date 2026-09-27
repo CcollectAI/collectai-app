@@ -112,6 +112,7 @@ Two rules the tooling learned the hard way:
 | AP | A scan identity chosen by an arbitrary LIMIT, then priced by a key SUBSTRING | **fixed + DEPLOYED 2026-09-26** | QuickScan of Base Set Charizard (EUR 1,159 on its catalogue page) adopted the Celebrations reprint at score 1.00 and quoted EUR 154; with the identity fixed it then quoted EUR 2.97. Three defects: (1) the attribute strategy queried `card_number = '4/102'` but the catalogue's printed form is `number` ('4/102'; `card_number` is '4'), so it never matched; (2) the title strategy was an UNORDERED `LIMIT 5` over 28 exact "Charizard" rows; (3) the price step ran `normalized_key ILIKE '%base1-base1-4%'`, which matches base1-base1-40..49. Fixed: printed number (zero-pad normalised, SQL twin) + title containment as strategy 0b, number-first ORDER BY before the LIMIT, a number-conflict cap (0.55) at one chokepoint for every candidate, and pricing from `market_hits_daily` by exact item_ref — the catalogue screen's source. Falsifier: on EC2 `python /tmp/vx3.py <base1/4_hires.png>` → KEY base1-base1-4, EUR 1159.04; pytest `test_catalog_title_ties.py`, `test_intake_price_exact_key.py` (5 mutations, all caught). |
 | AQ | A "gain" that counts what the member ADDED | **fixed 2026-09-26 (server DEPLOYED; client needs a JS build)** | Home's headline and Analytics' "Unrealized P/L" were last point minus first of the value series, so a EUR 25 item added this week read as +EUR 25 of gain; on 30D it MASKED a real fall (raw -10.29, market -35.29). `/portfolio/timeseries` now returns `market_change` (value change of the items already held when the range opened; one LATERAL value per item-day, summed twice — daily totals byte-identical to the old query, same timing). Home (`src/lib/portfolioChange.ts`) and Analytics (`computePLFromSeries`) prefer it. Falsifier: prod simcheck 7D `market_change` 0.0 while points go 1228 -> 1253; tests `portfolioChange`, `computePLMarketChange`, `test_portfolio_router` (mutation-proven). |
 | AR | A stock photo that shows a different subject than its label | **swept 2026-09-26** | Explore banners: all 53 downloaded onto labelled contact sheets and looked at. 10 wrong (Marvel Legends = a rabbit, Digimon = Pokemon energy cards, One Piece TCG = tarot, Bandai = a Super Nintendo, ...), 2 not loading -> emptied (icon fallback), same rule as the Magic/Lorcana tiles. 8 weak-but-plausible kept and listed in ed64737b — then, walked at full tile size on the emulator the same night, **6 of those 8 were wrong too** (Action Figures = wooden toy dinosaurs, D&D = Ticket to Ride, Gunpla = a giant robot statue, VTuber = con cosplayers, Sports Cards = bat and balls, Blind Box = a gift-wrapped box) -> emptied; retro_pokemon and oop_board_games kept. A thumbnail contact sheet was too small to judge subject — look at tile size. No gate can see a photo's subject: re-run = download every `bannerImageUrl` and look. |
+| AS | A `'%key%'` substring search where an exact, indexed key exists | **swept 2026-09-27, DEPLOYED** | Three `market_hits` reads used `normalized_key ILIKE '%…%'`: QuickScan social proof (3.2M-row seq scan, 2.2-4.5 s per scan, and `%base1-base1-4%` matched base1-base1-40..49 — other cards' sales), barcode pricing and dossier comps (a TITLE against dash slugs: 9.6-14.1 s, 0 rows, always). All now `item_ref = category:key` (index, ~5 ms) and skip without a catalogue key. Falsifier: `grep -rn "normalized_key ILIKE" server/app` → only the comment in intake_social_proof/barcode_lookup; tests assert `item_ref = $1` and no ILIKE (mutation-proven). |
 
 ## AD — a money format typed into the UI (2026-09-24)
 
@@ -540,6 +541,25 @@ total(last) - SUM(entry_value)`. DEPLOYED. Falsifier, prod simcheck: 7d 0.0,
 30d -35.29, 90d/1y/all -35.29 (were 0.0). Test
 `test_timeseries_a_fall_after_adding_is_still_a_fall` (mutation to day-1-only
 fails it).
+
+## AS — a substring search where an exact, indexed key exists (2026-09-27)
+
+Found by PROFILING, not reading: `/intake/image-only` timed stage by stage on
+EC2 (every async function in the orchestrator wrapped with a timer, every
+asyncpg statement timed). Social proof — a "best-effort" extra — was the
+second-largest cost after the vision call.
+
+`ILIKE '%x%'` has two failure modes, and this had both:
+- **Slow:** a leading wildcard cannot use a btree, so it reads every row in
+  the window. `market_hits` is ~3.2M rows a month.
+- **Wrong:** a KEY is not a word. `%base1-base1-4%` also matches
+  `base1-base1-40` … `-49`; a title (`LEGO Millennium Falcon`, spaces) never
+  matches a slug (`lego-…`, dashes), so two of the three returned nothing
+  after 10-14 s.
+
+Rule: when the thing searched for is a catalogue key, look it up by the
+indexed `item_ref` (`<category>:<bare key>`, the same value
+`price_predictions` and `market_hits_daily` use). No key → no query.
 
 ## AR — a stock photo that shows a different subject than its label (2026-09-26)
 

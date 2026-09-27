@@ -1228,7 +1228,12 @@ Barcode Scan → Intake Agent → Taxonomy Resolver → Vision Classifier → Pr
 ```
 
 **QuickScan client guardrail (`app/quickscan.tsx`):** the standard scan races the
-intake call against an 8s client-side cap (reassurance message at ~4s). On
+intake call against a 20 s client-side cap (reassurance message at ~4 s). It was
+8 s until 2026-09-27, when the server took p50 11 s and most camera scans fell
+back to manual. **Where the server's time goes** (profiled 2026-09-27, after
+class AS): OpenAI vision 4.3-4.8 s, catalogue match 0.7-1 s warm (up to ~3 s
+cold — sequential ~0.1 s round trips to Supabase), social proof ~0.15 s; a scan
+now takes 6-8.6 s end to end. On
 timeout or a low-confidence result the user is handed off to **Add Manually**
 (`app/add-manual.tsx`) with the snapped image; on the low-confidence path the
 vision-extracted name / category / condition / attributes are passed through as
