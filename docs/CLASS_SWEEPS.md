@@ -577,10 +577,26 @@ secret scan (served JS contains no OPS_API_KEY / ADMIN_PIN / service role /
 session secret) was run by hand with a positive control, the public anon key,
 and is not automated.
 
-Not changed, for Merle: ML Models reads `model_registry`, which holds stale
-CLIP rows from April and test rows ("Demo", "TestCat"). The real weekly Ridge
-retrains are logged in `model_promotion_log`. Worker Health lists the 15
-deliberately disabled SCHEDULES workers as "never run".
+**ML Models + Worker Health, fixed the same night (Merle: "fix the ml models
+and worker health tabs too"):**
+- `/admin/models` read `model_metrics` (last written 2026-04-24, all
+  clip-v1.0.0, n=0 — its writer went with the CLIP tier) and `model_registry`
+  ("Demo", "TestCat"). It now reads what serving loads — each
+  `artifacts/<cat>/active/model.json` via `model_loader._resolve_artifacts_root`
+  — plus the newest `model_promotion_log` decision per category
+  (`server/app/lib/model_summary.py`, tested on fixture trees incl. a REVERTED
+  promotion where `active` is not the newest folder; 4 mutations caught). The
+  dead MAE list left `/admin/metrics`. The tab shows version, fit time, age,
+  train rows, CV MAE (labelled log-price when log-scale), 7d predictions and
+  the last retrain decision.
+- Measured on prod while doing it: 54 categories fitted 2026-09-27, every one
+  promoted on `holdout_n = 0` (no verified sales yet — docs/WATCHDOG.md), and
+  **pokemon has 50 model versions on disk, lorcana 43** — one per
+  restart-triggered retrain (class AT, fixed today). Nothing prunes them.
+- Worker Health: the registry now knows which workers the orchestrator started
+  (`mark_enabled`); the other 15 SCHEDULES entries report `disabled`, not
+  `never_run`, and are never "overdue". "Run Count" is labelled "runs since
+  restart" (it is in memory).
 
 ## AT — a schedule that lives only in memory (2026-09-27)
 

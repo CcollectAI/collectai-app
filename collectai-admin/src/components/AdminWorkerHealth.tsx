@@ -8,6 +8,7 @@ const STATUS_ORDER: Record<WorkerStatus["status"], number> = {
   never_run: 1,
   ok: 2,
   on_demand: 3,
+  disabled: 4,
 };
 
 const STATUS_BADGE: Record<WorkerStatus["status"], string> = {
@@ -15,6 +16,7 @@ const STATUS_BADGE: Record<WorkerStatus["status"], string> = {
   overdue: "bg-red-100 text-red-700",
   never_run: "bg-amber-100 text-amber-700",
   on_demand: "bg-blue-100 text-blue-700",
+  disabled: "bg-gray-100 text-gray-500",
 };
 
 function relativeTime(iso: string | null): string {
@@ -67,6 +69,7 @@ export function AdminWorkerHealth() {
   const okCount = workers.filter((w) => w.status === "ok").length;
   const overdueCount = workers.filter((w) => w.status === "overdue").length;
   const neverRunCount = workers.filter((w) => w.status === "never_run").length;
+  const disabledCount = workers.filter((w) => w.status === "disabled").length;
 
   if (loading) {
     return (
@@ -122,10 +125,10 @@ export function AdminWorkerHealth() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         <div className="bg-white rounded-2xl shadow-sm p-4">
-          <p className="text-sm text-gray-500">Total Workers</p>
-          <p className="text-3xl font-bold text-gray-900">{workers.length}</p>
+          <p className="text-sm text-gray-500">Running</p>
+          <p className="text-3xl font-bold text-gray-900">{workers.length - disabledCount}</p>
         </div>
         <div className="bg-white rounded-2xl shadow-sm p-4">
           <p className="text-sm text-gray-500">OK</p>
@@ -136,8 +139,12 @@ export function AdminWorkerHealth() {
           <p className="text-3xl font-bold text-red-600">{overdueCount}</p>
         </div>
         <div className="bg-white rounded-2xl shadow-sm p-4">
-          <p className="text-sm text-gray-500">Never Run</p>
+          <p className="text-sm text-gray-500" title="Started, but no run recorded since the last restart">Not run yet</p>
           <p className="text-3xl font-bold text-amber-600">{neverRunCount}</p>
+        </div>
+        <div className="bg-white rounded-2xl shadow-sm p-4">
+          <p className="text-sm text-gray-500" title="Scheduled in SCHEDULES but switched off in the bake manifest">Disabled</p>
+          <p className="text-3xl font-bold text-gray-400">{disabledCount}</p>
         </div>
       </div>
 
@@ -150,7 +157,7 @@ export function AdminWorkerHealth() {
                 <th className="px-4 py-3 font-medium">Name</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Last Run</th>
-                <th className="px-4 py-3 font-medium text-right">Run Count</th>
+                <th className="px-4 py-3 font-medium text-right" title="Kept in memory: a bake restart resets it">Runs since restart</th>
                 <th className="px-4 py-3 font-medium text-right">Avg Duration</th>
                 <th className="px-4 py-3 font-medium text-right">Expected Interval</th>
                 <th className="px-4 py-3 font-medium text-right">Minutes Overdue</th>

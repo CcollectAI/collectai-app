@@ -172,7 +172,9 @@ export interface WorkerStatus {
   last_status: string;
   run_count: number;
   average_duration_s: number;
-  status: "ok" | "overdue" | "never_run" | "on_demand";
+  /** "disabled" (2026-09-27): in SCHEDULES but deliberately not started by the
+   *  bake orchestrator. Those 15 used to be reported as "never_run". */
+  status: "ok" | "overdue" | "never_run" | "on_demand" | "disabled";
   minutes_overdue: number;
   expected_interval_minutes: number;
 }
@@ -367,18 +369,37 @@ export function fetchSponsorAnalytics(): Promise<SponsorAnalyticsResponse> {
 
 // ─── ML Models ───────────────────────────────────────────────────────────────
 
+/** One SERVED model — `artifacts/<category>/active/model.json` on the API
+ *  server — plus its last retrain decision (model_promotion_log).
+ *  Until 2026-09-27 this tab read model_metrics / model_registry: dead CLIP
+ *  rows from April and test rows, not the models serving uses. */
 export interface ModelRow {
   category: string;
   version: string;
-  status: string;
-  artifact_uri?: string;
+  model_type: string | null;
+  fitted_at: string;
+  age_days: number;
+  train_size: number | null;
+  /** Cross-validated error at training time. In LOG-price units when log_scale. */
+  cv_mae: number | null;
+  log_scale: boolean;
+  versions_on_disk: number;
+  last_decision: {
+    promoted: boolean | null;
+    holdout_n: number | null;
+    old_mae: number | null;
+    new_mae: number | null;
+    reason: string | null;
+    at: string | null;
+  } | null;
 }
 
-export interface MaeRow {
-  category: string;
-  model_version: string;
-  mae: number | null;
-  n: number;
+export interface ModelSummary {
+  root: string | null;
+  models: ModelRow[];
+  /** Category folders with no resolvable active model — listed, not hidden. */
+  unresolved: string[];
+  promotion_error: string | null;
 }
 
 export interface CountsRow {
@@ -390,61 +411,40 @@ export interface CountsRow {
 
 export interface MetricsResponse {
   counts_7d: CountsRow[];
-  mae: MaeRow[];
+  warming?: boolean;
+  stale?: boolean;
+  detail?: string;
 }
 
-const DEMO_MODELS: readonly ModelRow[] = [
-  { category: "pokemon_tcg", version: "v2.3", status: "active" },
-  { category: "mtg", version: "v2.1", status: "active" },
-  { category: "funko", version: "v2.2", status: "active" },
-  { category: "sneakers", version: "v2.0", status: "active" },
-  { category: "watches", version: "v1.8", status: "active" },
-  { category: "lego", version: "v2.1", status: "active" },
-  { category: "vinyl", version: "v1.9", status: "active" },
-  { category: "hot_toys", version: "v1.7", status: "active" },
-  { category: "warhammer", version: "v2.0", status: "active" },
-  { category: "yugioh", version: "v1.6", status: "active" },
-  { category: "kpop", version: "v1.5", status: "active" },
-  { category: "anime_figures", version: "v1.4", status: "active" },
-];
-
-function getDemoMetrics(): MetricsResponse {
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+function getDemoModelSummary(): ModelSummary {
+  const fitted = new Date(Date.now() - 2 * 86400000).toISOString();
   return {
-    counts_7d: [
-      { category: "pokemon_tcg", model_version: "v2.3", day: today, n: 342 },
-      { category: "pokemon_tcg", model_version: "v2.3", day: yesterday, n: 318 },
-      { category: "mtg", model_version: "v2.1", day: today, n: 215 },
-      { category: "funko", model_version: "v2.2", day: today, n: 187 },
-      { category: "sneakers", model_version: "v2.0", day: today, n: 156 },
-      { category: "watches", model_version: "v1.8", day: today, n: 134 },
-      { category: "lego", model_version: "v2.1", day: today, n: 112 },
-      { category: "vinyl", model_version: "v1.9", day: today, n: 98 },
-      { category: "hot_toys", model_version: "v1.7", day: today, n: 67 },
-      { category: "warhammer", model_version: "v2.0", day: today, n: 89 },
-      { category: "yugioh", model_version: "v1.6", day: today, n: 145 },
-      { category: "kpop", model_version: "v1.5", day: today, n: 76 },
-    ],
-    mae: [
-      { category: "pokemon_tcg", model_version: "v2.3", mae: 12.4, n: 1850 },
-      { category: "mtg", model_version: "v2.1", mae: 18.7, n: 1200 },
-      { category: "funko", model_version: "v2.2", mae: 8.2, n: 980 },
-      { category: "sneakers", model_version: "v2.0", mae: 22.1, n: 870 },
-      { category: "watches", model_version: "v1.8", mae: 145.3, n: 620 },
-      { category: "lego", model_version: "v2.1", mae: 11.8, n: 750 },
-      { category: "vinyl", model_version: "v1.9", mae: 6.3, n: 540 },
-      { category: "hot_toys", model_version: "v1.7", mae: 35.6, n: 380 },
-      { category: "warhammer", model_version: "v2.0", mae: 14.9, n: 450 },
-      { category: "yugioh", model_version: "v1.6", mae: 9.1, n: 680 },
-      { category: "kpop", model_version: "v1.5", mae: 7.8, n: 420 },
-      { category: "anime_figures", model_version: "v1.4", mae: 19.5, n: 310 },
-    ],
+    root: "(demo)",
+    unresolved: [],
+    promotion_error: null,
+    models: ["pokemon", "mtg", "funko", "lego"].map((category, i) => ({
+      category, version: "20260101_000000", model_type: "ridge_v2", fitted_at: fitted, age_days: 2,
+      train_size: 1000 * (i + 1), cv_mae: 0.8 + i / 10, log_scale: true, versions_on_disk: 2,
+      last_decision: { promoted: true, holdout_n: 0, old_mae: null, new_mae: null, reason: "demo", at: fitted },
+    })),
   };
 }
 
-export function fetchModels(): Promise<ModelRow[]> {
-  return fetchList<ModelRow>("/admin/models", "models", [...DEMO_MODELS]);
+function getDemoMetrics(): MetricsResponse {
+  const day = new Date().toISOString().slice(0, 10);
+  return {
+    counts_7d: ["pokemon", "mtg", "funko", "lego"].map((category, i) => ({
+      category, model_version: "", day, n: 300 - i * 50,
+    })),
+  };
+}
+
+export async function fetchModelSummary(): Promise<ModelSummary> {
+  const body = await tryFetchJSON<ModelSummary>("/admin/models", getDemoModelSummary());
+  if (!body || !Array.isArray(body.models)) {
+    throw new Error("/admin/models — unexpected response shape: expected { models: [...] }");
+  }
+  return body;
 }
 
 export function fetchMetrics(): Promise<MetricsResponse> {

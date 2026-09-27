@@ -1302,7 +1302,7 @@ async def start_all_workers() -> None:
         logger.info("[bake_orchestrator] Disabled via BAKE_ORCHESTRATOR_ENABLED=%s", enabled)
         return
 
-    from app.worker_registry import SCHEDULES
+    from app.worker_registry import SCHEDULES, mark_enabled
 
     all_workers = _WORKER_MANIFEST + _WEEKLY_WORKERS
     started = 0
@@ -1329,6 +1329,7 @@ async def start_all_workers() -> None:
             name=f"orchestrator:{registry_name}",
         )
         _active_tasks[registry_name] = task
+        mark_enabled(registry_name)
         started += 1
 
     # Also start the matview_refresh worker via its own scheduler_loop
@@ -1338,6 +1339,9 @@ async def start_all_workers() -> None:
             from workers.matview_refresh_worker import scheduler_loop as matview_loop
             task = asyncio.create_task(matview_loop(), name="orchestrator:matview_refresh")
             _active_tasks["matview_refresh"] = task
+            # The matview loop records under these three names.
+            for _mv in ("matview_refresh", "matview_demand", "matview_supply"):
+                mark_enabled(_mv)
             started += 1
             logger.info(
                 "[bake_orchestrator] Starting matview_refresh (own scheduler_loop)",
@@ -1364,6 +1368,7 @@ async def start_all_workers() -> None:
                 name="orchestrator:task_worker",
             )
             _active_tasks["task_worker"] = task
+            mark_enabled("task_worker")
             started += 1
             logger.info("[bake_orchestrator] Task worker started (poll=%ds)", poll_interval)
         except Exception as e:

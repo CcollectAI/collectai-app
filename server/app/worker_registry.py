@@ -143,6 +143,8 @@ def get_overdue_workers() -> list[dict]:
             continue
         if "matview" in name:
             continue
+        if is_disabled(name):
+            continue  # switched off on purpose — not late
 
         entry = _registry.get(name, {})
         last_run = entry.get("last_run")
@@ -240,6 +242,28 @@ def _duration_from_cycle(worker_name: str) -> Optional[float]:
     if cycle and cycle[0] == worker_name:
         return time.monotonic() - cycle[1]
     return None
+
+
+# Workers the bake orchestrator actually started (mark_enabled). None = the
+# orchestrator has not started in this process (tests, scripts), in which case
+# nothing is labelled "disabled". SCHEDULES lists ~38 workers; the orchestrator
+# starts ~23. The other 15 are switched off on purpose in _WORKER_MANIFEST —
+# and the admin Worker Health tab called them "never run", indistinguishable
+# from a started worker that has silently not run (2026-09-27).
+_enabled: Optional[set[str]] = None
+
+
+def mark_enabled(worker_name: str) -> None:
+    """Called by bake_orchestrator for every loop it starts."""
+    global _enabled
+    if _enabled is None:
+        _enabled = set()
+    _enabled.add(worker_name)
+
+
+def is_disabled(worker_name: str) -> bool:
+    """Scheduled but never started by this process's orchestrator."""
+    return _enabled is not None and worker_name not in _enabled
 
 
 def note_skip(worker_name: str, reason: str) -> None:
@@ -406,9 +430,10 @@ def get_worker_health() -> dict:
       - name: worker name
       - last_run_at: ISO timestamp of last run (or null)
       - expected_interval_minutes: configured interval in minutes
-      - status: "ok" | "overdue" | "never_run" | "on_demand"
+      - status: "ok" | "overdue" | "never_run" | "on_demand" | "disabled"
+        ("disabled" = in SCHEDULES but not started by the bake orchestrator)
       - last_status: "ok" | "error" | null
-      - run_count: lifetime run count
+      - run_count: runs since this process started (in memory; a restart resets it)
       - total_errors: lifetime error count
       - average_duration_s: mean wall-clock seconds per run (or null)
       - minutes_overdue: minutes past the 1.5x threshold (0 if not overdue, null if never_run)
@@ -417,10 +442,24 @@ def get_worker_health() -> dict:
 
     now = time.time()
     workers: list[dict] = []
-    counts = {"ok": 0, "overdue": 0, "never_run": 0, "on_demand": 0}
+    counts = {"ok": 0, "overdue": 0, "never_run": 0, "on_demand": 0, "disabled": 0}
 
     for name, interval in SCHEDULES.items():
         entry = _registry.get(name, {})
+        if interval > 0 and is_disabled(name):
+            workers.append({
+                "name": name,
+                "last_run_at": None,
+                "expected_interval_minutes": round(interval / 60, 1),
+                "status": "disabled",
+                "minutes_overdue": None,
+                "last_status": None,
+                "run_count": 0,
+                "total_errors": 0,
+                "average_duration_s": None,
+            })
+            counts["disabled"] += 1
+            continue
         last_run_epoch = entry.get("last_run")
         dur_count = entry.get("duration_count", 0)
         avg_dur = round(entry["total_duration_s"] / dur_count, 2) if dur_count > 0 else None

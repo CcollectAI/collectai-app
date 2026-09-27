@@ -129,9 +129,9 @@ Supabase reads go through `/api/admin/sb/...` the same way (table allowlist, ser
 | `GET /ops/dashboard/users` | Users |
 | `GET /ops/dashboard/sponsor-analytics` | Sponsors |
 | `GET /ops/dashboard/intel-summary` | Intelligence Data |
-| `GET /admin/worker-health` | Worker Health, Overview |
+| `GET /admin/worker-health` | Worker Health, Overview (`disabled` = scheduled but not started by the bake) |
 | `GET /admin/demand-summary` | Demand Signals |
-| `GET /admin/models`, `GET /admin/metrics` | ML Models (read-only) |
+| `GET /admin/models`, `GET /admin/metrics` | ML Models (read-only): the served `active/model.json` per category + last `model_promotion_log` decision; 7-day prediction counts |
 | `GET /admin/kpi-summary` | KPI Funnel |
 | `GET /admin/spend-summary`, `POST /admin/spend-budget` · `spend-pause` · `spend-reset` | Spend Monitor |
 

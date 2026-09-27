@@ -370,77 +370,68 @@ async def bake_summary(request: Request) -> JSONResponse:
 
 
 # ---------------------------------------------------------------------------
-# GET /admin/models  —  ML model registry
+# GET /admin/models  —  the models being served
 # ---------------------------------------------------------------------------
 # The admin dashboard's ML Models tab called this and /admin/metrics; neither
-# existed, so every request 404'd and the tab silently rendered a hardcoded
-# DEMO_MODELS list. Both are now served from model_registry / model_metrics.
+# existed at first, so the tab rendered a hardcoded DEMO_MODELS list. They were
+# then served from model_registry / model_metrics — both dead tables for this
+# purpose (see admin_models). Since 2026-09-27: served artifacts + the
+# promotion log.
 
 
-@router.get("/admin/models", summary="Registered ML models per category")
+@router.get("/admin/models", summary="The pricing models being served, per category")
 async def admin_models(request: Request):
-    """Per-category model versions, newest first."""
+    """The `active` model.json per category (what serving loads) + its last
+    retrain decision from model_promotion_log. See app/lib/model_summary.py.
+
+    Until 2026-09-27 this read model_metrics (dead since 2026-04-24, all
+    clip-v1.0.0) and model_registry (test rows), so the ML tab showed 61
+    "stale" CLIP models while serving used Ridge models fitted that day.
+    """
     if (err := _check_ops_key(request)) is not None:
         return err
 
+    from app.lib.model_summary import serving_models
+    from app.ml.model_loader import _resolve_artifacts_root
+
+    promotions: dict[str, dict] = {}
+    promotion_error: str | None = None
     pool = await get_pool()
     if pool is None:
-        return JSONResponse(status_code=503, content={"detail": "Database unavailable"})
-
-    try:
-        # model_metrics is the only per-category source: model_registry rows are
-        # per training run (name='price'), not per collectible category.
-        # DISTINCT ON picks each category's most recently evaluated version.
-        rows = await pool.fetch(
-            """
-            SELECT DISTINCT ON (category)
-                   category,
-                   model_version AS version,
-                   computed_at
-            FROM model_metrics
-            WHERE category IS NOT NULL AND category <> 'unknown'
-            ORDER BY category, computed_at DESC
-            """
-        )
-        registry = await pool.fetch(
-            "SELECT name, version, uri, is_canary, created_at "
-            "FROM model_registry ORDER BY created_at DESC LIMIT 50"
-        )
-    except Exception as exc:
-        _log.exception("admin/models query failed")
-        # raw-error-ok: an OPS endpoint (_check_ops_key in the body); whoever
-        # holds that key is debugging, and no member path reaches this.
-        return JSONResponse(status_code=500, content={"detail": f"Query failed: {exc}"})
-
-    latest = registry[0]["version"] if registry else None
-    models = [
-        {
-            "category": r["category"],
-            "version": r["version"],
-            # "active" means this category's newest evaluated version matches the
-            # newest registry version; anything older is stale, not active.
-            "status": "active" if latest and r["version"] == latest else "stale",
-            "artifact_uri": None,
-            "evaluated_at": r["computed_at"].isoformat() if r["computed_at"] else None,
-        }
-        for r in rows
-    ]
-
-    return JSONResponse(
-        content={
-            "models": models,
-            "registry": [
-                {
-                    "name": r["name"],
-                    "version": r["version"],
-                    "uri": r["uri"],
-                    "is_canary": r["is_canary"],
+        promotion_error = "Database unavailable — retrain decisions not shown"
+    else:
+        try:
+            rows = await pool.fetch(
+                """
+                SELECT DISTINCT ON (category)
+                       category, promoted, holdout_n, old_mae, new_mae, reason, created_at
+                FROM public.model_promotion_log
+                ORDER BY category, created_at DESC
+                """
+            )
+            promotions = {
+                r["category"]: {
+                    "promoted": r["promoted"],
+                    "holdout_n": r["holdout_n"],
+                    "old_mae": float(r["old_mae"]) if r["old_mae"] is not None else None,
+                    "new_mae": float(r["new_mae"]) if r["new_mae"] is not None else None,
+                    "reason": r["reason"],
                     "created_at": r["created_at"].isoformat() if r["created_at"] else None,
                 }
-                for r in registry
-            ],
-        }
-    )
+                for r in rows
+            }
+        except Exception as exc:
+            _log.exception("admin/models promotion log query failed")
+            promotion_error = f"model_promotion_log unreadable: {exc}"
+
+    summary = serving_models(_resolve_artifacts_root(), promotions)
+    if summary["root"] is None:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "No artifacts root found — cannot tell which models are served"},
+        )
+    summary["promotion_error"] = promotion_error
+    return JSONResponse(content=summary)
 
 
 # ---------------------------------------------------------------------------
@@ -461,9 +452,9 @@ def _seven_day_window_label() -> str:
     return f"{(date.today() - timedelta(days=7)).isoformat()}..{date.today().isoformat()}"
 
 
-@router.get("/admin/metrics", summary="Model MAE and 7-day prediction counts")
+@router.get("/admin/metrics", summary="7-day prediction counts per category")
 async def admin_metrics(request: Request):
-    """MAE per category plus 7-day prediction volume.
+    """7-day prediction volume per category (price_prediction_daily rollup).
 
     Cached for 10 minutes. The underlying scan is ~1-2s over 180k rollup rows,
     and the admin client aborts at 5s and silently substitutes demo data — so
@@ -495,7 +486,7 @@ async def admin_metrics(request: Request):
     # Cold start: empty and explicitly labelled. Empty-and-honest beats
     # fabricated-and-plausible, which is what the client shows on a timeout.
     return JSONResponse(
-        content={"mae": [], "counts_7d": [], "warming": True,
+        content={"counts_7d": [], "warming": True,
                  "detail": "metrics are being computed — reload in a few seconds"}
     )
 
@@ -516,15 +507,10 @@ async def _refresh_metrics_cache() -> None:
             _log.warning("admin/metrics refresh skipped — no DB pool")
             return
 
-        mae = await pool.fetch(
-            """
-            SELECT DISTINCT ON (category, model_version)
-                   category, model_version, mae, mape, n
-            FROM model_metrics
-            WHERE category IS NOT NULL AND category <> 'unknown'
-            ORDER BY category, model_version, computed_at DESC
-            """
-        )
+        # (The model_metrics MAE list was removed 2026-09-27: that table was
+        # last written 2026-04-24 — clip-v1.0.0, n=0 — so it reported a dead
+        # tier as the models' accuracy. Per-model training error now comes from
+        # the served model.json via /admin/models.)
         # Grouped by category only: AdminMLModels sums every row for a category
         # (countForCategory) and never reads the per-day split, so grouping by
         # day returned 7x the rows for no rendered benefit.
@@ -544,16 +530,6 @@ async def _refresh_metrics_cache() -> None:
         )
 
         _METRICS_CACHE["payload"] = {
-            "mae": [
-                {
-                    "category": r["category"],
-                    "model_version": r["model_version"],
-                    "mae": float(r["mae"]) if r["mae"] is not None else None,
-                    "mape": float(r["mape"]) if r["mape"] is not None else None,
-                    "n": r["n"] or 0,
-                }
-                for r in mae
-            ],
             "counts_7d": [
                 {
                     "category": r["category"] or "unknown",
@@ -567,10 +543,7 @@ async def _refresh_metrics_cache() -> None:
             ],
         }
         _METRICS_CACHE["at"] = monotonic()
-        _log.info(
-            "admin/metrics cache refreshed: %d mae rows, %d category counts",
-            len(mae), len(counts),
-        )
+        _log.info("admin/metrics cache refreshed: %d category counts", len(counts))
     except Exception:
         # Cache left untouched so a failed refresh serves the last good value
         # rather than reverting to empty.

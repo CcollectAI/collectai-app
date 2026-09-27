@@ -42,6 +42,7 @@ function WorkerSummary({ workers }: { workers: WorkerStatus[] }) {
   const overdue = workers.filter((w) => w.status === "overdue").length;
   const neverRun = workers.filter((w) => w.status === "never_run").length;
   const onDemand = workers.filter((w) => w.status === "on_demand").length;
+  const disabled = workers.filter((w) => w.status === "disabled").length;
 
   return (
     <div className="rounded-2xl bg-white dark:bg-slate-800 p-5 shadow-sm transition-colors">
@@ -57,7 +58,7 @@ function WorkerSummary({ workers }: { workers: WorkerStatus[] }) {
         )}
         {neverRun > 0 && (
           <span className="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />{neverRun} never run
+            <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />{neverRun} not run yet
           </span>
         )}
         {onDemand > 0 && (
@@ -65,7 +66,12 @@ function WorkerSummary({ workers }: { workers: WorkerStatus[] }) {
             <span className="h-2.5 w-2.5 rounded-full bg-blue-400" />{onDemand} on-demand
           </span>
         )}
-        <span className="text-xs text-gray-400 dark:text-gray-500">({workers.length} total)</span>
+        {disabled > 0 && (
+          <span className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+            <span className="h-2.5 w-2.5 rounded-full bg-gray-300" />{disabled} disabled
+          </span>
+        )}
+        <span className="text-xs text-gray-400 dark:text-gray-500">({workers.length - disabled} running)</span>
       </div>
     </div>
   );

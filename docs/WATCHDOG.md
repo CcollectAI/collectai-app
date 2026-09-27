@@ -745,6 +745,13 @@ defaults false), artifacts upload only `if: failure()`, and the runner is then
 destroyed. Serving reads `artifacts/<cat>/active/model.json` from the box's own
 disk. The two halves have never been connected. Full chain in `docs/INGEST.md`.
 
+**Where to look without the watchdog (2026-09-27):** the admin dashboard's ML
+Models tab reads the same thing serving loads — every
+`artifacts/<cat>/active/model.json` — with its age and the last
+`model_promotion_log` decision (`GET /admin/models`,
+`server/app/lib/model_summary.py`). Before that date it showed dead
+`model_metrics` rows (clip-v1.0.0, April) and could not have shown this finding.
+
 ### Why this is ONE medium and not 53 highs
 
 This doc's own rule — *"a daily siren is how a channel stops being read"* — and
