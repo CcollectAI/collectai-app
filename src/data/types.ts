@@ -605,6 +605,8 @@ export type PersistedItem = {
   categoryId: string;
   createdAt: string;
   imageUrl?: string | null;
+  /** false = a photo was given but could not be uploaded; the item WAS saved. */
+  photoSaved?: boolean;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -266,7 +266,8 @@
     "a11y_scan_another": "Nog een item scannen",
     "scan_another": "Nog een scannen",
     "quickscan_tip": "Tip: gebruik QuickScan voor sneller invoeren met AI-hulp",
-    "load_failed": "Dit object kon niet worden geladen."
+    "load_failed": "Dit object kon niet worden geladen.",
+    "saved_photo_failed": "Item saved — but the photo didn't upload. Add it from the item page."
   },
   "onboarding": {
     "skip_a11y": "Categorie-keuze overslaan",

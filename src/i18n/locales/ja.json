@@ -266,7 +266,8 @@
     "a11y_scan_another": "別のアイテムをスキャン",
     "scan_another": "別のものをスキャン",
     "quickscan_tip": "ヒント: QuickScan を使うと AI の支援でより速く入力できます",
-    "load_failed": "このアイテムを読み込めませんでした。"
+    "load_failed": "このアイテムを読み込めませんでした。",
+    "saved_photo_failed": "Item saved — but the photo didn't upload. Add it from the item page."
   },
   "onboarding": {
     "skip_a11y": "カテゴリー選択をスキップ",

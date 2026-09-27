@@ -266,7 +266,8 @@
     "a11y_scan_another": "Weiteren Artikel scannen",
     "scan_another": "Weiteren scannen",
     "quickscan_tip": "Tipp: Nutze QuickScan für schnellere Eingabe mit KI-Unterstützung",
-    "load_failed": "Dieses Objekt konnte nicht geladen werden."
+    "load_failed": "Dieses Objekt konnte nicht geladen werden.",
+    "saved_photo_failed": "Item saved — but the photo didn't upload. Add it from the item page."
   },
   "onboarding": {
     "skip_a11y": "Kategorieauswahl überspringen",

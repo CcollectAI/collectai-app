@@ -266,7 +266,8 @@
     "a11y_scan_another": "Escanear otro artículo",
     "scan_another": "Escanear otro",
     "quickscan_tip": "Consejo: usa QuickScan para introducir datos más rápido con ayuda de la IA",
-    "load_failed": "No se pudo cargar este artículo."
+    "load_failed": "No se pudo cargar este artículo.",
+    "saved_photo_failed": "Item saved — but the photo didn't upload. Add it from the item page."
   },
   "onboarding": {
     "skip_a11y": "Saltar selección de categoría",

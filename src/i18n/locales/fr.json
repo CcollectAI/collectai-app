@@ -266,7 +266,8 @@
     "a11y_scan_another": "Scanner un autre article",
     "scan_another": "Scanner un autre",
     "quickscan_tip": "Astuce : utilisez QuickScan pour une saisie plus rapide assistée par l'IA",
-    "load_failed": "Impossible de charger cet objet."
+    "load_failed": "Impossible de charger cet objet.",
+    "saved_photo_failed": "Item saved — but the photo didn't upload. Add it from the item page."
   },
   "onboarding": {
     "skip_a11y": "Passer la sélection de catégorie",

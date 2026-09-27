@@ -612,6 +612,14 @@ export async function listArchivedItems(): Promise<Item[]> {
   return mapRowsWithValues(data);
 }
 
+/** Upload content type from a local file name (camera = jpeg, gallery may be png/webp). */
+export function photoMimeType(uri: string): string {
+  const lower = uri.toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  return 'image/jpeg';
+}
+
 export async function persistQuickscanDraft(input: QuickscanDraft): Promise<PersistedItem> {
   // Server contract: ItemCreateRequest takes `name` (not `title`),
   // category, collection_name, estimated_value, notes, canonical_key.
@@ -620,10 +628,29 @@ export async function persistQuickscanDraft(input: QuickscanDraft): Promise<Pers
   // here was rejected with 422 (missing `name`).
   // canonical_key (catalog-match key) is forwarded so downstream Premium
   // JOINs (price_trend, item_history, dossier) can find the catalog row.
+  // The scan's photo. It was accepted here and never used, so every item
+  // saved from QuickScan landed with no image (device walk 2026-09-27). Same
+  // route as Add manually: upload first, then create with its URL. A failed
+  // upload must not cost the item — it is saved, and `photoSaved: false`
+  // tells the caller to say so.
+  let imageUrl: string | null = null;
+  let photoSaved: boolean | undefined;
+  if (input.photoUri) {
+    try {
+      const up = await collectorsApi.uploadPhoto('quickscan-draft', input.photoUri, photoMimeType(input.photoUri));
+      imageUrl = up.cdn_url ?? null;
+      photoSaved = Boolean(imageUrl);
+    } catch (e) {
+      logger.error('[SupabaseDataProvider] persistQuickscanDraft photo upload failed:', e);
+      photoSaved = false;
+    }
+  }
+
   let row: Record<string, unknown>;
   try {
     row = await collectorsApi.post<Record<string, unknown>>('/items', {
       name: input.title ?? 'Untitled Scan',
+      ...(imageUrl ? { image_url: imageUrl } : {}),
       category: input.categoryId ?? 'uncategorized',
       notes: input.notes ?? null,
       canonical_key: input.canonicalKey ?? null,
@@ -671,13 +698,14 @@ export async function persistQuickscanDraft(input: QuickscanDraft): Promise<Pers
     }
   }
 
-  const images = (row.images as string[] | null) ?? null;
   return {
     id: row.id as string,
     title: (row.title as string | null) ?? input.title ?? 'Untitled Scan',
     categoryId: (row.category as string | null) ?? input.categoryId ?? 'uncategorized',
     createdAt: (row.created_at as string | null) ?? new Date().toISOString(),
-    imageUrl: images?.[0] ?? null,
+    // The server returns `image_url` (singular); `images` was never populated.
+    imageUrl: (row.image_url as string | null) ?? imageUrl,
+    ...(photoSaved !== undefined ? { photoSaved } : {}),
   };
 }
 

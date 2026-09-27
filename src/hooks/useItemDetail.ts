@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { memberAmountToEUR } from '@/lib/fx';
 import { Platform, Keyboard } from 'react-native';
 import { router } from 'expo-router';
@@ -89,6 +90,7 @@ export function useItemDetail(params: UseItemDetailParams) {
 
   const { settings } = useSettings();
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   // ── Edit state ─────────────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
@@ -394,7 +396,11 @@ export function useItemDetail(params: UseItemDetailParams) {
         }).catch((e: unknown) => logger.error('[ItemDetail] barcode observation failed:', e));
       }
       fireHaptic(HapticIntent.JUDGMENT_LOCKED, { enabled: settings.hapticsEnabled });
-      showToast({ message: 'Item saved to collection', type: 'success' });
+      showToast(
+        persisted.photoSaved === false
+          ? { message: t('item_detail.saved_photo_failed', { defaultValue: "Item saved — but the photo didn't upload. Add it from the item page." }), type: 'warning' }
+          : { message: 'Item saved to collection', type: 'success' },
+      );
       router.replace({
         pathname: '/item/[id]',
         params: {
@@ -414,7 +420,7 @@ export function useItemDetail(params: UseItemDetailParams) {
     } finally {
       setSavingDraft(false);
     }
-  }, [isDraft, imageUri, editableCategory, editableName, notes, editableCollection, editableCondition, editableValue, q50, q10, q90, confidence, initialValue, settings.hapticsEnabled, showToast, initialAttributes, catalogKey]);
+  }, [isDraft, imageUri, editableCategory, editableName, notes, editableCollection, editableCondition, editableValue, q50, q10, q90, confidence, initialValue, settings.hapticsEnabled, showToast, initialAttributes, catalogKey, t]);
 
   // ── Save edits handler ─────────────────────────────────────────────────
   const onSaveEdits = useCallback(async () => {
