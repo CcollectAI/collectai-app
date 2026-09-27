@@ -43,6 +43,8 @@ interface OfferInput {
   userEstimate?: number | null;
   /** `attrs.value_choice`, if they have already answered. */
   existingChoice?: string | null;
+  /** `attrs.value_entry`: 'app' = the estimate came from a scan, not the member. */
+  valueEntry?: string | null;
 }
 
 /**
@@ -53,10 +55,15 @@ interface OfferInput {
  *  - the member actually typed something (otherwise there is nothing to keep)
  *  - they have not already answered (asking twice reads as the app ignoring you)
  *  - the two numbers differ (offering a choice between €50 and €50 is noise)
+ *
+ * "Typed" means the MEMBER set it: a QuickScan save stores the scan's own
+ * estimate in `estimated_value` with `attrs.value_entry = 'app'`, and the prompt
+ * then read "You said EUR 1.159" to someone who said nothing (walk 2026-09-27).
  */
 export function shouldOfferComp(input: OfferInput): boolean {
-  const { valueSource, currentValue, userEstimate, existingChoice } = input;
+  const { valueSource, currentValue, userEstimate, existingChoice, valueEntry } = input;
   if (existingChoice === 'mine' || existingChoice === 'market') return false;
+  if (valueEntry === 'app') return false;
   if (!isMarketBacked(valueSource)) return false;
   if (typeof currentValue !== 'number' || !(currentValue > 0)) return false;
   if (typeof userEstimate !== 'number' || !(userEstimate > 0)) return false;

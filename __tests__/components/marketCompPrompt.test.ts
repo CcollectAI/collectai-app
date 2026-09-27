@@ -54,6 +54,11 @@ describe('shouldOfferComp', () => {
     expect(shouldOfferComp({ ...base, currentValue: 50.01, userEstimate: 50 })).toBe(true);
   });
 
+  it('does not ask about a value the SCAN set, not the member (walk 2026-09-27: "You said EUR 1.159")', () => {
+    expect(shouldOfferComp({ ...base, valueEntry: 'app' })).toBe(false);
+    expect(shouldOfferComp({ ...base, valueEntry: null })).toBe(shouldOfferComp(base));
+  });
+
   it('does not ask when there is no market number to offer', () => {
     for (const v of [undefined, null, 0]) {
       expect(shouldOfferComp({ ...base, currentValue: v as number })).toBe(false);

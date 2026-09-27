@@ -1052,6 +1052,7 @@ function ItemDetailScreen() {
     userEstimate: savedCore?.userEstimate,
     existingChoice:
       typeof savedAttrs?.value_choice === 'string' ? savedAttrs.value_choice : null,
+    valueEntry: typeof savedAttrs?.value_entry === 'string' ? savedAttrs.value_entry : null,
   });
 
   return (
