@@ -27,6 +27,7 @@ import { ComparisonCard } from '@/components/ComparisonCard';
 import { classifyOnDevice, buildCategoryDistribution } from '@/lib/edgeClassifier';
 import type { EdgeClassification } from '@/lib/edgeClassifier';
 import { CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
+import { handoffCategoryName } from '@/lib/quickscanHandoff';
 import { multiDetect } from '@/api/collectorsApi';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -297,9 +298,11 @@ function QuickScanScreen() {
           type: 'info',
           duration: 4000,
         });
-        const visionCategory = sr.attributes.category
-          ? CATEGORY_SLUG_TO_NAME[sr.attributes.category]
-          : undefined;
+        // Only a category vision was actually confident in (quickscanHandoff).
+        const visionCategory = handoffCategoryName(
+          sr.attributes.category,
+          sr.fieldConfidence?.category ?? sr.prediction.confidence,
+        );
         const extracted = sr.attributes.extractedDetails;
         const handoffAttrs = withBarcode(extracted);
         router.push({
@@ -515,9 +518,11 @@ function QuickScanScreen() {
         // The vision pass still extracted usable details even at low
         // confidence — carry name / category / condition / attributes into
         // manual-add so the user confirms fields instead of typing from scratch.
-        const visionCategory = sr.attributes.category
-          ? CATEGORY_SLUG_TO_NAME[sr.attributes.category]
-          : undefined;
+        // Only a category vision was actually confident in (quickscanHandoff).
+        const visionCategory = handoffCategoryName(
+          sr.attributes.category,
+          sr.fieldConfidence?.category ?? sr.prediction.confidence,
+        );
         const extracted = sr.attributes.extractedDetails;
         const handoffAttrs = withBarcode(extracted);
         router.push({
