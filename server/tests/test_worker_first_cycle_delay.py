@@ -180,3 +180,90 @@ def test_every_guard_call_site_returns_the_sentinel():
             assert "return SKIPPED" in src[i:i + 120], f"{f}: bare return after the guard"
             start = i + 1
     assert sites >= 2
+
+
+class _FakeConn:
+    def __init__(self, pool):
+        self.pool = pool
+
+    async def fetch(self, q, names, host):
+        self.pool.fetches += 1
+        if self.pool.fail_first > 0:
+            self.pool.fail_first -= 1
+            raise RuntimeError("(EMAXCONNSESSION) max clients reached in session mode")
+        return [{"worker_name": "a", "age": 3600.0}]
+
+    async def fetchval(self, *a):
+        self.pool.fetchvals += 1
+        return 10.0
+
+
+class _FakePool:
+    def __init__(self, fail_first=0):
+        self.fail_first = fail_first
+        self.fetches = 0
+        self.fetchvals = 0
+
+    def acquire(self):
+        pool = self
+
+        class _Ctx:
+            async def __aenter__(self_inner):
+                return _FakeConn(pool)
+
+            async def __aexit__(self_inner, *a):
+                return False
+        return _Ctx()
+
+
+def _use_pool(monkeypatch, pool):
+    import app.lib.db_helpers as dh
+    monkeypatch.setattr(dh, "get_db_pool", lambda: pool)
+    monkeypatch.setattr(bo, "_primed_last_run_epoch", {})
+
+
+@pytest.mark.asyncio
+async def test_prime_is_ONE_query_for_all_workers_and_reads_need_no_connection(monkeypatch):
+    """2026-09-27 21:50: ~20 per-worker reads at once → 6 EMAXCONNSESSION →
+    those 6 fell back to running. The prime must replace them."""
+    pool = _FakePool()
+    _use_pool(monkeypatch, pool)
+    assert await bo._prime_last_run_ages(["a", "b"]) is True
+    assert pool.fetches == 1
+    age_a = await bo._seconds_since_last_run("a")
+    age_b = await bo._seconds_since_last_run("b")
+    assert pool.fetchvals == 0, "a primed worker opened its own connection"
+    assert abs(age_a - 3600.0) < 5
+    assert age_b is None  # no row: a new worker runs on the stagger
+
+
+@pytest.mark.asyncio
+async def test_a_primed_value_is_used_once_then_the_db_is_read(monkeypatch):
+    # A respawned loop must not trust an hours-old startup value.
+    pool = _FakePool()
+    _use_pool(monkeypatch, pool)
+    await bo._prime_last_run_ages(["a"])
+    await bo._seconds_since_last_run("a")
+    assert await bo._seconds_since_last_run("a") == 10.0
+    assert pool.fetchvals == 1
+
+
+@pytest.mark.asyncio
+async def test_prime_retries_a_refused_connection(monkeypatch):
+    pool = _FakePool(fail_first=2)
+    _use_pool(monkeypatch, pool)
+
+    async def no_sleep(s):
+        return None
+    monkeypatch.setattr(bo.asyncio, "sleep", no_sleep)
+    assert await bo._prime_last_run_ages(["a"]) is True
+    assert pool.fetches == 3
+
+
+def test_start_all_workers_primes_before_it_spawns_any_loop():
+    import inspect
+    src = inspect.getsource(bo.start_all_workers)
+    prime = src.find("await _prime_last_run_ages(")
+    spawn = src.find("_run_worker_loop(")
+    assert prime != -1, "start_all_workers no longer primes last-run ages"
+    assert prime < spawn

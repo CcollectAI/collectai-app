@@ -554,8 +554,67 @@ def _first_cycle_delay(
     return max(float(stagger), float(interval_s) - since_last_s)
 
 
+# Last-run epochs read ONCE for every worker before the loops start, and each
+# consumed once (popped). The first deploy of _first_cycle_delay read per
+# worker: ~20 loops opened a pool connection in the same millisecond, the
+# pooler answered 6 of them "(EMAXCONNSESSION) max clients reached in session
+# mode", and those 6 fell back to running — lorcast and seatgeek re-ran on
+# that very restart (2026-09-27 21:50). One grouped query = one connection.
+_primed_last_run_epoch: dict[str, float | None] = {}
+_PRIME_ATTEMPTS = 3
+# Caps the one-by-one fallback reads (prime failed, or a respawned loop) so
+# they cannot reproduce the startup burst. Created lazily: asyncio primitives
+# need a running loop.
+_LAST_RUN_READ_SEM: asyncio.Semaphore | None = None
+
+
+async def _prime_last_run_ages(names: list[str]) -> bool:
+    """Fill _primed_last_run_epoch for `names` with one query; retry briefly.
+
+    A worker with no row is primed as None (new worker → run on the stagger).
+    Returns False when every attempt failed; the loops then read one by one.
+    """
+    from app.lib.db_helpers import get_db_pool
+    from app.worker_registry import _HOST
+
+    pool = get_db_pool()
+    if pool is None or not names:
+        return False
+    for attempt in range(_PRIME_ATTEMPTS):
+        try:
+            async with pool.acquire() as conn:
+                rows = await asyncio.wait_for(
+                    conn.fetch(
+                        "SELECT worker_name, "
+                        "EXTRACT(EPOCH FROM now() - max(finished_at))::float8 AS age "
+                        "FROM public.worker_runs "
+                        "WHERE worker_name = ANY($1::text[]) AND metadata->>'host' = $2 "
+                        "GROUP BY worker_name",
+                        list(names), _HOST,
+                    ),
+                    timeout=15,
+                )
+        except Exception as e:
+            logger.warning(
+                "[bake_orchestrator] last-run prime attempt %d/%d failed: %r",
+                attempt + 1, _PRIME_ATTEMPTS, e,
+            )
+            await asyncio.sleep(2 * (attempt + 1))
+            continue
+        now = time.time()
+        ages = {r["worker_name"]: r["age"] for r in rows}
+        for n in names:
+            age = ages.get(n)
+            _primed_last_run_epoch[n] = (now - float(age)) if age is not None else None
+        return True
+    return False
+
+
 async def _seconds_since_last_run(name: str) -> float | None:
     """Age in seconds of `name`'s newest worker_runs row recorded by this host.
+
+    Primed value first (see _primed_last_run_epoch), consumed once so a later
+    respawn of the loop reads the DB afresh instead of a stale startup value.
 
     Host-scoped because worker_runs is a prod table a laptop can write to
     (see worker_registry._HOST) — a local run must not postpone prod's cycle.
@@ -564,11 +623,18 @@ async def _seconds_since_last_run(name: str) -> float | None:
     from app.lib.db_helpers import get_db_pool
     from app.worker_registry import _HOST
 
+    if name in _primed_last_run_epoch:
+        epoch = _primed_last_run_epoch.pop(name)
+        return None if epoch is None else max(0.0, time.time() - epoch)
+
+    global _LAST_RUN_READ_SEM
     pool = get_db_pool()
     if pool is None:
         return None
+    if _LAST_RUN_READ_SEM is None:
+        _LAST_RUN_READ_SEM = asyncio.Semaphore(2)
     try:
-        async with pool.acquire() as conn:
+        async with _LAST_RUN_READ_SEM, pool.acquire() as conn:
             age = await asyncio.wait_for(
                 conn.fetchval(
                     "SELECT EXTRACT(EPOCH FROM now() - max(finished_at))::float8 "
@@ -1222,6 +1288,10 @@ async def start_all_workers() -> None:
     all_workers = _WORKER_MANIFEST + _WEEKLY_WORKERS
     started = 0
     skipped = 0
+
+    await _prime_last_run_ages([
+        n for n, *_ in all_workers if SCHEDULES.get(n, 0) > 0
+    ])
 
     for registry_name, module_path, func_name, needs_db_dsn in all_workers:
         interval = SCHEDULES.get(registry_name, 0)
