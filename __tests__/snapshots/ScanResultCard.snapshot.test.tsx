@@ -214,3 +214,37 @@ describe('ScanResultCard snapshots', () => {
     expect(tree).toMatchSnapshot();
   });
 });
+
+// ---------------------------------------------------------------------------
+// #12 (2026-09-27): when the markets disagree, a RANGE — not their midpoint.
+// Base Set Charizard read EUR 1,159: the midpoint of TCGplayer 825 and
+// Cardmarket 1,531, a number no market quoted.
+// ---------------------------------------------------------------------------
+describe('ScanResultCard price when sources disagree', () => {
+  const band = { estimatedLow: 825.41, estimatedMid: 825.41, estimatedHigh: 1531, currency: 'EUR' as const };
+  const renderWith = (sourcesDisagree: boolean) =>
+    render(
+      <ScanResultCard
+        scanResult={makeScanResult({
+          prediction: { ...makeScanResult().prediction, ...band, sourcesDisagree },
+        })}
+        capturedUri="file:///photo.jpg"
+        currency="EUR"
+        onRetake={noopFn}
+        onSelectAlternative={noopFn}
+        onConfirm={noopFn}
+      />,
+    );
+
+  it('shows the range as the headline', () => {
+    const { queryByText } = renderWith(true);
+    expect(queryByText('$825.41 – $1531')).not.toBeNull();
+  });
+
+  it('shows the single value when the sources agree', () => {
+    const { queryByText, queryAllByText } = renderWith(false);
+    expect(queryByText('$825.41 – $1531')).toBeNull();
+    // Twice: the headline and the band's low label (getByText throws on 2).
+    expect(queryAllByText('$825.41').length).toBeGreaterThanOrEqual(1);
+  });
+});

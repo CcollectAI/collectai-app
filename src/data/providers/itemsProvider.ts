@@ -774,6 +774,7 @@ export async function quickscanSingle(imageUri?: string): Promise<QuickScanResul
         currency,
         confidence,
         explanation: intake.rationale?.length ? intake.rationale.join(' ') : null,
+        sourcesDisagree: priceBand?.sources_disagree === true,
       },
       catalogMatchId: intake.catalog_match_id ?? null,
       catalogMatchKey: intake.catalog_match_key ?? null,

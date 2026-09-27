@@ -112,7 +112,12 @@ function CatalogItemMuseumScreen() {
   // Median over recent comps + how many comps back it — drives the credibility
   // line ("Based on N recent comps"). Fetched on mount; the nav param shows
   // instantly meanwhile.
-  const [priceDetail, setPriceDetail] = useState<{ estimated_price: number | null; comps_count: number } | null>(null);
+  const [priceDetail, setPriceDetail] = useState<{
+    estimated_price: number | null;
+    comps_count: number;
+    value_source?: string | null;
+    range?: { low: number; high: number } | null;
+  } | null>(null);
   // From the price endpoint; the route params only carry the raw set code.
   const [setName, setSetName] = useState<string | null>(null);
   // Whether the price-detail read has answered. With no price in the route,
@@ -225,7 +230,14 @@ function CatalogItemMuseumScreen() {
         const res = await collectorsApi.getCatalogItemPrice(category, params.key as string);
         if (cancelled) return;
         if (res) {
-          setPriceDetail({ estimated_price: res.estimated_price, comps_count: res.comps_count });
+          setPriceDetail({
+            estimated_price: res.estimated_price,
+            comps_count: res.comps_count,
+            value_source: res.value_source ?? null,
+            range: res.sources_disagree && res.range_low != null && res.range_high != null
+              ? { low: res.range_low, high: res.range_high }
+              : null,
+          });
           setSetName(res.set_name ?? null);
           if (res.estimated_price != null) setEstPrice(res.estimated_price);
         }
@@ -357,7 +369,13 @@ function CatalogItemMuseumScreen() {
         {/* Market value — FREE estimated price; q-bands/trend are Pro-gated and NOT shown here */}
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionLabel, { color: colors.muted }]}>MARKET VALUE</Text>
-          {estPrice != null ? (
+          {/* One value per catalogue item (#12): the same number the scan and
+              the saved item show; a RANGE when the markets disagree > 1.5x. */}
+          {priceDetail?.range ? (
+            <Text style={[styles.price, { color: colors.text }]}>
+              {`${formatPrice(priceDetail.range.low)} – ${formatPrice(priceDetail.range.high)}`}
+            </Text>
+          ) : estPrice != null ? (
             <Text style={[styles.price, { color: colors.text }]}>~{formatPrice(estPrice)}</Text>
           ) : priceLoading ? (
             <ActivityIndicator color={colors.accent} style={{ marginTop: 12, alignSelf: 'flex-start' }} />
@@ -391,7 +409,14 @@ function CatalogItemMuseumScreen() {
                 drift into describing the same rows two ways. This endpoint
                 returns only a count -- no `sources` -- so it makes no provider
                 or market claim, which is the honest floor. */}
-            {(priceDetail && priceDetail.comps_count >= 3)
+            {priceDetail?.range
+              ? t('scan.sources_disagree')
+              : (priceDetail?.value_source === 'catalog_model' && priceDetail.comps_count > 0)
+              ? t('catalog.value_model_caption', {
+                  count: priceDetail.comps_count,
+                  noun: compNoun(null, priceDetail.comps_count),
+                })
+              : (priceDetail && priceDetail.comps_count >= 3)
               ? `Median of ${priceDetail.comps_count} recent ${compNoun(null, priceDetail.comps_count)}`
               : (priceDetail && priceDetail.comps_count > 0)
                 ? `Based on ${priceDetail.comps_count} recent ${compNoun(null, priceDetail.comps_count)}`

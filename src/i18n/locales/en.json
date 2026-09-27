@@ -659,7 +659,8 @@
     "total_estimated_value": "Total estimated value",
     "nothing_saved": "No items were saved during this session.",
     "one_by_one": "One by one",
-    "all_at_once": "All at once"
+    "all_at_once": "All at once",
+    "sources_disagree": "Markets disagree on this one — the range is what they quote."
   },
   "settings": {
     "title": "Settings",
@@ -1538,7 +1539,8 @@
     "suggestions_explainer": "When you scan or add items we don't recognize, they'll appear here so you can track their status.",
     "no_categories_match": "No categories match \"{{query}}\"",
     "not_in_catalogue": "Not in our catalogue yet",
-    "help_us_file": "Pick its category so the next scan of it lands in the right place."
+    "help_us_file": "Pick its category so the next scan of it lands in the right place.",
+    "value_model_caption": "Our market estimate, from {{count}} recent {{noun}}"
   },
   "inbox": {
     "sent_requests": "Sent Requests",

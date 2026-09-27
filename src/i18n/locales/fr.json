@@ -659,7 +659,8 @@
     "total_estimated_value": "Valeur totale estimée",
     "nothing_saved": "Aucun objet n'a été enregistré durant cette session.",
     "one_by_one": "Un par un",
-    "all_at_once": "Tous à la fois"
+    "all_at_once": "Tous à la fois",
+    "sources_disagree": "Markets disagree on this one — the range is what they quote."
   },
   "settings": {
     "title": "Paramètres",
@@ -1538,7 +1539,8 @@
     "suggestions_explainer": "Quand vous scannez ou ajoutez des objets que nous ne reconnaissons pas, ils apparaissent ici pour que vous puissiez suivre leur statut.",
     "no_categories_match": "Aucune catégorie ne correspond à \"{{query}}\"",
     "not_in_catalogue": "Not in our catalogue yet",
-    "help_us_file": "Pick its category so the next scan of it lands in the right place."
+    "help_us_file": "Pick its category so the next scan of it lands in the right place.",
+    "value_model_caption": "Our market estimate, from {{count}} recent {{noun}}"
   },
   "inbox": {
     "sent_requests": "Demandes envoyées",

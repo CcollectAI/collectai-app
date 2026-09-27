@@ -659,7 +659,8 @@
     "total_estimated_value": "Totale geschatte waarde",
     "nothing_saved": "Er zijn tijdens deze sessie geen items opgeslagen.",
     "one_by_one": "Eén voor één",
-    "all_at_once": "Allemaal tegelijk"
+    "all_at_once": "Allemaal tegelijk",
+    "sources_disagree": "Markets disagree on this one — the range is what they quote."
   },
   "settings": {
     "title": "Instellingen",
@@ -1538,7 +1539,8 @@
     "suggestions_explainer": "Als je items scant of toevoegt die we niet herkennen, verschijnen ze hier zodat je hun status kunt volgen.",
     "no_categories_match": "Geen categorieën komen overeen met \"{{query}}\"",
     "not_in_catalogue": "Not in our catalogue yet",
-    "help_us_file": "Pick its category so the next scan of it lands in the right place."
+    "help_us_file": "Pick its category so the next scan of it lands in the right place.",
+    "value_model_caption": "Our market estimate, from {{count}} recent {{noun}}"
   },
   "inbox": {
     "sent_requests": "Verzonden verzoeken",

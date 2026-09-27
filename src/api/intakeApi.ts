@@ -205,6 +205,13 @@ export const getCatalogItemPrice = (categoryId: string, itemKey: string) =>
     /** The set's display name ("Base"), null when the item has no set. Added
      *  2026-09-26 — the detail screen printed the raw code ("base1"). */
     set_name?: string | null;
+    /** Which rule produced estimated_price (server app/lib/catalogue_value.py, #12):
+     *  'catalog_model' | 'market_median' | 'latest_comp'. */
+    value_source?: string | null;
+    /** Sources > 1.5x apart: show range_low..range_high, not one figure. */
+    sources_disagree?: boolean;
+    range_low?: number | null;
+    range_high?: number | null;
   }>(
     `/catalog/${encodeURIComponent(categoryId)}/items/${encodeURIComponent(itemKey)}/price`,
   );

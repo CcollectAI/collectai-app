@@ -40,6 +40,8 @@ export type IntakeResultResponse = {
     q90: number;
     confidence: number;
     currency: CurrencyCode;
+    /** The catalogue's sources are > 1.5x apart: q10..q90 is their spread (#12). */
+    sources_disagree?: boolean;
   } | null;
   image_url: string | null;
   catalog_miss: boolean;

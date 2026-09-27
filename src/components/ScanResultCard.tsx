@@ -368,9 +368,18 @@ function ScanResultCardInner({
               <Ionicons name="analytics-outline" size={18} color={colors.brand.dark} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('scan.estimated_value')}</Text>
             </View>
+            {/* Sources > 1.5x apart (#12): a range, not a number nobody quoted —
+                Base Set Charizard read EUR 1,159, the midpoint of 825 and 1,531. */}
             <Text style={[styles.priceHero, { color: colors.text }]}>
-              {formatPrice(priceBandMid, currency)}
+              {scanResult.prediction.sourcesDisagree && priceBandLow > 0 && priceBandHigh > 0
+                ? `${formatPrice(priceBandLow, currency)} – ${formatPrice(priceBandHigh, currency)}`
+                : formatPrice(priceBandMid, currency)}
             </Text>
+            {scanResult.prediction.sourcesDisagree ? (
+              <Text style={[styles.priceBandLabel, { color: colors.muted, marginTop: 4 }]}>
+                {t('scan.sources_disagree')}
+              </Text>
+            ) : null}
             {/* Price band bar */}
             {priceBandLow > 0 && priceBandHigh > 0 && (
               <View style={styles.priceBandContainer}>

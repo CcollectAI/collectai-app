@@ -237,6 +237,8 @@ export type QuickScanPrediction = {
   currency: CurrencyCode;
   confidence: number;
   explanation?: string | null;
+  /** Sources > 1.5x apart: show estimatedLow..estimatedHigh, not estimatedMid (#12). */
+  sourcesDisagree?: boolean;
 };
 
 export type CatalogAlternative = {

@@ -659,7 +659,8 @@
     "total_estimated_value": "推定価値の合計",
     "nothing_saved": "このセッションでは何も保存されませんでした。",
     "one_by_one": "1つずつ",
-    "all_at_once": "まとめて"
+    "all_at_once": "まとめて",
+    "sources_disagree": "Markets disagree on this one — the range is what they quote."
   },
   "settings": {
     "title": "設定",
@@ -1538,7 +1539,8 @@
     "suggestions_explainer": "認識できないアイテムをスキャンまたは追加すると、ここに表示され状況を追跡できます。",
     "no_categories_match": "「{{query}}」に一致するカテゴリーはありません",
     "not_in_catalogue": "Not in our catalogue yet",
-    "help_us_file": "Pick its category so the next scan of it lands in the right place."
+    "help_us_file": "Pick its category so the next scan of it lands in the right place.",
+    "value_model_caption": "Our market estimate, from {{count}} recent {{noun}}"
   },
   "inbox": {
     "sent_requests": "送信したリクエスト",
