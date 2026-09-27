@@ -65,7 +65,12 @@ const SCAN_SLOW_HINT_MS = 4000;
 // Hard client-side cap: past this we stop waiting and hand off to manual add
 // (carrying the snapped image + on-device category guess) so the user is
 // never stuck on the analyzing screen.
-const SCAN_MAX_MS = 8000;
+// 20 s, not 8: measured 2026-09-27 on prod, /intake/image-only took p50 11 s,
+// max 16.9 s, and 7 of 9 calls ran past 8 s — so the CAMERA path handed off
+// to manual on most scans while the gallery path (no cap) identified the same
+// card. SCAN_SLOW_HINT_MS still reassures at 4 s. Server latency is an open
+// item (docs/OPEN_DECISIONS.md): vision is ~4 s of the 11.
+const SCAN_MAX_MS = 20000;
 // Sentinel rejection so we can tell a scan timeout apart from a real error.
 const SCAN_TIMEOUT = Symbol('scan_timeout');
 
