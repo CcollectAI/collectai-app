@@ -605,6 +605,32 @@ but the preflights also connect through that pooler, and at 21:58 two of them
 could not connect while bake held all 15. Setting the pool max to ~12 would
 make excess acquires wait instead of error.
 
+**Round 3 (Merle: "do 2 3 4 and 5"), 2026-09-27 late:**
+- **Discogs misses remembered** — `discogs_probe_misses` (migration
+  20260927_discogs_probe_misses, APPLIED): `no_match` rechecked after 30 days,
+  `no_price` after 14. A FAILED request (timeout/429/non-200) now returns
+  `_FAILED`, not `None`, and is never remembered. The unused psycopg copy of the
+  stale query was deleted. Falsifier: after the next two runs, `select reason,
+  count(*) from discogs_probe_misses group by 1` is non-zero and the
+  "anime_ost_vinyl: N items to probe" log line falls from ~1,100 toward ~300.
+- **Key-collision sweep, every market_hits writer** (measured per provider over
+  40 days: rows vs distinct listing_id vs rows in the last 24 h). One more
+  instance: the Discogs ADAPTER keyed releases `discogs-<id>` (20 rows ever,
+  none after 09-14) → dated per day. **Not instances:** scryfall, tcgplayer,
+  cardmarket, lorcast (many rows per id — they store per observation); eBay,
+  crawl4ai, reverb, firecrawl (id = one real listing). **pricecharting is
+  deliberate:** its guide prices are stored as SOLD comps, so a daily row would
+  count one price as N sales (class AA); the cost is a guide price refreshed
+  about monthly. Also found: `persist_comps_to_db` counted every row it SENT
+  as inserted — `WHERE NOT EXISTS` drops repeats with "INSERT 0 0" — so
+  "Persisted N/N" held while nothing was written; now counts Postgres' answer.
+- **Durations in worker_runs** and **no `ok` for a skip or a crash** — see
+  docs/WATCHDOG.md "One cycle = one worker_runs row". Gate:
+  `server/tests/test_worker_runs_honest_rows.py` (AST check for `ok` in a
+  `finally`, with a control that proves it can see the pattern).
+- Schema lock regenerated: it was already behind live by barcode_observations
+  and 3 added columns (paint_recipes, policy_checks, bio) — all additive.
+
 ## AS — a substring search where an exact, indexed key exists (2026-09-27)
 
 Found by PROFILING, not reading: `/intake/image-only` timed stage by stage on

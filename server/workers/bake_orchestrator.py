@@ -661,7 +661,10 @@ async def _run_worker_loop(
     needs_db_dsn: bool,
 ) -> None:
     """Run a single worker's run_once() in a loop with sleep(interval)."""
-    from app.worker_registry import SKIPPED, last_recorded_at, record_run, seed_last_run
+    from app.worker_registry import (
+        SKIPPED, begin_cycle, end_cycle, last_recorded_at, note_skip,
+        record_run, seed_last_run,
+    )
 
     def _already_recorded(since_wall: float) -> bool:
         """Did this worker's own run_once() already record this cycle?
@@ -736,7 +739,8 @@ async def _run_worker_loop(
                 "[bake_orchestrator] %s skipping cycle — circuit breaker (DB degraded)",
                 name,
             )
-            record_run(name, "ok", duration_s=0.0)
+            # NO worker_runs row — a skipped cycle is not a run (note_skip).
+            note_skip(name, "circuit breaker open (DB degraded)")
             try:
                 await asyncio.sleep(interval_s)
                 continue
@@ -752,7 +756,8 @@ async def _run_worker_loop(
                     "[bake_orchestrator] %s yielding this cycle — heavy workers in flight: %s",
                     name, sorted(heavy_now),
                 )
-                record_run(name, "ok", duration_s=0.0)  # not a failure, deferred
+                # Not a failure, and not a run either: no worker_runs row.
+                note_skip(name, f"yielding to heavy workers {sorted(heavy_now)}")
                 try:
                     await asyncio.sleep(interval_s)
                     continue
@@ -777,7 +782,12 @@ async def _run_worker_loop(
                 # Bounded by wait_for so a hung cycle can't stall the loop forever.
                 _cap = _WORKER_CYCLE_TIMEOUTS.get(name, _DEFAULT_WORKER_CYCLE_TIMEOUT_S)
                 _coro = run_fn(dry_run=False) if name == "aggregate_catalog_attributes" else run_fn()
-                result = await asyncio.wait_for(_coro, timeout=_cap)
+                # Lets a worker's own record_run() carry this cycle's duration.
+                _cycle_token = begin_cycle(name)
+                try:
+                    result = await asyncio.wait_for(_coro, timeout=_cap)
+                finally:
+                    end_cycle(_cycle_token)
 
                 duration = time.monotonic() - t0
                 if result is SKIPPED:
@@ -1144,6 +1154,15 @@ async def _instance_health_monitor(
                                     f"{held_s/60:.0f}min — likely wedged)"
                                     if holder else ""
                                 )
+                                # Skipped cycles write no row since 2026-09-27
+                                # (they used to write a fake `ok`, which kept
+                                # this check green). So name the cause when it
+                                # is the circuit breaker, not a wedge.
+                                if _is_db_degraded():
+                                    extra += (
+                                        " — circuit breaker OPEN (DB degraded): "
+                                        "light workers are skipping cycles"
+                                    )
                                 issues.append((
                                     "worker_runs_stalled",
                                     f"no worker_runs in last "

@@ -107,7 +107,7 @@ async def test_a_skipped_cycle_writes_no_worker_runs_row(monkeypatch):
     from app import worker_registry as wr
     import types, sys
     rows: list[str] = []
-    monkeypatch.setattr(wr, "_persist_run_to_db", lambda n, s, error_repr=None: rows.append(s))
+    monkeypatch.setattr(wr, "_persist_run_to_db", lambda n, s, error_repr=None, duration_s=None: rows.append(s))
     monkeypatch.setattr(wr, "_registry", {})
 
     sleeps = []
@@ -140,7 +140,7 @@ async def test_a_real_cycle_still_writes_its_ok_row(monkeypatch):
     from app import worker_registry as wr
     import types, sys
     rows: list[str] = []
-    monkeypatch.setattr(wr, "_persist_run_to_db", lambda n, s, error_repr=None: rows.append(s))
+    monkeypatch.setattr(wr, "_persist_run_to_db", lambda n, s, error_repr=None, duration_s=None: rows.append(s))
     monkeypatch.setattr(wr, "_registry", {})
     sleeps = []
 

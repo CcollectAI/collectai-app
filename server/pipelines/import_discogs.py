@@ -138,27 +138,9 @@ def _get(
 # ---------------------------------------------------------------------------
 
 
-def get_catalog_items(
-    conn, category: str, limit: Optional[int] = None,
-) -> list[dict]:
-    """Return category_items that don't have fresh Discogs listings yet."""
-    sql = """
-      SELECT ci.category, ci.item_key, ci.title
-      FROM public.category_items ci
-      WHERE ci.category = %s
-        AND ci.title IS NOT NULL
-        AND NOT EXISTS (
-          SELECT 1 FROM public.market_hits mh
-          WHERE mh.provider = 'discogs_listing'
-            AND mh.normalized_key = ci.category || ':' || ci.item_key
-            AND mh.seen_at > now() - INTERVAL '7 days'
-        )
-      ORDER BY RANDOM()
-    """
-    if limit:
-        sql += f" LIMIT {int(limit)}"
-    rows = conn.execute(sql, (category,)).fetchall()
-    return [dict(r) for r in rows]
+# (get_catalog_items, a psycopg copy of the query below with no callers, was
+# removed 2026-09-27 when the query gained the discogs_probe_misses filter — a
+# second copy is where the next fix silently fails to land.)
 
 
 def _get_stale_items_pg(dsn: str, category: str, limit: Optional[int]) -> list[dict]:
@@ -186,6 +168,15 @@ def _get_stale_items_pg(dsn: str, category: str, limit: Optional[int]) -> list[d
                     AND mh.normalized_key = ci.category || ':' || ci.item_key
                     AND mh.seen_at > now() - INTERVAL '7 days'
                 )
+                -- Discogs already answered "nothing" recently (see
+                -- discogs_probe_misses / MISS_RECHECK_DAYS).
+                AND NOT EXISTS (
+                  SELECT 1 FROM public.discogs_probe_misses m
+                  WHERE m.item_ref = ci.category || ':' || ci.item_key
+                    AND m.last_probed_at > now() - CASE m.reason
+                          WHEN 'no_match' THEN INTERVAL '30 days'
+                          ELSE INTERVAL '14 days' END
+                )
               ORDER BY RANDOM()
             """
             args: list = [category]
@@ -197,6 +188,41 @@ def _get_stale_items_pg(dsn: str, category: str, limit: Optional[int]) -> list[d
             await c.close()
 
     return asyncio.run(_run())
+
+
+def _record_misses(misses: list[tuple[str, str]]) -> None:
+    """Upsert (item_ref, reason) into discogs_probe_misses, one statement."""
+    import asyncio
+    import asyncpg
+
+    dsn = os.environ.get("DB_DSN", "")
+    if not dsn or not misses:
+        return
+    # One row per item: ON CONFLICT cannot touch the same row twice in one
+    # statement ("command cannot affect row a second time").
+    misses = list(dict(misses).items())
+
+    async def _run():
+        c = await asyncpg.connect(
+            dsn,
+            server_settings={"application_name": "collectai-bake-discogs_worker"},
+        )
+        try:
+            await c.execute(
+                """
+                INSERT INTO public.discogs_probe_misses AS m (item_ref, reason)
+                SELECT * FROM unnest($1::text[], $2::text[])
+                ON CONFLICT (item_ref) DO UPDATE
+                   SET reason = EXCLUDED.reason,
+                       misses = m.misses + 1,
+                       last_probed_at = now()
+                """,
+                [r for r, _ in misses], [why for _, why in misses],
+            )
+        finally:
+            await c.close()
+
+    asyncio.run(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -225,6 +251,16 @@ def _clean_title(title: str) -> str:
     return t or title  # never return empty
 
 
+# Returned by _best_release_match / _release_stats when the REQUEST failed
+# (timeout, 429, non-200). Distinct from None ("Discogs answered: nothing"),
+# because only a real answer may be remembered in discogs_probe_misses — a
+# rate-limit blip must not hide an item for 30 days.
+_FAILED = object()
+
+# How long a remembered miss keeps an item out of the probe list.
+MISS_RECHECK_DAYS = {"no_match": 30, "no_price": 14}
+
+
 def _best_release_match(
     client: httpx.Client, title: str, category: str,
 ) -> Optional[dict]:
@@ -245,7 +281,7 @@ def _best_release_match(
 
     body = _get(client, "/database/search", params=params)
     if not body:
-        return None
+        return _FAILED  # the request failed: NOT evidence of "no match"
     results = body.get("results") or []
     return results[0] if results else None
 
@@ -254,7 +290,7 @@ def _release_stats(client: httpx.Client, release_id: int) -> Optional[dict]:
     """Fetch release stats: lowest_price + num_for_sale + main image."""
     body = _get(client, f"/releases/{release_id}")
     if not body:
-        return None
+        return _FAILED
     return {
         "lowest_price": body.get("lowest_price"),
         "num_for_sale": body.get("num_for_sale", 0),
@@ -385,6 +421,7 @@ def process_category(
     total_listed = 0  # had lowest_price > 0
     total_upserted = 0
     hits_buffer: list[MarketHit] = []
+    misses: list[tuple[str, str]] = []
 
     for idx, it in enumerate(items):
         title = it["title"]
@@ -392,17 +429,21 @@ def process_category(
         t0 = time.monotonic()
         try:
             match = _best_release_match(client, title, category)
+            if match is _FAILED:
+                continue  # retry next run; not a miss
             if not match:
+                misses.append((f"{category}:{item_key}", "no_match"))
                 continue
             total_found += 1
             rid = match.get("id")
             if not rid:
                 continue
             rstats = _release_stats(client, rid)
-            if not rstats:
+            if rstats is _FAILED or not rstats:
                 continue
             price = rstats.get("lowest_price")
             if not price or float(price) <= 0:
+                misses.append((f"{category}:{item_key}", "no_price"))
                 continue
             total_listed += 1
 
@@ -441,12 +482,19 @@ def process_category(
         upserted = 0 if dry_run else _upsert(hits_buffer, stats)
         total_upserted += upserted
 
+    if misses and not dry_run:
+        try:
+            _record_misses(misses)
+        except Exception as e:  # losing the memo costs requests, not data
+            logger.warning("discogs: could not record %d misses: %s", len(misses), e)
+
     return {
         "category": category,
         "items_processed": len(items),
         "releases_matched": total_found,
         "with_listings": total_listed,
         "upserted": total_upserted,
+        "misses": len(misses),
     }
 
 

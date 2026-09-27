@@ -977,8 +977,9 @@ async def run_once():
             global _shutdown
             _shutdown = True
             _shutdown_event.set()
-            record_run("marketplace_scrape_worker", "ok")
-            return 0
+            # Shutting down is not a run: no worker_runs row.
+            from app.worker_registry import SKIPPED
+            return SKIPPED
 
     # Tagged via application_name for the ExecStop cancel hook.
     conn = await asyncpg.connect(

@@ -102,6 +102,18 @@ except (TypeError, ValueError):
 # Agent
 # ---------------------------------------------------------------------------
 
+
+def _inserted_one(status: Any) -> bool:
+    """asyncpg's execute() status for a single-row INSERT: "INSERT 0 <n>".
+
+    Anything that is not that string (a test double, a driver that returns
+    None) counts as inserted, which is the pre-2026-09-27 behaviour — the
+    point is to stop counting the rows Postgres REPORTS it dropped.
+    """
+    if isinstance(status, str) and status.startswith("INSERT "):
+        return status.rsplit(" ", 1)[-1] != "0"
+    return True
+
 class MarketplaceAgent:
     """Marketplace Aggregation Agent.
 
@@ -848,7 +860,7 @@ class MarketplaceAgent:
                         # queries don't silently match nothing. Both were
                         # NULL on every row for weeks until 2026-04-29.
                         adapter_id = hit.get("source", "") or ""
-                        await conn.execute(
+                        _status = await conn.execute(
                             """
                             INSERT INTO market_hits
                                 (provider, source, marketplace,
@@ -901,7 +913,13 @@ class MarketplaceAgent:
                             }),
                             json.dumps(raw_attrs),  # asyncpg jsonb needs str (learnings #18)
                         )
-                        inserted += 1
+                        # Count what Postgres inserted, not what we sent: the
+                        # WHERE NOT EXISTS drops a repeat (provider, listing_id)
+                        # and returns "INSERT 0 0". Until 2026-09-27 every
+                        # dropped row was counted, so "Persisted N/N" was true
+                        # even when nothing was written.
+                        if _inserted_one(_status):
+                            inserted += 1
                     except Exception:
                         logger.warning(
                             "[MarketplaceAgent] Failed to insert hit %s:%s",

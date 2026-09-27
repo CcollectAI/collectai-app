@@ -181,14 +181,14 @@ def _append_manifest(s3, entry: dict) -> None:
     s3.put_object(Bucket=BUCKET, Key=MANIFEST_KEY, Body=new_body)
 
 
-async def run_once() -> dict:
+async def run_once() -> object:
     """Export eligible partitions. Returns summary stats."""
-    from app.worker_registry import record_run
+    from app.worker_registry import SKIPPED
 
     if not ENABLED:
         logger.info("DATALAKE_ENABLED=false — skipping datalake export")
-        record_run("datalake_export_worker", "ok", duration_s=0.0)
-        return {"skipped": True}
+        # Disabled is not a run: no worker_runs row (worker_registry.SKIPPED).
+        return SKIPPED
 
     import asyncpg
     import boto3
@@ -351,7 +351,8 @@ async def run_once() -> dict:
             )
 
     await conn.close()
-    record_run("datalake_export_worker", "ok", duration_s=0.0)
+    # The orchestrator records this cycle, with its real duration. This line
+    # used to record `duration_s=0.0` for every export, however long it took.
     return stats
 
 

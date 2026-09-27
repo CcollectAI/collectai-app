@@ -173,6 +173,27 @@ orchestrator's row is the richer one (it carries `error_repr`;
 `calibration_worker`'s `finally` records a bare status), so suppressing it
 would trade a duplicate row for a lost cause.
 
+**Three more ways a row lied, fixed 2026-09-27** (class AT, docs/CLASS_SWEEPS.md):
+
+- **A skipped cycle wrote `ok`.** The orchestrator recorded `ok` when the
+  DB-degraded circuit breaker skipped a light worker, and when a probe yielded
+  to a heavy one; the discogs/tcgcsv recent-run guard did the same through the
+  orchestrator. Now a skip writes NO row: the guard returns
+  `worker_registry.SKIPPED`, the orchestrator calls `note_skip()` (in memory
+  only). The overdue alert names the skip reason, and `worker_runs_stalled`
+  says "circuit breaker OPEN" instead of "wedged" when that is the cause.
+- **`ok` in a `finally`.** category_map and value_change recorded `ok` from a
+  `finally:`, i.e. also for a cycle that raised: value_change's 14 failures
+  (09-09..09-12) each had an `ok` twin. Gate: an AST check in
+  `server/tests/test_worker_runs_honest_rows.py` fails on any
+  `record_run(..., "ok")` inside a `finally`.
+- **No duration.** Rows are written at completion, so `started_at =
+  finished_at` and every run read as <50 ms. `metadata.duration_s` now carries
+  it; a worker that records its own row gets the cycle's duration from a
+  context variable the orchestrator sets (`begin_cycle`). `started_at` is
+  deliberately NOT back-dated: the stall check and the recent-run guard read it
+  as "when this row appeared".
+
 ### Checks that go quiet (2026-08-12)
 
 The RLS, worker and pg_cron checks were each wrapped in `except Exception:

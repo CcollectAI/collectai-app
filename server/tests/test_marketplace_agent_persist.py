@@ -168,3 +168,38 @@ class TestPersistCompsAttrs:
             count = await agent.persist_comps_to_db(result, normalized_key="pokemon:pika", category="pokemon")
 
         assert count == 1
+
+
+class TestPersistCountsWhatPostgresInserted:
+    """2026-09-27: `inserted += 1` ran even when WHERE NOT EXISTS dropped the
+    row, so "Persisted N/N" held while nothing was written."""
+
+    async def _persist(self, status):
+        from app.agents.marketplace_agent import MarketplaceAgent
+        hit = {"source": "ebay", "raw_id": "ebay-123", "title": "Test Card",
+               "price": 50.0, "currency": "EUR", "url": "https://ebay.com/123"}
+        mock_conn = _mock_direct_conn()
+        mock_conn.execute = AsyncMock(return_value=status)
+        with patch("asyncpg.connect", AsyncMock(return_value=mock_conn)), \
+             patch("app.db.db_configured", return_value=True):
+            return await MarketplaceAgent().persist_comps_to_db(
+                _make_result([hit]), normalized_key="pokemon:charizard")
+
+    @pytest.mark.asyncio
+    async def test_a_dropped_repeat_counts_zero(self):
+        assert await self._persist("INSERT 0 0") == 0
+
+    @pytest.mark.asyncio
+    async def test_a_real_insert_counts_one(self):
+        assert await self._persist("INSERT 0 1") == 1
+
+
+def test_discogs_adapter_release_key_is_dated():
+    """A release's asking price is a series; `discogs-<id>` kept only the first."""
+    from datetime import datetime, timezone
+    from app.agents.adapters import discogs_caller as dc
+    import inspect
+    fn = next(f for n, f in inspect.getmembers(dc, inspect.isfunction)
+              if '"raw_id": f"discogs-{item.get' in inspect.getsource(f))
+    hit = fn({"id": 42, "title": "A - B", "lowest_price": 9.5})
+    assert hit["raw_id"] == f"discogs-42-{datetime.now(timezone.utc).date().isoformat()}"

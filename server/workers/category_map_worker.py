@@ -78,7 +78,11 @@ async def run_once():
         logging.info("category_map cycle done")
     finally:
         await conn.close()
-        record_run("category_map_worker", "ok")
+        # No record_run here. In a `finally` it wrote `ok` for a cycle that
+        # RAISED, next to the orchestrator's `error` row: value_change_worker's
+        # 14 failures (09-09..09-12) each came with an `ok` twin, halving the
+        # failure rate the watchdog pages on (docs/WATCHDOG.md "One cycle = one
+        # worker_runs row"). The orchestrator records the outcome and duration.
 
 async def main():
     try:

@@ -14,6 +14,7 @@ Env vars:
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -64,7 +65,13 @@ def _normalize_release(item: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         "source": "discogs",
-        "raw_id": f"discogs-{item.get('id', '')}",
+        # A release's lowest asking price is a time series, and market_hits
+        # inserts only when (provider, listing_id) is absent from every
+        # partition — so `discogs-<release>` stored the first price ever seen
+        # and dropped every later one (20 rows in 40 days, none after 09-14).
+        # Dated per UTC day, like import_discogs.snapshot_listing_id. Safe:
+        # is_sold False → is_listing, which training and valuation exclude.
+        "raw_id": f"discogs-{item.get('id', '')}-{datetime.now(timezone.utc).date().isoformat()}",
         "title": title,
         "price": float(lowest) if lowest else 0,
         "currency": "USD",

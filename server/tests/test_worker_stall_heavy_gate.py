@@ -45,8 +45,10 @@ class TestWorkerRunsStalledIsGateAware:
     def test_the_benign_case_is_LOGGED_not_silent(self):
         # A check that goes quiet without saying why is indistinguishable from
         # a check that broke — docs/WATCHDOG.md, "Checks that go quiet".
+        # Bounded by the next check's marker, not a character count — a fixed
+        # window broke the day a comment was added inside the block.
         i = SRC.index('if wr_recent == 0:')
-        blk = SRC[i:i + 3000]
+        blk = SRC[i:SRC.index('# Matview freshness', i)]
         assert "benign queueing, not paging" in blk
 
 

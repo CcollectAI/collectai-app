@@ -46,6 +46,9 @@
     "demand_signals.signal_type": [
       "CHECK ((signal_type = ANY (ARRAY['affiliate_click'::text, 'catalog_browsed'::text, 'category_viewed'::text, 'collection_viewed'::text, 'event_announcement_read'::text, 'event_followed'::text, 'event_viewed'::text, 'feature_gated_attempt'::text, 'item_added'::text, 'item_archived'::text, 'item_deleted'::text, 'item_scanned'::text, 'item_viewed'::text, 'mandate_created'::text, 'marketplace_listing_viewed'::text, 'no_results_search'::text, 'notification_settings_changed'::text, 'paywall_dismissed'::text, 'paywall_viewed'::text, 'price_alert_removed'::text, 'price_alert_set'::text, 'search_query'::text, 'subscription_purchased'::text, 'ticket_clicked'::text, 'watchlist_add'::text, 'watchlist_remove'::text])))"
     ],
+    "discogs_probe_misses.reason": [
+      "CHECK ((reason = ANY (ARRAY['no_match'::text, 'no_price'::text])))"
+    ],
     "dm_threads.status": [
       "CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])))"
     ],
@@ -2844,6 +2847,36 @@
       "nullable": false,
       "type": "jsonb"
     },
+    "barcode_observations.barcode": {
+      "nullable": false,
+      "type": "text"
+    },
+    "barcode_observations.canonical_key": {
+      "nullable": true,
+      "type": "text"
+    },
+    "barcode_observations.category": {
+      "nullable": true,
+      "type": "text"
+    },
+    "barcode_observations.created_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "barcode_observations.title": {
+      "nullable": false,
+      "type": "text"
+    },
+    "barcode_observations.updated_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "barcode_observations.user_id": {
+      "nullable": false,
+      "type": "uuid"
+    },
     "beta_signups.email": {
       "nullable": false,
       "type": "text"
@@ -2928,6 +2961,11 @@
     "build_paint_projects.notes": {
       "nullable": true,
       "type": "text"
+    },
+    "build_paint_projects.paint_recipes": {
+      "default": "'[]'::jsonb",
+      "nullable": false,
+      "type": "jsonb"
     },
     "build_paint_projects.progress_pct": {
       "default": "0",
@@ -5073,6 +5111,24 @@
     "device_tokens.user_id": {
       "nullable": false,
       "type": "uuid"
+    },
+    "discogs_probe_misses.item_ref": {
+      "nullable": false,
+      "type": "text"
+    },
+    "discogs_probe_misses.last_probed_at": {
+      "default": "now()",
+      "nullable": false,
+      "type": "timestamptz"
+    },
+    "discogs_probe_misses.misses": {
+      "default": "1",
+      "nullable": false,
+      "type": "int4"
+    },
+    "discogs_probe_misses.reason": {
+      "nullable": false,
+      "type": "text"
     },
     "dm_threads.created_at": {
       "default": "now()",
@@ -7263,6 +7319,10 @@
     "mandate_deals.notified_at": {
       "nullable": true,
       "type": "timestamptz"
+    },
+    "mandate_deals.policy_checks": {
+      "nullable": true,
+      "type": "jsonb"
     },
     "mandate_deals.policy_passed": {
       "default": "true",
@@ -14476,6 +14536,10 @@
       "nullable": true,
       "type": "text"
     },
+    "user_public_profile_v1.bio": {
+      "nullable": true,
+      "type": "text"
+    },
     "user_public_profile_v1.collection_count": {
       "nullable": true,
       "type": "int8"
@@ -20794,6 +20858,15 @@
       "captured_at",
       "integrity"
     ],
+    "barcode_observations": [
+      "barcode",
+      "user_id",
+      "category",
+      "title",
+      "canonical_key",
+      "created_at",
+      "updated_at"
+    ],
     "beta_signups": [
       "id",
       "email",
@@ -20823,7 +20896,8 @@
       "user_id",
       "category_id",
       "item_id",
-      "image_url"
+      "image_url",
+      "paint_recipes"
     ],
     "build_paint_sessions": [
       "id",
@@ -21437,6 +21511,12 @@
       "platform",
       "created_at",
       "active"
+    ],
+    "discogs_probe_misses": [
+      "item_ref",
+      "reason",
+      "misses",
+      "last_probed_at"
     ],
     "dm_threads": [
       "id",
@@ -22073,7 +22153,8 @@
       "notified_at",
       "clicked_at",
       "purchased_at",
-      "created_at"
+      "created_at",
+      "policy_checks"
     ],
     "market_availability_v1": [
       "id",
@@ -24086,7 +24167,8 @@
       "created_at",
       "updated_at",
       "collection_count",
-      "collection_value_eur"
+      "collection_value_eur",
+      "bio"
     ],
     "user_public_profile_v1_legacy_20260724": [
       "user_id",
@@ -25881,6 +25963,12 @@
         "id"
       ]
     ],
+    "barcode_observations": [
+      [
+        "barcode",
+        "user_id"
+      ]
+    ],
     "beta_signups": [
       [
         "email"
@@ -26302,6 +26390,11 @@
       ],
       [
         "token"
+      ]
+    ],
+    "discogs_probe_misses": [
+      [
+        "item_ref"
       ]
     ],
     "dm_threads": [

@@ -11,6 +11,7 @@ and also tracked in-memory for fast access.
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import logging
 import socket
 import time
@@ -166,6 +167,11 @@ def get_overdue_workers() -> list[dict]:
                 "last_run_ago_s": round(elapsed, 1),
                 "last_status": entry.get("last_status"),
                 "overdue_by_s": round(elapsed - threshold, 1),
+                # Why, when the orchestrator has been skipping it (note_skip).
+                "last_skip_reason": (
+                    entry.get("last_skip_reason")
+                    if (entry.get("last_skip_at") or 0) > last_run else None
+                ),
             })
 
     return overdue
@@ -189,6 +195,8 @@ def record_run(
                     after the auction_alert / auto_delist / watchlist_monitor
                     33%-error pattern surfaced with empty metadata.
     """
+    if duration_s is None:
+        duration_s = _duration_from_cycle(worker_name)
     entry = _registry.setdefault(worker_name, {"runs": 0, "errors": 0, "total_duration_s": 0.0, "duration_count": 0})
     entry["last_run"] = time.time()
     entry["last_status"] = status
@@ -203,9 +211,53 @@ def record_run(
 
     # Best-effort persist to DB (non-blocking)
     try:
-        _persist_run_to_db(worker_name, status, error_repr=error_repr)
+        _persist_run_to_db(worker_name, status, error_repr=error_repr, duration_s=duration_s)
     except Exception:
         logger.debug("[worker_registry] Failed to trigger DB persist for %s", worker_name)
+
+
+# The cycle the orchestrator is running in this task: (worker_name, monotonic
+# start). ~20 workers record their own row from inside run_once() without a
+# duration, and the orchestrator then (correctly) writes no second row — so
+# those rows had no duration at all. record_run() fills it from here. Set by
+# bake_orchestrator around run_fn(); asyncio.wait_for's task copies the
+# context, so the worker's own record_run() sees it.
+_current_cycle: contextvars.ContextVar = contextvars.ContextVar(
+    "worker_cycle", default=None,
+)
+
+
+def begin_cycle(worker_name: str) -> contextvars.Token:
+    return _current_cycle.set((worker_name, time.monotonic()))
+
+
+def end_cycle(token: contextvars.Token) -> None:
+    _current_cycle.reset(token)
+
+
+def _duration_from_cycle(worker_name: str) -> Optional[float]:
+    cycle = _current_cycle.get()
+    if cycle and cycle[0] == worker_name:
+        return time.monotonic() - cycle[1]
+    return None
+
+
+def note_skip(worker_name: str, reason: str) -> None:
+    """A cycle the orchestrator skipped: in memory only, NO worker_runs row.
+
+    Skips used to be `record_run(name, "ok", duration_s=0.0)` — a row saying
+    the worker ran when it did not, which kept the stall check and the failure
+    ratio green through a DB-degraded window and hid a probe that yielded
+    cycle after cycle (same shape as the SKIPPED sentinel, class AT). Does not
+    touch `last_run`, so the overdue alert stays true; it names the reason.
+    """
+    entry = _registry.setdefault(
+        worker_name,
+        {"runs": 0, "errors": 0, "total_duration_s": 0.0, "duration_count": 0},
+    )
+    entry["last_skip_at"] = time.time()
+    entry["last_skip_reason"] = reason
+    entry["skips"] = entry.get("skips", 0) + 1
 
 
 def seed_last_run(worker_name: str, epoch: float) -> None:
@@ -249,6 +301,7 @@ def _persist_run_to_db(
     worker_name: str,
     status: str,
     error_repr: Optional[str] = None,
+    duration_s: Optional[float] = None,
 ) -> None:
     """Persist worker run to DB table (best-effort, sync-safe)."""
     try:
@@ -260,7 +313,7 @@ def _persist_run_to_db(
         import asyncio
         try:
             loop = asyncio.get_running_loop()
-            task = loop.create_task(_async_persist_run(pool, worker_name, status, error_repr))
+            task = loop.create_task(_async_persist_run(pool, worker_name, status, error_repr, duration_s))
             # Hold a reference so GC doesn't drop the task.
             _pending_persist_tasks.add(task)
 
@@ -289,6 +342,7 @@ async def _async_persist_run(
     worker_name: str,
     status: str,
     error_repr: Optional[str] = None,
+    duration_s: Optional[float] = None,
 ) -> None:
     """Async insert into worker_runs table. Re-raises on failure so the
     done-callback in _persist_run_to_db surfaces the error at WARNING.
@@ -314,6 +368,13 @@ async def _async_persist_run(
     # connection, which has no codec and parses the string correctly — the
     # app's pool does not. Prove jsonb writes through a pool built by
     # `app.db`, never through a plain connect().
+    #
+    # duration_s (2026-09-27): record_run() always received it and never stored
+    # it. The row is written at completion, so started_at = finished_at to the
+    # millisecond and every run read as "<50 ms" — discogs' 1.5-2.25 h runs had
+    # to be reconstructed from bake.log. Kept in metadata rather than
+    # back-dating started_at, because the stall check and the recent-run guard
+    # read started_at as "when this row appeared".
     async with pool.acquire() as conn:
         await conn.execute(
             """
@@ -321,12 +382,15 @@ async def _async_persist_run(
             VALUES ($1, $2,
                     jsonb_build_object('host', $3::text)
                     || CASE WHEN $4::text IS NULL THEN '{}'::jsonb
-                            ELSE jsonb_build_object('error_repr', $4::text) END)
+                            ELSE jsonb_build_object('error_repr', $4::text) END
+                    || CASE WHEN $5::float8 IS NULL THEN '{}'::jsonb
+                            ELSE jsonb_build_object('duration_s', round($5::numeric, 1)) END)
             """,
             worker_name,
             status,
             _HOST,
             error_repr,
+            duration_s,
         )
 
 
@@ -495,6 +559,8 @@ async def check_and_alert_overdue(*, force: bool = False) -> bool:
         interval_min = round(w["expected_interval_s"] / 60, 1)
         ago_min = round(w["last_run_ago_s"] / 60, 1)
         status_tag = f' (last: {w["last_status"]})' if w["last_status"] else ""
+        if w.get("last_skip_reason"):
+            status_tag += f' — skipping: {w["last_skip_reason"]}'
         lines.append(
             f"\u2022 <b>{w['name']}</b> — last ran {ago_min}m ago "
             f"(expected every {interval_min}m){status_tag}"
