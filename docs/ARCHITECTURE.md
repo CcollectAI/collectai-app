@@ -599,6 +599,20 @@ So the four links are two comp/model-backed and two member-supplied:
 | 3 | `items.predicted_price_eur` | **a member typed it** (legacy writes only) |
 | 4 | `items.estimated_value` | **a member or a scan** — `attrs.value_entry` says which |
 
+##### One price per CATALOGUE item — `app/lib/catalogue_value.py` (2026-09-27)
+
+Before a member saves anything, two more surfaces price a catalogue item: the
+QuickScan result and the catalogue page. They used the median of daily
+medians, while the saved item reads link 1/2 (the model) — so Base Set
+Charizard read EUR 1,159 on the scan, EUR 825 once saved. With two sources a
+day (TCGplayer 825, Cardmarket 1,531) a median is their midpoint, nobody's
+price. `catalogue_value(conn, item_ref)` is now the single rule for both:
+the model's latest `price_prediction_daily.q50` (the number the value chain
+shows), else the daily median, else the latest comp; plus the latest day's
+source spread and `sources_disagree` (> 1.5x and >= EUR 5 apart), on which the
+app shows the RANGE. Surfaces that price a catalogue item must call it, not
+re-derive a number.
+
 ##### `value_source` — the app must say which of those answered
 
 `v_item_values_v1` returns `value_source` alongside `value_eur` (migration

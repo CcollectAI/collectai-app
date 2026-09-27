@@ -9,46 +9,12 @@ _Opened 2026-09-26 from the Android walk rounds._
 
 ## Open
 
-### 10. The offline banner covers the screen header
-- **Seen:** device walk 2026-09-26, airplane mode, Portfolio. `OfflineBanner`
-  (`src/components/OfflineBanner.tsx`, mounted in `app/_layout.tsx`) is an
-  absolute overlay: while offline it hides the screen title and the
-  bell / chat / settings icons (taps pass through — `pointerEvents: 'none'`).
-- **Why a decision, not a fix:** making it push content down changes the layout
-  of every screen; alternatives are a slimmer status-bar-only strip or a pill
-  above the tab bar. Re-check: airplane mode on, cold start, look at the header.
-- **Recommendation (2026-09-27): a small pill just above the tab bar** (or the
-  bottom safe area on screens without one), same colour, same text and queue
-  count, still non-interactive. It hides no controls (the header holds back,
-  bell, inbox, settings — the tab bar is already out of reach offline for
-  most destinations), needs no layout change on any screen, and keeps clear
-  of toasts, which enter from the top. Not a status-bar strip: on iPhones
-  with a Dynamic Island the middle of that strip is taken.
-
-### 12. A scan and its item page quote different prices
-- **Seen 2026-09-27:** Base Set Charizard (`base1-base1-4`) scanned at EUR
-  1.159 (QuickScan: `market_hits_daily` median); the saved item's page says
-  "Our comps say EUR 825 · based on 2 market prices". Same catalogue key, two
-  sources, two numbers. Needs a call on which is the item's value (and the
-  AP note already says this key mixes 1st Edition and unlimited sales).
-- **Measured 2026-09-27:** each day this card has exactly TWO prices —
-  TCGplayer holofoil EUR 825 and Cardmarket EUR 1,531 (the same 1,531 every
-  day: a guide figure, not sales). The scan takes the median of daily medians
-  = the MIDPOINT of the two (EUR 1,159); the item page reads the catalogue
-  model's q50 = the TCGplayer number (EUR 825). Neither source has moved since
-  2026-09-05.
-- **Recommendation:** one number per catalogue item — the scan should SHOW the
-  value chain's number (the one the item page and portfolio will use) instead
-  of computing its own from `market_hits_daily`, so saving never changes the
-  price under the member. And when the sources disagree by more than ~1.5×
-  (here 1.9×), show the RANGE with "sources disagree" rather than any single
-  figure: a midpoint of a US price and an EU guide price is nobody's price.
-  Separately worth a look: why this card's prices stopped on 09-05.
-
-_#1–#9 from the 2026-09-26 walk are decided; each entry as opened is kept under **As opened** at the end._
+_None open._ _#1–#9 from the 2026-09-26 walk are decided; each entry as opened is kept under **As opened** at the end._
 
 ## Decided
 
+- **2026-09-27 — #10 offline banner: DONE (9713dfcc).** A pill just above the bottom bar (offset from the bars' own height constant), translated, with the queue count. Seen on the emulator in airplane mode on Portfolio (tab bar) and Settings (QuickNavBar): header fully visible. Test `offlineBanner.test.tsx` (anchoring it to the top fails it).
+- **2026-09-27 — #12 one price per catalogue item: DONE (69432053 server DEPLOYED, 4d55239d app).** `server/app/lib/catalogue_value.py` is the one rule for the scan, the catalogue page and (already) the saved item: the model's latest q50, else the daily median / latest comp; plus the latest day's source spread, `sources_disagree` when > 1.5x AND >= EUR 5 apart. Base Set Charizard now reads EUR 825 on the scan, the catalogue page and the item — and the scan and catalogue page show "EUR 825 – EUR 1.531 · Markets disagree on this one" (seen on the emulator). A EUR 0.56 common spanning 0.47-4.20 is not flagged (the EUR 5 floor). Not done: why this card's prices stopped on 09-05 (a pipeline question, left open in the note below).
 - **2026-09-27 — #11 QuickScan server latency: DONE (a6712bbd, DEPLOYED).** Profiled stage by stage on EC2: social proof's "recent sold" was a 3.2M-row `ILIKE '%key%'` scan (2.2-4.5 s per scan, and it matched OTHER cards' sales); the same shape sat in barcode pricing (9.6-14.1 s for 0 rows) and dossier comps — class AS, all now exact `item_ref`. The same scan: 10.3-12.5 s -> 6.0-8.6 s (median 7.1). What remains is the OpenAI vision call (4.3-4.8 s, ~80 %): shortening its output (chain-of-thought, defect notes) could save seconds but needs an accuracy check first — one knob at a time. The 20 s client cap stays as a safety net.
 - **2026-09-27 — walk of the screens the sweep skips (emulator):** signed-out Login / Register / Reset (routes.json now expects no signed-in chrome), 2FA challenge (wrong code → toast, right code → in), reset-password via a real recovery link (mismatch caught, new password works, restored), Register with creator code `seednova` → `profiles.referred_by_code = SEEDNOVA` → Check your email → real confirmation mail → confirmed and signed in → Delete account (gone from auth + profiles), chat thread (read-only: it is with Merle's real account) + new chat request to simseller, Create / Edit / Announce / Cancel event, QuickScan (gallery + live camera) and barcode scan (camera, 3 generated codes). **Fixed:** watchlist error toast for a signed-out member (every new member saw it after the confirm link); event Manage sheet's dismiss row misaligned and a second "Cancel" (Merle); Create Event ignored a typed detail; QuickScan dropped the scan photo on save; an old draft overwrote a fresh scan hand-off; a 0 %-confidence category pre-filled; "Identified via: manual" / "We don't recognize" under found results; camera QuickScan capped at 8 s against an 11 s server; "You said EUR X" for a scan's own estimate. Test data removed (account, inbox, DM request, event cancelled, projects, items).
 - **2026-09-26 — walk items 1–7 (Pro, emulator):** all seen working except as noted. Found and FIXED on the way: Portfolio 90D read +EUR 0 over a EUR 35 fall (`market_change` counted only items held on day 1 — server DEPLOYED) and then "(0,00%)" (percent against the chart's EUR 0 start); switching a project's Complete OFF always failed (NULL into NOT NULL `progress_pct`). Noted, not bugs: Sets to complete is empty for simcheck because none of its items is linked to a catalogue set (server `/sets/auto-progress` → `[]`); a hand-typed `sparrow://catalog-set/<code>` without `name` titles the page "Set" (in-app navigation passes it); one "Deal found" row opens "Deal not found" — its deal was in the probe data deleted earlier today. simcheck back to Free.
@@ -144,4 +110,40 @@ _#1–#9 from the 2026-09-26 walk are decided; each entry as opened is kept unde
   hides the symptom, not the cause. Next: profile the other ~7 s (CLIP,
   catalogue match, pricing) before changing anything. Re-check:
   `grep '"path": "/intake/image-only"' bake.log | grep -o '"duration_ms": [0-9.]*'`.
+
+### 10. (as opened 2026-09-27) The offline banner covers the screen header
+- **Seen:** device walk 2026-09-26, airplane mode, Portfolio. `OfflineBanner`
+  (`src/components/OfflineBanner.tsx`, mounted in `app/_layout.tsx`) is an
+  absolute overlay: while offline it hides the screen title and the
+  bell / chat / settings icons (taps pass through — `pointerEvents: 'none'`).
+- **Why a decision, not a fix:** making it push content down changes the layout
+  of every screen; alternatives are a slimmer status-bar-only strip or a pill
+  above the tab bar. Re-check: airplane mode on, cold start, look at the header.
+- **Recommendation (2026-09-27): a small pill just above the tab bar** (or the
+  bottom safe area on screens without one), same colour, same text and queue
+  count, still non-interactive. It hides no controls (the header holds back,
+  bell, inbox, settings — the tab bar is already out of reach offline for
+  most destinations), needs no layout change on any screen, and keeps clear
+  of toasts, which enter from the top. Not a status-bar strip: on iPhones
+  with a Dynamic Island the middle of that strip is taken.
+
+### 12. (as opened 2026-09-27) A scan and its item page quote different prices
+- **Seen 2026-09-27:** Base Set Charizard (`base1-base1-4`) scanned at EUR
+  1.159 (QuickScan: `market_hits_daily` median); the saved item's page says
+  "Our comps say EUR 825 · based on 2 market prices". Same catalogue key, two
+  sources, two numbers. Needs a call on which is the item's value (and the
+  AP note already says this key mixes 1st Edition and unlimited sales).
+- **Measured 2026-09-27:** each day this card has exactly TWO prices —
+  TCGplayer holofoil EUR 825 and Cardmarket EUR 1,531 (the same 1,531 every
+  day: a guide figure, not sales). The scan takes the median of daily medians
+  = the MIDPOINT of the two (EUR 1,159); the item page reads the catalogue
+  model's q50 = the TCGplayer number (EUR 825). Neither source has moved since
+  2026-09-05.
+- **Recommendation:** one number per catalogue item — the scan should SHOW the
+  value chain's number (the one the item page and portfolio will use) instead
+  of computing its own from `market_hits_daily`, so saving never changes the
+  price under the member. And when the sources disagree by more than ~1.5×
+  (here 1.9×), show the RANGE with "sources disagree" rather than any single
+  figure: a midpoint of a US price and an EU guide price is nobody's price.
+  Separately worth a look: why this card's prices stopped on 09-05.
 
