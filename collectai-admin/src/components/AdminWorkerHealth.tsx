@@ -32,7 +32,10 @@ function relativeTime(iso: string | null): string {
   return `${days}d ago`;
 }
 
-function formatDuration(seconds: number): string {
+function formatDuration(seconds: number | null): string {
+  // null = no run recorded since the restart (the average is in memory).
+  // `null < 1` is true in JS, so this used to print "<1s" for "unknown".
+  if (seconds == null) return "—";
   if (seconds < 1) return "<1s";
   if (seconds < 60) return `${Math.round(seconds)}s`;
   return `${Math.round(seconds / 60)}m`;

@@ -171,7 +171,7 @@ export interface WorkerStatus {
   last_run_at: string | null;
   last_status: string;
   run_count: number;
-  average_duration_s: number;
+  average_duration_s: number | null; // null = no run since the restart
   /** "disabled" (2026-09-27): in SCHEDULES but deliberately not started by the
    *  bake orchestrator. Those 15 used to be reported as "never_run". */
   status: "ok" | "overdue" | "never_run" | "on_demand" | "disabled";
