@@ -1,36 +1,48 @@
 /**
- * OfflineBanner — slide-down banner shown when the device is offline.
+ * OfflineBanner — a pill just above the bottom bar, shown while offline.
  * Also displays the number of queued mutations waiting to be replayed.
+ *
+ * WHERE, and why (2026-09-27, OPEN_DECISIONS #10): it used to slide down over
+ * the TOP of every screen and covered the header — title, back, bell, inbox,
+ * settings — for as long as the device was offline. A pill above the bottom
+ * bar hides no control, changes no screen's layout, and keeps clear of toasts,
+ * which enter from the top. Not a status-bar strip: on iPhones with a Dynamic
+ * Island the middle of that strip is taken.
  *
  * Wire into app/_layout.tsx alongside the ToastProvider.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, Platform, StatusBar } from 'react-native';
+import { Animated, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { getQueueLength } from '@/lib/mutationQueue';
+import { EXTERNAL_TAB_BAR_HEIGHT } from '@/components/ExternalTabBar';
+import { useTranslation } from 'react-i18next';
 
-// Visible banner content height (icon + text + vertical padding). The full
-// rendered height is this value + the safe-area top inset (status bar / notch).
-const BANNER_BODY_HEIGHT = 36;
+/**
+ * Bottom offset that clears the bottom bar. ExternalTabBar (tab screens) and
+ * QuickNavBar (the rest) are both `58 + max(insets.bottom, 10)` tall; screens
+ * with neither (auth, camera) get the pill a little higher, which is harmless.
+ */
+export function offlinePillBottom(insetsBottom: number): number {
+  return EXTERNAL_TAB_BAR_HEIGHT + Math.max(insetsBottom, 10) + 8;
+}
 
 export function OfflineBanner() {
   const { isOnline } = useNetworkStatus();
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  // Start fully off-screen \u2014 actual hidden offset is computed below once insets resolve.
-  const translateY = useRef(new Animated.Value(-200)).current;
+  // Starts hidden below the screen edge; springs up into place when offline.
+  const translateY = useRef(new Animated.Value(300)).current;
   const [queueCount, setQueueCount] = useState(0);
 
-  const topInset =
-    insets.top || (Platform.OS === 'ios' ? 47 : StatusBar.currentHeight ?? 24);
-  // Pull the banner fully above the screen edge, including the status-bar area
-  // it paints over when shown. The +12 is a small over-slide so the bottom edge
-  // doesn't peek past the notch during the spring overshoot.
-  const hiddenY = -(topInset + BANNER_BODY_HEIGHT + 12);
+  const bottom = offlinePillBottom(insets.bottom);
+  // Far enough down to be fully off-screen, whatever the bar height.
+  const hiddenY = bottom + 80;
 
   useEffect(() => {
     setQueueCount(getQueueLength());
@@ -52,24 +64,20 @@ export function OfflineBanner() {
     }).start();
   }, [isOnline, hiddenY, translateY]);
 
-  const queueSuffix =
-    queueCount > 0
-      ? ` \u2014 ${queueCount} change${queueCount > 1 ? 's' : ''} queued`
-      : '';
+  const label =
+    queueCount === 0
+      ? t('offline.banner')
+      : t(queueCount === 1 ? 'offline.banner_queued_one' : 'offline.banner_queued_many', { count: queueCount });
 
   return (
     <Animated.View
       accessibilityRole="alert"
-      accessibilityLabel={
-        isOnline
-          ? undefined
-          : `You are offline. Showing cached data.${queueCount > 0 ? ` ${queueCount} changes queued.` : ''}`
-      }
+      accessibilityLabel={isOnline ? undefined : `${label}. ${t('offline.banner_a11y_cached')}`}
       accessibilityLiveRegion="polite"
       style={[
         styles.container,
         {
-          paddingTop: topInset + 8,
+          bottom,
           backgroundColor: colors.offlineBanner,
           transform: [{ translateY }],
           // pointerEvents in style (RN 0.81+) — legacy prop on
@@ -81,7 +89,7 @@ export function OfflineBanner() {
     >
       <Ionicons name="cloud-offline-outline" size={16} color={colors.offlineBannerText} />
       <Text style={[styles.text, { color: colors.offlineBannerText }]}>
-        You're offline{queueSuffix}
+        {label}
       </Text>
     </Animated.View>
   );
@@ -90,16 +98,21 @@ export function OfflineBanner() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
     zIndex: 9998,
     gap: 8,
+    // Lifted off the content it floats over.
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
   text: {
     fontSize: 13,

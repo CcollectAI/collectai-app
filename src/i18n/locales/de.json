@@ -1808,5 +1808,11 @@
     "verify": "Bestätigen",
     "code_required": "Gib den 6-stelligen Code aus deiner Authenticator-App ein.",
     "code_rejected": "Dieser Code hat nicht funktioniert. Prüfe deine Authenticator-App und versuche es erneut."
+  },
+  "offline": {
+    "banner": "You're offline",
+    "banner_queued_one": "You're offline — 1 change queued",
+    "banner_queued_many": "You're offline — {{count}} changes queued",
+    "banner_a11y_cached": "Showing cached data"
   }
 }

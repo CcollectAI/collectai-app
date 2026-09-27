@@ -1808,5 +1808,11 @@
     "verify": "Verify",
     "code_required": "Enter the 6-digit code from your authenticator app.",
     "code_rejected": "That code didn't work. Check your authenticator app and try again."
+  },
+  "offline": {
+    "banner": "You're offline",
+    "banner_queued_one": "You're offline — 1 change queued",
+    "banner_queued_many": "You're offline — {{count}} changes queued",
+    "banner_a11y_cached": "Showing cached data"
   }
 }

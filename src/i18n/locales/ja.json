@@ -1808,5 +1808,11 @@
     "verify": "確認",
     "code_required": "認証アプリの 6 桁のコードを入力してください。",
     "code_rejected": "コードが正しくありません。認証アプリを確認してもう一度お試しください。"
+  },
+  "offline": {
+    "banner": "You're offline",
+    "banner_queued_one": "You're offline — 1 change queued",
+    "banner_queued_many": "You're offline — {{count}} changes queued",
+    "banner_a11y_cached": "Showing cached data"
   }
 }
