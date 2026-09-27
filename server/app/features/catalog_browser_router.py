@@ -531,24 +531,16 @@ async def get_catalog_item_price(category_id: str, item_key: str) -> dict:
     if pool is None:
         raise error_response(503, "Database not available", code="DB_UNAVAILABLE")
     item_ref = f"{category_id}:{item_key}"
-    row = await pool.fetchrow(
-        """
-        SELECT
-            COALESCE(SUM(comps_count), 0) AS comps_count,
-            percentile_cont(0.5) WITHIN GROUP (ORDER BY median_price) AS median_price,
-            (ARRAY_AGG(latest_price ORDER BY latest_seen_at DESC))[1] AS latest_price
-        FROM market_hits_daily
-        WHERE item_ref = $1
-          AND day > (current_date - interval '180 days')
-          AND median_price IS NOT NULL
-        """,
-        item_ref,
-    )
-    comps = int(row["comps_count"]) if row and row["comps_count"] else 0
-    median = float(row["median_price"]) if row and row["median_price"] is not None else None
-    latest = float(row["latest_price"]) if row and row["latest_price"] is not None else None
-    # Prefer the robust median once enough comps back it; else the latest comp.
-    estimated = median if (comps >= 3 and median is not None) else latest
+    # ONE value per catalogue item (app/lib/catalogue_value.py, #12): the
+    # model's number the saved item will show, else the median of daily
+    # medians; plus the source spread when the sources disagree.
+    from app.lib.catalogue_value import catalogue_value
+    async with pool.acquire() as conn:
+        cv = await catalogue_value(conn, item_ref)
+    comps = cv["comps_count"] if cv else 0
+    median = cv["median"] if cv else None
+    latest = cv["latest"] if cv else None
+    estimated = cv["value"] if cv else None
 
     # The set's display name, named exactly as the collections rail names it
     # (_collection_display_name). The detail screen only had the raw code from
@@ -578,6 +570,10 @@ async def get_catalog_item_price(category_id: str, item_key: str) -> dict:
         "median_price": median,
         "latest_price": latest,
         "comps_count": comps,
+        "value_source": cv["source"] if cv else None,
+        "sources_disagree": bool(cv and cv["sources_disagree"]),
+        "range_low": cv["low"] if cv and cv["sources_disagree"] else None,
+        "range_high": cv["high"] if cv and cv["sources_disagree"] else None,
         "set_name": set_name,
     }
 

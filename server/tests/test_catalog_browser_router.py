@@ -475,34 +475,56 @@ class TestAccessoryFilter:
 # endpoint now names the set the way the collections rail does.
 # ---------------------------------------------------------------------------
 
-class TestCatalogItemPriceSetName:
-    _PRICE = {"comps_count": 5, "median_price": 100.0, "latest_price": 90.0}
+_CV = {"value": 100.0, "source": "market_median", "comps_count": 5, "median": 100.0,
+       "latest": 90.0, "low": 95.0, "high": 105.0, "p10": 95.0, "p90": 105.0, "sources_disagree": False}
 
+
+class TestCatalogItemPriceSetName:
+    # The price comes from app.lib.catalogue_value (one rule for scan, catalogue
+    # page and item, #12); these tests are about the set name, so it is stubbed.
+
+    @patch("app.lib.catalogue_value.catalogue_value", AsyncMock(return_value=_CV))
     @patch("app.features.catalog_browser_router.get_pool")
     def test_uses_the_catalogue_set_name(self, mock_get_pool):
         pool = _mock_pool()
         mock_get_pool.return_value = pool
-        pool.fetchrow = AsyncMock(side_effect=[self._PRICE, {"set_code": "base1", "set_name": "Base"}])
+        pool.fetchrow = AsyncMock(side_effect=[{"set_code": "base1", "set_name": "Base"}])
         resp = client.get("/catalog/pokemon/items/base1-base1-4/price")
         assert resp.status_code == 200
         assert resp.json()["set_name"] == "Base"
 
+    @patch("app.lib.catalogue_value.catalogue_value", AsyncMock(return_value=_CV))
     @patch("app.features.catalog_browser_router.get_pool")
     def test_falls_back_to_the_humanised_code(self, mock_get_pool):
         pool = _mock_pool()
         mock_get_pool.return_value = pool
-        pool.fetchrow = AsyncMock(side_effect=[self._PRICE, {"set_code": "swsh8", "set_name": None}])
+        pool.fetchrow = AsyncMock(side_effect=[{"set_code": "swsh8", "set_name": None}])
         resp = client.get("/catalog/pokemon/items/swsh8-1/price")
         assert resp.json()["set_name"] not in (None, "swsh8")
 
+    @patch("app.lib.catalogue_value.catalogue_value", AsyncMock(return_value=_CV))
     @patch("app.features.catalog_browser_router.get_pool")
     def test_no_set_means_no_name(self, mock_get_pool):
         pool = _mock_pool()
         mock_get_pool.return_value = pool
-        pool.fetchrow = AsyncMock(side_effect=[self._PRICE, None])
+        pool.fetchrow = AsyncMock(side_effect=[None])
         resp = client.get("/catalog/pokemon/items/x/price")
         assert resp.json()["set_name"] is None
         assert resp.json()["estimated_price"] == 100.0
+
+    @patch("app.lib.catalogue_value.catalogue_value", AsyncMock(return_value={
+        **_CV, "value": 825.41, "source": "catalog_model", "low": 825.41, "high": 1531.0, "sources_disagree": True}))
+    @patch("app.features.catalog_browser_router.get_pool")
+    def test_disagreeing_sources_return_the_range(self, mock_get_pool):
+        """#12: the catalogue page shows the SAME value the scan and the saved
+        item show, and the source spread when it is wider than 1.5x."""
+        pool = _mock_pool()
+        mock_get_pool.return_value = pool
+        pool.fetchrow = AsyncMock(side_effect=[None])
+        body = client.get("/catalog/pokemon/items/base1-base1-4/price").json()
+        assert body["estimated_price"] == 825.41 and body["value_source"] == "catalog_model"
+        assert body["sources_disagree"] is True
+        assert (body["range_low"], body["range_high"]) == (825.41, 1531.0)
 
 
 # ---------------------------------------------------------------------------

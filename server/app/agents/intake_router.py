@@ -54,6 +54,9 @@ class PriceBandResponse(BaseModel):
     q90: float
     confidence: float
     currency: str = "EUR"
+    # True when the catalogue's sources are > 1.5x apart: q10..q90 is then the
+    # source spread and the app shows the range, not q50 (#12, 2026-09-27).
+    sources_disagree: bool = False
 
 
 class SuggestedCorrectionResponse(BaseModel):
@@ -225,6 +228,7 @@ def _intake_to_response(result: IntakeResult) -> IntakeResultResponse:
                 q90=result.price_band.get("q90", 0),
                 confidence=result.price_band.get("confidence", 0),
                 currency=result.price_band.get("currency", "EUR"),
+                sources_disagree=bool(result.price_band.get("sources_disagree", False)),
             )
         except Exception:
             logger.debug("Failed to parse price band from intake result")

@@ -42,41 +42,36 @@ async def _estimate_price(
     if not pool or not category_id or not name:
         return None, None, None
 
-    # Source 0: the matched catalogue item, priced exactly as the catalogue
-    # screen prices it (catalog_browser_router.get_catalog_item_price): the
-    # market_hits_daily rollup by EXACT item_ref over 180 days. Before
-    # 2026-09-26 the matched key went into the ILIKE below as '%key%', a
-    # SUBSTRING — 'base1-base1-4' also matched base1-base1-40..49 — so a
-    # QuickScan of Base Set Charizard (EUR 1,159 on its catalogue page) was
-    # quoted EUR 2.97 from commons. Band = p10/p50/p90 of the daily medians.
+    # Source 0: the matched catalogue item, priced by the ONE shared rule
+    # (app/lib/catalogue_value.py): the catalogue model's value — the number
+    # the saved item, portfolio and analytics show — else the median of daily
+    # medians. Until 2026-09-27 the scan used the median of daily medians
+    # alone, and with two sources a day that is their MIDPOINT: Base Set
+    # Charizard scanned at EUR 1,159 and became EUR 825 once saved (#12).
+    # When the sources disagree (> 1.5x apart) the band IS the source spread,
+    # so the scan shows a range rather than a number nobody quoted.
     if catalog_match_key:
         try:
+            from app.lib.catalogue_value import catalogue_value
             async with pool.acquire() as conn:
-                row = await conn.fetchrow(
-                    """
-                    SELECT COALESCE(SUM(comps_count), 0) AS n,
-                           percentile_cont(0.1) WITHIN GROUP (ORDER BY median_price) AS q10,
-                           percentile_cont(0.5) WITHIN GROUP (ORDER BY median_price) AS q50,
-                           percentile_cont(0.9) WITHIN GROUP (ORDER BY median_price) AS q90
-                    FROM market_hits_daily
-                    WHERE item_ref = $1
-                      AND day > (current_date - interval '180 days')
-                      AND median_price IS NOT NULL
-                    """,
-                    f"{category_id}:{catalog_match_key}",
-                )
-            n = int(row["n"]) if row and row["n"] else 0
-            if n >= 3 and row["q50"] is not None:
+                cv = await catalogue_value(conn, f"{category_id}:{catalog_match_key}")
+            if cv:
+                if cv["sources_disagree"]:
+                    lo, hi = cv["low"], cv["high"]
+                else:
+                    lo = cv["p10"] if cv["p10"] is not None else cv["value"]
+                    hi = cv["p90"] if cv["p90"] is not None else cv["value"]
                 band = {
-                    "q10": round(float(row["q10"]), 2),
-                    "q50": round(float(row["q50"]), 2),
-                    "q90": round(float(row["q90"]), 2),
-                    "confidence": min(0.9, 0.3 + n * 0.01),
+                    "q10": round(min(lo, cv["value"]), 2),
+                    "q50": cv["value"],
+                    "q90": round(max(hi, cv["value"]), 2),
+                    "confidence": min(0.9, 0.3 + cv["comps_count"] * 0.01),
                     "currency": "EUR",
+                    "sources_disagree": cv["sources_disagree"],
                 }
-                return band["q50"], "market_hits_daily", band
+                return band["q50"], cv["source"], band
         except Exception as e:
-            logger.warning("market_hits_daily price lookup error: %s", e)
+            logger.warning("catalogue value lookup error: %s", e)
 
     # Source 1: market_hits (recent sold prices). With a matched key the match
     # is EXACT — a substring of one catalogue key is a prefix of its siblings.

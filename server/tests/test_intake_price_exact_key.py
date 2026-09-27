@@ -14,11 +14,13 @@ from app.agents.intake.enrichment import _estimate_price  # noqa: E402
 
 
 class _Conn:
-    def __init__(self, log, daily_row, hits):
-        self.log, self.daily_row, self.hits = log, daily_row, hits
+    def __init__(self, log, daily_row, hits, model_row=None):
+        self.log, self.daily_row, self.hits, self.model_row = log, daily_row, hits, model_row
 
     async def fetchrow(self, sql, *args):
         self.log.append((sql, args))
+        if "price_prediction_daily" in sql:
+            return self.model_row
         return self.daily_row if "market_hits_daily" in sql else None
 
     async def fetch(self, sql, *args):
@@ -27,16 +29,16 @@ class _Conn:
 
 
 class _Pool:
-    def __init__(self, daily_row=None, hits=None):
+    def __init__(self, daily_row=None, hits=None, model_row=None):
         self.log = []
-        self.daily_row, self.hits = daily_row, hits or []
+        self.daily_row, self.hits, self.model_row = daily_row, hits or [], model_row
 
     def acquire(self):
         pool = self
 
         class _Ctx:
             async def __aenter__(self_inner):
-                return _Conn(pool.log, pool.daily_row, pool.hits)
+                return _Conn(pool.log, pool.daily_row, pool.hits, pool.model_row)
 
             async def __aexit__(self_inner, *a):
                 return False
@@ -44,18 +46,40 @@ class _Pool:
         return _Ctx()
 
 
-def test_matched_key_reads_the_daily_rollup_by_exact_item_ref():
-    pool = _Pool(daily_row={"n": 108, "q10": 700.0, "q50": 1159.04, "q90": 1500.0})
+def _daily(n, median, low=None, high=None):
+    return {"comps_count": n, "p10": median, "median_price": median, "p90": median,
+            "latest_price": median, "low": low, "high": high}
+
+
+def test_matched_key_is_priced_by_the_catalogue_model_by_exact_item_ref():
+    """#12 (2026-09-27): the scan shows the number the saved item will show.
+    Base Set Charizard: model 825 (TCGplayer), sources 825 / 1,531 — the old
+    median-of-medians said 1,159, their midpoint."""
+    pool = _Pool(daily_row=_daily(108, 1159.04, low=825.41, high=1531.0), model_row={"q50": 825.41})
     price, source, band = asyncio.run(
         _estimate_price("pokemon", "Charizard", pool, catalog_match_key="base1-base1-4")
     )
-    assert (price, source) == (1159.04, "market_hits_daily")
-    sql, args = pool.log[0]
-    assert "market_hits_daily" in sql and args == ("pokemon:base1-base1-4",)
+    assert (price, source) == (825.41, "catalog_model")
+    assert all(args == ("pokemon:base1-base1-4",) for _, args in pool.log[:2])
+    # 1,531 / 825 = 1.9x apart: the band is the source spread, flagged.
+    assert band["sources_disagree"] is True
+    assert (band["q10"], band["q90"]) == (825.41, 1531.0)
+
+
+def test_agreeing_sources_are_not_flagged():
+    pool = _Pool(daily_row=_daily(40, 100.0, low=95.0, high=110.0), model_row={"q50": 100.0})
+    _, _, band = asyncio.run(_estimate_price("pokemon", "X", pool, catalog_match_key="k"))
+    assert band["sources_disagree"] is False
+
+
+def test_without_a_model_value_the_daily_median_prices_it():
+    pool = _Pool(daily_row=_daily(12, 50.0, low=48.0, high=52.0), model_row=None)
+    price, source, _ = asyncio.run(_estimate_price("pokemon", "X", pool, catalog_match_key="k"))
+    assert (price, source) == (50.0, "market_median")
 
 
 def test_raw_fallback_for_a_matched_key_is_equality_not_substring():
-    pool = _Pool(daily_row={"n": 0, "q10": None, "q50": None, "q90": None})
+    pool = _Pool(daily_row=_daily(0, None))
     asyncio.run(_estimate_price("pokemon", "Charizard", pool, catalog_match_key="base1-base1-4"))
     raw = [(s, a) for s, a in pool.log if "FROM market_hits\n" in s or "FROM market_hits " in s]
     assert raw, "the raw market_hits fallback never ran"
