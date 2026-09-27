@@ -33,7 +33,7 @@ import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
-import { useEventForm, validateEventForm, buildEventInput, type EventFormat } from '@/hooks/useEventForm';
+import { useEventForm, validateEventForm, buildEventInput, joinDescriptionDetail, type EventFormat } from '@/hooks/useEventForm';
 import { BottomSheetModal } from '@/components/BottomSheetModal';
 import logger from '@/utils/logger';
 import { logAuthState } from '@/utils/diagnostics';
@@ -80,6 +80,10 @@ const CreateEventScreen: React.FC = () => {
   /* ---- detail input draft ---- */
   const [detailDraft, setDetailDraft] = useState('');
 
+  // Create is possible with a typed detail even before it is added (joinDescriptionDetail).
+  const canCreate =
+    form.canSubmit || (form.canSubmitExceptDescription && detailDraft.trim().length > 0);
+
   /* ---- saving state ---- */
   const [saving, setSaving] = useState(false);
 
@@ -121,8 +125,15 @@ const CreateEventScreen: React.FC = () => {
 
   /* ---- submit ---- */
   const handleSubmit = async () => {
-    if (!validateEventForm(form)) return;
-    if (!form.canSubmit || saving) return;
+    // A typed detail that was never added with the arrow still counts.
+    const pendingDetail = detailDraft.trim();
+    if (!validateEventForm(form, pendingDetail.length > 0)) return;
+    if (!canCreate || saving) return;
+    const description = joinDescriptionDetail(form.descriptionField.value, pendingDetail);
+    if (pendingDetail) {
+      form.descriptionField.onChange(description);
+      setDetailDraft('');
+    }
 
     setSaving(true);
 
@@ -132,6 +143,7 @@ const CreateEventScreen: React.FC = () => {
 
     try {
       const input = buildEventInput(form, {
+        description,
         ...(params.sponsorCompanyId
           ? { sponsorCompanyId: params.sponsorCompanyId, sponsorTier: 'featured' as const }
           : {}),
@@ -529,11 +541,11 @@ const CreateEventScreen: React.FC = () => {
           {/* ============================================================== */}
           <AnimatedPressable
             onPress={() => { fireHaptic(HapticIntent.JUDGMENT_LOCKED); handleSubmit(); }}
-            disabled={!form.canSubmit || saving}
+            disabled={!canCreate || saving}
             style={[
               styles.submitButton,
               {
-                backgroundColor: form.canSubmit && !saving ? colors.accent : colors.border,
+                backgroundColor: canCreate && !saving ? colors.accent : colors.border,
               },
             ]}
             accessibilityRole="button"

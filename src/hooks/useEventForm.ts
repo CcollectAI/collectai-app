@@ -54,6 +54,9 @@ export type EventFormState = {
   showLocation: boolean;
   showOnlineUrl: boolean;
   canSubmit: boolean;
+  /** Everything but the description is valid — Create Event lets a typed,
+   *  not-yet-added detail supply it (see joinDescriptionDetail). */
+  canSubmitExceptDescription: boolean;
   saveState: SaveState;
 };
 
@@ -119,16 +122,18 @@ export function useEventForm(options?: UseEventFormOptions): EventFormState {
   const showLocation = format === 'in_person' || format === 'hybrid';
   const showOnlineUrl = format === 'online' || format === 'hybrid';
 
-  const canSubmit =
+  const canSubmitExceptDescription =
     titleField.value.trim().length > 0 &&
     dateField.value.trim().length > 0 &&
-    descriptionField.value.trim().length > 0 &&
     !titleField.error &&
     !dateField.error &&
-    !descriptionField.error &&
     !onlineUrlField.error &&
     !imageUrlField.error &&
     saveState !== 'saving';
+  const canSubmit =
+    canSubmitExceptDescription &&
+    descriptionField.value.trim().length > 0 &&
+    !descriptionField.error;
 
   // Geolocation handler
   const handleUseMyLocation = useCallback(async () => {
@@ -212,6 +217,7 @@ export function useEventForm(options?: UseEventFormOptions): EventFormState {
     showLocation,
     showOnlineUrl,
     canSubmit,
+    canSubmitExceptDescription,
     saveState,
   };
 }
@@ -220,15 +226,33 @@ export function useEventForm(options?: UseEventFormOptions): EventFormState {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Validate all form fields. Returns true if all are valid. */
-export function validateEventForm(form: EventFormState): boolean {
-  return validateAll(
-    form.titleField,
-    form.dateField,
-    form.descriptionField,
-    form.onlineUrlField,
-    form.imageUrlField,
-  );
+/** Validate all form fields. Returns true if all are valid. `descriptionFromDraft`:
+ *  a typed detail supplies the description, so its (stale) field is not checked. */
+export function validateEventForm(form: EventFormState, descriptionFromDraft = false): boolean {
+  return descriptionFromDraft
+    ? validateAll(form.titleField, form.dateField, form.onlineUrlField, form.imageUrlField)
+    : validateAll(
+        form.titleField,
+        form.dateField,
+        form.descriptionField,
+        form.onlineUrlField,
+        form.imageUrlField,
+      );
+}
+
+/**
+ * The description with a typed-but-not-added detail appended (2026-09-27).
+ * Create Event's description is a list of details added with the arrow; text
+ * typed and never "sent" was ignored, and with no other detail the Create
+ * button stayed disabled with nothing saying why (device walk). The typed
+ * text now counts, as the playbook's rule says: a field that only saves on a
+ * button press must not discard what was typed.
+ */
+export function joinDescriptionDetail(current: string, draft: string): string {
+  const c = current.trim();
+  const d = draft.trim();
+  if (!d) return c;
+  return c ? `${c}\n${d}` : d;
 }
 
 /** Build a CreateEventInput from the current form state. */
