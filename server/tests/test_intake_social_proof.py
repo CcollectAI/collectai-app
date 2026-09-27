@@ -75,9 +75,27 @@ async def test_recent_sold_returns_items():
     pool = MagicMock()
     pool.acquire = MagicMock(return_value=AsyncContextMock(conn))
 
-    result = await get_social_proof("pokemon", "charizard", pool)
+    result = await get_social_proof("pokemon", "base1-base1-4", pool, catalog_ref="pokemon:base1-base1-4")
     assert len(result["recent_sold"]) == 1
     assert result["recent_sold"][0]["price"] == 500.0
+    # Exact, indexed item_ref — never a substring (2026-09-27: '%base1-base1-4%'
+    # matched base1-base1-40..49 and scanned 3.2M rows).
+    sql, arg = conn.fetch.call_args_list[0].args[:2]
+    assert "item_ref = $1" in sql and "ILIKE" not in sql
+    assert arg == "pokemon:base1-base1-4"
+
+
+@pytest.mark.asyncio
+async def test_recent_sold_not_queried_without_a_catalogue_match():
+    conn = AsyncMock()
+    conn.fetchval = AsyncMock(return_value=0)
+    conn.fetchrow = AsyncMock(return_value=None)
+    conn.fetch = AsyncMock(return_value=[{"title": "x", "price": 1.0, "currency": "EUR", "ended_at": None, "source": "s"}])
+    pool = MagicMock()
+    pool.acquire = MagicMock(return_value=AsyncContextMock(conn))
+    result = await get_social_proof("pokemon", "Charizard", pool)
+    assert result["recent_sold"] == []
+    assert not any("market_hits" in c.args[0] for c in conn.fetch.call_args_list)
 
 
 @pytest.mark.asyncio

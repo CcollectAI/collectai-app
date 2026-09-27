@@ -480,6 +480,11 @@ async def process_intake(
                 category=result.category_id,
                 item_key=result.catalog_match_key or result.name,
                 pool=pool,
+                # market_hits.item_ref is namespaced: "<category>:<bare key>".
+                catalog_ref=(
+                    f"{result.category_id}:{result.catalog_match_key}"
+                    if result.catalog_match_key and result.category_id else None
+                ),
             )
             if result.social_proof.get("collector_count", 0) > 0:
                 result.rationale.append(

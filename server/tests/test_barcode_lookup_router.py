@@ -422,3 +422,36 @@ class TestCategoryMappingCoverage:
         """All subject patterns should be lowercase for case-insensitive matching."""
         for pattern, _cat in SUBJECT_CATEGORY_MAP:
             assert pattern == pattern.lower(), f"Pattern '{pattern}' should be lowercase"
+
+
+# ---- _lookup_market_price: exact item_ref, never a title substring (2026-09-27) ----
+
+class _PoolCtx:
+    def __init__(self, conn):
+        self.conn = conn
+    async def __aenter__(self):
+        return self.conn
+    async def __aexit__(self, *a):
+        return False
+
+
+def test_market_price_uses_exact_item_ref_and_skips_without_a_key():
+    import asyncio
+    from unittest.mock import AsyncMock, MagicMock
+    from app.features.barcode_lookup_router import _lookup_market_price
+
+    conn = AsyncMock()
+    conn.fetch = AsyncMock(return_value=[{"price": p, "currency": "EUR"} for p in (10, 20, 30)])
+    pool = MagicMock()
+    pool.acquire = MagicMock(return_value=_PoolCtx(conn))
+
+    band = asyncio.run(_lookup_market_price("lego", "LEGO Millennium Falcon", pool, item_key="75192-1-millennium-falcon"))
+    sql, arg = conn.fetch.call_args.args[:2]
+    assert "item_ref = $1" in sql and "ILIKE" not in sql
+    assert arg == "lego:75192-1-millennium-falcon"
+    assert band is not None and band.q50 == 20.0
+
+    conn.fetch.reset_mock()
+    # A title alone never matched a slug and cost a 10-14 s scan: no key, no query.
+    assert asyncio.run(_lookup_market_price("books", "Harry Potter", pool)) is None
+    conn.fetch.assert_not_called()

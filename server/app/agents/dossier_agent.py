@@ -376,14 +376,16 @@ async def generate_dossier(
     # ------------------------------------------------------------------
     market_comps: List[Dict[str, Any]] = []
     try:
-        # Use normalized_key ILIKE to find comps matching this item's title
-        item_title = item_row.get("title") or ""
-        search_key = f"%{item_title[:40]}%" if item_title else "%"
+        # By exact item_ref = the item's canonical_ref (2026-09-27). It was
+        # `normalized_key ILIKE '%<title>%'` — or '%' (every row) with no
+        # title: a leading-wildcard scan that took 10-14 s and matched nothing,
+        # since titles have spaces and normalized_key holds dash slugs (see
+        # barcode_lookup_router._lookup_market_price). No catalogue ref = no comps.
         mh_rows = await conn.fetch(
             """
             SELECT title, price, currency, provider, ended_at, url, condition
             FROM public.market_hits
-            WHERE normalized_key ILIKE $1
+            WHERE item_ref = $1
               AND (is_listing IS NOT TRUE)
               -- Partition prune: dossier only needs recent comps; the
               -- model decay half-life is 30d so 180d covers the whole
@@ -393,8 +395,8 @@ async def generate_dossier(
             ORDER BY ended_at DESC NULLS LAST
             LIMIT 10
             """,
-            search_key,
-        )
+            canonical_ref,
+        ) if canonical_ref else []
         from app.lib.affiliate import build_affiliate_url
 
         for row in mh_rows:

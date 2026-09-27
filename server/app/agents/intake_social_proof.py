@@ -28,6 +28,7 @@ async def get_social_proof(
     category: Optional[str],
     item_key: Optional[str],
     pool,
+    catalog_ref: Optional[str] = None,
 ) -> dict[str, Any]:
     """
     Aggregate social proof data for a scanned item.
@@ -104,55 +105,65 @@ async def get_social_proof(
                 logger.debug("Social proof trending error: %s", e)
 
             # Recent sold from market_hits (last 5)
-            try:
-                rows = await conn.fetch(
-                    """
-                    SELECT title, price, currency, ended_at, source
-                    FROM market_hits
-                    WHERE normalized_key ILIKE $1
-                      AND price IS NOT NULL
-                      AND price > 0
-                      AND (is_listing IS NOT TRUE)
-                      -- Partition prune: social proof shows recent sold;
-                      -- 180d covers the window where prices are still
-                      -- relevant. Without this filter every intake call
-                      -- walks all monthly partitions of market_hits.
-                      AND seen_at > now() - interval '180 days'
-                    ORDER BY ended_at DESC NULLS LAST
-                    LIMIT 5
-                    """,
-                    f"%{(item_key or '')[:60]}%",
-                )
-                result["recent_sold"] = [
-                    {
-                        "title": r["title"],
-                        "price": float(r["price"]),
-                        "currency": r["currency"] or "EUR",
-                        "sold_at": r["ended_at"].isoformat() if r["ended_at"] else None,
-                        "source": r["source"],
-                    }
-                    for r in rows
-                ]
-            except Exception as e:
-                logger.debug("Social proof recent sold error: %s", e)
+            if catalog_ref:
+                try:
+                    # EXACT item_ref, only when the scan matched a catalogue card
+                    # (2026-09-27). It was `normalized_key ILIKE '%<key>%'`: a
+                    # leading-wildcard scan of the whole month's partition
+                    # (EXPLAIN: 3.2M rows read, 2.17 s — 2.6 s of a 9 s scan) that
+                    # was also WRONG — '%base1-base1-4%' matches base1-base1-40..49,
+                    # so Charizard's "recent sales" included other cards. Without a
+                    # catalogue match the fallback was the item NAME, which never
+                    # matches a key: 2 s for nothing. item_ref has an index.
+                    rows = await conn.fetch(
+                        """
+                        SELECT title, price, currency, ended_at, source
+                        FROM market_hits
+                        WHERE item_ref = $1
+                          AND price IS NOT NULL
+                          AND price > 0
+                          AND (is_listing IS NOT TRUE)
+                          -- Partition prune: social proof shows recent sold;
+                          -- 180d covers the window where prices are still
+                          -- relevant. Without this filter every intake call
+                          -- walks all monthly partitions of market_hits.
+                          AND seen_at > now() - interval '180 days'
+                        ORDER BY ended_at DESC NULLS LAST
+                        LIMIT 5
+                        """,
+                        catalog_ref,
+                    )
+                    result["recent_sold"] = [
+                        {
+                            "title": r["title"],
+                            "price": float(r["price"]),
+                            "currency": r["currency"] or "EUR",
+                            "sold_at": r["ended_at"].isoformat() if r["ended_at"] else None,
+                            "source": r["source"],
+                        }
+                        for r in rows
+                    ]
+                except Exception as e:
+                    logger.debug("Social proof recent sold error: %s", e)
 
             # Recent listings (asking prices) — only for categories where
             # Discogs listing-price data is ingested. Uses price_eur (FX-
             # normalized) so UI doesn't mix currencies.
-            if category in LISTING_PRICE_CATEGORIES:
+            # Same exact-item_ref rule as recent sold above.
+            if category in LISTING_PRICE_CATEGORIES and catalog_ref:
                 try:
                     rows = await conn.fetch(
                         """
                         SELECT title, price, currency, seen_at, source, url
                         FROM market_hits
-                        WHERE normalized_key ILIKE $1
+                        WHERE item_ref = $1
                           AND price IS NOT NULL
                           AND price > 0
                           AND is_listing IS TRUE
                         ORDER BY seen_at DESC NULLS LAST
                         LIMIT 5
                         """,
-                        f"%{(item_key or '')[:60]}%",
+                        catalog_ref,
                     )
                     result["recent_listings"] = [
                         {

@@ -50,7 +50,9 @@ async def _barcode_lookup_internal(
         category = local.get("category")
         price_band = None
         if category and local.get("title"):
-            price_band = await _lookup_market_price(category, local["title"], pool)
+            price_band = await _lookup_market_price(
+                category, local["title"], pool, item_key=local.get("item_key"),
+            )
             if price_band:
                 rationale.append("Price from recent market data")
 

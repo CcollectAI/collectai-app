@@ -451,9 +451,19 @@ async def _lookup_google_books(isbn: str) -> Optional[dict]:
     return None
 
 
-async def _lookup_market_price(category: str, title: Optional[str], pool) -> Optional[PriceBand]:
-    """Look up recent market prices from market_hits for similar items."""
-    if not pool or not category or not title:
+async def _lookup_market_price(
+    category: str, title: Optional[str], pool, item_key: Optional[str] = None,
+) -> Optional[PriceBand]:
+    """Recent market prices for a CATALOGUE item, by exact item_ref.
+
+    It was `normalized_key ILIKE '%<title>%'`. normalized_key holds slugs
+    ("base1-base1-4", dashes) and titles have spaces, so a title never
+    matched — while a leading-wildcard scan of 180 days of market_hits ran on
+    every call: measured 2026-09-27, 9.6 s for "LEGO Millennium Falcon",
+    14.1 s for an ISBN title, 0 rows both times. Without a catalogue key there
+    is nothing to look up; with one, item_ref is indexed.
+    """
+    if not pool or not category or not item_key:
         return None
 
     try:
@@ -464,7 +474,7 @@ async def _lookup_market_price(category: str, title: Optional[str], pool) -> Opt
                 """
                 SELECT price, currency
                 FROM market_hits
-                WHERE normalized_key ILIKE $1
+                WHERE item_ref = $1
                   AND price IS NOT NULL
                   AND price > 0
                   AND (is_listing IS NOT TRUE)
@@ -475,7 +485,7 @@ async def _lookup_market_price(category: str, title: Optional[str], pool) -> Opt
                 ORDER BY ended_at DESC NULLS LAST
                 LIMIT 20
                 """,
-                f"%{title[:40]}%",
+                f"{category}:{item_key}",
             )
             if not rows or len(rows) < 3:
                 return None
@@ -539,7 +549,9 @@ async def barcode_lookup(
         category = local["category"]
 
         # Try to get market price
-        price_band = await _lookup_market_price(category, local["title"], pool)
+        price_band = await _lookup_market_price(
+            category, local["title"], pool, item_key=local.get("item_key"),
+        )
         if price_band:
             rationale.append("Price from recent market data")
 

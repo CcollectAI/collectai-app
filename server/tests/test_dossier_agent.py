@@ -391,6 +391,11 @@ class TestGenerateDossier:
         assert dossier.provenance[0]["event_type"] == "purchase"
         assert len(dossier.market_comps) == 1
         assert dossier.market_comps[0]["price"] == 350.0
+        # Comps by the item's exact item_ref, never a title substring
+        # (2026-09-27: '%<title>%' scanned 180 days and matched nothing).
+        mh = [(sql, args) for sql, args in conn.recorded_calls if "market_hits" in sql.lower()]
+        assert mh and "item_ref = $1" in mh[0][0] and "ilike" not in mh[0][0].lower()
+        assert mh[0][1][0] == "pokemon:base1-base1-4"
         assert len(dossier.photos) >= 1
         # Empty, like the dedicated collections test below: `items` has no
         # `collections` column, so the agent hardcodes []. The row used to
