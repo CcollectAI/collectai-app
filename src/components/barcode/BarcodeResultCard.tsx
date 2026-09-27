@@ -110,7 +110,9 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
           </View>
         )}
 
-        {intakeResult?.identification_method && (
+        {/* Only for a result that WAS identified: an unrecognised code read
+            "Identified via: manual" under "Not recognised" (walk 2026-09-27). */}
+        {recognised && intakeResult?.identification_method && (
           <View style={styles.productMeta}>
             <Ionicons name="bulb-outline" size={16} color={colors.muted} />
             <Text style={[styles.productMetaText, { color: colors.muted }]}>
