@@ -40,6 +40,7 @@ export function AdminCreatorManager() {
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState("");
   const [perf, setPerf] = useState<CreatorRow[]>([]);
+  const perfByCode = new Map(perf.map((p) => [p.affiliateCode, p]));
   const [exporting, setExporting] = useState(false);
 
   const configured = isSupabaseConfigured();
@@ -215,6 +216,8 @@ export function AdminCreatorManager() {
               <th className="border border-gray-300 px-3 py-2 text-center font-semibold text-gray-700">Status</th>
               <th className="border border-gray-300 px-3 py-2 text-center font-semibold text-gray-700">Kits Sent</th>
               <th className="border border-gray-300 px-3 py-2 text-center font-semibold text-gray-700">Payout %</th>
+              <th className="border border-gray-300 px-3 py-2 text-center font-semibold text-gray-700" title="Members who signed up with this code in the last 30 days (profiles.referred_by_code)">Signups (30d)</th>
+              <th className="border border-gray-300 px-3 py-2 text-center font-semibold text-gray-700" title="Paid subscription events attributed to this code in the last 30 days (subscription_events.affiliate_code)">Paid (30d)</th>
               <th className="border border-gray-300 px-3 py-2 text-center font-semibold text-gray-700">Actions</th>
             </tr>
           </thead>
@@ -243,6 +246,15 @@ export function AdminCreatorManager() {
                 </td>
                 <td className="border border-gray-300 px-3 py-2 text-center">{c.kits_sent}</td>
                 <td className="border border-gray-300 px-3 py-2 text-center">{c.affiliate_payout_pct}%</td>
+                {/* Until 2026-09-27 the roster showed who a creator is but never
+                    what they brought: the signup counts were loaded (perf) for
+                    the CSV export only. `scans` = attributed signups (kpi.ts). */}
+                <td className="border border-gray-300 px-3 py-2 text-center font-medium">
+                  {perfByCode.get(c.affiliate_code)?.scans ?? (perf.length ? 0 : "—")}
+                </td>
+                <td className="border border-gray-300 px-3 py-2 text-center">
+                  {perfByCode.get(c.affiliate_code)?.purchases ?? (perf.length ? 0 : "—")}
+                </td>
                 <td className="border border-gray-300 px-3 py-2 text-center">
                   <button
                     type="button"
@@ -256,7 +268,7 @@ export function AdminCreatorManager() {
             ))}
             {creators.length === 0 && (
               <tr>
-                <td colSpan={9} className="border border-gray-300 px-3 py-6 text-center text-gray-400">
+                <td colSpan={11} className="border border-gray-300 px-3 py-6 text-center text-gray-400">
                   No creators yet. Click &quot;+ Add Creator&quot; to onboard your first creator.
                 </td>
               </tr>
