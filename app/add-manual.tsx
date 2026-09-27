@@ -157,6 +157,11 @@ const ManualAddScreen: React.FC = () => {
   }), [nameField.value, category, gameOrSeries, conditionGrade, purchasePriceField.value, estimatedValueField.value, source, notes, categoryAttrs]);
 
   const handleRestoreDraft = useCallback((draft: FormDraftState) => {
+    // A fresh scan hand-off wins over an old draft. The restore is async and
+    // landed AFTER the hand-off, overwriting the new scan's name, category and
+    // barcode with the previous item's (device walk 2026-09-27). The old draft
+    // is replaced by this form's state on the next debounced save.
+    if (handoffConsumedRef.current) return false;
     if (typeof draft.name === 'string' && draft.name) nameField.setValue(draft.name);
     if (typeof draft.category === 'string') setCategory(draft.category);
     if (typeof draft.gameOrSeries === 'string') setGameOrSeries(draft.gameOrSeries);

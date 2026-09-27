@@ -25,8 +25,12 @@ interface UseFormDraftOptions {
   draftKey: string;
   /** Current form values to persist */
   formState: FormDraftState;
-  /** Called once on mount with restored draft (if any). Return true if draft was applied. */
-  onRestore: (draft: FormDraftState) => void;
+  /** Called once on mount with restored draft (if any). Return `false` to
+   *  DECLINE it — nothing is restored and no "Draft restored" is announced.
+   *  (The doc said "return true if applied" while the value was ignored; a
+   *  fresh QuickScan hand-off was then overwritten by a stale draft,
+   *  2026-09-27.) Any other return applies it, as before. */
+  onRestore: (draft: FormDraftState) => boolean | void;
 }
 
 export function useFormDraft({ draftKey, formState, onRestore }: UseFormDraftOptions) {
@@ -54,9 +58,10 @@ export function useFormDraft({ draftKey, formState, onRestore }: UseFormDraftOpt
           });
           if (hasContent) {
             restoredRef.current = true;
-            onRestoreRef.current(draft);
-            setHasDraft(true);
-            setDraftRestored(true);
+            if (onRestoreRef.current(draft) !== false) {
+              setHasDraft(true);
+              setDraftRestored(true);
+            }
           }
         }
       } catch (err) {
