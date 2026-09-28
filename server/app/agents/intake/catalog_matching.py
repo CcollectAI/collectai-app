@@ -430,13 +430,23 @@ async def _match_catalog_items(
                                 '\\s+', ' ', 'g'
                               ) LIKE $2
                         ORDER BY (""" + _PRINTED_SQL + """ = $3) DESC NULLS LAST,
-                                 (lower(attributes_json ->> 'card_number') = lower($4)) DESC NULLS LAST
+                                 (lower(attributes_json ->> 'card_number') = lower($4)) DESC NULLS LAST,
+                                 -- Exact titles next, so a title SHARED by many rows
+                                 -- reaches resolve_title_ties as a tie. Without this,
+                                 -- "Charizard" (28+ exact rows) returned one exact row
+                                 -- among four "Charizard ex"-likes, no tie was visible,
+                                 -- and the Celebrations reprint came back at 1.0
+                                 -- (OPEN_DECISIONS #17, 2026-09-28).
+                                 (regexp_replace(
+                                    regexp_replace(lower(title), '[^a-z0-9[:space:]]', '', 'g'),
+                                    '\\s+', ' ', 'g') = $5) DESC
                         LIMIT 5
                         """,
                         category_id,
                         f"%{title_query}%",
                         norm_printed(read_number),
                         read_number.split("/")[0].strip(),
+                        _normalize_for_search(suggested_name),
                     )
                     for row in rows:
                         rid = str(row["id"])
