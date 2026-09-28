@@ -11,16 +11,14 @@ _Opened 2026-09-26 from the Android walk rounds._
 
 _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in `docs/CLASS_SWEEPS.md`). #1–#12 are decided; each entry as opened is kept under **As opened** at the end._
 
-### 17. A free-text item priced from anything with its name in the title — **found 2026-09-28, not triaged**
-- **State:** simcheck's "Charizard (Base Set 004)" is `canonical_ref = pokemon:charizard` (not linked to `pokemon:base1-base1-4`). Its card reads "Our comps say €10" from a 2026-09-06 prediction (q50 €9.90, confidence 0.33) over 8 eBay rows filed under the generic key — plushies, a 25th-anniversary set. The catalogue card itself holds EUR 812–1,531 sales. Not caused by the 09-28 changes (prediction predates them).
-- **Re-check:** `GET /predict/evidence/60be9f51-7c1c-4e6a-8866-d2691453b88c` as simcheck.
-
 ### 16. Affiliate enrollment — **recommend: eBay Partner Network first, then one aggregator**
 - **State:** all 16 `*_AFFILIATE_*` vars empty on EC2 (checked 2026-09-28). eBay is 336,880 of ~360k outbound links in 30 d. Of 18 shops the app links to, 8 pay per sale (eBay, TCGplayer, StockX, Catawiki, Reverb, HLJ, Solaris Japan, Sideshow); Reverb/HLJ/Solaris/Sideshow have no tagger yet.
 - **Do (your hands):** eBay campaign id → `EBAY_AFFILIATE_CAMPAIGN_ID` (10 digits; `docs/AFFILIATE_SWITCH_ON.md` Step 1). Then Sovrn Commerce or Skimlinks: one signup covers many merchants — I add its link format when you have an account.
 - **Re-check:** `grep AFFILIATE /opt/collectors/.env`.
 
 ## Decided
+
+- **2026-09-28 — #17 an item priced from anything with its name in the title: FIXED (`f7540cd4`, DEPLOYED 22:08 CEST; trigger applied on prod).** Two holes, both closed at the chokepoint: (1) `trg_items_canonical_ref` gave ANY key a ref (`charizard` → `pokemon:charizard`, which matched title-filed junk predictions) — a key the catalogue does not know now gets no ref (`server/migrations/20260928_canonical_ref_catalogue_only.sql`; rolled-back dry run first: 1 of 17 items changed, 56/56 category sample keys still resolve); (2) the catalogue matcher's LIMIT 5 hid AH's tie — "Charizard" returned one Celebrations row at 1.0; exact titles now rank first, so it comes back ambiguous at 0.5 (Base Set with set+number still resolves at 1.0). The test account's item re-linked to `base1-base1-4`. Verified live: its evidence reads EUR 825 from TCGplayer/Cardmarket sales (was EUR 10 from plushies); a new item POSTed with key `charizard` gets `canonical_ref` NULL (probe deleted).
 
 - **2026-09-28 — #13 junk Mercari rows: DONE on prod** (Merle: yes). One transaction: 9,241 `market_hits` rows deleted (`provider='crawl4ai'`, photo URL, title echoing our query — all 9,241 had both), and 2,061 `market_hits_daily` rows removed whose day had ONLY those rows (6,667 item-days touched). Re-check: `select count(*) from market_hits where url like '%mercdn%'` → 0. **Not reachable:** daily rows before 2026-09-01 — `market_hits` keeps one month, so older days that included such rows cannot be recomputed; they age out of the 180-day window by March 2027. New junk stops only when the parse fix is DEPLOYED.
 - **2026-09-28 — #14 daily rollup: SALES FIRST, listings as fallback — DONE on prod** (Merle: "preferably sales only but not if we lose all data"). Measured first: pure sales-only would have emptied the daily price of **24,525 of 97,111** items (25 %, the eBay-fed categories have listings only). So on an item-day with sales only sales count; a day with none keeps its listings' median. Cron job 39 changed via `supabase/migrations/20260928_market_hits_daily_sales_first.sql`; 2026-09-01…09-28 recomputed day by day. Verified: daily rows 1,599,970 → 1,650,919 (−2,061 junk-only days, + today's 53,047 not yet rolled) — nothing lost; on 09-27 all 83 mixed item-days now equal the sales-only median (82 had differed). Re-check: `select position('day_has_sales' in command) > 0 from cron.job where jobid = 39` → true.
@@ -63,7 +61,12 @@ _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in 
 - `_extract_url_from_listing` took the first URL (a photo on Mercari); titles came from image alt text echoing the query; the search page stood in for a missing link.
 - Recommended then: hide Yahoo JP in Europe; check Mercari from a US connection first; fix the parse before deciding on scraper sold rows. The Mercari advice changed on the evidence — see Decided.
 
-### 13–15. (as opened 2026-09-28, decided the same day)
+### 13–15, 17. (as opened 2026-09-28, decided the same day)
+
+#### 17. A free-text item priced from anything with its name in the title — **found 2026-09-28, not triaged**
+- **State:** simcheck's "Charizard (Base Set 004)" is `canonical_ref = pokemon:charizard` (not linked to `pokemon:base1-base1-4`). Its card reads "Our comps say €10" from a 2026-09-06 prediction (q50 €9.90, confidence 0.33) over 8 eBay rows filed under the generic key — plushies, a 25th-anniversary set. The catalogue card itself holds EUR 812–1,531 sales. Not caused by the 09-28 changes (prediction predates them).
+- **Re-check:** `GET /predict/evidence/60be9f51-7c1c-4e6a-8866-d2691453b88c` as simcheck.
+
 
 #### 13. Delete the 9,234 Mercari rows that are not the items they are filed under — **recommend: yes**
 - **State:** in 30 days, 9,234 `market_hits` rows at `u-mercari-images.mercdn.net`: 6,327 titled with OUR query (`"Goodfellas (4K UHD) sold" search result`) and 2,907 from Mercari's "Items related to …" section. Each carries a catalogue `item_ref` (6,660 items) and a price of some OTHER item. The parse is fixed (Decided, below), so no new ones arrive — but the old ones sit in the nightly `rollup-market-hits-daily`, which medians every priced row: **6,660 items had them in their daily price; on at least one day 2,107 items had ONLY them.** That table feeds the catalogue price fallback (#12) and the Pro price range (#2).

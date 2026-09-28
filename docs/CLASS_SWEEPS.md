@@ -343,6 +343,14 @@ rows can be told apart before tapping. Tests: `server/tests/test_catalog_title_t
 
 **Re-run:** the falsifier in the AH row above, against prod.
 
+**The fix had a hole (found 2026-09-28, OPEN_DECISIONS #17).** `resolve_title_ties`
+only sees ties among the rows it is handed, and the title strategy handed it an
+unordered-by-title `LIMIT 5`. With no number read, "Charizard" (28+ exact rows)
+returned ONE exact row among four "Charizard ex"-likes — no visible tie, the
+Celebrations reprint at 1.0. Exact titles now rank before the LIMIT. Falsifier:
+`_match_catalog_items(category_id="pokemon", suggested_name="Charizard", …)` on
+prod → every top row `ambiguous`, score 0.5.
+
 ## AI — a paid agent that could not produce its product (2026-09-24)
 
 Walked the Smart Deal Agent (Pro) on Android with a real keyed mandate
