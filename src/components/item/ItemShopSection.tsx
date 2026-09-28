@@ -18,7 +18,7 @@
  * idioms in a row" bug in another costume.
  */
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Linking, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
@@ -26,8 +26,8 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { AnimatedPressable } from '@/motion';
 import { BottomSheetModal } from '@/components/BottomSheetModal';
 import { radius, text, fontWeight } from '@/theme/tokens';
-import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
+import { openAffiliateUrl } from '@/utils/affiliateHelpers';
 
 interface AffiliateLink {
   source: string;
@@ -49,11 +49,9 @@ export const ItemShopSection = React.memo(function ItemShopSection({ affiliateLi
   const openLink = useCallback(
     (link: AffiliateLink) => {
       fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-      Linking.openURL(link.affiliate_url).catch((err) =>
-        // logger.error, not warn: warn is stripped in release, which is exactly
-        // where a link that silently does nothing would be invisible.
-        logger.error('[ItemDetail] Failed to open affiliate URL', err),
-      );
+      // openAffiliateUrl records the tap (demand_signals) and logs a failed
+      // open at error level — warn is stripped in release.
+      openAffiliateUrl(link.affiliate_url || link.url, { source: link.source });
       setOpen(false);
     },
     [settings.hapticsEnabled],

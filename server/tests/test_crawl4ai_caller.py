@@ -270,3 +270,58 @@ class TestSiteSearchTemplates:
         from app.agents.adapters.crawl4ai_caller import SITE_SEARCH_TEMPLATES
 
         assert "ktown4u.com" in SITE_SEARCH_TEMPLATES
+
+
+class TestClassAYListingParse:
+    """Shapes seen on prod 2026-09-28: 9,234 Mercari rows whose title was our
+    own query and whose link was a photo."""
+
+    def test_photo_is_not_the_link_and_names_the_item(self):
+        from app.agents.adapters.crawl4ai_caller import _extract_url_from_listing
+
+        block = ('![x](https://u-mercari-images.mercdn.net/photos/m40653651141_1.jpg?width=2560)\n'
+                 'nct 127 2 baddies deluxe box $20.00')
+        assert _extract_url_from_listing(block) == "https://www.mercari.com/us/item/m40653651141/"
+
+    def test_item_link_after_the_photo_wins(self):
+        from app.agents.adapters.crawl4ai_caller import _extract_url_from_listing
+
+        block = ('[![x](https://img.example.com/a.jpg)](https://www.hlj.com/figure-1)\n'
+                 'Figure $30')
+        assert _extract_url_from_listing(block) == "https://www.hlj.com/figure-1"
+
+    def test_no_link_is_none(self):
+        from app.agents.adapters.crawl4ai_caller import _extract_url_from_listing
+
+        assert _extract_url_from_listing("Some figure $30 only an ![a](https://x.com/p.png)") is None
+
+    def test_echoed_query_is_not_a_title(self):
+        from app.agents.adapters.crawl4ai_caller import _extract_title_from_listing
+
+        assert _extract_title_from_listing(
+            '![“Goodfellas (4K UHD) sold” search result #1](https://u-mercari-images.mercdn.net/photos/m1_1.jpg)'
+        ) is None
+        assert _extract_title_from_listing('"Goodfellas (4K UHD) sold" search result') is None
+        assert _extract_title_from_listing("Goodfellas 4K UHD steelbook, sealed") == "Goodfellas 4K UHD steelbook, sealed"
+
+    def test_items_related_section_is_dropped(self):
+        from app.agents.adapters.crawl4ai_caller import _split_into_listings
+
+        md = ("No results found\n\nWe couldn't find anything that matches.\n\n\n"
+              "## Items related to Goodfellas\n\n\n"
+              "Pokemon plush unrelated item listing text $6.00 more words here\n")
+        assert all("Pokemon plush" not in p for p in _split_into_listings(md))
+
+
+def test_no_adapter_falls_back_to_the_search_page():
+    # `_extract_url_from_listing(...) or url` stored the SEARCH page as a listing.
+    import pathlib, re
+
+    root = pathlib.Path(__file__).resolve().parents[1] / "app" / "agents" / "adapters"
+    bad = [
+        f"{p.name}:{i}"
+        for p in root.glob("*.py")
+        for i, line in enumerate(p.read_text().splitlines(), 1)
+        if re.search(r"_extract_(url_from_listing|grailed_url)\([^)]*\)\s+or\s+\w", line)
+    ]
+    assert bad == []

@@ -310,7 +310,7 @@ function CatalogItemMuseumScreen() {
 
   const openLink = useCallback((link: AffiliateLink) => {
     fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
-    openAffiliateUrl(link.affiliate_url || link.url);
+    openAffiliateUrl(link.affiliate_url || link.url, { source: link.source });
   }, [settings.hapticsEnabled]);
 
   const openSibling = useCallback((it: CatalogItemData) => {

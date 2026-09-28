@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import { AppState, Linking, Platform, type AppStateStatus } from "react-native";
+import { AppState, Platform, type AppStateStatus } from "react-native";
 import * as Notifications from "expo-notifications";
 import { useRouter, type Href } from "expo-router";
 import { collectorsApi } from "@/api/collectorsApi";
@@ -24,6 +24,7 @@ import { recordPushImpression, recordPushInteraction } from "@/api/intelligenceA
 import { trackTap } from "@/lib/notificationOutcomeTracker";
 import { itemHref, inAppListingHref } from "@/lib/ids";
 import { logger } from '@/lib/logger';
+import { openAffiliateUrl } from '@/utils/affiliateHelpers';
 
 // ---------------------------------------------------------------------------
 // Configure how notifications appear when the app is in the foreground
@@ -245,7 +246,7 @@ export function usePushNotifications(userId: string | null) {
           try {
             const parsed = new URL(directUrl);
             if (ALLOWED_SCHEMES.includes(parsed.protocol)) {
-              Linking.openURL(directUrl).catch(() => {});
+              openAffiliateUrl(directUrl);
             }
           } catch (e) {
             logger.error('[silent-catch] usePushNotifications.ts:205:', e);

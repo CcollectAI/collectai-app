@@ -684,6 +684,7 @@ function AgentHubScreen() {
                             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
                             collectorsApi.clickDeal(deal.id).catch(() => {});
                             const url = deal.affiliateUrl || deal.listingUrl;
+                            // affiliate-open-ok: clickDeal above records the tap on the mandate_deals row
                             if (url) Linking.openURL(url).catch(() => {});
                           }}
                           style={[styles.quickBuyBtn, { backgroundColor: colors.accent }]}

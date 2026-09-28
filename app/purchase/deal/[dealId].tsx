@@ -97,6 +97,7 @@ function DealDetailScreen() {
       await collectorsApi.clickDeal(deal.id);
       const url = deal.affiliateUrl || deal.listingUrl;
       if (url) {
+        // affiliate-open-ok: clickDeal above records the tap on the mandate_deals row
         await Linking.openURL(url);
       }
       setDeal((prev) => prev ? { ...prev, status: "clicked", affiliateClick: true } : prev);

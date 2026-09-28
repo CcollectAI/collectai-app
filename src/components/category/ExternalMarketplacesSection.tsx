@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, Linking, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
-import logger from '@/utils/logger';
 import type { AppTheme } from '@/hooks/useAppTheme';
 import { useTranslation } from 'react-i18next';
+import { openAffiliateUrl } from '@/utils/affiliateHelpers';
 
 type ExternalMarketplace = {
   id: string;
@@ -50,7 +50,7 @@ const ExternalMarketplacesSection: React.FC<Props> = ({
               style={[styles.marketplaceBtn, { backgroundColor: colors.accent + '15', borderColor: colors.accent }]}
               onPress={() => {
                 onPress();
-                Linking.openURL(url).catch((err) => logger.warn('[CategoryStore] open URL error:', err));
+                openAffiliateUrl(url, { source: mp.id });
               }}
               accessibilityRole="link"
               accessibilityLabel={`Shop ${mp.label}`}

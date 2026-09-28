@@ -187,7 +187,10 @@ class ScrapedoCaller:
                     if not title:
                         continue
 
-                    listing_url = _extract_url_from_listing(listing_text) or url
+                    # No link of its own → not a listing. The search page is not one (class AY).
+                    listing_url = _extract_url_from_listing(listing_text)
+                    if not listing_url:
+                        continue
                     price_text = f"{title} {listing_text[:500]}"
                     price, currency, source_price, source_currency = _extract_price(
                         price_text, rates=rates,
@@ -310,7 +313,10 @@ class ScrapedoCaller:
                     if not title:
                         continue
 
-                    listing_url = _extract_url_from_listing(listing_text) or url
+                    # No link of its own → not a listing. The search page is not one (class AY).
+                    listing_url = _extract_url_from_listing(listing_text)
+                    if not listing_url:
+                        continue
                     price_text = f"{title} {listing_text[:500]}"
                     price, currency, source_price, source_currency = _extract_price(
                         price_text, rates=rates,

@@ -82,7 +82,7 @@ SITE_SEARCH_TEMPLATES: Dict[str, str] = {
     # ─── Added 2026-04-25: dead specialty APIs replaced with public-page scraping
     # so thin categories (watches, whiskey, lego, scale models) keep getting hits
     # via Crawl4AI without needing API access we don't have.
-    "chrono24.com": "https://www.chrono24.com/search/index.htm?query={query}",
+    "chrono24.com": "https://www.chrono24.com/search/index.htm?dosearch=true&query={query}",  # without dosearch the query is ignored (class AX)
     "whiskyauctioneer.com": "https://www.whiskyauctioneer.com/search?q={query}",
     "masterofmalt.com": "https://www.masterofmalt.com/search/?searchTerm={query}",
     "brickeconomy.com": "https://www.brickeconomy.com/search?query={query}",
@@ -116,22 +116,39 @@ SITE_WAIT_SELECTORS: Dict[str, str] = {
 _LISTING_SPLIT_RE = re.compile(r"\n{3,}|^-{3,}$|^\*{3,}$|^#{1,3}\s", re.MULTILINE)
 
 
+# A results page that found nothing still renders items: Mercari's "No results
+# found" is followed by "Items related to <query>". Everything from that
+# heading on is NOT a match for the query (class AY: 2,907 such rows in 30 d,
+# each filed under the searched item's catalogue ref).
+_RELATED_SECTION_RE = re.compile(r"^.{0,12}Items related to\b", re.MULTILINE | re.IGNORECASE)
+
+
 def _split_into_listings(markdown: str, max_listings: int = 30) -> List[str]:
     """Split a search-results page markdown into individual listing candidates."""
+    related = _RELATED_SECTION_RE.search(markdown or "")
+    if related:
+        markdown = markdown[:related.start()]
     parts = _LISTING_SPLIT_RE.split(markdown)
     # Filter tiny fragments and limit
     return [p.strip() for p in parts if len(p.strip()) > 30][:max_listings]
 
 
+# Image alt text that echoes OUR query back ("\"<query> sold\" search result #1")
+# is not the item's title. Taking it filed unrelated items under the query
+# (class AY: 6,327 rows in 30 d).
+_ECHO_TITLE_RE = re.compile(r"search result(?:\s*#\d+)?\s*$|^items related to\b", re.IGNORECASE)
+_IMAGE_MD_RE = re.compile(r"!\[[^\]]*\]\([^)]*\)")
+
+
 def _extract_title_from_listing(text: str) -> Optional[str]:
-    """Extract a title from a listing text block."""
+    """Extract a title from a listing text block (never from an image's alt text)."""
     lines = text.strip().split("\n")
     for line in lines:
-        line = line.strip().lstrip("#").strip()
+        line = _IMAGE_MD_RE.sub("", line).strip().lstrip("#").strip()
         if 10 <= len(line) <= 300:
             # Strip markdown link syntax
-            cleaned = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", line)
-            if cleaned:
+            cleaned = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", line).strip()
+            if cleaned and not _ECHO_TITLE_RE.search(cleaned):
                 return cleaned[:300]
     return None
 
@@ -172,10 +189,30 @@ def _extract_attrs_from_text(text: str) -> Dict[str, Any]:
     return attrs
 
 
+_IMAGE_URL_RE = re.compile(
+    r"\.(?:jpe?g|png|webp|gif|avif|svg)(?:[?#]|$)|mercdn\.net|/images?/|/thumbs?/",
+    re.IGNORECASE,
+)
+_MERCARI_PHOTO_ID_RE = re.compile(r"mercdn\.net/(?:thumb/)?photos/(m\d{8,})_")
+
+
 def _extract_url_from_listing(text: str) -> Optional[str]:
-    """Extract the first URL from a listing text block."""
-    m = re.search(r"\(?(https?://[^\s)]+)", text)
-    return m.group(1) if m else None
+    """The listing's own link from a text block, or None.
+
+    Not simply the first URL: Mercari renders the photo before the item link,
+    so "first" stored 9,221 photos as buy links in 30 d (class AY). Images are
+    skipped; a Mercari photo still names its item, so the item page is rebuilt
+    from it (/us/item/<id>/ — checked in a browser 2026-09-28).
+    """
+    photo_item = None
+    for m in re.finditer(r"\(?(https?://[^\s)\]]+)", text):
+        u = m.group(1)
+        if not _IMAGE_URL_RE.search(u):
+            return u
+        pid = _MERCARI_PHOTO_ID_RE.search(u)
+        if pid and photo_item is None:
+            photo_item = f"https://www.mercari.com/us/item/{pid.group(1)}/"
+    return photo_item
 
 
 # ---------------------------------------------------------------------------
@@ -286,7 +323,10 @@ class Crawl4AICaller:
                     if not title:
                         continue
 
-                    listing_url = _extract_url_from_listing(listing_text) or url
+                    # No link of its own → not a listing. The search page is not one (class AY).
+                    listing_url = _extract_url_from_listing(listing_text)
+                    if not listing_url:
+                        continue
                     price_text = f"{title} {listing_text[:500]}"
                     price, currency, source_price, source_currency = _extract_price(price_text, rates=rates)
 
@@ -403,7 +443,10 @@ class Crawl4AICaller:
                     if not title:
                         continue
 
-                    listing_url = _extract_url_from_listing(listing_text) or url
+                    # No link of its own → not a listing. The search page is not one (class AY).
+                    listing_url = _extract_url_from_listing(listing_text)
+                    if not listing_url:
+                        continue
                     price_text = f"{title} {listing_text[:500]}"
                     price, currency, source_price, source_currency = _extract_price(price_text, rates=rates)
 

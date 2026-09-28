@@ -64,7 +64,7 @@ function BarcodeScanScreen() {
   const [inputMode, setInputMode] = useState<InputMode>('camera');
   const [urlInput, setUrlInput] = useState('');
   const [isUrlSubmitting, setIsUrlSubmitting] = useState(false);
-  const [affiliateLink, setAffiliateLink] = useState<{ url: string; label: string } | null>(null);
+  const [affiliateLink, setAffiliateLink] = useState<{ url: string; label: string; source?: string } | null>(null);
 
   // Billing / paywall state
   const [userPlan, setUserPlan] = useState<BillingStatus['plan']>('free');
@@ -284,7 +284,7 @@ function BarcodeScanScreen() {
     collectorsApi.getAffiliateLinks(lookupResult.title, lookupResult.categoryId || undefined, 1)
       .then((data) => {
         if (!cancelled && data.links.length > 0) {
-          setAffiliateLink({ url: data.links[0].affiliate_url, label: data.links[0].label });
+          setAffiliateLink({ url: data.links[0].affiliate_url, label: data.links[0].label, source: data.links[0].source });
         }
       })
       .catch(() => {});

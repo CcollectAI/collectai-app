@@ -9,7 +9,6 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -20,12 +19,13 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import type { BarcodeLookupResult } from '@/data';
 import type { CurrencyCode } from '@/data/types';
 import type { IntakeResultResponse } from '@/api/collectorsApi';
+import { openAffiliateUrl } from '@/utils/affiliateHelpers';
 
 interface BarcodeResultCardProps {
   lookupResult: BarcodeLookupResult;
   intakeResult: IntakeResultResponse | null;
   scannedCode: { type: string; value: string } | null;
-  affiliateLink: { url: string; label: string } | null;
+  affiliateLink: { url: string; label: string; source?: string } | null;
   isSaving: boolean;
   currency: CurrencyCode;
   hapticsEnabled: boolean;
@@ -254,7 +254,7 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
           style={[styles.watchlistButton, { borderColor: colors.border, marginTop: 8 }]}
           onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
-            Linking.openURL(affiliateLink.url).catch(() => {});
+            openAffiliateUrl(affiliateLink.url, { source: affiliateLink.source });
           }}
           accessibilityRole="link"
           accessibilityLabel={affiliateLink.label}

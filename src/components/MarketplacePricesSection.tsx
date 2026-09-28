@@ -12,15 +12,14 @@ import {
   Text,
   Pressable,
   ActivityIndicator,
-  Linking,
   StyleSheet,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { AnimatedPressable } from "@/motion";
-import logger from "@/utils/logger";
 import { conditionDisplayName } from '@/lib/conditionVocabulary';
 import { useTranslation } from 'react-i18next';
+import { openAffiliateUrl } from '@/utils/affiliateHelpers';
 
 // ── Exported types ──────────────────────────────────────────────────────
 
@@ -115,9 +114,7 @@ export const MarketplacePricesSection = React.memo(function MarketplacePricesSec
               key={idx}
               onPress={() => {
                 const openUrl = hit.affiliate_url || hit.url;
-                if (openUrl) Linking.openURL(openUrl).catch((err) => {
-                  logger.warn("[ItemDetail] Failed to open URL", err);
-                });
+                if (openUrl) openAffiliateUrl(openUrl, { source: hit.source || hit.provider });
               }}
               style={[s.marketHitRow, { borderBottomColor: theme.border }]}
               accessibilityRole="link"

@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
 from app.auth import get_optional_user_id
+from app.db import db_configured, get_conn
 from app.lib.affiliate import build_affiliate_url
 from app.lib.fx_service import get_rates_from_eur
 from app.rate_limit import per_ip_rate_limit
@@ -302,7 +303,10 @@ def _build_amiami_search_url(query: str) -> str:
 
 
 def _build_chrono24_search_url(query: str) -> str:
-    return f"https://www.chrono24.com/search/index.htm?query={quote_plus(query)}"
+    # `dosearch=true` is what Chrono24's own search form sends. Without it the
+    # page ignores `query` and shows the empty "Search for a wristwatch" form —
+    # 0 listings, checked in a browser 2026-09-28 (class AX).
+    return f"https://www.chrono24.com/search/index.htm?dosearch=true&query={quote_plus(query)}"
 
 
 def _build_catawiki_search_url(query: str) -> str:
@@ -404,14 +408,19 @@ def _eligible_sources(cat: str, rgn: str, value_eur: Optional[float] = None) -> 
     Above the threshold an authentication guarantee IS the product.
 
     Chrono24 and Catawiki already have taggers in app/lib/affiliate.py
-    (CATAWIKI_AFFILIATE_ID ~7-10%, CHRONO24_AFFILIATE_ID), so the swap is not a
-    revenue sacrifice — an unset env var emits the link untagged and working,
-    per docs/AFFILIATE_SWITCH_ON.md.
+    (CATAWIKI_AFFILIATE_ID; Chrono24's link format is unchecked, so it is
+    never tagged), per docs/AFFILIATE_SWITCH_ON.md. An unset env var emits
+    the link untagged and working.
     """
     if _is_high_value(cat, value_eur):
         return set(_HIGH_VALUE_SOURCES[cat])
 
-    eligible = {"ebay", "mercari"}
+    eligible = {"ebay"}
+    # Mercari US returns "No results found" to European visitors — its own
+    # search box, from NL (browser) and from Stockholm (EC2 scraper, which then
+    # only ever saw "Items related to …"). Checked 2026-09-28, class AX.
+    if rgn != "europe":
+        eligible.add("mercari")
     if cat in _TCG_CATEGORIES:
         eligible.add("cardmarket")
         if rgn != "japan":
@@ -422,7 +431,9 @@ def _eligible_sources(cat: str, rgn: str, value_eur: Optional[float] = None) -> 
         eligible.add("stockx")
     if cat in _LEGO_CATEGORIES:
         eligible.add("bricklink")
-    if rgn == "japan" or cat in _JP_CATEGORIES:
+    # Yahoo! JAPAN has refused the EEA and the UK since 2022-04-06 — the link
+    # opens a notice, not a search (checked in a browser 2026-09-28, class AX).
+    if (rgn == "japan" or cat in _JP_CATEGORIES) and rgn != "europe":
         eligible.add("yahoo_auctions_jp")
     if cat in _FIGURE_CATEGORIES:
         eligible.add("amiami")
@@ -465,6 +476,16 @@ async def get_affiliate_links(
     """
     cat = (category or "").lower().strip()
     rgn = (region or "").lower().strip()
+    if not rgn and user_id and db_configured():
+        # Two of the four app callers send no region; the member's saved one
+        # is the next best answer (same order as marketplace_router).
+        try:
+            async with get_conn() as conn:
+                rgn = ((await conn.fetchval(
+                    "SELECT region FROM user_settings WHERE user_id = $1", user_id,
+                )) or "").lower().strip()
+        except Exception as exc:
+            logger.warning("[affiliate-links] saved region lookup failed: %s", exc)
     profile = _profile_for(cat)
 
     q = _qualify(query, profile.suffix)

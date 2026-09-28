@@ -229,3 +229,59 @@ async def test_empty_query_validation(client: AsyncClient):
     """Empty query should return 422 validation error."""
     resp = await client.get("/marketplace/affiliate-links", params={"query": ""})
     assert resp.status_code == 422
+
+
+def test_chrono24_search_runs_the_search():
+    # Without dosearch=true Chrono24 ignores the query and shows an empty form.
+    from app.routes.affiliate_links_router import _build_chrono24_search_url
+
+    url = _build_chrono24_search_url("rolex submariner")
+    assert "dosearch=true" in url
+    assert "query=rolex+submariner" in url
+
+
+def test_yahoo_auctions_jp_hidden_in_europe():
+    # Yahoo! JAPAN blocks the EEA and the UK; the link opens a notice, not a search.
+    from app.routes.affiliate_links_router import _eligible_sources
+
+    assert "yahoo_auctions_jp" not in _eligible_sources("anime_figures", "europe")
+    assert "yahoo_auctions_jp" in _eligible_sources("anime_figures", "americas")
+    assert "yahoo_auctions_jp" in _eligible_sources("pokemon", "japan")
+
+
+@pytest.mark.anyio
+async def test_saved_region_used_when_caller_sends_none(app, client: AsyncClient, monkeypatch):
+    # useItemMarketplace and barcode-scan send no region; a European member
+    # must still not be offered Yahoo! JAPAN, which blocks the EEA.
+    from contextlib import asynccontextmanager
+    import app.routes.affiliate_links_router as r
+    from app.auth import get_optional_user_id
+
+    class _Conn:
+        async def fetchval(self, sql, uid):
+            assert "user_settings" in sql and uid == "u-1"
+            return "europe"
+
+    @asynccontextmanager
+    async def _get_conn():
+        yield _Conn()
+
+    monkeypatch.setattr(r, "db_configured", lambda: True)
+    monkeypatch.setattr(r, "get_conn", _get_conn)
+    app.dependency_overrides[get_optional_user_id] = lambda: "u-1"
+    try:
+        resp = await client.get("/marketplace/affiliate-links",
+                                params={"query": "miku figure", "category": "anime_figures", "limit": 10})
+    finally:
+        app.dependency_overrides.pop(get_optional_user_id, None)
+    sources = [l["source"] for l in resp.json()["links"]]
+    assert "yahoo_auctions_jp" not in sources
+    assert "amiami" in sources
+
+
+def test_mercari_hidden_in_europe():
+    from app.routes.affiliate_links_router import _eligible_sources
+
+    assert "mercari" not in _eligible_sources("funko", "europe")
+    assert "mercari" in _eligible_sources("funko", "americas")
+    assert "mercari" in _eligible_sources("funko", "")

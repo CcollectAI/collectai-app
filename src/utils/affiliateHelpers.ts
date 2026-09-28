@@ -79,7 +79,7 @@ export function buildItemAffiliateUrl(
 
 export function openAffiliateUrl(
   url: string,
-  context?: { query?: string; item_key?: string; category?: string },
+  context?: { source?: string; query?: string; item_key?: string; category?: string },
 ): void {
   // Only open HTTP(S) URLs
   let hostname = '';
@@ -96,11 +96,13 @@ export function openAffiliateUrl(
   // 7+ components route through this helper, so adding tracking here
   // propagates everywhere automatically. context is optional — call sites
   // that have query/item/category should pass them for richer signal.
+  // `source` from the caller wins: a link wrapped by an affiliate network
+  // (tcgplayer.pxf.io, prf.hn) names the network's host, not the shop's.
   recordAffiliateClick({
-    source: hostnameToSource(hostname),
+    source: context?.source || hostnameToSource(hostname),
     query: context?.query,
     item_key: context?.item_key,
     category: context?.category,
   });
-  Linking.openURL(url).catch(() => {});
+  Linking.openURL(url).catch((err) => logger.error('[affiliate] open failed:', err));
 }

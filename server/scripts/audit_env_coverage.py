@@ -63,7 +63,7 @@ EXPECTED_EMPTY: dict[str, str] = {
     "ANTHROPIC_API_KEY": "claude_estimator.py:477 guards on it and falls back to the Ridge model. Deliberately unset — the paid-scraper/LLM killswitch (project_paid_scraper_killswitches).",
     "BRICKLINK_CONSUMER_KEY": "No BrickLink developer account. The adapter degrades to keyless; lego supply comes from ebay (3,201 buyable rows, 7d).",
     "CARDMARKET_APP_TOKEN": "No Cardmarket API account. config.py:252 defaults it to ''. Cardmarket rows are scraped via Firecrawl, and are price-only (0 buyable) regardless.",
-    "DISCOGS_TOKEN": "Dead var — no server code reads it. DISCOGS_AFFILIATE_TOKEN is the one actually used, and it IS set. Remove on the next config sweep.",
+    "DISCOGS_TOKEN": "Dead var — no server code reads it (the adapter reads DISCOGS_PERSONAL_TOKEN). Remove on the next config sweep.",
     "PRICECHARTING_API_KEY": "No PriceCharting subscription; the caller runs keyless behind the console guard (learning_keyless_pricecharting_needs_console_guard).",
     "STOCKX_API_KEY": "No StockX API account. Sneaker/collectible supply comes from ebay instead.",
     "TCGPLAYER_BEARER_TOKEN": "No TCGplayer API account. Its 256,848 rows arrive via scrape and are price-only (0 buyable), so a token would not change alert coverage.",

@@ -893,13 +893,9 @@ Earn commission when users purchase collectibles through links in the app.
 
 ### To Activate
 
-Set affiliate program credentials:
-
-```
-EBAY_AFFILIATE_CAMPAIGN_ID=        # Apply at https://partnernetwork.ebay.com
-TCGPLAYER_AFFILIATE_ID=            # Apply at https://tcgplayer.com/affiliates
-CARDMARKET_AFFILIATE_ID=           # Apply at https://cardmarket.com/affiliate
-```
+See `docs/AFFILIATE_SWITCH_ON.md` Step 1 — the value each env var holds
+differs per network (a campaign id for eBay, a tracking link for Impact and
+Partnerize). Cardmarket has no link programme; its var was removed 2026-09-28.
 
 ### Revenue Estimate
 
@@ -1188,7 +1184,8 @@ dashboard, set the ids, restart. €29–199 per event, no Apple cut.
 notifications screen and the push handler. The env declares 16 affiliate ids —
 `EBAY_AFFILIATE_CAMPAIGN_ID`, `CARDMARKET_AFFILIATE_ID`, `TCGPLAYER_AFFILIATE_ID`,
 `STOCKX_AFFILIATE_ID`, `BRICKLINK_AFFILIATE_ID`, `CHRONO24_AFFILIATE_ID` and ten
-more — **and all of them are set to the empty string.**
+more — **and all of them are set to the empty string.** *(2026-09-28: Cardmarket, BrickLink and Discogs
+have no programme and were removed; 13 remain, all still empty — class AV.)*
 
 Proved on prod rather than inferred:
 

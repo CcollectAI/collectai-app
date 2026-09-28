@@ -133,7 +133,10 @@ class AbeBooksCaller:
             if not title:
                 continue
 
-            listing_url = _extract_url_from_listing(listing_text) or fallback_url
+            # No link of its own → not a listing. The search page is not one (class AY).
+            listing_url = _extract_url_from_listing(listing_text)
+            if not listing_url:
+                continue
             # Ensure AbeBooks relative URLs are made absolute
             if listing_url.startswith("/"):
                 listing_url = f"https://www.abebooks.com{listing_url}"

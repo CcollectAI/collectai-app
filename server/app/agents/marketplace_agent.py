@@ -87,6 +87,13 @@ from app.agents.marketplace_helpers import (  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
+# Adapters that parse a search page's markdown and guess "sold" from keywords
+# (the users of `_extract_url_from_listing`, plus firecrawl which defines the
+# helpers). test_marketplace_agent_persist derives this set from the source.
+_UNDATED_SOLD_SCRAPERS = frozenset({
+    "crawl4ai", "firecrawl", "scrapedo", "grailed", "comc", "reverb", "abebooks",
+})
+
 # Overall wall-clock budget for a live (cache-miss) aggregate search. Fast API
 # adapters (eBay, TCGPlayer) finish in ~1-2s; slow scrapers (crawl4ai, etc.)
 # can take 8s+ and were dragging the whole gather. Cap the wall-clock and
@@ -752,6 +759,17 @@ class MarketplaceAgent:
                     # rather than real product listings.
                     _title_norm = str(hit.get("title") or "").strip().lower()
                     if _title_norm in _GARBAGE_TITLES or not _title_norm:
+                        continue
+                    # A markdown scraper's "sold" is a keyword guess with no
+                    # date. Persist derives is_listing = (sold_at IS NULL), so
+                    # such a row landed as a BUYABLE listing: never a comp, but
+                    # eligible for Target Hit. Neither a listing nor a trusted
+                    # comp → not stored (OPEN_DECISIONS #15, 2026-09-28).
+                    if (
+                        (hit.get("is_sold") or scored.is_sold)
+                        and not hit.get("sold_at")
+                        and str(hit.get("source") or "") in _UNDATED_SOLD_SCRAPERS
+                    ):
                         continue
                     # Normalize price to EUR. Computed in the pre-pass above (which
                     # needs EUR to build the sanity band); _to_eur is the same

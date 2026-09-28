@@ -115,6 +115,108 @@ Two rules the tooling learned the hard way:
 | AS | A `'%key%'` substring search where an exact, indexed key exists | **swept 2026-09-27, DEPLOYED** | Three `market_hits` reads used `normalized_key ILIKE '%…%'`: QuickScan social proof (3.2M-row seq scan, 2.2-4.5 s per scan, and `%base1-base1-4%` matched base1-base1-40..49 — other cards' sales), barcode pricing and dossier comps (a TITLE against dash slugs: 9.6-14.1 s, 0 rows, always). All now `item_ref = category:key` (index, ~5 ms) and skip without a catalogue key. Falsifier: `grep -rn "normalized_key ILIKE" server/app` → only the comment in intake_social_proof/barcode_lookup; tests assert `item_ref = $1` and no ILIKE (mutation-proven). |
 | AT | A schedule that lives only in memory — every restart runs every worker | **swept 2026-09-27** | `_run_worker_loop` slept a <=60 s stagger and ran, with no persisted last run. 7 days: 43 bake restarts; calibration (daily) 44 runs, lorcast 26, discogs 25, ticketmaster/seatgeek (12 h) 50 each; model_retrain (weekly) 40 in 30 days at 25-30 min on the heavy gate, two killed at the 1800 s cap. The one existing guard (`should_skip_recent_run`, discogs + tcgcsv) reset its own clock: its skip was recorded `ok`, so discogs did no real run 09-24..09-27. Fix: the loop waits out the interval from the worker's newest worker_runs row (`_first_cycle_delay`); a guard skip returns `SKIPPED` and writes no row; retrain cap 3600 s. Discogs then measured (<2 s DB per run) and moved out of the heavy gate; its writes were silently dropped (0 of 724 stored) → dated snapshot key. Falsifier: after a restart, `grep "ran .*s ago — first cycle in" bake.log` lists the slow workers, and `select count(*) from worker_runs where worker_name='calibration_worker' and finished_at > <restart>` stays 0 until 24 h after its previous row. |
 | AU | An admin screen that invents numbers when it cannot read real ones | **swept 2026-09-27 (all 26 tabs, local walk)** | collectai-admin called the prod API from the browser: CORS refused every call and `tryFetchJSON` returned demo data under a green LIVE / "DB: connected" (2,847 users vs 10, 187,432 items vs 21 member items). Same class: "Waiting for data — will appear once users start using the app" for a FAILED request (KPI Funnel, Intelligence); "no videos yet → sample data" when 15 existed outside the window; Developer Hub = 8 typed-in metric cards, a Math.random() chart, 5 fictional deploys, and seed issues/feedback that the page WROTE into prod (10 rows, deleted with backup); 6 of 19 called endpoints do not exist (ML train/activate/reload = dead prod-write buttons). Also: ops key + login PIN shipped to the browser (NEXT_PUBLIC_*). Fixed: server proxy `/api/admin/api` (cookie + path allowlist + key server-side), server-session gate + 5-try PIN limiter, demo only with NEXT_PUBLIC_ADMIN_DEMO, `noteDemo` chokepoint returns zeros + reason, 2 list-shape casts now checked, Pipeline crash on an unknown status, Intelligence read nonexistent columns → gate `npm run check:columns` (collectai-admin). Falsifier: log in at localhost:3000/admin → Overview Total users = `select count(*) from profiles`; the served JS contains no OPS_API_KEY / ADMIN_PIN (scan with a positive control on the anon key). |
+| AV | An affiliate link built to a format the network does not read | **fixed 2026-09-28 (server; not deployed — no id is set, so nothing changes on prod yet)** | 13 of 16 `_tag_*` helpers appended params nobody reads: Impact and Partnerize only credit a click that goes THROUGH their tracking link, eBay needs `mkcid`+`mkrid`, and Cardmarket/Discogs/BrickLink have no link programme at all. Now three checked formats with a value-shape check; seven unchecked networks never tag. Falsifier: `.venv/bin/pytest -q server/tests/test_affiliate.py` (26 pass); delete the `"mkrid"` line in `affiliate.py` → 3 fail. See "## AV" below |
+| AW | A shop tap opened past the one function that records it | **fixed + gated 2026-09-28 (client; needs a JS build)** | Item Shop, price sources, market hits, category store, barcode and the push tap all used a bare `Linking.openURL`; prod held 6 `affiliate_click` rows ever, the last on 2026-08-17. All go through `openAffiliateUrl` now; gate `check:affiliate-open`. Falsifier: in `ItemShopSection.tsx` swap the `openAffiliateUrl(...)` line for `Linking.openURL(link.affiliate_url);` → `npm run check:affiliate-open` exits 1. See "## AW" below |
+| AX | An outbound link that lands on a page with nothing to buy | **fixed 2026-09-28 (server, not deployed): Chrono24 URL; Yahoo JP + Mercari hidden for `europe` (saved region used when none is sent)** | Opened every search builder in a real browser from NL. Chrono24 ignored `query` without `dosearch=true` → empty form (FIXED). Yahoo Auctions JP: "no longer available in the EEA" since 2022-04-06, yet offered for every JP category in every region. Mercari US: its OWN search box returns "No results found" from NL, yet Mercari is in the floor set for every category. Falsifier: open `https://auctions.yahoo.co.jp/search/search?p=charizard` from an EU connection → EEA notice. See "## AX" below |
+| AY | A scraper row whose URL is the first link in the block, and whose sold flag is dropped | **parse fixed 2026-09-28 (server, not deployed); old rows + sold flag + rollup are OPEN_DECISIONS #13–#15** | `crawl4ai_caller._extract_url_from_listing` takes the FIRST URL: on Mercari that is the photo (9,221 `is_listing` rows in 30 d at `u-mercari-images.mercdn.net`). Both scrapers write `sold_at: None` even for `is_sold: True`, and persist derives `is_listing = sold_at IS NULL` — sold comps are stored as buyable listings, invisible to valuation and eligible for Target Hit (0 of 120 fired alerts so far). Falsifier: `select count(*) from market_hits where seen_at > now()-interval '30 days' and is_listing and url like '%mercdn%'` → >0. See "## AY" below |
+
+## AV — an affiliate link built to a format the network does not read (2026-09-28)
+
+**Found** checking each `_tag_*` helper in `server/app/lib/affiliate.py` against
+the network's own docs before any id was set. The helpers appended
+`?partner=` / `?ref=` / `utm_*` to the SHOP's URL. That shape is read by eBay
+Partner Network only. Impact (TCGplayer, StockX, Whatnot, Mercari) credits a
+click that passes through `https://<brand>.pxf.io/c/<pub>/<ad>/<prog>?u=<url>&subId1=<sub>`;
+Partnerize (Catawiki) through `https://prf.hn/click/camref:<id>/pubref:<sub>/destination:<url>`.
+Setting the env var would have produced links that look tagged and pay €0 —
+the silent-fallback family again, one step later than "the id is empty".
+
+eBay itself was incomplete: no `mkcid=1`, no `mkrid`. The rotation id names the
+eBay site, so it is chosen from the URL's host (`ebay.nl` → `1346-53482-19255-0`);
+a host missing from the table ships untagged rather than with a wrong id.
+
+Cardmarket has only a signup referral capped at €10/month; Discogs and BrickLink
+have no programme. Their env vars were removed. KEH, MPB, Master of Malt,
+PopMart, Drop, Chrono24 and AmiAmi were NOT checked — their vars are read, never
+applied, and a set value logs a warning. Enable one by copying a deep link from
+its dashboard at enrollment, adding the format, and a test.
+
+**Falsifier:** `.venv/bin/pytest -q server/tests/test_affiliate.py` → 26 pass.
+Mutations each turn it red: drop `mkrid`, swap pubref/destination, rename
+`subId1`, skip the value-shape check, change the NL rotation id, silence the
+unchecked-network warning.
+
+## AW — a shop tap opened past the one function that records it (2026-09-28)
+
+**Found** asking why prod held 6 `affiliate_click` rows in total, the last on
+2026-08-17. `openAffiliateUrl` records the tap; the 2026-08-04 fix moved the
+wishlist onto it, but six other opens stayed bare `Linking.openURL`:
+`ItemShopSection` (the item screen's Shop), `PriceExplanationSheet`,
+`MarketplacePricesSection`, `ExternalMarketplacesSection`, `BarcodeResultCard`
+and the push tap in `usePushNotifications`. The two Deal Agent screens also open
+bare, but record through `clickDeal` into `mandate_deals` — they carry an
+`affiliate-open-ok:` reason.
+
+Second defect in the same path: the click's `source` was derived from the
+link's hostname, which after AV is the network's (`pxf.io`, `prf.hn`). Callers
+now pass `source`; the hostname is the fallback.
+
+**Latent, not fixed:** `/marketplace/affiliate-click` stores `source` in
+`item_key` only when `item_key` is absent (`demand_signals` has no source
+column). No caller passes `item_key` today; the first one that does loses the
+marketplace. Needs a column + schema-lock regen before anyone adds it.
+
+**Gate:** `scripts/check-affiliate-open.mjs` — in any file that handles a shop
+link, an open call must be `openAffiliateUrl` or carry `affiliate-open-ok: <why>`.
+It found exactly the 8 sites above before the fix.
+
+## AX — an outbound link that lands on a page with nothing to buy (2026-09-28)
+
+**Found** opening each `_build_*_search_url` in `affiliate_links_router.py` in a
+real browser (curl is useless here: 8 of 10 sites 403 a script). Works:
+eBay, TCGplayer, Discogs, StockX, BrickLink, AmiAmi, Catawiki, Google Shopping.
+Cardmarket sits behind a Cloudflare challenge that only a person can pass.
+
+- **Chrono24 — fixed.** The site's own form sends `dosearch=true`; without it
+  `query` is ignored and the page is the blank "Search for a wristwatch" form
+  (0 listings). With it: "Rolex Submariner", 120 listings.
+- **Yahoo Auctions JP — decision.** Yahoo! JAPAN blocks the EEA and UK since
+  2022-04-06. `_eligible_sources` adds it for every `_JP_CATEGORIES` category
+  regardless of region, so every EU/UK member gets a dead link there.
+- **Mercari US — decision.** From NL, Mercari's own search box lands on the
+  same URL we build and shows "No results found" for "charizard". Mercari is in
+  `{"ebay", "mercari"}`, the floor for every category and region. Cause looks
+  geographic; not confirmed from a US connection.
+
+Same family, found on the way: the tagger chose the network from the caller's
+`source` label, so a scraper row (`crawl4ai`, `firecrawl`) at catawiki.com or
+ebay.de could never be tagged, and a row labelled `tcgplayer` pointing elsewhere
+would have been wrapped in TCGplayer's link. The URL's host now decides
+(`_source_from_host` in `affiliate.py`), and Impact/Partnerize links require
+the brand's own host.
+
+## AY — a scraper row: the first URL in the block, and a dropped sold flag (2026-09-28)
+
+**Found** listing which hosts `is_listing` rows point at. `crawl4ai` rows:
+3,022 of 6,325 buyable rows in 7 days had a Mercari PHOTO as their URL, with
+page text as the title (`"NCT 127 - 2 Baddies Standard sold" search result`,
+`Items related to …`).
+
+Two defects, one adapter family:
+1. `_extract_url_from_listing` returns the first `https://` in the markdown
+   block. Mercari renders the image before the item link. The item id is in the
+   photo path (`m40653651141`), so the real link is recoverable.
+2. `crawl4ai_caller` and `firecrawl_caller` always write `sold_at: None`, and
+   `persist` sets `is_listing = (sold_at IS NULL)`. `sold_comps()` rows carry
+   `is_sold: True` and are still stored as asking-price listings. So they are
+   excluded from valuation (`is_listing IS NOT TRUE`) — the scrape feeds no
+   price — and they ARE eligible for the Target Hit snipe
+   (`deal_discovery_worker.py:167`: url + `is_listing IS TRUE`, no provider
+   filter). Checked: 0 of 120 `alert_trigger_history` rows reference them.
+
+Not fixed: making these rows `is_listing = false` would put junk-titled sold
+comps INTO valuation and training. That needs the URL/title parse fixed first,
+then a decision on whether scraper sold comps are trusted at all.
 
 ## AD — a money format typed into the UI (2026-09-24)
 

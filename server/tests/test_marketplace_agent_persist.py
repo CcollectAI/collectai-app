@@ -203,3 +203,49 @@ def test_discogs_adapter_release_key_is_dated():
               if '"raw_id": f"discogs-{item.get' in inspect.getsource(f))
     hit = fn({"id": 42, "title": "A - B", "lowest_price": 9.5})
     assert hit["raw_id"] == f"discogs-42-{datetime.now(timezone.utc).date().isoformat()}"
+
+
+class TestUndatedScraperSold:
+    """OPEN_DECISIONS #15: a scraper's undated 'sold' row is not stored."""
+
+    @pytest.mark.asyncio
+    async def test_scraper_sold_row_without_date_is_skipped(self):
+        from app.agents.marketplace_agent import MarketplaceAgent
+
+        sold = {"source": "crawl4ai", "raw_id": "c-1", "title": "Space Marine box sold",
+                "price": 30.0, "currency": "EUR", "url": "https://thetrolltrader.com/p/1",
+                "is_sold": True, "sold_at": None}
+        live = {**sold, "raw_id": "c-2", "title": "Space Marine box", "is_sold": False}
+        mock_conn = _mock_direct_conn()
+        with patch("asyncpg.connect", AsyncMock(return_value=mock_conn)), \
+             patch("app.db.db_configured", return_value=True):
+            count = await MarketplaceAgent().persist_comps_to_db(
+                _make_result([sold, live]), normalized_key="warhammer:x")
+        assert count == 1
+
+    @pytest.mark.asyncio
+    async def test_trusted_source_sold_row_is_kept(self):
+        from app.agents.marketplace_agent import MarketplaceAgent
+
+        sold = {"source": "ebay", "raw_id": "e-1", "title": "Charizard base set",
+                "price": 300.0, "currency": "EUR", "url": "https://www.ebay.com/itm/1",
+                "is_sold": True, "sold_at": None}
+        mock_conn = _mock_direct_conn()
+        with patch("asyncpg.connect", AsyncMock(return_value=mock_conn)), \
+             patch("app.db.db_configured", return_value=True):
+            count = await MarketplaceAgent().persist_comps_to_db(
+                _make_result([sold]), normalized_key="pokemon:x")
+        assert count == 1
+
+
+def test_scraper_set_matches_the_markdown_scrapers():
+    import pathlib, re
+    from app.agents.marketplace_agent import _UNDATED_SOLD_SCRAPERS
+
+    root = pathlib.Path(__file__).resolve().parents[1] / "app" / "agents" / "adapters"
+    derived = {"firecrawl"}
+    for p in root.glob("*_caller.py"):
+        src = p.read_text()
+        if "_extract_url_from_listing" in src and p.name != "firecrawl_caller.py":
+            derived |= set(re.findall(r'"source": "([a-z0-9_]+)"', src))
+    assert derived == set(_UNDATED_SOLD_SCRAPERS)

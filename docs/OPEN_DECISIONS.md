@@ -9,9 +9,25 @@ _Opened 2026-09-26 from the Android walk rounds._
 
 ## Open
 
-_None open._ _#1–#9 from the 2026-09-26 walk are decided; each entry as opened is kept under **As opened** at the end._
+_Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in `docs/CLASS_SWEEPS.md`). #1–#12 are decided; each entry as opened is kept under **As opened** at the end._
+
+### 16. Affiliate enrollment — **recommend: eBay Partner Network first, then one aggregator**
+- **State:** all 16 `*_AFFILIATE_*` vars empty on EC2 (checked 2026-09-28). eBay is 336,880 of ~360k outbound links in 30 d. Of 18 shops the app links to, 8 pay per sale (eBay, TCGplayer, StockX, Catawiki, Reverb, HLJ, Solaris Japan, Sideshow); Reverb/HLJ/Solaris/Sideshow have no tagger yet.
+- **Do (your hands):** eBay campaign id → `EBAY_AFFILIATE_CAMPAIGN_ID` (10 digits; `docs/AFFILIATE_SWITCH_ON.md` Step 1). Then Sovrn Commerce or Skimlinks: one signup covers many merchants — I add its link format when you have an account.
+- **Re-check:** `grep AFFILIATE /opt/collectors/.env`.
 
 ## Decided
+
+- **2026-09-28 — #13 junk Mercari rows: DONE on prod** (Merle: yes). One transaction: 9,241 `market_hits` rows deleted (`provider='crawl4ai'`, photo URL, title echoing our query — all 9,241 had both), and 2,061 `market_hits_daily` rows removed whose day had ONLY those rows (6,667 item-days touched). Re-check: `select count(*) from market_hits where url like '%mercdn%'` → 0. **Not reachable:** daily rows before 2026-09-01 — `market_hits` keeps one month, so older days that included such rows cannot be recomputed; they age out of the 180-day window by March 2027. New junk stops only when the parse fix is DEPLOYED.
+- **2026-09-28 — #14 daily rollup: SALES FIRST, listings as fallback — DONE on prod** (Merle: "preferably sales only but not if we lose all data"). Measured first: pure sales-only would have emptied the daily price of **24,525 of 97,111** items (25 %, the eBay-fed categories have listings only). So on an item-day with sales only sales count; a day with none keeps its listings' median. Cron job 39 changed via `supabase/migrations/20260928_market_hits_daily_sales_first.sql`; 2026-09-01…09-28 recomputed day by day. Verified: daily rows 1,599,970 → 1,650,919 (−2,061 junk-only days, + today's 53,047 not yet rolled) — nothing lost; on 09-27 all 83 mixed item-days now equal the sales-only median (82 had differed). Re-check: `select position('day_has_sales' in command) > 0 from cron.job where jobid = 39` → true.
+- **2026-09-28 — #15 scraper "sold" rows: no longer stored — in code, NOT deployed** (Merle: yes). `persist_comps_to_db` skips a row flagged sold with no `sold_at` from the markdown scrapers (`_UNDATED_SOLD_SCRAPERS`: crawl4ai, firecrawl, scrapedo, grailed, comc, reverb, abebooks); eBay, TCGplayer and the other API sources are untouched. Tests in `test_marketplace_agent_persist.py`, incl. one that derives the scraper set from the adapters' source (mutation-proven).
+
+- **2026-09-28 — outbound links and affiliate tagging, from the recommendations (working tree; not committed, server not deployed, client needs a JS build).** Classes AV–AY in `docs/CLASS_SWEEPS.md`.
+  - **Yahoo Auctions JP hidden for `europe`** — Yahoo! JAPAN blocks the EEA and UK (seen in a browser). When the app sends no region (`useItemMarketplace`, barcode scan), the member's saved region is used; all 4 saved regions on prod are `europe`. Tests: `test_yahoo_auctions_jp_hidden_in_europe`, `test_saved_region_used_when_caller_sends_none` (both mutation-proven).
+  - **Mercari hidden for `europe`** — its own search shows "No results found" from NL and from Stockholm. For EU members the EU view IS the test; a US check matters only for `americas`, who keep it. Test `test_mercari_hidden_in_europe`.
+  - **Scraper parse fixed** (`crawl4ai_caller.py`, shared by 6 adapters): an image is never the link (a Mercari photo is rebuilt to `/us/item/<id>/`, checked in a browser); image alt text that echoes our query is never a title; everything after "Items related to" is dropped; no adapter falls back to the SEARCH page as a listing (9 sites). 6 tests, each mutation-proven, incl. a guard against the fallback returning.
+  - **Chrono24 search** needed `dosearch=true` — fixed in the link builder and in the scraper's template.
+  - **Affiliate tagging** now follows each network's real link format and picks the network from the URL's host (`server/app/lib/affiliate.py`); every shop tap is recorded (`check:affiliate-open`).
 
 - **2026-09-27 — #10 offline banner: DONE (9713dfcc).** A pill just above the bottom bar (offset from the bars' own height constant), translated, with the queue count. Seen on the emulator in airplane mode on Portfolio (tab bar) and Settings (QuickNavBar): header fully visible. Test `offlineBanner.test.tsx` (anchoring it to the top fails it).
 - **2026-09-27 — #12 one price per catalogue item: DONE (69432053 server DEPLOYED, 4d55239d app).** `server/app/lib/catalogue_value.py` is the one rule for the scan, the catalogue page and (already) the saved item: the model's latest q50, else the daily median / latest comp; plus the latest day's source spread, `sources_disagree` when > 1.5x AND >= EUR 5 apart. Base Set Charizard now reads EUR 825 on the scan, the catalogue page and the item — and the scan and catalogue page show "EUR 825 – EUR 1.531 · Markets disagree on this one" (seen on the emulator). A EUR 0.56 common spanning 0.47-4.20 is not flagged (the EUR 5 floor). Not done: why this card's prices stopped on 09-05 (a pipeline question, left open in the note below).
@@ -34,6 +50,32 @@ _None open._ _#1–#9 from the 2026-09-26 walk are decided; each entry as opened
 - **2026-09-26 — #5 server-side 2FA: DONE** — API 403 + restrictive RLS policy on 314 tables + guard in 16 DEFINER RPCs + watchdog check; verified as zz-lifecycle. See `docs/AUTH_AND_WEB_DEPLOY.md` → MFA.
 - **2026-09-26 — #6 concerts shown as conventions: DONE** — `concert` kind from the providers' own classification, admission tickets skipped, 498 rows backfilled; see `docs/EVENT_QUALITY_PLAN.md`.
 - **2026-09-26 — #1 barcode: no paid source** (Merle) → free options 1 (learn from members' saves) and 3 (photo fallback) BUILT and verified on prod; see `docs/BARCODE.md`. Option 2 (Brickset LEGO EANs, free key) not taken up.
+
+## As opened (2026-09-28)
+
+### Yahoo Auctions JP, Mercari and the scraper parse (decided the same day)
+- Yahoo Auctions JP offered for every JP category in every region; it blocks the EEA/UK.
+- Mercari US in the floor set for every category and region; "No results found" from NL.
+- `_extract_url_from_listing` took the first URL (a photo on Mercari); titles came from image alt text echoing the query; the search page stood in for a missing link.
+- Recommended then: hide Yahoo JP in Europe; check Mercari from a US connection first; fix the parse before deciding on scraper sold rows. The Mercari advice changed on the evidence — see Decided.
+
+### 13–15. (as opened 2026-09-28, decided the same day)
+
+#### 13. Delete the 9,234 Mercari rows that are not the items they are filed under — **recommend: yes**
+- **State:** in 30 days, 9,234 `market_hits` rows at `u-mercari-images.mercdn.net`: 6,327 titled with OUR query (`"Goodfellas (4K UHD) sold" search result`) and 2,907 from Mercari's "Items related to …" section. Each carries a catalogue `item_ref` (6,660 items) and a price of some OTHER item. The parse is fixed (Decided, below), so no new ones arrive — but the old ones sit in the nightly `rollup-market-hits-daily`, which medians every priced row: **6,660 items had them in their daily price; on at least one day 2,107 items had ONLY them.** That table feeds the catalogue price fallback (#12) and the Pro price range (#2).
+- **Do:** `DELETE FROM market_hits WHERE url LIKE '%mercdn.net%' AND provider = 'crawl4ai'`, then recompute `market_hits_daily` for the touched `(item_ref, day)` pairs (delete the days that had only these rows). A prod data write — waiting for your yes.
+- **Re-check:** `select count(*) from market_hits where seen_at > now()-interval '30 days' and url like '%mercdn%'` → 9,234 today; 0 after.
+
+#### 14. Should the daily price rollup count asking prices? — **recommend: no (sold only)**
+- **State:** `rollup-market-hits-daily` has no `is_listing` filter. 30 d of priced rows: 2,942,932 sold vs 357,508 listings (eBay 337,086 · crawl4ai 17,908 · discogs 2,498) — about 11 % asking prices in a table read as "what it sells for". Valuation and training already exclude listings (`is_listing IS NOT TRUE`).
+- **Do:** add `AND is_listing IS NOT TRUE` to the cron command and rebuild the 180 days kept. Changes the number members see on thin items, which is why it is yours.
+- **Re-check:** `select command from cron.job where jobname = 'rollup-market-hits-daily'`.
+
+#### 15. Scraper "sold" rows are stored as buyable listings — **recommend: stop persisting them until one source is audited**
+- **State:** `crawl4ai_caller` and `firecrawl_caller` always write `sold_at: None`; persist sets `is_listing = (sold_at IS NULL)`. So a `sold_comps()` row (`is_sold: True`) lands as an asking-price LISTING: never used by valuation, but eligible for the Target Hit snipe (`deal_discovery_worker.py:167`, url + `is_listing`, no provider filter). 0 of 120 fired alerts used one so far.
+- **Options:** (a) don't persist scraper rows flagged sold (recommended — they are neither valid listings nor trusted comps); (b) set `sold_at` and let them into valuation — only after a per-site title/price audit; (c) leave as is.
+- **Re-check:** `select count(*) from market_hits where provider in ('crawl4ai','firecrawl') and is_listing and title ~* 'sold'`.
+
 
 ## As opened (2026-09-26)
 

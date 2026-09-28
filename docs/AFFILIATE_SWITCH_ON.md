@@ -14,42 +14,43 @@ buys they route.
 
 ## Step 1 — Enroll in the networks (your hands)
 
-Each program below maps to one env var in `server/app/config.py:274-289`. An
-**empty** var = links are emitted untagged-but-working (no commission, nothing
-breaks). Setting the var activates that network's tag immediately on next bake
-restart. Apply in this order (rate × your traffic):
+> ⚠️ **Rewritten 2026-09-28** (class AV in `docs/CLASS_SWEEPS.md`). The old
+> table treated every network as "paste an id, params get appended". Only eBay
+> works that way. The helpers for the rest built links the networks do not
+> read, and three of the programmes do not exist.
 
-| # | Network | Program / Console | Commission | Env var |
-|---|---------|-------------------|-----------|---------|
-| 1 | eBay | eBay Partner Network (partnernetwork.ebay.com) | 1–4% | `EBAY_AFFILIATE_CAMPAIGN_ID` |
-| 2 | Catawiki | Partnerize | ~7–10% | `CATAWIKI_AFFILIATE_ID` |
-| 3 | TCGPlayer | TCGplayer Affiliate (direct) | varies | `TCGPLAYER_AFFILIATE_ID` |
-| 4 | Master of Malt | Affiliate Future | 5–7.66% | `MASTEROFMALT_AFFILIATE_ID` |
-| 5 | PopMart | Yeesshh / Digidip | 1–8% | `POPMART_AFFILIATE_ID` |
-| 6 | Whatnot | Impact.com | 1–3.5% | `WHATNOT_AFFILIATE_ID` |
-| 7 | Mercari | Impact / Awin | varies | `MERCARI_AFFILIATE_ID` |
-| 8 | StockX | Impact | varies | `STOCKX_AFFILIATE_ID` |
-| 9 | Cardmarket | direct | varies | `CARDMARKET_AFFILIATE_ID` |
-| 10 | Discogs | direct | varies | `DISCOGS_AFFILIATE_TOKEN` |
-| 11 | BrickLink | referral | varies | `BRICKLINK_AFFILIATE_ID` |
-| 12 | KEH | ShareASale | 1.6–3.2% | `KEH_AFFILIATE_ID` |
-| 13 | MPB | FlexOffers / Sovrn | 2% | `MPB_AFFILIATE_ID` |
-| 14 | Drop | FlexOffers | 1.6–2.4% | `DROP_AFFILIATE_ID` |
-| 15 | Chrono24 | direct partnership | varies | `CHRONO24_AFFILIATE_ID` |
-| 16 | AmiAmi | Sovrn Commerce | varies | `AMIAMI_AFFILIATE_ID` |
+What goes in each env var (`server/app/config.py:302+`) depends on the
+network. A value of the wrong shape is refused (logged, link ships untagged),
+so a bare id pasted where a tracking link belongs cannot build a dead link.
 
-**To set on EC2**: add the approved IDs to the bake `.env`, then restart bake.
-⚠️ Run the preflight chain manually **before** restarting (schema-lock
-staleness can take the API down — see MEMORY). Env-only changes don't touch the
-schema lock, but the restart will run all gates regardless.
+**Checked — tags as soon as the var is set** (apply in this order):
 
-### Per-network sub-ID refinement (optional, during enrollment)
-The tag builder carries a per-click sub-ID in `customid` (eBay) / `utm_content`
-(everyone else). Most networks pass `utm_content` straight through to their
-conversion reports, but a few use their own sub-ID param (e.g. Impact's `subId1`,
-ShareASale's `afftrack`, Partnerize's `clickref`). When you read each network's
-docs at enrollment, if it has a dedicated sub-ID field, swap `utm_content` →
-that param in the matching `_tag_*` helper so attribution survives.
+| # | Network | Programme | Commission | Env var holds |
+|---|---------|-----------|-----------|---------------|
+| 1 | eBay | eBay Partner Network (partnernetwork.ebay.com) | 1–4% | `EBAY_AFFILIATE_CAMPAIGN_ID` = the 10-digit campaign id |
+| 2 | Catawiki | Partnerize | 80% (new) / 40% (existing) of Catawiki's OWN fee, + up to €40 per new bidder — not a % of the hammer price | `CATAWIKI_AFFILIATE_ID` = `https://prf.hn/click/camref:<id>` |
+| 3 | TCGPlayer | Impact (their only programme) | 3.5% | `TCGPLAYER_AFFILIATE_ID` = `https://tcgplayer.pxf.io/c/<pub>/<ad>/<prog>` |
+| 4 | Whatnot | Impact | 1–3.5% | `WHATNOT_AFFILIATE_ID` = the Impact tracking link |
+| 5 | StockX | Impact | varies | `STOCKX_AFFILIATE_ID` = the Impact tracking link |
+| 6 | Mercari | Impact (unconfirmed — if it turns out to be Awin, the format needs adding) | varies | `MERCARI_AFFILIATE_ID` = the Impact tracking link |
+
+eBay: the rotation id (`mkrid`) is picked from the listing's eBay site
+(`ebay.nl`, `ebay.de`, …), so one campaign id covers every site. Note that
+`affiliate_links_router.py` builds every eBay *search* on `ebay.com` today, so
+EU members are sent to the US site — a product decision, not a tagging bug.
+
+**Unchecked — var is read but NEVER applied** (a set value logs a warning):
+KEH (ShareASale), MPB (FlexOffers/Sovrn), Master of Malt (Affiliate Future),
+PopMart (Digidip), Drop (FlexOffers), Chrono24, AmiAmi (Sovrn). To enable one
+at enrollment: copy a deep link from the network's dashboard, add its format to
+`_PROGRAMMES` in `affiliate.py`, with a test. Do not guess the format.
+
+**No programme — env var removed:** Cardmarket (signup referral only, capped at
+€10/month), Discogs, BrickLink.
+
+**To set on EC2**: add the value to `/opt/collectors/.env`, run the 9
+`ExecStartPre` stages by hand, restart bake, then check that
+`/marketplace/affiliate-links` returns a tagged `affiliate_url`.
 
 ---
 
@@ -57,12 +58,13 @@ that param in the matching `_tag_*` helper so attribution survives.
 
 `server/app/lib/affiliate.py`:
 - All tags rebranded `collectai` → `sparrow`.
-- `build_affiliate_url(url, source, subid=None)` now embeds a per-click sub-ID
-  (`customid` for eBay, `utm_content` for the rest), defaulting to `"sparrow"`.
+- `build_affiliate_url(url, source, subid=None)` now embeds a per-click sub-ID,
+  defaulting to `"sparrow"`: `customid` (eBay), `subId1` (Impact), `pubref`
+  (Partnerize) — the field each network puts in its conversion report.
 - `deal_discovery_agent.py` passes `subid=deal_id` — so every discovered deal's
   link is attributable back to a row in `public.mandate_deals`.
 
-Covered by `server/tests/test_affiliate.py` (18 passing, incl. sub-ID tests).
+Covered by `server/tests/test_affiliate.py` (26 passing as of 2026-09-28).
 
 ---
 
@@ -174,11 +176,10 @@ result counts, zero empties. **A wrong category id fails silently** — the sear
 just looks like "no stock" — so re-derive with the API rather than editing by
 intuition.
 
-**Only nine sources can build a *search* URL** (`_SEARCHABLE_SOURCES`): ebay,
-tcgplayer, cardmarket, mercari, discogs, stockx, bricklink, yahoo_auctions_jp,
-amiami. `affiliate.py` tags six more (chrono24, keh, mpb, masterofmalt, drop,
-popmart) but only for concrete listing URLs, which is what deal discovery hands
-it. Naming one of those six in a category profile makes it silently drop out of
+**Twelve sources can build a *search* URL** (`_SEARCHABLE_SOURCES`, 2026-09-28):
+ebay, tcgplayer, cardmarket, mercari, discogs, stockx, bricklink,
+yahoo_auctions_jp, amiami, chrono24, catawiki, google. (This said nine until
+chrono24, catawiki and google were added.) Naming one of those six in a category profile makes it silently drop out of
 the response — `test_every_profile_names_only_buildable_sources` guards this.
 Adding their search builders is the obvious next lift for watches, cameras and
 whisky, which currently fall back to eBay.
@@ -193,7 +194,9 @@ MTG, Yu-Gi-Oh and Lorcana search ran against the Pokémon catalogue.
 
 | Step | State |
 |------|-------|
-| 1. Enroll networks | ⏳ your hands |
+| 1. Enroll networks | ⏳ your hands — all 16 vars empty on EC2 (checked 2026-09-28) |
+| 1b. Link formats checked against each network | ✅ 2026-09-28 for eBay / Impact / Partnerize; 7 unchecked (class AV) |
+| 1c. Every shop tap recorded | ✅ 2026-09-28, gate `check:affiliate-open` (class AW); needs a JS build |
 | 2. Rebrand + sub-ID | ✅ done, tests green |
 | 3. Reconciliation (table + worker) | ⏳ deferred design (above) |
 | 4. Lift routed GMV | ⏳ product, ongoing |

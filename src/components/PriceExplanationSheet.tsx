@@ -10,7 +10,6 @@ import {
   StyleSheet,
   ScrollView,
   Pressable,
-  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -27,6 +26,7 @@ import { formatPrice } from '@/lib/format';
 import { RangeBar } from './RangeBar';
 import { useTranslation } from 'react-i18next';
 import { dateLocale } from '@/constants/dateFormats';
+import { openAffiliateUrl } from '@/utils/affiliateHelpers';
 
 type AffiliateLink = {
   source: string;
@@ -168,7 +168,7 @@ export function PriceExplanationSheet({
                         <Pressable
                           onPress={() => {
                             fireHaptic(HapticIntent.CONFIRMATION_LIGHT);
-                            Linking.openURL(matchedLink.affiliate_url).catch(() => {});
+                            openAffiliateUrl(matchedLink.affiliate_url, { source: matchedLink.source });
                           }}
                           style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
                           accessibilityRole="link"
