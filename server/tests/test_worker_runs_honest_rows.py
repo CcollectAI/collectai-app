@@ -148,14 +148,37 @@ async def test_a_skipped_cycle_writes_no_row_and_says_why(monkeypatch, path):
 
 
 def test_overdue_alert_names_the_skip_reason(monkeypatch):
+    # Yielding past the grace window still pages, and says why.
     import time
     monkeypatch.setattr(wr, "_registry", {
-        "sanity_probe_worker": {"last_run": time.time() - 3 * 3600, "last_status": "ok",
+        "sanity_probe_worker": {"last_run": time.time() - 7 * 3600, "last_status": "ok",
                                 "runs": 1, "errors": 0},
     })
     wr.note_skip("sanity_probe_worker", "yielding to heavy workers ['valuation_worker']")
     od = {w["name"]: w for w in wr.get_overdue_workers()}
     assert "yielding" in od["sanity_probe_worker"]["last_skip_reason"]
+
+
+def test_a_few_yields_to_heavy_workers_do_not_page(monkeypatch):
+    # 2026-09-29: an hourly probe yielding to the scrape for 2-3 cycles paged
+    # Telegram every hour. Yielding is the design; within the grace, not late.
+    import time
+    monkeypatch.setattr(wr, "_registry", {
+        "sanity_probe_worker": {"last_run": time.time() - 3 * 3600, "last_status": "ok",
+                                "runs": 1, "errors": 0},
+    })
+    wr.note_skip("sanity_probe_worker", "yielding to heavy workers ['marketplace_scrape_worker']")
+    assert "sanity_probe_worker" not in {w["name"] for w in wr.get_overdue_workers()}
+
+
+def test_other_skips_keep_the_normal_threshold(monkeypatch):
+    import time
+    monkeypatch.setattr(wr, "_registry", {
+        "sanity_probe_worker": {"last_run": time.time() - 3 * 3600, "last_status": "ok",
+                                "runs": 1, "errors": 0},
+    })
+    wr.note_skip("sanity_probe_worker", "circuit breaker open (DB degraded)")
+    assert "sanity_probe_worker" in {w["name"] for w in wr.get_overdue_workers()}
 
 
 def _ok_records_in_finally():

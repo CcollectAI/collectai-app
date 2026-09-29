@@ -125,6 +125,11 @@ def is_overdue(worker_name: str) -> bool:
     return elapsed > (interval * 1.5)
 
 
+# How long a worker may go unrun while it is deliberately yielding to heavy
+# workers before it counts as overdue (x its interval; 1.5x otherwise).
+_YIELD_GRACE_MULTIPLIER = 6
+
+
 def get_overdue_workers() -> list[dict]:
     """Return all overdue workers with details.
 
@@ -162,6 +167,16 @@ def get_overdue_workers() -> list[dict]:
             continue
 
         elapsed = now - last_run
+        skip_reason = (
+            entry.get("last_skip_reason")
+            if (entry.get("last_skip_at") or 0) > last_run else None
+        )
+        if skip_reason and skip_reason.startswith("yielding"):
+            # A light worker stepping aside for a heavy one is the design, not
+            # a stall: at 1.5x an hourly probe paged every hour on a busy day
+            # (2026-09-29, 8 alerts, all sanity_probe_worker yielding to the
+            # scrape). Still overdue if it keeps yielding this long.
+            threshold = interval * _YIELD_GRACE_MULTIPLIER
         if elapsed > threshold:
             overdue.append({
                 "name": name,
@@ -170,10 +185,7 @@ def get_overdue_workers() -> list[dict]:
                 "last_status": entry.get("last_status"),
                 "overdue_by_s": round(elapsed - threshold, 1),
                 # Why, when the orchestrator has been skipping it (note_skip).
-                "last_skip_reason": (
-                    entry.get("last_skip_reason")
-                    if (entry.get("last_skip_at") or 0) > last_run else None
-                ),
+                "last_skip_reason": skip_reason,
             })
 
     return overdue
