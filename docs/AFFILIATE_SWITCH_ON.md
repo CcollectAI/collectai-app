@@ -48,6 +48,13 @@ at enrollment: copy a deep link from the network's dashboard, add its format to
 **No programme — env var removed:** Cardmarket (signup referral only, capped at
 €10/month), Discogs, BrickLink.
 
+**The URL's host picks the network, not the caller's label** (2026-09-28): a
+scraper row (`crawl4ai`, `firecrawl`) at ebay.de or catawiki.com is tagged as
+eBay / Catawiki, and an Impact or Partnerize link is only built for the brand's
+own domain (`_source_from_host` in `affiliate.py`).
+
+**The signup checklist, in order, lives in `docs/OPEN_DECISIONS.md` #16.**
+
 **To set on EC2**: add the value to `/opt/collectors/.env`, run the 9
 `ExecStartPre` stages by hand, restart bake, then check that
 `/marketplace/affiliate-links` returns a tagged `affiliate_url`.

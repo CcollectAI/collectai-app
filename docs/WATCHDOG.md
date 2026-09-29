@@ -182,6 +182,16 @@ would trade a duplicate row for a lost cause.
   `worker_registry.SKIPPED`, the orchestrator calls `note_skip()` (in memory
   only). The overdue alert names the skip reason, and `worker_runs_stalled`
   says "circuit breaker OPEN" instead of "wedged" when that is the cause.
+  **Follow-up 2026-09-29 (`d878e84c`):** with skips no longer counting as runs,
+  an hourly probe that yielded to the scrape twice was "overdue" at 1.5x and
+  Telegram got an "Overdue Workers" page every hour (8 on 09-29, all
+  sanity_probe_worker). A skip whose reason starts with `yielding` now gets
+  `_YIELD_GRACE_MULTIPLIER` (6x) the interval; circuit-breaker skips and real
+  stalls keep 1.5x. Falsifier: `grep "Overdue alert sent" bake.log` on a busy
+  scrape day → none unless the probe has not run for 6 h.
+  **Telegram message text is not logged.** To find what paged, read the log
+  line just before `Telegram ops alert sent` (e.g. `[worker_registry] Overdue
+  alert sent for N worker(s)`).
 - **`ok` in a `finally`.** category_map and value_change recorded `ok` from a
   `finally:`, i.e. also for a cycle that raised: value_change's 14 failures
   (09-09..09-12) each had an `ok` twin. Gate: an AST check in

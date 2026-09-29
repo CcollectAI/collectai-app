@@ -13,10 +13,19 @@ _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in 
 
 ### 16. Affiliate enrollment — **recommend: eBay Partner Network first, then one aggregator**
 - **State:** all 16 `*_AFFILIATE_*` vars empty on EC2 (checked 2026-09-28). eBay is 336,880 of ~360k outbound links in 30 d. Of 18 shops the app links to, 8 pay per sale (eBay, TCGplayer, StockX, Catawiki, Reverb, HLJ, Solaris Japan, Sideshow); Reverb/HLJ/Solaris/Sideshow have no tagger yet.
-- **Do (your hands):** eBay campaign id → `EBAY_AFFILIATE_CAMPAIGN_ID` (10 digits; `docs/AFFILIATE_SWITCH_ON.md` Step 1). Then Sovrn Commerce or Skimlinks: one signup covers many merchants — I add its link format when you have an account.
+- **Do (your hands), in this order** — send the value in brackets; it goes in `/opt/collectors/.env`, no app build:
+  1. **eBay Partner Network** (partnernetwork.ebay.com) → Campaigns → create → [10-digit Campaign ID] → `EBAY_AFFILIATE_CAMPAIGN_ID`.
+  2. **Impact.com** as a Partner, then apply inside it to **TCGplayer**, **StockX** (and Whatnot — nothing links to it yet) → [each tracking link `https://<brand>.pxf.io/c/…/…/…`] → `TCGPLAYER_/STOCKX_/WHATNOT_AFFILIATE_ID`.
+  3. **Catawiki via Partnerize** (join.partnerize.com/catawiki) → [`https://prf.hn/click/camref:…`] → `CATAWIKI_AFFILIATE_ID`.
+  4. **Sovrn Commerce or Skimlinks** (one) → [account key] — covers Mercari, AmiAmi, Sideshow; its link format must be added in `affiliate.py` first.
+  - Skip: Cardmarket (signup referral, €10/month cap), Discogs, BrickLink. Later: Reverb, HLJ, Solaris Japan, Sideshow direct (need link formats).
+  - Applications ask for a site/app: sparrowcollect.com + the App Store link.
 - **Re-check:** `grep AFFILIATE /opt/collectors/.env`.
 
 ## Decided
+
+- **2026-09-29 — Explore banners: every tile has a correct image (`8103218e`, client; needs a JS build).** Chosen with Merle at tile size over five rounds; walked on the emulator. See class AR in `docs/CLASS_SWEEPS.md` for sources and the `bannerFocusY` crop field.
+- **2026-09-29 — Telegram "Overdue Workers" spam: FIXED (`d878e84c`, DEPLOYED).** A probe yielding to heavy workers gets 6x its interval before it is overdue; see `docs/WATCHDOG.md`.
 
 - **2026-09-28 — #17 an item priced from anything with its name in the title: FIXED (`f7540cd4`, DEPLOYED 22:08 CEST; trigger applied on prod).** Two holes, both closed at the chokepoint: (1) `trg_items_canonical_ref` gave ANY key a ref (`charizard` → `pokemon:charizard`, which matched title-filed junk predictions) — a key the catalogue does not know now gets no ref (`server/migrations/20260928_canonical_ref_catalogue_only.sql`; rolled-back dry run first: 1 of 17 items changed, 56/56 category sample keys still resolve); (2) the catalogue matcher's LIMIT 5 hid AH's tie — "Charizard" returned one Celebrations row at 1.0; exact titles now rank first, so it comes back ambiguous at 0.5 (Base Set with set+number still resolves at 1.0). The test account's item re-linked to `base1-base1-4`. Verified live: its evidence reads EUR 825 from TCGplayer/Cardmarket sales (was EUR 10 from plushies); a new item POSTed with key `charizard` gets `canonical_ref` NULL (probe deleted).
 
