@@ -221,6 +221,7 @@ const BROWSE_CATEGORIES = CATEGORIES.map((cat) => ({
   id: cat.id,
   name: cat.name,
   imageUrl: cat.bannerImageUrl,
+  focusY: cat.bannerFocusY,
 }));
 
 function SearchScreen({ asTab = false }: { asTab?: boolean }) {
@@ -506,6 +507,7 @@ function SearchScreen({ asTab = false }: { asTab?: boolean }) {
                         source={{ uri: cat.imageUrl }}
                         style={styles.categoryTileImage}
                         contentFit="cover"
+                        contentPosition={cat.focusY == null ? 'center' : { top: `${Math.round(cat.focusY * 100)}%`, left: '50%' }}
                         cachePolicy="memory-disk"
                         transition={150}
                       />
