@@ -189,6 +189,14 @@ would trade a duplicate row for a lost cause.
   `_YIELD_GRACE_MULTIPLIER` (6x) the interval; circuit-breaker skips and real
   stalls keep 1.5x. Falsifier: `grep "Overdue alert sent" bake.log` on a busy
   scrape day → none unless the probe has not run for 6 h.
+  **2026-09-30 (`7e1a1574`):** a heavy worker *queued* for the heavy lock
+  (`note_waiting`) gets the same grace — deal_discovery waited 18 min behind
+  the scrape and paged. And `SUPABASE_DB_SIZE_ALERT_MB=14000` in the prod
+  `.env` (was the 6400 default = 80% of Pro's included 8 GB): the DB is ~8 GB
+  with September partitions still live, disk beyond 8 GB costs $0.125/GB/month
+  and 18 GB is provisioned (`docs/DATA_SCALING_PLAN.md`), so the old line paged
+  every ~6 h about a cost of cents. Falsifier:
+  `grep "SANITY VIOLATION db_size_near_cap" bake.log` → none below 14000 MB.
   **Telegram message text is not logged.** To find what paged, read the log
   line just before `Telegram ops alert sent` (e.g. `[worker_registry] Overdue
   alert sent for N worker(s)`).
