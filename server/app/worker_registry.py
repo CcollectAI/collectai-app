@@ -171,7 +171,7 @@ def get_overdue_workers() -> list[dict]:
             entry.get("last_skip_reason")
             if (entry.get("last_skip_at") or 0) > last_run else None
         )
-        if skip_reason and skip_reason.startswith("yielding"):
+        if (skip_reason and skip_reason.startswith("yielding")) or entry.get("waiting_since"):
             # A light worker stepping aside for a heavy one is the design, not
             # a stall: at 1.5x an hourly probe paged every hour on a busy day
             # (2026-09-29, 8 alerts, all sanity_probe_worker yielding to the
@@ -276,6 +276,21 @@ def mark_enabled(worker_name: str) -> None:
 def is_disabled(worker_name: str) -> bool:
     """Scheduled but never started by this process's orchestrator."""
     return _enabled is not None and worker_name not in _enabled
+
+
+def note_waiting(worker_name: str, waiting: bool) -> None:
+    """Queued for the heavy gate (True) or no longer (False). In memory only.
+
+    A heavy worker waiting its turn behind another is not stalled: on
+    2026-09-30 deal_discovery waited 18 min behind the scrape and Telegram got
+    an "Overdue Workers" page for it. get_overdue_workers gives a waiting
+    worker the same grace as a yielding one.
+    """
+    entry = _registry.setdefault(
+        worker_name,
+        {"runs": 0, "errors": 0, "total_duration_s": 0.0, "duration_count": 0},
+    )
+    entry["waiting_since"] = time.time() if waiting else None
 
 
 def note_skip(worker_name: str, reason: str) -> None:

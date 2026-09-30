@@ -228,3 +228,33 @@ def test_the_finally_checker_can_see_the_pattern(tmp_path, monkeypatch):
         assert _ok_records_in_finally() == ["w.py:5"]
     finally:
         ROOT = old
+
+
+
+def test_a_worker_queued_for_the_heavy_gate_is_not_overdue(monkeypatch):
+    # 2026-09-30: deal_discovery waited 18 min behind the scrape and paged.
+    import time
+    monkeypatch.setattr(wr, "_registry", {
+        "deal_discovery": {"last_run": time.time() - 2 * 3600, "last_status": "ok",
+                           "runs": 1, "errors": 0},
+    })
+    name = "deal_discovery"
+    if name not in wr.SCHEDULES:
+        monkeypatch.setitem(wr.SCHEDULES, name, 3600)
+    monkeypatch.setattr(wr, "is_disabled", lambda n: False)
+    wr.note_waiting(name, True)
+    assert name not in {w["name"] for w in wr.get_overdue_workers()}
+    wr.note_waiting(name, False)
+    assert name in {w["name"] for w in wr.get_overdue_workers()}
+
+
+def test_heavy_gate_releases_and_clears_waiting():
+    import asyncio
+    import workers.bake_orchestrator as bo
+    heavy = next(iter(bo._HEAVY_WORKERS))
+
+    async def go():
+        async with bo._heavy_gate(heavy):
+            assert not wr._registry[heavy].get("waiting_since")
+        assert not bo._get_heavy_lock().locked()
+    asyncio.run(go())

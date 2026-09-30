@@ -370,7 +370,13 @@ async def _heavy_gate(name: str):
         return
     lock = _get_heavy_lock()
     wait_start = time.monotonic()
-    async with lock:
+    from app.worker_registry import note_waiting
+    note_waiting(name, True)
+    try:
+        await lock.acquire()
+    finally:
+        note_waiting(name, False)
+    try:
         waited = time.monotonic() - wait_start
         if waited > 1.0:
             logger.info(
@@ -383,6 +389,8 @@ async def _heavy_gate(name: str):
             yield
         finally:
             _HEAVY_HOLDER = None
+    finally:
+        lock.release()
 _worker_import_failures: dict[str, str] = {}
 # Workers we've already paged Telegram for — avoids re-paging every health tick
 _alerted_workers: set[str] = set()
