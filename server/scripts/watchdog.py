@@ -1557,7 +1557,12 @@ def collect_supabase_logs(hours: int) -> dict:
         docs/WATCHDOG.md already states the rule this now obeys, for the DAC7
         check: *reporting nothing must never look like all-clear.*
         """
-        url = ("https://api.supabase.com/v1/projects/%s/analytics/endpoints/logs.all"
+        # `logs`, not `logs.all`: Supabase removed logs.all on 2026-09-23 and
+        # every report from 09-25 to 10-04 was blind on BOTH halves (pg + API).
+        # The new endpoint is ClickHouse SQL over ONE `logs` table; the source
+        # is the `source` column (the changelog says `source_name`, which the
+        # endpoint rejects) and nested fields are `log_attributes['a.b']`.
+        url = ("https://api.supabase.com/v1/projects/%s/analytics/endpoints/logs"
                "?sql=%s&iso_timestamp_start=%s&iso_timestamp_end=%s"
                % (PROJECT_REF, urllib.parse.quote(sql), start, end))
         # RETRY. The `edge_logs` source answers intermittently: measured
@@ -1588,6 +1593,8 @@ def collect_supabase_logs(hours: int) -> dict:
                     # nothing.
                     last = str(payload.get("message") or payload.get("error")
                                or (r.stdout or "")[:120] or "empty response")[:160]
+                    if "Too Many Requests" in last:
+                        time.sleep(20)   # Throttler; 2s/4s does not clear it
                     continue
                 return payload.get("result") or []
             except Exception as e:
@@ -1613,20 +1620,21 @@ def collect_supabase_logs(hours: int) -> dict:
             "counts below are PARTIAL and must not be read as totals" % hours)
 
     pg_rows = query(
-        'select event_message as msg, count(*) as n from postgres_logs '
-        'cross join unnest(metadata) m cross join unnest(m.parsed) p '
-        'where p.error_severity = "ERROR" group by msg order by n desc limit 10',
+        "select event_message as msg, count(*) as n from logs "
+        "where source = 'postgres_logs' "
+        "and log_attributes['parsed.error_severity'] = 'ERROR' "
+        "group by msg order by n desc limit 10",
         "postgres_errors")
     code_rows = query(
-        'select cast(r.status_code as string) as code, count(*) as n from edge_logs '
-        'cross join unnest(metadata) m cross join unnest(m.response) r '
-        'group by code order by n desc',
+        "select log_attributes['response.status_code'] as code, count(*) as n from logs "
+        "where source = 'edge_logs' group by code order by n desc",
         "api_status_codes")
     path_rows = query(
-        'select rq.path as path, cast(rs.status_code as string) as code, count(*) as n '
-        'from edge_logs cross join unnest(metadata) m '
-        'cross join unnest(m.request) rq cross join unnest(m.response) rs '
-        'where rs.status_code >= 400 group by path, code order by n desc limit 10',
+        "select log_attributes['request.path'] as path, "
+        "log_attributes['response.status_code'] as code, count(*) as n from logs "
+        "where source = 'edge_logs' "
+        "and toInt32OrZero(log_attributes['response.status_code']) >= 400 "
+        "group by path, code order by n desc limit 10",
         "api_failing_paths")
 
     out["postgres_errors"] = [{"message": (r.get("msg") or "")[:220], "count": r.get("n")}
@@ -1754,7 +1762,13 @@ async def main() -> int:
         # (learning_a_wrong_diagnostic_is_believed_for_sessions): on 2026-08-26
         # the PAT was a valid sbp_ token, postgres_logs answered, and only
         # edge_logs was flapping.
-        creds_ok = bool(sblogs.get("available"))
+        # "Nothing answered" is not "the PAT is bad" either: 09-25..10-04 every
+        # sub-query failed with "The logs.all endpoint has been removed" and
+        # this told the operator to mint a new token. Only an auth-shaped
+        # error message implicates the credential.
+        _why = " ".join(sblogs["unavailable"]).lower()
+        creds_ok = bool(sblogs.get("available")) or not any(
+            w in _why for w in ("401", "403", "unauthor", "forbidden", "jwt", "token"))
         bugs.append({"severity": "medium",
                      "title": "watchdog could not read part of the Supabase logs",
                      "detail": ("This report is INCOMPLETE — the counts below are missing, "
@@ -1762,16 +1776,20 @@ async def main() -> int:
                                 % ("; ".join(sblogs["unavailable"])[:400],
                                    (" The PAT is NOT the cause: postgres_logs answered with the "
                                     "same token in this run, so this is the log source flapping "
-                                    "upstream." if creds_ok else
-                                    " No sub-query answered, so the credential is a real "
-                                    "suspect."))),
+                                    "upstream." if sblogs.get("available") else
+                                    " No sub-query answered, but the error is not auth-shaped, so "
+                                    "read it before touching the PAT." if creds_ok else
+                                    " No sub-query answered and the error is auth-shaped, so "
+                                    "the credential is a real suspect."))),
                      "link": (sblogs.get("links") or {}).get("postgres_logs", ""),
                      "verify": ("Re-run in a minute; if only edge_logs/auth_logs fail it is "
                                 "upstream. Credential check: head -c4 ~/.supabase/access-token "
                                 "(must be sbp_)"),
                      "suggested_fix": (
-                         "Upstream flap — re-run `scripts/watchdog.py --hours 24 --summary`; "
-                         "note that api_5xx / api_4xx are UNKNOWN this run, not zero"
+                         "Read the error above: a flap clears on re-run "
+                         "(`scripts/watchdog.py --hours 24 --summary`); a message naming an "
+                         "endpoint/table/field is an API change and needs the query fixed. "
+                         "api_5xx / api_4xx are UNKNOWN this run, not zero"
                          if creds_ok else
                          "Refresh the Management API PAT at "
                          "https://supabase.com/dashboard/account/tokens, then re-run")})
