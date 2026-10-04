@@ -197,9 +197,37 @@ async def main() -> int:
 
     conn = await asyncpg.connect(dsn)
     findings = []
+    # The LIVE catalogue, not the snapshot. `columns_by_table` comes from a
+    # --dump-columns snapshot that can be weeks old, and a monthly partition
+    # drop then leaves names in it that no longer exist. Counting them made
+    # Postgres log `relation "public.market_hits_y2026m09" does not exist` as
+    # an ERROR every watchdog run (07:00 UTC, user postgres), which the
+    # watchdog then reported as a rejected write: a probe manufacturing the
+    # alarm it detects (docs/WATCHDOG.md). The parent of each partition is
+    # read from pg_inherits, not guessed from the name: `market_hits_daily`
+    # and `market_hits_archive` share the prefix and are real tables.
+    live_parent = {
+        r["relname"]: r["parent"] for r in await conn.fetch("""
+            SELECT c.relname, p.relname AS parent
+              FROM pg_class c
+              JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'
+              LEFT JOIN pg_inherits i ON i.inhrelid = c.oid AND c.relispartition
+              LEFT JOIN pg_class p ON p.oid = i.inhparent
+             WHERE c.relkind IN ('r', 'p')
+        """)
+    }
+    gone_from_db: list[str] = []
     try:
         for table, cols in sorted(columns_by_table.items()):
             if table in SKIP_TABLES:
+                continue
+            if table not in live_parent:
+                gone_from_db.append(table)   # stale snapshot: never query it
+                continue
+            if live_parent[table] is not None:
+                # A partition. Its parent is the table of record, and
+                # SKIP_TABLES names the parents: without this their children
+                # walked straight past the skip under their own names.
                 continue
             usable = sorted(c for c in cols if c not in BORING)
             read_only = [c for c in usable if c in reads and c not in writes]
@@ -265,8 +293,12 @@ async def main() -> int:
     findings.sort(key=lambda f: (f["confidence"] != "HIGH", -f["similarity"]))
 
     if args.json:
-        print(json.dumps({"findings": findings}, indent=2))
+        print(json.dumps({"findings": findings, "gone_from_db": gone_from_db}, indent=2))
     else:
+        if gone_from_db:
+            print("note: %d table(s) in the column snapshot no longer exist and were "
+                  "not queried (%s) - refresh with `npm run audit:drift:refresh`"
+                  % (len(gone_from_db), ", ".join(gone_from_db[:5])))
         print("=" * 74)
         print("COLUMN DRIFT AUDIT (advisory) - readers and writers on different columns")
         print("=" * 74)

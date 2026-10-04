@@ -738,6 +738,47 @@ keeps "missing" (`None`) distinguishable from "empty" (`0`).
 This is the same defect class as the `check-unrendered` gate counting a
 component named only in a `//` comment: **a comment is not a reference.**
 
+### Second instance: a snapshot is not the catalogue (2026-10-04)
+
+The fix above went into ONE script. `audit_column_drift.py`, which this
+watchdog also runs every morning, had the same unguarded
+`SELECT COUNT(*) FROM public."<table>"`, over table names from its
+`--dump-columns` snapshot. Each monthly partition drop left names in the
+snapshot that no longer existed, so every run logged
+`relation "public.market_hits_y2026m08" does not exist` and the same for
+`y2026m09` (found 10-04 07:00:33 UTC, user `postgres`, from the EC2 address,
+query text matching exactly), and the watchdog reported its own probe as a
+rejected write.
+
+A second defect hid inside it. `SKIP_TABLES` skips the large partitioned
+parents (`market_hits`, `price_history`, `price_predictions`), but their
+CHILDREN walked past the skip under their own names. That is why the known
+`seller_rating`/`seller_score` DEAD_PAIR was reported against
+`market_hits_y2026m10` rather than skipped.
+
+The audit now reads the LIVE catalogue once per run (`pg_class` and
+`pg_inherits`) and:
+- never queries a table the database no longer has (it reports them as
+  `gone_from_db` in `--json`, and as a "refresh the snapshot" note in text);
+- skips partition children, so their parent stays the table of record.
+
+The parent comes from `pg_inherits`, not a name pattern: `market_hits_daily`
+and `market_hits_archive` share the prefix and are real tables.
+
+Swept as a class: every `FROM public."<name>"` probe under `server/` was
+traced to where its name comes from. `audit_orphan_tables` and
+`audit_orphan_stores` check `to_regclass` first, `audit_key_overlap` and the
+search canary use fixed lists of live tables, `datalake_export_worker` lists
+partitions live from `pg_inherits`, and the sanity probe's current-month
+partition is a real alarm if it is missing. Only this one read a snapshot.
+
+Proved on prod: refs with `y2026m08`/`y2026m09` injected → both listed as
+gone, not queried. Control: an injected `ends_at`/`starts_at` pair on
+`events` → HIGH with the true counts (0 / 3,461), so live tables are still
+audited. **Falsifier:** after the next monthly drop, the Postgres ERROR list
+has no `relation "public.*_y20…" does not exist` from user `postgres` at
+07:00 UTC.
+
 ## A model can be well-formed, pass every gate, and be a season old (2026-08-29)
 
 Chasing the broken model gate in `nightly-train-eval-gate` turned up the
@@ -1378,8 +1419,9 @@ API change, and the finding now says so.
 `None`. The first run on the new endpoint gave `postgres_errors 2, api_5xx 0,
 api_ok 1263`, the same order as 09-22..24 (1,511 / 1,922 / 3,113 ok). Its 2
 Postgres errors were `relation "market_hits_y2026m09" does not exist` and the
-same for `m08`: something still probes dropped partitions by name (see "A
-probe must not manufacture the alarm it detects"). Not chased yet.
+same for `m08`. That was `audit_column_drift.py`, run by this watchdog, probing
+partitions from a stale column snapshot. Fixed and deployed 2026-10-04; see
+"A probe must not manufacture the alarm it detects", second instance.
 
 **Deployed 2026-10-04**: `/opt/collectors/server/scripts/watchdog.py` sha256
 `42b5b69d…`, previous copy kept as `watchdog.py.bak_20261004`. Cron runs it
