@@ -182,9 +182,17 @@ until 2026-09-27 those three shipped the ops key and the login PIN to every brow
 
 ## Deploy
 
-```bash
-npm run build
-npx vercel         # or deploy to any Node.js hosting
-```
+**Not deployed. It runs locally only, by decision (Merle, 2026-10-04).** Start
+it with `npm run dev`. The service-role key and the ops key stay on your
+machine, so there is nothing to redeploy after a change: restart the local
+server.
 
-Recommended domain: `admin.collectai.app`
+Not to be confused with the Vercel project named `admin`
+(`admin.vascobuild.com`), which is Vasco's app, or `collectors-app-7ed1f56b`,
+last deployed 2025-08-30, before this dashboard existed (first commit
+2025-12-13). Falsifier: `vercel project ls` shows no project serving this repo,
+and `dig +short admin.sparrowcollect.com` is empty.
+
+If it is ever hosted, it needs Deployment Protection (or equivalent) in front
+of the PIN login, and `ADMIN_SESSION_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` and
+`OPS_API_KEY` as server-only env vars.
