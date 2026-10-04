@@ -147,6 +147,20 @@ every failure silently rendered demo numbers (2,847 users against a real 10).
 `npm run check:columns` — every column a Supabase query names must exist in
 `../scripts/schema.lock.json`.
 
+**Template tables that do not exist are not queried.** `kpi_events` and `orders`
+(from `supabase/migrations/001_kpi_tables.sql`, the kit-business template) were
+never created in this database. The KPI funnel shows zeros labelled "not
+provisioned" without sending a request (`UNPROVISIONED_TABLES` in
+`src/lib/kpi.ts`), and the Supabase proxy refuses both tables. Until
+2026-10-04 every load still sent the request, and each one left a 404 in
+Supabase's edge log that the watchdog reads as a failing API path. If you ever
+create one, remove it from `UNPROVISIONED_TABLES` and add it back to the
+proxy's `TABLES`.
+
+`npm run test:demo-state` sets `NEXT_PUBLIC_ADMIN_DEMO=true` itself: since
+2026-09-27 demo data exists only behind that flag, and without it 8 of 18
+checks failed by default.
+
 ## Environment Variables
 
 ```env

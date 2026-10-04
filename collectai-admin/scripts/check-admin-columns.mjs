@@ -65,8 +65,8 @@ function selectColumns(table, sel) {
 // handles 42P01 by showing "not provisioned" zeros (kpi.ts), which is honest.
 // Listed with the reason, so a NEW missing table still fails.
 const KNOWN_UNPROVISIONED = new Map([
-  ["kpi_events", "kit-funnel events from the admin template; kpi.ts:470 shows 'not provisioned'"],
-  ["orders", "physical-kit orders from the admin template; kpi.ts shows 'not provisioned'"],
+  ["kpi_events", "kit-funnel events from the admin template; kpi.ts UNPROVISIONED_TABLES, never queried"],
+  ["orders", "physical-kit orders from the admin template; kpi.ts UNPROVISIONED_TABLES, never queried"],
 ]);
 
 const problems = [];

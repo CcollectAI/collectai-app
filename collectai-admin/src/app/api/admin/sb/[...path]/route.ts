@@ -20,14 +20,14 @@ import { NextResponse } from "next/server";
 import { adminAuthConfigured, isAdminRequest } from "@/lib/adminAuth";
 
 /** Every table the dashboard queries from the browser (grepped 2026-09-22).
- *  A table not listed here is refused, not forwarded. */
+ *  A table not listed here is refused, not forwarded. `kpi_events` and
+ *  `orders` were removed 2026-10-04: they do not exist, and kpi.ts no longer
+ *  asks for them (UNPROVISIONED_TABLES there). */
 const TABLES = new Set([
   "admin_content_config",
   "admin_dev_hub",
   "content_ideas",
   "creators",
-  "kpi_events",
-  "orders",
   "ugc_accounts",
   "ugc_content_pipeline",
   "ugc_pods",

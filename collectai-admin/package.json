@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test:e2e:creators": "tsx --env-file=.env.local scripts/e2e-creator-dashboard.mts",
-    "test:demo-state": "tsx scripts/test-demo-state.mts",
+    "test:demo-state": "NEXT_PUBLIC_ADMIN_DEMO=true tsx scripts/test-demo-state.mts",
     "test:e2e:tabs": "tsx --env-file=.env.local scripts/e2e-all-tabs.mts",
     "test:admin-endpoints": "tsx --env-file=.env.local scripts/e2e-admin-endpoints.mts",
     "test:creators-crud": "tsx --env-file=.env.local scripts/e2e-creators-crud.mts",

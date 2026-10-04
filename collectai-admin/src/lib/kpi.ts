@@ -305,6 +305,17 @@ export function getUnprovisionedSections(): string[] {
   return getUnprovisionedTables("kpi");
 }
 
+/**
+ * Template tables that do not exist in this database: PostgREST answers
+ * `42P01` / HTTP 404 for both (checked 2026-10-04). Handling the error was not
+ * enough. Every dashboard load still SENT the request, so Supabase's edge log
+ * took a 404 per load (18 in one session on 09-27), and the watchdog reads
+ * edge-log 4xx as failing API paths. They are not asked at all now. If one is
+ * ever created, remove it here and re-add it to the proxy allowlist
+ * (src/app/api/admin/sb/[...path]/route.ts).
+ */
+const UNPROVISIONED_TABLES = new Set(["kpi_events", "orders"]);
+
 const ZERO_FUNNEL: FunnelMetrics = {
   kitOpens: 0, qrScans: 0, stepStarts: 0, videoPlays: 0, videoWatch90: 0,
   stepCompletes: 0, kitCompletes: 0, buyClicks: 0, dropLandingViews: 0, orders: 0,
@@ -457,6 +468,9 @@ function getDemoData(days: number): KPIDashboardData {
 async function fetchFunnel(days: number): Promise<FunnelMetrics> {
   const sb = getSupabase();
   if (!sb) return noteDemo("no Supabase client", getDemoData(days).funnel);
+  if (UNPROVISIONED_TABLES.has("kpi_events")) {
+    return noteUnprovisioned("kpi_events", ZERO_FUNNEL);
+  }
 
   const since = new Date(Date.now() - days * 86400000).toISOString();
 

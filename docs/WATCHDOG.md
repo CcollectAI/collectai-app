@@ -1427,10 +1427,23 @@ per-category daily count of SOLD comps. `market_hits_daily` cannot serve as it
 is: its columns are `item_ref, day, comps_count, median/min/max/latest_price,
 latest_seen_at`, with no sold-vs-listing split (checked 10-04).
 
-Also seen on the first readable run, not chased: `/rest/v1/kpi_events` 404 ×18
-over 7 days (new endpoint, ≥400 query, `--hours 168`). `to_regclass
-('public.kpi_events')` is NULL and nothing in `src/`, `app/` or `server/app/`
-names it, so the caller is outside this repo.
+### `/rest/v1/kpi_events` 404 ×18 — the admin dashboard, fixed 2026-10-04
+
+Seen on the first readable run (`--hours 168`). All 18 came from one IP, UA
+`node`, service_role, 2026-09-27 20:42–21:10: the admin-dashboard session
+of that evening. The caller is `collectai-admin/src/lib/kpi.ts`, which is in
+this repo. (This note first said "outside this repo" because it grepped `src/`,
+`app/` and `server/app/` only.) `kpi_events` and `orders` are admin-template
+tables that were never created. PostgREST answers `42P01`, and the dashboard
+did already show zeros for that, but it still SENT the request on every
+load. It no longer asks (`UNPROVISIONED_TABLES` in kpi.ts), and the proxy
+refuses both (403 "Table not allowed"). Proved on a local dev server: the
+refusal never reaches Supabase, while a `creators` control in the same run
+does. Falsifier: the edge-log ≥400 query over 7 days shows no
+`/rest/v1/kpi_events` after 2026-10-04.
+
+The same session's 2 × `ugc_tiktok_metrics` 400s (`select=posted_at,…`) were
+already fixed that evening (`d02fa4fa`, `IntelligenceTab.tsx:118`).
 
 ## Related audits
 
