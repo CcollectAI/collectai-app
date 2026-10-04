@@ -160,11 +160,28 @@ now removed from SKIP_CATEGORIES so the main scrape covers them.
 > correct, just on a monthly clock.
 >
 > This matters for anything loaded by hand. `partition_drop_worker` drops a
-> partition once its month is **strictly older** than `current_month −
-> retention`, so `y2026m08` survives September and goes at the start of
-> **2026-10**. The 5,420 Lorcast comps loaded on 2026-08-15 therefore had two
-> deadlines — out of the watchdog's 30-day sold-comp window on **2026-09-14**,
-> out of the database around **2026-10-01**.
+> partition when `months(first-of-current-month − partition_start) >=
+> retention` (`partition_drop_worker.py:190-192`). With retention `1` that is
+> **every month except the current one**: `y2026m09` was eligible on 2026-10-01
+> and dropped that evening (exported first: 3,518,230 rows, manifest
+> 19:53:53). So "1 month retention" means **0–31 days of hot history**, and
+> on the 1st `market_hits` starts the month empty. (This note said `y2026m08`
+> "survives September" — wrong by one month, corrected 2026-10-04. Falsifier:
+> on day N of a month, `SELECT min(seen_at) FROM market_hits` → the 1st.) The
+> 5,420 Lorcast comps loaded on 2026-08-15 therefore left the database on
+> **2026-09-01**, not 10-01.
+>
+> **Changed 2026-10-04 (Merle): `PARTITION_RETENTION_MONTHS_MARKET_HITS=2`**
+> in `/opt/collectors/.env` (backup `.env.bak_20261004`), so `market_hits`
+> keeps the current month plus the previous one (31–62 days). `price_history`
+> and `price_predictions` stay at 1. September was already dropped (it is in
+> S3) and is not restored. The bake reads `.env` through systemd
+> `EnvironmentFile`, so the value applies only after a bake restart, and it
+> must happen before **2026-11-01**, when October would otherwise be dropped.
+> Falsifier: `sudo cat /proc/$(systemctl show -p MainPID --value
+> collectai-bake.service)/environ | tr '\0' '\n' | grep
+> RETENTION_MONTHS_MARKET` → `=2`; and on 2026-11-02, `SELECT min(seen_at)
+> FROM market_hits` → 2026-10-01.
 >
 > ✅ **Both closed 2026-08-26**: Lorcast is now a daily bake worker
 > (`workers/lorcast_worker.py`, `SCHEDULES["lorcast_worker"] = 24 * 3600`), so

@@ -1345,6 +1345,93 @@ mediums every morning.
 it to `expected` in the check, with the reason. If only the server or cron
 calls it, run the `suggested_fix` (revoke from PUBLIC, grant to service_role).
 
+## The logs half was blind for ten days, and the finding blamed the PAT (2026-10-04)
+
+Supabase removed `analytics/endpoints/logs.all` on **2026-09-23**
+(changelog 48235). Every report from **09-25 to 10-04** failed all three
+Logflare sub-queries with *"The logs.all endpoint has been removed"*: no
+Postgres errors, no API status codes, and "API 5xx rate is UNKNOWN" every day.
+The three-state rule worked (UNKNOWN, never green), and the advice under it
+did not: "No sub-query answered, so the credential is a real suspect —
+refresh the PAT". The PAT was fine; the new endpoint answered with it first try.
+
+The replacement is ClickHouse SQL over ONE table:
+
+| | old (`logs.all`) | new (`logs`) |
+|---|---|---|
+| source | `FROM edge_logs` | `FROM logs WHERE source = 'edge_logs'` |
+| nested field | `cross join unnest(metadata) m cross join unnest(m.response) r` → `r.status_code` | `log_attributes['response.status_code']` (a STRING) |
+| pg severity | `p.error_severity` via two unnests | `log_attributes['parsed.error_severity']` |
+
+⚠️ **The changelog says `source_name`; the endpoint rejects it**
+(`Field "source_name" does not exist`). The column is `source`. Keys were
+read off prod with `mapKeys(log_attributes)`, not taken from the doc. The
+endpoint also throttles (`ThrottlerException: Too Many Requests`) after a few
+back-to-back queries, so a throttled attempt now waits 20s before retrying.
+
+The credential is now named only when the error is auth-shaped
+(401/403/unauthorized/forbidden/jwt/token). "Nothing answered" is not
+evidence about the token. A message naming an endpoint, table or field is an
+API change, and the finding now says so.
+
+**Falsifier:** run the watchdog; `supabase_logs.totals` must hold numbers, not
+`None`. The first run on the new endpoint gave `postgres_errors 2, api_5xx 0,
+api_ok 1263`, the same order as 09-22..24 (1,511 / 1,922 / 3,113 ok). Its 2
+Postgres errors were `relation "market_hits_y2026m09" does not exist` and the
+same for `m08`: something still probes dropped partitions by name (see "A
+probe must not manufacture the alarm it detects"). Not chased yet.
+
+**Deployed 2026-10-04**: `/opt/collectors/server/scripts/watchdog.py` sha256
+`42b5b69d…`, previous copy kept as `watchdog.py.bak_20261004`. Cron runs it
+(`watchdog_daily.sh`) and the bake does not import it, so no restart was needed.
+Falsifier: the next `watchdog-YYYYMMDD.json` has numeric
+`supabase_logs.totals` and no `unavailable` key.
+
+### "events have a date but no starts_at" — the cause was not a time format
+
+The one row was a member event (the 09-27 walk probe) with `time` NULL. The
+finding's sentence ("a time format the composer does not accept") describes
+the scrapers' composer, and no member path calls it: events_core
+create/edit/duplicate and both sponsor_company_router INSERTs never write
+`starts_at`. The five older member rows only had it from the hand-run 09-01
+backfill (`30ba040e`: "339 rows backfilled from date + COALESCE(time,'00:00')",
+the same rule the trigger uses).
+`20261004_events_compose_starts_at.sql` adds a fill-only trigger (date +
+time, read as UTC, the composer's rule) plus a backfill that RAISEs if
+anything is left behind. Proved in a rolled-back transaction on prod:
+date+time, date-only, a scraper-supplied value kept, an edited date
+recomputed, an unrelated edit left alone, 0 rows left NULL.
+**Applied to prod 2026-10-04**: trigger enabled, a rolled-back live INSERT
+composed 20:15 UTC, schema lock regenerated with an empty diff and
+`preflight_schema_lock` PASS. The probe row itself (and its one walk
+announcement) was deleted the same day. Falsifier: `SELECT count(*) FROM events
+WHERE date IS NOT NULL AND starts_at IS NULL` → 0.
+
+### ⛔ OPEN: "sold-comp source DIED" cannot fire under retention=1
+
+The coverage canary's `sold_before` counts `market_hits` rows `seen_at BETWEEN
+now() - 90 days AND now() - 30 days` (watchdog.py, the `sold_before` query).
+With `PARTITION_RETENTION_MONTHS_MARKET_HITS=1`, `market_hits` holds only the
+current calendar month (`min(seen_at)` = 2026-10-01 00:00:40 on 10-04; see
+docs/MARKET_DATA.md), so that window is always empty. A sold-comp source that
+dies is therefore reported inside the aggregated "N categories have NO
+sold-comp source" MEDIUM, never as its own HIGH. The same short window also
+shrinks `sold_now` early in each month. Not fixed. **Falsifier:** `SELECT
+count(*) FROM market_hits WHERE seen_at < now() - interval '30 days'` → 0
+means the HIGH is blind. **Retention was raised to 2 on 2026-10-04** (live after the
+next bake restart; docs/MARKET_DATA.md). That brings back only PART of the
+window: `market_hits` will then reach 31–62 days back, so the 30–90d half sees
+between 1 and 32 days of data depending on the day of the month. The check
+can fire again but is weakest early in each month. A full fix would be to keep a small
+per-category daily count of SOLD comps. `market_hits_daily` cannot serve as it
+is: its columns are `item_ref, day, comps_count, median/min/max/latest_price,
+latest_seen_at`, with no sold-vs-listing split (checked 10-04).
+
+Also seen on the first readable run, not chased: `/rest/v1/kpi_events` 404 ×18
+over 7 days (new endpoint, ≥400 query, `--hours 168`). `to_regclass
+('public.kpi_events')` is NULL and nothing in `src/`, `app/` or `server/app/`
+names it, so the caller is outside this repo.
+
 ## Related audits
 
 - `server/scripts/audit_orphan_tables.py` — tables read by code that nothing writes

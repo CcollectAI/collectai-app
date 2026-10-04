@@ -889,38 +889,6 @@
     "source_code",
     "weight"
   ],
-  "market_hits_y2026m08": [
-    "attrs",
-    "category",
-    "condition",
-    "condition_grade",
-    "currency",
-    "ended_at",
-    "features_json",
-    "graded",
-    "id",
-    "image_url",
-    "is_listing",
-    "item_ref",
-    "listing_id",
-    "marketplace",
-    "normalized_key",
-    "observed_at",
-    "price",
-    "price_eur",
-    "processed",
-    "provider",
-    "seen_at",
-    "seller_rating",
-    "seller_score",
-    "shipping",
-    "source",
-    "title",
-    "tx_id",
-    "url",
-    "url_hash",
-    "user_id"
-  ],
   "source_catalog": [
     "code",
     "display",
@@ -931,15 +899,6 @@
     "max_rps",
     "notes",
     "source_code"
-  ],
-  "vision_category_quality": [
-    "category",
-    "common_confusion_secondary",
-    "common_confusion_target",
-    "computed_at",
-    "confidence_calibration_factor",
-    "predicted_accuracy_30d",
-    "sample_count"
   ],
   "scrape_jobs": [
     "canonical_category",
@@ -969,42 +928,19 @@
     "started_at",
     "status"
   ],
+  "vision_category_quality": [
+    "category",
+    "common_confusion_secondary",
+    "common_confusion_target",
+    "computed_at",
+    "confidence_calibration_factor",
+    "predicted_accuracy_30d",
+    "sample_count"
+  ],
   "enqueue_runs": [
     "id",
     "notes",
     "ran_at"
-  ],
-  "market_hits_y2026m09": [
-    "attrs",
-    "category",
-    "condition",
-    "condition_grade",
-    "currency",
-    "ended_at",
-    "features_json",
-    "graded",
-    "id",
-    "image_url",
-    "is_listing",
-    "item_ref",
-    "listing_id",
-    "marketplace",
-    "normalized_key",
-    "observed_at",
-    "price",
-    "price_eur",
-    "processed",
-    "provider",
-    "seen_at",
-    "seller_rating",
-    "seller_score",
-    "shipping",
-    "source",
-    "title",
-    "tx_id",
-    "url",
-    "url_hash",
-    "user_id"
   ],
   "market_observations": [
     "category",
@@ -1411,13 +1347,6 @@
     "segment_key",
     "updated_at"
   ],
-  "vision_category_regret": [
-    "category",
-    "computed_at",
-    "items_added",
-    "items_regretted",
-    "regret_rate_30d"
-  ],
   "build_paint_sessions": [
     "created_at",
     "id",
@@ -1716,29 +1645,6 @@
     "pinned",
     "user_id"
   ],
-  "price_predictions_y2026m08": [
-    "category",
-    "comps_count",
-    "conf_score",
-    "confidence",
-    "created_at",
-    "evidence_hit_ids",
-    "evidence_summary",
-    "explanation",
-    "generated_at",
-    "head",
-    "id",
-    "item_ref",
-    "model_version",
-    "nk",
-    "q10",
-    "q50",
-    "q90",
-    "raw",
-    "source",
-    "training_data_asof",
-    "ts"
-  ],
   "notification_impressions": [
     "client_context",
     "first_seen_at",
@@ -1757,18 +1663,16 @@
     "rarity_tier",
     "weight"
   ],
-  "price_history_y2026m08": [
-    "as_of",
-    "currency",
+  "ugc_accounts": [
+    "created_at",
+    "description",
+    "followers",
+    "handle",
     "id",
-    "item_id",
-    "item_ref",
-    "price",
-    "price_q10",
-    "price_q50",
-    "price_q90",
-    "snapshot_at",
-    "source"
+    "is_active",
+    "language",
+    "platform",
+    "updated_at"
   ],
   "projects_v1": [
     "created_at",
@@ -1797,6 +1701,33 @@
     "outcome",
     "user_id"
   ],
+  "ugc_swipe_file": [
+    "created_at",
+    "estimated_views",
+    "format",
+    "hook_text",
+    "hook_type",
+    "id",
+    "is_competitor",
+    "niche",
+    "platform",
+    "saved_by",
+    "source_account",
+    "tags",
+    "url",
+    "why_it_works"
+  ],
+  "content_batches": [
+    "actual_duration_mins",
+    "batch_date",
+    "created_at",
+    "estimated_duration_mins",
+    "id",
+    "notes",
+    "setup_type",
+    "status",
+    "title"
+  ],
   "chat_thread_members_v1": [
     "created_at",
     "role",
@@ -1814,15 +1745,37 @@
     "updated_at",
     "visibility"
   ],
-  "market_hits_daily": [
-    "comps_count",
-    "day",
-    "item_ref",
-    "latest_price",
-    "latest_seen_at",
-    "max_price",
-    "median_price",
-    "min_price"
+  "content_ideas": [
+    "account_id",
+    "affiliate_ready",
+    "boostable_reason",
+    "commerce_mode",
+    "concept",
+    "created_at",
+    "cta",
+    "estimated_duration",
+    "format",
+    "hashtags",
+    "hook",
+    "id",
+    "language_code",
+    "niche_id",
+    "objective_type",
+    "paid_candidate",
+    "pillar_id",
+    "presence_mode",
+    "priority",
+    "product_id",
+    "series_id",
+    "series_order",
+    "shot_list",
+    "status",
+    "target_completion_rate",
+    "target_keyword",
+    "target_save_rate",
+    "title",
+    "updated_at",
+    "voiceover"
   ],
   "wishlists": [
     "created_at",
@@ -1841,6 +1794,16 @@
     "priority",
     "series",
     "wishlist_id"
+  ],
+  "market_hits_daily": [
+    "comps_count",
+    "day",
+    "item_ref",
+    "latest_price",
+    "latest_seen_at",
+    "max_price",
+    "median_price",
+    "min_price"
   ],
   "chat_dm_requests_v1": [
     "context",
@@ -1873,6 +1836,61 @@
     "starts_at",
     "title",
     "url"
+  ],
+  "content_niches": [
+    "audience_tags",
+    "category_slug",
+    "created_at",
+    "emoji",
+    "id",
+    "is_active",
+    "name",
+    "personality_tags",
+    "price_range",
+    "short_description",
+    "slug",
+    "trending_topics"
+  ],
+  "content_pillars": [
+    "best_formats",
+    "best_presence",
+    "created_at",
+    "default_cta",
+    "description",
+    "emoji",
+    "id",
+    "is_active",
+    "name",
+    "slug",
+    "target_mix_pct"
+  ],
+  "content_products": [
+    "best_content_angles",
+    "category",
+    "created_at",
+    "description",
+    "id",
+    "is_active",
+    "name",
+    "slug",
+    "tier"
+  ],
+  "weekly_calendars": [
+    "batch_film_day",
+    "created_at",
+    "goal",
+    "id",
+    "notes",
+    "pillar_distribution",
+    "status",
+    "week_start"
+  ],
+  "admin_dev_hub": [
+    "created_at",
+    "data",
+    "id",
+    "item_type",
+    "updated_at"
   ],
   "item_extractions_v1": [
     "confidence_score",
@@ -2050,6 +2068,38 @@
     "listing_id",
     "user_id"
   ],
+  "market_hits_y2026m10": [
+    "attrs",
+    "category",
+    "condition",
+    "condition_grade",
+    "currency",
+    "ended_at",
+    "features_json",
+    "graded",
+    "id",
+    "image_url",
+    "is_listing",
+    "item_ref",
+    "listing_id",
+    "marketplace",
+    "normalized_key",
+    "observed_at",
+    "price",
+    "price_eur",
+    "processed",
+    "provider",
+    "seen_at",
+    "seller_rating",
+    "seller_score",
+    "shipping",
+    "source",
+    "title",
+    "tx_id",
+    "url",
+    "url_hash",
+    "user_id"
+  ],
   "user_feedback_events_v1": [
     "canonical_key",
     "category_slug",
@@ -2067,6 +2117,29 @@
     "status",
     "user_id",
     "value_json"
+  ],
+  "price_predictions_y2026m10": [
+    "category",
+    "comps_count",
+    "conf_score",
+    "confidence",
+    "created_at",
+    "evidence_hit_ids",
+    "evidence_summary",
+    "explanation",
+    "generated_at",
+    "head",
+    "id",
+    "item_ref",
+    "model_version",
+    "nk",
+    "q10",
+    "q50",
+    "q90",
+    "raw",
+    "source",
+    "training_data_asof",
+    "ts"
   ],
   "chat_thread_bans_v1": [
     "banned_by",
@@ -2087,6 +2160,19 @@
     "emoji",
     "message_id",
     "user_id"
+  ],
+  "price_history_y2026m10": [
+    "as_of",
+    "currency",
+    "id",
+    "item_id",
+    "item_ref",
+    "price",
+    "price_q10",
+    "price_q50",
+    "price_q90",
+    "snapshot_at",
+    "source"
   ],
   "categories_v1": [
     "brand_story_md",
@@ -2124,6 +2210,12 @@
   "condition_grade_weights_v1": [
     "condition_grade",
     "weight"
+  ],
+  "discogs_probe_misses": [
+    "item_ref",
+    "last_probed_at",
+    "misses",
+    "reason"
   ],
   "portfolio_valuations_v1": [
     "as_of_date",
@@ -2208,28 +2300,6 @@
     "uuid_id",
     "version"
   ],
-  "user_category_ownership": [
-    "acquired_at",
-    "category_item_id",
-    "created_at",
-    "id",
-    "notes",
-    "quantity",
-    "user_id"
-  ],
-  "user_price_alerts": [
-    "active",
-    "category",
-    "created_at",
-    "direction",
-    "id",
-    "item_id",
-    "last_triggered_at",
-    "metadata",
-    "threshold_value",
-    "trigger_type",
-    "user_id"
-  ],
   "marketplace_listings": [
     "account_id",
     "auction_duration_days",
@@ -2260,7 +2330,6 @@
     "photo_catalogue_consent",
     "price",
     "quantity",
-    "reports_count",
     "reserved_at",
     "reserved_offer_id",
     "returns_accepted",
@@ -2279,6 +2348,28 @@
     "user_id",
     "views_count",
     "watchers_count"
+  ],
+  "user_category_ownership": [
+    "acquired_at",
+    "category_item_id",
+    "created_at",
+    "id",
+    "notes",
+    "quantity",
+    "user_id"
+  ],
+  "user_price_alerts": [
+    "active",
+    "category",
+    "created_at",
+    "direction",
+    "id",
+    "item_id",
+    "last_triggered_at",
+    "metadata",
+    "threshold_value",
+    "trigger_type",
+    "user_id"
   ],
   "category_items": [
     "attributes_json",
@@ -2324,6 +2415,13 @@
     "notes",
     "version"
   ],
+  "beta_signups": [
+    "email",
+    "id",
+    "ip_address",
+    "referral_source",
+    "signed_up_at"
+  ],
   "mandate_deals": [
     "added_item_id",
     "affiliate_click",
@@ -2347,6 +2445,7 @@
     "listing_url",
     "mandate_id",
     "notified_at",
+    "policy_checks",
     "policy_passed",
     "policy_reasons",
     "predicted_q10",
@@ -2357,13 +2456,6 @@
     "purchased_at",
     "status",
     "user_id"
-  ],
-  "beta_signups": [
-    "email",
-    "id",
-    "ip_address",
-    "referral_source",
-    "signed_up_at"
   ],
   "purchase_mandates": [
     "allowed_sources",
@@ -2609,16 +2701,6 @@
     "current_count",
     "user_id"
   ],
-  "ugc_daily_snapshots": [
-    "comments",
-    "id",
-    "likes",
-    "saves",
-    "shares",
-    "snapshot_date",
-    "video_id",
-    "views"
-  ],
   "sets": [
     "category_id",
     "created_at",
@@ -2642,6 +2724,16 @@
     "position",
     "rarity",
     "set_id"
+  ],
+  "ugc_daily_snapshots": [
+    "comments",
+    "id",
+    "likes",
+    "saves",
+    "shares",
+    "snapshot_date",
+    "video_id",
+    "views"
   ],
   "user_set_progress": [
     "completion_pct",
@@ -2758,19 +2850,6 @@
     "rsvps",
     "updated_at"
   ],
-  "admin_content_config": [
-    "config_type",
-    "data",
-    "id",
-    "updated_at"
-  ],
-  "admin_dev_hub": [
-    "created_at",
-    "data",
-    "id",
-    "item_type",
-    "updated_at"
-  ],
   "ingest_runs_v1": [
     "config_json",
     "created_at",
@@ -2796,6 +2875,12 @@
     "source",
     "subtype_id",
     "taxonomy_version"
+  ],
+  "admin_content_config": [
+    "config_type",
+    "data",
+    "id",
+    "updated_at"
   ],
   "alert_trigger_history": [
     "alert_id",
@@ -2824,6 +2909,7 @@
     "line",
     "name",
     "notes",
+    "paint_recipes",
     "progress_pct",
     "stage",
     "status",
@@ -2835,23 +2921,6 @@
     "event_id",
     "notify_before_hours",
     "user_id"
-  ],
-  "ugc_pods": [
-    "color",
-    "created_at",
-    "description",
-    "id",
-    "is_active",
-    "language",
-    "name",
-    "target_videos_per_week"
-  ],
-  "ugc_pod_members": [
-    "creator_id",
-    "id",
-    "joined_at",
-    "pod_id",
-    "role"
   ],
   "ugc_content_pipeline": [
     "account_id",
@@ -2875,6 +2944,23 @@
     "title",
     "updated_at",
     "video_id"
+  ],
+  "ugc_pod_members": [
+    "creator_id",
+    "id",
+    "joined_at",
+    "pod_id",
+    "role"
+  ],
+  "ugc_pods": [
+    "color",
+    "created_at",
+    "description",
+    "id",
+    "is_active",
+    "language",
+    "name",
+    "target_videos_per_week"
   ],
   "spend_events": [
     "cost_eur",
@@ -2979,6 +3065,17 @@
     "scanned_at",
     "user_id"
   ],
+  "profiles": [
+    "avatar_color",
+    "avatar_url",
+    "bio",
+    "created_at",
+    "display_name",
+    "id",
+    "referred_by_code",
+    "seller_age_verified_at",
+    "username"
+  ],
   "ugc_video_audio": [
     "artist",
     "bpm",
@@ -2991,16 +3088,34 @@
     "s3_key",
     "title"
   ],
-  "profiles": [
-    "avatar_color",
-    "avatar_url",
-    "bio",
-    "created_at",
-    "display_name",
+  "ugc_tiktok_metrics": [
+    "avg_watch_time",
+    "comments",
+    "completion_rate",
     "id",
-    "referred_by_code",
-    "seller_age_verified_at",
-    "username"
+    "likes",
+    "profile_views",
+    "reach",
+    "retention_3s",
+    "shares",
+    "snapshot_at",
+    "tiktok_video_id",
+    "video_script_id",
+    "views"
+  ],
+  "ugc_video_learning": [
+    "avg_retention",
+    "avg_views",
+    "hits",
+    "hook_id",
+    "id",
+    "last_used",
+    "niche_id",
+    "score",
+    "template_id",
+    "trend",
+    "updated_at",
+    "uses"
   ],
   "ugc_video_scripts": [
     "ab_group",
@@ -3037,35 +3152,6 @@
     "views_2h",
     "views_total"
   ],
-  "ugc_tiktok_metrics": [
-    "avg_watch_time",
-    "comments",
-    "completion_rate",
-    "id",
-    "likes",
-    "profile_views",
-    "reach",
-    "retention_3s",
-    "shares",
-    "snapshot_at",
-    "tiktok_video_id",
-    "video_script_id",
-    "views"
-  ],
-  "ugc_video_learning": [
-    "avg_retention",
-    "avg_views",
-    "hits",
-    "hook_id",
-    "id",
-    "last_used",
-    "niche_id",
-    "score",
-    "template_id",
-    "trend",
-    "updated_at",
-    "uses"
-  ],
   "user_alert_preferences": [
     "frequency",
     "milestone_enabled",
@@ -3087,6 +3173,13 @@
     "updated_at",
     "user_id",
     "user_weight"
+  ],
+  "jsonb_double_encode_backup_20260823": [
+    "backed_up_at",
+    "col",
+    "original",
+    "pk",
+    "tbl"
   ],
   "ugc_videos": [
     "account_id",
@@ -3128,33 +3221,6 @@
     "views_24h",
     "views_2h",
     "views_total"
-  ],
-  "ugc_swipe_file": [
-    "created_at",
-    "estimated_views",
-    "format",
-    "hook_text",
-    "hook_type",
-    "id",
-    "is_competitor",
-    "niche",
-    "platform",
-    "saved_by",
-    "source_account",
-    "tags",
-    "url",
-    "why_it_works"
-  ],
-  "ugc_accounts": [
-    "created_at",
-    "description",
-    "followers",
-    "handle",
-    "id",
-    "is_active",
-    "language",
-    "platform",
-    "updated_at"
   ],
   "price_predictions_default": [
     "category",
@@ -3223,19 +3289,6 @@
     "signal_type",
     "user_id"
   ],
-  "creators": [
-    "affiliate_code",
-    "affiliate_payout_pct",
-    "cogs_per_kit_cents",
-    "created_at",
-    "handle",
-    "id",
-    "is_active",
-    "kits_sent",
-    "language",
-    "name",
-    "platform"
-  ],
   "subscriptions": [
     "cancel_at_period_end",
     "created_at",
@@ -3271,6 +3324,27 @@
     "takehome_percentage",
     "user_id"
   ],
+  "creators": [
+    "affiliate_code",
+    "affiliate_payout_pct",
+    "cogs_per_kit_cents",
+    "created_at",
+    "handle",
+    "id",
+    "is_active",
+    "kits_sent",
+    "language",
+    "name",
+    "platform"
+  ],
+  "item_images": [
+    "created_at",
+    "id",
+    "image_url",
+    "item_id",
+    "label",
+    "position"
+  ],
   "content_accounts": [
     "account_type",
     "content_focus",
@@ -3283,86 +3357,6 @@
     "platform",
     "posting_rules",
     "purpose"
-  ],
-  "content_pillars": [
-    "best_formats",
-    "best_presence",
-    "created_at",
-    "default_cta",
-    "description",
-    "emoji",
-    "id",
-    "is_active",
-    "name",
-    "slug",
-    "target_mix_pct"
-  ],
-  "content_niches": [
-    "audience_tags",
-    "category_slug",
-    "created_at",
-    "emoji",
-    "id",
-    "is_active",
-    "name",
-    "personality_tags",
-    "price_range",
-    "short_description",
-    "slug",
-    "trending_topics"
-  ],
-  "content_products": [
-    "best_content_angles",
-    "category",
-    "created_at",
-    "description",
-    "id",
-    "is_active",
-    "name",
-    "slug",
-    "tier"
-  ],
-  "content_ideas": [
-    "account_id",
-    "affiliate_ready",
-    "boostable_reason",
-    "commerce_mode",
-    "concept",
-    "created_at",
-    "cta",
-    "estimated_duration",
-    "format",
-    "hashtags",
-    "hook",
-    "id",
-    "language_code",
-    "niche_id",
-    "objective_type",
-    "paid_candidate",
-    "pillar_id",
-    "presence_mode",
-    "priority",
-    "product_id",
-    "series_id",
-    "series_order",
-    "shot_list",
-    "status",
-    "target_completion_rate",
-    "target_keyword",
-    "target_save_rate",
-    "title",
-    "updated_at",
-    "voiceover"
-  ],
-  "weekly_calendars": [
-    "batch_film_day",
-    "created_at",
-    "goal",
-    "id",
-    "notes",
-    "pillar_distribution",
-    "status",
-    "week_start"
   ],
   "calendar_items": [
     "account_id",
@@ -3378,6 +3372,15 @@
     "sort_order",
     "status"
   ],
+  "content_batch_items": [
+    "batch_id",
+    "created_at",
+    "id",
+    "idea_id",
+    "is_filmed",
+    "setup_notes",
+    "shot_order"
+  ],
   "generated_captions": [
     "account_id",
     "caption",
@@ -3392,34 +3395,6 @@
     "seo_keyword",
     "version"
   ],
-  "content_batches": [
-    "actual_duration_mins",
-    "batch_date",
-    "created_at",
-    "estimated_duration_mins",
-    "id",
-    "notes",
-    "setup_type",
-    "status",
-    "title"
-  ],
-  "content_batch_items": [
-    "batch_id",
-    "created_at",
-    "id",
-    "idea_id",
-    "is_filmed",
-    "setup_notes",
-    "shot_order"
-  ],
-  "item_images": [
-    "created_at",
-    "id",
-    "image_url",
-    "item_id",
-    "label",
-    "position"
-  ],
   "build_paint_steps": [
     "created_at",
     "description",
@@ -3431,10 +3406,26 @@
     "title",
     "updated_at"
   ],
+  "vision_category_regret": [
+    "category",
+    "computed_at",
+    "items_added",
+    "items_regretted",
+    "regret_rate_30d"
+  ],
+  "on_demand_lookups_audit": [
+    "cost_cents",
+    "fetched_at",
+    "id",
+    "item_ref",
+    "provider",
+    "user_id"
+  ],
   "items": [
     "acquired_condition",
     "acquired_from",
-    "acquisition_price",
+    "acquisition_fees",
+    "acquisition_fees_eur",
     "actual_price_eur",
     "ai_estimate_usd",
     "ai_label",
@@ -3442,14 +3433,10 @@
     "asking_currency",
     "asking_price",
     "attrs",
-    "authenticity_score",
     "brand",
-    "build_notes",
-    "build_state",
     "canonical_key",
     "canonical_ref",
     "category",
-    "checklist_item_id",
     "collection_name",
     "condition",
     "condition_grade",
@@ -3457,18 +3444,12 @@
     "confidence_score",
     "cost_basis",
     "created_at",
-    "date_completed",
-    "date_started",
     "description",
     "edition_label",
     "estimated_value",
     "for_sale",
-    "fraud_details",
-    "fraud_flags",
     "fts",
     "id",
-    "identity_locked",
-    "identity_locked_at",
     "image_path",
     "image_url",
     "is_first_edition",
@@ -3481,7 +3462,6 @@
     "name",
     "notes",
     "owner",
-    "paint_state",
     "predicted_price_eur",
     "prediction_confidence",
     "progress_notes",
@@ -3507,14 +3487,6 @@
     "verified_price",
     "year"
   ],
-  "on_demand_lookups_audit": [
-    "cost_cents",
-    "fetched_at",
-    "id",
-    "item_ref",
-    "provider",
-    "user_id"
-  ],
   "activity_feed": [
     "activity_type",
     "created_at",
@@ -3523,6 +3495,15 @@
     "is_public",
     "metadata",
     "title",
+    "user_id"
+  ],
+  "barcode_observations": [
+    "barcode",
+    "canonical_key",
+    "category",
+    "created_at",
+    "title",
+    "updated_at",
     "user_id"
   ]
 }
