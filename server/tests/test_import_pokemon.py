@@ -194,3 +194,50 @@ def test_the_oldest_set_is_not_always_last():
     sets = [{"id": f"s{i}"} for i in range(175)] + [{"id": "base1"}]
     positions = {[x["id"] for x in rotate_sets(sets, 739_000 + d)].index("base1") for d in range(3)}
     assert min(positions) < 176 // 3 + 1
+
+
+# ── The set list gates the whole category (2026-10-04) ──────────────────────
+# 3 of 6 nightlies lost Pokemon entirely to 5xx on /v2/sets with 3 attempts.
+# Drives the REAL fetch_json through a fake client, so the test fails if
+# fetch_sets stops passing its own retry budget.
+
+class _FakeClient:
+    def __init__(self, statuses):
+        self.statuses = list(statuses)
+        self.calls = 0
+
+    def get(self, url, params=None, headers=None):
+        import httpx
+        self.calls += 1
+        status = self.statuses.pop(0)
+        req = httpx.Request("GET", url)
+        if status == 200:
+            return httpx.Response(200, request=req,
+                                  json={"data": [{"id": "base1"}], "totalCount": 1})
+        return httpx.Response(status, request=req)
+
+
+def _run_fetch_sets(monkeypatch, statuses):
+    import pipelines.import_common as ic
+    import pipelines.import_pokemon as ip
+    client = _FakeClient(statuses)
+    monkeypatch.setattr(ic, "get_http_client", lambda: client)
+    monkeypatch.setattr(ic.time, "sleep", lambda s: None)
+    monkeypatch.setattr(ip.time, "sleep", lambda s: None)
+    ic._host_failures.clear()
+    try:
+        return ip.fetch_sets(), client
+    finally:
+        ic._host_failures.clear()
+
+
+def test_set_list_survives_five_server_errors(monkeypatch):
+    sets, client = _run_fetch_sets(monkeypatch, [500, 502, 500, 503, 500, 200])
+    assert [s["id"] for s in sets] == ["base1"]
+    assert client.calls == 6
+
+
+def test_set_list_retries_stay_under_the_circuit_limit():
+    import pipelines.import_common as ic
+    import pipelines.import_pokemon as ip
+    assert ip.SETS_FETCH_RETRIES < ic._HOST_FAIL_LIMIT

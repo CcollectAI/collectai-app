@@ -176,32 +176,50 @@ def _get_latest_run_id(conn: sqlite3.Connection) -> str | None:
 # Import runner
 # ---------------------------------------------------------------------------
 
+def pipeline_argv(dry_run: bool, cache_images: bool) -> list[str]:
+    """The argv every pipeline's own `parser.parse_args()` sees in this run."""
+    argv = ["import_all"]
+    if dry_run:
+        argv.append("--dry-run")
+    if cache_images:
+        argv.append("--cache-images")
+    return argv
+
+
 def run_import(module_name: str, category: str, description: str,
                dry_run: bool, cache_images: bool = False) -> tuple[bool, str]:
-    """Run a single import module. Returns (success, error_message)."""
+    """Run a single import module. Returns (success, error_message).
+
+    Does NOT touch `sys.argv`; `main()` sets it ONCE for the whole run (see
+    `pipeline_argv`). This used to swap the process-global argv per call and
+    restore it only on success. Under `--parallel 4` one thread's restore put
+    `--parallel 4` back while another pipeline was inside `parse_args()`, which
+    rejected it ("unrecognized arguments: --parallel 4") with SystemExit(2).
+    That is not an Exception, so it escaped through `future.result()` and
+    killed the 2026-10-02 nightly before the summary, the checkpoint close and
+    the HTTP client release. dry_run/cache_images are only for the log line;
+    every pipeline in a run gets the same flags.
+    """
     logger.info(f"{'='*60}")
     logger.info(f"  {category.upper()} - {description}")
     logger.info(f"{'='*60}")
 
     try:
-        # Save original argv and override
-        orig_argv = sys.argv
-        argv_extra = []
-        if dry_run:
-            argv_extra.append("--dry-run")
-        if cache_images:
-            argv_extra.append("--cache-images")
-        sys.argv = ["import_all", *argv_extra]
-
         mod = importlib.import_module(f"pipelines.{module_name}")
         mod.main()
-
-        sys.argv = orig_argv
         return True, ""
 
     except ModuleNotFoundError:
         msg = f"pipelines/{module_name}.py not yet implemented"
         logger.warning(f"SKIP: {msg}")
+        return False, msg
+    except SystemExit as e:
+        # A pipeline's argparse error or sys.exit() is ITS failure, not the
+        # run's: count it like any other and let the other categories finish.
+        if e.code in (0, None):
+            return True, ""
+        msg = f"pipeline exited with code {e.code}"
+        logger.error(f"FAILED {category}: {msg}")
         return False, msg
     except Exception as e:
         msg = str(e)
@@ -255,6 +273,11 @@ def main():
     start_time = datetime.now()
     results = {"success": [], "skipped": [], "failed": []}
     global_stats = IngestStats()
+
+    # One argv for every pipeline, set before any thread starts and restored
+    # after the last one finishes. See run_import for why it is not per call.
+    orig_argv = sys.argv
+    sys.argv = pipeline_argv(args.dry_run, args.cache_images)
 
     def _run_one(slug: str, module: str, desc: str) -> tuple[str, bool, str]:
         """Wrapper for parallel execution."""
@@ -329,6 +352,7 @@ def main():
                     time.sleep(0.5)
 
     elapsed = (datetime.now() - start_time).total_seconds()
+    sys.argv = orig_argv
 
     # Release ownership, then close for real. release_http_client() is safe to
     # call even when hold was never taken (the --category path).

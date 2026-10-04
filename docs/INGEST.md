@@ -531,6 +531,49 @@ Proved against a `git worktree` baseline rather than asserted:
 12 new tests; `4051 passed` on the full suite (the 12 errors are pre-existing
 and identical on the baseline worktree).
 
+### Two ways the nightly lost whole nights after the rotation fix (2026-10-04)
+
+**Where this runs.** `import_pokemon` (and every importer `import_all.py`
+lists) runs ONLY in GitHub Actions, in `.github/workflows/nightly-ingest.yml`
+(`0 3 * * *`, `python -m pipelines.import_all --parallel 4`), from the
+**default branch**, which is `feat/marketplace-and-target-hit` as of 10-04
+(`gh repo view --json defaultBranchRef`). The copy on EC2
+(`/opt/collectors/server/pipelines/import_pokemon.py`, April) is never
+executed; the bake does not import it. The 09-27 rotation fix IS on the
+default branch, and it works: on 10-04 the oldest last-seen set was 10-02, and
+base1/neo1/gym1/ecard1/ex1 had 1,756 rows since 10-01.
+
+But the nightly failed 4 of the 6 runs from 09-29 to 10-04, for two reasons:
+
+**1. The set list is one call that gates the whole category** (09-29, 10-01,
+10-04). `fetch_sets` used `fetch_json`'s defaults (3 attempts in ~3s). At
+pokemontcg.io's 5xx rate all three fail on roughly a third of nights, the run
+logs `FAILED pokemon: Server error '500/502' … /v2/sets`, and no set runs at
+all. Now `SETS_FETCH_RETRIES = 6`, `SETS_FETCH_DELAY_S = 2.0` (up to ~90s, for
+one GET a night). 6 stays under `INGEST_HOST_FAIL_LIMIT` (8), so this alone
+cannot open the circuit, and a test pins that. Test:
+`test_set_list_survives_five_server_errors` drives the real `fetch_json`
+through a fake client (5 × 5xx, then 200). It fails with retries = 3.
+
+**2. A race on `sys.argv` killed the run with exit code 2** (10-02).
+`run_import` set the process-global `sys.argv` per pipeline and restored it
+only on success. Under `--parallel 4`, one thread restored `… --parallel 4`
+while another pipeline was inside its own `parser.parse_args()`:
+`import_all.py: error: unrecognized arguments: --parallel 4`, which is
+`SystemExit(2)`. That is not an `Exception`, so it escaped through
+`future.result()` and ended the process before the summary, the checkpoint
+close and the HTTP client release. Now `main()` sets one argv for the whole
+run (`pipeline_argv`) and `run_import` never touches it, and a pipeline's
+`SystemExit` is counted as that pipeline's failure.
+`tests/test_import_all_argv.py`, with both halves proved by mutation
+(re-adding the per-call swap; dropping the `SystemExit` clause).
+
+**Falsifier for both:** `gh run list --workflow nightly-ingest.yml -L 7` after
+2026-10-05. A `FAILED pokemon … /v2/sets` should need ~6 consecutive 5xx, and
+`unrecognized arguments` should never appear again. A red run is still
+possible on a genuinely bad night; read its exit line with
+`./scripts/check_nightly_ingest.sh`.
+
 ### Prod auth refills itself with fixtures, because CI runs against prod (2026-09-06)
 
 Purging 24 synthetic accounts took prod from **30 users / 87 items to 6 / 17**.

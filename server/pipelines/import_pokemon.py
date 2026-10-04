@@ -38,6 +38,16 @@ API_KEY = os.getenv("POKEMONTCG_API_KEY", "")
 _HEADERS = {"X-Api-Key": API_KEY} if API_KEY else {}
 
 
+# The set list gates the whole category: if it fails, no set runs that night.
+# With fetch_json's default 3 attempts in ~3s, pokemontcg.io's 5xx rate made it
+# fail on 3 of 6 nightlies (09-29, 10-01, 10-04: "FAILED pokemon: 500/502 ...
+# /v2/sets"), every one exiting 1 with zero Pokemon rows. It is ONE idempotent
+# GET per night, so a longer wait costs the upstream nothing. 6 attempts stays
+# under INGEST_HOST_FAIL_LIMIT (8), so this alone cannot open the circuit.
+SETS_FETCH_RETRIES = 6
+SETS_FETCH_DELAY_S = 2.0   # backoff ~2,4,8,16,32s x jitter: up to ~90s total
+
+
 def fetch_sets(limit: int | None = None) -> list[dict]:
     """Fetch all Pokemon TCG sets."""
     sets = []
@@ -48,7 +58,7 @@ def fetch_sets(limit: int | None = None) -> list[dict]:
             "page": page,
             "pageSize": 250,
             "orderBy": "-releaseDate",
-        })
+        }, retries=SETS_FETCH_RETRIES, delay=SETS_FETCH_DELAY_S)
         page_data = data.get("data", [])
         if not page_data:
             break
