@@ -1418,8 +1418,8 @@ dies is therefore reported inside the aggregated "N categories have NO
 sold-comp source" MEDIUM, never as its own HIGH. The same short window also
 shrinks `sold_now` early in each month. Not fixed. **Falsifier:** `SELECT
 count(*) FROM market_hits WHERE seen_at < now() - interval '30 days'` → 0
-means the HIGH is blind. **Retention was raised to 2 on 2026-10-04** (live after the
-next bake restart; docs/MARKET_DATA.md). That brings back only PART of the
+means the HIGH is blind. **Retention was raised to 2 on 2026-10-04** (live since the
+12:42 bake restart that day; docs/MARKET_DATA.md). That brings back only PART of the
 window: `market_hits` will then reach 31–62 days back, so the 30–90d half sees
 between 1 and 32 days of data depending on the day of the month. The check
 can fire again but is weakest early in each month. A full fix would be to keep a small

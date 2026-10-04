@@ -176,8 +176,8 @@ now removed from SKIP_CATEGORIES so the main scrape covers them.
 > keeps the current month plus the previous one (31–62 days). `price_history`
 > and `price_predictions` stay at 1. September was already dropped (it is in
 > S3) and is not restored. The bake reads `.env` through systemd
-> `EnvironmentFile`, so the value applies only after a bake restart, and it
-> must happen before **2026-11-01**, when October would otherwise be dropped.
+> `EnvironmentFile`, so the value applies only after a bake restart: done
+> 2026-10-04 12:42 (9/9 gates PASS first; the new process's environ shows `=2`).
 > Falsifier: `sudo cat /proc/$(systemctl show -p MainPID --value
 > collectai-bake.service)/environ | tr '\0' '\n' | grep
 > RETENTION_MONTHS_MARKET` → `=2`; and on 2026-11-02, `SELECT min(seen_at)
