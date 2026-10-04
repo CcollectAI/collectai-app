@@ -161,6 +161,22 @@ proxy's `TABLES`.
 2026-09-27 demo data exists only behind that flag, and without it 8 of 18
 checks failed by default.
 
+`npm run test:tabs-real` needs the dashboard running (`npm run dev`, or set
+`ADMIN_BASE`). It logs in with `ADMIN_PIN`, runs the real readers through the
+`/api/admin/sb` proxy, records every request, and checks each source with
+`getZeroReason()`, which is the real "this tab fell back to zeros" signal.
+`isUsingDemoData()` is only true under the demo flag, so on its own it can never
+fail. It also asserts `kpi_events`/`orders` are never requested, with
+controls that fail if nothing was recorded. From 2026-09-27 to 10-04 it crashed
+on its first reader (no `window.location` after the proxy change). UGC wiring
+reads 365 days, because `ugc_videos` holds only seed rows from 2026-06-26 to
+07-19. That check starts failing again after 2027-06-26 unless real videos are
+posted.
+
+Every refusal from `/api/admin/sb` uses PostgREST's error shape (`code`,
+`message`), so a refused table or an expired session reads e.g.
+"ADMIN_PROXY_401: Not authenticated" instead of "undefined: undefined".
+
 ## Environment Variables
 
 ```env

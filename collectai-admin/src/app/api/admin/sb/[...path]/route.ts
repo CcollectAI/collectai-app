@@ -48,16 +48,27 @@ const NON_FILTER = new Set(["select", "order", "limit", "offset", "on_conflict",
 
 const PREFIX = "/api/admin/sb/rest/v1/";
 
+/**
+ * Every refusal from this route, in PostgREST's error shape. supabase-js reads
+ * `code` and `message`; with only `{ error }` the dashboard printed
+ * "ugc_swipe_file unreadable (undefined: undefined)" for a refused table, and
+ * would print the same for an expired session (found 2026-10-04 while
+ * mutation-testing test:tabs-real). `error` stays for callers that read it.
+ */
+function refuse(message: string, status: number): NextResponse {
+  return NextResponse.json(
+    { code: `ADMIN_PROXY_${status}`, message, error: message },
+    { status },
+  );
+}
+
 function guard(req: Request): NextResponse | null {
   const cfg = adminAuthConfigured();
   if (!cfg.ok) {
-    return NextResponse.json(
-      { error: `Admin auth not configured. Missing: ${cfg.missing.join(", ")}` },
-      { status: 503 },
-    );
+    return refuse(`Admin auth not configured. Missing: ${cfg.missing.join(", ")}`, 503);
   }
   if (!isAdminRequest(req)) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return refuse("Not authenticated (session expired? log in again)", 401);
   }
   return null;
 }
@@ -68,11 +79,11 @@ async function forward(req: Request): Promise<Response> {
 
   const url = new URL(req.url);
   if (!url.pathname.startsWith(PREFIX)) {
-    return NextResponse.json({ error: "Only table requests are proxied" }, { status: 404 });
+    return refuse("Only table requests are proxied", 404);
   }
   const table = url.pathname.slice(PREFIX.length);
   if (!TABLES.has(table)) {
-    return NextResponse.json({ error: `Table not allowed: ${table}` }, { status: 403 });
+    return refuse(`Table not allowed: ${table}`, 403);
   }
 
   // An unfiltered PATCH or DELETE rewrites the whole table. No dashboard call
@@ -80,7 +91,7 @@ async function forward(req: Request): Promise<Response> {
   if (req.method === "PATCH" || req.method === "DELETE") {
     const hasFilter = [...url.searchParams.keys()].some((k) => !NON_FILTER.has(k));
     if (!hasFilter) {
-      return NextResponse.json({ error: `${req.method} needs a row filter` }, { status: 400 });
+      return refuse(`${req.method} needs a row filter`, 400);
     }
   }
 
