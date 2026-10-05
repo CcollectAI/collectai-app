@@ -173,9 +173,48 @@ Then it is code-side and I will do it:
 
 | | |
 |---|---|
-| Applied on | _(not yet)_ |
-| Ticket number | _(none)_ |
-| Outcome | _(pending)_ |
+| Applied on | 2026-10-05 (Merle asked for access; channel not recorded) |
+| Ticket number | _(none recorded)_ |
+| Outcome | **not granted as of 2026-10-05 21:19 UTC** (scope check below) |
+
+### What our production keyset is granted (checked 2026-10-05, token service)
+
+| scope | API | granted |
+|---|---|---|
+| `api_scope` (base) | Browse search/getItem, Notification, Developer Analytics | ✅ |
+| `commerce.catalog.readonly` | Catalog | ❌ |
+| `buy.marketplace.insights` | Marketplace Insights (sold prices) | ❌ |
+| `buy.item.feed` | Feed v1 | ❌ |
+| `buy.marketing` | Marketing (most watched, similar items) | ❌ (also 403 errorId 1100) |
+| `buy.item.stream` | price/availability notifications | ❌ |
+| `buy.deal`, `buy.item.bulk` | Deal, Browse `getItems` | ❌ |
+
+Re-check with Step 1's command and the scope you care about: a token = granted.
+Two doors are documented and both may apply: eBay's Buy API requirements page
+says production Buy access is *"intended for eBay partners only. You must apply
+for production access through the eBay Partner Network"*; Step 2 above (verified
+2026-09-06) names the Application Growth Check for Limited Release APIs. We
+have been an EPN member since 2026-10-05 (campaign 5339218687).
+
+### Compliance in place (2026-10-05, commit e766df0c)
+
+- **Account deletion:** subscribed via the Notification API (topic
+  `MARKETPLACE_ACCOUNT_DELETION`, subscription `17457477-…`, destination
+  `10bf7948-…`, alert email ccollect.ai@gmail.com). eBay's live challenge
+  passed, and its test notification `2e302ad2…` was acknowledged. Endpoint:
+  `/ebay/marketplace-account-deletion` (`app/routes/ebay_notifications_router.py`).
+  We hold no eBay user data, so POSTs are acknowledged and logged by id only.
+  **The portal may still show an older opt-out; check Alerts & Notifications.**
+- **Daily cap:** `app/lib/ebay_quota.py` stops at 4,500 of 5,000 Browse calls,
+  metered on eBay's own count (`/developer/analytics/v1_beta/rate_limit/`).
+- **Affiliate URLs:** Browse sends `X-EBAY-C-ENDUSERCTX` with the campaign id,
+  and outbound links use eBay's `itemAffiliateWebUrl`.
+- **Retention correction:** Step 5's "cached for our one-month retention
+  window" is now two months (`PARTITION_RETENTION_MONTHS_MARKET_HITS=2`).
+
+Falsifiers: `grep ebay-notify /opt/collectors/bake.log` shows acknowledged
+notifications; `[ebay_quota] daily budget reached` must not appear on a
+normal day (~1,500 calls).
 
 ## If they say no
 
