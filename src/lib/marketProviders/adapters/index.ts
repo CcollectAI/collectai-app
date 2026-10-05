@@ -8,11 +8,9 @@
 import Constants from 'expo-constants';
 import { logger } from '@/lib/logger';
 import type { MarketProviderAdapter } from '../types';
-import { EbayAdapter } from './ebay-adapter';
 import { TCGPlayerAdapter } from './tcgplayer-adapter';
 
 // Re-export adapter classes
-export { EbayAdapter } from './ebay-adapter';
 export { TCGPlayerAdapter } from './tcgplayer-adapter';
 
 // ---------------------------------------------------------------------------
@@ -55,15 +53,9 @@ function getEnv(key: string): string | undefined {
 export function createAdapters(): MarketProviderAdapter[] {
   const adapters: MarketProviderAdapter[] = [];
 
-  // eBay — requires EBAY_CLIENT_ID + EBAY_CLIENT_SECRET
-  const ebayClientId = getEnv('EBAY_CLIENT_ID');
-  const ebayClientSecret = getEnv('EBAY_CLIENT_SECRET');
-  if (ebayClientId && ebayClientSecret) {
-    adapters.push(new EbayAdapter(ebayClientId, ebayClientSecret));
-    logger.info('[MarketAdapters] eBay adapter registered');
-  } else {
-    logger.debug('[MarketAdapters] eBay adapter skipped (missing credentials)');
-  }
+  // eBay: deliberately NOT a client adapter (removed 2026-10-05). It minted
+  // OAuth tokens with EBAY_CLIENT_SECRET, which must never ship in the app
+  // bundle. eBay is queried server-side only (server/app/agents/adapters/ebay_caller.py).
 
   // TCGPlayer — requires TCGPLAYER_BEARER_TOKEN
   const tcgToken = getEnv('TCGPLAYER_BEARER_TOKEN');

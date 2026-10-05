@@ -199,7 +199,10 @@ class DealDiscoveryAgent:
             #    report back to this exact deal (and thus user) for reconciliation.
             deal_id = str(uuid.uuid4())
             source = hit.get("source", "")
-            affiliate_url, affiliate_source = build_affiliate_url(hit_url, source, subid=deal_id)
+            # Tag eBay's own EPN link when Browse returned one. hit_url itself
+            # stays the clean listing URL: deal dedup keys on listing identity.
+            affiliate_url, affiliate_source = build_affiliate_url(
+                hit.get("affiliate_url") or hit_url, source, subid=deal_id)
 
             # 6. Prepare deal row for batch insert
             batch_rows.append(self._build_deal_row(

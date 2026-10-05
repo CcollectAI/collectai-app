@@ -215,6 +215,12 @@ def build_affiliate_url(
 
 def _tag_epn(url: str, campaign_id: str, subid: str) -> str | None:
     """Append eBay Partner Network params, with the rotation id of the URL's site."""
+    # Already an eBay-issued EPN link for OUR campaign (Browse's
+    # itemAffiliateWebUrl, which eBay says to use for API listings). Keep
+    # eBay's own params (toolid=10049 etc.) and set only our per-click sub-id;
+    # re-tagging would overwrite them with the hand-built 10001 set.
+    if parse_qs(urlparse(url).query).get("campid") == [campaign_id]:
+        return _append_params(url, {"customid": subid})
     host = (urlparse(url).hostname or "").lower()
     for prefix in ("www.", "m.", "befr.", "benl."):
         if host.startswith(prefix):

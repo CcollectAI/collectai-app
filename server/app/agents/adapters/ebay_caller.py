@@ -22,6 +22,8 @@ import httpx
 from app.config import USD_TO_EUR, GBP_TO_EUR, JPY_TO_EUR
 
 from app.config import EBAY_CLIENT_ID as _CFG_EBAY_CLIENT_ID, EBAY_CLIENT_SECRET as _CFG_EBAY_CLIENT_SECRET
+from app.config import EBAY_AFFILIATE_CAMPAIGN_ID as _CFG_EBAY_CAMPAIGN_ID
+from app.lib import ebay_quota
 from workers.circuit_breaker import ebay_circuit, CircuitOpenError
 
 logger = logging.getLogger(__name__)
@@ -196,6 +198,10 @@ def _normalize_browse_item(item: Dict[str, Any], rates: Dict[str, float] | None 
         "source_currency": converted.get("source_currency"),
         "sold_at": None,
         "url": item.get("itemWebUrl") or item.get("itemHref"),
+        # eBay's own EPN link, present when the request carried our campaign
+        # id (see search()). Outbound links use it; `url` stays the clean
+        # listing URL because deal dedup and market_hits key on it.
+        "affiliate_url": item.get("itemAffiliateWebUrl"),
         "condition": item.get("condition") or item.get("conditionId"),
         "image_url": (item.get("image") or {}).get("imageUrl"),
         "is_sold": False,
@@ -351,17 +357,28 @@ class EbayCaller:
             "limit": str(min(limit, 200)),
         }
 
+        # Daily budget, metered against eBay's own count (app/lib/ebay_quota).
+        if not await ebay_quota.allow_call(client, token):
+            return []
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-EBAY-C-MARKETPLACE-ID": marketplace_id,
+            "Content-Type": "application/json",
+        }
+        # eBay: EPN members "must pass in the values for affiliateCampaignId"
+        # to get itemAffiliateWebUrl, and "In order to receive a commission
+        # for your sales, you must use the URL returned in the
+        # itemAffiliateWebUrl field" (Browse API docs, read 2026-10-05).
+        if _CFG_EBAY_CAMPAIGN_ID:
+            headers["X-EBAY-C-ENDUSERCTX"] = (
+                f"affiliateCampaignId={_CFG_EBAY_CAMPAIGN_ID},affiliateReferenceId=sparrow"
+            )
+
         url = f"{EBAY_BROWSE_BASE}/item_summary/search"
         try:
-            resp = await client.get(
-                url,
-                params=params,
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "X-EBAY-C-MARKETPLACE-ID": marketplace_id,
-                    "Content-Type": "application/json",
-                },
-            )
+            ebay_quota.record_call()
+            resp = await client.get(url, params=params, headers=headers)
 
             if resp.status_code == 429:
                 retry_after = resp.headers.get("Retry-After", "unknown")

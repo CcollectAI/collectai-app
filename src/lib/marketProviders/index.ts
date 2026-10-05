@@ -36,7 +36,7 @@ export type {
 export { DEFAULT_AGGREGATOR_CONFIG } from './types';
 
 // Concrete adapter implementations
-export { EbayAdapter, TCGPlayerAdapter, createAdapters } from './adapters';
+export { TCGPlayerAdapter, createAdapters } from './adapters';
 
 /**
  * Aggregate search results from multiple providers.

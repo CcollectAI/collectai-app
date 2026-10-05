@@ -300,6 +300,11 @@ CATALOG_NEW_CATEGORY_THRESHOLD: int = int(os.getenv("CATALOG_NEW_CATEGORY_THRESH
 DEAL_DISCOVERY_ENABLED: bool = os.getenv("DEAL_DISCOVERY_ENABLED", "false").lower() in ("1", "true", "yes")
 DEAL_SCAN_INTERVAL_SECS: int = int(os.getenv("DEAL_SCAN_INTERVAL_SECS", "1800"))
 EBAY_AFFILIATE_CAMPAIGN_ID: str = os.getenv("EBAY_AFFILIATE_CAMPAIGN_ID", "")
+# eBay marketplace-account-deletion notifications (app/routes/ebay_notifications_router.py).
+# The endpoint must be the EXACT URL registered with eBay: it is part of the
+# challenge hash. The token is 32-80 chars of [A-Za-z0-9_-].
+EBAY_NOTIFICATION_ENDPOINT: str = os.getenv("EBAY_NOTIFICATION_ENDPOINT", "")
+EBAY_NOTIFICATION_VERIFICATION_TOKEN: str = os.getenv("EBAY_NOTIFICATION_VERIFICATION_TOKEN", "")
 TCGPLAYER_AFFILIATE_ID: str = os.getenv("TCGPLAYER_AFFILIATE_ID", "")  # Impact tracking link, 3.5%
 MERCARI_AFFILIATE_ID: str = os.getenv("MERCARI_AFFILIATE_ID", "")  # Impact tracking link
 STOCKX_AFFILIATE_ID: str = os.getenv("STOCKX_AFFILIATE_ID", "")  # Impact tracking link

@@ -31,6 +31,7 @@ tell "public by design" from "public by accident" without re-deriving it.
 | GET | `/sponsor-companies/{company_id}` | a sponsor's public profile |
 | GET | `/photos/view/{photo_key:path}` | **capability URL**: React Native's `<Image>` cannot send an Authorization header. `_PHOTO_KEY_RE` is the security boundary — see the handler's docstring |
 | POST | `/webhook`, `/revenuecat-webhook` | provider webhooks; each verifies its own signature/secret in the body |
+| GET, POST | `/ebay/marketplace-account-deletion` | eBay's mandatory account-deletion notifications (added 2026-10-05). GET answers eBay's challenge with `sha256(challenge_code + token + endpoint)`, which reveals nothing; POST only acknowledges (204), because we hold no eBay user data. See `app/routes/ebay_notifications_router.py` |
 | POST | `/api/beta-signup` | the landing page's form |
 | GET | `/api/imports/template` | the CSV import template |
 | GET | `/marketplace/health`, `/marketplace/adapter-health`, `/vision-predict/health`, `/vision-predict/categories`, `/pipeline/status` | health and reference |

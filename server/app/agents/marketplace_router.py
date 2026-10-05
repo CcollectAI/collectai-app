@@ -108,7 +108,10 @@ async def marketplace_search(
         for h in result.hits:
             raw_url = h.hit.get("url") or ""
             source_name = h.hit.get("source") or ""
-            aff_url, aff_source = build_affiliate_url(raw_url, source_name)
+            # eBay's own EPN link when Browse returned one; raw_url stays the
+            # clean listing URL for region detection and persistence.
+            aff_url, aff_source = build_affiliate_url(
+                h.hit.get("affiliate_url") or raw_url, source_name)
 
             # Detect listing region & estimate shipping
             listing_region = detect_listing_region(

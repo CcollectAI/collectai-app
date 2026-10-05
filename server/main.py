@@ -213,6 +213,7 @@ from app.routes.mfa_router import router as mfa_router
 from app.routes.beta_signup_router import router as beta_signup_router
 from app.routes.seed_router import router as seed_router
 from app.routes.affiliate_links_router import router as affiliate_links_router
+from app.routes.ebay_notifications_router import router as ebay_notifications_router
 from app.features.sponsor_router import router as sponsor_router
 from app.features.catalog_learning_router import router as catalog_learning_router
 from app.features.social_router import router as social_router
@@ -292,6 +293,8 @@ app.include_router(mfa_router)
 app.include_router(beta_signup_router)
 app.include_router(seed_router)
 app.include_router(affiliate_links_router)
+# eBay calls one fixed URL (/ebay/marketplace-account-deletion), so root only, no /v1 copy.
+app.include_router(ebay_notifications_router)
 app.include_router(sponsor_router)
 app.include_router(catalog_learning_router)
 app.include_router(social_router)
