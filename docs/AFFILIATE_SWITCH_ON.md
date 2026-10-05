@@ -55,6 +55,8 @@ own domain (`_source_from_host` in `affiliate.py`).
 
 **The signup checklist, in order, lives in `docs/OPEN_DECISIONS.md` #16.**
 
+**eBay switched on 2026-10-05.** Verified: live `/marketplace/affiliate-links` → eBay `affiliate_url` with `campid=5339218687&customid=sparrow&mkevt=1`, and a click wrote its `demand_signals` row (test row deleted). A scripted fetch of the tagged link gets 403, but so does eBay's plain homepage from `curl` (bot block), so the 403 says nothing about the tag. **Falsifier:** the EPN dashboard shows clicks within ~24h of a real tap from a phone. Do not buy through your own link (EPN policy).
+
 **To set on EC2**: add the value to `/opt/collectors/.env`, run the 9
 `ExecStartPre` stages by hand, restart bake, then check that
 `/marketplace/affiliate-links` returns a tagged `affiliate_url`.
@@ -201,7 +203,7 @@ MTG, Yu-Gi-Oh and Lorcana search ran against the Pokémon catalogue.
 
 | Step | State |
 |------|-------|
-| 1. Enroll networks | ⏳ your hands — all 16 vars empty on EC2 (checked 2026-09-28) |
+| 1. Enroll networks | ✅ eBay live 2026-10-05 (campaign 5339218687, Business account under the eenmanszaak); ⏳ Impact (TCGplayer/StockX/Whatnot), Partnerize (Catawiki), one aggregator: your hands |
 | 1b. Link formats checked against each network | ✅ 2026-09-28 for eBay / Impact / Partnerize; 7 unchecked (class AV) |
 | 1c. Every shop tap recorded | ✅ 2026-09-28, gate `check:affiliate-open` (class AW); needs a JS build |
 | 2. Rebrand + sub-ID | ✅ done, tests green |

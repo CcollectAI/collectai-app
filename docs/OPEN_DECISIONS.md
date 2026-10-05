@@ -12,9 +12,10 @@ _Opened 2026-09-26 from the Android walk rounds._
 _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in `docs/CLASS_SWEEPS.md`). #1–#12 are decided; each entry as opened is kept under **As opened** at the end._
 
 ### 16. Affiliate enrollment — **recommend: eBay Partner Network first, then one aggregator**
-- **State:** all 16 `*_AFFILIATE_*` vars empty on EC2 (checked 2026-09-28). eBay is 336,880 of ~360k outbound links in 30 d. Of 18 shops the app links to, 8 pay per sale (eBay, TCGplayer, StockX, Catawiki, Reverb, HLJ, Solaris Japan, Sideshow); Reverb/HLJ/Solaris/Sideshow have no tagger yet.
+- **✅ Step 1 done 2026-10-05:** eBay Partner Network, Business account under the eenmanszaak, campaign `5339218687` in `EBAY_AFFILIATE_CAMPAIGN_ID` (9/9 gates, bake restarted, the running process's environ has it). Live `/marketplace/affiliate-links` returns eBay links with `campid=5339218687`, `mkrid`, `customid`. Steps 2–4 below are still open.
+- **State (as opened):** all 16 `*_AFFILIATE_*` vars empty on EC2 (checked 2026-09-28). eBay is 336,880 of ~360k outbound links in 30 d. Of 18 shops the app links to, 8 pay per sale (eBay, TCGplayer, StockX, Catawiki, Reverb, HLJ, Solaris Japan, Sideshow); Reverb/HLJ/Solaris/Sideshow have no tagger yet.
 - **Do (your hands), in this order** — send the value in brackets; it goes in `/opt/collectors/.env`, no app build:
-  1. **eBay Partner Network** (partnernetwork.ebay.com) → Campaigns → create → [10-digit Campaign ID] → `EBAY_AFFILIATE_CAMPAIGN_ID`.
+  1. ~~**eBay Partner Network**~~ ✅ 2026-10-05 (see above).
   2. **Impact.com** as a Partner, then apply inside it to **TCGplayer**, **StockX** (and Whatnot — nothing links to it yet) → [each tracking link `https://<brand>.pxf.io/c/…/…/…`] → `TCGPLAYER_/STOCKX_/WHATNOT_AFFILIATE_ID`.
   3. **Catawiki via Partnerize** (join.partnerize.com/catawiki) → [`https://prf.hn/click/camref:…`] → `CATAWIKI_AFFILIATE_ID`.
   4. **Sovrn Commerce or Skimlinks** (one) → [account key] — covers Mercari, AmiAmi, Sideshow; its link format must be added in `affiliate.py` first.
