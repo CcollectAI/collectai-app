@@ -118,7 +118,7 @@ type ItemRow = {
  * of this read is ~0.55ms per item (EXPLAIN ANALYZE, per-partition
  * `item_ref` indexes), so a 20-item page costs ~11ms.
  */
-type ItemValue = { valueEur: number | null; source: string | null };
+type ItemValue = { valueEur: number | null; source: string | null; asOf: string | null };
 
 async function fetchItemValues(ids: string[]): Promise<Map<string, ItemValue>> {
   if (ids.length === 0) return new Map();
@@ -130,7 +130,10 @@ async function fetchItemValues(ids: string[]): Promise<Map<string, ItemValue>> {
       // `value_source` added 2026-08-19: the same CASE the view's COALESCE
       // already walks, so it costs nothing extra and is the only way the app
       // can tell a comp-backed number from a typed one.
-      .select('item_id, value_eur, value_source')
+      // `value_as_of` added 2026-10-06 (migration 20261006): the date behind a
+      // `catalog_price` value. ⚠️ The column must exist BEFORE a build that
+      // selects it ships, or this whole read errors and every value degrades.
+      .select('item_id, value_eur, value_source, value_as_of')
       .in('item_id', ids);
     if (error) {
       // best-effort: values degrade to the client-side chain below, which is
@@ -143,9 +146,14 @@ async function fetchItemValues(ids: string[]): Promise<Map<string, ItemValue>> {
     const out = new Map<string, ItemValue>();
     for (const row of (data ?? []) as {
       item_id: string; value_eur: number | null; value_source?: string | null;
+      value_as_of?: string | null;
     }[]) {
       if (typeof row.value_eur === 'number') {
-        out.set(row.item_id, { valueEur: row.value_eur, source: row.value_source ?? null });
+        out.set(row.item_id, {
+          valueEur: row.value_eur,
+          source: row.value_source ?? null,
+          asOf: row.value_as_of ?? null,
+        });
       }
     }
     return out;
@@ -266,7 +274,7 @@ function mapItemRow(r: ItemRow, resolvedValue?: number, valueSource?: string | n
  */
 export async function fetchItemValueById(
   itemId: string,
-): Promise<{ valueEur: number | null; source: string | null } | null> {
+): Promise<ItemValue | null> {
   const values = await fetchItemValues([itemId]);
   return values.get(itemId) ?? null;
 }

@@ -18,14 +18,12 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 import { useAppTheme } from '@/hooks/useAppTheme';
+import { formatValueAsOf } from '@/lib/valueSources';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
 
-/** Sources that rest on market data rather than on somebody's opinion. */
-const MARKET_SOURCES = new Set(['catalog_daily', 'catalog_model', 'quick_scan']);
-
-export function isMarketBacked(source?: string | null): boolean {
-  return !!source && MARKET_SOURCES.has(source);
-}
+// One list for the whole app (src/lib/valueSources.ts); re-exported so
+// existing imports of isMarketBacked from here keep working.
+export { isMarketBacked } from '@/lib/valueSources';
 
 type Descriptor = { label: string; tone: 'market' | 'estimate' };
 
@@ -37,6 +35,12 @@ export function describeValueSource(source?: string | null): Descriptor | null {
     case 'catalog_model':
     case 'quick_scan':
       return { label: 'Market estimate', tone: 'market' };
+    // The catalogue's own price (a median of recent listings and sales), used
+    // when no model value exists. NOT "Market estimate": it may be asking
+    // prices and months old, so it says what it is and, where there is room,
+    // when its data was last seen (2026-10-06).
+    case 'catalog_price':
+      return { label: 'Catalogue price', tone: 'market' };
     // The scan's own vision guess. NOT "your estimate" — the member did not
     // say it, and blaming them for the app's number is the wrong way round.
     case 'app_estimate':
@@ -56,15 +60,21 @@ interface ValueSourceChipProps {
   source?: string | null;
   /** Compact form for list rows: text only, no pill. */
   inline?: boolean;
+  /** `v_item_values_v1.value_as_of` (YYYY-MM-DD). Shown only for
+   *  `catalog_price`, and only in the full chip, as "· last seen 18 Aug". */
+  asOf?: string | null;
 }
 
 export const ValueSourceChip = React.memo(function ValueSourceChip({
   source,
   inline = false,
+  asOf = null,
 }: ValueSourceChipProps) {
   const { colors } = useAppTheme();
   const d = describeValueSource(source);
   if (!d) return null;
+  const seen = source === 'catalog_price' && !inline ? formatValueAsOf(asOf) : null;
+  const label = seen ? `${d.label} · last seen ${seen}` : d.label;
 
   /**
    * ONE treatment for every source (2026-08-20).
@@ -103,7 +113,7 @@ export const ValueSourceChip = React.memo(function ValueSourceChip({
         { backgroundColor: tint + '1E', borderColor: tint + '40' },
       ]}
     >
-      <Text style={[styles.chipText, { color: tint }]}>{d.label}</Text>
+      <Text style={[styles.chipText, { color: tint }]}>{label}</Text>
     </View>
   );
 });

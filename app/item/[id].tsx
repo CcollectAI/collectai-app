@@ -243,6 +243,8 @@ function ItemDetailScreen() {
     name?: string | null; category?: string | null; condition?: string | null;
     value?: number | null; imageUrl?: string | null; notes?: string | null;
     valueSource?: string | null;
+    /** `value_as_of`: the market-data date behind a `catalog_price` value. */
+    valueAsOf?: string | null;
     /** What the member typed — needed to offer "keep mine" against the comp. */
     userEstimate?: number | null;
     /** RAW cost basis + the currency it is in. The EUR half is deliberately
@@ -304,7 +306,7 @@ function ItemDetailScreen() {
       // at the client. Degrades to the row's own columns when the view cannot
       // answer, in the view's OWN rank order — a different order here would be
       // a fifth definition of value.
-      let viewValue: { valueEur: number | null; source: string | null } | null = null;
+      let viewValue: { valueEur: number | null; source: string | null; asOf: string | null } | null = null;
       try {
         viewValue = await fetchItemValueById(id);
       } catch (e) {
@@ -331,6 +333,7 @@ function ItemDetailScreen() {
           row.estimated_value ??
           null,
         valueSource: viewValue?.source ?? null,
+        valueAsOf: viewValue?.asOf ?? null,
         userEstimate: row.estimated_value ?? row.predicted_price_eur ?? null,
         purchasePrice: row.purchase_price ?? null,
         // RAW half, like purchasePrice: the field is denominated in
@@ -1389,7 +1392,7 @@ function ItemDetailScreen() {
                       {/* currency-ok: editableValue is in the member's currency (seeded via toMemberNumber) */}
                       {formatPrice(toNum(editableValue), settings.currency)}
                     </Text>
-                    {savedCore?.valueSource ? <ValueSourceChip source={savedCore.valueSource} /> : null}
+                    {savedCore?.valueSource ? <ValueSourceChip source={savedCore.valueSource} asOf={savedCore.valueAsOf} /> : null}
                   </>
                 )}
               </View>

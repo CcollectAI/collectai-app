@@ -1,3 +1,5 @@
+import { MARKET_VALUE_SOURCES } from '@/lib/valueSources';
+
 export interface PortfolioLikeItem {
   id: string;
   name: string;
@@ -30,7 +32,8 @@ function toNumber(value: unknown): number {
 /** Value sources that rest on market data rather than on somebody's opinion.
  *  Must match MARKET_SOURCES in src/components/ValueSourceChip.tsx and
  *  server/tests/test_leaderboard_value_parity.py. */
-const MARKET_SOURCES = new Set(['catalog_daily', 'catalog_model', 'quick_scan']);
+// The shared list (src/lib/valueSources.ts); was a third copy until 2026-10-06.
+const MARKET_SOURCES = MARKET_VALUE_SOURCES;
 
 export interface PortfolioValueSplit {
   /** What the member PAID, where a purchase price is on file. A fact. */

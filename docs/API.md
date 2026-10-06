@@ -129,7 +129,8 @@ for another (added 2026-07-28 and 2026-08-19):
 |---|---|
 | `current_value` | the canonical chain: catalog model → quick valuation → the member's own numbers |
 | `has_purchase_price` | **false ⇒ `unrealized_pl` is model drift, not profit.** The server falls back to the earliest prediction as cost basis when no purchase price is on file. Never sum P/L across items without checking it |
-| `value_source` | which link produced `current_value`: `catalog_model` / `catalog_daily` / `quick_scan` are comp-backed; `user_estimate` / `app_estimate` are numbers nobody checked; `none` means nothing answered |
+| `value_source` | which link produced `current_value`: `catalog_model` / `catalog_daily` / `quick_scan` are comp-backed; **`catalog_price`** (2026-10-06) is the catalogue's own price, used only when no model value exists and the item's market data is from the current calendar year (it may be listing prices); `user_estimate` / `app_estimate` are numbers nobody checked; `none` means nothing answered |
+| `value_as_of` | `YYYY-MM-DD` for `catalog_price` (the latest `market_hits_daily.day` behind it, shown as "last seen"), `null` for every other source |
 
 An **absent** `value_source` (an older server build) must be read as *unknown*,
 never as market — the conservative side is the one that under-claims.

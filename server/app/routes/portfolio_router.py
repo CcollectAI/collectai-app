@@ -589,6 +589,9 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     -- Provenance from the SAME call, so the label can never
                     -- describe a number the caller did not use.
                     iv.value_source,
+                    -- Market-data date behind a 'catalog_price' value, NULL
+                    -- for every other source (migration 20261006).
+                    iv.value_as_of,
                     -- WHICH SET THIS ITEM BELONGS TO, AND HOW BIG THAT SET IS.
                     --
                     -- app/sets-to-complete.tsx has always mapped `collection`,
@@ -732,6 +735,8 @@ async def portfolio_items(user_id: str = Depends(get_current_user_id)) -> dict:
                     # caller must not add it to a figure it calls "market
                     # value" — see docs/ARCHITECTURE.md value-sources.
                     "value_source": r["value_source"],
+                    # YYYY-MM-DD for 'catalog_price' ("last seen"), else None.
+                    "value_as_of": r["value_as_of"].isoformat() if r["value_as_of"] else None,
                     # 'US' | 'EU' | 'mixed' | None. None means we could not
                     # tell, NOT that it is domestic -- see comp_market.py.
                     "market": item_market,

@@ -621,9 +621,21 @@ COALESCE already walks, so no storage and no backfill:
 
 ```
 catalog_daily | quick_scan | catalog_model   -> comp/model-backed
+catalog_price                                -> catalogue price, no model value;
+                                                data from this calendar year
+                                                (2026-10-06, migration 20261006)
 user_estimate | app_estimate                 -> nobody checked it
 none                                         -> nothing answered; value is 0
 ```
+
+`catalog_price` closes "€870 in the catalogue, Not priced yet in my
+collection" for items whose sold data stopped (TCGplayer feed blocked since
+2026-07-29, LEGO and ~50 categories without a sold source). It counts as
+market-derived in the app (`src/lib/valueSources.ts`, now the ONE client list)
+but is NOT in the leaderboard's server list, because it may be asking prices.
+`value_as_of` carries its date, so the chip says "Catalogue price · last seen
+18 Aug". The calendar-year cutoff is one expression in the function; on
+1 January it drops last year's prices back to `none` at once.
 
 Before this, a EUR 185 backed by twelve sold comps and a EUR 185 someone typed
 were the same pixels. That is hardest to see exactly where it matters most: in

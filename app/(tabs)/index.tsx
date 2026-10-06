@@ -65,6 +65,7 @@ import { AddMenuModal } from "@/components/home/AddMenuModal";
 import { ValueSavedBanner } from "@/components/ValueSavedBanner";
 import { useValueSummary } from "@/hooks/useValueSummary";
 import { radius, spacing, text, fontWeight, gap, shadow } from '@/theme/tokens';
+import { MARKET_VALUE_SOURCES } from '@/lib/valueSources';
 
 // Real backend whenever mode is not "mock" / "off". `eas.json` ships
 // production builds with mode=`strict` (per src/api/config.ts guidance);
@@ -540,7 +541,7 @@ function PortfolioScreen() {
     if (!items.some((it) => typeof it.valueSource === 'string' && it.valueSource)) {
       return null;
     }
-    const MARKET = new Set(['catalog_daily', 'catalog_model', 'quick_scan']);
+    const MARKET = MARKET_VALUE_SOURCES; // shared list, src/lib/valueSources.ts
     let total = 0;
     let count = 0;
     for (const it of items) {
