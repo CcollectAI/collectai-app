@@ -180,15 +180,18 @@ async def portfolio_timeseries(
                         -- output joined by canonical_ref, quick_predictions is
                         -- per-item QuickScan output joined by item_id. Using
                         -- either alone zeroes the other group.
-                        COALESCE(
-                            (SELECT qp.q50_eur FROM quick_predictions qp
-                              WHERE qp.item_id = i.id
-                              ORDER BY qp.created_at DESC LIMIT 1),
-                            i.predicted_price_eur,
-                            i.estimated_value,
-                            0
-                        ) AS stored_value
+                        --
+                        -- Since 2026-10-06 this IS public.item_value_v1. It was
+                        -- a hand-rolled copy (snapshot -> typed -> 0) and missed
+                        -- the catalogue-price link added that day, so the curve
+                        -- and the Home headline read EUR 1.749 while the same
+                        -- account's breakdown and total read EUR 6.587 (6 of 9
+                        -- demo items are catalogue-priced). An item WITH a model
+                        -- prediction never reaches this value: per_day carries
+                        -- its last prediction into every day of the window.
+                        COALESCE(iv.value_eur, 0) AS stored_value
                     FROM items i
+                    LEFT JOIN LATERAL public.item_value_v1(i) iv ON TRUE
                     WHERE i.user_id = $1 AND NOT i.archived
                 ),
                 -- One prediction per item per day (the last of that day), so a
@@ -864,15 +867,7 @@ async def portfolio_category_stats(
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 """
-                WITH latest AS (
-                    SELECT DISTINCT ON (pp.item_ref)
-                        pp.item_ref, pp.q50, pp.generated_at
-                    FROM price_predictions pp
-                    JOIN items i ON i.canonical_ref = pp.item_ref
-                    WHERE i.user_id = $1
-                    ORDER BY pp.item_ref, pp.generated_at DESC
-                ),
-                prev_7d AS (
+                WITH prev_7d AS (
                     SELECT DISTINCT ON (pp.item_ref)
                         pp.item_ref, pp.q50 AS q50_7d
                     FROM price_predictions pp
@@ -909,17 +904,17 @@ async def portfolio_category_stats(
                 valued AS (
                     SELECT
                         COALESCE(NULLIF(i.category, ''), 'uncategorized') AS category,
-                        COALESCE(
-                            l.q50,
-                            (SELECT qp.q50_eur FROM quick_predictions qp
-                              WHERE qp.item_id = i.id
-                              ORDER BY qp.created_at DESC LIMIT 1),
-                            i.predicted_price_eur,
-                            i.estimated_value
-                        ) AS value_eur,
-                        p.q50_7d
+                        -- public.item_value_v1 since 2026-10-06 (it was a
+                        -- hand-rolled copy that missed the catalogue-price link
+                        -- and the member's 'mine' choice). 'none' -> NULL keeps
+                        -- the no-zero rule above.
+                        CASE WHEN iv.value_source <> 'none' THEN iv.value_eur END AS value_eur,
+                        -- The 7-day change compares model with model only: a
+                        -- member's own number or a catalogue price minus a
+                        -- 7-day-old MODEL price is not a market move.
+                        CASE WHEN iv.value_source = 'catalog_model' THEN p.q50_7d END AS q50_7d
                     FROM items i
-                    LEFT JOIN latest l ON l.item_ref = i.canonical_ref
+                    LEFT JOIN LATERAL public.item_value_v1(i) iv ON TRUE
                     LEFT JOIN prev_7d p ON p.item_ref = i.canonical_ref
                     WHERE i.user_id = $1 AND NOT i.archived
                 )

@@ -1313,6 +1313,33 @@ async def collect_findings(c, hours: int) -> tuple[list, list]:
     except Exception:
         pass
 
+    # --- Home headline == collection total (timeseries invariant) -----------
+    # The gate existed since 2026-09-12 but ran only by hand. On 2026-10-06 a
+    # new item_value_v1 link (catalog_price) went live, the timeseries kept its
+    # own copy of the chain, and Home read EUR 1.749 above a EUR 6.587 total for
+    # the App Review demo account — found by eye on a screenshot, not by this.
+    # Exit 0 pass, 1 drift, 2 could not run (never read as a pass).
+    try:
+        import subprocess
+        r = subprocess.run(["/opt/collectors/.venv/bin/python",
+                            "/opt/collectors/server/scripts/check_timeseries_invariant.py"],
+                           capture_output=True, text=True, timeout=300)
+        if r.returncode == 1:
+            bug("high", "Home headline disagrees with the collection total",
+                "check_timeseries_invariant FAILS — the chart's last point is not the "
+                "item_value_v1 total, so Home shows two different values on one screen. "
+                "Usually a value-chain change that one hand-written query did not get.\n"
+                + r.stdout[-900:],
+                src_link("server/app/routes/portfolio_router.py"),
+                "/opt/collectors/.venv/bin/python /opt/collectors/server/scripts/check_timeseries_invariant.py",
+                "Make the per-item value in /portfolio/timeseries public.item_value_v1")
+        elif r.returncode == 0:
+            healthy.append({"check": "timeseries invariant", "detail": r.stdout.strip()[-160:]})
+        else:
+            bug("info", "timeseries invariant could not run", (r.stdout + r.stderr)[-300:])
+    except Exception as e:
+        bug("info", "timeseries invariant could not run", str(e)[:200])
+
     # --- DAC7: who is over the line, and who is about to be -----------------
     #
     # THE GAP THIS CLOSES: `_dac7_accrue` notifies the SELLER when they cross and

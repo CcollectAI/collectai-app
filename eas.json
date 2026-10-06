@@ -11,7 +11,9 @@
         "simulator": true
       },
       "env": {
-        "EXPO_PUBLIC_SUPABASE_MODE": "mock"
+        "EXPO_PUBLIC_SUPABASE_MODE": "mock",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "SENTRY_ALLOW_FAILURE": "true"
       }
     },
     "development-device": {

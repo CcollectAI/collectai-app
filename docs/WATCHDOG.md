@@ -60,7 +60,9 @@ purpose.
    groups).
 3. **Live health checks** — CHECK-constraint vs code drift, RLS gaps,
    worker/cron failure rates, ingest freshness, partition runway,
-   `schema.lock` staleness.
+   `schema.lock` staleness, and the Home headline invariant
+   (`server/scripts/check_timeseries_invariant.py`, HIGH on drift, since
+   2026-10-06 — see the section at the end).
 4. **Supabase Logflare** — `postgres_logs`, `edge_logs`, `auth_logs` via the
    Management API.
 
@@ -1499,3 +1501,22 @@ All three are advisory (`audit_postgrest_selects.py` exits 1 only under
 backlog, and a blocking gate would wedge every deploy until that backlog is
 zero. Flip `--strict` on once the findings list is empty — for the PostgREST
 audit that list **is** empty as of 2026-09-05, so it is the first candidate.
+
+## A gate that runs by hand did not run (2026-10-06)
+
+`check_timeseries_invariant.py` (the last point of `/portfolio/timeseries` must
+equal the `item_value_v1` total) existed since 2026-09-12 but was only ever run
+by hand. On 2026-10-06 migration `20261006_item_value_v1_catalog_price` added a
+link to `item_value_v1`; `/portfolio/timeseries` and `/portfolio/category-stats`
+still carried their own copy of the chain, so Home read **EUR 1.749** in the
+headline above a **EUR 6.587** total for the App Review demo account. It was
+found by eye on an iPad screenshot, not by the gate.
+
+Measured the same evening, prod, gate against the committed query: FAIL, 10
+ranges, two accounts (demo off by 4837.75, a real member by 43.54). Against the
+fixed query (both now `LEFT JOIN LATERAL public.item_value_v1(i)`): PASS, 4
+accounts. The watchdog now runs it daily: exit 1 -> HIGH, exit 2 -> info
+("could not run", never read as a pass).
+
+Re-test: `/opt/collectors/.venv/bin/python /opt/collectors/server/scripts/check_timeseries_invariant.py`
+with `/opt/collectors/.env` loaded, expect `PASS` and exit 0.
