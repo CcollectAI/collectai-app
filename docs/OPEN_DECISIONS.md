@@ -13,6 +13,7 @@ _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in 
 
 ### 16. Affiliate enrollment — **recommend: eBay Partner Network first, then one aggregator**
 - **✅ Step 1 done 2026-10-05:** eBay Partner Network, Business account under the eenmanszaak, campaign `5339218687` in `EBAY_AFFILIATE_CAMPAIGN_ID` (9/9 gates, bake restarted, the running process's environ has it). Live `/marketplace/affiliate-links` returns eBay links with `campid=5339218687`, `mkrid`, `customid`. Steps 2–4 below are still open.
+- **⏸ PARKED 2026-10-06 (Merle: "not worth it for now").** Impact signup landed in Trackonomics and its brand search showed none of the brands; TCGplayer's direct join link is `app.impact.com/campaign-campaign-info-v2/TCGplayer.brand?io=…` (from docs.tcgplayer.com), StockX applies via stockx.com/news/stockx-affiliate-program. Whatnot needs 1,000+ social followers, so skip it. Re-open when outbound clicks justify it: `SELECT count(*) FROM demand_signals WHERE signal_type='affiliate_click' AND created_at > now() - interval '30 days'` (7 clicks ever on 10-05).
 - **State (as opened):** all 16 `*_AFFILIATE_*` vars empty on EC2 (checked 2026-09-28). eBay is 336,880 of ~360k outbound links in 30 d. Of 18 shops the app links to, 8 pay per sale (eBay, TCGplayer, StockX, Catawiki, Reverb, HLJ, Solaris Japan, Sideshow); Reverb/HLJ/Solaris/Sideshow have no tagger yet.
 - **Do (your hands), in this order** — send the value in brackets; it goes in `/opt/collectors/.env`, no app build:
   1. ~~**eBay Partner Network**~~ ✅ 2026-10-05 (see above).
