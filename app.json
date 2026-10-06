@@ -79,7 +79,7 @@
     "ios": {
       "bundleIdentifier": "io.sparrowcollect.app",
       "buildNumber": "101",
-      "supportsTablet": true,
+      "supportsTablet": false,
       "usesAppleSignIn": true,
       "associatedDomains": [
         "applinks:sparrowcollect.com",

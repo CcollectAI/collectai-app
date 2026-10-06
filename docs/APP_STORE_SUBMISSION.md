@@ -86,7 +86,7 @@ local build — if it starts asking questions, something changed upstream.
 |--------|-----------|-----------|
 | iPhone 6.9" (16 Pro Max) | 1320 x 2868 | Yes |
 | iPhone 6.7" (15 Plus / 14 Pro Max) | 1290 x 2796 | Yes |
-| iPad Pro 13" | 2064 x 2752 | Yes (supportsTablet: true) |
+| iPad Pro 13" | 2064 x 2752 | No — `supportsTablet: false` since 2026-10-07 (iPhone-only launch; iPads run the iPhone app). Turning it back on makes this row required again. |
 
 Minimum 3 screenshots per device size, recommended 6-10.
 
