@@ -4,6 +4,25 @@
 
 ---
 
+## ▶ ASC STATE READ VIA THE API, 2026-10-06 (supersedes the block below)
+
+Read with `docs/ASC_API_KEY.md`'s key, not from memory:
+
+| | State |
+|---|---|
+| Name / subtitle / keywords / promo / description | ✅ in ASC, **identical** to `docs/app-store-aso.md` (diffed field by field) |
+| Categories | ✅ Lifestyle + **Shopping** (secondary set 10-06) |
+| Support / marketing / privacy URLs, copyright, age rating 12+ | ✅ (all three URLs return 200) |
+| Release type | ✅ **MANUAL** (set 10-06) |
+| iPhone screenshots (APP_IPHONE_67, 1320x2868) | ✅ 6 uploaded 10-06 from `collectai-admin/video/out/screenshots/` |
+| **iPad screenshots** | ❌ required because `app.json` has `ios.supportsTablet: true`; none exist |
+| Subscriptions `sparrow_pro_monthly` / `_yearly` | ✅ READY_TO_SUBMIT, review screenshots present; attach them on the version page |
+| Review contact | ✅ Merle; demo account name set to `apple-review@sparrowcollect.com` (was `simcheck@sparrowcollect.test`); **password must be entered by hand** |
+| Build on version 1.0 | ❌ none attached; 161/162/163 are VALID, but 65 client commits landed after 161 |
+| App Privacy labels | ⏳ UI only, no API |
+
+Re-check: `scratchpad/asc_snapshot.py`-style reads (`GET /apps/6767359453/appStoreVersions`, …).
+
 ## ▶ STATUS AS OF 2026-08-02 — read before trusting anything below
 
 The session log below stops at **2026-05-20** and still calls build #14 "in
