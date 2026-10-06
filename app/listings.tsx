@@ -34,6 +34,7 @@ import {
   Animated,
   Alert,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
@@ -79,10 +80,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 
-const NUM_COLUMNS = 2;
+/**
+ * Columns follow the screen width (2026-10-07). This was a fixed 2 with
+ * `flex: 1` tiles: on a 13" iPad (1032pt portrait) each tile was ~500pt wide
+ * at 4:5, two tiles filled the screen, and an ODD last listing took the whole
+ * row — one image ~1450pt tall. Phones (< 700pt) keep 2.
+ */
+const GRID_GUTTER = 16;
+const GRID_GAP = 12;
+function gridColumns(width: number): number {
+  if (width >= 1000) return 4;
+  if (width >= 700) return 3;
+  return 2;
+}
 
-/** 12 rows of a 2-column grid. Divisible by NUM_COLUMNS so a full page never
- *  leaves a half-filled last row mid-list, which reads as the end of the data. */
+/** Divisible by every column count above (2, 3, 4) so a full page never leaves
+ *  a half-filled last row mid-list, which reads as the end of the data. */
 const PAGE_SIZE = 24;
 
 // The filter chips are no longer a static list of all app categories — they
@@ -148,8 +161,12 @@ function ListingCard({
   currency,
   fxRates,
   numberLocale,
+  width,
 }: {
   listing: P2PListing;
+  /** Fixed tile width from the grid. NOT `flex: 1`: a flex tile alone on the
+   *  last row stretched to the full row width. */
+  width: number;
   onPress: () => void;
   /** Omitted → no share affordance. Keeps the card usable anywhere the sheet
    *  is not mounted, rather than rendering a button that does nothing. */
@@ -173,7 +190,7 @@ function ListingCard({
   return (
     <AnimatedPressable
       onPress={onPress}
-      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+      style={[styles.card, { width, backgroundColor: colors.card, borderColor: colors.border }]}
       accessibilityRole="button"
       accessibilityLabel={`${listing.title}, ${priceLabel}`}
     >
@@ -723,10 +740,17 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
     [shareFor, settings.currency, settings.fxRates, settings.numberLocale],
   );
 
+  const { width: windowWidth } = useWindowDimensions();
+  const numColumns = gridColumns(windowWidth);
+  const tileWidth = Math.floor(
+    (windowWidth - GRID_GUTTER * 2 - GRID_GAP * (numColumns - 1)) / numColumns,
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: P2PListing }) => (
       <ListingCard
         listing={item}
+        width={tileWidth}
         currency={settings.currency}
         fxRates={settings.fxRates}
         numberLocale={settings.numberLocale}
@@ -737,7 +761,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
     // fxRates belongs here: SettingsProvider swaps it in when live rates
     // arrive, and without the dep every tile would keep formatting against the
     // rates that happened to be loaded when the screen mounted.
-    [openListing, onShareListing, settings.currency, settings.fxRates, settings.numberLocale],
+    [openListing, onShareListing, settings.currency, settings.fxRates, settings.numberLocale, tileWidth],
   );
 
   return (
@@ -1004,10 +1028,10 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
         // jolt — the skeleton's job is to hold the shape the content will
         // take, otherwise it adds a flicker instead of hiding one.
         <View style={styles.skeletonWrap}>
-          {[0, 1, 2, 3].map((i) => (
+          {Array.from({ length: numColumns * 2 }, (_, i) => (
             <View
               key={i}
-              style={[styles.skeletonCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+              style={[styles.skeletonCard, { width: tileWidth, backgroundColor: colors.card, borderColor: colors.border }]}
             >
               <View style={[styles.skeletonThumb, { backgroundColor: colors.border + '55' }]} />
               <View style={styles.skeletonBody}>
@@ -1040,7 +1064,10 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
           data={listings}
           keyExtractor={(l) => l.id}
           renderItem={renderItem}
-          numColumns={NUM_COLUMNS}
+          // FlatList cannot change numColumns on a mounted list; a new key
+          // remounts it when an iPad rotates or enters split view.
+          key={`cols-${numColumns}`}
+          numColumns={numColumns}
           columnWrapperStyle={styles.column}
           // QuickNavBar is absolute and reserves no layout space.
           contentContainerStyle={[styles.list, { paddingBottom: bottomInset }]}
@@ -1334,10 +1361,10 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: textToken.md, padding: 0 },
   skeletonWrap: {
     flexDirection: 'row', flexWrap: 'wrap',
-    paddingHorizontal: 16, gap: 12,
+    paddingHorizontal: GRID_GUTTER, gap: GRID_GAP,
   },
   skeletonCard: {
-    width: '47%', borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: radius.md, overflow: 'hidden', marginBottom: 14,
   },
   skeletonThumb: { width: '100%', aspectRatio: 4 / 5 },
@@ -1345,14 +1372,13 @@ const styles = StyleSheet.create({
   skeletonLine: { height: 10, borderRadius: 4, width: '85%' },
   skeletonLineShort: { height: 13, borderRadius: 4, width: '55%' },
   resultCount: { fontSize: textToken.xs, paddingHorizontal: 16, paddingBottom: 6 },
-  list: { paddingHorizontal: 16, paddingTop: 2 },
-  column: { gap: 12 },
+  list: { paddingHorizontal: GRID_GUTTER, paddingTop: 2 },
+  column: { gap: GRID_GAP },
   // Elevation over a hairline border: a flat outlined tile reads as a
   // placeholder, a lifted one reads as a product. shadow.card is the repo's
   // existing token, so this matches every other surface rather than inventing
   // a new depth.
   card: {
-    flex: 1,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: radius.md,
     overflow: 'hidden',
