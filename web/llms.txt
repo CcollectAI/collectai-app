@@ -1,30 +1,30 @@
 # Sparrow Collect
 
-> Sparrow Collect is an AI-powered mobile app (iOS & Android) that scans, identifies, and values collectibles across 54 categories. It pulls real-time pricing from leading marketplaces — eBay, TCGPlayer, StockX, Cardmarket, and Discogs — so collectors can track portfolio value, compare prices, set watchlist alerts, and decide when to buy or sell. One app for trading cards, figures, vinyl, watches, LEGO, sneakers, comics, and more.
+> Sparrow Collect is an AI-powered iPhone app (App Store: https://apps.apple.com/app/id6767359453; Android coming later) that scans, identifies, and values collectibles across 56 categories. Values are built from marketplace listings and price data (eBay, TCGplayer, Cardmarket, Discogs, and other marketplace data), and each value shows how it was derived, so collectors can track portfolio value, compare live listings, set watchlist target-price alerts, and decide when to buy or sell. One app for trading cards, figures, vinyl, watches, LEGO, sneakers, comics, and more.
 
 ## What it does
 
-- **Scan & identify**: Point your camera at an item; AI identifies it and extracts structured attributes (brand, set, edition, condition).
-- **Value**: Real-time market valuations with low/median/high price quantiles, sourced from live marketplace data and normalized to your currency.
-- **Track**: Build a collection portfolio and watch its total value change over time.
-- **Alerts**: Set watchlist price alerts and get notified on market moves.
-- **Deal Hub**: Surface buying opportunities across marketplaces against your interests.
+- **Scan & identify**: Point your camera at an item; AI identifies the item, edition, and variant, and estimates its condition from the photo. Barcode and ISBN scanning too.
+- **Value**: Low/mid/high price range, with how it was derived (how many market prices, which sources, which market: US, European, or both). When data is thin, the app says so instead of guessing. Shown in EUR, USD, GBP, JPY, KRW, AUD, or CAD.
+- **Track**: Portfolio dashboard with total value, what you paid (incl. tax and shipping) against current value, biggest movers, and CSV export.
+- **Alerts**: Add items to your watchlist with a target price and get notified when the market reaches it.
+- **Deal discovery (Pro)**: Purchase mandates describe what you want and your budget; matching listings are surfaced as deals.
 
 ## Pricing
 
-- **Free**: Download and track your collection with core features.
-- **Sparrow Pro — €4.99/month or €39.99/year**: Unlimited items, AI scans, market alerts, and advanced valuations.
+- **Free**: Scan and catalogue your items, see each value with how it was derived, and profit/loss against what you paid.
+- **Sparrow Pro (monthly or yearly, via Apple In-App Purchase; price shown in the App Store)**: 10 purchase mandates, unlimited watchlist, unlimited Target Hit alerts, deal discovery, set completion for trading-card sets, advanced analytics.
 
 ## Pages
 
 - [Home](https://sparrowcollect.com/): Product overview, features, and what Sparrow Collect does.
-- [Categories](https://sparrowcollect.com/categories.html): The 54 collectible categories covered (trading cards, figures, vinyl, watches, LEGO, sneakers, comics, and more).
-- [Guides](https://sparrowcollect.com/guides.html): In-depth collector guides and 100+ answered questions on identifying, grading, and valuing collectibles.
+- [Categories](https://sparrowcollect.com/categories): The 56 collectible categories covered (trading cards, figures, vinyl, watches, LEGO, sneakers, comics, and more).
+- [Guides](https://sparrowcollect.com/guides): In-depth collector guides and 80+ answered questions on identifying, grading, and valuing collectibles.
 - [Sparrow Pro](https://sparrowcollect.com/pro): Pro subscription features and web checkout.
 
 ## Support & policies
 
-- [Support](https://sparrowcollect.com/support.html): Help and contact.
-- [Privacy Policy](https://sparrowcollect.com/privacy.html)
-- [Terms of Service](https://sparrowcollect.com/terms.html)
-- [User Content Policy](https://sparrowcollect.com/user-policy.html)
+- [Support](https://sparrowcollect.com/support): Help and contact.
+- [Privacy Policy](https://sparrowcollect.com/privacy)
+- [Terms of Service](https://sparrowcollect.com/terms)
+- [Acceptable Use Policy](https://sparrowcollect.com/user-policy)

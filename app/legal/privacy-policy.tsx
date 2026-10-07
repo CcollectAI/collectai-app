@@ -138,7 +138,7 @@ function PrivacyPolicyScreenInner() {
           {'\n\n'}
           <Text style={styles.bold}>Leaderboard:</Text> Your display name, level, XP total, and achievement count may appear on the public leaderboard, which is visible to all users. If you prefer not to appear on the leaderboard, you can adjust this in your privacy settings.
           {'\n\n'}
-          <Text style={styles.bold}>Social Proof:</Text> Aggregated data such as how many collectors own a particular item, trending items, and recent sold prices are displayed to provide market context. This data is derived from anonymized, aggregated usage and does not identify individual users.
+          <Text style={styles.bold}>Social Proof:</Text> Aggregated data such as how many collectors own a particular item, trending items, and recent market prices are displayed to provide market context. This data is derived from anonymized, aggregated usage and does not identify individual users.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>7. Data Storage & Security</Text>

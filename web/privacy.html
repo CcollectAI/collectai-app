@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Privacy Policy - Sparrow Collect</title>
+<title>Privacy Policy | Sparrow Collect</title>
+<meta name="description" content="How Sparrow Collect collects, uses and protects your data, which services process it, and how to delete your account.">
+<link rel="canonical" href="https://sparrowcollect.com/privacy">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -57,7 +59,7 @@
 
   <h2>3. AI &amp; Machine Learning</h2>
   <p><strong>Vision Classification:</strong> We use OpenAI Vision API and on-device classifiers to identify collectible items from photos. Classification results include item name, category, and confidence scores. Per-field confidence levels are provided so you can assess accuracy.</p>
-  <p><strong>CLIP Embeddings:</strong> We generate CLIP embeddings from your item images to match against our catalog of 120,000+ curated items across 54 categories. Embeddings are numerical representations of visual features and cannot be used to reconstruct the original image. Cached embeddings may be retained to improve matching speed.</p>
+  <p><strong>CLIP Embeddings:</strong> We generate CLIP embeddings from your item images to match against our catalogue of collectibles across 56 categories. Embeddings are numerical representations of visual features and cannot be used to reconstruct the original image. Cached embeddings may be retained to improve matching speed.</p>
   <p><strong>Price Prediction Models:</strong> We use Ridge regression machine learning models to predict item values with q10/q50/q90 quantile estimates (low/median/high). Models are trained on aggregated, anonymized marketplace data and are periodically retrained to reflect current market conditions.</p>
   <p><strong>Condition Grading AI:</strong> Our condition assessment AI analyzes item photos to detect defects and estimate grades on standard scales (PSA 1-10, CGC 0.5-10.0, generic condition tiers). AI grades are estimates and should not substitute for professional grading services.</p>
   <p><strong>Feedback &amp; Corrections:</strong> When you correct an AI identification or condition grade, your correction is used to improve the AI for all users. Corrections are anonymized before being used for model improvement &mdash; they are not linked to your account or personal information. You may submit corrections at any time through the inline editing interface on scan results.</p>
@@ -99,7 +101,7 @@
   <p><strong>XP, Levels &amp; Streaks:</strong> Certain actions within the app (adding items, scanning, completing trades, attending events) earn experience points (XP). Your XP total, level, and activity streaks are tracked in your account.</p>
   <p><strong>Achievements:</strong> You may earn achievements for reaching milestones (e.g., adding a certain number of items, completing trades). Achievement badges are displayed on your profile and are visible to other users.</p>
   <p><strong>Leaderboard:</strong> Your display name, level, XP total, and achievement count may appear on the public leaderboard, which is visible to all users. If you prefer not to appear on the leaderboard, you can adjust this in your privacy settings.</p>
-  <p><strong>Social Proof:</strong> Aggregated data such as how many collectors own a particular item, trending items, and recent sold prices are displayed to provide market context. This data is derived from anonymized, aggregated usage and does not identify individual users.</p>
+  <p><strong>Social Proof:</strong> Aggregated data such as how many collectors own a particular item, trending items, and recent market prices are displayed to provide market context. This data is derived from anonymized, aggregated usage and does not identify individual users.</p>
 
   <h2>7. Data Storage &amp; Security</h2>
   <p>Your data is stored on secure servers managed by Supabase (PostgreSQL) with row-level security (RLS) policies ensuring users can only access their own data. All data is encrypted in transit (TLS 1.2+). Passwords are hashed using industry-standard algorithms. We implement security headers (HSTS, CSP, X-Frame-Options) and JWT-based authentication with audience and issuer validation. Authentication tokens are stored securely on-device using platform-native secure storage (SecureStore).</p>
@@ -122,7 +124,7 @@
     <li>fal.ai &mdash; CLIP text embedding generation for catalog matching</li>
   </ul>
 
-  <p><strong>Marketplace Data (30 sources across 51 categories):</strong></p>
+  <p><strong>Marketplace Data:</strong></p>
   <p><strong>General (all categories):</strong></p>
   <ul>
     <li>eBay, Firecrawl, Crawl4AI, Mercari US, Vinted, Mavin.io</li>
