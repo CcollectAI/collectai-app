@@ -1,41 +1,42 @@
 Snap a photo. Know what it's worth.
 
-Sparrow Collect is the most advanced AI-powered collectibles tracker, scanner, and price guide. Point your camera at any item and get instant identification, condition grading, and real-time market value from 37 data sources.
+Sparrow Collect is an AI-powered collection tracker and price guide for collectibles. Point your camera at any item — trading cards, Funko Pops, watches, vinyl records, LEGO sets, anime figures — and get instant identification and a real market value. No manual entry. No guesswork.
 
 Your collection is worth more than you think. Now you can prove it.
 
-★ AI-POWERED SCANNER
-Point your camera at any collectible — trading cards, Funko Pops, watches, vinyl records, LEGO, anime figures, and more. Our AI identifies the exact item, edition, and variant in seconds. No manual entry required.
+SCAN & IDENTIFY IN SECONDS
+Point your camera at any collectible. Our AI vision engine identifies the item, its edition and variant, and estimates its condition from the photo. Works across 56 categories.
 
-★ REAL-TIME PRICE GUIDE & VALUATION
-Every item gets a market value based on actual sold listings from eBay, TCGPlayer, StockX, Cardmarket, Discogs, and 37 marketplace sources. See low, mid, and high price ranges. Track price history. Know when to buy, sell, or hold.
+A PRICE THAT SHOWS ITS WORKING
+Most apps give you one confident number. We tell you where it came from: how many market prices it rests on, which sources, and which market — US, European, or both. You get a low, mid and high range rather than a single figure, and when there isn't enough data to be confident, the app says so instead of guessing.
 
-★ PORTFOLIO DASHBOARD
-See your total collection value update daily. Track price changes, spot winners and losers, and watch your portfolio grow over time. Export for insurance documentation.
+PORTFOLIO DASHBOARD
+See your total collection value update in real time. Track what you actually paid — including the tax and shipping most trackers ignore — against what it's worth now. Spot your biggest movers. Export your collection as CSV for insurance documentation.
 
-★ WATCHLIST & PRICE ALERTS
-Hunting for a grail? Add items to your watchlist with a target price. Get notified when prices drop or new listings appear.
+WATCHLIST & TARGET PRICE ALERTS
+Hunting for a grail? Add items to your watchlist with a target price and get notified when the market reaches it.
 
-★ CONDITION & GRADING TRACKER
-Log PSA, CGC, BGS grades. AI-assisted condition estimation helps you grade before submitting.
+CONDITION THAT FITS WHAT YOU COLLECT
+A sealed LEGO set and an opened one are not the same thing, and neither is "Near Mint". Condition options match the category: sealed or opened for boxed collectibles, fill level for spirits, Goldmine grades for vinyl, card grades for trading cards.
 
-★ MARKETPLACE PRICE COMPARISON
-Compare prices across eBay, Mercari, TCGPlayer, StockX, Cardmarket, BrickLink, Discogs, and 30+ sources in one view. Find the best deal every time.
+MARKETPLACE COMPARISON
+Compare live listings across eBay, TCGplayer, Cardmarket and Discogs in one view.
 
-★ BARCODE SCANNING
-Scan barcodes and ISBN codes for instant item lookup. Works for sealed products, books, LEGO sets, and more.
+BARCODE SCANNING
+Scan barcodes and ISBN codes for instant lookup. Works for sealed products, books, LEGO sets and more.
 
-★ 54 CATEGORIES:
-Trading Cards (Pokémon, MTG, Yu-Gi-Oh!, One Piece, Lorcana, Sports Cards) • Funko Pop • Hot Toys • Anime Figures • Action Figures • Designer Toys • Gunpla • Marvel Legends • Vinyl Records • Blu-ray Steelbooks • Manga • Comic Books • Retro Games • Watches • LEGO • Warhammer • Scale Models • K-pop • Disney • Ghibli • Loungefly • Keycaps • Fragrances • Diecast • Vintage Toys • and 30+ more
+56 CATEGORIES INCLUDING:
+• Trading Cards — Pokémon, Magic: The Gathering, Yu-Gi-Oh!, One Piece TCG, Lorcana, Digimon
+• Figures — Funko Pop, Hot Toys, Anime Figures, Action Figures, Designer Toys, Marvel Legends, Gunpla
+• Media — Vinyl Records, Blu-ray Steelbooks, Manga, Comic Books, Retro Games
+• Luxury — Watches, Jewellery, Fragrances, Pens
+• Building — LEGO, Warhammer, Scale Models
+• Lifestyle — K-pop, Disney, Ghibli, Loungefly, Keycaps
 
-★ MORE FEATURES:
-• Chat with other collectors
-• Set completion tracking
-• Multi-currency (EUR, USD, GBP, JPY, KRW, AUD, CAD)
+ALSO INCLUDES:
+• Set completion tracking for trading-card sets
 • Collection export (CSV)
+• Multi-currency support (EUR, USD, GBP, JPY, KRW, AUD, CAD)
 • Dark mode
-• Offline access
 
-Whether you have 10 items or 10,000 — Sparrow Collect is the last collection app you'll ever need. Built for collectors who want to know exactly what they own and what it's worth.
-
-Download Sparrow Collect and scan your first item today.
+Built for collectors. Whether you have 10 items or 10,000.

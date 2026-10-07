@@ -1,1 +1,1 @@
-Initial release — AI-powered collection tracker for 54 categories.
+First release of Sparrow Collect.

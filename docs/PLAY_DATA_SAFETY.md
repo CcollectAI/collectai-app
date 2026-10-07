@@ -5,6 +5,13 @@ listing, it is a compliance statement: Play treats a mismatch between this form
 and the app's real behaviour as a policy violation, not a typo. Apple's Privacy
 Nutrition Labels ask nearly the same questions, so the answers below serve both.
 
+> **2026-10-07:** the App Store privacy label was filled to match this file —
+> 14 types, none used for tracking, Coarse Location and Product Interaction
+> NOT linked, everything else linked (crash/performance/diagnostics are linked
+> because `AuthProvider` calls `Sentry.setUser({ id })`). `app.json`
+> `privacyManifests` was brought to the same 14. If you change one, change all
+> three.
+
 Every row was derived from code and from the live database, not from memory.
 The authoritative list of what we hold per user is
 `server/app/routes/account_router.py::_ALLOWED_TABLES` — the same list account

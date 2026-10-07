@@ -16,6 +16,34 @@ Run the gate rather than reading this list:
 npm run preflight:android      # exit 0 = ready to build and submit
 ```
 
+## Status check — 2026-10-07
+
+**Play enrolment: started, identity NOT yet verified** (Merle, 2026-10-07).
+`npm run preflight:android` still exits with the same three blockers (FCM,
+Play service-account JSON, RevenueCat Android key); all three wait on
+verification except FCM, which only needs a Firebase project.
+Re-test: `npm run preflight:android` — expect `3 blocker(s)` until they land.
+
+Found and fixed today, none of it visible to the gate:
+
+- **The Play listing images are MOCKUPS with invented data** —
+  `android/fastlane/metadata/android/en-US/images/phoneScreenshots/1.png` shows
+  "142 items, €24.8K", a Charizard and a Jordan 1 that no account owns. They are
+  the `Play-*` compositions from `collectai-admin/video`, which "mirror the App
+  Store ones" — and the App Store ones were replaced on 2026-10-07 for exactly
+  this reason. **Do not upload them.** Replace with real emulator captures of
+  the review account at 1080×1920 (`adb shell wm size 1080x1920`, demo-mode
+  status bar). Started 2026-10-07 and paused: with VascoWalk (another project)
+  running, swap hit 13/14 GB and SparrowWalk ANR-stormed (gotchas 8 + 15).
+- **Short description was 84 characters**; Play's limit is 80 → rewritten (77).
+- **Full description replaced** with the App Store text vetted 2026-10-06 — the
+  May text claimed "most advanced", "37 data sources", "actual sold listings"
+  and "Offline access", none of which the app backs up. Changelog no longer
+  says "54 categories" (the vetted text says 56).
+- Payment wording in privacy policy / terms now says Google Play Billing +
+  RevenueCat for in-app subscriptions, Stripe only for tickets, sponsors and
+  web (`e6206ed0`, web deployed 2026-10-07).
+
 ## Status check — 2026-09-07
 
 `npm run preflight:android`: **exit 1, the same three blockers** (FCM, Play
