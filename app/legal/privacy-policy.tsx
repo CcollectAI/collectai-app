@@ -12,7 +12,7 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import ScreenHeader from '@/components/ScreenHeader';
 import { useAuthContext } from '@/providers/useAuthContext';
 
-const LAST_UPDATED = 'September 6, 2026';
+const LAST_UPDATED = 'October 7, 2026';
 
 function PrivacyPolicyScreenInner() {
   const { user } = useAuthContext();
@@ -184,7 +184,9 @@ function PrivacyPolicyScreenInner() {
           <Text style={styles.bold}>Specialty:</Text>{'\n'}
           {'\u2022'} PopMart (blind boxes), Booth.pm (VTuber/doujin), ScaleMates (scale models), Drop (keycaps), GouletPens (pens), KTown4U (K-pop), ComicBookRealm (comics){'\n\n'}
           <Text style={styles.bold}>Payments:</Text>{'\n'}
-          {'\u2022'} Stripe — subscription billing, sponsored event payments, and event ticket purchases{'\n\n'}
+          {'\u2022'} Apple App Store and Google Play — in-app subscription purchases (payment is handled by Apple or Google; we never receive your card details){'\n'}
+          {'\u2022'} RevenueCat — manages in-app subscription status (receives your account ID, the subscription purchased, and its renewal and expiry dates){'\n'}
+          {'\u2022'} Stripe — sponsored event payments, event ticket purchases, and payments made on our website{'\n\n'}
           <Text style={styles.bold}>Geolocation:</Text>{'\n'}
           {'\u2022'} ip-api.com — IP-based region detection (country-level only){'\n\n'}
           <Text style={styles.bold}>Analytics:</Text>{'\n'}
@@ -220,7 +222,7 @@ function PrivacyPolicyScreenInner() {
           {'\u2022'} With your consent{'\n'}
           {'\u2022'} With other users, as described in the Social Features section{'\n'}
           {'\u2022'} With OpenAI for image processing (QuickScan, condition grading){'\n'}
-          {'\u2022'} With Stripe for payment processing{'\n'}
+          {'\u2022'} With Apple, Google, RevenueCat, and Stripe for payment and subscription processing{'\n'}
           {'\u2022'} With ad-mediation networks (only when ads are activated — see Section 20 for details and conditions){'\n'}
           {'\u2022'} To comply with legal obligations{'\n'}
           {'\u2022'} To protect against legal liability{'\n'}

@@ -11,7 +11,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import { useAuthContext } from '@/providers/useAuthContext';
 import { PLATFORM_FEE_PCT } from '@/constants/fees';
 
-const LAST_UPDATED = 'August 7, 2026';
+const LAST_UPDATED = 'October 7, 2026';
 
 function TermsOfServiceScreenInner() {
   const { user } = useAuthContext();
@@ -161,7 +161,7 @@ function TermsOfServiceScreenInner() {
 
         <Text style={[styles.heading, { color: colors.text }]}>14. Subscriptions & Payments</Text>
         <Text style={[styles.body, { color: colors.text }]}>
-          Certain features of the Service require a paid subscription. Payments are processed through Stripe. Subscription terms, pricing, and renewal conditions are presented at the time of purchase. You may cancel your subscription at any time through the app settings. Refunds are handled in accordance with applicable laws and Stripe's policies.{'\n\n'}
+          Certain features of the Service require a paid subscription. In the iOS app, subscriptions are purchased through Apple In-App Purchase and billed to your Apple ID; on Android, through Google Play. Subscription terms, pricing, and renewal conditions are presented at the time of purchase. Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period. You can manage or cancel an in-app subscription in your Apple ID or Google Play account settings; refunds for in-app purchases are handled by Apple or Google under their policies. Payments made on our website, event tickets, and sponsor payments are processed through Stripe.{'\n\n'}
           <Text style={styles.bold}>Event Tickets:</Text> Some events require paid tickets. Ticket prices are set by event hosts and include a {PLATFORM_FEE_PCT}% platform fee. Ticket purchases are one-time payments processed through Stripe. Tickets are non-transferable and tied to your account. If an event is cancelled by the host, refunds will be issued to the original payment method.
         </Text>
 

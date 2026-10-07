@@ -10,7 +10,7 @@ import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import ScreenHeader from '@/components/ScreenHeader';
 import { useAuthContext } from '@/providers/useAuthContext';
 
-const LAST_UPDATED = 'April 11, 2026';
+const LAST_UPDATED = 'October 7, 2026';
 
 function DataProcessingScreenInner() {
   const { user } = useAuthContext();
@@ -60,7 +60,7 @@ function DataProcessingScreenInner() {
           <Text style={styles.bold}>Marketplace Aggregation:</Text> Collecting and normalizing pricing data from public marketplace sources to provide price estimates, deal detection, watchlist monitoring, and market insights.{'\n\n'}
           <Text style={styles.bold}>Notifications:</Text> Delivering push notifications for price alerts, deal discoveries, watchlist updates, event updates, direct messages, and announcements. Notifications are subject to tier-based frequency caps (free: 5/day, Pro: 15/day, Premium: 30/day) and user preference settings.{'\n\n'}
           <Text style={styles.bold}>Analytics & Improvement:</Text> Anonymized usage analytics via PostHog and crash reporting via Sentry to improve service quality and reliability.{'\n\n'}
-          <Text style={styles.bold}>Payment Processing:</Text> Subscription billing, event ticket purchases, and sponsor payments via Stripe.
+          <Text style={styles.bold}>Payment Processing:</Text> In-app subscriptions via Apple In-App Purchase or Google Play, with subscription status managed by RevenueCat; event ticket purchases, sponsor payments, and website payments via Stripe.
         </Text>
 
         <Text style={[styles.heading, { color: colors.text }]}>4. Sub-Processors</Text>
@@ -69,7 +69,8 @@ function DataProcessingScreenInner() {
           {'\u2022'} <Text style={styles.bold}>Supabase</Text> — Authentication, PostgreSQL database, row-level security, real-time messaging{'\n'}
           {'\u2022'} <Text style={styles.bold}>Amazon Web Services (AWS)</Text> — Backend hosting (EC2), file storage (S3), infrastructure{'\n'}
           {'\u2022'} <Text style={styles.bold}>OpenAI</Text> — Vision API for item identification and condition grading{'\n'}
-          {'\u2022'} <Text style={styles.bold}>Stripe</Text> — Payment processing for subscriptions, event tickets, and sponsor billing{'\n'}
+          {'\u2022'} <Text style={styles.bold}>RevenueCat</Text> — In-app subscription status (account ID, subscription purchased, renewal and expiry dates){'\n'}
+          {'\u2022'} <Text style={styles.bold}>Stripe</Text> — Payment processing for event tickets, sponsor billing, and website payments{'\n'}
           {'\u2022'} <Text style={styles.bold}>PostHog</Text> — Product analytics and feature usage tracking (anonymized){'\n'}
           {'\u2022'} <Text style={styles.bold}>Sentry</Text> — Error monitoring and crash reporting{'\n'}
           {'\u2022'} <Text style={styles.bold}>Expo</Text> — App distribution, OTA updates, and push notification delivery{'\n\n'}
