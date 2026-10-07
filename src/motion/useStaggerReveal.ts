@@ -100,6 +100,15 @@ export function useStaggerReveal(options: StaggerRevealOptions): StaggerRevealRe
     if (!enabled || hasRevealed.current) return;
     hasRevealed.current = true;
 
+    // JS driver, NOT the native driver (2026-10-07). With `useNativeDriver:
+    // true` the timing ran on the UI thread and reached only views that were
+    // already attached. Rows a SectionList mounted AFTER `reveal()` started
+    // (virtualised lists mount in batches) were handed the JS-side value,
+    // which stays at its start (0) until the native run ends — measured on the
+    // iPhone 16 Pro Max sim, production bundle: the Items list rendered its
+    // section headers and totals with every row invisible, and stayed so.
+    // At most `maxAnimated` (10) opacity/translate pairs, so the JS cost is
+    // nothing; a row that mounts mid-animation now reads the current value.
     const animations = [];
     for (let i = 0; i < animateCount; i++) {
       const delay = i * staggerMs;
@@ -109,13 +118,13 @@ export function useStaggerReveal(options: StaggerRevealOptions): StaggerRevealRe
             toValue: 1,
             duration,
             delay,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
           Animated.timing(translates.current[i], {
             toValue: 0,
             duration,
             delay,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ]),
       );
