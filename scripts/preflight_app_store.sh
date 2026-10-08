@@ -44,17 +44,13 @@ VERSION=$(python3 -c "import json; print(json.load(open('app.json'))['expo']['ve
 BUNDLE_IOS=$(python3 -c "import json; print(json.load(open('app.json'))['expo']['ios']['bundleIdentifier'])" 2>/dev/null || echo "?")
 BUNDLE_AND=$(python3 -c "import json; print(json.load(open('app.json'))['expo']['android']['package'])" 2>/dev/null || echo "?")
 
-if [[ "$NAME" == "Atlantis" ]]; then
-    fail "app.json name is still 'Atlantis' — must change to 'CollectAI' before submission"
-elif [[ "$NAME" == "CollectAI" ]]; then
-    pass "app.json name = 'CollectAI'"
-else
-    fail "app.json name = '$NAME' (expected 'CollectAI')"
-fi
+# Renamed CollectAI -> Sparrow Collect 2026-05-04. The slug stays "collectai":
+# it is the EAS project key, and changing it orphans the EAS project.
+[[ "$NAME" == "Sparrow Collect" ]] && pass "app.json name = '$NAME'" || fail "app.json name = '$NAME' (expected 'Sparrow Collect')"
 [[ "$SLUG" == "collectai" ]] && pass "slug = collectai" || fail "slug = '$SLUG'"
 pass "version = $VERSION"
-[[ "$BUNDLE_IOS" == "com.collectai.app" ]] && pass "iOS bundleIdentifier = $BUNDLE_IOS" || fail "iOS bundleIdentifier = $BUNDLE_IOS"
-[[ "$BUNDLE_AND" == "com.collectai.app" ]] && pass "Android package = $BUNDLE_AND" || fail "Android package = $BUNDLE_AND"
+[[ "$BUNDLE_IOS" == "io.sparrowcollect.app" ]] && pass "iOS bundleIdentifier = $BUNDLE_IOS" || fail "iOS bundleIdentifier = $BUNDLE_IOS"
+[[ "$BUNDLE_AND" == "io.sparrowcollect.app" ]] && pass "Android package = $BUNDLE_AND" || fail "Android package = $BUNDLE_AND"
 
 if grep -q "YOUR_APPLE_TEAM_ID" eas.json; then
     pend "eas.json appleTeamId = YOUR_APPLE_TEAM_ID (need Apple Developer enrollment)"
@@ -102,7 +98,7 @@ else
     fail "EC2 bake NOT responding on internal :8000 — service down"
 fi
 
-DOMAIN_TARGET="${API_DOMAIN:-}"
+DOMAIN_TARGET="${API_DOMAIN:-api.sparrowcollect.com}"
 if [[ -z "$DOMAIN_TARGET" ]]; then
     pend "API_DOMAIN env var unset — set it to your real domain when buying one (e.g. \`API_DOMAIN=api.yourdomain.tld bash $0\`). Domain purchase + DNS still pending."
 elif dig +short "$DOMAIN_TARGET" 2>/dev/null | grep -q .; then
@@ -120,7 +116,7 @@ section "Store assets"
 
 if [[ -f docs/APP_REVIEW_NOTES.md ]]; then
     pass "docs/APP_REVIEW_NOTES.md exists"
-    if grep -q "reviewer@collectai.app" docs/APP_REVIEW_NOTES.md; then
+    if grep -q "reviewer@sparrowcollect.com" docs/APP_REVIEW_NOTES.md; then
         pass "Reviewer demo account documented"
     else
         fail "APP_REVIEW_NOTES.md missing reviewer demo account"
@@ -164,8 +160,10 @@ fi
 
 # ---------------------------------------------------------------------------
 section "Privacy + legal"
-pend "Privacy policy URL must resolve at submission time"
-pend "Terms of Service URL must resolve at submission time"
+for url in https://sparrowcollect.com/privacy https://sparrowcollect.com/terms; do
+    code=$(curl -s -o /dev/null -w "%{http_code}" -L -m 10 "$url" 2>/dev/null || echo 000)
+    [[ "$code" == "200" ]] && pass "$url resolves (200)" || fail "$url returned $code"
+done
 pend "Data Safety form completed in App Store Connect / Play Console"
 
 # ---------------------------------------------------------------------------
