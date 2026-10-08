@@ -7,7 +7,8 @@
       "namespace": "android_app",
       "package_name": "io.sparrowcollect.app",
       "sha256_cert_fingerprints": [
-        "BF:C3:7F:04:99:2E:41:68:F3:9F:15:9B:E2:F6:2E:A4:D1:33:9B:A0:02:1D:89:17:5C:57:A6:EF:C2:8D:5E:F3"
+        "BF:C3:7F:04:99:2E:41:68:F3:9F:15:9B:E2:F6:2E:A4:D1:33:9B:A0:02:1D:89:17:5C:57:A6:EF:C2:8D:5E:F3",
+        "8F:34:81:99:08:D0:08:70:FB:7A:CC:76:44:73:A2:16:F9:C6:B5:3D:0E:99:2E:0C:91:7D:40:F6:01:04:9F:46"
       ]
     }
   }

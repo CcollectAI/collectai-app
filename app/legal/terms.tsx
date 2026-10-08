@@ -276,6 +276,7 @@ function TermsOfServiceScreenInner() {
           legal@sparrowcollect.com{'\n\n'}
           Sparrow Collect{'\n'}
           Ertskade 74, 1019 BB Amsterdam{'\n'}The Netherlands{'\n'}KvK: 99596326
+          {'\n\n'}On Google Play, Sparrow Collect is published under the developer name “3511”, a trade name of the same business (KvK 99596326).
         </Text>
 
         <View style={{ height: 40 }} />
