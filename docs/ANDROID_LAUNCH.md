@@ -16,6 +16,26 @@ Run the gate rather than reading this list:
 npm run preflight:android      # exit 0 = ready to build and submit
 ```
 
+## Status check — 2026-10-08
+
+**Play app CREATED** in developer account `7740039459322156044` (Chrome profile
+`/u/3`, owner eu.sammysam@gmail.com, developer name **"3511"** = KvK trade name,
+shared with SammySam; Vasco not created yet). App id `4976072077209678882`.
+Package registered for Android developer verification.
+
+- **App signing key** (Play-generated): SHA-256
+  `8F:34:81:99:08:D0:08:70:FB:7A:CC:76:44:73:A2:16:F9:C6:B5:3D:0E:99:2E:0C:91:7D:40:F6:01:04:9F:46`
+  added to both assetlinks.json (`03b49b9d`) — **web/ NOT deployed yet** (Vercel CLI
+  was logged into "Merle's projects", not `collectais-projects`).
+- **GCP project `sparrow-collect`** (same Google account), Android Publisher API
+  enabled, service account `sparrow-play-publisher@sparrow-collect.iam.gserviceaccount.com`
+  created. The Play Console "API access" page no longer exists: invite the SA
+  email under Users and permissions instead.
+- Open (Merle): download the SA JSON key → repo root as
+  `sparrow-play-service-account.json`; invite the SA in Play (Sparrow only);
+  Firebase on `sparrow-collect`; RevenueCat Android app; first AAB upload.
+- Re-test: `npm run preflight:android` — expect `3 blocker(s)`, 0 WARN.
+
 ## Status check — 2026-10-07
 
 **Play enrolment: started, identity NOT yet verified** (Merle, 2026-10-07).
