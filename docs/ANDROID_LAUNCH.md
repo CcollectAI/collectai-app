@@ -40,7 +40,7 @@ started locally 10-09 (`npm run build:android:local` → `builds/sparrow-android
 
   | Product ID | Base plan | iOS price (NL / US / GB) | Name / description (iOS) | Offer |
   |---|---|---|---|---|
-  | `sparrow_pro_monthly` | `monthly`, P1M auto-renew | €4.99 / $3.99 / £3.99 | "Pro Monthly" — "Unlimited features and advanced analytics" | iOS has a **3-month free trial** (50 territories) |
+  | `sparrow_pro_monthly` | `monthly`, P1M auto-renew | €4.99 / $3.99 / £3.99 | "Pro Monthly" — "Unlimited features and advanced analytics" | **2-week free trial** (Merle 10-09). iOS was 3 months in all 175 territories → changed to TWO_WEEKS via the ASC API 10-09, re-read: 175/175 |
   | `sparrow_pro_yearly` | `yearly`, P1Y auto-renew | €39.99 / $34.99 / £34.99 | "Pro Yearly" — "Save 33% vs monthly." | none |
 
   Then in RevenueCat: add both as Play products (`sparrow_pro_monthly:monthly`,
