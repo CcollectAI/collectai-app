@@ -27,7 +27,7 @@ import { dataProvider, type Item as DataItem } from "@/data";
 import { mapDataItemToScreenItem, type ScreenItem } from "@/data/screenItem";
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { AnimatedPressable, useEnterReveal, useStaggerReveal } from "@/motion";
+import { AnimatedPressable, useEnterReveal } from "@/motion";
 // Skeleton imports moved to ItemsLoadingState
 import { ItemGalleryGrid } from "@/components/ItemGalleryGrid";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
@@ -84,7 +84,6 @@ type Item = ScreenItem;
 const VIEW_MODE_KEY = '@sparrowcollect/items_view_mode';
 
 const ITEMS_PAGE_SIZE = 20;
-const STAGGER_MS = 40;
 const STATUS_CLEAR_DELAY_MS = 3000;
 const SCROLL_LOAD_THRESHOLD = 0.5;
 
@@ -132,22 +131,19 @@ const ItemsScreen: React.FC = () => {
     enabled: !authLoading,
   });
 
-  // Stagger animation for list items — compute flat index map
-  const { getItemStyle: getStaggerStyle } = useStaggerReveal({
-    count: (providerItems ?? []).length,
-    enabled: settings.animationsEnabled && !loading,
-    staggerMs: STAGGER_MS,
-  });
-  // Pre-compute flat index per item id for stagger animation
-  const staggerIndexMap = useRef(new Map<string, number>());
-  useEffect(() => {
-    const map = new Map<string, number>();
-    let idx = 0;
-    for (const item of (providerItems ?? [])) {
-      map.set(item.id, idx++);
-    }
-    staggerIndexMap.current = map;
-  }, [providerItems]);
+  // NO STAGGER REVEAL ON THESE ROWS (2026-10-09). On Android (release APK,
+  // SparrowWalk emulator, Animations ON) the list view drew every section
+  // header and total with EVERY row invisible — absent even from a
+  // uiautomator dump — while the grid view and iOS were fine. This was AFTER
+  // both iOS fixes in useStaggerReveal (69eb248d, 58c19080). Turning Settings →
+  // Animations OFF made every row appear, and that path is exactly "row gets
+  // no stagger style", which is what this screen now always does. The same
+  // hook still animates the leaderboard rows correctly on the same device, so
+  // the failure is this list's combination (SectionList + removeClippedSubviews
+  // + SwipeableRow inside the animated wrapper), not the hook alone; the exact
+  // Android mechanism is unproven. Losing a 40 ms fade is cosmetic; a member's
+  // items looking gone is not (docs/ui-playbook.md "A row can render and
+  // still be invisible").
 
   const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -1042,7 +1038,6 @@ const ItemsScreen: React.FC = () => {
               item={item}
               isMultiSelectMode={isMultiSelectMode}
               isSelected={isSelected(item.id)}
-              staggerStyle={getStaggerStyle(staggerIndexMap.current.get(item.id) ?? 0)}
               onPress={handleItemPress}
               onLongPress={handleLongPress}
               onArchive={handleSwipeArchive}

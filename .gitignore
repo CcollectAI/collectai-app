@@ -114,3 +114,4 @@ supabase/.temp/
 # silent-drift shape this repo keeps paying for.
 server/scripts/schema.lock.json
 deploy_files.txt
+reviewer-credentials.local.txt

@@ -3766,6 +3766,18 @@ symmetric: *unanimated* is a cosmetic loss, *invisible* reads as sold, lost or
 deleted. When a fix has two directions, pick the one whose failure is the
 smaller lie.
 
+**It came back on Android, after both hook fixes (2026-10-09).** Release APK on
+the SparrowWalk emulator, Animations ON: headers and totals drawn, every row
+invisible and absent from a `uiautomator` dump; grid view and iOS fine. Turning
+Animations OFF made every row appear — and that is exactly the "no stagger style"
+path, so the Items rows now never get the stagger. The same hook still animates
+the leaderboard rows on that device, so it is this list's combination
+(SectionList + `removeClippedSubviews` + `SwipeableRow` inside the animated
+wrapper), not the hook; the Android mechanism is unproven.
+`__tests__/hooks/itemsListNoStagger.test.ts` reads the screen, because a test of
+the hook cannot see it. **A fix verified on one platform is verified on one
+platform.**
+
 ### Four suites were passing and gating nothing
 
 `verify:prebuild` names its jest files explicitly. Four were never in the list —
