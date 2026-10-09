@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "825648476865",
+    "project_id": "sparrow-collect",
+    "storage_bucket": "sparrow-collect.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:825648476865:android:6eade3cab5fe08586dda40",
+        "android_client_info": {
+          "package_name": "io.sparrowcollect.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzvTtQB1TDUk7i5hCyBfCrOcjbRVG6xaw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
