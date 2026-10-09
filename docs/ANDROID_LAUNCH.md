@@ -16,6 +16,41 @@ Run the gate rather than reading this list:
 npm run preflight:android      # exit 0 = ready to build and submit
 ```
 
+## Status check — 2026-10-09
+
+`npm run preflight:android` → **13 PASS, 0 blockers** (service-account JSON,
+Firebase/FCM config, RevenueCat Android key all in place). First AAB build
+started locally 10-09 (`npm run build:android:local` → `builds/sparrow-android-local.aab`).
+
+- **RevenueCat** is now project "Sparrow Collect" (`e94defd0`) on the
+  ccollect.ai@ login — see `docs/OPEN_DECISIONS.md` → Decided 2026-10-09. Its
+  Play app passes 2 of 3 credential checks; the third ("package name not found"
+  for subscription purchases) needs the first AAB in a Play track.
+- **assetlinks.json:** the repo has both fingerprints (`03b49b9d`) but the LIVE
+  file still has only the upload key → App Links from Play installs open the
+  browser until `web/` is deployed (Vercel CLI: "Not authorized" 10-09). Re-check:
+  `curl -s https://sparrowcollect.com/.well-known/assetlinks.json | grep -c 8F:34:81`
+  → expect 1.
+- **Play subscriptions — not created yet.** The service account can READ
+  monetization (`GET /subscriptions` → 204) but `POST /pricing:convertRegionPrices`
+  → **403 "caller does not have permission"**: it lacks the product/pricing
+  permission in Play Console → Users and permissions. Create them in the UI, or
+  grant that permission and let the API do it. Mirror iOS (read from the ASC API
+  10-09):
+
+  | Product ID | Base plan | iOS price (NL / US / GB) | Name / description (iOS) | Offer |
+  |---|---|---|---|---|
+  | `sparrow_pro_monthly` | `monthly`, P1M auto-renew | €4.99 / $3.99 / £3.99 | "Pro Monthly" — "Unlimited features and advanced analytics" | iOS has a **3-month free trial** (50 territories) |
+  | `sparrow_pro_yearly` | `yearly`, P1Y auto-renew | €39.99 / $34.99 / £34.99 | "Pro Yearly" — "Save 33% vs monthly." | none |
+
+  Then in RevenueCat: add both as Play products (`sparrow_pro_monthly:monthly`,
+  `sparrow_pro_yearly:yearly`), attach to entitlement `pro`, and put them in
+  offering `default` → `$rc_monthly` / `$rc_annual`. Re-check:
+  `curl -H "Authorization: Bearer <goog_ key>" -H "X-Platform: android" https://api.revenuecat.com/v1/subscribers/probe/offerings`
+  → both packages carry a `platform_product_identifier`.
+- Still open: FCM V1 service-account key on EAS (`eas credentials -p android`,
+  interactive) — without it Expo push does not reach Android.
+
 ## Status check — 2026-10-08
 
 **Play app CREATED** in developer account `7740039459322156044` (Chrome profile
