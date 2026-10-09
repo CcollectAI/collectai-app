@@ -1,6 +1,6 @@
 # Hybrid Web Subscription Plan — Phase 1 (Pre-Launch)
 
-**Status:** Phase 1 in progress, 2026-05-18
+**Status:** Phase 1 in progress, 2026-05-18. **ON HOLD 2026-10-09** — launch is in-app purchase only; the web checkout stays off (Stripe is `sk_test`). Decision + re-open trigger: `docs/OPEN_DECISIONS.md` → Decided, 2026-10-09.
 **Goal:** Let users subscribe to Pro via sparrowcollect.com using Stripe, bypassing Apple's 15% cut for the slice of users acquired through marketing/SEO rather than App Store discovery.
 
 ---
