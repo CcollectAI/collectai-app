@@ -19,8 +19,10 @@ npm run preflight:android      # exit 0 = ready to build and submit
 ## Status check — 2026-10-09
 
 `npm run preflight:android` → **13 PASS, 0 blockers** (service-account JSON,
-Firebase/FCM config, RevenueCat Android key all in place). First AAB build
-started locally 10-09 (`npm run build:android:local` → `builds/sparrow-android-local.aab`).
+Firebase/FCM config, RevenueCat Android key all in place). First AAB **built 10-10**
+(versionCode 7, 17 min) and **on the internal track** (API upload + commit, re-read).
+**Updated 2026-10-12:** FCM V1 key on EAS, license testers set, Play subs ACTIVE and
+wired into RevenueCat — see the bullets below. Open: a real purchase + push on a phone.
 
 - **RevenueCat** is now project "Sparrow Collect" (`e94defd0`) on the
   ccollect.ai@ login — see `docs/OPEN_DECISIONS.md` → Decided 2026-10-09. Its
@@ -77,8 +79,12 @@ started locally 10-09 (`npm run build:android:local` → `builds/sparrow-android
   offering `default` → `$rc_monthly` / `$rc_annual`. Re-check:
   `curl -H "Authorization: Bearer <goog_ key>" -H "X-Platform: android" https://api.revenuecat.com/v1/subscribers/probe/offerings`
   → both packages carry a `platform_product_identifier`.
-- Still open: FCM V1 service-account key on EAS (`eas credentials -p android`,
-  interactive) — without it Expo push does not reach Android.
+- **FCM V1 key on EAS — DONE 2026-10-12** (Merle, `eas credentials -p android` →
+  profile `store`). Verified via Expo GraphQL `androidAppCredentials` →
+  `googleServiceAccountKeyForFcmV1.clientEmail = firebase-adminsdk-fbsvc@sparrow-collect…`,
+  project `sparrow-collect` = `google-services.json`. Push itself still to be seen on a device.
+- **License testers — DONE 2026-10-12:** list "SammySam team" (eu.sammysam@,
+  slendebroekmerle@) enabled under Settings → License testing (all apps of 3511).
 
 ## Status check — 2026-10-08
 
@@ -228,9 +234,9 @@ no red test — Android just quietly did less than iOS:
 
 | Gap | Symptom on Android | Why nothing caught it | State |
 |-----|--------------------|-----------------------|-------|
-| `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` unset | Paywall shows "unavailable"; app cannot take money | `initPurchases()` returns early, logged at `warn` which release strips | **OPEN — console** |
-| No FCM config | Push never works | `getExpoPushTokenAsync()` throws into a `catch` | **OPEN — console** |
-| `sparrow-play-service-account.json` absent | `eas submit` / `fastlane supply` fail | Only surfaces at upload time | **OPEN — console** |
+| `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` unset | Paywall shows "unavailable"; app cannot take money | `initPurchases()` returns early, logged at `warn` which release strips | ✅ FIXED 10-09 (key in EAS, in AAB 7) |
+| No FCM config | Push never works | `getExpoPushTokenAsync()` throws into a `catch` | ✅ FIXED (google-services.json + FCM V1 key on EAS 10-12) |
+| `sparrow-play-service-account.json` absent | `eas submit` / `fastlane supply` fail | Only surfaces at upload time | ✅ FIXED (JSON present, gitignored; API upload worked 10-10) |
 | Listing screenshots 1320×2868 RGBA | Play rejects the upload | Valid for the App Store, invalid for Play | FIXED |
 | `<Modal>` without `onRequestClose` | Back button cannot dismiss the sheet | No-op on iOS, so it only manifests on Android | FIXED |
 
