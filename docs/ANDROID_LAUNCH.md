@@ -31,6 +31,11 @@ started locally 10-09 (`npm run build:android:local` → `builds/sparrow-android
   browser until `web/` is deployed (Vercel CLI: "Not authorized" 10-09). Re-check:
   `curl -s https://sparrowcollect.com/.well-known/assetlinks.json | grep -c 8F:34:81`
   → expect 1.
+- ⚠️ **Before any PRODUCTION release: build a new AAB from ≥ `4a139b07`.** AAB 7
+  (internal track) still shows Settings → "Billing portal", which errors for every
+  Play/Apple subscriber (now hidden behind `WEB_BILLING_ENABLED=false`). Internal
+  testing on AAB 7 is fine. iOS: build 166 stays in review (Merle 10-12); rebuild
+  only on rejection, else the fix ships in 1.0.1.
 - **Play subscriptions — CREATED + ACTIVE 2026-10-12** (UI; Merle activated both base
   plans + the trial offer; API re-read: all ACTIVE). **RevenueCat wired 10-12:** both
   imported as `sparrow_pro_monthly:monthly` / `sparrow_pro_yearly:yearly`, attached to
