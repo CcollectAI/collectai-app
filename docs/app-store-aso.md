@@ -6,7 +6,49 @@
 
 ---
 
-## iOS App Store Connect
+## ⭐ Listing v2 (2026-10-12) — CURRENT. The v1 copy below is history.
+
+**Source of truth: `scripts/store_listing.py`** (name, subtitle, keywords, promo,
+Play short, full description). It exits 1 on a store limit, a keyword that repeats
+a name/subtitle word, a third-party trademark in the iOS keywords, or a banned
+claim ("real time", "live listings", PSA/CGC). Mutation-checked: a `real-time`
+sentence + a `lego` keyword both fail it.
+
+| Field | v1 (live until 10-12) | v2 |
+|---|---|---|
+| Name / Play title | Sparrow Collect | **Sparrow Collect: Value Scanner** (30) |
+| iOS subtitle | Scan, Value & Track | **Card & Collectible Price Guide** (30) |
+| iOS keywords | …funko,lego,…grading… | `collection,tracker,worth,appraisal,tcg,trading,figure,vinyl,record,watch,comic,manga,sneaker,hobby` (98) |
+| Play short | Scan any collectible with AI… (77) | **Scan trading cards, figures, vinyl & watches. See what your collection is worth.** (80) |
+
+**Why each change (all measured 10-12):**
+- v1 said the portfolio updates **"in real time"** — values refresh from daily
+  data; the 10-08 web pass removed the same claim from the site.
+- v1 said **"Compare live listings across eBay, TCGplayer, Cardmarket and Discogs in
+  one view"** — no screen does this (`COMPARABLE_SALES_ENABLED` and
+  `LIVE_PRICE_FETCH_ENABLED` are false). v2 states the MEASURED sources instead
+  (market_hits by provider, 30 days to 10-12: TCGplayer + Cardmarket card prices,
+  Scryfall for MTG, Discogs for vinyl, eBay listings elsewhere — same line as the
+  `/value/*` web pages).
+- v1 iOS keywords carried **`funko`, `lego`** (third-party trademarks — App Review
+  2.3.7 risk) and **`grading`** (PSA/CGC lookup is not shipped). Trademarks stay in
+  the DESCRIPTION, used descriptively, with a non-affiliation line.
+- The name carried no search term; "value scanner" + the subtitle's "card",
+  "collectible", "price guide" are the queries collectors type.
+
+**Where it is applied:**
+- **Google Play — SAVED 10-12** in the Console UI (default listing, en-US; 30/80/2817
+  read back in the form). The service account can PATCH a listing but the commit
+  403s, same products/store permission gap as the subscriptions. Draft app ⇒ it
+  goes public with the first production release.
+- **App Store — NOT applied**: version 1.0 is WAITING_FOR_REVIEW, so name, subtitle,
+  keywords and description are locked. Apply to **1.0.1** (or promo text right after
+  approval — promo text needs no review). Re-check live:
+  `node asc_meta.mjs` pattern → `GET /v1/apps/6767359453/appInfos?include=appInfoLocalizations`.
+
+---
+
+## iOS App Store Connect (v1, superseded)
 
 ### App Name (30 chars max)
 ```
