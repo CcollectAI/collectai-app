@@ -770,13 +770,50 @@ async def _handle_checkout_completed(pool: Any, session: dict):
         pass
 
 
+def _subscription_period(subscription: dict) -> tuple[Any, Any]:
+    """(current_period_start, current_period_end) of a Stripe subscription.
+
+    Since API version 2025-03-31.basil Stripe no longer puts the period on the
+    subscription itself — only on each subscription ITEM. The webhook endpoint
+    is pinned to 2026-03-25.dahlia, so reading the top level returned None and
+    every Stripe subscription was stored with no period end (measured
+    2026-10-12 on a test subscription: top level absent, item present).
+    Older payloads still carry it at the top level, so read that first.
+    """
+    start = subscription.get("current_period_start")
+    end = subscription.get("current_period_end")
+    if start is None or end is None:
+        items = (subscription.get("items") or {}).get("data") or []
+        if items:
+            if start is None:
+                start = items[0].get("current_period_start")
+            if end is None:
+                end = items[0].get("current_period_end")
+    return start, end
+
+
+def _invoice_subscription_id(invoice: dict) -> str | None:
+    """The subscription an invoice bills, in both API shapes.
+
+    basil+ moved `invoice.subscription` to
+    `invoice.parent.subscription_details.subscription`; on dahlia the old key
+    is None (measured 2026-10-12), so a failed renewal never reached past_due.
+    """
+    sub_id = invoice.get("subscription")
+    if not sub_id:
+        details = (invoice.get("parent") or {}).get("subscription_details") or {}
+        sub_id = details.get("subscription")
+    if isinstance(sub_id, dict):  # expanded object
+        sub_id = sub_id.get("id")
+    return sub_id or None
+
+
 async def _handle_subscription_updated(pool: Any, subscription: dict):
     """Subscription updated (plan change, renewal, etc.)."""
     sub_id = subscription.get("id")
     status = subscription.get("status", "active")
     cancel_at_period_end = subscription.get("cancel_at_period_end", False)
-    current_period_start = subscription.get("current_period_start")
-    current_period_end = subscription.get("current_period_end")
+    current_period_start, current_period_end = _subscription_period(subscription)
 
     period_start = _safe_timestamp(current_period_start)
     period_end = _safe_timestamp(current_period_end)
@@ -858,7 +895,7 @@ async def _handle_subscription_deleted(pool: Any, subscription: dict):
 
 async def _handle_payment_failed(pool: Any, invoice: dict):
     """Payment failed — mark subscription as past_due."""
-    sub_id = invoice.get("subscription")
+    sub_id = _invoice_subscription_id(invoice)
     if sub_id:
         await pool.execute(
             "UPDATE subscriptions SET status = 'past_due', updated_at = now() "

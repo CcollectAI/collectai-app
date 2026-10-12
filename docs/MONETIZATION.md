@@ -845,7 +845,32 @@ are adding a second store to the same entitlement, not building a second one.
 
 ## 2. Stripe (DORMANT — kept for future web/Android)
 
-Three-tier code path (Free / Pro €4.99 / Premium €9.99) remains in `server/app/billing_router.py` with 25 passing tests. **Do NOT activate Stripe Live Mode for v1 iOS submission** — it duplicates RevenueCat and complicates compliance review. Revisit when:
+### Stripe test-mode audit (2026-10-12) — what was measured, and how to re-check
+
+Launch is in-app purchase only (`docs/OPEN_DECISIONS.md` → Decided 2026-10-09);
+this is the state of the dormant path, so turning it on later starts from facts.
+
+| check | result 10-12 |
+|---|---|
+| `POST /billing/checkout-session` pro/premium × monthly/yearly (simcheck token) | **200 ×4**, `cs_test_…` URLs; prices €4.99 / €39.99 / €9.99 / €79.99, all `active` |
+| `POST /billing/web/checkout-session` | **503** — `STRIPE_PRICE_PRO_{MONTHLY,YEARLY}_WEB` unset (web tier never created) |
+| `POST /billing/portal-session` | 200 for a member with a Stripe customer; **404 for every IAP member** |
+| Stripe webhook endpoint `we_1TIUeXBG4CZBPHP7GXqu7stY` | was **`https://api.collectai.app/stripe/webhook`** — dead domain AND wrong path: **0 Stripe deliveries in every retained `bake.log`** (≈ 2026-09-13 → 10-12; older logs rotated away — events did arrive in May, see the 2026-05-02 note in the handler). Changed 10-12 to `https://api.sparrowcollect.com/billing/webhook`; delivery proven: 3 test events → `bake.log` `POST /billing/webhook 200` (signing secret unchanged by a URL edit) |
+| Payload shape | endpoint is pinned to API **2026-03-25.dahlia**: the subscription period lives on `items.data[0]`, and `invoice.subscription` is `None` (moved to `invoice.parent.subscription_details.subscription`). Both handlers read the old keys → period end never stored, a failed renewal never reached `past_due`. **Fixed** (`_subscription_period`, `_invoice_subscription_id`), 4 tests in `TestStripeDahliaPayloadShape`, mutation-checked (2 fail on the old code) |
+| In-app "Billing portal" row (Settings) | hidden behind `WEB_BILLING_ENABLED=false` — it only ever errored for IAP members and is an App Review risk |
+
+Re-check the webhook any time:
+`ssh collectai 'grep -a "POST /billing/webhook" /opt/collectors/bake.log | tail -5'`
+(after a test-mode event) → expect `200`.
+
+Not yet proven: a full **checkout.session.completed** from a hosted Checkout page
+(needs the test card typed on Stripe's page by a person) → `subscriptions` row
+`plan=pro, status=active` → `/billing/status` pro. Note the handler links the
+Stripe subscription only on `checkout.session.completed`;
+`customer.subscription.created` is not handled, and a `subscription.updated`
+that arrives before the link updates 0 rows.
+
+Three-tier code path (Free / Pro €4.99 / Premium €9.99) remains in `server/app/routes/billing_router.py` (26 tests in `server/tests/test_billing_router.py`, 10-12). **Do NOT activate Stripe Live Mode for v1 iOS submission** — it duplicates RevenueCat and complicates compliance review. Revisit when:
 
 - Building a web sign-up flow (`web/` Vercel site has no payments today).
 - Submitting Android version (Google Play allows external billing in some markets but Stripe is simpler than Play Billing for our scale).

@@ -771,7 +771,7 @@ long. `server/app/routes/billing_router.py`.
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/billing/status` | JWT | Current plan + limits (`PLAN_LIMITS`) |
-| POST | `/billing/webhook` | Stripe signature | Stripe events (sponsorships, tickets, web subscriptions) |
+| POST | `/billing/webhook` | Stripe signature | Stripe events (sponsorships, tickets, web subscriptions). Stripe's endpoint must point at `https://api.sparrowcollect.com/billing/webhook` (it pointed at the dead `api.collectai.app/stripe/webhook` until 2026-10-12) and is pinned to API **2026-03-25.dahlia** — read subscription periods via `_subscription_period` and an invoice's subscription via `_invoice_subscription_id`, never the pre-basil top-level keys. See `docs/MONETIZATION.md` → Stripe test-mode audit |
 | POST | `/billing/revenuecat-webhook` | `Authorization: <REVENUECAT_WEBHOOK_AUTH>` | In-app purchases — **the only path from a mobile purchase to `subscriptions`** |
 
 ### The idempotency contract, and the way it used to fail

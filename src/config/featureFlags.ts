@@ -206,3 +206,17 @@ export const featureFlags = {
  * together, and only with live Stripe prices and an organiser payout path.
  */
 export const PAID_EVENTS_ENABLED = false;
+
+/**
+ * Stripe (web) billing surfaces inside the app — today only the Settings →
+ * "Billing portal" row, which opens the Stripe customer portal.
+ *
+ * OFF: launch is in-app purchase only (docs/OPEN_DECISIONS.md → Decided
+ * 2026-10-09). Measured 2026-10-12: a member who bought through Apple or
+ * Google has no Stripe customer, so `/billing/portal-session` answers 404 and
+ * the row only ever produced "Failed to open billing portal" — and an iOS link
+ * to an outside payment portal is an App Review risk (guideline 3.1.1).
+ * Subscriptions are managed through the store (Settings → Manage subscription).
+ * Turn on together with the web checkout, never alone.
+ */
+export const WEB_BILLING_ENABLED = false;

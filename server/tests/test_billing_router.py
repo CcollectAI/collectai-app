@@ -657,3 +657,72 @@ class TestWebhookClaimIsReleasedOnFailure:
         assert resp.status_code == 503, "200 tells Stripe to stop retrying"
         assert "evt_stripe_nodb_1" not in seen, \
             "the in-memory claim outlived the failure — the retry is swallowed"
+
+
+# ---------------------------------------------------------------------------
+# Stripe payload shape (API 2025-03-31.basil and later — the webhook endpoint
+# is pinned to 2026-03-25.dahlia). Shapes below were MEASURED on a test-mode
+# subscription on 2026-10-12, not taken from docs.
+# ---------------------------------------------------------------------------
+
+class TestStripeDahliaPayloadShape:
+    """The handlers must read the period and the invoice's subscription
+    from where dahlia puts them, and still accept the pre-basil shape."""
+
+    def _pool(self):
+        pool = MagicMock()
+        pool.execute = AsyncMock()
+        pool.fetchrow = AsyncMock(return_value=None)  # not a sponsor sub
+        return pool
+
+    def test_subscription_updated_reads_period_from_item(self):
+        import asyncio
+        from app.routes.billing_router import _handle_subscription_updated
+        pool = self._pool()
+        sub = {  # dahlia: no top-level current_period_*
+            "id": "sub_dahlia", "status": "active", "cancel_at_period_end": False,
+            "items": {"data": [{
+                "price": {"id": "price_unknown"},
+                "current_period_start": 1791817526,
+                "current_period_end": 1794495926,
+            }]},
+        }
+        asyncio.run(_handle_subscription_updated(pool, sub))
+        args = pool.execute.await_args.args
+        # (sql, plan, status, cancel_at_period_end, period_start, period_end, sub_id)
+        assert args[4] is not None and args[5] is not None, "period dropped"
+        assert args[5].timestamp() == 1794495926
+        assert args[6] == "sub_dahlia"
+
+    def test_subscription_updated_still_reads_legacy_top_level(self):
+        import asyncio
+        from app.routes.billing_router import _handle_subscription_updated
+        pool = self._pool()
+        sub = {
+            "id": "sub_legacy", "status": "active",
+            "current_period_start": 1700000000, "current_period_end": 1702592000,
+            "items": {"data": [{"price": {"id": "price_unknown"}}]},
+        }
+        asyncio.run(_handle_subscription_updated(pool, sub))
+        args = pool.execute.await_args.args
+        assert args[5].timestamp() == 1702592000
+
+    def test_payment_failed_reads_parent_subscription_details(self):
+        import asyncio
+        from app.routes.billing_router import _handle_payment_failed
+        pool = self._pool()
+        invoice = {  # dahlia: invoice.subscription is None
+            "subscription": None,
+            "parent": {"type": "subscription_details",
+                       "subscription_details": {"subscription": "sub_dahlia", "metadata": {}}},
+        }
+        asyncio.run(_handle_payment_failed(pool, invoice))
+        assert pool.execute.await_count == 1, "past_due never written"
+        assert pool.execute.await_args.args[1] == "sub_dahlia"
+
+    def test_payment_failed_still_reads_legacy_key(self):
+        import asyncio
+        from app.routes.billing_router import _handle_payment_failed
+        pool = self._pool()
+        asyncio.run(_handle_payment_failed(pool, {"subscription": "sub_legacy"}))
+        assert pool.execute.await_args.args[1] == "sub_legacy"

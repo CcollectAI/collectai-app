@@ -44,7 +44,7 @@ import { TimeoutError } from '@/lib/withTimeout';
 import { deleteAccount, collectorsApi } from '@/api/collectorsApi';
 import { logger } from '@/lib/logger';
 import { radius, text as textToken, fontWeight as fw } from '@/theme/tokens';
-import { BETA_MODE } from '@/config/featureFlags';
+import { BETA_MODE, WEB_BILLING_ENABLED } from '@/config/featureFlags';
 import { useTranslation } from 'react-i18next';
 
 function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMount?: boolean }) {
@@ -396,6 +396,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
+        {WEB_BILLING_ENABLED && (<>
         <AnimatedPressable
           style={styles.settingRow}
           onPress={async () => {
@@ -418,6 +419,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
         </AnimatedPressable>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        </>)}
 
         <AnimatedPressable
           style={styles.settingRow}
