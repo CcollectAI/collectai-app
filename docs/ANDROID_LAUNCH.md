@@ -31,7 +31,20 @@ started locally 10-09 (`npm run build:android:local` → `builds/sparrow-android
   browser until `web/` is deployed (Vercel CLI: "Not authorized" 10-09). Re-check:
   `curl -s https://sparrowcollect.com/.well-known/assetlinks.json | grep -c 8F:34:81`
   → expect 1.
-- **Play subscriptions — not created yet.** The service account can READ
+- **Play subscriptions — CREATED 2026-10-12 in the Play Console UI, state DRAFT
+  until Merle activates.** Payments profile "3511" (Organization, ID 9441-7330-4883,
+  NL) linked 10-12 + Knab bank account added (test deposit pending). Read back via
+  the API (`GET /subscriptions/<id>` 200):
+  `sparrow_pro_monthly` / base plan `monthly` P1M, 174 regions — NL/BE €4.99,
+  DE/FR €4.89, US $3.99, GB £3.99; offer `free-trial-2w` = P2W free, new customers
+  who never had ANY subscription in the app. `sparrow_pro_yearly` / `yearly` P1Y —
+  NL/BE/FR €39.99, DE €38.99, US $34.99, GB £34.99; no offer.
+  ⚠️ Play's bulk "Set prices" treats the entered amount as EX-VAT for tax-inclusive
+  countries (€4.99 became NL €5.99). Enter `target / 1.21` (4.12, 33.05) and then
+  override US/GB per row — the bulk update overwrites those overrides.
+  The service account still gets 403 on every product WRITE (create, convertRegionPrices)
+  while reads work → it lacks the products permission; UI was used instead.
+  Earlier history: The service account can READ
   monetization (`GET /subscriptions` → 204) but `POST /pricing:convertRegionPrices`
   → **403 "caller does not have permission"**. NOT a service-account permission
   (still 403 after Merle granted rights, and after the first AAB): **the
