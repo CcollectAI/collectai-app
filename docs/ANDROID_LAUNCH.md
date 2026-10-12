@@ -31,8 +31,12 @@ started locally 10-09 (`npm run build:android:local` → `builds/sparrow-android
   browser until `web/` is deployed (Vercel CLI: "Not authorized" 10-09). Re-check:
   `curl -s https://sparrowcollect.com/.well-known/assetlinks.json | grep -c 8F:34:81`
   → expect 1.
-- **Play subscriptions — CREATED 2026-10-12 in the Play Console UI, state DRAFT
-  until Merle activates.** Payments profile "3511" (Organization, ID 9441-7330-4883,
+- **Play subscriptions — CREATED + ACTIVE 2026-10-12** (UI; Merle activated both base
+  plans + the trial offer; API re-read: all ACTIVE). **RevenueCat wired 10-12:** both
+  imported as `sparrow_pro_monthly:monthly` / `sparrow_pro_yearly:yearly`, attached to
+  entitlement `pro`, added to offering `default` ($rc_monthly / $rc_annual). Re-check
+  with the goog_ key + `X-Platform: android` → `/v1/subscribers/<any>/offerings` returns
+  both packages with `platform_product_identifier` (verified 10-12). Payments profile "3511" (Organization, ID 9441-7330-4883,
   NL) linked 10-12 + Knab bank account added (test deposit pending). Read back via
   the API (`GET /subscriptions/<id>` 200):
   `sparrow_pro_monthly` / base plan `monthly` P1M, 174 regions — NL/BE €4.99,
