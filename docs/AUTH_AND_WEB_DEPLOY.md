@@ -733,6 +733,23 @@ exercises each rewrite. A deploy that reports success while the site is
 unchanged is the documented failure mode of this repo (2026-05-02, and again
 here in a different guise).
 
+## `web/` DEPLOYED 2026-10-12 — the login that finally stuck
+
+Two `vercel login` runs by Merle both landed on `eusammysam-2709` although the
+Chrome window Claude drives was signed in as **`ccollectai-9199`**: the CLI opens
+the Mac's DEFAULT browser/profile, which is signed in as the personal account.
+**What worked:** `BROWSER=none npx vercel@latest login` prints
+`Visit https://vercel.com/oauth/device?user_code=XXXX-XXXX`; open THAT URL in the
+browser that shows "CollectAI's projects" and click Allow Access. Then
+`vercel teams ls` lists `✔ collectais-projects`.
+
+Deployed with `npx vercel@latest --prod --scope collectais-projects --yes` (the
+existing `.vercel/` was correct — not removed). `vercel inspect` → target
+production, aliases sparrowcollect.com + www. Verified live: assetlinks carries
+the Play signing key (`8F:34:81…`), 11 `/value/*` price guides 200, sitemap 19
+URLs, terms name 3511, AASA `/l/*` + `/l/<id>` `/r/<code>` `/auth/confirm` 200.
+Re-check: `curl -s https://sparrowcollect.com/sitemap.xml | grep -c '<loc>'` → 19.
+
 ## Deploying `web/` — the Vercel account gotcha
 
 `web/` (marketing site + AASA + `/auth/confirm`) lives under the Vercel team

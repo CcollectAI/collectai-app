@@ -26,8 +26,9 @@ started locally 10-09 (`npm run build:android:local` → `builds/sparrow-android
   ccollect.ai@ login — see `docs/OPEN_DECISIONS.md` → Decided 2026-10-09. Its
   Play app passes 2 of 3 credential checks; the third ("package name not found"
   for subscription purchases) needs the first AAB in a Play track.
-- **assetlinks.json:** the repo has both fingerprints (`03b49b9d`) but the LIVE
-  file still has only the upload key → App Links from Play installs open the
+- **assetlinks.json: LIVE with both fingerprints since 2026-10-12** (web deploy;
+  `grep -c 8F:34:81` → 1). Earlier: the repo had both (`03b49b9d`) but the LIVE
+  file still had only the upload key → App Links from Play installs open the
   browser until `web/` is deployed (Vercel CLI: "Not authorized" 10-09). Re-check:
   `curl -s https://sparrowcollect.com/.well-known/assetlinks.json | grep -c 8F:34:81`
   → expect 1.
