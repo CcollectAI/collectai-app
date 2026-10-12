@@ -863,9 +863,13 @@ Re-check the webhook any time:
 `ssh collectai 'grep -a "POST /billing/webhook" /opt/collectors/bake.log | tail -5'`
 (after a test-mode event) → expect `200`.
 
-Not yet proven: a full **checkout.session.completed** from a hosted Checkout page
-(needs the test card typed on Stripe's page by a person) → `subscriptions` row
-`plan=pro, status=active` → `/billing/status` pro. Note the handler links the
+**Proven end to end 2026-10-12 (test mode, fix `4a139b07` DEPLOYED 17:22, 9 gates PASS,
+healthz 200):** Merle paid the hosted Checkout (Pro monthly, card 4242) for simcheck →
+`checkout.session.completed` → "subscribed to pro plan" → `/billing/status` `pro/active`
+(`current_period_end` null on the OLD code) → `cancel_at_period_end` via API →
+`subscription.updated` → period end **2026-11-12 stored** → cancel → `subscription.deleted`
+→ `free/canceled`. Failed renewal (`pm_card_chargeCustomerFail`) → `invoice.payment_failed`
+→ "Payment failed for subscription sub_…" (unreachable before the fix). Note the handler links the
 Stripe subscription only on `checkout.session.completed`;
 `customer.subscription.created` is not handled, and a `subscription.updated`
 that arrives before the link updates 0 rows.
