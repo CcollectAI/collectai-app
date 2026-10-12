@@ -33,10 +33,16 @@ started locally 10-09 (`npm run build:android:local` → `builds/sparrow-android
   → expect 1.
 - **Play subscriptions — not created yet.** The service account can READ
   monetization (`GET /subscriptions` → 204) but `POST /pricing:convertRegionPrices`
-  → **403 "caller does not have permission"**: it lacks the product/pricing
-  permission in Play Console → Users and permissions. Create them in the UI, or
-  grant that permission and let the API do it. Mirror iOS (read from the ASC API
-  10-09):
+  → **403 "caller does not have permission"**. NOT a service-account permission
+  (still 403 after Merle granted rights, and after the first AAB): **the
+  developer account has no Google Payments merchant account** — Play Console →
+  Monetize → Subscriptions shows "You need to set up a Google Payments merchant
+  account to access this page" (seen 2026-10-12). Merle sets it up (bank, tax,
+  KvK identity); then retry `convertRegionPrices` → expect 200. The Play
+  developer account is the **u/3** Google login in Chrome (account
+  7740039459322156044, app 4976072077209678882); u/0 and u/1 land on signup.
+  AAB versionCode 7 is on the **internal** track (API upload + commit 10-10,
+  re-read: status completed). Mirror iOS (read from the ASC API 10-09):
 
   | Product ID | Base plan | iOS price (NL / US / GB) | Name / description (iOS) | Offer |
   |---|---|---|---|---|
