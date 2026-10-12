@@ -529,6 +529,30 @@ The landing page includes:
 - **guides.html** — programmatic answer library with 81 structured Q&As across 8 intent clusters (see below)
 - **Source**: `/Users/merle/GitHub/CcollectAI/web/index.html`, `categories.html`, `guides.html`, `robots.txt`, `sitemap.xml`
 
+### Price-guide landing pages — `web/value/<slug>.html` (added 2026-10-12)
+
+One page per search intent ("pokemon card value", "lego set value", …), 11 pages:
+pokemon-cards, magic-the-gathering-cards, yugioh-cards, sports-cards, funko-pop,
+lego-sets, vinyl-records, retro-video-games, anime-figures, watches, sneakers.
+
+- **Generated — never hand-edit.** `python3 scripts/build_value_pages.py` writes the
+  pages, the `/value/` entries in `sitemap.xml` and the `## Price guides` list in
+  `llms.txt`. It is idempotent; it exits non-zero if a referenced guide question is
+  missing from `guides.html` or a title/description is over 63/160 chars (both
+  mutation-checked 10-12).
+- **FAQ answers are the vetted `guides.html` JSON-LD text, copied verbatim.** Fix an
+  answer in `guides.html`, then re-run the script.
+- **"Where the prices come from" is a measurement** (market_hits per category and
+  provider, 30 days to 2026-10-12): Pokémon = TCGplayer + Cardmarket (+ eBay), MTG =
+  Scryfall (+ eBay), Yu-Gi-Oh! = Cardmarket + TCGplayer, vinyl = Discogs + eBay, the
+  rest = eBay **listings** (asking prices — never "sold"). Re-measure with the query in
+  the script's docstring before changing a source line.
+- Intro claims stay within what `categories.html` already says (e.g. barcode only for
+  sealed LEGO; no box-and-papers, CIB, deadstock or graded-slab claims).
+- `categories.html` cards for these 11 link to the pages ("Price guide →").
+- Not yet: Lorcana / One Piece / comics pages (comics had 12 prices in 30 days — too
+  thin to promise a value).
+
 ### AEO Structured Fact Sheet
 
 > These facts are embedded in the landing page JSON-LD and meta tags. Use them as the single source of truth for all marketing copy.

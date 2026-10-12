@@ -20,7 +20,20 @@
 - [Home](https://sparrowcollect.com/): Product overview, features, and what Sparrow Collect does.
 - [Categories](https://sparrowcollect.com/categories): The 56 collectible categories covered (trading cards, figures, vinyl, watches, LEGO, sneakers, comics, and more).
 - [Guides](https://sparrowcollect.com/guides): In-depth collector guides and 80+ answered questions on identifying, grading, and valuing collectibles.
-- [Sparrow Pro](https://sparrowcollect.com/pro): Pro subscription features and web checkout.
+
+## Price guides
+
+- [What are my Pokémon cards worth?](https://sparrowcollect.com/value/pokemon-cards): Scan a Pokémon card with your phone to identify the card, set and variant and see a value built from TCGplayer and Cardmarket prices plus eBay listings.
+- [How much are my Magic: The Gathering cards worth?](https://sparrowcollect.com/value/magic-the-gathering-cards): Scan Magic: The Gathering cards to identify the card, set and edition and see a value built from Scryfall card prices and eBay listings.
+- [What are my Yu-Gi-Oh! cards worth?](https://sparrowcollect.com/value/yugioh-cards): Scan Yu-Gi-Oh! cards to identify the set and rarity and see a value built from Cardmarket and TCGplayer prices. Ghost Rares, Starlights and 1st Editions.
+- [What is my sports card collection worth?](https://sparrowcollect.com/value/sports-cards): Scan baseball, basketball, football and hockey cards to identify them and see a value built from eBay listings. Rookies and autographs in one app.
+- [How much is my Funko Pop worth?](https://sparrowcollect.com/value/funko-pop): Scan a Funko Pop to identify the figure, variant and exclusive edition and see a value built from eBay listings. Commons, chases, vaulted and convention grails.
+- [How do I check the value of my LEGO sets?](https://sparrowcollect.com/value/lego-sets): Scan a LEGO set (barcode works for sealed boxes) and see a value built from eBay listings, sealed or opened. Track retired sets across your whole collection.
+- [What is my vinyl record collection worth?](https://sparrowcollect.com/value/vinyl-records): Scan a record to identify the release and see a value built from Discogs and eBay listings, graded on the Goldmine scale.
+- [How much are my retro video games worth?](https://sparrowcollect.com/value/retro-video-games): Scan NES, SNES, N64, PlayStation and Sega games to identify them and see a value built from eBay listings. Track every game in one app.
+- [How do I find the value of anime figures?](https://sparrowcollect.com/value/anime-figures): Scan anime figures from Good Smile, Kotobukiya, Alter and Bandai to identify them and see a value built from eBay listings. Scale figures, Nendoroids, prizes.
+- [How do I value my watch collection?](https://sparrowcollect.com/value/watches): Photograph a watch to identify it and see a value built from eBay listings. Rolex, Omega, Seiko, vintage and modern, in one app.
+- [How much are my sneakers worth?](https://sparrowcollect.com/value/sneakers): Scan a pair of sneakers to identify them and see a value built from eBay listings. Nike, Adidas, Jordan and collabs. Track every pair in one app.
 
 ## Support & policies
 
