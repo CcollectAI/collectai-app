@@ -159,6 +159,27 @@ edit whose anchor appeared twice, so it silently did not apply.
   live listings" view that does not exist → `docs/app-store-aso.md`. Play saved;
   iOS goes in 1.0.1.
 
+## 2026-10-13 follow-ups (state + re-checks)
+
+- **iOS 1.0 rejected (3.1.2, EULA link missing from the description) → fixed in metadata,
+  build 167, resubmitted** → `docs/app-store-aso.md` Listing v2. After a rejection the
+  version page's **"Update Review"** is what resubmits; the submission page's button
+  stays grey until then.
+- **Android AAB 8 on internal = production candidate** (billing-portal hide inside);
+  production checklist in `docs/ANDROID_LAUNCH.md`.
+- **Web:** 16 `/value/*` price guides live, sitemap 24. Search Console 10-13: home indexed,
+  sitemap still "Couldn't fetch" (our side proven fine) → `docs/AUTH_AND_WEB_DEPLOY.md`.
+- **Drift:** `server/app` + `workers` identical to prod (md5, 400 files); the only drift
+  (EC2-run `import_retro_pokemon` price-claim strip + 3 others) deployed 10-13.
+- **"Nightly Sanity / Train/Eval/Gate failed" emails came from the OLD repo
+  `CcollectAI/collectors-merge-recovered-ec2`** (last push 2026-03-15; 5/5 nights red),
+  not `collectai-app` (green daily). All 10 of its workflows **disabled** 10-13 (Merle).
+  Re-enable: `gh workflow enable <id> --repo CcollectAI/collectors-merge-recovered-ec2`.
+- **Vercel CLI keeps getting re-logged as `eusammysam`.** Before any `web/` deploy run
+  `npx vercel@latest teams ls` and require `✔ collectais-projects`; fix =
+  `BROWSER=none npx vercel@latest login` + approve the device URL in a browser whose
+  vercel.com/account shows `ccollectai-9199`.
+
 ## Decisions of 2026-09-24 (Merle) — built the same day
 
 - **Keep the DEMO listings** on the marketplace as demo content.
