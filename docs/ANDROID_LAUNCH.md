@@ -60,9 +60,9 @@ wired into RevenueCat — see the bullets below. Open: a real purchase + push on
   NL) linked 10-12 + Knab bank account added (test deposit pending). Read back via
   the API (`GET /subscriptions/<id>` 200):
   `sparrow_pro_monthly` / base plan `monthly` P1M, 174 regions — NL/BE €4.99,
-  DE/FR €4.89, US $3.99, GB £3.99; offer `free-trial-2w` = P2W free, new customers
+  DE/FR €4.89, US ~~$3.99~~ **$4.99**, GB ~~£3.99~~ **£4.49** (raised 2026-10-13, OPEN_DECISIONS); offer `free-trial-2w` = P2W free, new customers
   who never had ANY subscription in the app. `sparrow_pro_yearly` / `yearly` P1Y —
-  NL/BE/FR €39.99, DE €38.99, US $34.99, GB £34.99; no offer.
+  NL/BE/FR €39.99, DE €38.99, US ~~$34.99~~ **$39.99** (10-13), GB £34.99; no offer.
   ⚠️ Play's bulk "Set prices" treats the entered amount as EX-VAT for tax-inclusive
   countries (€4.99 became NL €5.99). Enter `target / 1.21` (4.12, 33.05) and then
   override US/GB per row — the bulk update overwrites those overrides.
@@ -83,8 +83,8 @@ wired into RevenueCat — see the bullets below. Open: a real purchase + push on
 
   | Product ID | Base plan | iOS price (NL / US / GB) | Name / description (iOS) | Offer |
   |---|---|---|---|---|
-  | `sparrow_pro_monthly` | `monthly`, P1M auto-renew | €4.99 / $3.99 / £3.99 | "Pro Monthly" — "Unlimited features and advanced analytics" | **2-week free trial** (Merle 10-09). iOS was 3 months in all 175 territories → changed to TWO_WEEKS via the ASC API 10-09, re-read: 175/175 |
-  | `sparrow_pro_yearly` | `yearly`, P1Y auto-renew | €39.99 / $34.99 / £34.99 | "Pro Yearly" — "Save 33% vs monthly." | none |
+  | `sparrow_pro_monthly` | `monthly`, P1M auto-renew | €4.99 / $4.99 / £4.49 (since 2026-10-13) | "Pro Monthly" — "Unlimited features and advanced analytics" | **2-week free trial** (Merle 10-09). iOS was 3 months in all 175 territories → changed to TWO_WEEKS via the ASC API 10-09, re-read: 175/175 |
+  | `sparrow_pro_yearly` | `yearly`, P1Y auto-renew | €39.99 / $39.99 / £34.99 (since 2026-10-13) | "Pro Yearly" — "Save 33% vs monthly." | none |
 
   Then in RevenueCat: add both as Play products (`sparrow_pro_monthly:monthly`,
   `sparrow_pro_yearly:yearly`), attach to entitlement `pro`, and put them in
