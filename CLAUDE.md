@@ -142,8 +142,10 @@ edit whose anchor appeared twice, so it silently did not apply.
   2-week trial, yearly) and wired into RevenueCat; FCM V1 key on EAS; license testers
   set. **A new AAB from ≥ `4a139b07` is required before Production.** →
   `docs/ANDROID_LAUNCH.md`.
-- **Play pricing trap:** bulk "Set prices" treats the amount as EX-VAT (€4.99 became
-  €5.99 in NL) — enter target/1.21. The Play and ASC service accounts can READ but not
+- **Play pricing trap:** the "Set prices" dialog treats the amount as EX-VAT and adds
+  EACH country's VAT (€4.99 became €5.99 in DE) — target/1.21 fits 21% countries only and
+  left 10 euro countries at €4.09–€4.89 until 10-13. Use the row pencil ("Edit price"):
+  it takes the final price incl. VAT. Verify via the API: one EUR price for all 24. The Play and ASC service accounts can READ but not
   COMMIT product/listing changes (403); those go through the Console UI.
 - **Stripe (dormant, IAP-only launch) was broken twice and nobody could see it:** the
   webhook pointed at the dead `api.collectai.app/stripe/webhook` (0 deliveries in

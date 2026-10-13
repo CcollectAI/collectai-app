@@ -31,7 +31,13 @@ _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in 
   Collectibles.com $3.99–9.99/$24.99–49.99 + lifetime $99.99; App Pricing Lab snapshots
   Mar–May 2026):
   1. **US $4.99 / $39.99, UK £4.49 / £34.99, EU €4.99 / €39.99** — APPLIED 10-13 on App Store
-     (ASC API, read back) and Google Play (Console UI; API GET read back). Zero subscribers
+     (ASC API, read back) and Google Play (Console UI; API GET read back). **Re-check 10-13
+     evening found Play off in 10 euro countries** (€4.09–€4.89 / €32.99–€40.99, the
+     ex-VAT dialog × per-country VAT) → fixed in the Console; API read-back: all 24 euro countries
+     €4.99 / €39.99 on both stores. Trial: 2 weeks on MONTHLY only, both stores (yearly has
+     none on either — consistent). Not part of the decision, noted: Apple CA $4.99 CAD /
+     AU $5.99 AUD monthly are cheaper than Play (CA $6.49, AU $7.49) — Apple's own
+     equalisation, left alone. Zero subscribers
      existed, so no price-increase consent was needed. RevenueCat holds no prices (reads the
      stores); its `default` offering maps both packages on iOS + Android (offerings API 10-13).
      Stripe (test, dormant) stays EUR-only €4.99/€39.99 — prices are immutable, add USD/GBP

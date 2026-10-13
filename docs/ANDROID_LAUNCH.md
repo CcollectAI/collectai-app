@@ -59,13 +59,20 @@ wired into RevenueCat — see the bullets below. Open: a real purchase + push on
   both packages with `platform_product_identifier` (verified 10-12). Payments profile "3511" (Organization, ID 9441-7330-4883,
   NL) linked 10-12 + Knab bank account added (test deposit pending). Read back via
   the API (`GET /subscriptions/<id>` 200):
-  `sparrow_pro_monthly` / base plan `monthly` P1M, 174 regions — NL/BE €4.99,
-  DE/FR €4.89, US ~~$3.99~~ **$4.99**, GB ~~£3.99~~ **£4.49** (raised 2026-10-13, OPEN_DECISIONS); offer `free-trial-2w` = P2W free, new customers
+  `sparrow_pro_monthly` / base plan `monthly` P1M, 174 regions — **all 24 euro
+  countries €4.99** (DE/FR/AT/BG/CY/MC were €4.89, LU €4.79, MT €4.86, SM/VA €4.09 until
+  the 10-13 evening fix), US ~~$3.99~~ **$4.99**, GB ~~£3.99~~ **£4.49** (raised 2026-10-13, OPEN_DECISIONS); offer `free-trial-2w` = P2W free, new customers
   who never had ANY subscription in the app. `sparrow_pro_yearly` / `yearly` P1Y —
-  NL/BE/FR €39.99, DE €38.99, US ~~$34.99~~ **$39.99** (10-13), GB £34.99; no offer.
-  ⚠️ Play's bulk "Set prices" treats the entered amount as EX-VAT for tax-inclusive
-  countries (€4.99 became NL €5.99). Enter `target / 1.21` (4.12, 33.05) and then
-  override US/GB per row — the bulk update overwrites those overrides.
+  **all 24 euro countries €39.99** (DE/CY/LU were €38.99, EE/FI/GR/HR/IE/PT/SK €40.99,
+  MT €39.00, SM/VA €32.99 until the 10-13 evening fix), US ~~$34.99~~ **$39.99** (10-13),
+  GB £34.99; no offer.
+  ⚠️ Play's "Set prices" dialog (bulk OR one country) treats the amount as EX-VAT and
+  adds each country's own VAT, then charms it. `target / 1.21` is right ONLY for 21%
+  countries — it left 10 euro countries off-target (fixed 10-13). **Use the row's pencil
+  (inline "Edit price") instead: it takes the FINAL price incl. VAT.** Malta, Iceland and
+  the CFA countries hide under the "Other countries / regions (EUR)" group row.
+  Re-check: Android Publisher `GET /subscriptions/<id>` (service account), group
+  `regionalConfigs` by price: expect ONE EUR line of 24 countries per plan.
   The service account still gets 403 on every product WRITE (create, convertRegionPrices)
   while reads work → it lacks the products permission; UI was used instead.
   Earlier history: The service account can READ
