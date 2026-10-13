@@ -69,10 +69,10 @@ USER ACTIONS REMAINING (before App Store submission):
         Review Information — that part is genuinely open, see Phase 7)
   ### ⚠️ Everything above was true in May and nothing has re-confirmed it
   ### against App Store Connect since. Treat as done-but-unverified.
-  [ ] App privacy nutrition labels — ASC questionnaire (answers in
+  [x] App privacy nutrition labels — ASC questionnaire (answers in  ← DONE 2026-10-12 (published)
         docs/app-store-aso.md lines 620-672)
-  [ ] App Review Information — demo creds + contact + reviewer notes
-  [ ] Submit for review — Phase 8 of PUBLIC_LAUNCH_CHECKLIST.md
+  [x] App Review Information — demo creds + contact + reviewer notes  ← DONE 2026-10-09
+  [x] Submit for review — Phase 8 of PUBLIC_LAUNCH_CHECKLIST.md  ← DONE 2026-10-12, resubmitted 10-13 (build 167)
   [ ] Supabase dashboard toggles — HIBP, OTP expiry, Postgres upgrade (post-launch)
 
 DEFERRED (NOT required for v1):
@@ -157,14 +157,14 @@ Code side ✅ DONE:
 [x] EXPO_PUBLIC_REVENUECAT_IOS_KEY plumbing via EAS env
 
 Dashboard side ⏳ PENDING (user action — see PUBLIC_LAUNCH_CHECKLIST.md Phases 1-2):
-[ ] revenuecat.com account + Sparrow project
-[ ] ASC: create `sparrow_pro_monthly` (€4.99/mo) + `sparrow_pro_yearly` (€39.99/yr)
-[ ] ASC: generate In-App Purchase Key (.p8) — Key ID + Issuer ID
-[ ] RC: paste .p8 + Key ID + Issuer ID, copy public app-specific API key
-[ ] `eas env:create` to push `EXPO_PUBLIC_REVENUECAT_IOS_KEY` to production env
-[ ] RC: import products from App Store
-[ ] RC: create `pro` entitlement, attach both products
-[ ] RC: configure `default` offering with `$rc_monthly` + `$rc_annual` packages
+[x] revenuecat.com account + Sparrow project  (done 2026-10-09, RC project e94defd0)
+[x] ASC: create `sparrow_pro_monthly` (€4.99/mo) + `sparrow_pro_yearly` (€39.99/yr)  (done 2026-10-09, RC project e94defd0)
+[x] ASC: generate In-App Purchase Key (.p8) — Key ID + Issuer ID  (done 2026-10-09, RC project e94defd0)
+[x] RC: paste .p8 + Key ID + Issuer ID, copy public app-specific API key  (done 2026-10-09, RC project e94defd0)
+[x] `eas env:create` to push `EXPO_PUBLIC_REVENUECAT_IOS_KEY` to production env  (done 2026-10-09, RC project e94defd0)
+[x] RC: import products from App Store  (done 2026-10-09, RC project e94defd0)
+[x] RC: create `pro` entitlement, attach both products  (done 2026-10-09, RC project e94defd0)
+[x] RC: configure `default` offering with `$rc_monthly` + `$rc_annual` packages  (done 2026-10-09, RC project e94defd0)
 [ ] ASC: create sandbox tester for purchase QA
 
 ================================================================================
@@ -255,7 +255,7 @@ matching ASC field per **`docs/PUBLIC_LAUNCH_CHECKLIST.md` Phase 5**.
 [~] Build #13 (auto-incremented from #12) — BUILDING on EAS 2026-05-19,
     track at https://expo.dev/accounts/collectai/projects/collectai/builds/
 [x] Submit profile `store` added to eas.json 2026-05-19 (mirrors `production`)
-[ ] App Store submission — pending RevenueCat dashboard + ASC metadata
+[x] App Store submission — done: submitted 2026-10-12, resubmitted 10-13 with build 167 (see docs/PUBLIC_LAUNCH_CHECKLIST.md Phase 8)
 
 ================================================================================
  15. POST-LAUNCH

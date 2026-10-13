@@ -73,11 +73,11 @@ that carries them.
 - ✅ Phase 2 — RevenueCat wiring
 - ⏳ Phase 3 — In flight: store-profile binary build (#14, rebuild required for new RC key to land)
 - ⏳ Phase 4 — Demo account ready, just needs ASC App Review Info paste
-- ☐ Phase 5 — ASC metadata (paste from `docs/app-store-aso.md`)
-- ☐ Phase 6 — App Privacy nutrition labels
-- ☐ Phase 7 — App Review Information
-- ☐ Phase 7.5 — Run `node scripts/check-asc-listing.mjs` + `node scripts/analyze-bundle.mjs --cached`
-- ☐ Phase 8 — Submit for review
+- ✅ Phase 5 — ASC metadata — listing v2 applied via the ASC API 2026-10-13 (source: `scripts/store_listing.py`)
+- ✅ Phase 6 — App Privacy — 14 data types PUBLISHED 2026-10-12 (they had sat as a draft)
+- ✅ Phase 7 — App Review Information — reviewer account + notes saved 2026-10-09
+- ✅ Phase 7.5 — superseded: `check-asc-listing.mjs` parses the v1 copy in the doc, not the live text. Run `python3 scripts/store_listing.py /tmp/l.json` (limits + EULA link + banned claims) — PASS 2026-10-13
+- ✅ Phase 8 — submitted 2026-10-12; rejected 10-13 (3.1.2, EULA link in description); fixed + resubmitted with build 167 on 10-13 → WAITING_FOR_REVIEW
 
 **2026-05-20 morning** (3 commits, all bake-side perf + CI hygiene):
 
