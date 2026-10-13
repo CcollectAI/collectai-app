@@ -33,6 +33,11 @@
 - [How much are my retro video games worth?](https://sparrowcollect.com/value/retro-video-games): Scan NES, SNES, N64, PlayStation and Sega games to identify them and see a value built from eBay listings. Track every game in one app.
 - [How do I find the value of anime figures?](https://sparrowcollect.com/value/anime-figures): Scan anime figures from Good Smile, Kotobukiya, Alter and Bandai to identify them and see a value built from eBay listings. Scale figures, Nendoroids, prizes.
 - [How do I value my watch collection?](https://sparrowcollect.com/value/watches): Photograph a watch to identify it and see a value built from eBay listings. Rolex, Omega, Seiko, vintage and modern, in one app.
+- [What are my Disney Lorcana cards worth?](https://sparrowcollect.com/value/lorcana-cards): Scan Disney Lorcana cards to identify the card and set and see a value built from Lorcast card prices and eBay listings. All sets and promos.
+- [What are my Hot Toys figures worth?](https://sparrowcollect.com/value/hot-toys): Scan Hot Toys 1/6 scale figures from Star Wars, Marvel and DC to identify them and see a value built from eBay listings. Track every figure in one app.
+- [How much is my Warhammer collection worth?](https://sparrowcollect.com/value/warhammer): Track the value of Warhammer 40K and Age of Sigmar miniatures, sealed or painted, with values built from eBay listings. Your whole army in one app.
+- [What are my Gunpla model kits worth?](https://sparrowcollect.com/value/gunpla): Scan Gunpla kits (HG, MG, PG, RG) to identify them and see a value built from eBay listings. Track built and sealed kits in one app.
+- [How much are my Hot Wheels and diecast cars worth?](https://sparrowcollect.com/value/diecast-hot-wheels): Scan Hot Wheels, Tomica and 1:18 scale diecast cars to identify them and see a value built from eBay listings. Track every car in one app.
 - [How much are my sneakers worth?](https://sparrowcollect.com/value/sneakers): Scan a pair of sneakers to identify them and see a value built from eBay listings. Nike, Adidas, Jordan and collabs. Track every pair in one app.
 
 ## Support & policies

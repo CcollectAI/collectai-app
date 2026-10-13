@@ -577,9 +577,11 @@ The landing page includes:
 
 ### Price-guide landing pages — `web/value/<slug>.html` (added 2026-10-12)
 
-One page per search intent ("pokemon card value", "lego set value", …), 11 pages:
+One page per search intent ("pokemon card value", "lego set value", …), **16 pages**:
 pokemon-cards, magic-the-gathering-cards, yugioh-cards, sports-cards, funko-pop,
-lego-sets, vinyl-records, retro-video-games, anime-figures, watches, sneakers.
+lego-sets, vinyl-records, retro-video-games, anime-figures, watches, sneakers — and
+(added 2026-10-13, sources re-measured) lorcana-cards (Lorcast card prices + eBay),
+hot-toys, warhammer, gunpla, diecast-hot-wheels (eBay listings).
 
 - **Generated — never hand-edit.** `python3 scripts/build_value_pages.py` writes the
   pages, the `/value/` entries in `sitemap.xml` and the `## Price guides` list in
@@ -596,8 +598,8 @@ lego-sets, vinyl-records, retro-video-games, anime-figures, watches, sneakers.
 - Intro claims stay within what `categories.html` already says (e.g. barcode only for
   sealed LEGO; no box-and-papers, CIB, deadstock or graded-slab claims).
 - `categories.html` cards for these 11 link to the pages ("Price guide →").
-- Not yet: Lorcana / One Piece / comics pages (comics had 12 prices in 30 days — too
-  thin to promise a value).
+- Not yet: One Piece (1,174 eBay rows, merch not the TCG) / comics (12 prices in 30
+  days — too thin to promise a value).
 
 ### AEO Structured Fact Sheet
 
