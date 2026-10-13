@@ -64,6 +64,10 @@ END;
 $fn$;
 
 REVOKE ALL ON FUNCTION public.enforce_free_item_cap() FROM PUBLIC;
+-- Supabase grants EXECUTE to anon/authenticated on new functions by default
+-- (seen after the first apply 2026-10-13: has_function_privilege(anon) = t).
+-- A trigger function needs no EXECUTE grant to fire, so take it away.
+REVOKE ALL ON FUNCTION public.enforce_free_item_cap() FROM anon, authenticated;
 
 DROP TRIGGER IF EXISTS trg_items_free_cap ON public.items;
 CREATE TRIGGER trg_items_free_cap

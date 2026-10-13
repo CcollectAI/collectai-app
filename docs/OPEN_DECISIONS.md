@@ -37,8 +37,14 @@ _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in 
      Stripe (test, dormant) stays EUR-only €4.99/€39.99 — prices are immutable, add USD/GBP
      price objects only if the web checkout is ever re-opened. `web/pro.html` (unlinked,
      dormant) still shows the old €4.74/€37.99 web discount.
-  2. **Free plan gets a soft cap: 100 items in the collection** (scans stay free). Enforced
-     server-side, paywall offer at the cap — ships with iOS 1.0.1 / next AAB.
+  2. **Free plan gets a soft cap: 100 items in the collection** (scans stay free). LIVE 10-13:
+     DB trigger `trg_items_free_cap` (`supabase/migrations/20261013_free_item_cap.sql`, applied,
+     EXECUTE revoked from anon/authenticated) catches all six item writers; server `daaeb1f4`
+     DEPLOYED turns it into a coded 403 `PLAN_LIMIT_ITEMS`; trade settlement is exempt.
+     E2E 10-13: simcheck (free) filled to 100 → `POST /items` = 403 PLAN_LIMIT_ITEMS; test rows
+     deleted. The app's Pro offer at the cap (`src/lib/planLimitPrompt.ts`) ships with
+     iOS 1.0.1 / AAB 9 — iOS 167 and AAB 8 show a generic error at the cap. Nobody is near it
+     (max 9 items). Re-check: run the INSERT/`POST /items` probe above on a free test account.
   3. **Keep the 2-week trial and the 33%-off yearly.**
   4. **Re-check after 4–6 weeks of real traffic:** trial→paid, % of free users at the cap;
      then a RevenueCat Experiment €4.99 vs €6.99.
