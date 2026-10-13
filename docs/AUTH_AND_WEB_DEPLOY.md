@@ -750,6 +750,17 @@ the Play signing key (`8F:34:81…`), 11 `/value/*` price guides 200, sitemap 19
 URLs, terms name 3511, AASA `/l/*` + `/l/<id>` `/r/<code>` `/auth/confirm` 200.
 Re-check: `curl -s https://sparrowcollect.com/sitemap.xml | grep -c '<loc>'` → 19.
 
+**Search Console, measured 2026-10-13 (~1 day after deploy):** Indexed **1** (home);
+not indexed 3 = 2 "Page with redirect" (old `.html` URLs → 308, intended) + 1
+"Alternate page with proper canonical" (www → apex, intended). Sitemap submitted
+10-12 still **"Couldn't fetch", no "Last read"** — yet our side is clean: Googlebot UA
+gets 200 `application/xml`, robots.txt lists it, and Search Console's **live test of
+`/value/pokemon-cards` = "URL is available to Google", indexable, Breadcrumbs valid**.
+`/value/pokemon-cards` was "URL is unknown to Google" → indexing requested 10-13; home
+re-index requested. Re-check in Search Console → Sitemaps (expect Success + 19
+discovered) and Pages (indexed count). If the sitemap still says "Couldn't fetch"
+after ~3 days, remove and resubmit it — the fetch itself is proven working.
+
 ## Deploying `web/` — the Vercel account gotcha
 
 `web/` (marketing site + AASA + `/auth/confirm`) lives under the Vercel team
