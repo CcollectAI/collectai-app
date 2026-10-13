@@ -175,6 +175,13 @@ edit whose anchor appeared twice, so it silently did not apply.
   `CcollectAI/collectors-merge-recovered-ec2`** (last push 2026-03-15; 5/5 nights red),
   not `collectai-app` (green daily). All 10 of its workflows **disabled** 10-13 (Merle).
   Re-enable: `gh workflow enable <id> --repo CcollectAI/collectors-merge-recovered-ec2`.
+  **Also on EC2 (10-13, Merle: "turn off everything from the old repo"):** 37 systemd
+  unit files still pointed at the long-gone `/home/ubuntu/collectors-merge-recovered/`
+  (all inactive, none enabled, no timers; `collectai-bake` does not reference it). Moved
+  to `/etc/systemd/system/_old_repo_units_disabled_2026-10-13/` + daemon-reload; bake
+  active, healthz 200. Restore = move a file back + `systemctl daemon-reload`.
+  `scripts/rollback.sh` and `scripts/sanity_models.sh` still restart
+  `collectors-merge.service` — dead scripts, no caller (grep 10-13); do not run them.
 - **Vercel CLI keeps getting re-logged as `eusammysam`.** Before any `web/` deploy run
   `npx vercel@latest teams ls` and require `✔ collectais-projects`; fix =
   `BROWSER=none npx vercel@latest login` + approve the device URL in a browser whose
