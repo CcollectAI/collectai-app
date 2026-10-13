@@ -34,7 +34,18 @@ wired into RevenueCat — see the bullets below. Open: a real purchase + push on
   browser until `web/` is deployed (Vercel CLI: "Not authorized" 10-09). Re-check:
   `curl -s https://sparrowcollect.com/.well-known/assetlinks.json | grep -c 8F:34:81`
   → expect 1.
-- ⚠️ **Before any PRODUCTION release: build a new AAB from ≥ `4a139b07`.** AAB 7
+- ✅ **AAB 8 (built from `6eccd40f`, 2026-10-13) is on the INTERNAL track** (API upload +
+  commit 200, re-read: `1.0.0 (8)` completed). It carries the billing-portal hide, so the
+  precondition below is MET — AAB 8 is the production candidate.
+- **Production release checklist (Merle's call when to press it):** (1) a purchase + push
+  verified on a real phone from internal testing; (2) Play Console → Production → Create
+  release → *promote* `1.0.0 (8)` from internal (do not rebuild); (3) countries: same as
+  the subscriptions (174/175); (4) staged rollout 20% → 100% after 2–3 days of crash-free
+  Android vitals; (5) store listing v2 is already saved (`scripts/store_listing.py`).
+  3511 is an ORGANIZATION account, so the 12-testers/14-days closed-test rule for new
+  personal accounts does not apply — re-check Dashboard for any "Apply for production"
+  gate before assuming.
+- (history) ⚠️ **Before any PRODUCTION release: build a new AAB from ≥ `4a139b07`.** AAB 7
   (internal track) still shows Settings → "Billing portal", which errors for every
   Play/Apple subscriber (now hidden behind `WEB_BILLING_ENABLED=false`). Internal
   testing on AAB 7 is fine. iOS: build 166 stays in review (Merle 10-12); rebuild
