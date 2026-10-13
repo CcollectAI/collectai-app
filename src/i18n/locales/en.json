@@ -1126,6 +1126,8 @@
     "unlock_via_plan_feature": "Included in {{plan}} as “{{planFeature}}”",
     "limit_watchlist_title": "Your watchlist is full",
     "limit_watchlist_body": "The free plan watches up to {{count}} items. Sparrow Pro watches as many as you like.",
+    "limit_items_title": "Your collection is full",
+    "limit_items_body": "The free plan holds {{count}} items. Sparrow Pro gives you an unlimited collection.",
     "limit_generic_title": "Part of Sparrow Pro",
     "limit_generic_body": "You have reached what the free plan includes. Sparrow Pro lifts the limit.",
     "see_pro": "See Sparrow Pro"

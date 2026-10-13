@@ -333,6 +333,9 @@ async def create_item(
         except HTTPException:
             raise
         except Exception as e:
+            from app.subscription import is_plan_limit_items, plan_limit_items_response
+            if is_plan_limit_items(e):
+                raise plan_limit_items_response()
             logger.error("[items] DB error creating item: %s", e)
             raise error_response(500, "Failed to create item", code="DB_ERROR")
 

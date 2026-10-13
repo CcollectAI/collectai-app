@@ -28,6 +28,29 @@ _log = logging.getLogger("collectai.subscription")
 # Plan hierarchy: free < pro < premium
 _PLAN_RANK = {"free": 0, "pro": 1, "premium": 2}
 
+# The free plan's collection cap is enforced by the DATABASE, not here:
+# trigger trg_items_free_cap (supabase/migrations/20261013_free_item_cap.sql)
+# raises 'PLAN_LIMIT_ITEMS: ...' on the 101st active item, for every writer
+# including the app's direct supabase-js insert. This only translates that
+# error into the coded 403 the app turns into a Pro offer (planLimitPrompt.ts).
+PLAN_LIMIT_ITEMS = "PLAN_LIMIT_ITEMS"
+FREE_ITEM_CAP = 100  # must equal the literal in the trigger and FREE_PLAN_LIMITS.max_items
+
+
+def is_plan_limit_items(exc: BaseException) -> bool:
+    """True when `exc` is the free-plan item cap raised by trg_items_free_cap."""
+    return PLAN_LIMIT_ITEMS in str(exc)
+
+
+def plan_limit_items_response():
+    """The coded 403 for the item cap — same shape as PLAN_LIMIT_WATCHLIST."""
+    return error_response(
+        403,
+        f"Your free plan holds {FREE_ITEM_CAP} items. "
+        "Upgrade to Pro for an unlimited collection.",
+        code=PLAN_LIMIT_ITEMS,
+    )
+
 
 async def get_user_plan(user_id: str) -> str:
     """Return the user's current subscription plan ('free', 'pro', or 'premium')."""

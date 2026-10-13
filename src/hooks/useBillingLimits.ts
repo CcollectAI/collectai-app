@@ -73,6 +73,10 @@ const DEFAULT_LIMITS: BillingStatus['limits'] = {
   // until 2026-08-16 — long enough that the paywall copy was written from it
   // and advertised "3 purchase mandates" to people who get none.
   max_mandates: 0,
+  // Active collection items. Enforced by the DB trigger trg_items_free_cap
+  // (supabase/migrations/20261013_free_item_cap.sql), which every writer passes,
+  // including add-manual's direct supabase insert.
+  max_items: 100,
   max_watchlist_items: 25,
   max_daily_deal_alerts: 1,
   // Price-alert creation cap per rolling 7 days. Mirrors
@@ -93,6 +97,7 @@ const DEFAULT_LIMITS: BillingStatus['limits'] = {
 const FORCED_LIMITS: Record<'pro' | 'premium', BillingStatus['limits']> = {
   pro: {
     max_mandates: 10,
+    max_items: null,
     max_watchlist_items: null,
     max_daily_deal_alerts: null,
     max_alerts_per_week: null,
@@ -105,6 +110,7 @@ const FORCED_LIMITS: Record<'pro' | 'premium', BillingStatus['limits']> = {
   },
   premium: {
     max_mandates: 50,
+    max_items: null,
     max_watchlist_items: null,
     max_daily_deal_alerts: null,
     max_alerts_per_week: null,

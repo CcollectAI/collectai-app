@@ -719,6 +719,9 @@ async def _settle_completed_trade(conn, offer_id: str, listing_id: str,
         )
         if not already:
             amount_eur = await convert_to_eur(float(amount), currency or "EUR")
+            # A completed purchase must never fail on the buyer's free-plan item
+            # cap (trg_items_free_cap). Transaction-local: is_local=true.
+            await conn.execute("SELECT set_config('app.skip_item_cap', 'on', true)")
             await conn.execute(
                 """
                 INSERT INTO public.items

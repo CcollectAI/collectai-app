@@ -1126,6 +1126,8 @@
     "unlock_via_plan_feature": "Inclus dans {{plan}} sous « {{planFeature}} »",
     "limit_watchlist_title": "Votre liste de suivi est pleine",
     "limit_watchlist_body": "L’offre gratuite suit jusqu’à {{count}} articles. Sparrow Pro en suit autant que vous le souhaitez.",
+    "limit_items_title": "Votre collection est pleine",
+    "limit_items_body": "L'offre gratuite contient {{count}} objets. Sparrow Pro vous offre une collection illimitée.",
     "limit_generic_title": "Inclus dans Sparrow Pro",
     "limit_generic_body": "Vous avez atteint ce que comprend l’offre gratuite. Sparrow Pro lève la limite.",
     "see_pro": "Voir Sparrow Pro"

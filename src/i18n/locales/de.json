@@ -1126,6 +1126,8 @@
     "unlock_via_plan_feature": "In {{plan}} enthalten als „{{planFeature}}“",
     "limit_watchlist_title": "Deine Beobachtungsliste ist voll",
     "limit_watchlist_body": "Der kostenlose Tarif beobachtet bis zu {{count}} Einträge. Sparrow Pro beobachtet so viele, wie du möchtest.",
+    "limit_items_title": "Deine Sammlung ist voll",
+    "limit_items_body": "Der kostenlose Plan umfasst {{count}} Objekte. Mit Sparrow Pro ist deine Sammlung unbegrenzt.",
     "limit_generic_title": "Teil von Sparrow Pro",
     "limit_generic_body": "Du hast erreicht, was der kostenlose Tarif enthält. Sparrow Pro hebt die Grenze auf.",
     "see_pro": "Sparrow Pro ansehen"

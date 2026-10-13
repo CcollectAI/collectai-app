@@ -1126,6 +1126,8 @@
     "unlock_via_plan_feature": "{{plan}}의 '{{planFeature}}'에 포함됩니다",
     "limit_watchlist_title": "관심 목록이 가득 찼습니다",
     "limit_watchlist_body": "무료 플랜은 최대 {{count}}개까지 관심 목록에 추가할 수 있습니다. Sparrow Pro는 제한이 없습니다.",
+    "limit_items_title": "컬렉션이 가득 찼습니다",
+    "limit_items_body": "무료 플랜은 {{count}}개 항목까지 저장할 수 있습니다. Sparrow Pro는 컬렉션 제한이 없습니다.",
     "limit_generic_title": "Sparrow Pro 기능입니다",
     "limit_generic_body": "무료 플랜에 포함된 한도에 도달했습니다. Sparrow Pro는 한도가 없습니다.",
     "see_pro": "Sparrow Pro 보기"

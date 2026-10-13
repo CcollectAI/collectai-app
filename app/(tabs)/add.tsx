@@ -33,6 +33,7 @@ import { TabBackButton } from '@/components/TabBackButton';
 import { useToast } from '@/components/Toast';
 import logger from '@/utils/logger';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { offerProOnPlanLimit } from '@/lib/planLimitPrompt';
 
 /**
  * Add screen:
@@ -172,7 +173,7 @@ const handleImportCollectionFile = async () => {
         total_rows?: number;
         inserted_count?: number;
         skipped_count?: number;
-        errors?: { row: number; message: string }[];
+        errors?: { row: number; message: string; code?: string }[];
       }>("/api/imports/collection", formData);
 
       logger.info("[Add] import summary", json);
@@ -182,6 +183,10 @@ const handleImportCollectionFile = async () => {
         skipped: json.skipped_count ?? 0,
         errors: json.errors ?? [],
       });
+      // The server stops at the free-plan item cap and tags that row with
+      // code PLAN_LIMIT_ITEMS: show the summary AND the Pro offer.
+      const capped = (json.errors ?? []).find((e) => e.code === 'PLAN_LIMIT_ITEMS');
+      if (capped) offerProOnPlanLimit(capped, t, () => router.push('/subscription'));
     } finally {
       setImportBusy(false);
     }

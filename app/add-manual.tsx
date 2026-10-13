@@ -54,6 +54,7 @@ import { dmyToIso } from '@/lib/eventDate';
 import { getCurrencySymbol, parseMoney } from '@/lib/format';
 import { withTimeout, TimeoutError } from '@/lib/withTimeout';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+import { offerProOnPlanLimit } from '@/lib/planLimitPrompt';
 
 // supabase-js ships NO per-request timeout, and both auth reads below sit
 // BETWEEN setSaveState("saving") and any state that clears it. A stalled auth
@@ -493,6 +494,12 @@ const ManualAddScreen: React.FC = () => {
       );
 
       if (error) {
+        // The free-plan item cap (DB trigger trg_items_free_cap) is a sale, not
+        // an error: offer Pro instead of "check your connection".
+        if (offerProOnPlanLimit(error, t, () => router.push('/subscription'))) {
+          setSaveState("idle");
+          return;
+        }
         // error, not warn: warn is stripped in release, and the raw text no
         // longer reaches the screen, so this line is the only place it lives.
         logger.error("[ManualAdd] insert error:", error.message);

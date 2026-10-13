@@ -398,6 +398,18 @@ async def import_collection(
                     )
                 inserted += 1
             except Exception as e:
+                from app.subscription import FREE_ITEM_CAP, PLAN_LIMIT_ITEMS, is_plan_limit_items
+                if is_plan_limit_items(e):
+                    # Every later row would hit the same cap: stop, and say so
+                    # once with the code the app turns into a Pro offer.
+                    skipped += total - idx + 1  # this row + every row after it
+                    errors.append({
+                        "row": idx,
+                        "code": PLAN_LIMIT_ITEMS,
+                        "message": f"Your free plan holds {FREE_ITEM_CAP} items. "
+                                   "Upgrade to Pro to import the rest.",
+                    })
+                    break
                 skipped += 1
                 errors.append({"row": idx, "message": f"DB insert failed: {e}"})
         else:

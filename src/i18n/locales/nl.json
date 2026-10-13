@@ -1126,6 +1126,8 @@
     "unlock_via_plan_feature": "Zit in {{plan}} onder “{{planFeature}}”",
     "limit_watchlist_title": "Je volglijst is vol",
     "limit_watchlist_body": "Met het gratis abonnement volg je tot {{count}} items. Met Sparrow Pro volg je er zoveel als je wilt.",
+    "limit_items_title": "Je collectie is vol",
+    "limit_items_body": "Het gratis abonnement bevat {{count}} items. Met Sparrow Pro is je collectie onbeperkt.",
     "limit_generic_title": "Onderdeel van Sparrow Pro",
     "limit_generic_body": "Je hebt bereikt wat het gratis abonnement biedt. Sparrow Pro heft de limiet op.",
     "see_pro": "Bekijk Sparrow Pro"

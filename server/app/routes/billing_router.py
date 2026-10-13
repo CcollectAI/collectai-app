@@ -163,6 +163,10 @@ PLAN_LIMITS = {
         # unreachable through the UI and inert if reached by deep link.
         # Changed 2026-07-31; MONETIZATION.md updated to match.
         "max_mandates": 0,
+        # Active collection items. Enforced by the DB trigger trg_items_free_cap
+        # (20261013), not by this table -- this entry tells the app the number.
+        # Keep equal: trigger literal, app.subscription.FREE_ITEM_CAP, FE FREE_PLAN_LIMITS.
+        "max_items": 100,
         # Watchlist size is the Pro lever for Target Hit: the alert can only
         # fire on something you are watching, so slots ARE reach. Added
         # 2026-08-06. None = unlimited.
@@ -181,6 +185,7 @@ PLAN_LIMITS = {
     },
     "pro": {
         "max_mandates": 10,
+        "max_items": None,
         "max_watchlist_items": None,
         "max_daily_deal_alerts": None,
         "max_alerts_per_week": None,
@@ -211,6 +216,7 @@ PLAN_LIMITS = {
     },
     "premium": {
         "max_mandates": 50,
+        "max_items": None,
         "max_watchlist_items": None,
         "max_daily_deal_alerts": None,
         "max_alerts_per_week": None,

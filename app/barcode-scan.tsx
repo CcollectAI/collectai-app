@@ -365,6 +365,9 @@ function BarcodeScanScreen() {
         },
       });
     } catch (err) {
+      // At the free-plan item cap, manual entry would hit the same cap: offer
+      // Pro instead of falling through to it.
+      if (offerProOnPlanLimit(err, t, () => router.push('/subscription'))) return;
       logger.error('[BarcodeScan] Save to collection error:', err);
       showToast({ message: 'Auto-save failed, opening manual entry', type: 'warning' });
       // Fallback: hand the scan to add-manual so nothing typed or scanned is

@@ -1126,6 +1126,8 @@
     "unlock_via_plan_feature": "{{plan}}の「{{planFeature}}」に含まれます",
     "limit_watchlist_title": "ウォッチリストがいっぱいです",
     "limit_watchlist_body": "無料プランでは最大 {{count}} 件までウォッチできます。Sparrow Pro なら無制限です。",
+    "limit_items_title": "コレクションがいっぱいです",
+    "limit_items_body": "無料プランでは{{count}}点まで登録できます。Sparrow Proならコレクションは無制限です。",
     "limit_generic_title": "Sparrow Pro の機能です",
     "limit_generic_body": "無料プランの上限に達しました。Sparrow Pro なら上限がなくなります。",
     "see_pro": "Sparrow Pro を見る"

@@ -151,6 +151,13 @@ _logger = logging.getLogger("collectai.main")
 @app.exception_handler(Exception)
 async def _global_exception_handler(request: Request, exc: Exception):
     """Catch unhandled exceptions and return a safe 500 without leaking internals."""
+    # The free-plan item cap is a database trigger; any writer that does not
+    # catch it itself (e.g. /intake/save) lands here and must answer the coded
+    # 403, never a 500. See app/subscription.py::PLAN_LIMIT_ITEMS.
+    from app.subscription import is_plan_limit_items, plan_limit_items_response
+    if is_plan_limit_items(exc):
+        limit = plan_limit_items_response()
+        return JSONResponse(status_code=limit.status_code, content={"detail": limit.detail})
     _logger.error("Unhandled exception on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
