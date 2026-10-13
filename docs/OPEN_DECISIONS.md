@@ -26,6 +26,17 @@ _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in 
 
 ## Decided
 
+- **2026-10-13 — Android goes to PRODUCTION as soon as the phone test passes** (Merle:
+  "after point 1 goes live"). Point 1 = on Merle's phone, from the internal track: install
+  AAB 8, buy Pro monthly as a license tester (expect "2 weeks free, then €4.99"), and receive
+  a push. NOT gated on Apple's iOS approval.
+  - **Then:** promote `1.0.0 (8)` from internal to Production (no rebuild), countries = the
+    subscriptions' 174, staged rollout 20% → 100% after 2–3 crash-free days.
+    Checklist: `docs/ANDROID_LAUNCH.md` → Production release checklist.
+  - **Proof required before promoting:** RevenueCat customer shows the Play purchase with
+    entitlement `pro`; `/billing/status` for that account = pro; the push arrives.
+  - **Re-open if** the purchase or push fails — fix, rebuild AAB 9, re-test.
+
 - **2026-10-09 — Payments at launch: in-app purchase ONLY (Apple via RevenueCat, Google Play); the web Stripe checkout stays OFF** (Merle: yes). Reasons: no paying users yet, so conversion matters more than the fee; Apple/Google are merchant of record and file EU VAT for us, Stripe direct would make the eenmanszaak do VAT OSS, invoices and refunds; one payment path is the lowest App Review risk for the first 1.0. Cost cut instead: **Apple Small Business Program** (30% → 15%); Google already charges 15% on subscriptions. **SBP enrolment SUBMITTED 2026-10-09 by Merle** (Paid Apps Agreement Active 21 Aug 2026 – 7 May 2027); Apple reviews it and the 15% starts the month after approval — re-check in ASC → Business / the Apple confirmation email.
   - **State it rests on (2026-10-09):** the web route is built but not live — `web/pro.html` calls `POST /billing/web/checkout-session` (`server/app/routes/billing_router.py:533`), the EC2 `.env` has `STRIPE_SECRET_KEY=sk_test…`, and `web/` is not deployed. Re-check: `ssh collectai 'grep -oE "^STRIPE_SECRET_KEY=sk_(live|test)" /opt/collectors/.env'`.
   - **Re-open when** there is revenue (~€1–2k/month) AND a channel that lands people on the website. Then prefer a merchant of record (Paddle / Lemon Squeezy, ~5%, they file VAT) over plain Stripe, and look at Apple's US external-purchase links. Plan: `docs/HYBRID_WEB_SUBSCRIPTION_PLAN.md` (its "no links/prices in the iOS app" rule still applies while this stands).

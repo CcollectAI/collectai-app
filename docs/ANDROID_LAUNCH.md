@@ -37,7 +37,8 @@ wired into RevenueCat — see the bullets below. Open: a real purchase + push on
 - ✅ **AAB 8 (built from `6eccd40f`, 2026-10-13) is on the INTERNAL track** (API upload +
   commit 200, re-read: `1.0.0 (8)` completed). It carries the billing-portal hide, so the
   precondition below is MET — AAB 8 is the production candidate.
-- **Production release checklist (Merle's call when to press it):** (1) a purchase + push
+- **Production release checklist — DECIDED 2026-10-13: release as soon as (1) passes**
+  (`docs/OPEN_DECISIONS.md` → Decided): (1) a purchase + push
   verified on a real phone from internal testing; (2) Play Console → Production → Create
   release → *promote* `1.0.0 (8)` from internal (do not rebuild); (3) countries: same as
   the subscriptions (174/175); (4) staged rollout 20% → 100% after 2–3 days of crash-free
