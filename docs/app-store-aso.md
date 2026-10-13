@@ -41,9 +41,13 @@ sentence + a `lego` keyword both fail it.
   read back in the form). The service account can PATCH a listing but the commit
   403s, same products/store permission gap as the subscriptions. Draft app ⇒ it
   goes public with the first production release.
-- **App Store — NOT applied**: version 1.0 is WAITING_FOR_REVIEW, so name, subtitle,
-  keywords and description are locked. Apply to **1.0.1** (or promo text right after
-  approval — promo text needs no review). Re-check live:
+- **App Store — APPLIED 2026-10-13** via the ASC API (read back equal): name, subtitle,
+  keywords, promo, `ios_description`, support URL `/support`. Trigger: **1.0 was
+  REJECTED 2026-10-13 under 3.1.2** (automated): *"does not include a functional link
+  to the Terms of Use (EULA) in the app metadata"*. `ios_description` now ends with the
+  renewal terms + Apple's standard EULA link + privacy link, and `store_listing.py`
+  fails without the EULA link (mutation-checked). The in-app paywall already linked
+  Terms + Privacy (`app/subscription.tsx`). Re-check live:
   `node asc_meta.mjs` pattern → `GET /v1/apps/6767359453/appInfos?include=appInfoLocalizations`.
 
 ---

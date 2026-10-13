@@ -51,8 +51,20 @@ Sparrow Collect is an independent app and is not affiliated with or endorsed by 
 
 Built for collectors, whether you have 10 items or 10,000."""
 
+# App Store only — guideline 3.1.2 (rejected 2026-10-13 for exactly this): the
+# product page must carry a FUNCTIONAL link to the Terms of Use (EULA). We use
+# Apple's standard EULA; the privacy link and renewal terms sit beside it.
+ios_legal = """
+
+Sparrow Pro is an auto-renewable subscription (monthly or yearly). Payment is charged to your Apple ID at confirmation of purchase. The subscription renews automatically unless it is cancelled at least 24 hours before the end of the current period. Manage or cancel it in your App Store account settings.
+
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+Privacy Policy: https://sparrowcollect.com/privacy"""
+ios_description = description + ios_legal
+
 LIMITS = {"name": (name, 30), "subtitle": (subtitle, 30), "keywords": (keywords, 100),
-          "promo": (promo, 170), "play_short": (play_short, 80), "description": (description, 4000)}
+          "promo": (promo, 170), "play_short": (play_short, 80), "description": (description, 4000),
+          "ios_description": (ios_description, 4000)}
 bad = [f"{k}: {len(v)} > {m}" for k, (v, m) in LIMITS.items() if len(v) > m]
 if " " in keywords: bad.append("keywords contain a space")
 kw = keywords.split(",")
@@ -65,6 +77,8 @@ for banned in ["real time", "real-time", "live listings", "psa", "cgc", "grading
 for tm in ["pokemon", "funko", "lego", "mtg", "magic"]:
     if tm in kw: bad.append(f"trademark in keywords: {tm}")
 for k, (v, m) in LIMITS.items(): print(f"{k:12} {len(v):4}/{m}")
+if "apple.com/legal/internet-services/itunes/dev/stdeula" not in ios_description:
+    bad.append("ios_description lacks the EULA link (3.1.2)")
 if bad: sys.exit("FAIL: " + "; ".join(bad))
 json.dump({k: v for k, (v, _) in LIMITS.items()}, open(sys.argv[1] if len(sys.argv) > 1 else "listing_v2.json", "w"), ensure_ascii=False, indent=1)
 print("OK")
