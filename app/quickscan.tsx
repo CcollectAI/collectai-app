@@ -21,14 +21,16 @@ import { isDeviceOnline } from '@/hooks/useNetworkStatus';
 import { useToast } from '@/components/Toast';
 import { useSettings } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
-import { ScanResultCard } from '@/components/ScanResultCard';
+import { ScanResultCard, type ScanShopLink } from '@/components/ScanResultCard';
 import { MultiItemOverlay } from '@/components/MultiItemOverlay';
 import { ComparisonCard } from '@/components/ComparisonCard';
 import { classifyOnDevice, buildCategoryDistribution } from '@/lib/edgeClassifier';
 import type { EdgeClassification } from '@/lib/edgeClassifier';
 import { CATEGORY_SLUG_TO_NAME } from '@/constants/categories';
 import { handoffCategoryName } from '@/lib/quickscanHandoff';
-import { multiDetect } from '@/api/collectorsApi';
+import { collectorsApi, multiDetect } from '@/api/collectorsApi';
+import { openAffiliateUrl } from '@/utils/affiliateHelpers';
+import { moneyInputValue } from '@/lib/format';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -615,6 +617,65 @@ function QuickScanScreen() {
     });
   }, [scanResult, settings.hapticsEnabled]);
 
+  // Where to buy the identified item (2026-10-14). The catalogue page already
+  // showed these affiliate-tagged links; the scan result — where a member has
+  // just learned what the thing is and what it is worth — showed none.
+  // `undefined` loading, `null` failed, `[]` none (ScanResultCard.shopLinks).
+  const [shopLinks, setShopLinks] = useState<ScanShopLink[] | null | undefined>(undefined);
+  const resultName = phase === 'result' ? scanResult?.prediction.name ?? '' : '';
+  const resultCategory = scanResult?.attributes.category ?? '';
+  const resultValueEur = scanResult?.prediction.currency === 'EUR' ? scanResult.prediction.estimatedMid : null;
+  useEffect(() => {
+    if (!resultName) return;
+    let cancelled = false;
+    setShopLinks(undefined);
+    collectorsApi.getAffiliateLinks(
+      resultName, resultCategory || undefined, 3, settings.region, null, undefined,
+      resultValueEur && resultValueEur > 0 ? resultValueEur : null,
+    )
+      .then((res) => { if (!cancelled) setShopLinks(res?.links ?? []); })
+      .catch((e: unknown) => {
+        // empty-ok: null is the FAILED marker; the card renders nothing for it
+        // rather than a claim that no shop sells this.
+        logger.error('[QuickScan] affiliate links failed:', e);
+        if (!cancelled) setShopLinks(null);
+      });
+    return () => { cancelled = true; };
+  }, [resultName, resultCategory, resultValueEur, settings.region]);
+
+  const handleOpenShopLink = useCallback((link: ScanShopLink) => {
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    openAffiliateUrl(link.affiliate_url || link.url, {
+      source: link.source,
+      query: scanResult?.prediction.name,
+      item_key: scanResult?.catalogMatchKey ?? undefined,
+      category: scanResult?.attributes.category,
+    });
+  }, [scanResult, settings.hapticsEnabled]);
+
+  // "Sell yours": the scan matched an item already in the collection, so the
+  // listing can be made FROM that item — the same handoff app/item/[id].tsx and
+  // app/sell/pick.tsx use, which inherits canonical_key server-side.
+  const ownedItemId = scanResult?.duplicateInfo?.ownedItemIds?.[0] ?? null;
+  const handleSellOwned = useCallback(() => {
+    if (!ownedItemId || !scanResult) return;
+    fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
+    const value = scanResult.prediction.estimatedMid;
+    router.push({
+      pathname: '/sell/new',
+      params: {
+        itemId: ownedItemId,
+        itemName: scanResult.prediction.name,
+        itemCategory: CATEGORY_SLUG_TO_NAME[scanResult.attributes.category] ?? '',
+        itemImage: '',
+        // The sell box is in the member's currency; seed it only when the
+        // scan priced in that same currency, never a silently converted figure.
+        itemValue: value > 0 && scanResult.prediction.currency === settings.currency ? moneyInputValue(value) : '',
+        itemCondition: scanResult.attributes.conditionGuess ?? '',
+      },
+    });
+  }, [ownedItemId, scanResult, settings.hapticsEnabled, settings.currency]);
+
   // Handle "Add to Collection" from the result screen
   const handleConfirmResult = useCallback(() => {
     if (!scanResult || !capturedUri) return;
@@ -831,6 +892,9 @@ function QuickScanScreen() {
         onRetake={resetCamera}
         onSelectAlternative={handleSelectAlternative}
         onConfirm={handleConfirmResult}
+        shopLinks={shopLinks}
+        onOpenShopLink={handleOpenShopLink}
+        onSellOwned={ownedItemId ? handleSellOwned : undefined}
       />
     );
   }

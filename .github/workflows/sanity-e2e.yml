@@ -1,8 +1,12 @@
 name: Sanity E2E (Supabase)
 
+# Manual only since 2026-10-14. On every push this reset a test user's password
+# on PRODUCTION and wrote a row into prod `predict_sessions` through the
+# predict-* edge functions -- which no app code calls. Those CI rows were the
+# only thing in that table (row times matched the runs to the second), and they
+# looked like member scans. Real scans are in `scan_events` and
+# `demand_signals.item_scanned`.
 on:
-  push:
-    branches: [ "**" ]
   workflow_dispatch: {}
 
 concurrency:

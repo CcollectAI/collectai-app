@@ -598,7 +598,12 @@ async def get_catalog_item_price_range(
       p10 / p50 / p90  — of the DAILY medians over 90 days (a day with many
                          sales counts once, so one busy day cannot drag it)
       series           — weekly median of those daily medians, oldest first
-      comps_count      — the sales behind it
+      comps_count      — the price points behind it. NOT sales: the rollup
+                         takes sales when a day has them, else asking-price
+                         listings (eBay-fed categories have only those), and
+                         the TCG "sales" are daily price-index snapshots
+                         (TCGplayer/Lorcast). The app says "price points" since
+                         2026-10-14; it said "sales".
 
     PRO enforced here, not only in the app (a paywall only the client enforces
     is not one — docs/MONETIZATION.md).

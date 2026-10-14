@@ -660,7 +660,10 @@
     "nothing_saved": "이번 세션에서 저장된 아이템이 없습니다.",
     "one_by_one": "하나씩",
     "all_at_once": "한꺼번에",
-    "sources_disagree": "Markets disagree on this one — the range is what they quote."
+    "sources_disagree": "Markets disagree on this one — the range is what they quote.",
+    "where_to_buy": "구매처",
+    "sell_yours": "내 것 판매하기",
+    "a11y_sell_yours": "이미 가진 것을 마켓에 등록하기"
   },
   "settings": {
     "title": "설정",
@@ -1507,11 +1510,11 @@
   },
   "catalog": {
     "image_coming_soon": "이미지 준비 중",
-    "no_recent_sales": "최근 판매 데이터 없음",
+    "no_recent_sales": "최근 가격 데이터 없음",
     "range_label": "90-day range",
-    "range_caption_one": "Middle 80% of daily prices · {{count}} sale",
-    "range_caption_many": "Middle 80% of daily prices · {{count}} sales",
-    "range_none": "No sales in the last 90 days.",
+    "range_caption_one": "일일 가격의 중간 80% · 가격 데이터 {{count}}건",
+    "range_caption_many": "일일 가격의 중간 80% · 가격 데이터 {{count}}건",
+    "range_none": "최근 90일간 가격 없음.",
     "range_failed": "Couldn't load the 90-day range.",
     "pro_teaser": "Full price range & 90-day trend — Sparrow Pro",
     "a11y_unlock_pro": "Unlock the price range and trend with Pro",

@@ -948,10 +948,11 @@ function ItemDetailScreen() {
           avgPrice: s.avg_price,
           dateRange: s.date_range,
         }))
-      : [
-          { source: 'eBay', count: 12, avgPrice: priceEstimate.priceBand.q50 * 0.95, dateRange: 'Last 90 days' },
-          { source: 'TCGPlayer', count: 8, avgPrice: priceEstimate.priceBand.q50 * 1.02 },
-        ];
+      // No evidence = no sources. Until 2026-10-14 this invented two — "eBay,
+      // 12 sales, last 90 days" at 0.95x and "TCGPlayer, 8" at 1.02x of the
+      // estimate itself — on every scan draft without evidence. The sheet
+      // renders no sources section for an empty list.
+      : [];
 
     const calculatedAt = evidenceData?.prediction_at || new Date().toISOString();
 

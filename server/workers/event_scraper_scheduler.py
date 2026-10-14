@@ -88,15 +88,17 @@ async def run_once():
         logger.warning("MusicBrainz scraper failed: %s", e)
         errors.append(f"musicbrainz: {e}")
 
-    # 2c. Run Limitless TCG scraper (free, no key — TCG tournaments)
+    # 2c. Ravensburger Play — Disney Lorcana prereleases / championships at
+    # stores (free, no key). Replaced Limitless TCG on 2026-10-14: Limitless is
+    # a RESULTS feed and stored 0 upcoming events after its upcoming-only filter.
     try:
-        from pipelines.limitless_tcg_events import run_limitless_scraper
-        lt_events = await run_limitless_scraper(dry_run=False)
-        logger.info("Limitless TCG scraper: %d events", len(lt_events))
-        total_events += len(lt_events)
+        from pipelines.ravensburger_play_events import run_ravensburger_scraper
+        rv_events = await run_ravensburger_scraper(dry_run=False)
+        logger.info("Ravensburger Play scraper: %d events", len(rv_events))
+        total_events += len(rv_events)
     except Exception as e:
-        logger.warning("Limitless TCG scraper failed: %s", e)
-        errors.append(f"limitless_tcg: {e}")
+        logger.error("Ravensburger Play scraper failed: %s", e)
+        errors.append(f"ravensburger_play: {e}")
 
     # 3. Run newsletter scraper (IMAP inbox → events).
     # DISABLED by default 2026-06-15: the inbox was ingesting GitHub Actions

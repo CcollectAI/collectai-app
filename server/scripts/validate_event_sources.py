@@ -98,27 +98,21 @@ async def _check_musicbrainz(client: httpx.AsyncClient) -> dict[str, Any]:
         }
 
 
-async def _check_limitless(client: httpx.AsyncClient) -> dict[str, Any]:
-    """Verify Limitless TCG API is reachable."""
+async def _check_ravensburger(client: httpx.AsyncClient) -> dict[str, Any]:
+    """Verify Ravensburger Play (Disney Lorcana events) is reachable."""
+    url = "https://api.ravensburgerplay.com/api/v2/events/"
     try:
-        from pipelines.limitless_tcg_events import run_limitless_scraper
-        events = await run_limitless_scraper(dry_run=True)
+        from pipelines.ravensburger_play_events import run_ravensburger_scraper
+        events = await run_ravensburger_scraper(dry_run=True)
         return {
-            "url": "https://play.limitlesstcg.com/api",
-            "name": "Limitless TCG",
-            "category": "pokemon",
+            "url": url, "name": "Ravensburger Play", "category": "lorcana",
             "status": "OK" if events else "ZERO_EVENTS",
-            "events": len(events),
-            "error": None,
+            "events": len(events), "error": None,
         }
     except Exception as e:
         return {
-            "url": "https://play.limitlesstcg.com/api",
-            "name": "Limitless TCG",
-            "category": "pokemon",
-            "status": "FAIL",
-            "events": 0,
-            "error": str(e)[:80],
+            "url": url, "name": "Ravensburger Play", "category": "lorcana",
+            "status": "FAIL", "events": 0, "error": str(e)[:80],
         }
 
 
@@ -144,7 +138,7 @@ async def main(mode: str) -> int:
         # Non-RSS sources (only in full mode — these hit real APIs)
         if mode in ("full", "ci"):
             results.append(await _check_musicbrainz(client))
-            results.append(await _check_limitless(client))
+            results.append(await _check_ravensburger(client))
 
     # Print report
     ok = [r for r in results if r["status"] == "OK"]

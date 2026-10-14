@@ -34,6 +34,29 @@ SITE = "https://sparrowcollect.com"
 APP_STORE = "https://apps.apple.com/app/id6767359453"
 MEASURED = "the 30 days to 12 October 2026"
 
+# eBay Partner Network (2026-10-14). Campaign id is public by design — it is in
+# every tagged URL. Rotation ids per eBay site and the parameter set mirror
+# server/app/lib/affiliate.py::_tag_epn, so web and app clicks report alike.
+EPN_CAMPAIGN = "5339218687"
+EBAY_SITES = [
+    ("eBay (US)", "www.ebay.com", "711-53200-19255-0"),
+    ("eBay (UK)", "www.ebay.co.uk", "710-53481-19255-0"),
+    ("eBay (Germany)", "www.ebay.de", "707-53477-19255-0"),
+]
+
+
+def ebay_links(p: dict) -> list[tuple[str, str]]:
+    """Tagged eBay searches for this page's collectible."""
+    from urllib.parse import urlencode
+    query = p.get("ebay_query", p["name"])
+    return [
+        (label, f"https://{host}/sch/i.html?" + urlencode({
+            "_nkw": query, "mkcid": "1", "mkrid": rid, "campid": EPN_CAMPAIGN,
+            "customid": f"web-value-{p['slug']}", "toolid": "10001", "mkevt": "1",
+        }))
+        for label, host, rid in EBAY_SITES
+    ]
+
 PAGES = [
     {
         "slug": "pokemon-cards",
@@ -346,6 +369,10 @@ def page(p: dict, faq: dict[str, str], style: str) -> str:
         f'            <a href="/value/{o["slug"]}">{esc(o["name"][0].upper() + o["name"][1:])}</a>'
         for o in PAGES if o["slug"] != p["slug"]
     )
+    shop_html = "\n".join(
+        f'            <a href="{esc(u)}" rel="sponsored noopener" target="_blank">{esc(label)}</a>'
+        for label, u in ebay_links(p)
+    )
     qa_html = "\n".join(
         f'        <div class="qa">\n            <h3>{esc(q)}</h3>\n            <p>{esc(a)}</p>\n        </div>'
         for q, a in qas
@@ -422,6 +449,13 @@ def page(p: dict, faq: dict[str, str], style: str) -> str:
 
         <h2>Where the prices come from</h2>
         <p>Values for {esc(p["name"])} are built from {esc(p["sources"])} (the sources that delivered prices in {MEASURED}). Each value in the app shows the prices behind it, so you can see what it is based on instead of trusting a single number.</p>
+
+        <h2>Browse {esc(p["name"])} for sale</h2>
+        <p>Current listings (asking prices, not sold prices) on eBay:</p>
+        <div class="related">
+{shop_html}
+        </div>
+        <p><small>These are affiliate links: if you buy after following one, Sparrow Collect may earn a commission from eBay. It costs you nothing extra and does not change the values shown in the app.</small></p>
 
         <h2>Questions collectors ask</h2>
 {qa_html}

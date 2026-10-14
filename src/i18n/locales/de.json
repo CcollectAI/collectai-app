@@ -660,7 +660,10 @@
     "nothing_saved": "In dieser Sitzung wurden keine Objekte gespeichert.",
     "one_by_one": "Einzeln",
     "all_at_once": "Alle auf einmal",
-    "sources_disagree": "Markets disagree on this one — the range is what they quote."
+    "sources_disagree": "Markets disagree on this one — the range is what they quote.",
+    "where_to_buy": "Wo kaufen",
+    "sell_yours": "Deins verkaufen",
+    "a11y_sell_yours": "Das Exemplar, das du schon besitzt, auf dem Marktplatz anbieten"
   },
   "settings": {
     "title": "Einstellungen",
@@ -1507,11 +1510,11 @@
   },
   "catalog": {
     "image_coming_soon": "Bild folgt in Kürze",
-    "no_recent_sales": "Keine aktuellen Verkaufsdaten",
+    "no_recent_sales": "Keine aktuellen Preisdaten",
     "range_label": "90-day range",
-    "range_caption_one": "Middle 80% of daily prices · {{count}} sale",
-    "range_caption_many": "Middle 80% of daily prices · {{count}} sales",
-    "range_none": "No sales in the last 90 days.",
+    "range_caption_one": "Mittlere 80 % der Tagespreise · {{count}} Preispunkt",
+    "range_caption_many": "Mittlere 80 % der Tagespreise · {{count}} Preispunkte",
+    "range_none": "Keine Preise in den letzten 90 Tagen.",
     "range_failed": "Couldn't load the 90-day range.",
     "pro_teaser": "Full price range & 90-day trend — Sparrow Pro",
     "a11y_unlock_pro": "Unlock the price range and trend with Pro",

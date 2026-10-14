@@ -61,7 +61,19 @@ export type ScanResultCardProps = {
   onSelectAlternative: (alt: CatalogAlternative) => void;
   /** Called when the user taps "Add to Collection" */
   onConfirm: () => void;
+  /**
+   * Affiliate-tagged marketplace links for the identified item (2026-10-14).
+   * `undefined` = still loading or not looked up, `null` = the lookup failed,
+   * `[]` = none. The section renders ONLY for a non-empty list: on this screen
+   * the item is the point, and a "couldn't load shops" row would be noise.
+   */
+  shopLinks?: ScanShopLink[] | null;
+  onOpenShopLink?: (link: ScanShopLink) => void;
+  /** "Sell yours" in the you-already-own-this banner; absent = not offered. */
+  onSellOwned?: () => void;
 };
+
+export type ScanShopLink = { source: string; url: string; affiliate_url: string; label: string };
 
 // ---------------------------------------------------------------------------
 // Sub-components
@@ -139,6 +151,9 @@ function ScanResultCardInner({
   onRetake,
   onSelectAlternative,
   onConfirm,
+  shopLinks,
+  onOpenShopLink,
+  onSellOwned,
 }: ScanResultCardProps) {
   const { colors } = useScannerTheme();
   const { t } = useTranslation();
@@ -423,6 +438,20 @@ function ScanResultCardInner({
                 })}
               </Text>
             )}
+            {/* Scanning something you already own is the moment to sell the
+                spare (2026-10-14): 3 active listings on the whole marketplace,
+                and the sell flow was two screens away from here. */}
+            {onSellOwned && (
+              <AnimatedPressable
+                onPress={onSellOwned}
+                style={[styles.shopRow, { borderColor: colors.warning + '60' }]}
+                accessibilityRole="button"
+                accessibilityLabel={t('scan.a11y_sell_yours')}
+              >
+                <Text style={[styles.shopLabel, { color: colors.text }]}>{t('scan.sell_yours')}</Text>
+                <Ionicons name="pricetag-outline" size={16} color={colors.warning} />
+              </AnimatedPressable>
+            )}
           </View>
         ) : featureFlags.FEATURE_DUPLICATE_DETECTION && scanResult.duplicateInfo?.isVariant ? (
           <View style={[styles.section, { backgroundColor: colors.info + '15', borderColor: colors.info + '40' }]}>
@@ -432,6 +461,29 @@ function ScanResultCardInner({
                 {t('scan.variant_of', { name: scanResult.duplicateInfo.variantOf })}
               </Text>
             </View>
+          </View>
+        ) : null}
+
+        {/* Where to buy — affiliate-tagged, the same links the catalogue page
+            shows. Only a non-empty list renders (see `shopLinks`). */}
+        {shopLinks && shopLinks.length > 0 && onOpenShopLink ? (
+          <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="cart-outline" size={18} color={TIFFANY} />
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('scan.where_to_buy')}</Text>
+            </View>
+            {shopLinks.slice(0, 3).map((link) => (
+              <AnimatedPressable
+                key={link.source + link.url}
+                onPress={() => onOpenShopLink(link)}
+                style={[styles.shopRow, { borderColor: colors.border }]}
+                accessibilityRole="button"
+                accessibilityLabel={link.label}
+              >
+                <Text style={[styles.shopLabel, { color: colors.text }]}>{link.label}</Text>
+                <Ionicons name="open-outline" size={16} color={TIFFANY} />
+              </AnimatedPressable>
+            ))}
           </View>
         ) : null}
 
@@ -655,6 +707,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     letterSpacing: 0.2,
+  },
+  shopRow: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 4,
+  },
+  shopLabel: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   // Price
   priceHero: {

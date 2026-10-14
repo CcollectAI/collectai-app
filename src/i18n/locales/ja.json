@@ -660,7 +660,10 @@
     "nothing_saved": "このセッションでは何も保存されませんでした。",
     "one_by_one": "1つずつ",
     "all_at_once": "まとめて",
-    "sources_disagree": "Markets disagree on this one — the range is what they quote."
+    "sources_disagree": "Markets disagree on this one — the range is what they quote.",
+    "where_to_buy": "購入先",
+    "sell_yours": "手持ちを売る",
+    "a11y_sell_yours": "すでに持っているものをマーケットに出品する"
   },
   "settings": {
     "title": "設定",
@@ -1507,11 +1510,11 @@
   },
   "catalog": {
     "image_coming_soon": "画像は近日公開",
-    "no_recent_sales": "最近の販売データはありません",
+    "no_recent_sales": "最近の価格データはありません",
     "range_label": "90-day range",
-    "range_caption_one": "Middle 80% of daily prices · {{count}} sale",
-    "range_caption_many": "Middle 80% of daily prices · {{count}} sales",
-    "range_none": "No sales in the last 90 days.",
+    "range_caption_one": "日次価格の中央80% · 価格データ{{count}}件",
+    "range_caption_many": "日次価格の中央80% · 価格データ{{count}}件",
+    "range_none": "過去90日間の価格はありません。",
     "range_failed": "Couldn't load the 90-day range.",
     "pro_teaser": "Full price range & 90-day trend — Sparrow Pro",
     "a11y_unlock_pro": "Unlock the price range and trend with Pro",

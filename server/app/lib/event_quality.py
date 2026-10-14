@@ -37,7 +37,8 @@ _TRUST_TIER_BY_SOURCE: dict[str, str] = {
     # Publisher feeds / newsletters — publisher
     "newsletter": "publisher",
     "rss": "publisher",
-    "limitless_tcg": "publisher",
+    "limitless_tcg": "publisher",  # pipeline removed 2026-10-14; rows remain
+    "ravensburger_play": "publisher",
     "pokemon_com": "publisher",
     "wizards_com": "publisher",
     "warhammer_community": "publisher",

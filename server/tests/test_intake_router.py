@@ -520,6 +520,69 @@ class TestIntakeImageOnly:
         assert hints["category"] == "pokemon"
         assert hints["condition"] == "Near Mint"
 
+    def test_image_only_records_a_scan_event(self):
+        """Every scan writes one scan_events row with its RESULT (2026-10-14)."""
+        mock_result = _make_intake_result(identification_method="vision",
+                                          catalog_match_key="pokemon:base1-4")
+        with patch(
+            "app.agents.intake_router.process_intake",
+            new_callable=AsyncMock,
+            return_value=mock_result,
+        ), patch(
+            "app.agents.intake_router._record_scan_event", new_callable=AsyncMock,
+        ) as rec:
+            resp = client.post(
+                "/intake/image-only",
+                files={"file": ("test.jpg", _jpeg_magic_bytes(), "image/jpeg")},
+            )
+        assert resp.status_code == 200
+        assert rec.call_count == 1
+        args = rec.call_args.args
+        assert args[1] is mock_result
+        assert isinstance(args[2], int) and args[2] >= 0
+
+    def test_image_only_failure_still_records_a_scan_event(self):
+        """A scan that raises is recorded as failed, then the error propagates."""
+        with patch(
+            "app.agents.intake_router.process_intake",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("vision down"),
+        ), patch(
+            "app.agents.intake_router._record_scan_event", new_callable=AsyncMock,
+        ) as rec:
+            resp = client.post(
+                "/intake/image-only",
+                files={"file": ("test.jpg", _jpeg_magic_bytes(), "image/jpeg")},
+            )
+        assert resp.status_code == 500
+        assert rec.call_count == 1
+        assert rec.call_args.args[1] is None
+        assert rec.call_args.kwargs["error"] == "RuntimeError"
+
+    def test_scan_event_row_maps_the_result(self):
+        """The INSERT carries the result's category, confidence, match and price."""
+        import asyncio
+        from contextlib import asynccontextmanager
+        from app.agents import intake_router
+
+        conn = AsyncMock()
+
+        @asynccontextmanager
+        async def fake_conn():
+            yield conn
+
+        mock_result = _make_intake_result(identification_method="vision",
+                                          catalog_match_key="pokemon:base1-4")
+        with patch.object(intake_router, "db_configured", return_value=True), \
+                patch.object(intake_router, "get_conn", fake_conn):
+            asyncio.run(intake_router._record_scan_event(
+                "11111111-1111-1111-1111-111111111111", mock_result, 1234))
+        sql, *vals = conn.execute.call_args.args
+        assert "INSERT INTO public.scan_events" in sql
+        assert vals == ["11111111-1111-1111-1111-111111111111", "identified", "pokemon",
+                        pytest.approx(0.92), "pokemon:base1-4", True, "vision",
+                        250.0, "market_hits", 1234, None]
+
     def test_image_only_invalid_content_type_400(self):
         """Image-only with unsupported content type returns 400."""
         resp = client.post(

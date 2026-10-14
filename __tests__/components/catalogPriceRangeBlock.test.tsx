@@ -23,9 +23,9 @@ it('ok: the range from p10 to p90', () => {
   expect(queryByText(/Sparrow Pro/)).toBeNull();
 });
 
-it('no sales in the window is said, not shown as a range', () => {
+it('no prices in the window is said, not shown as a range', () => {
   const { getByText } = render(
     <CatalogPriceRangeBlock {...base} state="ok" range={{ p10: null, p90: null, comps_count: 0, series: [] }} />,
   );
-  expect(getByText(/No sales in the last 90 days/)).toBeTruthy();
+  expect(getByText(/No prices in the last 90 days/)).toBeTruthy();
 });

@@ -65,7 +65,7 @@ export function CatalogPriceRangeBlock({ state, range, currency, fxRate, onUnloc
   if (range.p10 == null || range.p90 == null) {
     return (
       <Text style={[styles.sub, styles.gap, { color: colors.muted }]}>
-        {t('catalog.range_none', { defaultValue: 'No sales in the last 90 days.' })}
+        {t('catalog.range_none', { defaultValue: 'No prices in the last 90 days.' })}
       </Text>
     );
   }

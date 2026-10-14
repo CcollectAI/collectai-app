@@ -117,8 +117,14 @@ async def get_value_summary(
         # written by the predict pipeline. Same shape as the device_tokens ->
         # user_push_tokens repoint: an empty parallel schema shadowing the real
         # one. quickscan_history is now unreferenced and can be dropped.
+        # 2026-10-14: and `predict_sessions` was not it either. No app code
+        # calls the predict-* edge functions that write it; its rows came from
+        # the Sanity E2E workflow on every push. A real QuickScan hits
+        # /intake/image-only, which records `item_scanned` in demand_signals
+        # (and, from this date, a row in scan_events).
         scan_row = await conn.fetchrow(
-            "SELECT COUNT(*) AS cnt FROM public.predict_sessions WHERE user_id = $1::uuid",
+            "SELECT COUNT(*) AS cnt FROM public.demand_signals "
+            "WHERE user_id = $1::uuid AND signal_type = 'item_scanned'",
             user_id,
         )
         total_scans = scan_row["cnt"] if scan_row else 0

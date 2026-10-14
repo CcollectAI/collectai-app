@@ -660,7 +660,10 @@
     "nothing_saved": "No items were saved during this session.",
     "one_by_one": "One by one",
     "all_at_once": "All at once",
-    "sources_disagree": "Markets disagree on this one — the range is what they quote."
+    "sources_disagree": "Markets disagree on this one — the range is what they quote.",
+    "where_to_buy": "Where to buy",
+    "sell_yours": "Sell yours",
+    "a11y_sell_yours": "List the one you already own on the marketplace"
   },
   "settings": {
     "title": "Settings",
@@ -1507,11 +1510,11 @@
   },
   "catalog": {
     "image_coming_soon": "Image coming soon",
-    "no_recent_sales": "No recent sales data",
+    "no_recent_sales": "No recent price data",
     "range_label": "90-day range",
-    "range_caption_one": "Middle 80% of daily prices · {{count}} sale",
-    "range_caption_many": "Middle 80% of daily prices · {{count}} sales",
-    "range_none": "No sales in the last 90 days.",
+    "range_caption_one": "Middle 80% of daily prices · {{count}} price point",
+    "range_caption_many": "Middle 80% of daily prices · {{count}} price points",
+    "range_none": "No prices in the last 90 days.",
     "range_failed": "Couldn't load the 90-day range.",
     "pro_teaser": "Full price range & 90-day trend — Sparrow Pro",
     "a11y_unlock_pro": "Unlock the price range and trend with Pro",

@@ -392,7 +392,7 @@ function CatalogItemMuseumScreen() {
               </AnimatedPressable>
             </View>
           ) : (
-            <Text style={[styles.priceMuted, { color: colors.muted }]}>{t('catalog.no_recent_sales', { defaultValue: 'No recent sales data' })}</Text>
+            <Text style={[styles.priceMuted, { color: colors.muted }]}>{t('catalog.no_recent_sales', { defaultValue: 'No recent price data' })}</Text>
           )}
           {/* Provenance describes a NUMBER, so with no number there is none to
               state — and the whole <Text> goes, not just its content, so an

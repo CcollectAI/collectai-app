@@ -14,6 +14,7 @@ from __future__ import annotations
 import json as _json
 import logging
 import re
+import time
 from typing import Any, Optional
 from uuid import uuid4
 
@@ -25,6 +26,7 @@ from app.auth import get_current_user_id
 from app.errors import error_response
 from app.config import INTAKE_MAX_IMAGE_BYTES as MAX_IMAGE_BYTES
 from app.db import db_configured, get_conn, get_pool
+from app.lib.bg_tasks import spawn_bg
 from app.lib.validators import is_valid_barcode
 from app.rate_limit import per_user_rate_limit
 from app.ssrf import validate_url
@@ -552,6 +554,43 @@ async def intake_barcode_only(
     return _intake_to_response(result)
 
 
+async def _record_scan_event(
+    user_id: Optional[str],
+    result: Optional[IntakeResult],
+    duration_ms: int,
+    error: Optional[str] = None,
+) -> None:
+    """One `scan_events` row per QuickScan (migration 20261014_scan_events).
+
+    Runs in the background: a scan must never fail because its own record did.
+    """
+    if not db_configured():
+        return
+    band = (result.price_band or {}) if result else {}
+    price = band.get("q50") or (result.estimated_price if result else None)
+    async with get_conn() as conn:
+        await conn.execute(
+            """
+            INSERT INTO public.scan_events
+              (user_id, outcome, category, category_confidence, item_key,
+               catalog_matched, identification_method, price_mid_eur,
+               price_source, duration_ms, error)
+            VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            """,
+            user_id,
+            "failed" if result is None else "identified",
+            result.category_id if result else None,
+            float(result.category_confidence) if result else None,
+            result.catalog_match_key if result else None,
+            bool(result.catalog_match_key) if result else None,
+            result.identification_method if result else None,
+            float(price) if price else None,
+            result.price_source if result else None,
+            duration_ms,
+            error,
+        )
+
+
 @router.post("/image-only", response_model=IntakeResultResponse, summary="Image-only intake")
 async def intake_image_only(
     file: UploadFile = File(..., description="Image of the collectible item"),
@@ -593,22 +632,32 @@ async def intake_image_only(
     if condition:
         user_hints["condition"] = condition
 
-    result = await process_intake(
-        image_bytes=image_bytes,
-        barcode=None,
-        barcode_type=None,
-        filename=getattr(file, "filename", None),
-        user_hints=user_hints if user_hints else None,
-        user_id=user_id,
-    )
+    started = time.monotonic()
+    try:
+        result = await process_intake(
+            image_bytes=image_bytes,
+            barcode=None,
+            barcode_type=None,
+            filename=getattr(file, "filename", None),
+            user_hints=user_hints if user_hints else None,
+            user_id=user_id,
+        )
+    except Exception as exc:
+        spawn_bg(_record_scan_event(user_id, None, int((time.monotonic() - started) * 1000),
+                                    error=type(exc).__name__), "scan_event_failed")
+        raise
+    spawn_bg(_record_scan_event(user_id, result, int((time.monotonic() - started) * 1000)),
+             "scan_event")
 
     try:
         from app.features.data_moat import record_demand_signal, get_user_geo
         region, country = await get_user_geo(user_id)
+        # The RESULT, not the request hints: the hints are empty on almost
+        # every scan (37 of 52 rows on 2026-10-14 had no category at all).
         await record_demand_signal(
             signal_type="item_scanned",
-            category=category,
-            item_key=name,
+            category=result.category_id or category,
+            item_key=result.catalog_match_key or name,
             user_id=user_id,
             region=region,
             country_code=country,
