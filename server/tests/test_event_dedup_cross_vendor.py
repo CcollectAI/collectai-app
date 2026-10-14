@@ -79,3 +79,30 @@ class TestCityExtraction:
         assert _city_of(None) == ""
         assert _city_of("") == ""
         assert _city_of("SomewhereWithNoCommas") == ""
+
+
+class TestSameSourceDifferentVenue:
+    """2026-10-14: store events share a template title across venues."""
+
+
+    def _row(self, title, source, location, category="lorcana"):
+        return {"title": title, "source": source, "location": location, "category_id": category}
+
+    def test_same_template_title_at_two_stores_is_two_events(self):
+        from pipelines.event_dedup import _is_duplicate_pair
+        t = "Friday Evening Hyperia City Prerelease (Sealed)"
+        a = self._row(t, "ravensburger_play", "Paradisecards TCG, Nieuwe Ebbingestraat 17, 9712 NC Groningen")
+        b = self._row(t, "ravensburger_play", "Spielraum Bielefeld, Handwerkerstraße 7, 33617 Bielefeld, Germany")
+        assert _is_duplicate_pair(a, b) is False
+
+    def test_same_title_same_venue_same_source_is_still_a_duplicate(self):
+        from pipelines.event_dedup import _is_duplicate_pair
+        loc = "Paradisecards TCG, Nieuwe Ebbingestraat 17, 9712 NC Groningen"
+        t = "Friday Evening Hyperia City Prerelease (Sealed)"
+        assert _is_duplicate_pair(self._row(t, "ravensburger_play", loc), self._row(t, "ravensburger_play", loc)) is True
+
+    def test_cross_vendor_rule_unchanged(self):
+        from pipelines.event_dedup import _is_duplicate_pair
+        a = self._row(TM_TITLE, "ticketmaster", "MetLife Stadium, East Rutherford, US", "kpop_merch")
+        b = self._row(SG_TITLE, "seatgeek", "MetLife Stadium, East Rutherford, US", "kpop_merch")
+        assert _is_duplicate_pair(a, b) is True

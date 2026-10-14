@@ -96,6 +96,48 @@ def _city_of(location: str | None) -> str:
     return _normalize_title(parts[1]) if len(parts) >= 2 else ""
 
 
+def _is_duplicate_pair(a, b, similarity_threshold: float = 0.70) -> bool:
+    """Two same-day rows that describe one event (rows: title, category_id,
+    source, location). The dedup loop's whole matching rule, kept here so it
+    can be tested without a database."""
+    # Category must match (or one is null)
+    if (
+        a["category_id"]
+        and b["category_id"]
+        and a["category_id"] != b["category_id"]
+    ):
+        return False
+
+    # Check title similarity.
+    #
+    # Jaccard alone missed every cross-vendor duplicate,
+    # because SeatGeek writes the bare artist name where
+    # Ticketmaster writes the full billing. Containment
+    # catches that, but only apply it ACROSS sources and
+    # in the same city — within one source a short title
+    # that is a subset of a longer one is usually a
+    # genuinely different event (a festival's "Day 1" vs
+    # its "2-DAY VIP" ticket).
+    sim = _token_overlap(a["title"] or "", b["title"] or "")
+    cross_source = (a["source"] or "") != (b["source"] or "")
+    # One source, two different venues = two events
+    # (2026-10-14). Store-run events share a publisher's
+    # template title: Ravensburger Play lists "Friday Evening
+    # Hyperia City Prerelease (Sealed)" at dozens of stores on
+    # the same date, and by title + date alone every one but
+    # the first would be quarantined.
+    if (not cross_source and a["location"] and b["location"]
+            and _normalize_title(a["location"]) != _normalize_title(b["location"])):
+        return False
+    same_city = _city_of(a["location"]) == _city_of(b["location"])
+    if sim < similarity_threshold:
+        if not (cross_source and same_city and _city_of(a["location"])):
+            return False
+        if _token_containment(a["title"] or "", b["title"] or "") < 0.99:
+            return False
+    return True
+
+
 async def deduplicate_events(
     similarity_threshold: float = 0.70,
     dry_run: bool = False,
@@ -155,32 +197,8 @@ async def deduplicate_events(
                     a = group[i]
                     b = group[j]
 
-                    # Category must match (or one is null)
-                    if (
-                        a["category_id"]
-                        and b["category_id"]
-                        and a["category_id"] != b["category_id"]
-                    ):
+                    if not _is_duplicate_pair(a, b, similarity_threshold):
                         continue
-
-                    # Check title similarity.
-                    #
-                    # Jaccard alone missed every cross-vendor duplicate,
-                    # because SeatGeek writes the bare artist name where
-                    # Ticketmaster writes the full billing. Containment
-                    # catches that, but only apply it ACROSS sources and
-                    # in the same city — within one source a short title
-                    # that is a subset of a longer one is usually a
-                    # genuinely different event (a festival's "Day 1" vs
-                    # its "2-DAY VIP" ticket).
-                    sim = _token_overlap(a["title"] or "", b["title"] or "")
-                    cross_source = (a["source"] or "") != (b["source"] or "")
-                    same_city = _city_of(a["location"]) == _city_of(b["location"])
-                    if sim < similarity_threshold:
-                        if not (cross_source and same_city and _city_of(a["location"])):
-                            continue
-                        if _token_containment(a["title"] or "", b["title"] or "") < 0.99:
-                            continue
 
                     # Found a duplicate pair. Across vendors the winner is
                     # decided by source precedence, not richness: SeatGeek

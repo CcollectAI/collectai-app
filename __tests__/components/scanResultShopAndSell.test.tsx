@@ -159,6 +159,12 @@ describe('ScanResultCard — sell yours', () => {
     expect(sell).toHaveBeenCalledTimes(1);
   });
 
+  it('shows no where-to-buy for an item already owned', () => {
+    const r = card({ onSellOwned: jest.fn(), shopLinks: links, onOpenShopLink: jest.fn() }, owned);
+    expect(r.queryByText('Where to buy')).toBeNull();
+    expect(r.getByText('Sell yours')).toBeTruthy();
+  });
+
   it('does not offer it without a handler', () => {
     expect(card({}, owned).queryByText('Sell yours')).toBeNull();
   });

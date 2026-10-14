@@ -465,8 +465,11 @@ function ScanResultCardInner({
         ) : null}
 
         {/* Where to buy — affiliate-tagged, the same links the catalogue page
-            shows. Only a non-empty list renders (see `shopLinks`). */}
-        {shopLinks && shopLinks.length > 0 && onOpenShopLink ? (
+            shows. Only a non-empty list renders (see `shopLinks`), and not for
+            an item the member already owns: there "Sell yours" is the action,
+            the same reasoning that keeps where-to-buy low on the item screen
+            (ui-playbook, "The order now"). */}
+        {shopLinks && shopLinks.length > 0 && onOpenShopLink && !scanResult.duplicateInfo?.ownedCount ? (
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.sectionHeader}>
               <Ionicons name="cart-outline" size={18} color={TIFFANY} />
