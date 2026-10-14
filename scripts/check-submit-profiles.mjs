@@ -3,7 +3,8 @@
  * No submittable profile may ship the beta unlock.
  *
  * `EXPO_PUBLIC_BETA_UNLOCK_ALL=true` reports every user as `pro` and skips
- * RevenueCat entirely. It is deliberate on the `internal` profile. The hazard
+ * RevenueCat entirely. No profile may set it (the `internal` one that did was
+ * removed 2026-10-14). The hazard
  * class G (docs/CLASS_SWEEPS.md) raised: `submit.production` and `submit.store`
  * point at the SAME `ascAppId`, so the wrong artefact reaches the store with no
  * paywall and nothing says so.
@@ -38,15 +39,19 @@ const eas = JSON.parse(readFileSync(new URL('../eas.json', import.meta.url), 'ut
 const FLAG = 'EXPO_PUBLIC_BETA_UNLOCK_ALL';
 
 // A profile is submittable if `submit` names it, plus the conventional store
-// ones. `internal` is deliberately excluded — that is the whole point of it.
+// ones. Since 2026-10-14 NO profile may set the flag true, submittable or not:
+// the unlocked `internal` profile was removed (paid screens are reviewed with a
+// server-side pro|active account), and an unlocked profile on the same app
+// record is one `eas submit` away from the store.
 const submitProfiles = new Set([...Object.keys(eas.submit ?? {}), 'production', 'store']);
 const findings = [];
 
 for (const [name, profile] of Object.entries(eas.build ?? {})) {
-  if (!submitProfiles.has(name)) continue;
   const value = String(profile?.env?.[FLAG] ?? '').toLowerCase();
   if (value === 'true') {
     findings.push(`build.${name} sets ${FLAG}=true`);
+  } else if (!submitProfiles.has(name)) {
+    continue;
   } else if (value !== 'false') {
     // Unset is NOT safe: the flag then falls through to whatever the shell or
     // EAS project env supplies, which is exactly how a paywall-less build gets
@@ -56,11 +61,11 @@ for (const [name, profile] of Object.entries(eas.build ?? {})) {
 }
 
 if (findings.length) {
-  console.error(`[submit-profiles] FAIL — ${findings.length} submittable profile(s) could ship a paywall-less build:\n`);
+  console.error(`[submit-profiles] FAIL — ${findings.length} profile(s) could ship a paywall-less build:\n`);
   for (const f of findings) console.error(`  - ${f}`);
   console.error(
     `\n  Pin it: "env": { "${FLAG}": "false" } on every profile you can submit.\n` +
-    '  `internal` may keep it true — it is not submittable and is not checked.',
+    '  No profile may set it true (removed 2026-10-14 — use a pro|active test account).',
   );
   process.exit(1);
 }

@@ -647,14 +647,14 @@ set it there.
 | `preview` | Internal testing | locked |
 | `production` | Base profile the store profiles extend | locked |
 | `store` | **App Store / Google Play — the one to ship** | locked (`EXPO_PUBLIC_BETA_UNLOCK_ALL=false`) |
-| `internal` | Paid screens reviewed on TestFlight | ⚠️ **UNLOCKED** |
 
-⚠️ **`internal` produces a paywall-less build** — every user reports as `pro`
-and RevenueCat is skipped. It exists so paid screens can be reviewed, and a
-build made from it must never be promoted to the App Store.
-`npm run check:submit-profiles` flags it, because `eas.json` also defines a
-`submit.internal` profile, which means it CAN be submitted. That gate is not
-wired into `verify:prebuild`, so nothing stops it automatically.
+**No profile may unlock the paywall (2026-10-14).** The `internal` profile
+(`EXPO_PUBLIC_BETA_UNLOCK_ALL=true`) was removed: it shared the App Store app
+record, so one `eas submit` or one promoted TestFlight build away from shipping
+with no paywall. To review paid screens, give the test account `pro|active` in
+`public.subscriptions` — the store build reads the plan from the server, the
+same way the App Review account is unlocked. `npm run check:submit-profiles`
+(part of `verify:prebuild`) fails if ANY profile sets the flag `true`.
 
 ## Monitoring
 

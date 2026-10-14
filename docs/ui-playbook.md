@@ -3963,3 +3963,21 @@ Open bids and Sell are actions — their own row. A "Clear" belongs next to the
 thing it clears (the applied-filter chips), not next to the button that opened
 the panel. `app/listings.tsx`.
 
+## The match arrived after the button had already been built (2026-10-14)
+
+`app/sell/new.tsx` matches the typed title against the catalogue on BLUR and
+stores the hit in `match`. The List button's `useCallback` sent
+`canonical_key: match?.item_key` — and did not list `match` in its deps. Every
+keystroke rebuilt the callback with `match = null`; the blur then set the match
+and nothing rebuilt it. A seller who typed the title LAST, saw the match and
+tapped List created an unmatched listing: no `canonical_key`, so Target Hit
+never alerted the members watching that card, and the screen said nothing.
+
+Found by eslint `react-hooks/exhaustive-deps` — one of 51 warnings, and the
+only one of the 51 that was a bug (the rest omit stable refs, Animated values,
+setters, or are deliberate mount-once effects; triage is in
+`docs/CLASS_SWEEPS.md`). **A value that lands asynchronously AFTER the last
+user edit is exactly the dependency that goes stale**, because nothing else
+rebuilds the closure behind it. Pinned by
+`__tests__/screens/sellNewMatchDeps.test.ts` (reads the deps array; dropping
+the three deps turns 3 of 4 red).

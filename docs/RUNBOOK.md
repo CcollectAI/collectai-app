@@ -284,14 +284,19 @@ ssh collectai 'grep -E "FIRECRAWL_ENABLED|SCRAPEDO_ENABLED|OPENAI_API_KEY" /opt/
 
 ## 5. Paywall wrong state
 
-**Symptoms:** During beta, paywalls show plan cards instead of "You're in the Sparrow beta" panel. OR in production, Pro features are unlocked for free users.
+**Symptoms:** In production, Pro features are unlocked for free users — OR a member who paid still sees the paywall.
+
+> 2026-10-14: there is no unlocked "beta" build any more. Every EAS profile is
+> locked and `check:submit-profiles` (in `verify:prebuild`) fails if any profile
+> sets `EXPO_PUBLIC_BETA_UNLOCK_ALL=true`. To see paid screens, give the test
+> account `pro|active` in `public.subscriptions`.
 
 ### Diagnose
 
 ```bash
 # What does the build think it should do?
 eas env:list --environment production | grep BETA_UNLOCK_ALL
-# Expect: EXPO_PUBLIC_BETA_UNLOCK_ALL=true (beta) or =false (production)
+# Expect: EXPO_PUBLIC_BETA_UNLOCK_ALL=false (always — set false on 2026-09-19)
 
 # Which build profile produced the installed binary?
 # Check the build's eas.json profile in the build details page
@@ -302,7 +307,7 @@ eas build:list --limit 1 --json --non-interactive | grep -i profile
 
 | Scenario | Fix |
 |---|---|
-| Beta install shows paywall | `EXPO_PUBLIC_BETA_UNLOCK_ALL` wasn't in EAS env when build ran → re-push + rebuild |
+| Paying member sees the paywall | RevenueCat entitlement `pro` missing on the customer, or `GET /billing/status` not `pro` → check RC customer + `subscriptions` row |
 | Production install unlocks Pro for everyone | `EXPO_PUBLIC_BETA_UNLOCK_ALL=true` leaked into store build → run `eas build -p ios --profile store` (not `production`) |
 | RC offerings not loading in store build | RC dashboard not configured or `EXPO_PUBLIC_REVENUECAT_IOS_KEY` missing |
 

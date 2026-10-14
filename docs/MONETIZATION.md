@@ -4,6 +4,10 @@
 
 ## An unlocked build says so (2026-09-18)
 
+> **2026-10-14: the `internal` profile was removed** — no EAS profile may set
+> the flag. Review paid screens with a `pro|active` test account instead. See
+> docs/DEPLOYMENT.md → EAS Build Profiles.
+
 `EXPO_PUBLIC_BETA_UNLOCK_ALL=true` (the `internal` EAS profile) reports every
 user as `pro` and skips RevenueCat. Settings now renders a warning banner in
 that build — *"Beta build — every Pro feature is unlocked and billing is

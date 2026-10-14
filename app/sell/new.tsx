@@ -351,8 +351,13 @@ function SellNewScreen() {
     } finally {
       setSaving(false);
     }
+    // `match?.item_key` IS a dependency: the match lands on title BLUR, after
+    // the last edit that rebuilt this callback — leave it out and a seller who
+    // sees "Matched" and taps List sends no canonical_key, so the listing never
+    // reaches Target Hit watchers.
   }, [canList, parsedPrice, title, categorySlug, condition, description, photoUris,
-      consent, settings.currency, settings.hapticsEnabled, showToast, router]);
+      consent, settings.currency, settings.hapticsEnabled, showToast, router,
+      fromCollection, itemId, match?.item_key]);
 
   /** A tappable field that opens an action sheet. Same visual weight as the
    *  TextInputs beside it so the form reads as one thing. */

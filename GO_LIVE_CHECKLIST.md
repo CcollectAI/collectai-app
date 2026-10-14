@@ -225,7 +225,7 @@ remains is console setup (Play enrolment, RevenueCat Android key, FCM). Run
 [x] EXPO_PUBLIC_API_BASE_URL=https://api.sparrowcollect.com (in EAS production)
 [x] EXPO_PUBLIC_SUPABASE_URL + ANON_KEY (in EAS production)
 [x] EXPO_PUBLIC_SUPABASE_MODE=strict (set per-profile in eas.json)
-[x] EXPO_PUBLIC_BETA_UNLOCK_ALL — true on `production` profile, false on `store`
+[x] EXPO_PUBLIC_BETA_UNLOCK_ALL — false on EAS production env AND pinned false on every profile (unlocked `internal` profile removed 2026-10-14; `check:submit-profiles` enforces)
 [x] EXPO_PUBLIC_REVENUECAT_IOS_KEY (sensitive, pending RC dashboard setup)
 [x] SENTRY_DISABLE_AUTO_UPLOAD plumbed
 

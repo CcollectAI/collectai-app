@@ -3097,6 +3097,15 @@ hazard that requires deliberately promoting an internal build, with a warning
 banner on screen (`src/screens/Settings.tsx:79`). Revisit if anyone other than
 Merle can promote a build.
 
+**⚠️ REVERSED 2026-10-14 (Merle): the `internal` profile is GONE.** The
+09-19 reason to keep it — reviewing paid screens — is now served by a server-side
+`pro|active` row in `public.subscriptions` (how the App Review account is
+unlocked since 10-09), which tests the store build itself. `build.internal` and
+`build:ios:internal` removed; `check:submit-profiles` now fails on ANY profile
+setting the flag `true` (mutation-checked: an unlocked non-submittable profile
+→ exit 1) and runs in `verify:prebuild`. It had been red, unseen, since
+546e99ea (08-15). Re-test: `npm run check:submit-profiles` → PASS.
+
 Build 160 was built AND submitted with `--profile store`, and the build log
 confirms the store profile's `false` overrode the EAS value.
 
@@ -3412,3 +3421,19 @@ cosmetic", and "list the false positives you discarded and why". Read-only, no
 edits, no prod writes.
 
 Then write the gate before the fix, and prove the gate fails.
+
+## exhaustive-deps triage (2026-10-14)
+
+`npx expo lint` reported 51 `react-hooks/exhaustive-deps` warnings. Each was
+read, not bulk-suppressed. **One bug**: `app/sell/new.tsx` submit callback
+missed `match?.item_key` (+ `fromCollection`, `itemId`) → listings created
+without `canonical_key` (fixed; see ui-playbook 2026-10-14). The other 50:
+~35 omit values that never change (Animated values, `router`, setters,
+`showToast` — stable via useCallback in `src/components/Toast.tsx`); ~8 are
+deliberate mount-once effects; the rest already depend on what they read.
+Three minor, left alone: Items bulk actions read `settings.hapticsEnabled`
+from the last selection change; `item/[id]` priceEstimate's currency label
+until remount; `useBillingLimits` reads `userId` once per mount (matters only
+on an account switch without leaving the tabs).
+
+Re-test: `npx expo lint 2>&1 | grep -c exhaustive-deps` → 50.
