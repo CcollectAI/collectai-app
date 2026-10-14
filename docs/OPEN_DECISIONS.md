@@ -24,6 +24,30 @@ _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in 
   - Applications ask for a site/app: sparrowcollect.com + the App Store link.
 - **Re-check:** `grep AFFILIATE /opt/collectors/.env`.
 
+### 18. tcgcsv appeal — One Piece TCG + Digimon have NO prices (opened 2026-10-14)
+- **Measured 2026-10-14:** `one_piece_tcg` 7,675 catalogue items, `digimon` 9,762 — **0** `market_hits` for either (watchdog `coverage_zero_categories`: digimon, dnd, jewellery, one_piece_tcg). Their catalogue rows are TCGplayer-keyed (`tcgplayer:<id>:<variant>`), priced by `pipelines/import_tcgcsv.py` — disabled since 2026-08-04 because tcgcsv.com blocked our IP for overuse. **Still blocked:** `curl https://tcgcsv.com/tcgplayer/68/groups` from EC2 → 403 "flagged for overuse … send an email to cptspacetoaster@gmail.com to begin an appeal".
+- **Why not Cardmarket's free price-guide files instead:** `import_tcgcsv.build_catalog_rows` records that matching across namespaces was measured and REJECTED (name+set gave 8.2% / 1.3% unique matches for one_piece / digimon). A Cardmarket feed would need its own catalogue rows = a duplicate of every card in search.
+- **Do (you):** send the appeal (draft in the 2026-10-14 session: who we are, one daily run, and that until 2026-09-27 every bake restart re-ran every daily worker — 43 restarts in a week — which plausibly caused the overuse; since `897dc9fb` workers wait out their interval. Unverified as THE cause: no tcgcsv request log survives from July). When granted: uncomment `tcgcsv_worker` in `server/workers/bake_orchestrator.py:71`, run the 9 gates, restart bake.
+- **Re-check:** `ssh collectai 'curl -s -o /dev/null -w "%{http_code}" https://tcgcsv.com/tcgplayer/68/groups'` → 200.
+
+### 19. App analytics + crash reporting are OFF in store builds (opened 2026-10-14)
+- **Measured:** `eas env:list production` has no `EXPO_PUBLIC_POSTHOG_KEY` and no `EXPO_PUBLIC_SENTRY_DSN`. `src/analytics/track.ts::initAnalytics` no-ops without a key, so every `track()` (quickscan_started, paywall views, affiliate opens…) is dropped; Sentry likewise. Server-side `scan_events` (2026-10-14) covers scans regardless.
+- **Do (you):** create a PostHog project (EU host) and/or Sentry project; add the keys to the EAS `production` environment (sensitive); they take effect in the next build. Privacy labels already declare PostHog analytics (`docs/app-store-aso.md`).
+
+### 20. PriceCharting licence (opened 2026-10-14)
+- PriceCharting's API docs (read 2026-10-14 by the research agent): data is "licensed for internal use only"; showing it to app users needs "a commercial license and written permission". The keyless console scrape (`learning_keyless_pricecharting_needs_console_guard`) likely falls outside that. The same licence (SportsCardsPro) is the only practical source for sports cards, comics and Funko guide values.
+- **Decide:** ask PriceCharting for a commercial licence (covers 3 thin categories) or stop showing PriceCharting-derived values.
+
+### 21. Event sources behind terms of use (opened 2026-10-14)
+- Added: **Ravensburger Play** (Lorcana) — undocumented JSON API, no terms page found; 351 events on the first run.
+- **Bandai TCG+** (One Piece/Digimon/Gundam; 450 NL events) answered 200 to the research probe and **403 to every request** an hour later — not worked around.
+- **Wizards** event search works, but its ToS §2.2(i) forbids scrapers and robots.txt disallows `/api/`. **Pokémon** is bot-protected and its ToS forbids storing content. Both held.
+- **Decide:** ask Bandai / Wizards for API access, or keep them out. Ticketmaster convention/expo classifications are the documented alternative (key works on prod).
+
+### 22. Ads — deferred, not built (opened 2026-10-14)
+- No ad SDK exists; every unit id in `src/ads/config.ts` is `PLACEHOLDER_*` behind `NoOpAdProvider` → €0. At ~3 weekly members an SDK earns ~nothing and costs an ATT prompt, a privacy-label change and review risk; the post-scan interstitial would slow the core flow.
+- **Recommendation:** revisit at ~1,000 DAU. Money now = affiliate links (scan result + web guides, 2026-10-14) and Pro.
+
 ## Decided
 
 - **2026-10-13 — Pricing (Merle: "implement all these suggestions")**, after a competitor scan

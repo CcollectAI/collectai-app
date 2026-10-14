@@ -761,6 +761,24 @@ re-index requested. Re-check in Search Console → Sitemaps (expect Success + 19
 discovered) and Pages (indexed count). If the sitemap still says "Couldn't fetch"
 after ~3 days, remove and resubmit it — the fetch itself is proven working.
 
+## `web/` DEPLOYED 2026-10-14 — eBay links on the price guides
+
+`scripts/build_value_pages.py` now adds a "Browse … for sale" block to every
+`/value/*` page: eBay US / UK / DE searches tagged with EPN campaign
+`5339218687` (`customid=web-value-<slug>`, same parameter set as
+`server/app/lib/affiliate.py::_tag_epn`), `rel="sponsored noopener"`, and a
+one-line affiliate disclosure. Pages are generated — edit the script, not the
+HTML.
+
+Deployed with the CLI login (`vercel whoami` → `ccollectai-9199`, `teams ls` →
+`collectais-projects`): `npx vercel@latest deploy --prod --scope
+collectais-projects --yes` → aliased sparrowcollect.com. ⚠️ The token file the
+2026-10-13 note names (`~/Documents/Sparrow/Keys/vercel-token.txt`) **does not
+exist** — check `whoami` first; the login was enough. Verified live: 3 tagged
+links on each of pokemon-cards / lego-sets / sports-cards, disclosure present,
+sitemap 24 `<loc>`, `/terms` 200. eBay answers 403 to scripted requests, so link
+landing was checked in a real browser, not curl.
+
 ## Deploying `web/` — the Vercel account gotcha
 
 `web/` (marketing site + AASA + `/auth/confirm`) lives under the Vercel team

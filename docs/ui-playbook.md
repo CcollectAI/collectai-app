@@ -3981,3 +3981,34 @@ user edit is exactly the dependency that goes stale**, because nothing else
 rebuilds the closure behind it. Pinned by
 `__tests__/screens/sellNewMatchDeps.test.ts` (reads the deps array; dropping
 the three deps turns 3 of 4 red).
+
+## The scan result: where to buy, sell yours, and three numbers that lied (2026-10-14)
+
+**Where to buy on the scan result.** The catalogue page had affiliate links; the
+scan result — where a member has just learned what the thing is and what it is
+worth — had none. It now shows up to three (`/marketplace/affiliate-links`, the
+same call as the catalogue). Rendered only for a NON-EMPTY list: loading,
+failed (`null`) and none (`[]`) render nothing, because a "couldn't load shops"
+row is noise on this screen and a "no marketplaces" row would be a claim about a
+search that failed (CLAUDE.md, "The app was rate-limiting itself").
+
+**Not for an item you own.** When the scan matches the collection
+(`duplicateInfo.ownedCount`), where-to-buy is hidden and the "You already have
+this" banner offers **Sell yours** → `sell/new` with `itemId` (the collection
+handoff, which inherits `canonical_key` server-side). Same reasoning that keeps
+where-to-buy low on the item screen (§"The order now"): an action only belongs
+where the member wants it. The sell box is seeded only when the scan priced in
+the member's own currency.
+
+**Invented evidence on the item screen.** With no evidence, the price
+explanation built "Comparable sources" from the estimate itself: *eBay, 12 sales,
+last 90 days* at 0.95x and *TCGPlayer, 8* at 1.02x. Removed; the sheet renders
+no sources section for an empty list. Guard:
+`__tests__/screens/itemNoInventedComps.test.ts` (fails on the old code).
+
+**"{n} sales" that were not sales.** The catalogue range caption counted
+`market_hits_daily.comps_count` as sales. That rollup takes sales when a day has
+them, otherwise asking-price listings — and the TCG "sales" are daily
+price-index snapshots (TCGplayer/Lorcast). Now **"price points"**, and the three
+strings are translated in all 7 locales (six showed English). A test that
+pinned "No sales in the last 90 days" was updated, not deleted.

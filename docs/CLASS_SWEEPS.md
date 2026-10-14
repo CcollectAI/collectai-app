@@ -3437,3 +3437,34 @@ until remount; `useBillingLimits` reads `userId` once per mount (matters only
 on an account switch without leaving the tabs).
 
 Re-test: `npx expo lint 2>&1 | grep -c exhaustive-deps` → 50.
+
+## 2026-10-14 — four findings from checking a product proposal against prod
+
+Each was a claim of mine that measurement overturned, or a defect it surfaced.
+
+1. **A table named like the thing.** `predict_sessions` (308 rows, ~20-55/week)
+   read as QuickScan history. No app code calls the `predict-*` edge functions
+   that write it; the Sanity E2E workflow did, on every push, against prod (row
+   times = run times to the second). The value screen counted it as "scans".
+   Real scans: `/intake/image-only` → `demand_signals.item_scanned` (29 in 30 d,
+   3 members) and, from today, `scan_events`. Workflow now manual-only; value
+   screen repointed. Re-test: `SELECT count(*) FROM scan_events WHERE created_at
+   > now() - interval '1 day'` rises after a scan on a device.
+2. **A count labelled with a stronger noun.** Catalogue range "{n} sales" counted
+   asking-price listings and price-index snapshots. → "price points". Same
+   family: the Pokémon/Lorcana `is_listing = false` rows are TCGplayer/Lorcast
+   index snapshots, not sales (`EBAY_MARKETPLACE_INSIGHTS.md`: 99.98% of comps
+   carry no sale date).
+3. **Evidence derived from the number it supports.** Item screen without
+   evidence showed "eBay, 12 sales, last 90 days" at 0.95x the estimate.
+   Removed + `itemNoInventedComps.test.ts`. `grep` found no other instance.
+4. **A filter column that is empty for whole categories.** `market_hits.observed_at`
+   is NULL on all 394,778 Yu-Gi-Oh! and 784,542 of 787,943 MTG rows — a 14-day
+   coverage count on `observed_at` reported those categories as dead when they
+   were refreshed that day. Use `seen_at`. Re-test: `SELECT category,
+   count(*) FILTER (WHERE observed_at IS NULL) FROM market_hits WHERE seen_at >
+   now() - interval '1 day' GROUP BY 1`.
+
+Also measured, no code change: `one_piece_tcg` (7,675 items) and `digimon`
+(9,762) have **zero** prices because tcgcsv still 403s our IP (OPEN_DECISIONS
+#18); EAS production has no PostHog key or Sentry DSN (#19).

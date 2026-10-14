@@ -437,6 +437,37 @@ blabbermouth.
 - No global reputation system — localized per-event reports are enough.
 - No "minimum attendance" hard threshold — soft banners respect niche events.
 
+## Limitless removed, Ravensburger Play added — and the dedup rule it broke (2026-10-14)
+
+**Limitless TCG deleted** (`pipelines/limitless_tcg_events.py`): still 0 upcoming
+rows on 2026-10-14, last write 2026-09-28 — this plan's own "delete it if it is
+still writing zero rows in a month" had come due. Its 2,016 past rows remain;
+`limitless_tcg` stays in `_TRUST_TIER_BY_SOURCE` for them.
+
+**Ravensburger Play** (`pipelines/ravensburger_play_events.py`, source
+`ravensburger_play`, tier `publisher`): Disney Lorcana store events around
+Benelux / London / Paris / Berlin. The feed is ~70% weekly play nights, so only
+names saying prerelease / championship / challenge / cup / launch / release
+(or the feed's headlining / convention flags) are kept. First prod run:
+**1,530 fetched → 351 published**, quality_score avg 90, dates 2026-10-16 →
+2027-02-11. Undocumented API with no terms page found — an empty run raises, so
+it lands in the scheduler's `errors` instead of reading as "no events".
+
+**The dedup would have eaten it.** `event_dedup` called two same-day rows with
+≥70% title overlap one event **without looking at the venue** when they came
+from the same source. Ravensburger lists one template title — "Friday Evening
+Hyperia City Prerelease (Sealed)" — at dozens of stores per date: all but one
+would have been quarantined on the next scheduler run. Rule added: **one source,
+two different venues = two events.** The pair decision now lives in
+`_is_duplicate_pair` (tested; dropping the rule fails
+`TestSameSourceDifferentVenue`). Dry run after the first ingest: 11 merges, all
+same-store (copies, "V2", afternoon/evening sessions of one prerelease), zero
+cross-store.
+
+Falsifier: `SELECT status, count(*) FROM events WHERE source='ravensburger_play'
+GROUP BY 1` — `published` should stay in the hundreds after the scheduler's
+dedup pass; a collapse to a handful means the venue rule is gone.
+
 ## Open questions (for future sessions)
 
 1. Should `trust_tier='verified'` events always bypass the score threshold? (Current design: yes — any Ticketmaster event scores ≥50 via the +5 tier bonus and +15 for trusted venue/date/etc., so this is implicit.)

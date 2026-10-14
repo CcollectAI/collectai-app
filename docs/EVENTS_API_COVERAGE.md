@@ -43,7 +43,11 @@ Legend: ⚡ wired | ✅ Free/public | 💰 Paid | 🔑 Key required | 🕸 Scrap
 
 | Source | Games | Regions | Status |
 |---|---|---|---|
-| **Limitless TCG** | Pokemon (all major tournaments) | 🌍 Global | ❌ Not wired — limitlesstcg.com |
+| **Ravensburger Play** | Disney Lorcana prereleases, championships, launches | 🇪🇺🇬🇧 Benelux + London/Paris/Berlin hubs | ✅ **Wired 2026-10-14** — `pipelines/ravensburger_play_events.py`, undocumented JSON API, no key; weekly play nights filtered out; 351 events first run |
+| **Bandai TCG+** | One Piece, Digimon, Dragon Ball, Gundam | 🌍 per country | ⛔ 403 to every request since 2026-10-14 (worked an hour earlier) — not worked around; OPEN_DECISIONS #21 |
+| **Wizards event search** (locator.wizards.com API) | MTG store events | 🌍 | ⛔ Works, but ToS §2.2(i) forbids scrapers + robots.txt `Disallow: /api/` — held, OPEN_DECISIONS #21 |
+| **Pokémon Event Locator** | Pokémon | 🌍 | ⛔ Bot-protected; ToS forbids storing content — held |
+| ~~Limitless TCG~~ | Pokemon results | 🌍 | 🗑 **Removed 2026-10-14** — a RESULTS feed: 2,016 rows, all past at insert, 0 upcoming (EVENT_QUALITY_PLAN) |
 | **YGOPRODeck Tournaments** | Yu-Gi-Oh | 🌍 Global | ❌ Not wired — ygoprodeck.com/tournaments |
 | **TopDeck.gg** | MTG/Pokemon | 🌍 Global | ❌ Not wired — advanced registration |
 | **WPN (Wizards Play Network)** | MTG Regional Championships | 🌍 Global, official | 🔑 Requires store affiliation |

@@ -2,6 +2,22 @@
 
 > Last refreshed 2026-05-19. Renamed from CollectAI 2026-05-04. **iOS IAP via RevenueCat replaced Stripe on 2026-05-09** (commit `652230a`); Stripe code path is preserved for future web/Android billing.
 
+## Affiliate placements and ads, as of 2026-10-14
+
+| surface | affiliate links | since |
+|---|---|---|
+| catalogue item "Where to buy" | ✅ | 2026-08 |
+| item shop, wishlist, barcode result, market hits, push tap | ✅ (`openAffiliateUrl`, `check:affiliate-open`) | 2026-09-28 |
+| **QuickScan result** "Where to buy" (hidden when the scan matches an owned item → "Sell yours") | ✅ | **2026-10-14**, needs a JS build |
+| **web `/value/*` guides** — eBay US/UK/DE searches, EPN 5339218687, `customid=web-value-<slug>`, `rel="sponsored"`, disclosure line | ✅ live | **2026-10-14** |
+
+Measured before: **1** `affiliate_click` in 30 days (7 ever). Re-check:
+`SELECT count(*) FROM demand_signals WHERE signal_type='affiliate_click' AND created_at > now() - interval '30 days'`
+(web clicks are not in that table — they are EPN-side, by `customid`).
+
+**Ads: not built.** No SDK; all unit ids in `src/ads/config.ts` are
+`PLACEHOLDER_*` behind `NoOpAdProvider`. Deferred to ~1,000 DAU — OPEN_DECISIONS #22.
+
 ## An unlocked build says so (2026-09-18)
 
 > **2026-10-14: the `internal` profile was removed** — no EAS profile may set
