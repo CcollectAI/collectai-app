@@ -351,7 +351,9 @@
     "lookup_isbn_a11y": "ISBN nachschlagen",
     "point_camera": "Richte die Kamera auf den Barcode oder die ISBN",
     "looking_up": "Produkt wird gesucht...",
-    "cant_scan_hint": "Scannen klappt nicht? Gib die ISBN von der Rückseite ein"
+    "cant_scan_hint": "Scannen klappt nicht? Gib die ISBN von der Rückseite ein",
+    "invalid_length": "Bitte gib eine gültige ISBN ein (10 oder 13 Ziffern)",
+    "invalid_check_digit": "Die letzte Ziffer dieses Codes passt nicht zum Rest — prüfe die Ziffern und versuche es erneut."
   },
   "filters": {
     "close_a11y": "Filter schließen",

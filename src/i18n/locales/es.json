@@ -351,7 +351,9 @@
     "lookup_isbn_a11y": "Buscar el ISBN",
     "point_camera": "Apunta la cámara al código de barras o ISBN",
     "looking_up": "Buscando el producto...",
-    "cant_scan_hint": "¿No puedes escanear? Escribe el ISBN de la contraportada"
+    "cant_scan_hint": "¿No puedes escanear? Escribe el ISBN de la contraportada",
+    "invalid_length": "Introduce un ISBN válido (10 o 13 dígitos)",
+    "invalid_check_digit": "El último dígito de este código no coincide con el resto: revisa los dígitos e inténtalo de nuevo."
   },
   "filters": {
     "close_a11y": "Cerrar filtros",

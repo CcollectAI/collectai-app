@@ -208,11 +208,16 @@ def _pattern_in(pattern: str, text: str) -> bool:
     return pattern in text
 
 
+CHECK_DIGIT_MESSAGE = "That code's last digit doesn't match the rest — check the digits and try again."
+
+
 def _gs1_check_ok(code: str) -> Optional[bool]:
-    """Check digit of a numeric EAN-8 / UPC-A / EAN-13 / ISBN-10.
+    """Check digit of a numeric UPC-A / EAN-13 / ISBN-10.
 
     None when the code is not one of those shapes (other symbologies carry
-    letters or other lengths and are left to the lookup). A scanner never
+    letters or other lengths and are left to the lookup). 8 digits is NOT
+    checked: a scanned UPC-E is 8 digits too, and its check digit belongs to
+    the expanded UPC-A, so the EAN-8 formula would reject real UPC-E scans. A scanner never
     delivers a wrong check digit; a TYPED code does, and without this every
     typo went to Open Library / Google Books / the market lookup and came
     back "No match found" ~1.5 s later (probed 2026-10-15).
@@ -220,7 +225,7 @@ def _gs1_check_ok(code: str) -> Optional[bool]:
     c = re.sub(r"[\s-]", "", code)
     if len(c) == 10 and c[:9].isdigit() and (c[9].isdigit() or c[9] in "xX"):
         return _is_isbn(c)
-    if not c.isdigit() or len(c) not in (8, 12, 13):
+    if not c.isdigit() or len(c) not in (12, 13):
         return None
     digits = [int(d) for d in c]
     body, check = digits[:-1], digits[-1]
@@ -573,11 +578,7 @@ async def barcode_lookup(
         raise error_response(400, "Invalid barcode format", code=ErrorCode.VALIDATION_ERROR)
 
     if _gs1_check_ok(barcode) is False:
-        raise error_response(
-            400,
-            "That barcode's last digit doesn't match the rest — check the digits and try again.",
-            code=ErrorCode.VALIDATION_ERROR,
-        )
+        raise error_response(400, CHECK_DIGIT_MESSAGE, code=ErrorCode.VALIDATION_ERROR)
 
     pool = get_db_pool()
     rationale: list[str] = []

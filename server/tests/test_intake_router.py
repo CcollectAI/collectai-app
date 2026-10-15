@@ -103,6 +103,20 @@ class TestIntakeBarcodeOnly:
         assert isinstance(data["category_confidence"], float)
         assert isinstance(data["taxonomy_confidence"], float)
 
+    def test_barcode_only_rejects_a_typed_check_digit_typo(self):
+        """A typo in the manual ISBN box is a 400 before any lookup runs."""
+        with patch(
+            "app.agents.intake_router.process_intake",
+            new_callable=AsyncMock,
+        ) as mock_fn:
+            resp = client.post("/intake/barcode-only", json={
+                "barcode": "9780439023482", "barcode_type": "isbn",
+            })
+
+        assert resp.status_code == 400
+        assert "last digit" in resp.text
+        mock_fn.assert_not_called()
+
     def test_barcode_only_with_hints(self):
         """Barcode-only with category/name/condition hints."""
         mock_result = _make_intake_result(
@@ -115,7 +129,7 @@ class TestIntakeBarcodeOnly:
             return_value=mock_result,
         ) as mock_fn:
             resp = client.post("/intake/barcode-only", json={
-                "barcode": "4012927843999",
+                "barcode": "4012927843994",
                 "barcode_type": "EAN-13",
                 "category": "yugioh",
                 "name": "Blue-Eyes White Dragon",
@@ -125,7 +139,7 @@ class TestIntakeBarcodeOnly:
         assert resp.status_code == 200
         # Verify user_hints were passed
         call_kwargs = mock_fn.call_args.kwargs
-        assert call_kwargs["barcode"] == "4012927843999"
+        assert call_kwargs["barcode"] == "4012927843994"
         assert call_kwargs["barcode_type"] == "EAN-13"
         hints = call_kwargs.get("user_hints", {})
         assert hints["category"] == "yugioh"
@@ -187,7 +201,7 @@ class TestIntakeBarcodeOnly:
             return_value=mock_result,
         ):
             resp = client.post("/intake/barcode-only", json={
-                "barcode": "9999999999999",
+                "barcode": "9999999999994",
             })
 
         assert resp.status_code == 200

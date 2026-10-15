@@ -536,6 +536,13 @@ async def intake_barcode_only(
     if not is_valid_barcode(barcode):
         raise error_response(400, "Invalid barcode format")
 
+    # A TYPED code (the manual ISBN box) can carry a typo; a scanned one cannot.
+    # Same gate as /barcode/lookup — without it a typo cost Open Library +
+    # Google Books + a market lookup and read as "not found" (2026-10-15).
+    from app.features.barcode_lookup_router import _gs1_check_ok, CHECK_DIGIT_MESSAGE
+    if _gs1_check_ok(barcode) is False:
+        raise error_response(400, CHECK_DIGIT_MESSAGE)
+
     user_hints: dict[str, Any] = {}
     if req.category:
         user_hints["category"] = req.category

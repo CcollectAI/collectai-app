@@ -40,6 +40,7 @@ import { safeGoBack } from '@/lib/goBack';
 import { useTranslation } from 'react-i18next';
 import { userErrorMessage } from '@/lib/userErrorMessage';
 import { offerProOnPlanLimit } from '@/lib/planLimitPrompt';
+import { checkTypedCode, cleanTypedCode } from '@/lib/isbn';
 
 /** Barcode types accepted by the scanner */
 const SUPPORTED_BARCODE_TYPES = ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'isbn'] as const;
@@ -151,11 +152,15 @@ function BarcodeScanScreen() {
 
   // Handle manual ISBN submission
   const handleManualSubmit = async () => {
-    const cleaned = manualIsbn.replace(/[\s-]/g, '');
+    const cleaned = cleanTypedCode(manualIsbn);
 
-    // Validate ISBN length (10 or 13 digits)
-    if (cleaned.length < 10 || cleaned.length > 13) {
-      setErrorMessage('Please enter a valid ISBN (10 or 13 digits)');
+    // Length AND check digit, before any network call: a typo used to cost two
+    // lookups and end in "Could not find product information" (src/lib/isbn.ts).
+    const codeCheck = checkTypedCode(cleaned);
+    if (codeCheck !== 'ok') {
+      setErrorMessage(codeCheck === 'length'
+        ? t('barcode.invalid_length', { defaultValue: 'Please enter a valid ISBN (10 or 13 digits)' })
+        : t('barcode.invalid_check_digit', { defaultValue: "That code's last digit doesn't match the rest — check the digits and try again." }));
       setScanState('error');
       return;
     }

@@ -351,7 +351,9 @@
     "lookup_isbn_a11y": "Rechercher l'ISBN",
     "point_camera": "Pointez l'appareil photo vers le code-barres ou l'ISBN",
     "looking_up": "Recherche du produit...",
-    "cant_scan_hint": "Le scan ne fonctionne pas ? Saisissez l'ISBN au dos"
+    "cant_scan_hint": "Le scan ne fonctionne pas ? Saisissez l'ISBN au dos",
+    "invalid_length": "Saisis un ISBN valide (10 ou 13 chiffres)",
+    "invalid_check_digit": "Le dernier chiffre de ce code ne correspond pas au reste — vérifie les chiffres et réessaie."
   },
   "filters": {
     "close_a11y": "Fermer les filtres",

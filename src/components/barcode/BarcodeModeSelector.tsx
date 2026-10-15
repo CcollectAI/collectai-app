@@ -65,7 +65,11 @@ export const BarcodeModeSelector = React.memo(function BarcodeModeSelector({
             placeholderTextColor={colors.muted}
             value={manualIsbn}
             onChangeText={onChangeIsbn}
-            keyboardType="number-pad"
+            // Full keyboard, not number-pad: an ISBN-10 can end in X (~1 in 11
+            // older books) and the number pad has no X key (2026-10-15).
+            keyboardType="default"
+            autoCapitalize="characters"
+            autoCorrect={false}
             maxLength={17}
             returnKeyType="search"
             onSubmitEditing={onSubmit}

@@ -351,7 +351,9 @@
     "lookup_isbn_a11y": "ISBN 조회",
     "point_camera": "카메라를 바코드 또는 ISBN에 맞추세요",
     "looking_up": "제품을 조회하는 중...",
-    "cant_scan_hint": "스캔이 안 되나요? 뒤표지의 ISBN을 입력하세요"
+    "cant_scan_hint": "스캔이 안 되나요? 뒤표지의 ISBN을 입력하세요",
+    "invalid_length": "유효한 ISBN(10자리 또는 13자리)을 입력하세요",
+    "invalid_check_digit": "이 코드의 마지막 숫자가 나머지와 맞지 않습니다. 숫자를 확인하고 다시 시도하세요."
   },
   "filters": {
     "close_a11y": "필터 닫기",
