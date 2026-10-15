@@ -53,6 +53,13 @@ _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in 
 - **Coordinates now exist for most rows** (ravensburger 349/351 since 10-15, ticketmaster 70/126, seatgeek 16/22), so a member-region or distance rule is possible; the "Nearby" tab already uses lat/lon.
 - **Decide:** (a) rank events in the member's region first, (b) filter to region with a "Show worldwide" toggle, or (c) leave worldwide. Recommendation: (a) — no event disappears, and a Dutch member's list opens on Dutch/Belgian events.
 
+### 24. Set checklists — which categories, and how (opened 2026-10-15, PARKED by Merle)
+- **What members expect:** "Finish a set" = *which items do I still need*. Today `sets-to-complete` (Pro) shows % and "N missing" per set; tapping a set opens the member's OWN items, never the missing ones. `catalog-set/[setCode]` lists every item in a set without marking owned.
+- **Where "complete" is knowable (measured 2026-10-15):** set_name on ~100% of rows in the 6 TCGs (yugioh 98,182/98,188, mtg 33,335/33,384, pokemon, lorcana, digimon, one_piece_tcg) from complete official catalogues; **0** elsewhere. Other categories have `set_code`, but it is a brand/genre/region/theme ("Classic Rock", "Campbeltown", "agfa", Funko "animation") over **seed samples of ~1,100 items** — "you are missing N" would be false there.
+- **Taylor Swift:** grouped by era (eras-tour 477, ttpd 137, reputation 127, 1989-tv 82…), all `source='seed'`, curated, not complete. **926 of 2,059 rows duplicate another row's title** under a doubled key (`1989-tv-1989-tv-aquamarine-green` vs `…-aquamarine-green-aquamarine-green`); city_pop_vinyl 471/704 likewise. Re-check: `SELECT count(*) - count(DISTINCT lower(title)) FROM category_items WHERE category='taylor_swift'`.
+- **Proposed levels:** (1) automatic checklist for the 6 TCGs (~½ day); (2) complete discographies for music formats via Discogs (licence to verify first); (3) **member-defined checklists** for every category — pre-filled from the catalogue's era/series, editable; unused tables `set_registry`/`set_items` exist. Plus: de-duplicate taylor_swift/city_pop_vinyl seed rows (needed before any checklist touches them).
+- **Decide:** order (1→dedupe→3→2 proposed, or 3 first since it covers Taylor Swift), and whether checklists stay Pro.
+
 ## Decided
 
 - **2026-10-13 — Pricing (Merle: "implement all these suggestions")**, after a competitor scan
