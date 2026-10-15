@@ -229,7 +229,8 @@
     "announcements_title": "イベントのお知らせ",
     "updates_from_host": "主催者からのお知らせ",
     "location_unavailable_title": "現在地を取得できませんでした",
-    "location_unavailable_body": "位置情報サービスをオンにして、もう一度お試しください。"
+    "location_unavailable_body": "位置情報サービスをオンにして、もう一度お試しください。",
+    "open_event_page": "イベントページ"
   },
   "marketplace": {
     "find_collectors": "コレクターを探す",

@@ -229,7 +229,8 @@
     "announcements_title": "Aankondigingen bij het evenement",
     "updates_from_host": "Updates van de organisator",
     "location_unavailable_title": "Je locatie kon niet worden bepaald",
-    "location_unavailable_body": "Zet locatievoorzieningen aan en probeer het opnieuw."
+    "location_unavailable_body": "Zet locatievoorzieningen aan en probeer het opnieuw.",
+    "open_event_page": "Evenementpagina"
   },
   "marketplace": {
     "find_collectors": "Verzamelaars vinden",

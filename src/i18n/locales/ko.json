@@ -229,7 +229,8 @@
     "announcements_title": "이벤트 공지",
     "updates_from_host": "주최자의 소식",
     "location_unavailable_title": "위치를 찾을 수 없습니다",
-    "location_unavailable_body": "위치 서비스를 켠 후 다시 시도하세요."
+    "location_unavailable_body": "위치 서비스를 켠 후 다시 시도하세요.",
+    "open_event_page": "이벤트 페이지"
   },
   "marketplace": {
     "find_collectors": "컬렉터 찾기",

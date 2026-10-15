@@ -229,7 +229,8 @@
     "announcements_title": "Ankündigungen zum Event",
     "updates_from_host": "Updates vom Veranstalter",
     "location_unavailable_title": "Dein Standort wurde nicht gefunden",
-    "location_unavailable_body": "Aktiviere die Ortungsdienste und versuche es erneut."
+    "location_unavailable_body": "Aktiviere die Ortungsdienste und versuche es erneut.",
+    "open_event_page": "Event-Seite"
   },
   "marketplace": {
     "find_collectors": "Sammler finden",

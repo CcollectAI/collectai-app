@@ -229,7 +229,8 @@
     "announcements_title": "Annonces de l'événement",
     "updates_from_host": "Mises à jour de l'organisateur",
     "location_unavailable_title": "Impossible de trouver votre position",
-    "location_unavailable_body": "Activez les services de localisation, puis réessayez."
+    "location_unavailable_body": "Activez les services de localisation, puis réessayez.",
+    "open_event_page": "Page de l'événement"
   },
   "marketplace": {
     "find_collectors": "Trouver des collectionneurs",

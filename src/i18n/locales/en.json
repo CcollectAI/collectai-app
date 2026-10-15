@@ -229,7 +229,8 @@
     "announcements_title": "Event Announcements",
     "updates_from_host": "Updates from the host",
     "location_unavailable_title": "Couldn't find your location",
-    "location_unavailable_body": "Turn on location services, then try again."
+    "location_unavailable_body": "Turn on location services, then try again.",
+    "open_event_page": "Event page"
   },
   "marketplace": {
     "find_collectors": "Find Collectors",

@@ -38,9 +38,16 @@ export const EventActionBar = React.memo(function EventActionBar({
   const isStream = event.kind === 'stream';
   const isDrop = event.kind === 'collection_drop';
 
+  // The event's own page when it has no stream/online link (2026-10-15): none
+  // of the ~500 imported events (Ticketmaster, SeatGeek, Ravensburger Play)
+  // sets online_url, so the detail screen offered no way to the tickets or
+  // the store's registration page. `sourceUrl` is that page.
+  const sourcePage = event.sourceUrl && /^https?:\/\//.test(event.sourceUrl) ? event.sourceUrl : null;
+  const pageUrl = event.onlineUrl || sourcePage;
+
   const openExternal = () => {
-    if (!event.onlineUrl) return;
-    Linking.openURL(event.onlineUrl).catch((err) =>
+    if (!pageUrl) return;
+    Linking.openURL(pageUrl).catch((err) =>
       logger.info('[EventDetail] failed to open url', err),
     );
   };
@@ -51,7 +58,7 @@ export const EventActionBar = React.memo(function EventActionBar({
       // Optimized for messaging (WhatsApp / iMessage): the details a recipient
       // needs (what, when, where) on their own lines + a tappable link — the
       // event's own URL when it has one, else the app site.
-      const link = event.onlineUrl || 'https://sparrowcollect.com';
+      const link = pageUrl || 'https://sparrowcollect.com';
       const message =
         `${event.title}` +
         `\n${formatEventWhen(event.date, event.time)}` +
@@ -66,12 +73,14 @@ export const EventActionBar = React.memo(function EventActionBar({
 
   return (
     <>
-      {event.onlineUrl && (
+      {pageUrl && (
         <AnimatedPressable
           onPress={openExternal}
           style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
           accessibilityRole="link"
-          accessibilityLabel={isStream ? 'Open stream' : isDrop ? 'Open drop page' : 'Open link'}
+          accessibilityLabel={!event.onlineUrl
+            ? t('events.open_event_page', { defaultValue: 'Event page' })
+            : isStream ? 'Open stream' : isDrop ? 'Open drop page' : 'Open link'}
         >
           <Ionicons
             name={isStream ? 'logo-twitch' : 'open-outline'}
@@ -80,7 +89,9 @@ export const EventActionBar = React.memo(function EventActionBar({
             style={{ marginRight: 6 }}
           />
           <Text style={[styles.primaryBtnText, { color: colors.card }]}>
-            {isStream
+            {!event.onlineUrl
+              ? t('events.open_event_page', { defaultValue: 'Event page' })
+              : isStream
               ? 'Open stream'
               : isDrop
               ? 'Open drop page'
