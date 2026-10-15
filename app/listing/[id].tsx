@@ -130,7 +130,7 @@ function ListingDetailScreen() {
    * listing reads the same in the grid and here.
    */
   const viewerPrice = useCallback(
-    (amount: number) => formatMemberPrice(amount, listing?.currency, settings),
+    (amount: number) => formatMemberPrice(amount, listing?.currency, { currency: settings.currency, fxRates: settings.fxRates, numberLocale: settings.numberLocale }),
     [listing?.currency, settings.currency, settings.fxRates, settings.numberLocale],
   );
 

@@ -714,7 +714,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
             // does — sending "€8000" for a ¥8000 listing would be the exact bug
             // ListingCard converts to avoid.
             // currency-ok: convertCurrency (below) moves it into settings.currency first.
-            priceLabel: formatMemberPrice(shareFor.price, shareFor.currency, settings),
+            priceLabel: formatMemberPrice(shareFor.price, shareFor.currency, { currency: settings.currency, fxRates: settings.fxRates, numberLocale: settings.numberLocale }),
             route: `listing/${shareFor.id}`,
             // The public https url, built by the one function that also parses
             // it back (`inAppListingHref`). Sent instead of `sparrow://` so the

@@ -35,12 +35,12 @@
  * still highlights the pushed card. Repoint in the deploy AFTER this ships.
  */
 import { formatMemberPrice } from '@/lib/memberPrice';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Image, Alert, ActivityIndicator, Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { AnimatedPressable, useEnterReveal } from '@/motion';
@@ -86,6 +86,16 @@ function TradeScreen() {
     async () => (offerId ? await collectorsApi.p2pGetOffer(String(offerId)) : null),
     [offerId],
   );
+  // Refetch on return — the other side may have acted meanwhile (tracking,
+  // their confirm). Same rule as app/offers.tsx; the first focus is the mount.
+  const focusedOnce = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (focusedOnce.current) retry();
+      focusedOnce.current = true;
+    }, [retry]),
+  );
+
 
   /**
    * `offer.amount` is in the LISTING's currency (`P2POffer.currency`,
@@ -94,7 +104,7 @@ function TradeScreen() {
    * or a ¥8000 bid reads "€8000" to a European viewer.
    */
   const viewerPrice = useCallback(
-    (amount: number) => formatMemberPrice(amount, offer?.currency, settings),
+    (amount: number) => formatMemberPrice(amount, offer?.currency, { currency: settings.currency, fxRates: settings.fxRates, numberLocale: settings.numberLocale }),
     [offer?.currency, settings.currency, settings.fxRates, settings.numberLocale],
   );
 

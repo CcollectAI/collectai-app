@@ -23,7 +23,7 @@ import {
   View, Text, SectionList, StyleSheet, RefreshControl, Alert, Animated,
   Linking, TextInput, ScrollView, ActivityIndicator,
 } from 'react-native';
-import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -149,7 +149,7 @@ function OffersScreen() {
    * on the listing and here.
    */
   const viewerPrice = useCallback(
-    (amount: number, from: string | null | undefined) => formatMemberPrice(amount, from, settings),
+    (amount: number, from: string | null | undefined) => formatMemberPrice(amount, from, { currency: settings.currency, fxRates: settings.fxRates, numberLocale: settings.numberLocale }),
     [settings.currency, settings.fxRates, settings.numberLocale],
   );
 
@@ -423,6 +423,19 @@ function OffersScreen() {
         return sum + convertCurrency(amt, (o.currency as CurrencyCode) || 'EUR', settings.currency, settings.fxRates);
       }, 0),
     [offers, settings.currency, settings.fxRates],
+  );
+
+  // Refetch on RETURN (2026-10-15). Walked as buyer: accept a counter on the
+  // trade screen, come back, and the list still read "Seller countered — your
+  // call" with the agreed amount missing from "committed" until a pull-to-
+  // refresh. The first focus is the mount, which useAsync already fetched. The
+  // rows stay on screen while it reloads (the loader below needs !data).
+  const focusedOnce = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (focusedOnce.current) retry();
+      focusedOnce.current = true;
+    }, [retry]),
   );
 
   const handleRefresh = useCallback(async () => {
@@ -1584,7 +1597,7 @@ function OffersScreen() {
           untrustworthy; this is the same count, from the same helper. */}
       {/* Opens with what is at stake, the way a blotter does — Kalshi's
           portfolio leads with committed value rather than with rows. */}
-      {!loading && !error && offers.length > 0 ? (
+      {data && !error && offers.length > 0 ? (
         <View style={styles.summary}>
           {/* "2 needs you" was a number agreeing with nothing — reported as
               making no sense, and it doesn't: the noun it counts was missing.
@@ -1606,7 +1619,7 @@ function OffersScreen() {
         </View>
       ) : null}
 
-      {loading && !refreshing ? (
+      {loading && !refreshing && !data ? (
         // `loadingFill` (was a padding-only style): every sibling branch grows (EmptyState is
         // flex 1, SectionList is a ScrollView), and this one did not — so
         // QuickNavBar, the next sibling, rendered straight under one line of
