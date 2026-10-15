@@ -3468,3 +3468,29 @@ Each was a claim of mine that measurement overturned, or a defect it surfaced.
 Also measured, no code change: `one_piece_tcg` (7,675 items) and `digimon`
 (9,762) have **zero** prices because tcgcsv still 403s our IP (OPEN_DECISIONS
 #18); EAS production has no PostHog key or Sentry DSN (#19).
+
+### Same round, found by walking the new build on the emulator (2026-10-15)
+
+5. **A model's placeholder treated as data.** An unidentifiable photo came back
+   with the NAME `"null"`; the result card showed "null" at 0% and the new
+   Where-to-buy searched shops for it. Server chokepoint `_real_name` in
+   `intake_router._intake_to_response`; client falls back to Add manually on an
+   empty name in BOTH scan paths (`quickscanNamelessFallback.test.ts`).
+6. **One route param, two units.** `/item/[id]?confidence=`: quickscan sent a
+   percent, barcode-scan a fraction; the price card multiplied by 100, the save
+   divided by 100. On screen: **"High Confidence · 9000%"**. Now percent
+   everywhere (`itemConfidenceParamUnit.test.ts` pins every sender and reader).
+   Re-test: grep senders of `pathname: '/item/[id]'` for `confidence:`.
+7. **A recorded-false claim that was never fixed.** `compProvenance.ts` (08-30)
+   says the sheet's "N comparable sales" was false; the sheet still said it,
+   plus a summary fallback and the standard disclaimer. All three fixed; the
+   per-source line uses `compNoun()`.
+8. **Gate blind spot:** `check:category-display` passed with
+   `` `Category: ${editableCategory}` `` showing `nintendo_merch` — it cannot
+   see a slug inside a template literal. Fixed at the site; the gate is not.
+
+Also observed, not fixed: on the SparrowWalk emulator the QuickScan **gallery
+button does nothing** (no intent, no log) while every other control responds.
+Worked 2026-09-27 on the same AVD; this session ran it under
+`-gpu swiftshader_indirect` after crashes. Check on a real phone before
+calling it a bug.

@@ -4012,3 +4012,8 @@ them, otherwise asking-price listings — and the TCG "sales" are daily
 price-index snapshots (TCGplayer/Lorcast). Now **"price points"**, and the three
 strings are translated in all 7 locales (six showed English). A test that
 pinned "No sales in the last 90 days" was updated, not deleted.
+
+**Range bar labels (2026-10-15).** `RangeBar`'s three price labels are equal
+flex thirds; the high one must be `textAlign: 'right'` or it floats at ~67%
+instead of over the bar's end and "High" (Merle's screenshot). Same rule for
+any label row made of `flex: 1` cells: align each to the edge it names.
