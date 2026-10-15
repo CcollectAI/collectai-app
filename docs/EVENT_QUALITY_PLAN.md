@@ -472,6 +472,13 @@ client-side only). Because `source_url` is the upsert conflict key, the 357
 stored rows were rewritten in one checked transaction BEFORE the new code
 deployed; the next live run went 357 → 360 rows (3 new events, no doubles).
 
+**Coordinates (2026-10-15).** `ScrapedEvent` carries optional latitude /
+longitude; `_event_to_row` adds them ONLY when set, and `_upsert_batch` posts
+one request per key set — so a source without coordinates never NULLs what
+event_enrich geocoded. Ravensburger rows with coordinates: 36 → 349 of 351;
+ticketmaster/seatgeek counts unchanged. Tests:
+`test_event_upsert_coordinates.py` (mutation: one batch for all key sets fails).
+
 Falsifier: `SELECT status, count(*) FROM events WHERE source='ravensburger_play'
 GROUP BY 1` — `published` should stay in the hundreds after the scheduler's
 dedup pass; a collapse to a handful means the venue rule is gone.

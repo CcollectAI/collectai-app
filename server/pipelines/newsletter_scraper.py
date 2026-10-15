@@ -298,6 +298,10 @@ class ScrapedEvent:
     description: str | None = None
     source_url: str | None = None  # link from newsletter
     image_url: str | None = None
+    # Exact coordinates when the SOURCE gives them (Ravensburger Play does, per
+    # event). Sent only when both are set — see _event_to_row.
+    latitude: float | None = None
+    longitude: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Serialise to dict, dropping None values."""
@@ -1185,7 +1189,12 @@ class EventUpserter:
                 "[events] dropped %d within-batch duplicate row(s) before upsert "
                 "(same %s)", dropped, conflict_key,
             )
-        rows = list(deduped.values())
+        # One POST per key set: PostgREST rejects a whole batch whose objects
+        # disagree on keys (PGRST102), and rows only carry latitude/longitude
+        # when their source gave coordinates (_event_to_row).
+        by_keys: dict[frozenset, list[dict]] = {}
+        for row in deduped.values():
+            by_keys.setdefault(frozenset(row), []).append(row)
 
         headers = _supabase_headers()
         # Use Prefer header to signal upsert on the desired columns
@@ -1196,8 +1205,12 @@ class EventUpserter:
         # conflict_key may be comma-separated (e.g., "title,date") for composite keys.
         url = f"{SUPABASE_URL}/rest/v1/events?on_conflict={conflict_key}"
 
-        for i in range(0, len(rows), self.batch_size):
-            batch = rows[i : i + self.batch_size]
+        batches = [
+            group[i : i + self.batch_size]
+            for group in by_keys.values()
+            for i in range(0, len(group), self.batch_size)
+        ]
+        for batch in batches:
             try:
                 resp = client.post(url, headers=headers, json=batch)
                 if resp.status_code in (200, 201):
@@ -1247,7 +1260,7 @@ class EventUpserter:
 
         starts_at = _compose_starts_at(event.date, event.time)
         ends_at = _compose_starts_at(event.end_date, None) if event.end_date else None
-        return {
+        row = {
             "title": event.title,
             "kind": event.kind,
             "date": event.date,
@@ -1265,6 +1278,16 @@ class EventUpserter:
             "trust_tier": trust_tier,
             "quality_score": quality_score,
         }
+        # Coordinates ONLY when the source supplied them. Sending latitude=NULL
+        # for every other source would overwrite what event_enrich geocoded,
+        # because merge-duplicates updates every column in the payload
+        # ("sending fewer columns is safe; sending NULL is a write" —
+        # DATA_SCALING_PLAN §10). _upsert_batch groups rows by key set, so a
+        # batch mixing rows with and without coordinates still posts legally.
+        if event.latitude is not None and event.longitude is not None:
+            row["latitude"] = event.latitude
+            row["longitude"] = event.longitude
+        return row
 
     def print_stats(self) -> None:
         """Log insert/update/skip counts."""

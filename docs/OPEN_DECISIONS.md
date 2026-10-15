@@ -48,6 +48,11 @@ _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in 
 - No ad SDK exists; every unit id in `src/ads/config.ts` is `PLACEHOLDER_*` behind `NoOpAdProvider` → €0. At ~3 weekly members an SDK earns ~nothing and costs an ATT prompt, a privacy-label change and review risk; the post-scan interstitial would slow the core flow.
 - **Recommendation:** revisit at ~1,000 DAU. Money now = affiliate links (scan result + web guides, 2026-10-14) and Pro.
 
+### 23. The Events list is worldwide for every member (opened 2026-10-15)
+- **Walked on Android (simcheck, region `europe`):** the first card on the Events tab was "2026 MONSTA X WORLD TOUR — Irving, United States, today 20:00". `GET /events` → `rpc_list_personalized_events_v1` orders by the member's categories and date; it has **no region or distance filter**. Published upcoming on 2026-10-15: ticketmaster 126, seatgeek 22, ravensburger_play 351 (mostly Benelux/DE/FR/UK), newsletter 5.
+- **Coordinates now exist for most rows** (ravensburger 349/351 since 10-15, ticketmaster 70/126, seatgeek 16/22), so a member-region or distance rule is possible; the "Nearby" tab already uses lat/lon.
+- **Decide:** (a) rank events in the member's region first, (b) filter to region with a "Show worldwide" toggle, or (c) leave worldwide. Recommendation: (a) — no event disappears, and a Dutch member's list opens on Dutch/Belgian events.
+
 ## Decided
 
 - **2026-10-13 — Pricing (Merle: "implement all these suggestions")**, after a competitor scan

@@ -17,6 +17,7 @@ def _ev(**kw):
         "event_status": "SCHEDULED", "is_test_event": False, "event_is_online": False,
         "store": {"name": "Paradisecards TCG"}, "full_address": "Nieuwe Ebbingestraat 17,\n9712 NC Groningen",
         "gameplay_format": {"name": "Sealed"}, "cost_in_cents": 3000, "currency": "EUR", "capacity": 32,
+        "latitude": "53.2194", "longitude": 6.5665,
     }
     base.update(kw)
     return base
@@ -30,6 +31,7 @@ def test_prerelease_maps_to_a_lorcana_event_in_store_local_time():
     assert e.location == "Paradisecards TCG, Nieuwe Ebbingestraat 17, 9712 NC Groningen"
     assert e.source_url == "https://tcg.ravensburgerplay.com/events/871412"
     assert "Entry 30.00 EUR" in e.description
+    assert (e.latitude, e.longitude) == (53.2194, 6.5665)  # numeric string accepted
 
 
 def test_weekly_play_is_not_an_event():

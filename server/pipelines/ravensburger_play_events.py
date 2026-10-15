@@ -133,7 +133,22 @@ def to_scraped_event(event: dict[str, Any], now: Optional[datetime] = None) -> O
         description=" · ".join(details) or None,
         source_url=EVENT_URL.format(id=event.get("id")),
         image_url=event.get("full_header_image_url") or None,
+        # The feed's exact coordinates, so "Nearby" works without geocoding
+        # (only 36 of 351 rows had any after event_enrich, 2026-10-15).
+        latitude=_coord(event.get("latitude"), store.get("latitude")),
+        longitude=_coord(event.get("longitude"), store.get("longitude")),
     )
+
+
+def _coord(*values: Any) -> Optional[float]:
+    """First usable coordinate (the API sends numbers or numeric strings)."""
+    for v in values:
+        try:
+            if v is not None and v != "":
+                return float(v)
+        except (TypeError, ValueError):
+            continue
+    return None
 
 
 async def _fetch_hub(client: httpx.AsyncClient, lat: float, lon: float, miles: int) -> list[dict[str, Any]]:
