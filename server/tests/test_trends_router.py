@@ -112,20 +112,11 @@ class TestItemTrends:
 # ---------------------------------------------------------------------------
 
 class TestPortfolioCategoryBreakdown:
-    def test_breakdown_returns_200(self):
-        """Returns 200 with empty breakdown when no DB pool."""
+    def test_breakdown_without_db_is_an_error_not_an_empty_portfolio(self):
+        """No pool is a 503 (2026-10-15): a 200 with [] rendered "Add items" to
+        an owner, and Home's catch can only say "couldn't load" on an error."""
         resp = client.get("/analytics/portfolio/category-breakdown")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "breakdown" in data
-        assert "total_value" in data
-
-    def test_breakdown_offline_defaults(self):
-        """Offline mode returns empty breakdown and zero total."""
-        resp = client.get("/analytics/portfolio/category-breakdown")
-        data = resp.json()
-        assert data["breakdown"] == []
-        assert data["total_value"] == 0.0
+        assert resp.status_code == 503
 
 
 # ---------------------------------------------------------------------------
