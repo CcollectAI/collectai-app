@@ -23,6 +23,13 @@ type ScoreExplanationSheetProps = {
   rarityScore?: number;
   completenessScore?: number;
   diversificationScore?: number;
+  /**
+   * Scores with no evidence behind them (no item with a known rarity / no set
+   * we hold a catalogue entry for). The card shows these as "—"; this sheet
+   * drew "0/100 Getting started" for the same score, two lines above its own
+   * rule "Skipped, not counted as 0%" (walked 2026-10-15).
+   */
+  unscored?: { rarity?: boolean; completeness?: boolean };
   tier?: string;
 };
 
@@ -106,6 +113,7 @@ export function ScoreExplanationSheet({
   rarityScore = 0,
   completenessScore = 0,
   diversificationScore = 0,
+  unscored,
   tier,
 }: ScoreExplanationSheetProps) {
   const { t } = useTranslation();
@@ -150,9 +158,12 @@ export function ScoreExplanationSheet({
           {/* Score Sections */}
           {SCORE_SECTIONS.map((sec) => {
             const score = scores[sec.key] ?? 0;
+            const notScored = Boolean(unscored?.[sec.key as 'rarity' | 'completeness']);
             const displayScore = Math.round(score * 100);
-            const scoreColor = getScoreColor(score, colors.success, colors.warning);
-            const scoreLabel = getScoreLabel(score);
+            const scoreColor = notScored ? colors.muted : getScoreColor(score, colors.success, colors.warning);
+            const scoreLabel = notScored
+              ? t('guide.not_scored_yet', { defaultValue: 'Not scored yet' })
+              : getScoreLabel(score);
 
             return (
               <View
@@ -168,7 +179,7 @@ export function ScoreExplanationSheet({
                 <View style={styles.scoreBadgeRow}>
                   <View style={[styles.scoreBadge, { backgroundColor: scoreColor + '20' }]}>
                     <Text style={[styles.scoreBadgeValue, { color: scoreColor }]}>
-                      {displayScore}
+                      {notScored ? '—' : displayScore}
                     </Text>
                     <Text style={[styles.scoreBadgeMax, { color: colors.muted }]}>/100</Text>
                   </View>
@@ -182,7 +193,7 @@ export function ScoreExplanationSheet({
                   <View
                     style={[
                       styles.progressBarFill,
-                      { width: `${Math.min(displayScore, 100)}%`, backgroundColor: scoreColor },
+                      { width: `${notScored ? 0 : Math.min(displayScore, 100)}%`, backgroundColor: scoreColor },
                     ]}
                   />
                 </View>

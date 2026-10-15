@@ -1790,7 +1790,8 @@
     "how_scores_work": "So funktionieren die Scores",
     "what_counts": "Was zählt:",
     "faq_intro": "Kurze Antworten auf die häufigsten ersten Fragen. Du kannst auch einfach in die Suchleiste tippen, was du vorhast.",
-    "scores_update_note": "Die Scores aktualisieren sich, wenn du Objekte in deiner Sammlung hinzufügst, entfernst oder änderst. Berechnet werden sie aus deinen Katalogdaten und Marktreferenzen."
+    "scores_update_note": "Die Scores aktualisieren sich, wenn du Objekte in deiner Sammlung hinzufügst, entfernst oder änderst. Berechnet werden sie aus deinen Katalogdaten und Marktreferenzen.",
+    "not_scored_yet": "Noch nicht bewertet"
   },
   "price_explanation": {
     "title": "Preiserklärung",

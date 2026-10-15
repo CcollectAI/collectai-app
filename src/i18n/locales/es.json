@@ -1790,7 +1790,8 @@
     "how_scores_work": "Cómo funcionan las puntuaciones",
     "what_counts": "Lo que cuenta:",
     "faq_intro": "Respuestas breves a lo que la gente pregunta primero. También puedes escribir en la barra de búsqueda lo que quieres hacer.",
-    "scores_update_note": "Las puntuaciones se actualizan cuando añades, quitas o modificas artículos de tu colección. Se calculan a partir de tus datos de catálogo y de referencias del mercado."
+    "scores_update_note": "Las puntuaciones se actualizan cuando añades, quitas o modificas artículos de tu colección. Se calculan a partir de tus datos de catálogo y de referencias del mercado.",
+    "not_scored_yet": "Aún sin puntuación"
   },
   "price_explanation": {
     "title": "Explicación del precio",

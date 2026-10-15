@@ -1790,7 +1790,8 @@
     "how_scores_work": "Hoe scores werken",
     "what_counts": "Wat telt:",
     "faq_intro": "Korte antwoorden op de vragen die mensen het eerst stellen. Je kunt ook gewoon typen wat je wilt doen in de zoekbalk.",
-    "scores_update_note": "Scores worden bijgewerkt terwijl je items in je collectie toevoegt, verwijdert of aanpast. Ze worden berekend op basis van je catalogusgegevens en marktreferenties."
+    "scores_update_note": "Scores worden bijgewerkt terwijl je items in je collectie toevoegt, verwijdert of aanpast. Ze worden berekend op basis van je catalogusgegevens en marktreferenties.",
+    "not_scored_yet": "Nog geen score"
   },
   "price_explanation": {
     "title": "Prijsuitleg",

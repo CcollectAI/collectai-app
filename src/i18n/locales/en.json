@@ -1790,7 +1790,8 @@
     "how_scores_work": "How Scores Work",
     "what_counts": "What counts:",
     "faq_intro": "Short answers to the things people ask first. You can also just type what you are trying to do into the search bar.",
-    "scores_update_note": "Scores update as you add, remove, or update items in your collection. They are calculated based on your catalog data and market reference information."
+    "scores_update_note": "Scores update as you add, remove, or update items in your collection. They are calculated based on your catalog data and market reference information.",
+    "not_scored_yet": "Not scored yet"
   },
   "price_explanation": {
     "title": "Price Explanation",

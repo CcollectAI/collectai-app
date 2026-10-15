@@ -184,6 +184,10 @@ function PortfolioTierBadgeInner({ tierSummary, leaderboardCategoryId }: Props) 
         rarityScore={tierSummary.rarityScore}
         completenessScore={tierSummary.completenessScore}
         diversificationScore={tierSummary.diversificationScore}
+        unscored={{
+          rarity: tierSummary.rarityCoverage?.known === 0,
+          completeness: tierSummary.completenessCoverage?.known === 0,
+        }}
         tier={tierSummary.tier}
       />
     </>
