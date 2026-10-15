@@ -464,6 +464,14 @@ two different venues = two events.** The pair decision now lives in
 same-store (copies, "V2", afternoon/evening sessions of one prerelease), zero
 cross-store.
 
+**Event link corrected 2026-10-15.** `source_url` was first
+`tcg.ravensburgerplay.com/events?event=<id>`, which the site ignores — it opens
+the generic finder near the VISITOR's location. The event page is
+`/events/<id>` (verified in a browser; curl gets 404 because the route is
+client-side only). Because `source_url` is the upsert conflict key, the 357
+stored rows were rewritten in one checked transaction BEFORE the new code
+deployed; the next live run went 357 → 360 rows (3 new events, no doubles).
+
 Falsifier: `SELECT status, count(*) FROM events WHERE source='ravensburger_play'
 GROUP BY 1` — `published` should stay in the hundreds after the scheduler's
 dedup pass; a collapse to a handful means the venue rule is gone.

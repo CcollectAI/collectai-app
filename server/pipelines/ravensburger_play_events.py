@@ -44,10 +44,13 @@ logger = setup_logging("collectai.ravensburger_play")
 from pipelines.newsletter_scraper import ScrapedEvent, EventUpserter  # noqa: E402
 
 API_URL = "https://api.ravensburgerplay.com/api/v2/events/"
-# The finder is a single-page app; this deep link is the best available and is
-# also the row's unique source_url (upsert conflict key). Not verified to open
-# the event itself (the SPA answers 200 for any id).
-EVENT_URL = "https://tcg.ravensburgerplay.com/events?event={id}"
+# The event's own page — verified in a browser 2026-10-15 (Spelshop.be, 16 Oct,
+# 19:00, matching the row). `/events?event=<id>` was the first guess and lands on
+# the generic finder near the VISITOR's location. curl gets 404 for this path:
+# the site only routes it client-side. Also the row's source_url = upsert
+# conflict key, so changing the pattern needs the stored rows rewritten first
+# (done 2026-10-15) or every event is inserted twice.
+EVENT_URL = "https://tcg.ravensburgerplay.com/events/{id}"
 USER_AGENT = "SparrowCollect/1.0 (+https://sparrowcollect.com; support@sparrowcollect.com)"
 
 # (label, latitude, longitude, radius in miles). Benelux + the three biggest

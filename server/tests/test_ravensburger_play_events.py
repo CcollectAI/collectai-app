@@ -28,7 +28,7 @@ def test_prerelease_maps_to_a_lorcana_event_in_store_local_time():
     assert e.category_id == "lorcana"
     assert (e.date, e.time) == ("2026-10-16", "18:00")  # 16:00Z = 18:00 CEST
     assert e.location == "Paradisecards TCG, Nieuwe Ebbingestraat 17, 9712 NC Groningen"
-    assert e.source_url == "https://tcg.ravensburgerplay.com/events?event=871412"
+    assert e.source_url == "https://tcg.ravensburgerplay.com/events/871412"
     assert "Entry 30.00 EUR" in e.description
 
 
