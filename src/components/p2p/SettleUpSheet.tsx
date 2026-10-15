@@ -315,10 +315,20 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
               : 'No carriers with an online booking page for your region yet.'}
           </Text>
         ) : mode === 'pay' ? (
-          // Rendered in the ORDER THE SERVER GAVE (alphabetical). Do not sort,
-          // pin or highlight — any order we impose is a statement about which
-          // provider we prefer, which §5a forbids.
-          (rails ?? []).map((r) => (
+          <>
+          {/* No rail carries the seller's handle: every link below opens the
+              provider's front page, and nothing on the sheet said where the
+              money goes (walked as buyer 2026-10-15). Neutral — it names no
+              provider, so §5a's no-recommendation rule is untouched. */}
+          {offerId && rails && rails.length > 0 && !rails.some((r) => r.pay_url) ? (
+            <Text style={[styles.hint, { color: colors.muted }]}>
+              {t('settle.no_seller_handles', { defaultValue: "This seller hasn't added payment details. Agree in chat how they'd like to be paid." })}
+            </Text>
+          ) : null}
+          {/* Rendered in the ORDER THE SERVER GAVE (alphabetical). Do not sort,
+              pin or highlight — any order we impose is a statement about which
+              provider we prefer, which §5a forbids. */}
+          {(rails ?? []).map((r) => (
             <AnimatedPressable
               key={r.key}
               onPress={() => {
@@ -348,7 +358,8 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
               </View>
               <Ionicons name="open-outline" size={16} color={colors.muted} />
             </AnimatedPressable>
-          ))
+          ))}
+          </>
         ) : (
           (carriers ?? []).map((c) => (
             <AnimatedPressable

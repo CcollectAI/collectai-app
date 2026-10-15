@@ -1688,7 +1688,8 @@
     "a11y_save_address": "Bezorgadres opslaan",
     "list_load_failed": "Die lijst kon niet worden geladen.",
     "no_address_yet": "De koper heeft nog geen bezorgadres toegevoegd. Vraag ernaar in de chat — je hebt het nodig voordat je kunt boeken.",
-    "address_shared_note": "Alleen gedeeld met deze verkoper, voor deze ruil. Sparrow boekt of verzekert de verzending niet."
+    "address_shared_note": "Alleen gedeeld met deze verkoper, voor deze ruil. Sparrow boekt of verzekert de verzending niet.",
+    "no_seller_handles": "Deze verkoper heeft geen betaalgegevens toegevoegd. Spreek in de chat af hoe je betaalt."
   },
   "category": {
     "a11y_see_all_yours": "Bekijk al je items in deze categorie",

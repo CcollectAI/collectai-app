@@ -1688,7 +1688,8 @@
     "a11y_save_address": "Guardar la dirección de entrega",
     "list_load_failed": "No se pudo cargar esa lista.",
     "no_address_yet": "El comprador aún no ha añadido una dirección de entrega. Pídesela por chat: la necesitas antes de poder reservar.",
-    "address_shared_note": "Se comparte solo con este vendedor y para este intercambio. Sparrow no contrata ni asegura el envío."
+    "address_shared_note": "Se comparte solo con este vendedor y para este intercambio. Sparrow no contrata ni asegura el envío.",
+    "no_seller_handles": "Este vendedor no ha añadido datos de pago. Acordad en el chat cómo pagar."
   },
   "category": {
     "a11y_see_all_yours": "Ver todos tus artículos de esta categoría",

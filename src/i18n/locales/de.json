@@ -1688,7 +1688,8 @@
     "a11y_save_address": "Lieferadresse speichern",
     "list_load_failed": "Diese Liste konnte nicht geladen werden.",
     "no_address_yet": "Der Käufer hat noch keine Lieferadresse hinterlegt. Frag im Chat danach — ohne sie kannst du nicht buchen.",
-    "address_shared_note": "Nur mit diesem Verkäufer geteilt, für diesen Handel. Sparrow bucht und versichert den Versand nicht."
+    "address_shared_note": "Nur mit diesem Verkäufer geteilt, für diesen Handel. Sparrow bucht und versichert den Versand nicht.",
+    "no_seller_handles": "Dieser Verkäufer hat keine Zahlungsdaten hinterlegt. Vereinbart im Chat, wie bezahlt wird."
   },
   "category": {
     "a11y_see_all_yours": "Alle deine Objekte in dieser Kategorie ansehen",

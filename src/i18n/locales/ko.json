@@ -1688,7 +1688,8 @@
     "a11y_save_address": "배송 주소 저장",
     "list_load_failed": "목록을 불러오지 못했습니다.",
     "no_address_yet": "구매자가 아직 배송 주소를 입력하지 않았습니다. 채팅으로 요청하세요 — 예약 전에 필요합니다.",
-    "address_shared_note": "이 거래를 위해 이 판매자에게만 공유됩니다. Sparrow는 배송을 예약하거나 보험에 가입하지 않습니다."
+    "address_shared_note": "이 거래를 위해 이 판매자에게만 공유됩니다. Sparrow는 배송을 예약하거나 보험에 가입하지 않습니다.",
+    "no_seller_handles": "이 판매자는 결제 정보를 추가하지 않았습니다. 채팅에서 결제 방법을 정하세요."
   },
   "category": {
     "a11y_see_all_yours": "이 카테고리의 내 아이템 모두 보기",

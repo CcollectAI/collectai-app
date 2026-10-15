@@ -1688,7 +1688,8 @@
     "a11y_save_address": "Enregistrer l’adresse de livraison",
     "list_load_failed": "Impossible de charger cette liste.",
     "no_address_yet": "L'acheteur n'a pas encore ajouté d'adresse de livraison. Demandez-la dans le chat — elle est nécessaire avant de réserver.",
-    "address_shared_note": "Partagé uniquement avec ce vendeur, pour cet échange. Sparrow ne réserve ni n'assure l'expédition."
+    "address_shared_note": "Partagé uniquement avec ce vendeur, pour cet échange. Sparrow ne réserve ni n'assure l'expédition.",
+    "no_seller_handles": "Ce vendeur n'a pas ajouté de coordonnées de paiement. Convenez dans le chat du mode de paiement."
   },
   "category": {
     "a11y_see_all_yours": "Voir tous vos articles de cette catégorie",

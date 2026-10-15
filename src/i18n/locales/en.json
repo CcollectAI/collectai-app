@@ -1688,7 +1688,8 @@
     "a11y_save_address": "Save the delivery address",
     "list_load_failed": "Couldn't load that list.",
     "no_address_yet": "The buyer hasn't added a delivery address yet. Ask them in chat — you need it before you can book.",
-    "address_shared_note": "Shared with this seller only, for this trade. Sparrow doesn't book or insure the shipment."
+    "address_shared_note": "Shared with this seller only, for this trade. Sparrow doesn't book or insure the shipment.",
+    "no_seller_handles": "This seller hasn't added payment details. Agree in chat how they'd like to be paid."
   },
   "category": {
     "a11y_see_all_yours": "See all of your items in this category",
