@@ -116,6 +116,39 @@ class TestDeleteAccount:
         # Verify Supabase auth deletion
         mock_admin.auth.admin.delete_user.assert_called_once_with(TEST_USER_ID)
 
+    @patch("app.routes.account_router._get_supabase_admin")
+    @patch("app.routes.account_router.get_db_pool")
+    def test_deletes_rows_owned_through_other_column_names(self, mock_get_pool, mock_get_admin):
+        """Bids as a BUYER, DM requests, grades and events with user_id NULL.
+
+        The per-table loop deletes `WHERE user_id = $1`; these rows hold the
+        member under buyer_id / requester_id / rater_id / created_by and
+        survived deletion (measured on prod 2026-10-15: 11 bids from deleted
+        buyers, ~165 DM requests, 4 events). Completed trades are kept — the
+        seller's transaction record.
+        """
+        pool, conn = _mock_pool()
+        mock_get_pool.return_value = pool
+        mock_get_admin.return_value = MagicMock()
+
+        resp = client.delete("/account?confirm=DELETE_MY_ACCOUNT")
+        assert resp.status_code == 200
+
+        sqls = [" ".join(str(c.args[0]).split()) for c in conn.execute.call_args_list]
+        for expected in (
+            "DELETE FROM p2p_offers WHERE buyer_id = $1 AND status <> 'completed'",
+            "DELETE FROM chat_dm_requests_v1 WHERE requester_id = $1",
+            "DELETE FROM chat_dm_requests_v1 WHERE target_user_id = $1",
+            "DELETE FROM member_grades WHERE rater_id = $1",
+            "DELETE FROM member_grades WHERE ratee_id = $1",
+            "DELETE FROM events WHERE created_by = $1",
+        ):
+            assert expected in sqls, expected
+        # grades reference offers: they must go first
+        assert sqls.index("DELETE FROM member_grades WHERE rater_id = $1") < sqls.index(
+            "DELETE FROM p2p_offers WHERE buyer_id = $1 AND status <> 'completed'"
+        )
+
     @patch("app.routes.account_router.get_db_pool")
     def test_offline_mode_returns_503(self, mock_get_pool):
         """When DB is not available, return 503."""

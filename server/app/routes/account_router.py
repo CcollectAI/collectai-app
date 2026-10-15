@@ -128,6 +128,9 @@ _ALLOWED_TABLES = (
     "quickscan_history",
     "quick_predictions",
     "scan_corrections",
+    # Added 2026-10-15: 20261014_scan_events gave it a user_id and no FK, and
+    # the audit named it a gap the day after (indexed: scan_events_user_idx).
+    "scan_events",
     "taxonomy_corrections",
     "predict_sessions",
     "prediction_sessions",
@@ -193,6 +196,48 @@ _OWNER_COLUMN: dict[str, str] = {
     "task_queue": "created_by",
     "chat_reports": "reporter",
     "event_announcements": "author_user_id",
+}
+
+
+# User ids held under ANOTHER column name with no cascading FK to auth.users
+# (2026-10-15). The loop above only deletes `WHERE <owner> = $1` per table, and
+# the audit only enumerated columns NAMED user_id — so a member's bids as a
+# BUYER (p2p_offers.buyer_id), their DM requests, the grades they wrote and the
+# events they created with user_id NULL all survived deletion, while
+# web/delete-account.html promises "Marketplace listings, offers ... Messages"
+# are deleted. Measured on prod: 11 bids from deleted buyers (3 still "pending"
+# on a seller's screen as "Your move"), ~165 DM requests, 4 events.
+#
+# Found by matching VALUES, not names: every uuid column in public whose values
+# hit auth.users.id. server/scripts/audit_account_deletion.py now does the same
+# and fails on a person column that is in neither table below.
+#
+# Order matters: grades reference offers, so they go first.
+_PERSON_COLUMN_DELETES: tuple[tuple[str, str, str], ...] = (
+    ("member_grades", "rater_id", "DELETE FROM member_grades WHERE rater_id = $1"),
+    ("member_grades", "ratee_id", "DELETE FROM member_grades WHERE ratee_id = $1"),
+    # A COMPLETED trade stays: it is the seller's transaction record, which the
+    # deletion page lists under "What is kept" (tax / DAC7). Every other state
+    # is a bid or a trade that can no longer happen.
+    ("p2p_offers", "buyer_id",
+     "DELETE FROM p2p_offers WHERE buyer_id = $1 AND status <> 'completed'"),
+    ("chat_dm_requests_v1", "requester_id",
+     "DELETE FROM chat_dm_requests_v1 WHERE requester_id = $1"),
+    ("chat_dm_requests_v1", "target_user_id",
+     "DELETE FROM chat_dm_requests_v1 WHERE target_user_id = $1"),
+    # Member-created events can carry user_id NULL (4 measured, source='user').
+    ("events", "created_by", "DELETE FROM events WHERE created_by = $1"),
+)
+
+# Person columns that need no statement of their own, each with the reason.
+_PERSON_COLUMNS_COVERED: dict[str, str] = {
+    "p2p_offers.seller_id": (
+        "The seller's offers go with their listings: p2p_offers.listing_id is "
+        "ON DELETE CASCADE to marketplace_listings, whose user_id cascades from "
+        "auth.users."
+    ),
+    "p2p_offers.withdrawn_by": "Always the buyer or seller of the same row — removed with it.",
+    "chat_dm_requests_v1.decided_by": "Always the request's target — removed with the row.",
 }
 
 
@@ -289,6 +334,16 @@ async def _do_account_delete(conn: asyncpg.Connection, user_id: str) -> None:
                     table, owner_col,
                 )
                 raise
+
+        for table, column, sql in _PERSON_COLUMN_DELETES:
+            try:
+                async with conn.transaction():  # SAVEPOINT — see the loop above
+                    await conn.execute(sql, user_id)
+            except asyncpg.UndefinedTableError:
+                logger.error(
+                    "[account] %s.%s is in _PERSON_COLUMN_DELETES but %s does not "
+                    "exist — skipped. Prune the list.", table, column, table,
+                )
 
         try:
             await conn.execute("DELETE FROM profiles WHERE id = $1", user_id)

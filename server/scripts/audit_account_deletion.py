@@ -104,9 +104,57 @@ CASCADE_SQL = """
       AND kcu.column_name = 'user_id'
 """
 
+# PERSON COLUMNS (2026-10-15). Everything above keys on a column NAMED user_id,
+# so a member held as buyer_id / requester_id / rater_id / created_by was
+# invisible: their bids, DM requests, grades and some events survived deletion
+# while the audit read green. Find them by VALUE instead — a uuid column whose
+# values are auth.users ids — and require each one without a cascading FK to
+# be decided in account_router (_PERSON_COLUMN_DELETES / _PERSON_COLUMNS_COVERED).
+# A sample of 2,000 non-null values per column: a person column with no hit in
+# its first 2,000 rows is empty of users today, and the next run catches it.
+UUID_COLUMNS_SQL = """
+    SELECT c.table_name, c.column_name
+    FROM information_schema.columns c
+    JOIN information_schema.tables t
+      ON t.table_name = c.table_name AND t.table_schema = c.table_schema
+    WHERE c.table_schema = 'public' AND t.table_type = 'BASE TABLE'
+      AND c.data_type = 'uuid' AND c.column_name NOT IN ('id', 'user_id')
+"""
+
+# FKs to auth.users that remove or detach the row on their own: CASCADE (c)
+# or SET NULL (n). Anything else needs a decision.
+AUTH_FK_SQL = """
+    SELECT con.conrelid::regclass::text AS tbl, a.attname AS col, con.confdeltype AS rule
+    FROM pg_constraint con
+    JOIN pg_attribute a ON a.attrelid = con.conrelid AND a.attnum = ANY(con.conkey)
+    WHERE con.contype = 'f' AND con.confrelid = 'auth.users'::regclass
+"""
+
 # Partition children are covered by their parent; auditing them separately
 # would report the same gap N times and train the reader to ignore it.
 PARTITION_PREFIXES = ("market_hits_y", "market_hits_default", "market_hits_archive")
+
+
+def _parse_person_columns() -> set[str]:
+    """`table.column` names decided in account_router: deleted or covered."""
+    tree = ast.parse(ROUTER.read_text(encoding="utf-8"))
+    decided: set[str] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+            continue
+        targets = [node.target] if isinstance(node, ast.AnnAssign) else node.targets
+        for target in targets:
+            if not isinstance(target, ast.Name):
+                continue
+            if target.id == "_PERSON_COLUMN_DELETES" and isinstance(node.value, (ast.Tuple, ast.List)):
+                for e in node.value.elts:
+                    if isinstance(e, ast.Tuple) and len(e.elts) >= 2 and all(
+                        isinstance(x, ast.Constant) for x in e.elts[:2]
+                    ):
+                        decided.add(f"{e.elts[0].value}.{e.elts[1].value}")
+            elif target.id == "_PERSON_COLUMNS_COVERED" and isinstance(node.value, ast.Dict):
+                decided |= {k.value for k in node.value.keys if isinstance(k, ast.Constant)}
+    return decided
 
 
 def _parse_router() -> tuple[set[str], dict[str, str], dict[str, str]]:
@@ -162,6 +210,24 @@ async def main() -> int:
         for r in await conn.fetch(ALL_COLUMNS_SQL):
             all_columns.setdefault(r["table_name"], set()).add(r["column_name"])
         unindexed = {r["tbl"]: (r["rows"] or 0) for r in await conn.fetch(UNINDEXED_SQL)}
+
+        auth_fk = {
+            (r["tbl"].removeprefix("public."), r["col"]): r["rule"]
+            for r in await conn.fetch(AUTH_FK_SQL)
+        }
+        person_columns: set[str] = set()
+        for r in await conn.fetch(UUID_COLUMNS_SQL):
+            t, col = r["table_name"], r["column_name"]
+            if t.startswith(PARTITION_PREFIXES):
+                continue
+            if auth_fk.get((t, col)) in (b"c", b"n", "c", "n"):
+                continue
+            hit = await conn.fetchval(
+                f'SELECT EXISTS (SELECT 1 FROM (SELECT "{col}" AS v FROM public."{t}" '
+                f'WHERE "{col}" IS NOT NULL LIMIT 2000) x JOIN auth.users u ON u.id = x.v)'
+            )
+            if hit:
+                person_columns.add(f"{t}.{col}")
     finally:
         await conn.close()
 
@@ -190,12 +256,18 @@ async def main() -> int:
     )
     stale_retained = sorted(set(retained) - base)
     unreasoned = sorted(t for t, why in retained.items() if not why or why == "(no reason)")
+    decided_person = _parse_person_columns()
+    person_gaps = sorted(person_columns - decided_person)
+    # A decided column that no longer exists (or no longer holds users) is NOT
+    # flagged: "no hit in the sample" is not "gone", and a column that empties
+    # out is still a column a future row could fill.
 
     if "--json" in sys.argv:
         print(json.dumps({
             "with_user_id": len(base), "cascade": len(base & cascade),
             "deleted": len(base & allowed), "retained": len(base & set(retained)),
-            "gaps": gaps, "stale_allowed": stale_allowed, "stale_retained": stale_retained,
+            "gaps": gaps, "person_column_gaps": person_gaps,
+            "stale_allowed": stale_allowed, "stale_retained": stale_retained,
             "unindexed_deletion_targets": unindexed_small,
             "unindexed_over_warn": [{"table": t, "rows": n} for t, n in slow],
         }, indent=2))
@@ -208,6 +280,10 @@ async def main() -> int:
         print(f"    UNCOVERED (gap)        : {len(gaps)}\n")
         for t in gaps:
             print(f"    GAP  {t}  — user data survives account deletion")
+        print(f"  person columns not named user_id (no cascading FK): {len(person_columns)}")
+        for t in person_gaps:
+            print(f"    GAP  {t}  — holds user ids, not handled by DELETE /account "
+                  "(add to _PERSON_COLUMN_DELETES or _PERSON_COLUMNS_COVERED)")
         for t in stale_allowed:
             print(f"    STALE  {t} is listed for deletion but no longer exists")
         for t in stale_retained:
@@ -224,7 +300,7 @@ async def main() -> int:
             print(f"  none exceed {UNINDEXED_ROW_WARN:,} rows — seq scan is cheap, no index warranted")
         print()
 
-    return 1 if (gaps or stale_allowed or stale_retained or unreasoned or slow) else 0
+    return 1 if (gaps or person_gaps or stale_allowed or stale_retained or unreasoned or slow) else 0
 
 
 if __name__ == "__main__":
