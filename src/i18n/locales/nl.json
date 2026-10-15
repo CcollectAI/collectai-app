@@ -353,7 +353,8 @@
     "looking_up": "Product opzoeken...",
     "cant_scan_hint": "Scannen lukt niet? Typ de ISBN-code van de achterkant",
     "invalid_length": "Voer een geldig ISBN in (10 of 13 cijfers)",
-    "invalid_check_digit": "Het laatste cijfer van deze code klopt niet met de rest — controleer de cijfers en probeer het opnieuw."
+    "invalid_check_digit": "Het laatste cijfer van deze code klopt niet met de rest — controleer de cijfers en probeer het opnieuw.",
+    "type_code_instead": "Typ de code in"
   },
   "filters": {
     "close_a11y": "Filters sluiten",

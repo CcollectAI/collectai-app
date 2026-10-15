@@ -56,6 +56,8 @@ function BarcodeScanScreen() {
 
   const [permission, requestPermission] = useCameraPermissions();
   const [scanState, setScanState] = useState<ScanState>('scanning');
+  // Camera off and the member chose to type a code: the manual box without the camera.
+  const [typeOnly, setTypeOnly] = useState(false);
   const [scannedCode, setScannedCode] = useState<{ type: string; value: string } | null>(null);
   const [lookupResult, setLookupResult] = useState<BarcodeLookupResult | null>(null);
   const [intakeResult, setIntakeResult] = useState<IntakeResultResponse | null>(null);
@@ -469,8 +471,9 @@ function BarcodeScanScreen() {
     );
   }
 
-  // Permission denied
-  if (!permission.granted) {
+  // Permission denied — unless the member chose to type the code instead.
+  const cameraOn = permission.granted;
+  if (!cameraOn && !typeOnly) {
     return (
       <PermissionScreen
         onGrant={requestPermission}
@@ -478,6 +481,10 @@ function BarcodeScanScreen() {
         hapticsEnabled={settings.hapticsEnabled}
         canAskAgain={permission.canAskAgain}
         message="We need camera access to scan barcodes and ISBN codes."
+        secondaryAction={{
+          label: t('barcode.type_code_instead', { defaultValue: 'Type the code instead' }),
+          onPress: () => setTypeOnly(true),
+        }}
         colors={colors}
       />
     );
@@ -493,7 +500,7 @@ function BarcodeScanScreen() {
           behavior={KEYBOARD_AVOIDING_BEHAVIOR}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 20}
         >
-          <View style={styles.cameraContainer}>
+          {cameraOn && <View style={styles.cameraContainer}>
             {/* expo-camera warns "<CameraView> does not support children.
                 This may lead to inconsistent behaviour or crashes." The overlay
                 is therefore a SIBLING positioned over the camera rather than a
@@ -520,7 +527,7 @@ function BarcodeScanScreen() {
                 {t('barcode.point_camera', { defaultValue: 'Point camera at barcode or ISBN' })}
               </Text>
             </View>
-          </View>
+          </View>}
 
           <BarcodeModeSelector
             manualIsbn={manualIsbn}

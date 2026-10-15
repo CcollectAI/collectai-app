@@ -353,7 +353,8 @@
     "looking_up": "商品を検索中...",
     "cant_scan_hint": "スキャンできませんか？ 裏表紙のISBNを入力してください",
     "invalid_length": "有効なISBN（10桁または13桁）を入力してください",
-    "invalid_check_digit": "このコードの最後の数字が他の数字と一致しません。数字を確認してもう一度お試しください。"
+    "invalid_check_digit": "このコードの最後の数字が他の数字と一致しません。数字を確認してもう一度お試しください。",
+    "type_code_instead": "コードを入力する"
   },
   "filters": {
     "close_a11y": "フィルターを閉じる",

@@ -353,7 +353,8 @@
     "looking_up": "Buscando el producto...",
     "cant_scan_hint": "¿No puedes escanear? Escribe el ISBN de la contraportada",
     "invalid_length": "Introduce un ISBN válido (10 o 13 dígitos)",
-    "invalid_check_digit": "El último dígito de este código no coincide con el resto: revisa los dígitos e inténtalo de nuevo."
+    "invalid_check_digit": "El último dígito de este código no coincide con el resto: revisa los dígitos e inténtalo de nuevo.",
+    "type_code_instead": "Escribir el código"
   },
   "filters": {
     "close_a11y": "Cerrar filtros",

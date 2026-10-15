@@ -353,7 +353,8 @@
     "looking_up": "Looking up product...",
     "cant_scan_hint": "Can't scan? Type the ISBN code from the back cover",
     "invalid_length": "Please enter a valid ISBN (10 or 13 digits)",
-    "invalid_check_digit": "That code's last digit doesn't match the rest — check the digits and try again."
+    "invalid_check_digit": "That code's last digit doesn't match the rest — check the digits and try again.",
+    "type_code_instead": "Type the code instead"
   },
   "filters": {
     "close_a11y": "Close filters",

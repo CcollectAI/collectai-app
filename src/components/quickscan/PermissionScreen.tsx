@@ -44,6 +44,12 @@ interface PermissionScreenProps {
   canAskAgain: boolean;
   /** Why this screen needs the camera. Varies by caller. */
   message?: string;
+  /**
+   * A way forward WITHOUT the camera, when the caller has one. The barcode
+   * scanner's manual ISBN box needs no camera, but sat behind this screen:
+   * with camera access off there was no way to type a code (walked 2026-10-15).
+   */
+  secondaryAction?: { label: string; onPress: () => void };
   colors: {
     background: string;
     text: string;
@@ -57,6 +63,7 @@ function PermissionScreenInner({
   hapticsEnabled,
   canAskAgain,
   message = 'We need camera access to scan your collectibles with AI.',
+  secondaryAction,
   colors,
 }: PermissionScreenProps) {
   const { t } = useTranslation();
@@ -102,6 +109,16 @@ function PermissionScreenInner({
             {blocked ? 'Open Settings' : 'Grant Permission'}
           </Text>
         </AnimatedPressable>
+        {secondaryAction && (
+          <AnimatedPressable
+            style={[styles.secondaryBtn, { borderColor: TIFFANY }]}
+            onPress={secondaryAction.onPress}
+            accessibilityRole="button"
+            accessibilityLabel={secondaryAction.label}
+          >
+            <Text style={[styles.secondaryBtnText, { color: colors.text }]}>{secondaryAction.label}</Text>
+          </AnimatedPressable>
+        )}
         <AnimatedPressable
           style={styles.backBtn}
           onPress={onCancel}
@@ -151,6 +168,17 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  secondaryBtn: {
+    marginTop: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+  },
+  secondaryBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   backBtn: {
     marginTop: 16,

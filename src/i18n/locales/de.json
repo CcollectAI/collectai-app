@@ -353,7 +353,8 @@
     "looking_up": "Produkt wird gesucht...",
     "cant_scan_hint": "Scannen klappt nicht? Gib die ISBN von der Rückseite ein",
     "invalid_length": "Bitte gib eine gültige ISBN ein (10 oder 13 Ziffern)",
-    "invalid_check_digit": "Die letzte Ziffer dieses Codes passt nicht zum Rest — prüfe die Ziffern und versuche es erneut."
+    "invalid_check_digit": "Die letzte Ziffer dieses Codes passt nicht zum Rest — prüfe die Ziffern und versuche es erneut.",
+    "type_code_instead": "Code stattdessen eintippen"
   },
   "filters": {
     "close_a11y": "Filter schließen",

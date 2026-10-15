@@ -147,4 +147,28 @@ describe('PermissionScreen', () => {
       expect(onCancel).toHaveBeenCalledTimes(1);
     }
   });
+
+  it('offers the caller\'s camera-free way forward, and only when given one', () => {
+    // The barcode scanner's manual ISBN box needs no camera but sat behind
+    // this screen: camera off = no way to type a code (walked 2026-10-15).
+    const onPress = jest.fn();
+    for (const canAskAgain of [true, false]) {
+      onPress.mockClear();
+      const { getByLabelText, unmount } = render(
+        <PermissionScreen
+          onGrant={jest.fn()}
+          onCancel={jest.fn()}
+          hapticsEnabled={false}
+          canAskAgain={canAskAgain}
+          secondaryAction={{ label: 'Type the code instead', onPress }}
+          colors={colors}
+        />,
+      );
+      fireEvent.press(getByLabelText('Type the code instead'));
+      expect(onPress).toHaveBeenCalledTimes(1);
+      unmount();
+    }
+    const { queryByLabelText } = setup(false);
+    expect(queryByLabelText('Type the code instead')).toBeNull();
+  });
 });
