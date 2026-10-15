@@ -1,8 +1,11 @@
 import { ActionSheetIOS, Alert, Platform } from 'react-native';
+import { presentActionSheet } from '@/components/ActionSheetHost';
+import { logger } from '@/lib/logger';
 
 /**
  * Cross-platform action sheet picker.
- * On iOS uses ActionSheetIOS, on Android falls back to Alert.alert buttons.
+ * On iOS uses ActionSheetIOS. On Android it uses ActionSheetHost — NOT Alert.alert,
+ * which renders at most three buttons and silently drops the rest (2026-10-15).
  *
  * @param title   The title shown at the top of the sheet.
  * @param options The selectable option labels (Cancel is added automatically).
@@ -26,6 +29,13 @@ export function showActionSheet(
       },
     );
   } else {
+    if (presentActionSheet({ title, options, onSelect, onCancel })) return;
+    // No host mounted (should not happen in the app — app/_layout.tsx mounts
+    // one). Alert is only honest up to two options plus Cancel.
+    if (options.length > 2) {
+      logger.error('[actionSheet] no ActionSheetHost mounted; Alert drops options beyond 3 buttons', title);
+    }
+    // alert-buttons-ok: only reached with no ActionSheetHost mounted (logged above).
     Alert.alert(
       title,
       undefined,

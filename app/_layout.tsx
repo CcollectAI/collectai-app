@@ -1,3 +1,4 @@
+import { ActionSheetHost } from '@/components/ActionSheetHost';
 import React, { useEffect, useRef, useState } from "react";
 import { SettingsServerSync } from '@/components/SettingsServerSync';
 import { View, Pressable, ActivityIndicator, Text, TextInput, Animated as RNAnimated } from "react-native";
@@ -566,6 +567,9 @@ function RootStack() {
           dead-tab-bar bug inside the bottom-tabs navigator. Only visible
           on (tabs) routes. See memory/project_tab_bar_bug_saga.md. */}
       <ExternalTabBar />
+
+      {/* Android pickers — see src/components/ActionSheetHost.tsx. */}
+      <ActionSheetHost />
 
       {/* Branded splash overlay — covers content while auth is resolving, fades out */}
       {!splashHidden && (

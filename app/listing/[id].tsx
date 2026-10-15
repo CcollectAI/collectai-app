@@ -13,6 +13,7 @@
  * implied guarantee is the fastest way to inherit liability we deliberately
  * scoped out.
  */
+import { showActionSheet } from '@/hooks/useActionSheetPicker';
 import { formatMemberPrice } from '@/lib/memberPrice';
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -21,7 +22,6 @@ import {
   ScrollView,
   StyleSheet,
   Animated,
-  Alert,
   TextInput,
   ActivityIndicator,
   FlatList,
@@ -229,24 +229,16 @@ function ListingDetailScreen() {
       "Misleading description",
       "Suspected scam",
     ];
-    Alert.alert(
-      "Report this listing",
-      "Tell us what is wrong. We review reports and act on them.",
-      [
-        ...reasons.map((reason) => ({
-          text: reason,
-          onPress: async () => {
-            try {
-              await collectorsApi.reportListing(listing.id, reason);
-              setReported(true);
-            } catch (e) {
-              logger.error("[listing] report failed:", e);
-            }
-          },
-        })),
-        { text: "Cancel", style: "cancel" as const },
-      ],
-    );
+    // A picker, not Alert.alert: four reasons + Cancel is five buttons, and
+    // Android's Alert shows three (check:android-alert-buttons, 2026-10-15).
+    showActionSheet("Report this listing", reasons, async (i) => {
+      try {
+        await collectorsApi.reportListing(listing.id, reasons[i]);
+        setReported(true);
+      } catch (e) {
+        logger.error("[listing] report failed:", e);
+      }
+    });
   }, [listing]);
 
   // ── Price edit (seller only) ─────────────────────────────────────────────
