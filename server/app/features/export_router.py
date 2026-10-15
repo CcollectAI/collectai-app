@@ -278,7 +278,8 @@ def _render_html_report(data: InsuranceReportData) -> str:
 
     <div class="info-box">
         <strong>Important:</strong> This report provides estimated market values based on recent
-        comparable sales data and algorithmic price predictions. Values are approximate and should
+        market prices (price guides, asking prices and, where available, recorded sales) and
+        algorithmic price predictions. Values are approximate and should
         be reviewed by a qualified appraiser for official insurance purposes. Actual insurance
         coverage amounts should be determined in consultation with your insurance provider.
     </div>

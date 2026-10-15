@@ -138,7 +138,7 @@ def generate_explanation(features: dict[str, Any], artifact: dict) -> str:
         coef = artifact.get("ridge", {}).get("coef", [])
 
         if not cols or len(cols) != len(coef):
-            return "Price estimate based on category patterns and recent sales."
+            return "Price estimate based on category patterns and recent market prices."
 
         # Calculate contributions for each feature
         contributions: list[tuple[float, str, float]] = []  # (contribution, label, raw_value)
@@ -225,7 +225,7 @@ def generate_explanation(features: dict[str, Any], artifact: dict) -> str:
             parts.append(f"Price reflects {factors_str}")
 
         if not parts:
-            return "Price estimate based on recent market sales for similar items."
+            return "Price estimate based on recent market prices for similar items."
 
         explanation = ". ".join(parts) + "."
         return explanation
@@ -280,13 +280,13 @@ def generate_simple_explanation(
         # Category-specific fallbacks
         cat_lower = category.lower()
         if "mtg" in cat_lower or "magic" in cat_lower:
-            return "Estimate based on recent Magic: The Gathering market sales."
+            return "Estimate based on recent Magic: The Gathering market prices."
         elif "pokemon" in cat_lower:
-            return "Estimate based on recent Pokémon TCG market sales."
+            return "Estimate based on recent Pokémon TCG market prices."
         elif "funko" in cat_lower:
-            return "Estimate based on recent Funko Pop market sales."
+            return "Estimate based on recent Funko Pop market prices."
         else:
-            return f"Estimate based on recent {category} market sales."
+            return f"Estimate based on recent {category} market prices."
 
     if len(parts) == 1:
         return f"Priced based on {parts[0]} and recent market data."
