@@ -58,6 +58,10 @@ PUBLISHER_CATEGORY_MAP: list[tuple[str, str]] = [
     ("forge world", "warhammer"),
     # Manga publishers
     ("viz media", "manga"),
+    # Open Library gives VIZ as bare "Viz" (Naruto vol 1, 9781569319000),
+    # which fell through to the "comics" subject and became comic_books
+    # (probed 2026-10-15). Matched as a WHOLE WORD — see _pattern_in.
+    ("viz", "manga"),
     ("viz llc", "manga"),
     ("kodansha", "manga"),
     ("shogakukan", "manga"),
@@ -182,7 +186,7 @@ def _classify_category(
     # Check publisher first (more specific)
     pub_lower = publisher.lower()
     for pattern, cat in PUBLISHER_CATEGORY_MAP:
-        if pattern in pub_lower:
+        if _pattern_in(pattern, pub_lower):
             return cat
 
     # Check subjects + title
@@ -192,6 +196,37 @@ def _classify_category(
 
     # Fallback: if it's clearly a book but no category matched
     return None
+
+
+def _pattern_in(pattern: str, text: str) -> bool:
+    """Substring match, but WHOLE WORDS for short alphanumeric patterns, so
+    "viz" matches the publisher "Viz" and not a word that merely contains it.
+    Patterns with punctuation ("codex:", "boom! studios") keep substring
+    matching, where a word boundary would never match."""
+    if len(pattern) <= 4 and pattern.isalnum():
+        return re.search(rf"\b{re.escape(pattern)}\b", text) is not None
+    return pattern in text
+
+
+def _gs1_check_ok(code: str) -> Optional[bool]:
+    """Check digit of a numeric EAN-8 / UPC-A / EAN-13 / ISBN-10.
+
+    None when the code is not one of those shapes (other symbologies carry
+    letters or other lengths and are left to the lookup). A scanner never
+    delivers a wrong check digit; a TYPED code does, and without this every
+    typo went to Open Library / Google Books / the market lookup and came
+    back "No match found" ~1.5 s later (probed 2026-10-15).
+    """
+    c = re.sub(r"[\s-]", "", code)
+    if len(c) == 10 and c[:9].isdigit() and (c[9].isdigit() or c[9] in "xX"):
+        return _is_isbn(c)
+    if not c.isdigit() or len(c) not in (8, 12, 13):
+        return None
+    digits = [int(d) for d in c]
+    body, check = digits[:-1], digits[-1]
+    # GS1: weights 3,1,3,1… counted from the digit next to the check digit.
+    total = sum(d * (3 if i % 2 == 0 else 1) for i, d in enumerate(reversed(body)))
+    return (10 - total % 10) % 10 == check
 
 
 def _is_isbn(code: str) -> bool:
@@ -536,6 +571,13 @@ async def barcode_lookup(
 
     if not is_valid_barcode(barcode):
         raise error_response(400, "Invalid barcode format", code=ErrorCode.VALIDATION_ERROR)
+
+    if _gs1_check_ok(barcode) is False:
+        raise error_response(
+            400,
+            "That barcode's last digit doesn't match the rest — check the digits and try again.",
+            code=ErrorCode.VALIDATION_ERROR,
+        )
 
     pool = get_db_pool()
     rationale: list[str] = []

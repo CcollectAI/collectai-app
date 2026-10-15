@@ -251,7 +251,7 @@ class TestBarcodeLookup:
             return_value=None,
         ):
             r = client.post("/barcode/lookup", json={
-                "barcode": "1234567890",
+                "barcode": "0306406152",  # a VALID ISBN-10: since 2026-10-15 a wrong check digit is a 400
                 "code_type": "isbn",
             })
 
