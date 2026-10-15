@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { fireHaptic, HapticIntent } from '@/haptics';
+import { compNoun } from '@/lib/compProvenance';
 import { BottomSheetModal } from './BottomSheetModal';
 import {
   PriceExplanation,
@@ -180,7 +181,7 @@ export function PriceExplanationSheet({
                         <Text style={[styles.sourceName, { color: colors.text }]}>{source.source}</Text>
                       )}
                       <Text style={[styles.sourceCount, { color: colors.muted }]}>
-                        {source.count} comparable sales
+                        {source.count} {compNoun([{ source: source.source }], source.count)}
                         {source.dateRange && ` • ${source.dateRange}`}
                       </Text>
                     </View>

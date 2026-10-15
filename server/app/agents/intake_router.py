@@ -219,6 +219,20 @@ class UrlImportRequest(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
+# What a vision model writes when it cannot name the item. Seen on prod
+# 2026-10-14: an unidentifiable photo came back as the item NAME "null", the
+# app showed "null" as the identification, and the new Where-to-buy searched
+# marketplaces for "null".
+_PLACEHOLDER_NAMES = {"null", "none", "unknown", "n/a", "na", "undefined", "unidentified", "-"}
+
+
+def _real_name(name: Optional[str]) -> Optional[str]:
+    """The identified name, or None when there is no real one."""
+    if not name or not name.strip() or name.strip().lower() in _PLACEHOLDER_NAMES:
+        return None
+    return name
+
+
 def _intake_to_response(result: IntakeResult) -> IntakeResultResponse:
     """Convert internal IntakeResult to API response model."""
     price_band = None
@@ -377,7 +391,7 @@ def _intake_to_response(result: IntakeResult) -> IntakeResultResponse:
         logger.debug("Attribute normalization failed: %s", e)
 
     return IntakeResultResponse(
-        name=result.name,
+        name=_real_name(result.name),
         category_id=result.category_id,
         category_confidence=round(result.category_confidence, 4),
         subtype_id=result.subtype_id,
@@ -584,7 +598,7 @@ async def _record_scan_event(
             result.catalog_match_key if result else None,
             bool(result.catalog_match_key) if result else None,
             result.identification_method if result else None,
-            float(price) if price else None,
+            round(float(price), 2) if price else None,
             result.price_source if result else None,
             duration_ms,
             error,

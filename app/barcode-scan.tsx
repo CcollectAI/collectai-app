@@ -360,7 +360,10 @@ function BarcodeScanScreen() {
           q10: lookupResult.priceBand?.q10?.toString() || '',
           q50: lookupResult.priceBand?.q50?.toString() || '',
           q90: lookupResult.priceBand?.q90?.toString() || '',
-          confidence: lookupResult.priceBand?.confidence?.toString() || '',
+          // A PERCENT, like quickscan's: the item screen and its save both
+          // read this param as 0-100 (it was the 0-1 fraction until 2026-10-14).
+          confidence: lookupResult.priceBand?.confidence != null
+            ? String(Math.round(lookupResult.priceBand.confidence * 100)) : '',
           imageUri: lookupResult.imageUrl || '',
         },
       });

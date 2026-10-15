@@ -298,7 +298,9 @@ function QuickScanScreen() {
 
       // Same low-confidence fallback as the camera path: hand off to
       // manual-add pre-filled rather than show a garbage guess.
-      if (sr.prediction.confidence < LOW_CONFIDENCE_THRESHOLD) {
+      // ...or no name at all: a scan that identified nothing is not a result
+      // (it once rendered the name "null" at 0%, 2026-10-14).
+      if (sr.prediction.confidence < LOW_CONFIDENCE_THRESHOLD || !sr.prediction.name.trim()) {
         fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
         showToast({
           message: "Couldn't identify this item — we've pre-filled what we could",
@@ -515,7 +517,9 @@ function QuickScanScreen() {
 
       // R48.4 — Low-confidence fallback: if the AI can't identify the item,
       // offer "Add Manually" instead of showing a garbage guess.
-      if (sr.prediction.confidence < LOW_CONFIDENCE_THRESHOLD) {
+      // ...or no name at all: a scan that identified nothing is not a result
+      // (it once rendered the name "null" at 0%, 2026-10-14).
+      if (sr.prediction.confidence < LOW_CONFIDENCE_THRESHOLD || !sr.prediction.name.trim()) {
         fireHaptic(HapticIntent.ALERT_TRIGGERED, { enabled: settings.hapticsEnabled });
         showToast({
           message: "Couldn't identify this item — we've pre-filled what we could",

@@ -598,3 +598,16 @@ class TestIntakeImageOnly:
             files={"file": ("test.png", b"not an image", "image/png")},
         )
         assert resp.status_code == 400
+
+
+class TestPlaceholderName:
+    """A vision placeholder is not a name (2026-10-14: the app showed "null")."""
+
+    @pytest.mark.parametrize("raw", ["null", "None", " unknown ", "N/A", "", None])
+    def test_placeholder_becomes_no_name(self, raw):
+        from app.agents.intake_router import _intake_to_response
+        assert _intake_to_response(_make_intake_result(name=raw)).name is None
+
+    def test_a_real_name_passes_through(self):
+        from app.agents.intake_router import _intake_to_response
+        assert _intake_to_response(_make_intake_result(name="Charizard")).name == "Charizard"

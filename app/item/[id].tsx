@@ -87,7 +87,7 @@ import { supabase } from '@/lib/supabase';
 // SellTimingBadge hidden 2026-07-22 (see render block below) — restore both together.
 // import { SellTimingBadge } from '@/components/SellTimingBadge';
 // Pull from single source of truth — all 36 categories
-import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG, GRADING_ELIGIBLE_CATEGORIES, VALUATION_ELIGIBLE_CATEGORIES } from '@/constants/categories';
+import { CATEGORIES as ALL_CATS, CATEGORY_NAME_TO_SLUG, GRADING_ELIGIBLE_CATEGORIES, VALUATION_ELIGIBLE_CATEGORIES, categoryDisplayName } from '@/constants/categories';
 // DossierData and MarketHit types imported from extracted components
 
 // Price trend data shape
@@ -903,7 +903,11 @@ function ItemDetailScreen() {
   // Build PriceEstimate object from URL params for new PriceCard component
   const priceEstimate = useMemo((): PriceEstimate | null => {
     if (!q10 || !q50 || !q90) return null;
-    const confidenceValue = confidence ? parseFloat(confidence) * 100 : 50;
+    // `confidence` is a PERCENT (0-100) — what quickscan sends and what
+    // useItemDetail's save divides by 100. This multiplied by 100 again, so
+    // every scan of 1% or more read as "High Confidence" (seen 2026-10-14 on a
+    // 0%-identified scan).
+    const confidenceValue = confidence ? parseFloat(confidence) : 50;
     return {
       priceBand: {
         q10: parseFloat(q10),
@@ -923,11 +927,13 @@ function ItemDetailScreen() {
     // Use real evidence from backend when available, else fall back to defaults
     const summary = evidenceData?.explanation
       || explanation
-      || 'Price estimated based on comparable sales and market data.';
+      // Not "comparable sales": without evidence there are none to name.
+      || 'Estimated from market prices for this kind of item.';
 
     const keyFactors: string[] = [
       `Item condition: ${condition || 'Not specified'}`,
-      `Category: ${editableCategory}`,
+      // Display name, never the slug ('nintendo_merch' was shown raw, 2026-10-15).
+      `Category: ${categoryDisplayName(editableCategory)}`,
     ];
     if (evidenceData?.evidence_summary?.total_comps) {
       // "comparable sales" was the same false claim as the basis line above.

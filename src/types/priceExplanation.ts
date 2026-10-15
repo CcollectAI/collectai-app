@@ -98,6 +98,7 @@ export function getConfidenceColor(tier: ConfidenceTier): string {
  * Default disclaimer text
  */
 export const DEFAULT_DISCLAIMER =
-  'This estimate is based on recent market data and comparable sales. ' +
+  'This estimate is based on recent market prices — asking prices and price guides, ' +
+  'and sales where we have them. ' +
   'Actual prices may vary based on condition, timing, and market conditions. ' +
   'This is not financial advice.';

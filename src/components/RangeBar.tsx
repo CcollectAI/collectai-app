@@ -49,7 +49,7 @@ export function RangeBar({
           <Text style={[styles.labelText, styles.labelCenter, { color: colors.text, fontSize, fontWeight: '600' }]}>
             {formatPrice(q50, currency)}
           </Text>
-          <Text style={[styles.labelText, { color: colors.muted, fontSize }]}>
+          <Text style={[styles.labelText, styles.labelRight, { color: colors.muted, fontSize }]}>
             {formatPrice(q90, currency)}
           </Text>
         </View>
@@ -121,6 +121,12 @@ const styles = StyleSheet.create({
   },
   labelText: {
     flex: 1,
+  },
+  // Each label is a third of the row (flex: 1), so the high price has to be
+  // right-aligned in its third to sit over the bar's end and the "High"
+  // descriptor; left-aligned it floated at ~67% (Merle's screenshot 2026-10-15).
+  labelRight: {
+    textAlign: 'right',
   },
   labelCenter: {
     textAlign: 'center',
