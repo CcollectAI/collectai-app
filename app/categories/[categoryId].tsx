@@ -41,6 +41,8 @@ import { useLocalSearchParams, useRouter, Stack, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { dataProvider, type CategoryStoreData } from '@/data';
 import { getCategoryById, getRelatedCategories } from '@/data/categories';
+import { VALUATION_ELIGIBLE_CATEGORIES } from '@/constants/categories';
+import { useBillingLimits } from '@/hooks/useBillingLimits';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
@@ -73,6 +75,7 @@ function CategoryStoreScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { settings } = useSettings();
+  const { limits } = useBillingLimits();
   const { colors } = useAppTheme();
   const { showToast } = useToast();
 
@@ -270,6 +273,12 @@ function CategoryStoreScreen() {
             repo-wide search for a link returned zero hits. This is its entry
             point. It shows nothing useful until you own 2+ items from one set,
             which is why it lives below the guide rather than at the top. */}
+        {/* Only where completion is computable: set data exists for the six
+            trading-card categories and is 0% in the other 50
+            (docs/MONETIZATION.md, "Set Completion is trading-card only").
+            Shown on every category until 2026-10-15 — on LEGO or Funko it led
+            to a screen that could never fill. */}
+        {categoryId && VALUATION_ELIGIBLE_CATEGORIES.has(categoryId) ? (
         <AnimatedPressable
           onPress={() => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: settings.hapticsEnabled });
@@ -291,8 +300,16 @@ function CategoryStoreScreen() {
               {t('category.sets_missing_subtitle', { defaultValue: 'What you are still missing from sets you have already started.' })}
             </Text>
           </View>
+          {/* Say it is Pro BEFORE the tap: the screen behind it is a lock for
+              Free members, and the card promised a list (walked 2026-10-15). */}
+          {!limits.set_completion && (
+            <View style={[styles.proPill, { backgroundColor: colors.accent + '22' }]}>
+              <Text style={[styles.proPillText, { color: colors.accent }]}>{t('category.pro_pill', { defaultValue: 'Pro' })}</Text>
+            </View>
+          )}
           <Ionicons name="chevron-forward" size={18} color={colors.muted} />
         </AnimatedPressable>
+        ) : null}
 
         {/* 3-zero. YOUR shelf, before the shop.
             Added 2026-08-19 by request, and a deliberate partial reversal of
@@ -427,6 +444,16 @@ const styles = StyleSheet.create({
   // `YourItemsRail`, whose `wrap` owns a `marginBottom` and NO `marginTop`.
   // Two bordered boxes with zero between them read as overlapping — reported
   // from a screenshot with the seam circled.
+  proPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+    marginRight: 6,
+  },
+  proPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
   setsRow: {
     flexDirection: 'row',
     alignItems: 'center',

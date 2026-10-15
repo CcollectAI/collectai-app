@@ -1143,7 +1143,8 @@
     "no_sets": "No sets in progress yet",
     "est_value": "Est. value",
     "sets_to_complete": "Sets to complete",
-    "close_to_complete": "Collections close to 100%. Sorted by what you're nearest to finishing."
+    "close_to_complete": "Collections close to 100%. Sorted by what you're nearest to finishing.",
+    "sets_to_complete_in": "Sets to complete in {{category}}"
   },
   "ads": {
     "sponsored": "Sponsored",
@@ -1721,7 +1722,8 @@
     "no_collectors_found": "No collectors found",
     "find_friends": "Find friends",
     "guidance_disclaimer": "General guidance, not valuation advice. Prices move and condition is judged by whoever is buying.",
-    "items_in": "Items in {{category}}"
+    "items_in": "Items in {{category}}",
+    "pro_pill": "Pro"
   },
   "analytics": {
     "a11y_retry": "Retry loading analytics data",

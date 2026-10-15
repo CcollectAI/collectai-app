@@ -1143,7 +1143,8 @@
     "no_sets": "Aucune série en cours",
     "est_value": "Valeur est.",
     "sets_to_complete": "Sets à compléter",
-    "close_to_complete": "Collections proches de 100 %. Triées selon ce que vous êtes le plus près de terminer."
+    "close_to_complete": "Collections proches de 100 %. Triées selon ce que vous êtes le plus près de terminer.",
+    "sets_to_complete_in": "Séries à compléter dans {{category}}"
   },
   "ads": {
     "sponsored": "Sponsorisé",
@@ -1721,7 +1722,8 @@
     "no_collectors_found": "Aucun collectionneur trouvé",
     "find_friends": "Trouver des amis",
     "guidance_disclaimer": "Conseils généraux, pas une estimation. Les prix évoluent et l'état est jugé par celui qui achète.",
-    "items_in": "Objets dans {{category}}"
+    "items_in": "Objets dans {{category}}",
+    "pro_pill": "Pro"
   },
   "analytics": {
     "a11y_retry": "Recharger les données d'analyse",

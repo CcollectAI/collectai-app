@@ -1143,7 +1143,8 @@
     "no_sets": "進行中のセットはまだありません",
     "est_value": "推定価値",
     "sets_to_complete": "完成させたいセット",
-    "close_to_complete": "100%に近いコレクション。完成に最も近い順に並んでいます。"
+    "close_to_complete": "100%に近いコレクション。完成に最も近い順に並んでいます。",
+    "sets_to_complete_in": "{{category}}のコンプリート候補"
   },
   "ads": {
     "sponsored": "スポンサー",
@@ -1721,7 +1722,8 @@
     "no_collectors_found": "コレクターが見つかりません",
     "find_friends": "友達を探す",
     "guidance_disclaimer": "一般的な目安であり、査定ではありません。価格は変動し、状態は買い手が判断します。",
-    "items_in": "{{category}} のアイテム"
+    "items_in": "{{category}} のアイテム",
+    "pro_pill": "Pro"
   },
   "analytics": {
     "a11y_retry": "分析データを再読み込み",

@@ -1143,7 +1143,8 @@
     "no_sets": "아직 진행 중인 세트가 없습니다",
     "est_value": "예상 가치",
     "sets_to_complete": "완성할 세트",
-    "close_to_complete": "100%에 가까운 컬렉션. 완성에 가장 가까운 순으로 정렬했습니다."
+    "close_to_complete": "100%에 가까운 컬렉션. 완성에 가장 가까운 순으로 정렬했습니다.",
+    "sets_to_complete_in": "{{category}}에서 완성할 세트"
   },
   "ads": {
     "sponsored": "스폰서",
@@ -1721,7 +1722,8 @@
     "no_collectors_found": "컬렉터를 찾을 수 없습니다",
     "find_friends": "친구 찾기",
     "guidance_disclaimer": "일반적인 안내이며 감정 의견이 아닙니다. 가격은 변동하며 상태는 구매자가 판단합니다.",
-    "items_in": "{{category}} 아이템"
+    "items_in": "{{category}} 아이템",
+    "pro_pill": "Pro"
   },
   "analytics": {
     "a11y_retry": "분석 데이터 다시 불러오기",

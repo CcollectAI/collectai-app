@@ -1143,7 +1143,8 @@
     "no_sets": "Noch keine Sets in Bearbeitung",
     "est_value": "Gesch. Wert",
     "sets_to_complete": "Sets zum Vervollständigen",
-    "close_to_complete": "Sammlungen nahe 100 %. Sortiert danach, was du am ehesten abschließt."
+    "close_to_complete": "Sammlungen nahe 100 %. Sortiert danach, was du am ehesten abschließt.",
+    "sets_to_complete_in": "Sets zum Vervollständigen in {{category}}"
   },
   "ads": {
     "sponsored": "Gesponsert",
@@ -1721,7 +1722,8 @@
     "no_collectors_found": "Keine Sammler gefunden",
     "find_friends": "Freunde finden",
     "guidance_disclaimer": "Allgemeine Hinweise, keine Wertermittlung. Preise schwanken, und den Zustand beurteilt, wer kauft.",
-    "items_in": "Objekte in {{category}}"
+    "items_in": "Objekte in {{category}}",
+    "pro_pill": "Pro"
   },
   "analytics": {
     "a11y_retry": "Analysedaten erneut laden",

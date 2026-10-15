@@ -1143,7 +1143,8 @@
     "no_sets": "Todavía no hay colecciones en progreso",
     "est_value": "Valor est.",
     "sets_to_complete": "Sets por completar",
-    "close_to_complete": "Colecciones cerca del 100 %. Ordenadas por lo que estás más cerca de terminar."
+    "close_to_complete": "Colecciones cerca del 100 %. Ordenadas por lo que estás más cerca de terminar.",
+    "sets_to_complete_in": "Colecciones por completar en {{category}}"
   },
   "ads": {
     "sponsored": "Patrocinado",
@@ -1721,7 +1722,8 @@
     "no_collectors_found": "No se han encontrado coleccionistas",
     "find_friends": "Buscar amigos",
     "guidance_disclaimer": "Orientación general, no es una tasación. Los precios cambian y el estado lo juzga quien compra.",
-    "items_in": "Artículos en {{category}}"
+    "items_in": "Artículos en {{category}}",
+    "pro_pill": "Pro"
   },
   "analytics": {
     "a11y_retry": "Volver a cargar los datos de análisis",

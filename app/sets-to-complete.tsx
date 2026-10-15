@@ -271,7 +271,9 @@ const SetsToCompleteScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
       >
         <Text style={[styles.title, { color: colors.text }]}>
-          {t('set_completion.sets_to_complete', { defaultValue: 'Sets to complete' })}
+          {categoryId
+            ? t('set_completion.sets_to_complete_in', { defaultValue: 'Sets to complete in {{category}}', category: categoryDisplayName(categoryId) })
+            : t('set_completion.sets_to_complete', { defaultValue: 'Sets to complete' })}
         </Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
           {t('set_completion.close_to_complete', { defaultValue: "Collections close to 100%. Sorted by what you're nearest to finishing." })}

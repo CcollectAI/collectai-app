@@ -1143,7 +1143,8 @@
     "no_sets": "Nog geen sets in uitvoering",
     "est_value": "Gesch. waarde",
     "sets_to_complete": "Sets om af te maken",
-    "close_to_complete": "Collecties die bijna op 100% staan. Gesorteerd op wat je het dichtst bij afronden bent."
+    "close_to_complete": "Collecties die bijna op 100% staan. Gesorteerd op wat je het dichtst bij afronden bent.",
+    "sets_to_complete_in": "Sets om af te maken in {{category}}"
   },
   "ads": {
     "sponsored": "Gesponsord",
@@ -1721,7 +1722,8 @@
     "no_collectors_found": "Geen verzamelaars gevonden",
     "find_friends": "Vrienden zoeken",
     "guidance_disclaimer": "Algemene richtlijnen, geen taxatieadvies. Prijzen bewegen en de conditie wordt beoordeeld door wie er koopt.",
-    "items_in": "Items in {{category}}"
+    "items_in": "Items in {{category}}",
+    "pro_pill": "Pro"
   },
   "analytics": {
     "a11y_retry": "Analysegegevens opnieuw laden",
