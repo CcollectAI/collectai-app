@@ -243,9 +243,27 @@ async def list_events(
                     logger.warning("[events] Personalized RPC failed, falling back: %s", rpc_err)
                     rows = await fetch_events_basic(conn, category_id, include_past, limit, offset)
 
+                rows = [dict(r) for r in rows]
+                # rpc_list_personalized_events_v1 returns no source_url, and
+                # the app PRIMES the detail screen from these list rows
+                # (primeEventCache) — so an imported event's detail rendered
+                # without its source page and the "Event page" button never
+                # appeared (walked on Android 2026-10-15). One indexed lookup
+                # by id instead of changing the RPC's signature.
+                missing_src = [r["id"] for r in rows if "source_url" not in r and r.get("id")]
+                if missing_src:
+                    src_rows = await conn.fetch(
+                        "SELECT id, source_url FROM events WHERE id = ANY($1::uuid[])",
+                        missing_src,
+                    )
+                    src_by_id = {str(sr["id"]): sr["source_url"] for sr in src_rows}
+                    for r in rows:
+                        if "source_url" not in r:
+                            r["source_url"] = src_by_id.get(str(r.get("id")))
+
                 events = []
                 for row in rows:
-                    ev = row_to_event(dict(row), user_id=user_id)
+                    ev = row_to_event(row, user_id=user_id)
                     # Hide non-public events unless the user is the creator
                     if not ev.is_public and ev.created_by != user_id:
                         continue

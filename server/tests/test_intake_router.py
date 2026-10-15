@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from decimal import Decimal
 
 # Ensure project root is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -581,7 +582,8 @@ class TestIntakeImageOnly:
         assert "INSERT INTO public.scan_events" in sql
         assert vals == ["11111111-1111-1111-1111-111111111111", "identified", "pokemon",
                         pytest.approx(0.92), "pokemon:base1-4", True, "vision",
-                        250.0, "market_hits", 1234, None]
+                        Decimal("250.0"), "market_hits", 1234, None]
+        assert str(vals[7]) == "250.0"
 
     def test_image_only_invalid_content_type_400(self):
         """Image-only with unsupported content type returns 400."""

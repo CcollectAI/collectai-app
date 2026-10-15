@@ -15,6 +15,7 @@ import json as _json
 import logging
 import re
 import time
+from decimal import Decimal
 from typing import Any, Optional
 from uuid import uuid4
 
@@ -598,7 +599,9 @@ async def _record_scan_event(
             result.catalog_match_key if result else None,
             bool(result.catalog_match_key) if result else None,
             result.identification_method if result else None,
-            round(float(price), 2) if price else None,
+            # Decimal, not a rounded float: 0.29 as float8 is stored in a
+            # numeric column as 0.28999999999999998 (seen on prod 2026-10-15).
+            Decimal(str(round(float(price), 2))) if price else None,
             result.price_source if result else None,
             duration_ms,
             error,
