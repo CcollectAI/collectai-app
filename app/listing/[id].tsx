@@ -594,19 +594,14 @@ function ListingDetailScreen() {
           {listing.shipping_cost != null ? (
             <Text style={[styles.allIn, { color: colors.muted }]}>
               {listing.shipping_cost > 0
-                ? // ONE derived number, not price + shipping + total.
-                  // `formatPrice` renders 0 decimals for every currency by
-                  // design (src/lib/format.ts), so three independently rounded
-                  // figures can visibly fail to add up: €42.50 + €6.50 renders
-                  // as "43 €" + "7 € shipping" = "49 € total", and 43 + 7 ≠ 49.
-                  // Caught by walking the simulator, not by any test — the
-                  // arithmetic is only wrong once it is rounded for display.
-                  // The total is the number the buyer actually pays, so it is
-                  // the one worth showing. The exact shipping figure is
-                  // deliberately NOT rendered alongside it: any second money
-                  // number here re-creates the sum the reader will check.
-                  `${viewerPrice(listing.price + listing.shipping_cost)} total incl. shipping`
-                : "Free shipping"}
+                ? // Price + postage = total, Vinted's breakdown (2026-10-16).
+                  // This used to print the total ALONE: whole-unit rounding
+                  // made "43 + 7 = 49" for 42,50 + 6,50. Member prices now
+                  // render to the cent (formatMemberPrice), so the three add up
+                  // — and the buyer has to see the postage to know an offer
+                  // does not include it.
+                  `+ ${viewerPrice(listing.shipping_cost)} postage · ${viewerPrice(listing.price + listing.shipping_cost)} total`
+                : "Free postage"}
             </Text>
           ) : (
             <Text style={[styles.allIn, { color: colors.muted }]}>
@@ -616,7 +611,7 @@ function ListingDetailScreen() {
                   send, and the seller's own listing told them to ask themselves
                   (Android walk 2026-09-14; "Copy is part of the control",
                   docs/ui-playbook.md). */}
-              {listing.is_mine || isGone ? "Shipping not stated" : "Shipping not stated — ask the seller"}
+              {listing.is_mine || isGone ? "Postage not stated" : "Postage not stated — ask the seller"}
             </Text>
           )}
 
@@ -1162,6 +1157,7 @@ function ListingDetailScreen() {
           title={t('listings.make_an_offer', { defaultValue: 'Make an offer' })}
           reference={listing.price}
           referenceLabel="Asking"
+          postage={listing.shipping_cost ?? null}
           currency={settings.currency}
           numberLocale={settings.numberLocale}
           submitLabel="Send offer"

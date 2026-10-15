@@ -1442,7 +1442,12 @@
     "cover_photo_reference": "커버 사진을 이 제품의 참고 이미지로 Sparrow가 사용하도록 허용합니다. 다른 회원에게도 표시됩니다. 선택 사항이며 나중에 끌 수 있습니다.",
     "no_catalogue_match": "해당 제목과 일치하는 카탈로그 항목이 없습니다. 둘러보기와 검색에는 표시됩니다 — 정확한 제품명을 입력하면 기다리는 회원에게도 전달됩니다.",
     "arrange_with_buyer": "Sparrow는 결제나 배송을 처리하지 않습니다 — 구매자와 직접 정하세요.",
-    "age_gate_explainer": "아이템을 판매하거나 마켓플레이스에 등록하거나 판매자 계정을 연결하려면, 거주 지역의 법적 연령(18세 또는 현지 성년 연령)에 도달했음을 확인해 주세요."
+    "age_gate_explainer": "아이템을 판매하거나 마켓플레이스에 등록하거나 판매자 계정을 연결하려면, 거주 지역의 법적 연령(18세 또는 현지 성년 연령)에 도달했음을 확인해 주세요.",
+    "postage_label": "배송비(구매자 부담)",
+    "postage_placeholder": "예: 4.50 — 무료는 0",
+    "a11y_postage": "구매자가 내는 배송비",
+    "postage_invalid": "금액을 입력하거나, 무료 배송은 0, 아니면 비워 두세요.",
+    "postage_hint": "가격과 제안에 추가됩니다. 채팅에서 정하려면 비워 두세요."
   },
   "purchase": {
     "invalid_deal_link": "유효하지 않은 거래 링크",
@@ -1838,5 +1843,17 @@
     "banner_queued_one": "You're offline — 1 change queued",
     "banner_queued_many": "You're offline — {{count}} changes queued",
     "banner_a11y_cached": "Showing cached data"
+  },
+  "postage": {
+    "item": "상품",
+    "postage": "배송비",
+    "free": "무료",
+    "not_stated": "미기재 — 판매자와 협의하세요",
+    "total": "합계",
+    "note": "제안은 상품에 대한 것입니다. 배송비는 판매자가 정하며 별도로 추가됩니다.",
+    "your_offer": "내 제안",
+    "item_agreed": "상품(합의가)",
+    "total_to_pay": "결제 총액",
+    "plus_postage": "+ 배송비 {{amount}}"
   }
 }

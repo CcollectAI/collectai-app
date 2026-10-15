@@ -27,6 +27,7 @@
  * because expo-clipboard is not installed and a guarded require of a missing
  * package is a silent no-op on both platforms.
  */
+import { PostageBreakdown } from './PostageBreakdown';
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Linking, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -80,6 +81,11 @@ type Props = {
   isBuyer?: boolean;
   /** Already formatted — this component never formats money. */
   amountLabel: string;
+  /** Postage breakdown for the PAY sheet (2026-10-16): the agreed item amount,
+   *  the postage snapshotted on the offer (null = the seller stated none) and
+   *  a formatter in the viewer's currency. Without it the sheet said "Agreed
+   *  amount EUR 19" on a EUR 19 + 2,50 trade. */
+  breakdown?: { amount: number; shipping: number | null; format: (n: number) => string };
   /** The trade being settled. Passing it lets the server resolve the SELLER's
    *  handle and return a link with the amount already in it. */
   offerId?: string;
@@ -99,7 +105,7 @@ function openUrl(url: string) {
   }
 }
 
-export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, isBuyer, colors }: Props) {
+export function SettleUpSheet({ visible, onClose, mode, amountLabel, breakdown, offerId, isBuyer, colors }: Props) {
   const { t } = useTranslation();
   // The payment side resolves region SERVER-side from user_settings; the
   // carrier list is one flat table, so the filtering happens here. Same region
@@ -228,13 +234,29 @@ export function SettleUpSheet({ visible, onClose, mode, amountLabel, offerId, is
       <ScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
         {mode === 'pay' ? (
           <View style={[styles.amountBox, { borderColor: colors.border }]}>
-            <Text style={[styles.amountCaption, { color: colors.muted }]}>{t('settle.agreed_amount', { defaultValue: 'Agreed amount' })}</Text>
+            <Text style={[styles.amountCaption, { color: colors.muted }]}>
+              {breakdown && breakdown.shipping != null
+                ? t('postage.total_to_pay', { defaultValue: 'Total to pay' })
+                : t('settle.agreed_amount', { defaultValue: 'Agreed amount' })}
+            </Text>
             {/* Selectable, not a copy button: expo-clipboard is not installed,
                 and a guarded require of a missing package no-ops silently on
                 BOTH platforms. */}
             <Text selectable style={[styles.amountValue, { color: colors.text }]}>
               {amountLabel}
             </Text>
+            {breakdown ? (
+              <View style={{ marginTop: 10 }}>
+                <PostageBreakdown
+                  amount={breakdown.amount}
+                  shipping={breakdown.shipping}
+                  format={breakdown.format}
+                  colors={{ text: colors.text, muted: colors.muted, border: colors.border }}
+                  itemLabel={t('postage.item_agreed', { defaultValue: 'Item (agreed)' })}
+                  totalLabel={t('postage.total_to_pay', { defaultValue: 'Total to pay' })}
+                />
+              </View>
+            ) : null}
           </View>
         ) : null}
 

@@ -1442,7 +1442,12 @@
     "cover_photo_reference": "Autorisez Sparrow à utiliser votre photo de couverture comme image de référence pour ce produit, visible par les autres membres. Facultatif, et désactivable plus tard.",
     "no_catalogue_match": "Aucune correspondance au catalogue pour ce titre. Il restera visible dans la navigation et la recherche — essayez le nom exact du produit pour toucher aussi les membres qui l'attendent.",
     "arrange_with_buyer": "Sparrow ne gère ni le paiement ni la livraison — vous les organisez directement avec l'acheteur.",
-    "age_gate_explainer": "Pour vendre des objets, publier sur des places de marché ou connecter un compte vendeur, confirmez que vous avez l'âge légal dans votre région (18 ans ou la majorité locale)."
+    "age_gate_explainer": "Pour vendre des objets, publier sur des places de marché ou connecter un compte vendeur, confirmez que vous avez l'âge légal dans votre région (18 ans ou la majorité locale).",
+    "postage_label": "Frais de port (payés par l'acheteur)",
+    "postage_placeholder": "ex. 4,50 — 0 si gratuit",
+    "a11y_postage": "Frais de port payés par l'acheteur",
+    "postage_invalid": "Saisis un montant, 0 pour la livraison gratuite, ou laisse vide.",
+    "postage_hint": "S'ajoute au prix et aux offres. Laisse vide pour en convenir dans le chat."
   },
   "purchase": {
     "invalid_deal_link": "Lien d’offre invalide",
@@ -1838,5 +1843,17 @@
     "banner_queued_one": "You're offline — 1 change queued",
     "banner_queued_many": "You're offline — {{count}} changes queued",
     "banner_a11y_cached": "Showing cached data"
+  },
+  "postage": {
+    "item": "Article",
+    "postage": "Frais de port",
+    "free": "Gratuit",
+    "not_stated": "Non indiqués — à convenir avec le vendeur",
+    "total": "Total",
+    "note": "Les offres portent sur l'article. Les frais de port sont fixés par le vendeur et s'ajoutent.",
+    "your_offer": "Ton offre",
+    "item_agreed": "Article (convenu)",
+    "total_to_pay": "Total à payer",
+    "plus_postage": "+ {{amount}} de port"
   }
 }

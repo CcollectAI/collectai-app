@@ -117,6 +117,9 @@ _OFFER_COLUMNS = """
             o.seller_confirmed_at, o.buyer_confirmed_at,
             o.withdrawn_by,
             o.tracking_carrier, o.tracking_code, o.tracking_set_at,
+            -- Postage snapshotted at offer time (20261016_p2p_offer_postage):
+            -- the item amount plus this is what the buyer pays.
+            o.shipping_cost,
             l.listing_title,
             -- The ASKING price, so a counter can be expressed as a percentage of
             -- it. Without this the counter UI could only work off the buyer's own
@@ -320,6 +323,10 @@ class OfferOut(BaseModel):
     # percentage computed from nothing.
     listing_price: Optional[float] = None
     listing_image_url: Optional[str] = None
+    # Postage the buyer pays ON TOP of `amount` (snapshotted when the offer was
+    # made). None = the seller stated none — agree it in chat. Never 0 for
+    # unknown: 0 is "free postage".
+    shipping_cost: Optional[float] = None
     buyer_id: str
     seller_id: str
     amount: float
@@ -527,7 +534,8 @@ async def _notify_trade(conn, user_id: str, title: str, body: str, offer_id: str
 
 
 async def _record_p2p_sale(conn, listing_id: str, seller_id: str,
-                           amount: float, currency: str) -> None:
+                           amount: float, currency: str,
+                           shipping_charged: Optional[float] = None) -> None:
     """The seller's own record of what they sold — the row nothing was writing.
 
     `marketplace_sales` held **0 rows on production** (2026-09-18) against 3 sold
@@ -570,16 +578,20 @@ async def _record_p2p_sale(conn, listing_id: str, seller_id: str,
         INSERT INTO public.marketplace_sales
             (listing_id, user_id, buyer_marketplace_id, sale_price, currency,
              shipping_cost_actual, platform_fee, payment_processing_fee,
-             net_proceeds, status, sold_at)
+             net_proceeds, status, sold_at, shipping_charged)
         -- round(...,2): the agreed amount is a float8; see /postage.
+        -- net = item + the postage the BUYER paid (2026-10-16): the seller's
+        -- own stamp is subtracted when they record it, so a reimbursed
+        -- postage no longer reads as a loss.
         SELECT $1::uuid, $2::uuid, 'sparrow', round($3::numeric, 2), $4,
                NULL, 0, 0,
-               round($3::numeric, 2), 'completed', now()
+               round($3::numeric + COALESCE($5::numeric, 0), 2), 'completed', now(),
+               round($5::numeric, 2)
          WHERE NOT EXISTS (
            SELECT 1 FROM public.marketplace_sales WHERE listing_id = $1::uuid
          )
         """,
-        listing_id, seller_id, amount, currency,
+        listing_id, seller_id, amount, currency, shipping_charged,
     )
 
 
@@ -622,7 +634,8 @@ async def retire_sold_item(conn, item_id: str, seller_id: str, quantity: int) ->
 
 async def _settle_completed_trade(conn, offer_id: str, listing_id: str,
                                   buyer_id: str, seller_id: str,
-                                  amount: float, currency: str) -> None:
+                                  amount: float, currency: str,
+                                  shipping: Optional[float] = None) -> None:
     """Move the object, not just the paperwork.
 
     Completion used to update `p2p_offers`, mark the listing sold, remove the
@@ -718,7 +731,10 @@ async def _settle_completed_trade(conn, offer_id: str, listing_id: str,
             buyer_id, marker,
         )
         if not already:
-            amount_eur = await convert_to_eur(float(amount), currency or "EUR")
+            # What the buyer PAID: the item plus the postage they were charged
+            # (2026-10-16) — the cost basis their later resale is measured from.
+            paid = round(float(amount) + float(shipping or 0), 2)
+            amount_eur = await convert_to_eur(paid, currency or "EUR")
             # A completed purchase must never fail on the buyer's free-plan item
             # cap (trg_items_free_cap). Transaction-local: is_local=true.
             await conn.execute("SELECT set_config('app.skip_item_cap', 'on', true)")
@@ -744,7 +760,7 @@ async def _settle_completed_trade(conn, offer_id: str, listing_id: str,
                 l["listing_description"],
                 # The seller's photograph is theirs unless they said otherwise.
                 l["image_url"] if l["photo_catalogue_consent"] else None,
-                float(amount),
+                paid,
                 (currency or "EUR").upper(),
                 amount_eur,
                 marker,
@@ -998,6 +1014,7 @@ def _row_to_offer(r, me: str) -> OfferOut:
         buyer_id=str(r["buyer_id"]),
         seller_id=str(r["seller_id"]),
         amount=float(r["amount"]),
+        shipping_cost=_row_opt_float(r, "shipping_cost"),
         currency=r["currency"] or "EUR",
         status=r["status"],
         message=r["message"],
@@ -1074,7 +1091,7 @@ async def create_offer(
         listing = await conn.fetchrow(
             """
             SELECT id, user_id AS seller_id, listing_title, price,
-                   status, delisted_at
+                   status, delisted_at, shipping_cost
             FROM public.marketplace_listings
             WHERE id = $1::uuid
             """,
@@ -1117,9 +1134,14 @@ async def create_offer(
             """
             INSERT INTO public.p2p_offers
                 (listing_id, buyer_id, seller_id, amount, currency, status,
-                 message, counter_count, created_at, updated_at)
-            VALUES ($1::uuid, $2::uuid, $3::uuid, round($4::numeric, 2), $5, $6, $7, 0, now(), now())
-            RETURNING id, listing_id, buyer_id, seller_id, amount, currency,
+                 message, counter_count, created_at, updated_at, shipping_cost)
+            -- shipping_cost: the listing's postage as the buyer saw it when
+            -- bidding. An offer is on the ITEM; postage is added on top and is
+            -- not negotiable (Vinted's rule) — a later listing edit must not
+            -- move an agreed trade.
+            VALUES ($1::uuid, $2::uuid, $3::uuid, round($4::numeric, 2), $5, $6, $7, 0, now(), now(),
+                    round($8::numeric, 2))
+            RETURNING id, listing_id, buyer_id, seller_id, amount, currency, shipping_cost,
                       status, message, counter_count, created_at,
                       seller_confirmed_at, buyer_confirmed_at,
                       -- Always NULL on a fresh offer, but _row_to_offer reads
@@ -1133,6 +1155,7 @@ async def create_offer(
             """,
             payload.listing_id, user_id, str(listing["seller_id"]),
             payload.amount, payload.currency, _PENDING, payload.message,
+            listing["shipping_cost"],
         )
 
     out = _row_to_offer(row, user_id)
@@ -2172,6 +2195,7 @@ async def set_postage(
                    -- 55.04999999… (measured 2026-09-23). Money is cents.
                    SET shipping_cost_actual = round($2::numeric, 2),
                        net_proceeds = round(sale_price
+                                      + COALESCE(shipping_charged, 0)
                                       - COALESCE(platform_fee, 0)
                                       - COALESCE(payment_processing_fee, 0)
                                       - round($2::numeric, 2), 2),
@@ -2378,6 +2402,7 @@ async def confirm_exchange(
                     conn, offer_id, str(fresh["listing_id"]),
                     str(fresh["buyer_id"]), str(fresh["seller_id"]),
                     float(fresh["amount"]), fresh["currency"] or "EUR",
+                    _row_opt_float(fresh, "shipping_cost"),
                 )
 
                 # And the SELLER'S RECORD of the sale, in the same transaction:
@@ -2389,6 +2414,7 @@ async def confirm_exchange(
                 await _record_p2p_sale(
                     conn, str(fresh["listing_id"]), str(fresh["seller_id"]),
                     float(fresh["amount"]), fresh["currency"] or "EUR",
+                    _row_opt_float(fresh, "shipping_cost"),
                 )
 
         # ---- committed. Everything below runs ONCE, for the caller whose

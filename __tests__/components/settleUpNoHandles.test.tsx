@@ -45,3 +45,15 @@ it('says nothing when the seller gave a handle', async () => {
   await findByText('PayPal');
   await waitFor(() => expect(queryByText(HINT)).toBeNull());
 });
+
+it('the pay sheet leads with the total to pay — item plus postage (2026-10-16)', async () => {
+  mockRails.mockResolvedValue({ rails: [rail('https://paypal.me/seller')], disclaimer: '' });
+  const fmt = (n: number) => `€${n.toFixed(2).replace('.', ',')}`;
+  const { findAllByText, getByText } = render(
+    <SettleUpSheet visible mode="pay" offerId="o1" isBuyer onClose={jest.fn()} amountLabel="€21,50"
+      breakdown={{ amount: 19, shipping: 2.5, format: fmt }} colors={colors} />,
+  );
+  expect((await findAllByText('Total to pay')).length).toBeGreaterThan(0);
+  expect(getByText('€2,50')).toBeTruthy();
+  expect((await findAllByText('€21,50')).length).toBe(2); // headline + breakdown total
+});

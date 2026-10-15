@@ -1442,7 +1442,12 @@
     "cover_photo_reference": "Erlaube Sparrow, dein Titelfoto als Referenzbild für dieses Produkt zu nutzen, sichtbar für andere Mitglieder. Optional, und du kannst es später abschalten.",
     "no_catalogue_match": "Kein Katalogtreffer für diesen Titel. In Stöbern und Suche erscheint er trotzdem — versuche den genauen Produktnamen, um auch wartende Mitglieder zu erreichen.",
     "arrange_with_buyer": "Sparrow wickelt weder Zahlung noch Versand ab — das regelst du direkt mit dem Käufer.",
-    "age_gate_explainer": "Um Objekte zu verkaufen, auf Marktplätzen anzubieten oder ein Verkäuferkonto zu verbinden, bestätige bitte, dass du in deiner Region volljährig bist (18 Jahre oder das örtliche Volljährigkeitsalter)."
+    "age_gate_explainer": "Um Objekte zu verkaufen, auf Marktplätzen anzubieten oder ein Verkäuferkonto zu verbinden, bestätige bitte, dass du in deiner Region volljährig bist (18 Jahre oder das örtliche Volljährigkeitsalter).",
+    "postage_label": "Versand (zahlt der Käufer)",
+    "postage_placeholder": "z. B. 4,50 — 0 für kostenlos",
+    "a11y_postage": "Versandkosten, die der Käufer zahlt",
+    "postage_invalid": "Gib einen Betrag ein, 0 für kostenlosen Versand, oder lass das Feld leer.",
+    "postage_hint": "Kommt zum Preis und zu Angeboten hinzu. Leer lassen, um es im Chat abzusprechen."
   },
   "purchase": {
     "invalid_deal_link": "Ungültiger Deal-Link",
@@ -1838,5 +1843,17 @@
     "banner_queued_one": "You're offline — 1 change queued",
     "banner_queued_many": "You're offline — {{count}} changes queued",
     "banner_a11y_cached": "Showing cached data"
+  },
+  "postage": {
+    "item": "Artikel",
+    "postage": "Versand",
+    "free": "Kostenlos",
+    "not_stated": "Nicht angegeben — mit dem Verkäufer absprechen",
+    "total": "Gesamt",
+    "note": "Angebote gelten für den Artikel. Den Versand legt der Verkäufer fest; er kommt hinzu.",
+    "your_offer": "Dein Angebot",
+    "item_agreed": "Artikel (vereinbart)",
+    "total_to_pay": "Zu zahlen",
+    "plus_postage": "+ {{amount}} Versand"
   }
 }

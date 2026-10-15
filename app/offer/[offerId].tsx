@@ -340,6 +340,11 @@ function TradeScreen() {
                   </Text>
                 ) : null}
               </Text>
+              {offer.shipping_cost != null && offer.shipping_cost > 0 ? (
+                <Text style={[styles.postageLine, { color: colors.muted }]}>
+                  {t('postage.plus_postage', { amount: viewerPrice(offer.shipping_cost), defaultValue: '+ {{amount}} postage' })}
+                </Text>
+              ) : null}
               <View style={styles.metaRow}>
                 <View style={[
                   styles.rolePill,
@@ -622,7 +627,15 @@ function TradeScreen() {
         onClose={() => setSettleOpen(false)}
         mode={offer.i_am_buyer ? 'pay' : 'ship'}
         isBuyer={offer.i_am_buyer}
-        amountLabel={viewerPrice(offer.amount)}
+        // The big number is what the buyer actually sends: item + postage
+        // when the seller stated postage (2026-10-16), else the item alone
+        // and the breakdown says postage is to be agreed.
+        amountLabel={viewerPrice(offer.shipping_cost != null ? offer.amount + offer.shipping_cost : offer.amount)}
+        breakdown={offer.i_am_buyer ? {
+          amount: offer.amount,
+          shipping: offer.shipping_cost ?? null,
+          format: viewerPrice,
+        } : undefined}
         offerId={offer.id}
         colors={colors}
       />
@@ -649,6 +662,7 @@ function TradeScreen() {
 }
 
 const styles = StyleSheet.create({
+  postageLine: { fontSize: 13, marginTop: -1 },
   safe: { flex: 1 },
   scroll: { padding: 16, paddingBottom: 24 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 24 },

@@ -1442,7 +1442,12 @@
     "cover_photo_reference": "あなたのカバー写真をこの商品の参考画像として Sparrow が使うことを許可します。他のメンバーにも表示されます。任意で、後からオフにできます。",
     "no_catalogue_match": "そのタイトルはカタログに一致しません。閲覧と検索には表示されます — 正確な商品名を試すと、待っているメンバーにも届きます。",
     "arrange_with_buyer": "Sparrow は支払いや配送を扱いません — 購入者と直接やり取りしてください。",
-    "age_gate_explainer": "アイテムの販売、マーケットプレイスへの出品、出品者アカウントの連携を行うには、お住まいの地域で法定年齢（18歳または現地の成年年齢）に達していることをご確認ください。"
+    "age_gate_explainer": "アイテムの販売、マーケットプレイスへの出品、出品者アカウントの連携を行うには、お住まいの地域で法定年齢（18歳または現地の成年年齢）に達していることをご確認ください。",
+    "postage_label": "送料（購入者負担）",
+    "postage_placeholder": "例: 4.50 — 無料は0",
+    "a11y_postage": "購入者が支払う送料",
+    "postage_invalid": "金額を入力するか、送料無料は0、未定なら空欄にしてください。",
+    "postage_hint": "価格とオファーに加算されます。チャットで決める場合は空欄に。"
   },
   "purchase": {
     "invalid_deal_link": "無効な取引リンク",
@@ -1838,5 +1843,17 @@
     "banner_queued_one": "You're offline — 1 change queued",
     "banner_queued_many": "You're offline — {{count}} changes queued",
     "banner_a11y_cached": "Showing cached data"
+  },
+  "postage": {
+    "item": "商品",
+    "postage": "送料",
+    "free": "無料",
+    "not_stated": "未記載 — 出品者と相談してください",
+    "total": "合計",
+    "note": "オファーは商品に対するものです。送料は出品者が設定し、別途加算されます。",
+    "your_offer": "あなたのオファー",
+    "item_agreed": "商品（合意額）",
+    "total_to_pay": "支払い合計",
+    "plus_postage": "+ 送料 {{amount}}"
   }
 }

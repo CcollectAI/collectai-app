@@ -1442,7 +1442,12 @@
     "cover_photo_reference": "Laat Sparrow je omslagfoto gebruiken als referentiebeeld voor dit product, zichtbaar voor andere leden. Optioneel, en je kunt het later uitzetten.",
     "no_catalogue_match": "Geen catalogustreffer voor die titel. Hij is wel zichtbaar in bladeren en zoeken — probeer de exacte productnaam om ook leden te bereiken die erop wachten.",
     "arrange_with_buyer": "Sparrow regelt geen betaling of bezorging — dat regel je rechtstreeks met de koper.",
-    "age_gate_explainer": "Om items te verkopen, op marktplaatsen aan te bieden of een verkopersaccount te koppelen, bevestig je dat je de wettelijke leeftijd in jouw regio hebt (18 jaar of de lokale meerderjarigheid)."
+    "age_gate_explainer": "Om items te verkopen, op marktplaatsen aan te bieden of een verkopersaccount te koppelen, bevestig je dat je de wettelijke leeftijd in jouw regio hebt (18 jaar of de lokale meerderjarigheid).",
+    "postage_label": "Verzendkosten (betaalt de koper)",
+    "postage_placeholder": "bijv. 4,50 — 0 voor gratis",
+    "a11y_postage": "Verzendkosten die de koper betaalt",
+    "postage_invalid": "Vul een bedrag in, 0 voor gratis verzending, of laat het leeg.",
+    "postage_hint": "Komt bovenop de prijs en biedingen. Laat leeg om het in de chat af te spreken."
   },
   "purchase": {
     "invalid_deal_link": "Ongeldige deal-link",
@@ -1838,5 +1843,17 @@
     "banner_queued_one": "You're offline — 1 change queued",
     "banner_queued_many": "You're offline — {{count}} changes queued",
     "banner_a11y_cached": "Showing cached data"
+  },
+  "postage": {
+    "item": "Artikel",
+    "postage": "Verzendkosten",
+    "free": "Gratis",
+    "not_stated": "Niet opgegeven — spreek het af met de verkoper",
+    "total": "Totaal",
+    "note": "Een bod geldt voor het artikel. De verzendkosten bepaalt de verkoper en komen erbovenop.",
+    "your_offer": "Jouw bod",
+    "item_agreed": "Artikel (afgesproken)",
+    "total_to_pay": "Totaal te betalen",
+    "plus_postage": "+ {{amount}} verzending"
   }
 }

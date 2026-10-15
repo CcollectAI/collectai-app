@@ -321,6 +321,10 @@ export type P2POffer = {
    *  Null when the listing row is gone — callers must fall back and SAY they
    *  did, never show a percentage off an unstated basis. */
   listing_price: number | null;
+  /** Postage the buyer pays ON TOP of `amount`, snapshotted when the offer was
+   *  made (2026-10-16, Vinted's model: offers are on the item). null = the
+   *  seller stated none — agree it in chat; never treat it as free. */
+  shipping_cost?: number | null;
   /** The listing photo. Every row was text, which is what made a screen of
    *  live negotiations read as a spreadsheet — a thumbnail is the single
    *  change that makes a stacked list scannable. */

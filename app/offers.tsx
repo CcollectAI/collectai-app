@@ -1136,6 +1136,14 @@ function OffersScreen() {
           <Text style={[styles.amount, { color: colors.text }]}>
             {viewerPrice(o.amount, o.currency)}
           </Text>
+          {/* Offers are on the item; postage is added on top (Vinted's rule,
+              2026-10-16). Silent when the seller stated none — the trade
+              screen says so in full. */}
+          {o.shipping_cost != null && o.shipping_cost > 0 ? (
+            <Text style={[styles.amountDelta, { color: colors.muted }]}>
+              {t('postage.plus_postage', { amount: viewerPrice(o.shipping_cost, o.currency), defaultValue: '+ {{amount}} postage' })}
+            </Text>
+          ) : null}
           {/* The offer ALONE does not decide anything — "EUR 380" is only good
               or bad against what you asked. The percentage is the number a
               seller actually judges on, and it is the same reference the
@@ -1842,6 +1850,7 @@ function OffersScreen() {
           title={t('offers.counter_offer', { defaultValue: 'Counter offer' })}
           reference={counterFor.listing_price ?? counterFor.amount}
           referenceLabel={counterFor.listing_price != null ? 'Asking' : 'Their offer'}
+          postage={counterFor.shipping_cost ?? null}
           currency={settings.currency}
           numberLocale={settings.numberLocale}
           submitLabel="Send counter"

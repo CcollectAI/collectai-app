@@ -165,11 +165,22 @@ function SellNewScreen() {
     return n !== null && n > 0 ? n : null;
   }, [price]);
 
+  // Postage the BUYER pays on top (2026-10-16). The form had no field for it,
+  // so every listing made in the app read "Postage not stated", while offers
+  // are on the item only (Vinted's model). Empty = not stated (agree in chat),
+  // 0 = free postage — two different answers, never conflated.
+  const [postage, setPostage] = useState('');
+  const parsedPostage = useMemo(() => {
+    if (!postage.trim()) return undefined;
+    const n = parseMoney(postage);
+    return n !== null && n >= 0 ? n : null;
+  }, [postage]);
+
   // From the collection the SERVER supplies the name from the item, so a typed
   // title is neither required nor used. Requiring one would block the flow on a
   // field the seller cannot see.
   const canList = (fromCollection || title.trim().length >= 2)
-    && parsedPrice != null && !saving;
+    && parsedPrice != null && parsedPostage !== null && !saving;
 
   const categoryName = useMemo(
     () => CATEGORIES.find((c) => c.slug === categorySlug)?.name ?? null,
@@ -285,6 +296,7 @@ function SellNewScreen() {
             }),
         price: parsedPrice,
         currency: settings.currency,
+        ...(parsedPostage != null ? { shipping_cost: parsedPostage } : {}),
         condition_label: condition ?? undefined,
         description: description.trim() || undefined,
         photo_catalogue_consent: photoUris.length > 0 ? consent : false,
@@ -355,7 +367,7 @@ function SellNewScreen() {
     // the last edit that rebuilt this callback — leave it out and a seller who
     // sees "Matched" and taps List sends no canonical_key, so the listing never
     // reaches Target Hit watchers.
-  }, [canList, parsedPrice, title, categorySlug, condition, description, photoUris,
+  }, [canList, parsedPrice, parsedPostage, title, categorySlug, condition, description, photoUris,
       consent, settings.currency, settings.hapticsEnabled, showToast, router,
       fromCollection, itemId, match?.item_key]);
 
@@ -597,6 +609,29 @@ function SellNewScreen() {
             />
           </View>
 
+          <Text style={[styles.label, { color: colors.text }]}>
+            {t('sell.postage_label', { defaultValue: 'Postage (paid by the buyer)' })}
+          </Text>
+          <View style={[styles.field, { borderColor: colors.border, backgroundColor: colors.card }]}>
+            <Text style={[styles.currency, { color: colors.muted }]}>
+              {getCurrencySymbol(settings.currency)}
+            </Text>
+            <TextInput
+              value={postage}
+              onChangeText={setPostage}
+              placeholder={t('sell.postage_placeholder', { defaultValue: 'e.g. 4,50 — 0 for free' })}
+              placeholderTextColor={colors.muted}
+              keyboardType="decimal-pad"
+              style={[styles.priceInput, { color: colors.text }]}
+              accessibilityLabel={t('sell.a11y_postage', { defaultValue: 'Postage paid by the buyer' })}
+            />
+          </View>
+          <Text style={[styles.hint, { color: parsedPostage === null ? colors.danger : colors.muted }]}>
+            {parsedPostage === null
+              ? t('sell.postage_invalid', { defaultValue: 'Enter an amount, 0 for free postage, or leave it empty.' })
+              : t('sell.postage_hint', { defaultValue: 'Added on top of the price and offers. Leave empty to agree it in chat.' })}
+          </Text>
+
           <PickerField
             label="Condition"
             value={condition}
@@ -738,6 +773,7 @@ const styles = StyleSheet.create({
   pickedTitle: { fontSize: textToken.md, fontWeight: fontWeight.semibold },
   pickedMeta: { fontSize: textToken.sm },
   label: { fontSize: textToken.sm, fontWeight: fontWeight.semibold, marginTop: 14, marginBottom: 6 },
+  hint: { fontSize: textToken.xs, marginTop: 4 },
   // ONE field shape shared by the text inputs and the pickers, so a form of
   // mixed control types still reads as a single form.
   field: {

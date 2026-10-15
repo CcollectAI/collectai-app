@@ -22,7 +22,7 @@ describe('sell/new — submit callback dependencies', () => {
     expect(deps).not.toBe('');
   });
 
-  it.each(['match?.item_key', 'fromCollection', 'itemId'])('depends on %s, which the payload reads', (name) => {
+  it.each(['match?.item_key', 'fromCollection', 'itemId', 'parsedPostage'])('depends on %s, which the payload reads', (name) => {
     expect(deps.split(',').map((s) => s.trim())).toContain(name);
   });
 });

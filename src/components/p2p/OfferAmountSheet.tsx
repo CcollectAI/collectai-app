@@ -39,6 +39,7 @@
  * and inventing one client-side would block a legitimate lowball the seller is
  * free to decline.
  */
+import { PostageBreakdown } from './PostageBreakdown';
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, ActivityIndicator } from 'react-native';
 
@@ -87,6 +88,9 @@ export type OfferAmountSheetProps = {
   currency: Currency;
   numberLocale?: NumberLocale;
   submitLabel: string;
+  /** The listing's postage, added on top of whatever is offered. `undefined`
+   *  hides the breakdown; `null` says the seller stated none. */
+  postage?: number | null;
   busy?: boolean;
   colors: SheetColors;
   hapticsEnabled?: boolean;
@@ -95,7 +99,7 @@ export type OfferAmountSheetProps = {
 
 export function OfferAmountSheet({
   visible, onClose, title, reference, referenceLabel, currency, numberLocale,
-  submitLabel, busy = false, colors, hapticsEnabled = true, onSubmit,
+  submitLabel, postage, busy = false, colors, hapticsEnabled = true, onSubmit,
 }: OfferAmountSheetProps) {
   const [selected, setSelected] = useState<number | null>(null);
   const { t } = useTranslation();
@@ -239,6 +243,19 @@ export function OfferAmountSheet({
         </View>
         {customError ? (
           <Text style={[styles.error, { color: colors.muted }]}>{customError}</Text>
+        ) : null}
+
+        {/* What the buyer will actually pay — offer + postage (2026-10-16). */}
+        {amount != null && postage !== undefined ? (
+          <View style={{ marginTop: 12 }}>
+            <PostageBreakdown
+              amount={amount}
+              shipping={postage}
+              format={(n) => formatPrice(n, currency, numberLocale, { exact: true })}
+              colors={{ text: colors.text, muted: colors.muted, border: colors.border }}
+              itemLabel={t('postage.your_offer', { defaultValue: 'Your offer' })}
+            />
+          </View>
         ) : null}
 
         <AnimatedPressable

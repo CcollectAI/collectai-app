@@ -1442,7 +1442,12 @@
     "cover_photo_reference": "Let Sparrow use your cover photo as a reference picture for this product, shown to other members. Optional, and you can turn it off later.",
     "no_catalogue_match": "No catalogue match for that title. It will still show in browse and search — try the exact product name to also reach members watching for it.",
     "arrange_with_buyer": "Sparrow doesn't handle payment or delivery — you arrange those with the buyer directly.",
-    "age_gate_explainer": "To sell items, list on marketplaces, or connect a seller account, please confirm you are of legal age in your region (18 or the local age of majority)."
+    "age_gate_explainer": "To sell items, list on marketplaces, or connect a seller account, please confirm you are of legal age in your region (18 or the local age of majority).",
+    "postage_label": "Postage (paid by the buyer)",
+    "postage_placeholder": "e.g. 4,50 — 0 for free",
+    "a11y_postage": "Postage paid by the buyer",
+    "postage_invalid": "Enter an amount, 0 for free postage, or leave it empty.",
+    "postage_hint": "Added on top of the price and offers. Leave empty to agree it in chat."
   },
   "purchase": {
     "invalid_deal_link": "Invalid deal link",
@@ -1838,5 +1843,17 @@
     "banner_queued_one": "You're offline — 1 change queued",
     "banner_queued_many": "You're offline — {{count}} changes queued",
     "banner_a11y_cached": "Showing cached data"
+  },
+  "postage": {
+    "item": "Item",
+    "postage": "Postage",
+    "free": "Free",
+    "not_stated": "Not stated — agree it with the seller",
+    "total": "Total",
+    "note": "Offers are for the item. Postage is set by the seller and added on top.",
+    "your_offer": "Your offer",
+    "item_agreed": "Item (agreed)",
+    "total_to_pay": "Total to pay",
+    "plus_postage": "+ {{amount}} postage"
   }
 }

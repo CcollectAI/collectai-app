@@ -1442,7 +1442,12 @@
     "cover_photo_reference": "Permite que Sparrow use tu foto de portada como imagen de referencia de este producto, visible para otros miembros. Es opcional y puedes desactivarlo después.",
     "no_catalogue_match": "No hay coincidencia en el catálogo para ese título. Seguirá apareciendo al explorar y buscar: prueba con el nombre exacto del producto para llegar también a quienes lo esperan.",
     "arrange_with_buyer": "Sparrow no gestiona el pago ni el envío: los acuerdas directamente con el comprador.",
-    "age_gate_explainer": "Para vender artículos, publicar en marketplaces o conectar una cuenta de vendedor, confirma que tienes la edad legal en tu región (18 años o la mayoría de edad local)."
+    "age_gate_explainer": "Para vender artículos, publicar en marketplaces o conectar una cuenta de vendedor, confirma que tienes la edad legal en tu región (18 años o la mayoría de edad local).",
+    "postage_label": "Envío (lo paga el comprador)",
+    "postage_placeholder": "p. ej. 4,50 — 0 si es gratis",
+    "a11y_postage": "Envío que paga el comprador",
+    "postage_invalid": "Introduce un importe, 0 si el envío es gratis, o déjalo vacío.",
+    "postage_hint": "Se suma al precio y a las ofertas. Déjalo vacío para acordarlo en el chat."
   },
   "purchase": {
     "invalid_deal_link": "Enlace de oferta no válido",
@@ -1838,5 +1843,17 @@
     "banner_queued_one": "You're offline — 1 change queued",
     "banner_queued_many": "You're offline — {{count}} changes queued",
     "banner_a11y_cached": "Showing cached data"
+  },
+  "postage": {
+    "item": "Artículo",
+    "postage": "Envío",
+    "free": "Gratis",
+    "not_stated": "Sin indicar — acuérdalo con el vendedor",
+    "total": "Total",
+    "note": "Las ofertas son por el artículo. El envío lo fija el vendedor y se suma.",
+    "your_offer": "Tu oferta",
+    "item_agreed": "Artículo (acordado)",
+    "total_to_pay": "Total a pagar",
+    "plus_postage": "+ {{amount}} de envío"
   }
 }
