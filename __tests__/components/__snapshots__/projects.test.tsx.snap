@@ -837,7 +837,7 @@ exports[`ProjectCard renders with minimal props and matches snapshot 1`] = `
             ]
           }
         >
-          active
+          Active
         </Text>
       </View>
     </View>

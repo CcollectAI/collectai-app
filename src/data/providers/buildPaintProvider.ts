@@ -15,6 +15,30 @@ import type {
 import { supabase } from '../../lib/supabase';
 import logger from '../../utils/logger';
 
+/**
+ * One status vocabulary on the client (2026-10-15).
+ *
+ * Prod still runs the pre-pipeline RPC: `rpc_create_build_paint_project_v1`
+ * writes 'Backlog' for every new project and the column default is 'Active'
+ * (docs/CLASS_SWEEPS.md, "build_paint_projects: a migration that never reached
+ * production" — applying it is an open decision). The screen groups on
+ * 'wishlist', so a just-created project read "Backlog" under IN PROGRESS with
+ * Wishlist (0) beside it. Same mapping as 20260322_build_paint_status_pipeline.
+ */
+const LEGACY_STATUS: Record<string, string> = {
+  backlog: 'wishlist',
+  active: 'in_progress',
+  completed: 'finished',
+};
+
+export function normalizeProjectStatus(raw: unknown): string | undefined {
+  if (raw == null || raw === '') return undefined;
+  const s = String(raw).trim().toLowerCase();
+  return LEGACY_STATUS[s] ?? s;
+}
+
+const FINISHED_STATUSES = new Set(['finished', 'displayed']);
+
 export async function getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
   let activeProjects = 0;
   let backlogProjects = 0;
@@ -35,8 +59,8 @@ export async function getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
     const { data, error } = projectsRes.value;
     if (!error && Array.isArray(data)) {
       for (const row of data) {
-        const status = (row.status || '').toString().toLowerCase();
-        if (status === 'finished' || status === 'completed' || status === 'displayed') {
+        const status = normalizeProjectStatus(row.status) ?? '';
+        if (FINISHED_STATUSES.has(status)) {
           completedProjects += 1;
         } else if (status === 'wishlist') {
           backlogProjects += 1;
@@ -132,9 +156,9 @@ export async function listBuildPaintProjects(): Promise<BuildPaintProject[]> {
     itemId: (row.item_id as string) ?? undefined,
     itemName: undefined,
     itemImageUrl: undefined,
-    status: row.status as string | undefined,
+    status: normalizeProjectStatus(row.status),
     percent: (row.progress_pct as number) ?? 0,
-    isCompleted: ['finished', 'completed', 'displayed'].includes(((row.status as string) || '').toLowerCase()),
+    isCompleted: FINISHED_STATUSES.has(normalizeProjectStatus(row.status) ?? ''),
     notes: row.notes as string | undefined,
     imageUrl: (row.image_url as string) ?? undefined,
     paintRecipes: toPaintRecipes(row.paint_recipes),
@@ -174,7 +198,7 @@ export async function createBuildPaintProject(input: CreateBuildPaintProjectInpu
     category: row.category as string | undefined,
     categoryId: (row.category_id as string | null) ?? undefined,
     itemId: (row.item_id as string | null) ?? undefined,
-    status: row.status as string | undefined,
+    status: normalizeProjectStatus(row.status),
     percent: (row.percent_complete as number | null) ?? 0,
     isCompleted: (row.is_completed as boolean | null) ?? false,
     notes: (row.notes as string | null) || null,
@@ -380,12 +404,12 @@ export async function listBuildPaintProjectsByCategory(categoryId: string): Prom
   return (data ?? []).map((r: Record<string, unknown>) => ({
     id: r.id as string,
     title: (r.name as string) ?? 'Untitled',
-    status: (r.status as string) ?? 'in_progress',
+    status: normalizeProjectStatus(r.status) ?? 'in_progress',
     categoryId: (r.category_id as string | null) ?? undefined,
     itemId: (r.item_id as string | null) ?? undefined,
     imageUrl: (r.image_url as string | null) ?? undefined,
     percent: 0,
-    isCompleted: ['finished', 'completed', 'displayed'].includes(((r.status as string) || '').toLowerCase()),
+    isCompleted: FINISHED_STATUSES.has(normalizeProjectStatus(r.status) ?? ''),
     paintRecipes: [],
     createdAt: (r.created_at as string | null) ?? new Date().toISOString(),
     updatedAt: (r.last_updated as string | null) ?? new Date().toISOString(),
@@ -414,12 +438,12 @@ export async function listBuildPaintProjectsByItem(itemId: string): Promise<Buil
   return (data ?? []).map((r: Record<string, unknown>) => ({
     id: r.id as string,
     title: (r.name as string) ?? 'Untitled',
-    status: (r.status as string) ?? 'in_progress',
+    status: normalizeProjectStatus(r.status) ?? 'in_progress',
     categoryId: (r.category_id as string | null) ?? undefined,
     itemId: (r.item_id as string | null) ?? undefined,
     imageUrl: (r.image_url as string | null) ?? undefined,
     percent: 0,
-    isCompleted: ['finished', 'completed', 'displayed'].includes(((r.status as string) || '').toLowerCase()),
+    isCompleted: FINISHED_STATUSES.has(normalizeProjectStatus(r.status) ?? ''),
     paintRecipes: [],
     createdAt: (r.created_at as string | null) ?? new Date().toISOString(),
     updatedAt: (r.last_updated as string | null) ?? new Date().toISOString(),

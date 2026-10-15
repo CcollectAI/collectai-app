@@ -118,7 +118,11 @@ export const ProjectCard = React.memo(function ProjectCard({
               {(() => {
                 if (project.isCompleted) return 'Finished';
                 const def = getStatusDef(project.categoryId, project.status || '');
-                return def?.label ?? project.status ?? 'Wishlist';
+                if (def) return def.label;
+                // A status outside this category's pipeline (e.g. a legacy
+                // 'Active' row, read as 'in_progress') — words, not the id.
+                const raw = (project.status || 'wishlist').replace(/_/g, ' ');
+                return raw.charAt(0).toUpperCase() + raw.slice(1);
               })()}
             </Text>
           </View>
