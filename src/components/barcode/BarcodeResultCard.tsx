@@ -20,6 +20,25 @@ import type { BarcodeLookupResult } from '@/data';
 import type { CurrencyCode } from '@/data/types';
 import type { IntakeResultResponse } from '@/api/collectorsApi';
 import { openAffiliateUrl } from '@/utils/affiliateHelpers';
+import { Image } from 'expo-image';
+import { categoryDisplayName } from '@/constants/categories';
+
+/**
+ * Where the identification came from, in words a member knows — or null to
+ * show nothing. The card printed the raw method ("Identified via: barcode
+ * openlibrary") and "(90% confidence)", a constant the orchestrator sets on
+ * every barcode hit with a name and a category, not a measurement (walked
+ * 2026-10-15). Vision-supplemented methods ("barcode_google+vision_…") are
+ * named by their barcode source.
+ */
+function identifiedVia(method: string | null | undefined): string | null {
+  const m = method ?? '';
+  if (m.startsWith('barcode_openlibrary')) return 'Open Library';
+  if (m.startsWith('barcode_google')) return 'Google Books';
+  if (m.startsWith('barcode_catalog')) return 'catalogue';
+  if (m.startsWith('barcode_learned')) return 'members';
+  return null;
+}
 
 interface BarcodeResultCardProps {
   lookupResult: BarcodeLookupResult;
@@ -67,6 +86,7 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
   // so a missing title means nothing was identified. Fall back to the title
   // itself in case a caller supplies the result without that array.
   const recognised = Boolean(lookupResult.title) && !(lookupResult.missingRequired ?? []).includes('title');
+  const via = recognised ? identifiedVia(intakeResult?.identification_method) : null;
 
   return (
     <ScrollView style={styles.resultContainer} contentContainerStyle={styles.resultContent}>
@@ -91,9 +111,21 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
         </View>
 
         {recognised ? (
-          <Text style={[styles.productTitle, { color: colors.text }]}>
-            {lookupResult.title}
-          </Text>
+          <View style={styles.titleRow}>
+            {/* The lookup returns the cover (Open Library / Google Books /
+                catalogue image); the card never showed it. */}
+            {lookupResult.imageUrl ? (
+              <Image
+                source={{ uri: lookupResult.imageUrl }}
+                style={[styles.cover, { backgroundColor: colors.background }]}
+                contentFit="cover"
+                accessibilityIgnoresInvertColors
+              />
+            ) : null}
+            <Text style={[styles.productTitle, styles.titleText, { color: colors.text }]}>
+              {lookupResult.title}
+            </Text>
+          </View>
         ) : (
           <Text style={[styles.productMetaText, { color: colors.muted }]}>
             {t('barcode.not_recognised_hint')}
@@ -104,19 +136,22 @@ export const BarcodeResultCard = React.memo(function BarcodeResultCard({
           <View style={styles.productMeta}>
             <Ionicons name="folder-outline" size={16} color={colors.muted} />
             <Text style={[styles.productMetaText, { color: colors.muted }]}>
-              {lookupResult.categoryId}
-              {intakeResult ? ` (${Math.round(intakeResult.category_confidence * 100)}% confidence)` : ''}
+              {categoryDisplayName(lookupResult.categoryId)}
             </Text>
           </View>
         )}
 
         {/* Only for a result that WAS identified: an unrecognised code read
             "Identified via: manual" under "Not recognised" (walk 2026-09-27). */}
-        {recognised && intakeResult?.identification_method && (
+        {via && (
           <View style={styles.productMeta}>
             <Ionicons name="bulb-outline" size={16} color={colors.muted} />
             <Text style={[styles.productMetaText, { color: colors.muted }]}>
-              Identified via: {intakeResult.identification_method.replace(/_/g, ' ')}
+              {via === 'catalogue'
+                ? t('barcode.via_catalogue', { defaultValue: 'Found in the Sparrow catalogue' })
+                : via === 'members'
+                  ? t('barcode.via_members', { defaultValue: 'Recognised from what members saved' })
+                  : t('barcode.via_source', { source: via, defaultValue: 'Found via {{source}}' })}
             </Text>
           </View>
         )}
@@ -289,6 +324,19 @@ const styles = StyleSheet.create({
   productFound: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  cover: {
+    width: 56,
+    height: 80,
+    borderRadius: 6,
+  },
+  titleText: {
+    flex: 1,
   },
   productTitle: {
     fontSize: 18,

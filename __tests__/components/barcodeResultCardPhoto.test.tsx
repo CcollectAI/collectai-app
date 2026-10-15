@@ -35,11 +35,24 @@ it('recognised: no photo fallback', () => {
 it('unrecognised: no "Identified via" line (it read "Identified via: manual", walk 2026-09-27)', () => {
   const p = { ...props(null), intakeResult: { identification_method: 'manual' } as never };
   const { queryByText } = render(<BarcodeResultCard {...p} onIdentifyByPhoto={jest.fn()} />);
-  expect(queryByText(/Identified via/)).toBeNull();
+  expect(queryByText(/Found via|Recognised from|Found in the/)).toBeNull();
 });
 
 it('recognised: says how it was identified', () => {
   const p = { ...props('LEGO Millennium Falcon'), intakeResult: { identification_method: 'barcode_learned' } as never };
   const { queryByText } = render(<BarcodeResultCard {...p} onIdentifyByPhoto={jest.fn()} />);
-  expect(queryByText(/Identified via: barcode learned/)).not.toBeNull();
+  expect(queryByText('Recognised from what members saved')).not.toBeNull();
+});
+
+it('recognised: names the source in words, never the raw method or a constant %', () => {
+  // Was "Identified via: barcode openlibrary" and "comic_books (90% confidence)",
+  // the 90 a constant set on every barcode hit (walked 2026-10-15).
+  const p = {
+    ...props('Naruto, Vol 1'),
+    lookupResult: { ...props('Naruto, Vol 1').lookupResult, categoryId: 'comic_books' },
+    intakeResult: { identification_method: 'barcode_openlibrary', category_confidence: 0.9 } as never,
+  };
+  const { queryByText } = render(<BarcodeResultCard {...p} onIdentifyByPhoto={jest.fn()} />);
+  expect(queryByText('Found via Open Library')).not.toBeNull();
+  expect(queryByText(/openlibrary|comic_books|confidence/)).toBeNull();
 });

@@ -354,7 +354,10 @@
     "cant_scan_hint": "스캔이 안 되나요? 뒤표지의 ISBN을 입력하세요",
     "invalid_length": "유효한 ISBN(10자리 또는 13자리)을 입력하세요",
     "invalid_check_digit": "이 코드의 마지막 숫자가 나머지와 맞지 않습니다. 숫자를 확인하고 다시 시도하세요.",
-    "type_code_instead": "코드 직접 입력"
+    "type_code_instead": "코드 직접 입력",
+    "via_catalogue": "Sparrow 카탈로그에서 찾았습니다",
+    "via_members": "회원들이 저장한 내용으로 인식했습니다",
+    "via_source": "{{source}}에서 찾았습니다"
   },
   "filters": {
     "close_a11y": "필터 닫기",

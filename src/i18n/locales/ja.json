@@ -354,7 +354,10 @@
     "cant_scan_hint": "スキャンできませんか？ 裏表紙のISBNを入力してください",
     "invalid_length": "有効なISBN（10桁または13桁）を入力してください",
     "invalid_check_digit": "このコードの最後の数字が他の数字と一致しません。数字を確認してもう一度お試しください。",
-    "type_code_instead": "コードを入力する"
+    "type_code_instead": "コードを入力する",
+    "via_catalogue": "Sparrowカタログで見つかりました",
+    "via_members": "メンバーの保存内容から認識しました",
+    "via_source": "{{source}}で見つかりました"
   },
   "filters": {
     "close_a11y": "フィルターを閉じる",
