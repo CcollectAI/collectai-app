@@ -101,6 +101,39 @@ describe('PermissionScreen', () => {
     });
   });
 
+  describe('Android after a one-time grant expired (canAskAgain: false, 2026-10-15)', () => {
+    const { Platform } = require('react-native');
+    const realOS = Platform.OS;
+    beforeEach(() => { Platform.OS = 'android'; });
+    afterEach(() => { Platform.OS = realOS; });
+
+    it('asks first, and does not open Settings when the ask is granted', async () => {
+      const spy = jest.spyOn(Linking, 'openSettings').mockImplementation(() => Promise.resolve());
+      const onGrant = jest.fn().mockResolvedValue({ granted: true });
+      const { getByText } = render(
+        <PermissionScreen onGrant={onGrant} onCancel={jest.fn()} hapticsEnabled={false}
+          canAskAgain={false} colors={colors} />,
+      );
+      fireEvent.press(getByText('Open Settings'));
+      await new Promise((r) => setImmediate(r));
+      expect(onGrant).toHaveBeenCalledTimes(1);
+      expect(spy).not.toHaveBeenCalled();
+    });
+
+    it('opens Settings when Android still refuses', async () => {
+      const spy = jest.spyOn(Linking, 'openSettings').mockImplementation(() => Promise.resolve());
+      const onGrant = jest.fn().mockResolvedValue({ granted: false });
+      const { getByText } = render(
+        <PermissionScreen onGrant={onGrant} onCancel={jest.fn()} hapticsEnabled={false}
+          canAskAgain={false} colors={colors} />,
+      );
+      fireEvent.press(getByText('Open Settings'));
+      await new Promise((r) => setImmediate(r));
+      expect(onGrant).toHaveBeenCalledTimes(1);
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('always leaves a way back out', () => {
     // By accessibility LABEL, not by visible text. This asserted
     // `getByText('Go Back')` and went red when the copy moved to

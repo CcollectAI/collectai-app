@@ -7,6 +7,13 @@
  * `granted: false, canAskAgain: false` and no dialog ever appears again — so a
  * button that only calls `requestPermission()` is dead from that point on. When
  * `canAskAgain` is false the only route back is Settings.
+ *
+ * ANDROID IS DIFFERENT (2026-10-15). After an "Only this time" grant expires,
+ * Android cannot tell "never asked" from "denied for good", and expo reports
+ * `canAskAgain: false` although a request WOULD show the dialog. Walked on the
+ * emulator: the barcode scanner said "Camera Access Is Off … Open Settings"
+ * for a permission nobody had turned off. So on Android the blocked button
+ * asks first and opens Settings only if the answer is still no.
  */
 import React from 'react';
 import {
@@ -14,6 +21,7 @@ import {
   Text,
   StyleSheet,
   Linking,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedPressable } from '@/motion';
@@ -24,7 +32,8 @@ import { useTranslation } from 'react-i18next';
 const TIFFANY = BRAND_COLORS.tiffany;
 
 interface PermissionScreenProps {
-  onGrant: () => void;
+  /** expo's requestPermission — its result decides the Android fallback. */
+  onGrant: () => void | Promise<{ granted: boolean } | void>;
   onCancel: () => void;
   hapticsEnabled: boolean;
   /**
@@ -71,13 +80,18 @@ function PermissionScreenInner({
         </Text>
         <AnimatedPressable
           style={[styles.permissionButton, { backgroundColor: TIFFANY }]}
-          onPress={() => {
+          onPress={async () => {
             fireHaptic(HapticIntent.CONFIRMATION_LIGHT, { enabled: hapticsEnabled });
-            if (blocked) {
-              Linking.openSettings();
-            } else {
+            if (!blocked) {
               onGrant();
+              return;
             }
+            if (Platform.OS === 'android') {
+              // Ask first — see the header. Settings only if still refused.
+              const res = await Promise.resolve(onGrant()).catch(() => undefined);
+              if (res && res.granted) return;
+            }
+            Linking.openSettings();
           }}
           accessibilityRole="button"
           accessibilityLabel={
