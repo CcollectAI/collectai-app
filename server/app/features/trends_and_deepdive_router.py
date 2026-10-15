@@ -304,15 +304,20 @@ async def get_portfolio_category_breakdown(
     Portfolio value broken down by category.
     Uses latest q50 price prediction per item.
     """
-    # Check cache (user-specific)
-    cache_key = f"portfolio_breakdown:{user_id}"
-    cached = cache_get(cache_key)
-    if cached is not None:
-        return cached
-
+    # NOT cached (2026-10-15). This held a 6-hour per-user cache that nothing
+    # invalidated, while the header above it on Home reads /portfolio/overview
+    # fresh. Walked as a buyer: after a completed purchase the header and
+    # /portfolio/category-stats counted 9 items, Home's "Total Items" and
+    # Pokémon tile (this endpoint) 8 — for up to six hours after any add,
+    # sale, archive or revaluation. Measured uncached on prod, the three
+    # largest accounts: 28-79 ms. Its siblings carry no cache either.
+    #
+    # A failed read is an ERROR, not an empty portfolio: Home's catch keeps the
+    # rows on screen and says it could not load (app/(tabs)/index.tsx), which
+    # a 200 with [] made impossible — it rendered "Add items" to an owner.
     pool = get_db_pool()
     if not pool:
-        return PortfolioCategoryBreakdownResponse(breakdown=[], total_value=0.0)
+        raise error_response(503, "Portfolio breakdown is unavailable", code="DB_UNAVAILABLE")
 
     try:
         async with pool.acquire() as conn:
@@ -437,12 +442,11 @@ async def get_portfolio_category_breakdown(
                 breakdown=breakdown,
                 total_value=round(total_value, 2),
             )
-            cache_set(cache_key, result, ttl=_DEEPDIVE_CACHE_TTL)
             return result
 
     except Exception as e:
         logger.error(f"[portfolio/category-breakdown] DB error: {e}")
-        return PortfolioCategoryBreakdownResponse(breakdown=[], total_value=0.0)
+        raise error_response(503, "Portfolio breakdown is unavailable", code="DB_UNAVAILABLE")
 
 
 async def _compute_category_deep_dive(

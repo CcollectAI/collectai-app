@@ -328,20 +328,11 @@ class TestItemTrendsMockedDB:
 class TestCategoryBreakdownNoPool:
     """Tests for portfolio category breakdown when no DB pool is available."""
 
-    def test_returns_empty_breakdown(self):
+    def test_no_pool_is_an_error_not_an_empty_portfolio(self):
+        """A 200 with [] rendered "Add items" to an owner; Home's catch can only
+        say "couldn't load" if this is an error (2026-10-15)."""
         resp = client.get("/analytics/portfolio/category-breakdown")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["breakdown"] == []
-        assert data["total_value"] == 0.0
-
-    def test_schema_fields(self):
-        resp = client.get("/analytics/portfolio/category-breakdown")
-        data = resp.json()
-        assert "breakdown" in data
-        assert "total_value" in data
-        assert isinstance(data["breakdown"], list)
-        assert isinstance(data["total_value"], (int, float))
+        assert resp.status_code == 503
 
 
 # ---------------------------------------------------------------------------
@@ -410,33 +401,35 @@ class TestCategoryBreakdownMockedDB:
         assert data["breakdown"][0]["gain_pct"] == 0.0
 
     @patch(f"{MODULE}.get_db_pool")
-    def test_db_error_returns_empty(self, mock_get_pool):
+    def test_db_error_is_an_error(self, mock_get_pool):
         pool, conn = _mock_pool()
         mock_get_pool.return_value = pool
         conn.fetch = AsyncMock(side_effect=Exception("DB failure"))
 
         resp = client.get("/analytics/portfolio/category-breakdown")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["breakdown"] == []
-        assert data["total_value"] == 0.0
+        assert resp.status_code == 503
 
     @patch(f"{MODULE}.cache_get")
-    def test_cache_hit_returns_cached(self, mock_cache_get):
-        """When cache has a hit, the cached data is returned directly."""
-        cached_data = {
-            "breakdown": [
-                {"category": "lego", "item_count": 3, "total_value": 150.0, "pct_of_portfolio": 1.0, "gain_pct": 0.1}
-            ],
+    @patch(f"{MODULE}.get_db_pool")
+    def test_reads_fresh_every_time_never_a_cache(self, mock_get_pool, mock_cache_get):
+        """Home's "Total Items" read 8 for up to 6 h after a purchase made it 9
+        (a per-user cache nothing invalidated; walked 2026-10-15). A stale
+        entry must not be served, and each call reads the DB."""
+        mock_cache_get.return_value = {
+            "breakdown": [{"category": "lego", "item_count": 3, "total_value": 150.0,
+                           "pct_of_portfolio": 1.0, "gain_pct": 0.1}],
             "total_value": 150.0,
         }
-        mock_cache_get.return_value = cached_data
+        pool, conn = _mock_pool()
+        mock_get_pool.return_value = pool
+        conn.fetch = AsyncMock(return_value=[
+            {"category": "pokemon", "item_count": 5, "total_value": 1079.8, "first_total": 1079.8},
+        ])
 
-        resp = client.get("/analytics/portfolio/category-breakdown")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["total_value"] == 150.0
-        assert len(data["breakdown"]) == 1
+        for _ in range(2):
+            data = client.get("/analytics/portfolio/category-breakdown").json()
+            assert data["breakdown"][0]["item_count"] == 5
+        assert conn.fetch.await_count == 2
 
     @patch(f"{MODULE}.get_db_pool")
     def test_breakdown_item_schema(self, mock_get_pool):
