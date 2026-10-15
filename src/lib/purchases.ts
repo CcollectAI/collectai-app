@@ -152,8 +152,25 @@ export async function getOfferings(): Promise<PurchasesOfferings | null> {
     // (docs/MONETIZATION.md). Its .catch shows "Could not load plans." instead.
     // The not-configured guard above still returns null, as purchasesStatus.test
     // requires.
-    throw e instanceof Error ? e : new Error('Could not load offerings');
+    if (e instanceof Error) throw e;
+    // Keep RevenueCat's code when wrapping: isBillingUnavailableError reads it.
+    throw Object.assign(new Error('Could not load offerings'), { code: (e as { code?: unknown })?.code });
   }
+}
+
+/**
+ * The store will not sell on this device at all — RevenueCat
+ * PURCHASE_NOT_ALLOWED_ERROR ("3"): no Google account in the Play Store
+ * (seen on the emulator 2026-10-15, "Billing is not available in this
+ * device"), a phone without Play services, or in-app purchases turned off in
+ * iOS Screen Time. Unlike a network failure, retrying never helps, so the
+ * subscription screen says what to change instead of "check your connection".
+ */
+export function isBillingUnavailableError(e: unknown): boolean {
+  const err = e as { code?: unknown; userInfo?: { readableErrorCode?: unknown }; readableErrorCode?: unknown } | null;
+  return String(err?.code ?? '') === '3'
+    || err?.userInfo?.readableErrorCode === 'PurchaseNotAllowedError'
+    || err?.readableErrorCode === 'PurchaseNotAllowedError';
 }
 
 export type PurchaseResult =

@@ -1005,7 +1005,9 @@
     "restore_none": "Aucun achat précédent trouvé.",
     "restored": "Restauré — vous avez l’offre {{plan}}.",
     "manage_open_failed": "Impossible d’ouvrir la page des abonnements.",
-    "plans_load_error": "Impossible de charger les offres."
+    "plans_load_error": "Impossible de charger les offres.",
+    "billing_unavailable_ios": "Les achats intégrés sont désactivés sur cet appareil. Autorisez-les dans Réglages → Temps d'écran → Restrictions → Achats dans l'iTunes et l'App Store, puis réessayez.",
+    "billing_unavailable_android": "Google Play ne peut pas accepter de paiement sur cet appareil. Ouvrez le Play Store, connectez-vous avec votre compte Google, puis réessayez. Déjà abonné ? Utilisez Restaurer les achats ci-dessous."
   },
   "mfa": {
     "title": "Authentification à deux facteurs",

@@ -29,6 +29,7 @@ import {
   restorePurchases,
   planFromCustomerInfo,
   purchasesStatus,
+  isBillingUnavailableError,
 } from '@/lib/purchases';
 import { useBillingLimits } from '@/hooks/useBillingLimits';
 import { dateLocale, DATE_SHORT_YEAR } from '@/constants/dateFormats';
@@ -144,6 +145,9 @@ function SubscriptionScreen() {
   const [loading, setLoading] = useState(true);
   const [iapUnavailable, setIapUnavailable] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  // The store will not sell on this device (no Play account, Screen Time…):
+  // not a "try again" failure — see isBillingUnavailableError.
+  const [billingUnavailable, setBillingUnavailable] = useState(false);
   const [upgrading, setUpgrading] = useState<'monthly' | 'yearly' | null>(null);
   const [restoring, setRestoring] = useState(false);
   const { profile } = useAuthContext();
@@ -152,6 +156,7 @@ function SubscriptionScreen() {
     setLoading(true);
     setFetchError(null);
     setIapUnavailable(false);
+    setBillingUnavailable(false);
     // Two very different failures rendered the SAME "coming soon" screen, so
     // "the paywall is empty" could not be triaged without a rebuild:
     //   no-key      → RevenueCat never configured (our bug: env var missing)
@@ -201,6 +206,7 @@ function SubscriptionScreen() {
         }
       })
       .catch((err: unknown) => {
+        if (isBillingUnavailableError(err)) setBillingUnavailable(true);
         setFetchError(userErrorMessage(err, t('subscription.plans_load_error'), 'Subscription'));
       })
       .finally(() => setLoading(false));
@@ -436,7 +442,9 @@ function SubscriptionScreen() {
                   legal copy 130 lines below already did this correctly with the
                   same Platform check. Seen on an Android device 2026-09-12: one
                   screen naming two different stores. */}
-              {t(Platform.OS === 'ios' ? 'subscription.store_unreachable_ios' : 'subscription.store_unreachable_android')}
+              {billingUnavailable
+                ? t(Platform.OS === 'ios' ? 'subscription.billing_unavailable_ios' : 'subscription.billing_unavailable_android')
+                : t(Platform.OS === 'ios' ? 'subscription.store_unreachable_ios' : 'subscription.store_unreachable_android')}
             </Text>
             <AnimatedPressable
               onPress={fetchOfferings}

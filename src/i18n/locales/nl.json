@@ -1005,7 +1005,9 @@
     "restore_none": "Geen eerdere aankopen gevonden.",
     "restored": "Hersteld — je hebt {{plan}}.",
     "manage_open_failed": "De abonnementenpagina kon niet worden geopend.",
-    "plans_load_error": "De abonnementen konden niet worden geladen."
+    "plans_load_error": "De abonnementen konden niet worden geladen.",
+    "billing_unavailable_ios": "In-app aankopen staan uit op dit apparaat. Zet ze aan via Instellingen → Schermtijd → Beperkingen → Aankopen in iTunes en App Store, en probeer het opnieuw.",
+    "billing_unavailable_android": "Google Play kan op dit apparaat geen betalingen verwerken. Open de Play Store, log in met je Google-account en probeer het opnieuw. Al geabonneerd? Gebruik Aankopen herstellen hieronder."
   },
   "mfa": {
     "title": "Tweestapsverificatie",

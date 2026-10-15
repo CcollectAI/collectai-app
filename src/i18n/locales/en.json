@@ -1005,7 +1005,9 @@
     "restore_none": "No previous purchases found.",
     "restored": "Restored — you're on {{plan}}.",
     "manage_open_failed": "Could not open the subscriptions page.",
-    "plans_load_error": "Could not load plans."
+    "plans_load_error": "Could not load plans.",
+    "billing_unavailable_ios": "In-app purchases are turned off on this device. Allow them in Settings → Screen Time → Content & Privacy Restrictions → iTunes & App Store Purchases, then try again.",
+    "billing_unavailable_android": "Google Play can't take payments on this device. Open the Play Store, sign in with your Google account, then try again. Already subscribed? Use Restore Purchases below."
   },
   "mfa": {
     "title": "Two-Factor Authentication",

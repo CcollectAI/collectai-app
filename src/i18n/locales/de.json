@@ -1005,7 +1005,9 @@
     "restore_none": "Keine früheren Käufe gefunden.",
     "restored": "Wiederhergestellt — du hast {{plan}}.",
     "manage_open_failed": "Die Abo-Seite konnte nicht geöffnet werden.",
-    "plans_load_error": "Die Tarife konnten nicht geladen werden."
+    "plans_load_error": "Die Tarife konnten nicht geladen werden.",
+    "billing_unavailable_ios": "In-App-Käufe sind auf diesem Gerät deaktiviert. Erlaube sie unter Einstellungen → Bildschirmzeit → Beschränkungen → Käufe im iTunes & App Store und versuche es erneut.",
+    "billing_unavailable_android": "Google Play kann auf diesem Gerät keine Zahlungen annehmen. Öffne den Play Store, melde dich mit deinem Google-Konto an und versuche es erneut. Schon abonniert? Nutze unten Käufe wiederherstellen."
   },
   "mfa": {
     "title": "Zwei-Faktor-Authentifizierung",

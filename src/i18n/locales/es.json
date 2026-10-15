@@ -1005,7 +1005,9 @@
     "restore_none": "No se encontraron compras anteriores.",
     "restored": "Restaurado: tienes {{plan}}.",
     "manage_open_failed": "No se pudo abrir la página de suscripciones.",
-    "plans_load_error": "No se pudieron cargar los planes."
+    "plans_load_error": "No se pudieron cargar los planes.",
+    "billing_unavailable_ios": "Las compras dentro de apps están desactivadas en este dispositivo. Actívalas en Ajustes → Tiempo de uso → Restricciones → Compras en iTunes y App Store y vuelve a intentarlo.",
+    "billing_unavailable_android": "Google Play no puede aceptar pagos en este dispositivo. Abre Play Store, inicia sesión con tu cuenta de Google y vuelve a intentarlo. ¿Ya estás suscrito? Usa Restaurar compras abajo."
   },
   "mfa": {
     "title": "Autenticación en dos pasos",

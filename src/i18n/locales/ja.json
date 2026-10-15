@@ -1005,7 +1005,9 @@
     "restore_none": "以前の購入は見つかりませんでした。",
     "restored": "復元しました — {{plan}} をご利用中です。",
     "manage_open_failed": "サブスクリプションのページを開けませんでした。",
-    "plans_load_error": "プランを読み込めませんでした。"
+    "plans_load_error": "プランを読み込めませんでした。",
+    "billing_unavailable_ios": "このデバイスではアプリ内課金がオフになっています。設定 → スクリーンタイム → コンテンツとプライバシーの制限 → iTunesおよびApp Storeでの購入 で許可してから、もう一度お試しください。",
+    "billing_unavailable_android": "このデバイスではGoogle Playで支払いができません。Playストアを開いてGoogleアカウントでログインしてから、もう一度お試しください。すでに登録済みの場合は、下の「購入を復元」をご利用ください。"
   },
   "mfa": {
     "title": "二要素認証",
