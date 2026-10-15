@@ -6,6 +6,7 @@
  *
  * Server-side: GET /catalog/{category}/items?set_code=… (paged).
  */
+import { ToastHost } from '@/components/Toast';
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
@@ -356,6 +357,7 @@ function CatalogSetScreen() {
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </AnimatedPressable>
           </View>
+          <ToastHost />
         </Modal>
       )}
       <QuickNavBar />

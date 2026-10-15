@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
 
+jest.mock('@/components/Toast', () => ({ ToastHost: () => null, useToast: () => ({ showToast: jest.fn(), dismissToast: jest.fn() }) }));
 jest.mock('@expo/vector-icons', () => ({
   Ionicons: ({ name, ...props }: any) => {
     const { View } = require('react-native');

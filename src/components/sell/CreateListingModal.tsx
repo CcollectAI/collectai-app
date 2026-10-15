@@ -3,6 +3,7 @@
  * with fee preview (backend + local fallback).
  */
 
+import { ToastHost } from '@/components/Toast';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
@@ -178,6 +179,7 @@ export const CreateListingModal = React.memo(function CreateListingModal({
           </AnimatedPressable>
         </View>
       </View>
+      <ToastHost />
     </Modal>
   );
 });

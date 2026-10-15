@@ -2,6 +2,7 @@
  * AddMenuModal — Bottom-sheet menu for adding items (QuickScan, Barcode, Manual).
  */
 
+import { ToastHost } from '@/components/Toast';
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform, Keyboard } from 'react-native';
 import { router } from 'expo-router';
@@ -69,6 +70,7 @@ export const AddMenuModal = React.memo(function AddMenuModal({ visible, onClose 
           ))}
         </View>
       </TouchableOpacity>
+      <ToastHost />
     </Modal>
   );
 });

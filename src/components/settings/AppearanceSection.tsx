@@ -3,6 +3,7 @@
  * Extracted from Settings.tsx.
  */
 
+import { ToastHost } from '@/components/Toast';
 import React, { useState } from 'react';
 import {
   View,
@@ -333,6 +334,7 @@ function AppearanceSectionInner() {
             </TouchableOpacity>
           ))}
         </View>
+        <ToastHost />
       </Modal>
 
       {/* Region Picker Modal */}
@@ -370,6 +372,7 @@ function AppearanceSectionInner() {
             </TouchableOpacity>
           ))}
         </View>
+        <ToastHost />
       </Modal>
 
       {/* Currency Picker Modal */}
@@ -407,6 +410,7 @@ function AppearanceSectionInner() {
             </TouchableOpacity>
           ))}
         </View>
+        <ToastHost />
       </Modal>
 
       {/* Language Picker Modal */}
@@ -444,6 +448,7 @@ function AppearanceSectionInner() {
             </TouchableOpacity>
           ))}
         </View>
+        <ToastHost />
       </Modal>
     </>
   );

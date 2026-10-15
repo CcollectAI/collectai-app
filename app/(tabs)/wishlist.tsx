@@ -37,7 +37,7 @@ import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
 import { useBillingLimits } from '@/hooks/useBillingLimits';
-import { useToast } from '@/components/Toast';
+import { useToast, ToastHost } from '@/components/Toast';
 import logger from '@/utils/logger';
 import { track } from '@/analytics/track';
 import { radius, spacing, text, fontWeight, shadow } from '@/theme/tokens';
@@ -1074,6 +1074,7 @@ function WatchlistTabScreen() {
             </AnimatedPressable>
           </View>
         </KeyboardAvoidingView>
+        <ToastHost />
       </Modal>
 
       {/* Category Picker Modal */}
@@ -1108,6 +1109,7 @@ function WatchlistTabScreen() {
             ))}
           </View>
         </AnimatedPressable>
+        <ToastHost />
       </Modal>
 
       {/* "I Got It!" Acquisition Modal */}
@@ -1183,6 +1185,7 @@ function WatchlistTabScreen() {
             )}
           </View>
         </KeyboardAvoidingView>
+        <ToastHost />
       </Modal>
 
       {/* Edit Target Price Modal */}
@@ -1244,6 +1247,7 @@ function WatchlistTabScreen() {
             )}
           </View>
         </KeyboardAvoidingView>
+        <ToastHost />
       </Modal>
 
       {/* Marketplace picker — opened by the Shop button on a watchlist row.

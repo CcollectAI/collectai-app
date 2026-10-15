@@ -4,6 +4,7 @@
  * Displays a bottom sheet with action options.
  */
 
+import { ToastHost } from '@/components/Toast';
 import React from 'react';
 import {
   View,
@@ -124,6 +125,7 @@ export function ContextMenu({
           </SafeAreaView>
         </Pressable>
       </Pressable>
+      <ToastHost />
     </Modal>
   );
 }

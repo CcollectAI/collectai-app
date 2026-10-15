@@ -79,7 +79,7 @@ jest.mock('../../src/providers/useAuthContext', () => ({
   }),
 }));
 
-jest.mock('../../src/components/Toast', () => ({
+jest.mock('../../src/components/Toast', () => ({ ToastHost: () => null,
   useToast: () => ({ showToast: jest.fn() }),
 }));
 

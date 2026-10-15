@@ -30,7 +30,7 @@ jest.mock('../../src/lib/settings', () => ({
   }),
 }));
 
-jest.mock('../../src/components/Toast', () => ({
+jest.mock('../../src/components/Toast', () => ({ ToastHost: () => null,
   useToast: () => ({ showToast: mockShowToast }),
 }));
 

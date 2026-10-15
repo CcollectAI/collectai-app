@@ -11,6 +11,7 @@
  * "the ones you'd actually buy".
  */
 
+import { ToastHost } from '@/components/Toast';
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -137,6 +138,7 @@ export default function MarketplacePickerSheet({
           ))
         )}
       </View>
+      <ToastHost />
     </Modal>
   );
 }

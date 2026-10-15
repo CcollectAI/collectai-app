@@ -3,6 +3,7 @@
  * Supports category, price range, condition, and saved presets.
  */
 
+import { ToastHost } from '@/components/Toast';
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { parseMoney } from '@/lib/format';
 import {
@@ -543,6 +544,7 @@ function FilterSheetInner({
                   </Pressable>
                 </Pressable>
               </Pressable>
+              <ToastHost />
             </Modal>
               </>
             )}
@@ -728,7 +730,9 @@ function FilterSheetInner({
             </View>
           </View>
         </Pressable>
+        <ToastHost />
       </Modal>
+      <ToastHost />
     </Modal>
   );
 }

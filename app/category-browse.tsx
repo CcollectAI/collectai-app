@@ -12,6 +12,7 @@
  * gone with the redesign — ownership lives on the items tab, the catalog is
  * the museum.
  */
+import { ToastHost } from '@/components/Toast';
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import {
@@ -440,6 +441,7 @@ function CategoryBrowseScreen() {
               <Ionicons name="arrow-back" size={24} color={colors.text} />
             </AnimatedPressable>
           </View>
+          <ToastHost />
         </Modal>
       )}
 

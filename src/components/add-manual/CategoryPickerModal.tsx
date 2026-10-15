@@ -1,3 +1,4 @@
+import { ToastHost } from '@/components/Toast';
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -160,6 +161,7 @@ export const CategoryPickerModal = React.memo(function CategoryPickerModal({
           />
         </View>
       </KeyboardAvoidingView>
+      <ToastHost />
     </Modal>
   );
 });

@@ -8,6 +8,7 @@
  *  - "pageSheet": native page-sheet style (iOS) with full-height container.
  */
 
+import { ToastHost } from '@/components/Toast';
 import React, { useEffect, useRef, type ReactNode } from "react";
 import {
   Modal,
@@ -113,6 +114,7 @@ export function BottomSheetModal({
           </View>
           {children}
         </SafeAreaView>
+        <ToastHost />
       </Modal>
     );
   }
@@ -179,6 +181,7 @@ export function BottomSheetModal({
           </SafeAreaView>
         </View>
       </KeyboardAvoidingView>
+      <ToastHost />
     </Modal>
   );
 }

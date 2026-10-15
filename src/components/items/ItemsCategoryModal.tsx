@@ -1,6 +1,7 @@
 /**
  * ItemsCategoryModal — Modal to bulk-change category of selected items.
  */
+import { ToastHost } from '@/components/Toast';
 import React from 'react';
 import { View, Text, ScrollView, Modal, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -87,6 +88,7 @@ export const ItemsCategoryModal = React.memo(function ItemsCategoryModal({
           </AnimatedPressable>
         </View>
       </AnimatedPressable>
+      <ToastHost />
     </Modal>
   );
 });

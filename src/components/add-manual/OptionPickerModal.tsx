@@ -9,6 +9,7 @@
  * selection)") so the two pickers on one form look and behave alike. No search:
  * the longest option list is ~10 entries.
  */
+import { ToastHost } from '@/components/Toast';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, Platform } from 'react-native';
@@ -84,6 +85,7 @@ export const OptionPickerModal = React.memo(function OptionPickerModal({
           />
         </TouchableOpacity>
       </TouchableOpacity>
+      <ToastHost />
     </Modal>
   );
 });

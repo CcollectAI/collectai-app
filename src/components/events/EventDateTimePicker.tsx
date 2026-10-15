@@ -8,6 +8,7 @@
  *
  * Extracted from app/create-event.tsx to reduce file size.
  */
+import { ToastHost } from '@/components/Toast';
 import React, { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, TextInput, StyleSheet, Platform, Modal, Pressable } from 'react-native';
@@ -178,6 +179,7 @@ export const EventDateTimePicker = React.memo(function EventDateTimePicker({
               />
             </Pressable>
           </Pressable>
+          <ToastHost />
         </Modal>
       ) : (
         picker !== null && (

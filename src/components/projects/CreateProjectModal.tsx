@@ -5,6 +5,7 @@
  * and nested category/item picker modals.
  * Extracted from app/build-paint-projects.tsx to reduce file size.
  */
+import { ToastHost } from '@/components/Toast';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -329,6 +330,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
+        <ToastHost />
       </Modal>
 
       {/* Category Picker Modal */}
@@ -392,6 +394,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
             />
           </View>
         </View>
+        <ToastHost />
       </Modal>
 
       {/* Item Picker Modal */}
@@ -455,6 +458,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
             />
           </View>
         </View>
+        <ToastHost />
       </Modal>
     </>
   );

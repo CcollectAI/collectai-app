@@ -9,6 +9,7 @@
  * - Submit listings to all selected marketplaces at once
  */
 
+import { ToastHost } from '@/components/Toast';
 import React, { useCallback, useMemo } from 'react';
 import { sameCondition } from '@/lib/conditionVocabulary';
 import {
@@ -462,6 +463,7 @@ function ListForSaleModalInner({ hook, onSuccess }: ListForSaleModalProps) {
           </View>
         </View>
       </KeyboardAvoidingView>
+      <ToastHost />
     </Modal>
   );
 }

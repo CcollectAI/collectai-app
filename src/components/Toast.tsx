@@ -56,6 +56,47 @@ const ToastCtx = createContext<ToastContextValue>({
   dismissToast: () => {},
 });
 
+/**
+ * WHERE the toast renders (2026-10-15).
+ *
+ * A native `<Modal>` is its own window on Android, above the app root — so a
+ * toast drawn at the root while a modal is open is drawn UNDER it. Walked on
+ * Android: Edit Profile's "Username may only contain letters, numbers and
+ * underscores" (the server's exact reason, already toasted) was invisible, and
+ * Save read as a dead button. Same for every sheet that toasts while open
+ * (the address save in Pay the seller, …).
+ *
+ * Each modal renders `<ToastHost />` inside itself. RN mounts a Modal's
+ * children only while it is visible, so the hosts mounted ARE the open
+ * modals, last-mounted on top. The toast renders in the topmost host, and at
+ * the root only when no host is mounted. `npm run check:toast-host` fails on a
+ * `<Modal>` file without one.
+ */
+interface ToastRenderValue {
+  node: React.ReactNode;
+  register: () => number;
+  unregister: (id: number) => void;
+  topHost: number | null;
+}
+const ToastRenderCtx = createContext<ToastRenderValue>({
+  node: null,
+  register: () => 0,
+  unregister: () => {},
+  topHost: null,
+});
+let nextHostId = 0;
+
+export function ToastHost() {
+  const { node, register, unregister, topHost } = useContext(ToastRenderCtx);
+  const [id, setId] = useState<number | null>(null);
+  useEffect(() => {
+    const mine = register();
+    setId(mine);
+    return () => unregister(mine);
+  }, [register, unregister]);
+  return id !== null && id === topHost ? <>{node}</> : null;
+}
+
 // --------------- Style config ---------------
 
 /**
@@ -98,6 +139,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   // (app/_layout.tsx), and useAppTheme reads nothing else.
   const { colors } = useAppTheme();
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [hosts, setHosts] = useState<number[]>([]);
+  const register = useCallback(() => {
+    const id = ++nextHostId;
+    setHosts((h) => [...h, id]);
+    return id;
+  }, []);
+  const unregister = useCallback((id: number) => {
+    setHosts((h) => h.filter((x) => x !== id));
+  }, []);
+  const topHost = hosts.length ? hosts[hosts.length - 1] : null;
   const translateY = useRef(new Animated.Value(-120)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -182,7 +233,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   //
   // These four are the on-dark set. Any new one must be light enough to sit on
   // the darkest toast surface in `highContrast.ts`.
-  const cfg = toast
+  const cfg = useMemo(() => (toast
     ? {
         icon: TYPE_ICONS[toast.type],
         surface: {
@@ -201,12 +252,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           info: '#AEE6E1',
         }[toast.type],
       }
-    : null;
+    : null), [toast, colors]);
 
-  return (
-    <ToastCtx.Provider value={value}>
-      {children}
-      {toast && cfg && (
+  const toastNode = useMemo(() => (toast && cfg ? (
         <Animated.View
           style={[
             styles.container,
@@ -236,7 +284,20 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             </View>
           </Pressable>
         </Animated.View>
-      )}
+  ) : null), [toast, cfg, insets.top, translateY, opacity, dismiss]);
+
+  const renderValue = useMemo(
+    () => ({ node: toastNode, register, unregister, topHost }),
+    [toastNode, register, unregister, topHost],
+  );
+
+  return (
+    <ToastCtx.Provider value={value}>
+      <ToastRenderCtx.Provider value={renderValue}>
+        {children}
+        {/* At the root only when no modal is open — see ToastHost. */}
+        {topHost === null ? toastNode : null}
+      </ToastRenderCtx.Provider>
     </ToastCtx.Provider>
   );
 }

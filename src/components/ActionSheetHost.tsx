@@ -11,6 +11,7 @@
  * One host, mounted once in app/_layout.tsx, renders every Android sheet as a
  * scrollable list. `showActionSheet` keeps its signature, so no caller changed.
  */
+import { ToastHost } from '@/components/Toast';
 import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -67,6 +68,7 @@ export function ActionSheetHost() {
           </TouchableOpacity>
         </TouchableOpacity>
       </TouchableOpacity>
+      <ToastHost />
     </Modal>
   );
 }

@@ -10,6 +10,7 @@
  * Replaces the onboarding-time age checkbox (2026-05-18 onboarding rework).
  */
 
+import { ToastHost } from '@/components/Toast';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -111,6 +112,7 @@ export function SellerAgeGateProvider({ children }: { children: React.ReactNode 
             </Pressable>
           </View>
         </View>
+        <ToastHost />
       </Modal>
     </>
   );

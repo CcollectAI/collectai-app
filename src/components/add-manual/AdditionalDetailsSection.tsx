@@ -1,3 +1,4 @@
+import { ToastHost } from '@/components/Toast';
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Keyboard, Platform, Modal, Pressable } from 'react-native';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -153,6 +154,7 @@ export const AdditionalDetailsSection = React.memo(function AdditionalDetailsSec
                 />
               </Pressable>
             </Pressable>
+            <ToastHost />
           </Modal>
         ) : (
           showDatePicker && (

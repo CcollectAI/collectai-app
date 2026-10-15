@@ -3,6 +3,7 @@
  * Provides a visual gallery view with tap to expand functionality.
  */
 
+import { ToastHost } from '@/components/Toast';
 import React, { useState } from 'react';
 import { formatConditionName } from '@/lib/conditionVocabulary';
 import {
@@ -119,6 +120,7 @@ export function ItemGalleryGrid({
             </View>
           </View>
         </Pressable>
+        <ToastHost />
       </Modal>
     );
   };

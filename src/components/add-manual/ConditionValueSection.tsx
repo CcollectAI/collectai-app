@@ -1,3 +1,4 @@
+import { ToastHost } from '@/components/Toast';
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, Modal, FlatList, TouchableOpacity, TextInput, Platform, Keyboard,
@@ -140,6 +141,7 @@ export const ConditionValueSection = React.memo(function ConditionValueSection({
               />
             </View>
           </View>
+          <ToastHost />
         </Modal>
 
         {/* Prices */}

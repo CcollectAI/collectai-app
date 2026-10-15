@@ -2,6 +2,7 @@
  * ConnectMarketplaceModal — Modal for connecting an external marketplace account.
  */
 
+import { ToastHost } from '@/components/Toast';
 import React from 'react';
 import {
   View,
@@ -97,6 +98,7 @@ export const ConnectMarketplaceModal = React.memo(function ConnectMarketplaceMod
           </AnimatedPressable>
         </View>
       </View>
+      <ToastHost />
     </Modal>
   );
 });

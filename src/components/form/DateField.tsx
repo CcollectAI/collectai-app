@@ -3,6 +3,7 @@
  * Displays formatted date text, tappable to open a date picker modal.
  */
 
+import { ToastHost } from '@/components/Toast';
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -197,6 +198,7 @@ export const DateField = React.memo(function DateField({
             </View>
           </Pressable>
         </Pressable>
+        <ToastHost />
       </Modal>
     </View>
   );

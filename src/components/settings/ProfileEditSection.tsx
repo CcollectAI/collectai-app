@@ -35,7 +35,7 @@ import { useRouter, type Href } from 'expo-router';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { useSettings } from '@/lib/settings';
 import { useAuthContext } from '@/providers/useAuthContext';
-import { useToast } from '@/components/Toast';
+import { useToast, ToastHost } from '@/components/Toast';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { updateProfile } from '@/api/settingsApi';
@@ -575,6 +575,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
             </View>
           </View>
         </View>
+        <ToastHost />
       </Modal>
 
       {/* Change Password Modal */}
@@ -626,6 +627,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
             </View>
           </View>
         </View>
+        <ToastHost />
       </Modal>
 
       {/* Delete Account — typed-confirmation modal. Backend requires a
@@ -699,6 +701,7 @@ function ProfileEditSectionInner({ openEditorOnMount = false }: { openEditorOnMo
             />
           </View>
         </View>
+        <ToastHost />
       </Modal>
     </>
   );

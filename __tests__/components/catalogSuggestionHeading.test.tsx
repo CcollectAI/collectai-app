@@ -5,7 +5,7 @@
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
-jest.mock('@/components/Toast', () => ({ useToast: () => ({ showToast: jest.fn() }) }));
+jest.mock('@/components/Toast', () => ({ ToastHost: () => null, useToast: () => ({ showToast: jest.fn() }) }));
 jest.mock('@/api/collectorsApi', () => ({ collectorsApi: {} }));
 import CatalogSuggestionModal from '../../src/components/CatalogSuggestionModal';
 

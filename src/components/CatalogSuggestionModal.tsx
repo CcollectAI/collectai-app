@@ -5,6 +5,7 @@
  * and which category it belongs to, feeding the catalog learning pipeline.
  */
 
+import { ToastHost } from '@/components/Toast';
 import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
@@ -334,8 +335,10 @@ function CatalogSuggestionModalInner({
               />
             </View>
           </View>
+          <ToastHost />
         </Modal>
       </KeyboardAvoidingView>
+      <ToastHost />
     </Modal>
   );
 }

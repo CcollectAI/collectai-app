@@ -26,7 +26,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AnimatedPressable } from '@/motion';
 import { useStaggerReveal } from '@/motion/useStaggerReveal';
 import { fireHaptic, HapticIntent } from '@/haptics';
-import { useToast } from '@/components/Toast';
+import { useToast, ToastHost } from '@/components/Toast';
 import { useSettings, REGION_DEFAULTS, type Region, type SkillLevel } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '@/hooks/useAppTheme';
@@ -751,6 +751,7 @@ function OnboardingScreen() {
               </TouchableOpacity>
             ))}
           </SafeAreaView>
+          <ToastHost />
         </Modal>
       </SafeAreaView>
     </GradientBackground>

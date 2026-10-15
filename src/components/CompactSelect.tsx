@@ -1,3 +1,4 @@
+import { ToastHost } from '@/components/Toast';
 import { useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, TextInput, View, Dimensions } from 'react-native';
 import Icon from '@/components/Icon';
@@ -96,6 +97,7 @@ export default function CompactSelect({ title, value, options, placeholder='Sele
           </ScrollView>
         </Pressable>
       </Pressable>
+      <ToastHost />
     </Modal>
   </>);
 }

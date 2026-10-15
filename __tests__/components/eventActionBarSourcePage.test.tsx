@@ -17,7 +17,7 @@ jest.mock('../../src/motion', () => {
   return { AnimatedPressable: (props: any) => <Pressable {...props} /> };
 });
 jest.mock('../../src/haptics', () => ({ fireHaptic: jest.fn(), HapticIntent: { CONFIRMATION_LIGHT: 'x' } }));
-jest.mock('../../src/components/Toast', () => ({ useToast: () => ({ showToast: jest.fn() }) }));
+jest.mock('../../src/components/Toast', () => ({ ToastHost: () => null, useToast: () => ({ showToast: jest.fn() }) }));
 
 import { EventActionBar } from '../../src/components/events/EventActionBar';
 import type { CollectorsEvent } from '../../src/data/events';

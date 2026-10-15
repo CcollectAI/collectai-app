@@ -3,6 +3,7 @@
  * Uses react-native ScrollView with maximumZoomScale for native zoom behavior.
  */
 
+import { ToastHost } from '@/components/Toast';
 import React from 'react';
 import {
   Modal,
@@ -70,6 +71,7 @@ export function ImageZoomModal({ visible, imageUri, onClose }: ImageZoomModalPro
           />
         </ScrollView>
       </View>
+      <ToastHost />
     </Modal>
   );
 }

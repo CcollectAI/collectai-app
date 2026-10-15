@@ -7,6 +7,7 @@
  *
  * Extracted from app/item/[id].tsx to reduce file size.
  */
+import { ToastHost } from '@/components/Toast';
 import React from "react";
 import {
   View,
@@ -408,6 +409,7 @@ function GradingSectionInner({
             </Pressable>
           </Pressable>
         </Pressable>
+        <ToastHost />
       </Modal>
     </>
   );

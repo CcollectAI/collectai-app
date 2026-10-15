@@ -20,7 +20,7 @@ jest.mock('@/components/BottomSheetModal', () => ({
 }));
 jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
 jest.mock('@/haptics', () => ({ fireHaptic: jest.fn(), HapticIntent: {} }));
-jest.mock('@/components/Toast', () => ({ useToast: () => ({ showToast: jest.fn() }) }));
+jest.mock('@/components/Toast', () => ({ ToastHost: () => null, useToast: () => ({ showToast: jest.fn() }) }));
 jest.mock('@/lib/settings', () => ({ useSettings: () => ({ settings: { currency: 'EUR', numberLocale: 'nl-NL' } }) }));
 jest.mock('@/motion', () => {
   const { Pressable } = require('react-native');

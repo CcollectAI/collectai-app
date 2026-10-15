@@ -3,6 +3,7 @@
  * for event creators.
  */
 
+import { ToastHost } from '@/components/Toast';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Text, Modal, StyleSheet } from 'react-native';
@@ -95,6 +96,7 @@ export const EventCreatorMenu = React.memo(function EventCreatorMenu({
           </AnimatedPressable>
         </View>
       </AnimatedPressable>
+      <ToastHost />
     </Modal>
   );
 });
