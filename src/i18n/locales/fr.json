@@ -312,7 +312,8 @@
     "photo_optional": "Photo (facultatif)",
     "discard_draft_title": "Abandonner le brouillon",
     "full_control": "Saisissez les détails vous-même pour tout contrôler",
-    "extra_details_hint": "Ajoutez les détails propres à votre objet (p. ex. millésime, région, taille)"
+    "extra_details_hint": "Ajoutez les détails propres à votre objet (p. ex. millésime, région, taille)",
+    "select_option": "Choisir…"
   },
   "items_empty": {
     "hero_title": "Commencez votre collection",

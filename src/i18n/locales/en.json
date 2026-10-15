@@ -312,7 +312,8 @@
     "photo_optional": "Photo (Optional)",
     "discard_draft_title": "Discard Draft",
     "full_control": "Enter item details yourself for full control",
-    "extra_details_hint": "Add any details specific to your item (e.g. Vintage, Region, Size)"
+    "extra_details_hint": "Add any details specific to your item (e.g. Vintage, Region, Size)",
+    "select_option": "Select…"
   },
   "items_empty": {
     "hero_title": "Start your collection",

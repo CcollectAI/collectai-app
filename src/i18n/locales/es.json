@@ -312,7 +312,8 @@
     "photo_optional": "Foto (opcional)",
     "discard_draft_title": "Descartar borrador",
     "full_control": "Introduce los datos tú mismo para tener el control total",
-    "extra_details_hint": "Añade los detalles propios de tu artículo (p. ej. año, región, talla)"
+    "extra_details_hint": "Añade los detalles propios de tu artículo (p. ej. año, región, talla)",
+    "select_option": "Elegir…"
   },
   "items_empty": {
     "hero_title": "Empieza tu colección",

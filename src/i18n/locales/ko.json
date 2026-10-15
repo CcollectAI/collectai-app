@@ -312,7 +312,8 @@
     "photo_optional": "사진 (선택 사항)",
     "discard_draft_title": "초안 버리기",
     "full_control": "직접 입력해 모든 것을 관리하세요",
-    "extra_details_hint": "아이템 고유의 정보를 추가하세요 (예: 연식, 지역, 크기)"
+    "extra_details_hint": "아이템 고유의 정보를 추가하세요 (예: 연식, 지역, 크기)",
+    "select_option": "선택…"
   },
   "items_empty": {
     "hero_title": "컬렉션을 시작하세요",

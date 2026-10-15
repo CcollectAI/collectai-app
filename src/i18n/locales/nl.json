@@ -312,7 +312,8 @@
     "photo_optional": "Foto (optioneel)",
     "discard_draft_title": "Concept verwerpen",
     "full_control": "Voer de gegevens zelf in voor volledige controle",
-    "extra_details_hint": "Voeg specifieke details van je item toe (bijv. jaargang, regio, maat)"
+    "extra_details_hint": "Voeg specifieke details van je item toe (bijv. jaargang, regio, maat)",
+    "select_option": "Kies…"
   },
   "items_empty": {
     "hero_title": "Start je collectie",

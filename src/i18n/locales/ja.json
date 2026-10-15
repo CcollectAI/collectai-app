@@ -312,7 +312,8 @@
     "photo_optional": "写真（任意）",
     "discard_draft_title": "下書きを破棄",
     "full_control": "すべて自分で管理するために詳細を手動で入力",
-    "extra_details_hint": "アイテム固有の情報を追加してください（例: 年代、地域、サイズ）"
+    "extra_details_hint": "アイテム固有の情報を追加してください（例: 年代、地域、サイズ）",
+    "select_option": "選択…"
   },
   "items_empty": {
     "hero_title": "コレクションを始めよう",

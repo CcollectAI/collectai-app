@@ -312,7 +312,8 @@
     "photo_optional": "Foto (optional)",
     "discard_draft_title": "Entwurf verwerfen",
     "full_control": "Gib die Angaben selbst ein für volle Kontrolle",
-    "extra_details_hint": "Füge Angaben hinzu, die für dein Objekt spezifisch sind (z. B. Jahrgang, Region, Größe)"
+    "extra_details_hint": "Füge Angaben hinzu, die für dein Objekt spezifisch sind (z. B. Jahrgang, Region, Größe)",
+    "select_option": "Auswählen…"
   },
   "items_empty": {
     "hero_title": "Starte deine Sammlung",

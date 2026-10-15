@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/hooks/useAppTheme';
 import { AnimatedPressable } from '@/motion';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import type { CategoryField } from '@/constants/categoryFields';
+import { OptionPickerModal } from './OptionPickerModal';
 
 interface Props {
   categoryLabel: string;
@@ -17,6 +19,10 @@ export const CategorySpecificFields = React.memo(function CategorySpecificFields
   categoryLabel, fields, values, onChange,
 }: Props) {
   const { colors } = useAppTheme();
+  const { t } = useTranslation();
+  // The select field whose option sheet is open (one at a time).
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const openField = fields.find((f) => f.key === openKey && f.type === 'select');
 
   if (fields.length === 0) return null;
 
@@ -59,29 +65,30 @@ export const CategorySpecificFields = React.memo(function CategorySpecificFields
           }
 
           if (field.type === 'select' && field.options) {
+            // A dropdown, not a chip per option (2026-10-15, Merle). The value
+            // reads like the text fields around it; the options open in a
+            // sheet (OptionPickerModal).
+            const chosen = typeof val === 'string' ? val : '';
             return (
               <View key={field.key} style={styles.fieldBlock}>
                 <Text style={[styles.fieldLabel, { color: colors.text }]}>{field.label}</Text>
-                <View style={styles.chipRow}>
-                  {field.options.map((opt) => {
-                    const isSelected = val === opt;
-                    return (
-                      <AnimatedPressable
-                        key={opt}
-                        style={[
-                          styles.selectChip,
-                          { backgroundColor: isSelected ? colors.accent + '20' : colors.background, borderColor: isSelected ? colors.accent : colors.border },
-                        ]}
-                        onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); onChange(field.key, val === opt ? '' : opt); }}
-                        accessibilityRole="button"
-                        accessibilityLabel={`${field.label}: ${opt}`}
-                        accessibilityState={{ selected: isSelected }}
-                      >
-                        <Text style={[styles.selectChipText, { color: isSelected ? colors.accent : colors.text }]}>{opt}</Text>
-                      </AnimatedPressable>
-                    );
-                  })}
-                </View>
+                <AnimatedPressable
+                  onPress={() => { fireHaptic(HapticIntent.CONFIRMATION_LIGHT); setOpenKey(field.key); }}
+                  style={[styles.inputWrap, { borderColor: chosen ? colors.accent : colors.border, backgroundColor: colors.background }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${field.label}: ${chosen || t('add_manual.select_option', { defaultValue: 'Select…' })}`}
+                >
+                  <Ionicons
+                    name={(field.icon ?? 'list-outline') as keyof typeof Ionicons.glyphMap}
+                    size={16}
+                    color={colors.muted}
+                    style={styles.inputIcon}
+                  />
+                  <Text style={[styles.input, { color: chosen ? colors.text : colors.muted }]} numberOfLines={1}>
+                    {chosen || t('add_manual.select_option', { defaultValue: 'Select…' })}
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color={colors.muted} />
+                </AnimatedPressable>
               </View>
             );
           }
@@ -110,6 +117,14 @@ export const CategorySpecificFields = React.memo(function CategorySpecificFields
           );
         })}
       </View>
+      <OptionPickerModal
+        visible={!!openField}
+        title={openField?.label ?? ''}
+        options={openField?.options ?? []}
+        selected={openField && typeof values[openField.key] === 'string' ? (values[openField.key] as string) : ''}
+        onSelect={(value) => { if (openField) onChange(openField.key, value); }}
+        onClose={() => setOpenKey(null)}
+      />
     </View>
   );
 });
@@ -126,9 +141,6 @@ const styles = StyleSheet.create({
   },
   inputIcon: { marginRight: 8 },
   input: { flex: 1, fontSize: 14, paddingVertical: 0 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  selectChip: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8, borderWidth: 1 },
-  selectChipText: { fontSize: 12, fontWeight: '500' },
   booleanRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth,
