@@ -1775,7 +1775,8 @@
     "sales_without_basis_one": "1 Verkauf ausgeschlossen — kein Kaufpreis hinterlegt",
     "sales_without_basis_many": "{{count}} Verkäufe ausgeschlossen — kein Kaufpreis hinterlegt",
     "sales_without_postage_one": "1 Verkauf ausgeschlossen — Porto nicht hinterlegt",
-    "sales_without_postage_many": "{{count}} Verkäufe ausgeschlossen — Porto nicht hinterlegt"
+    "sales_without_postage_many": "{{count}} Verkäufe ausgeschlossen — Porto nicht hinterlegt",
+    "window_days": "Letzte {{count}} Tage"
   },
   "guide": {
     "no_guide_yet": "Noch kein Leitfaden für diese Kategorie",

@@ -51,6 +51,7 @@ import { UpgradePrompt } from "@/components/UpgradePrompt";
 // Import analytics store
 import {
   fetchPortfolioSnapshot,
+  PERFORMANCE_WINDOW_DAYS,
 } from "@/store/portfolioAnalyticsStore";
 import type { PortfolioSnapshot } from "@/analytics/portfolioMetrics";
 import { dataProvider } from "@/data";
@@ -568,7 +569,12 @@ function AnalyticsScreen() {
         {pl && (
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardHeader}>
-              <Text style={[styles.cardTitle, { color: colors.text }]}>Performance</Text>
+              <View>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>Performance</Text>
+                <Text style={[styles.windowLabel, { color: colors.muted }]}>
+                  {t('analytics.window_days', { count: PERFORMANCE_WINDOW_DAYS, defaultValue: 'Last {{count}} days' })}
+                </Text>
+              </View>
               {/* No badge without a baseline. "0.00%" beside "+EUR 8,070"
                   was the card contradicting itself on a real account. */}
               {pl.hasBaseline ? (
@@ -1191,6 +1197,10 @@ const styles = StyleSheet.create({
     fontSize: text.lg,
     fontWeight: fontWeight.bold,
     // color set inline via colors.text
+  },
+  windowLabel: {
+    fontSize: text.sm,
+    marginTop: 2,
   },
   cardSubtitle: {
     fontSize: text.md,

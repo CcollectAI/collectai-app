@@ -155,12 +155,17 @@ const DEMO_ITEMS: PortfolioItemSnapshot[] = [
 // so a stale value never outlives its series.
 let lastMarketChange: number | null = null;
 
+/** The Performance window. Analytics labels its card with this (2026-10-15):
+ *  unlabelled, its 30-day "+EUR 0" sat beside Home's default 7D "+EUR 43" and
+ *  read as a contradiction — both were right. */
+export const PERFORMANCE_WINDOW_DAYS = 30;
+
 async function loadSeriesFromBackend(): Promise<TimeSeriesPoint[] | null> {
   lastMarketChange = null;
   try {
     // A range is REQUIRED: the old call passed none, so the duplicate client
     // built `?range=undefined`.
-    const raw = await getPortfolioTimeseries('30d');
+    const raw = await getPortfolioTimeseries(`${PERFORMANCE_WINDOW_DAYS}d`);
 
     if (!raw) return null;
     lastMarketChange = extractMarketChange(raw);

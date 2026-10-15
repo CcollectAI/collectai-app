@@ -1775,7 +1775,8 @@
     "sales_without_basis_one": "1 sale excluded — no purchase price recorded",
     "sales_without_basis_many": "{{count}} sales excluded — no purchase price recorded",
     "sales_without_postage_one": "1 sale excluded — postage not recorded",
-    "sales_without_postage_many": "{{count}} sales excluded — postage not recorded"
+    "sales_without_postage_many": "{{count}} sales excluded — postage not recorded",
+    "window_days": "Last {{count}} days"
   },
   "guide": {
     "no_guide_yet": "No guide for this category yet",

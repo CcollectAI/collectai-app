@@ -1775,7 +1775,8 @@
     "sales_without_basis_one": "1건 제외 — 구매가가 기록되지 않음",
     "sales_without_basis_many": "{{count}}건 제외 — 구매가가 기록되지 않음",
     "sales_without_postage_one": "1건 제외 — 배송비가 기록되지 않음",
-    "sales_without_postage_many": "{{count}}건 제외 — 배송비가 기록되지 않음"
+    "sales_without_postage_many": "{{count}}건 제외 — 배송비가 기록되지 않음",
+    "window_days": "최근 {{count}}일"
   },
   "guide": {
     "no_guide_yet": "이 카테고리의 가이드가 아직 없습니다",

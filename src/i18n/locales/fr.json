@@ -1775,7 +1775,8 @@
     "sales_without_basis_one": "1 vente exclue — aucun prix d'achat enregistré",
     "sales_without_basis_many": "{{count}} ventes exclues — aucun prix d'achat enregistré",
     "sales_without_postage_one": "1 vente exclue — frais de port non enregistrés",
-    "sales_without_postage_many": "{{count}} ventes exclues — frais de port non enregistrés"
+    "sales_without_postage_many": "{{count}} ventes exclues — frais de port non enregistrés",
+    "window_days": "{{count}} derniers jours"
   },
   "guide": {
     "no_guide_yet": "Pas encore de guide pour cette catégorie",

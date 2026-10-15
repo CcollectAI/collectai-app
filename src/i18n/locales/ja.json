@@ -1775,7 +1775,8 @@
     "sales_without_basis_one": "1 件を除外 — 購入価格が未記録",
     "sales_without_basis_many": "{{count}} 件を除外 — 購入価格が未記録",
     "sales_without_postage_one": "1 件を除外 — 送料が未記録",
-    "sales_without_postage_many": "{{count}} 件を除外 — 送料が未記録"
+    "sales_without_postage_many": "{{count}} 件を除外 — 送料が未記録",
+    "window_days": "過去{{count}}日間"
   },
   "guide": {
     "no_guide_yet": "このカテゴリーのガイドはまだありません",
