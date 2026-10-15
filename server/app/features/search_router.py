@@ -17,6 +17,8 @@ from app.lib.db_helpers import get_db_pool
 from app.lib.json_safe import json_safe_rows
 from app.rate_limit import per_user_rate_limit
 
+from app.features.events.events_helpers import display_gate_sql
+
 router = APIRouter(prefix="/search", tags=["Search"])
 logger = logging.getLogger(__name__)
 
@@ -147,6 +149,24 @@ async def unified_search(
     # the candidate set — it never changes which rows qualify.
     like_anchor = max(like_terms, key=len)
 
+    # Items and catalogue match on public.search_key() (migration
+    # 20261015_catalog_search_key): lower-case, accents folded, punctuation and
+    # spaces removed, title + category on the row side. "1989 taylors version",
+    # "gameboy" and "one piece op01" found nothing / one oddity / 1 of 227
+    # before. The RAW words go to SQL and are normalised there by the same
+    # function, so the two sides cannot disagree. A query with no letter or
+    # digit at all ("&&") is skipped: every word would normalise to '' and
+    # LIKE ALL over an empty set is TRUE — the whole catalogue.
+    raw_terms = [t for t in q.split() if t][:LIKE_TERM_LIMIT]
+    has_text = any(ch.isalnum() for ch in q)
+    # Words with a letter or digit, each bound as its own parameter ($4..).
+    # Parameters, never interpolated: the SQL text only gains placeholders.
+    indexed_terms = [t for t in raw_terms if any(ch.isalnum() for ch in t)]
+    catalog_term_sql = "".join(
+        f"AND public.search_key(c.title || ' ' || c.category) LIKE '%' || public.search_key(${4 + i}) || '%' "
+        for i in range(len(indexed_terms))
+    )
+
     items = []
     catalog = []
     users = []
@@ -160,11 +180,16 @@ async def unified_search(
                 """SELECT id, name, category, image_url,
                           estimated_value AS price
                    FROM items
-                   WHERE user_id = $1 AND NOT archived AND name ILIKE ALL($2::text[])
+                   WHERE user_id = $1 AND NOT archived
+                     AND $4::boolean
+                     AND public.search_key(name || ' ' || coalesce(category, '')) LIKE ALL (
+                         SELECT '%' || public.search_key(t) || '%' FROM unnest($2::text[]) t
+                          WHERE public.search_key(t) <> '')
                    LIMIT $3""",
                 user_id,
-                like_terms,
+                raw_terms,
                 limit,
+                has_text,
             )
             items = [dict(r) for r in item_rows] if item_rows else []
 
@@ -207,16 +232,33 @@ async def unified_search(
                           -- row would have rendered "No price yet" — the feature
                           -- would have shipped dead and looked like missing data.
                           round(mp.price_eur::numeric, 2)::float8 AS price_eur
-                   FROM category_items ci
+                   -- At most 200 CANDIDATES from the index, then the priced-first
+                   -- sort over those. The category is part of the key, so a bare
+                   -- "pokemon" matches every Pokémon row (22,065) and sorting
+                   -- them all took 985 ms; bounded: 15 ms (EXPLAIN ANALYZE on
+                   -- prod, 2026-10-15). "Priced first" now means among those
+                   -- candidates — it was never a relevance ranking.
+                   FROM (
+                       SELECT * FROM category_items c
+                        WHERE $3::boolean
+                          -- One indexed LIKE PER WORD, so the trigram index
+                          -- (idx_category_items_search_key_trgm) intersects
+                          -- them: "pokémon pikachu" anchored on one word
+                          -- fetched all 22k Pokémon rows to find Pikachus.
+                          """ + catalog_term_sql + """
+                          AND public.search_key(c.title || ' ' || c.category) LIKE ALL (
+                              SELECT '%' || public.search_key(t) || '%' FROM unnest($1::text[]) t
+                               WHERE public.search_key(t) <> '')
+                        LIMIT 200
+                   ) ci
                    LEFT JOIN public.mv_catalog_item_price mp
                           ON mp.category = ci.category AND mp.item_key = ci.item_key
-                   WHERE ci.title ILIKE $1
-                     AND ci.title ILIKE ALL($2::text[])
                    ORDER BY (mp.price_eur IS NULL), ci.title ASC
-                   LIMIT $3""",
-                like_anchor,
-                like_terms,
+                   LIMIT $2""",
+                raw_terms,
                 limit,
+                has_text,
+                *indexed_terms,
             )
             catalog = [dict(r) for r in catalog_rows] if catalog_rows else []
 
@@ -234,12 +276,22 @@ async def unified_search(
             # Search events. events has no `start_date`; the FE-facing
             # date is `date` (and the precise timestamp is `starts_at`).
             event_rows = await conn.fetch(
-                """SELECT id, title, date AS start_date, location, category, status
+                # The FEED's gate, not just "not cancelled" (2026-10-15):
+                # search returned past events, dedup-quarantined twins
+                # (status 'rejected') and newsletter rows — the "reader that
+                # skipped the gate" class, EVENT_QUALITY_PLAN 2026-09-14.
+                f"""SELECT id, title, date AS start_date, location, category, status
                    FROM events
-                   WHERE title ILIKE ALL($1::text[]) AND status != 'cancelled'
+                   WHERE title ILIKE ALL($1::text[])
+                     AND status = 'published'
+                     AND date >= CURRENT_DATE
+                     AND (is_public = true OR created_by = $3::uuid)
+                     AND {display_gate_sql()}
+                   ORDER BY date ASC
                    LIMIT $2""",
                 like_terms,
                 limit,
+                user_id,
             )
             events = [dict(r) for r in event_rows] if event_rows else []
 
