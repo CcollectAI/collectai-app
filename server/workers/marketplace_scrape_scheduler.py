@@ -253,6 +253,13 @@ _TCG_REJECT_TOKENS = (
     "custom", "proxy", "playmat", "sleeve", "token", "alter", "altered",
     "sticker", "poster", "art print", "hand-painted", "hand painted",
     "digital", "code card", "empty box", "binder",
+    # Added 2026-10-15 from rows stored under a watched card's item_ref:
+    # the digital game ("Pokemon TCG Pocket - Korrina"), fan-made cards
+    # ("Gyarados VMAX *Fan Art*", "Thicc Snorlax NOT REAL meme Card (Unofficial
+    # Parody)") and a box sold without its cards ("Mega Charizard EX UPC (No
+    # Cards)"). Not bare "pocket": Japanese listings say "Pocket Monsters".
+    "tcg pocket", "fan art", "parody", "not real", "unofficial", "no card",
+    "upc", "ultra premium",
     # Sealed product / multi-card, not the single card. Added 2026-08-06 after
     # "2 Pokemon TCG Mega Moonlit ex Tin Bundle Clefable & Gengar Sealed New"
     # (€45.05) was persisted against `pokemon:base2-base2-1` (Base Set 2
@@ -351,8 +358,24 @@ def _collector_number(item_key: str) -> str | None:
     return None
 
 
-def _printing_matches(listing_title: str, collector_no: str | None) -> bool:
+# Categories whose sellers reliably QUOTE the collector number, so a listing
+# without one is treated as not-this-card (2026-10-15). Measured on 30 days of
+# eBay rows stored with an item_ref whose key carries a number:
+#   pokemon  894 / 999 (89%) quote it, and a random 25 of the 105 that do not
+#            were nearly all wrong: fan art, a TCG Pocket card, lots, and other
+#            sets ("Chansey Base Set" under xy12-70, "Fossil Cloyster" under
+#            xy1-32). Two of them fired Target Hits on simcheck's "Charizard ex
+#            svp-161" watch.
+#   mtg     1835 / 3128 (59%) — omitting the number is normal there, so MTG
+#            keeps the lenient rule below.
+_NUMBER_REQUIRED_CATEGORIES = frozenset({"pokemon"})
+
+
+def _printing_matches(listing_title: str, collector_no: str | None, require: bool = False) -> bool:
     """Reject a listing that names a DIFFERENT printing's collector number.
+
+    With `require=True` (see _NUMBER_REQUIRED_CATEGORIES) a listing that quotes
+    no number at all is rejected too.
 
     Measured 2026-08-06: `mtg:tdc-332-talisman-of-impulse` (Tarkir Dragonstorm
     #332) collected 14 buyable rows, most of them other printings — Mirrodin
@@ -375,7 +398,7 @@ def _printing_matches(listing_title: str, collector_no: str | None) -> bool:
         return True
     nums = {n.lstrip("0") or "0" for n in re.findall(r"\d+", listing_title or "")}
     if not nums:
-        return True
+        return not require
     return collector_no in nums
 
 
@@ -901,7 +924,8 @@ async def _scrape_listings(conn, agent, item_key: str, title: str, category: str
             lt = str(d.get("title") or "")
             if not _is_plausible_tcg_listing(lt, title, category):
                 continue
-            if not _printing_matches(lt, _collector_number(item_key)):
+            if not _printing_matches(lt, _collector_number(item_key),
+                                     require=category in _NUMBER_REQUIRED_CATEGORIES):
                 continue
             try:
                 p = float(d.get("price_eur") or d.get("price") or 0)

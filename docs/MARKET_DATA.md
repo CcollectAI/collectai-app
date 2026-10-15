@@ -141,6 +141,24 @@ is distinctive, eBay sellers include the set ("Fifth Dawn", "5DN", "120/165")
 and the matches are exact. The failure mode is confined to cards whose name is
 generic or whose printings are indistinguishable by price.
 
+### Pokémon listings must quote the card number (2026-10-15)
+
+Walked on Android: simcheck's "Charizard ex" watch (`svp-svp-161`, €30) had
+Target Hits for "Charizard Charmander Charmeleon…", a TCG Pocket card and
+"Mega Charizard EX UPC (No Cards)". Of 11 eBay rows stored under that
+item_ref in 20 days, **4** were the card. `_printing_matches` accepted any
+listing quoting NO number — right for MTG (59% of listings quote it), wrong
+for Pokémon: **894 / 999 (89%)** quote it, and a random 25 of the other 105
+were nearly all wrong (fan art, Pocket, lots, other sets). Now
+`_NUMBER_REQUIRED_CATEGORIES = {"pokemon"}` rejects a numberless Pokémon
+listing; MTG keeps the lenient rule. Reject tokens gained "tcg pocket",
+"fan art", "parody", "not real", "unofficial", "no card", "upc",
+"ultra premium". Tests: `server/tests/test_tcg_listing_gate.py` (real titles;
+each change mutation-checked). Rows already stored age out with retention.
+
+Re-test: the 30-day share of Pokémon eBay rows WITH an item_ref number whose
+title lacks it should fall toward 0 for rows seen after 2026-10-15.
+
 ### Separate outage found while verifying this (2026-08-06)
 
 `lorcana`, `digimon` and `one_piece_tcg` were on SKIP_CATEGORIES on the strength
