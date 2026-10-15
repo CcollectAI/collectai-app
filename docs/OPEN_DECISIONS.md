@@ -60,6 +60,11 @@ _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in 
 - **Proposed levels:** (1) automatic checklist for the 6 TCGs (~½ day); (2) complete discographies for music formats via Discogs (licence to verify first); (3) **member-defined checklists** for every category — pre-filled from the catalogue's era/series, editable; unused tables `set_registry`/`set_items` exist. Plus: de-duplicate taylor_swift/city_pop_vinyl seed rows (needed before any checklist touches them).
 - **Decide:** order (1→dedupe→3→2 proposed, or 3 first since it covers Taylor Swift), and whether checklists stay Pro.
 
+### 25. Watchlist market prices — re-enable watchlist_monitor_worker? (opened 2026-10-15)
+- **Measured:** all 4 watchlist rows on prod have `last_market_price` NULL and `last_checked_at` NULL; its only writer, `watchlist_monitor_worker`, has been commented out of `bake_orchestrator.py` since the 2026-05-04 pre-launch cut ("9 watchlist items, all dev/seed"). Every watch read "No market price yet".
+- **Done meanwhile (2026-10-15):** card-linked watches show the catalogue price, labelled and dated, by the item_value_v1 rule (`GET /watchlist/mine` → `catalog_price_eur`/`catalog_price_as_of`; app merges by id). "Charizard ex" → €5.53, last seen 12 Oct. Free-text watches (no catalogue card) still show no price.
+- **Decide:** re-enable the worker (live listings + trend per watch; bounded outbound calls — eBay budget ~1.5k/day of 5k used, OPEN_DECISIONS/project_ebay_api_compliance) or keep catalogue-only until there are members. Recommendation: re-enable at public launch.
+
 ## Decided
 
 - **2026-10-13 — Pricing (Merle: "implement all these suggestions")**, after a competitor scan

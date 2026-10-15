@@ -184,7 +184,9 @@
     "remove": "삭제",
     "added": "관심 목록에 추가했습니다",
     "added_named": "“{{title}}”을(를) 관심 목록에 추가했습니다",
-    "scan_no_title": "이 스캔에는 아직 관심 목록에 추가할 제목이 없습니다"
+    "scan_no_title": "이 스캔에는 아직 관심 목록에 추가할 제목이 없습니다",
+    "catalogue_price": "카탈로그 가격 {{price}}",
+    "last_seen": "· 마지막 확인 {{date}}"
   },
   "events": {
     "ticket_fee_hint": "유료 티켓에는 {{pct}}% 플랫폼 수수료가 적용됩니다.",

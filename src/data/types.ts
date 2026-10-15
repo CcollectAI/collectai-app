@@ -143,6 +143,13 @@ export type WatchlistItem = {
   lastMarketPrice?: number | null;
   lastCheckedAt?: string | null;
   priceTrend?: 'up' | 'down' | 'stable' | null;
+  /**
+   * Catalogue price (EUR) for a watch linked to a catalogue card, only when
+   * the card's market data is from this calendar year, with that date
+   * (GET /watchlist/mine, 2026-10-15 — same rule as item_value_v1).
+   */
+  catalogPriceEur?: number | null;
+  catalogPriceAsOf?: string | null;
   marketHitCount?: number;
   sortOrder?: number;
 };

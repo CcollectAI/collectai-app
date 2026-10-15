@@ -184,7 +184,9 @@
     "remove": "Entfernen",
     "added": "Zur Beobachtungsliste hinzugefügt",
     "added_named": "„{{title}}“ zur Beobachtungsliste hinzugefügt",
-    "scan_no_title": "Dieser Scan hat noch keinen Titel zum Beobachten"
+    "scan_no_title": "Dieser Scan hat noch keinen Titel zum Beobachten",
+    "catalogue_price": "Katalogpreis {{price}}",
+    "last_seen": "· zuletzt gesehen {{date}}"
   },
   "events": {
     "ticket_fee_hint": "Für bezahlte Tickets fällt eine Plattformgebühr von {{pct}}% an.",

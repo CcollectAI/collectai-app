@@ -184,7 +184,9 @@
     "remove": "Retirer",
     "added": "Ajouté à votre liste de suivi",
     "added_named": "« {{title}} » ajouté à votre liste de suivi",
-    "scan_no_title": "Ce scan n’a pas encore de titre à suivre"
+    "scan_no_title": "Ce scan n’a pas encore de titre à suivre",
+    "catalogue_price": "Prix catalogue {{price}}",
+    "last_seen": "· vu le {{date}}"
   },
   "events": {
     "ticket_fee_hint": "Des frais de plateforme de {{pct}}% s'appliquent aux billets payants.",

@@ -184,7 +184,9 @@
     "remove": "削除",
     "added": "ウォッチリストに追加しました",
     "added_named": "「{{title}}」をウォッチリストに追加しました",
-    "scan_no_title": "このスキャンにはまだウォッチできるタイトルがありません"
+    "scan_no_title": "このスキャンにはまだウォッチできるタイトルがありません",
+    "catalogue_price": "カタログ価格 {{price}}",
+    "last_seen": "· 最終確認 {{date}}"
   },
   "events": {
     "ticket_fee_hint": "有料チケットには{{pct}}%のプラットフォーム手数料がかかります。",

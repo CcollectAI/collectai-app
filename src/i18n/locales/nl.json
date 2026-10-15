@@ -184,7 +184,9 @@
     "remove": "Verwijderen",
     "added": "Toegevoegd aan je volglijst",
     "added_named": "“{{title}}” toegevoegd aan je volglijst",
-    "scan_no_title": "Deze scan heeft nog geen titel om te volgen"
+    "scan_no_title": "Deze scan heeft nog geen titel om te volgen",
+    "catalogue_price": "Catalogusprijs {{price}}",
+    "last_seen": "· laatst gezien {{date}}"
   },
   "events": {
     "ticket_fee_hint": "Bij betaalde tickets gelden platformkosten van {{pct}}%.",

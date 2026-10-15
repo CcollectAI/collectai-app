@@ -94,7 +94,7 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
     last_checked_at?: string | null;
   }[];
 
-  return rows.map((r) => ({
+  const items: WatchlistItem[] = rows.map((r) => ({
     id: r.id,
     title: r.title,
     priority: r.priority || 'medium',
@@ -116,6 +116,30 @@ export async function listWatchlist(_userId: string): Promise<WatchlistItem[]> {
       : null,
     lastCheckedAt: r.last_checked_at ?? null,
   }));
+
+  // Catalogue prices come from the API, which joins the card's catalogue price
+  // (this list reads watchlist_items directly and has no catalogue join). Only
+  // `last_market_price` was ever shown, and its one writer has been off since
+  // 2026-05-04 — so every watch read "No market price yet" (2026-10-15).
+  try {
+    const res = await collectorsApi.get<{ items?: { id: string; catalog_price_eur?: number | null; catalog_price_as_of?: string | null }[] }>(
+      '/watchlist/mine?limit=200',
+    );
+    const byId = new Map((res?.items ?? []).map((it) => [String(it.id), it]));
+    for (const item of items) {
+      const c = byId.get(String(item.id));
+      if (c) {
+        item.catalogPriceEur = typeof c.catalog_price_eur === 'number' ? c.catalog_price_eur : null;
+        item.catalogPriceAsOf = c.catalog_price_as_of ?? null;
+      }
+    }
+  } catch (e) {
+    // empty-ok: the catalogue price is a supplement. Without it the card shows
+    // exactly what it showed before ("No market price yet"); the list itself
+    // already loaded and is not affected.
+    logger.error('[watchlist] catalogue prices failed:', e);
+  }
+  return items;
 }
 
 export async function addWatchlistItem(input: CreateWatchlistInput): Promise<WatchlistItem> {

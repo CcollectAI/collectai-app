@@ -31,7 +31,8 @@ import { useAuthContext } from '@/providers/useAuthContext';
 import { mayLoadSignedInData } from '@/lib/signedInLoad';
 import { GATE_MAX_WAIT_MS } from '@/hooks/usePaginatedList';
 import { AnimatedPressable, useEnterReveal } from '@/motion';
-import { formatPrice, parseMoney, moneyInputValue } from '@/lib/format';
+import { formatPrice, parseMoney, moneyInputValue, fmtCurrency } from '@/lib/format';
+import { formatValueAsOf } from '@/lib/valueSources';
 import { fireHaptic, HapticIntent } from '@/haptics';
 import { useSettings } from '@/lib/settings';
 import { useTranslation } from 'react-i18next';
@@ -678,6 +679,23 @@ function WatchlistTabScreen() {
                   : item.lastMarketPrice < item.targetPrice
                     ? `· ${formatPrice(item.targetPrice - item.lastMarketPrice, item.currency)} under target`
                     : `· ${formatPrice(item.lastMarketPrice - item.targetPrice, item.currency)} over target`}
+              </Text>
+            ) : null}
+          </View>
+        ) : item.catalogPriceEur != null ? (
+          // Catalogue price for a card-linked watch (2026-10-15): labelled and
+          // dated like the portfolio's catalog_price, never passed off as a
+          // live market price.
+          <View style={styles.marketRow}>
+            <Text style={[styles.marketNow, { color: colors.text }]}>
+              {t('wishlist.catalogue_price', {
+                defaultValue: 'Catalogue price {{price}}',
+                price: fmtCurrency(item.catalogPriceEur, settings),
+              })}
+            </Text>
+            {formatValueAsOf(item.catalogPriceAsOf) ? (
+              <Text style={[styles.marketGap, { color: colors.muted }]} numberOfLines={1}>
+                {t('wishlist.last_seen', { defaultValue: '· last seen {{date}}', date: formatValueAsOf(item.catalogPriceAsOf) })}
               </Text>
             ) : null}
           </View>

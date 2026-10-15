@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import List, Optional
 from uuid import uuid4
 
@@ -41,6 +41,36 @@ async def _record_watchlist_demand(user_id: str, category, item_key) -> None:
         logger.debug("[watchlist] demand signal recording failed: %s", e)
 
 
+# Watchlist rows had no price at all: watchlist_monitor_worker (the only writer
+# of last_market_price) has been off since the 2026-05-04 pre-launch cut, so
+# every watch read "No market price yet" — walked on Android 2026-10-15 with a
+# "Charizard ex" watch whose card trades at ~EUR 6. Same columns and cutoff as
+# item_value_v1's catalog_price, so a card cannot be priced on the item screen
+# and unpriced on the watchlist. Both list queries use these two fragments.
+_CATALOG_COLUMNS = """,
+       CASE WHEN cat.last_day >= date_trunc('year', now())::date
+            THEN cat.price_eur END AS catalog_price_eur,
+       CASE WHEN cat.last_day >= date_trunc('year', now())::date
+            THEN cat.last_day END AS catalog_price_as_of"""
+_CATALOG_JOIN = """
+LEFT JOIN LATERAL (
+    SELECT m.price_eur,
+           (SELECT max(d.day) FROM public.market_hits_daily d
+             WHERE d.item_ref = w.category || ':' || w.item_id) AS last_day
+      FROM public.mv_catalog_item_price m
+     WHERE w.item_id IS NOT NULL
+       AND m.category = w.category AND m.item_key = w.item_id
+     LIMIT 1
+) cat ON TRUE"""
+
+
+def _catalog_fields(r) -> dict:
+    return {
+        "catalog_price_eur": float(r["catalog_price_eur"]) if r["catalog_price_eur"] is not None else None,
+        "catalog_price_as_of": r["catalog_price_as_of"],
+    }
+
+
 class WatchlistItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     user_id: str
@@ -60,6 +90,12 @@ class WatchlistItem(BaseModel):
     target_price: Optional[float] = None
     priority: str = "medium"
     notes: Optional[str] = None
+    # Catalogue price for a watch linked to a catalogue card (2026-10-15), by
+    # the SAME rule as item_value_v1's catalog_price (migration
+    # 20261006_item_value_v1_catalog_price): only when the card's latest market
+    # data is from this calendar year, and always with that date. EUR.
+    catalog_price_eur: Optional[float] = None
+    catalog_price_as_of: Optional[date] = None
 
 
 class WatchlistCreate(BaseModel):
@@ -100,15 +136,15 @@ async def get_my_watchlist(
                 # market_hit_count) were added by migration 20260422.
                 rows = await conn.fetch(
                     """
-                    SELECT id, user_id::text AS user_id, item_id,
-                           title AS name, category,
-                           created_at, predicted_value, currency,
-                           last_market_price, last_checked_at,
-                           price_trend, market_hit_count,
-                           target_price, priority, notes
-                    FROM public.watchlist_items
-                    WHERE user_id = $1::uuid
-                    ORDER BY created_at DESC
+                    SELECT w.id, w.user_id::text AS user_id, w.item_id,
+                           w.title AS name, w.category,
+                           w.created_at, w.predicted_value, w.currency,
+                           w.last_market_price, w.last_checked_at,
+                           w.price_trend, w.market_hit_count,
+                           w.target_price, w.priority, w.notes""" + _CATALOG_COLUMNS + """
+                    FROM public.watchlist_items w""" + _CATALOG_JOIN + """
+                    WHERE w.user_id = $1::uuid
+                    ORDER BY w.created_at DESC
                     LIMIT $2 OFFSET $3
                     """,
                     user_id, limit, offset,
@@ -134,6 +170,7 @@ async def get_my_watchlist(
                         target_price=float(r["target_price"]) if r["target_price"] is not None else None,
                         priority=r["priority"] or "medium",
                         notes=r["notes"],
+                        **_catalog_fields(r),
                     )
                     for r in rows
                 ]
@@ -301,14 +338,14 @@ async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_curren
                 # Mapping: watchlist_items.title → name (alias).
                 rows = await conn.fetch(
                     """
-                    SELECT id, user_id, item_id, title AS name, category,
-                           created_at, predicted_value, currency,
-                           last_market_price, last_checked_at,
-                           price_trend, market_hit_count,
-                           target_price, priority, notes
-                    FROM watchlist_items
-                    WHERE user_id = $1
-                    ORDER BY created_at DESC
+                    SELECT w.id, w.user_id, w.item_id, w.title AS name, w.category,
+                           w.created_at, w.predicted_value, w.currency,
+                           w.last_market_price, w.last_checked_at,
+                           w.price_trend, w.market_hit_count,
+                           w.target_price, w.priority, w.notes""" + _CATALOG_COLUMNS + """
+                    FROM watchlist_items w""" + _CATALOG_JOIN + """
+                    WHERE w.user_id = $1
+                    ORDER BY w.created_at DESC
                     """,
                     user_id,
                 )
@@ -333,6 +370,7 @@ async def remove_from_watchlist(watch_id: str, user_id: str = Depends(get_curren
                         target_price=float(r["target_price"]) if r["target_price"] is not None else None,
                         priority=r["priority"] or "medium",
                         notes=r["notes"],
+                        **_catalog_fields(r),
                     )
                     for r in rows
                 ]
