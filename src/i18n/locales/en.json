@@ -797,7 +797,7 @@
     "select_category_placeholder": "Select a category...",
     "link_to_item": "Link to Item (optional)",
     "no_portfolio_items": "No portfolio items in this category",
-    "template_steps_note": "Template steps will be added after creation",
+    "template_steps_note": "You can add these steps once the project is created",
     "no_paint_recipes": "No paint projects yet. Add your paint lists and technique notes.",
     "add_paint": "Add Paint",
     "track_paints_subtitle": "Track paints, brands, and techniques",

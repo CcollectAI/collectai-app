@@ -797,7 +797,7 @@
     "select_category_placeholder": "Elige una categoría...",
     "link_to_item": "Vincular a un artículo (opcional)",
     "no_portfolio_items": "No hay artículos del portafolio en esta categoría",
-    "template_steps_note": "Los pasos de la plantilla se añadirán tras la creación",
+    "template_steps_note": "Podrás añadir estos pasos cuando se haya creado el proyecto",
     "no_paint_recipes": "Aún no hay proyectos de pintura. Añade tus listas de pinturas y notas de técnica.",
     "add_paint": "Añadir pintura",
     "track_paints_subtitle": "Lleva el control de pinturas, marcas y técnicas",

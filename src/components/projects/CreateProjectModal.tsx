@@ -285,7 +285,7 @@ export const CreateProjectModal = React.memo(function CreateProjectModal({
                         {selectedTemplate.steps.length} steps for {selectedTemplate.displayName}
                       </Text>
                       <Text style={[styles.templateHint, { color: colors.muted }]}>
-                        {t('projects.template_steps_note', { defaultValue: 'Template steps will be added after creation' })}
+                        {t('projects.template_steps_note', { defaultValue: 'You can add these steps once the project is created' })}
                       </Text>
                     </View>
                     <Ionicons

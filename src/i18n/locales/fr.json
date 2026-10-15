@@ -797,7 +797,7 @@
     "select_category_placeholder": "Choisissez une catégorie...",
     "link_to_item": "Lier à un objet (facultatif)",
     "no_portfolio_items": "Aucun objet du portefeuille dans cette catégorie",
-    "template_steps_note": "Les étapes du modèle seront ajoutées après la création",
+    "template_steps_note": "Tu pourras ajouter ces étapes une fois le projet créé",
     "no_paint_recipes": "Aucun projet de peinture pour l’instant. Ajoutez vos listes de peintures et vos notes de technique.",
     "add_paint": "Ajouter une peinture",
     "track_paints_subtitle": "Suivez peintures, marques et techniques",

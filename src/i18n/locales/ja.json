@@ -797,7 +797,7 @@
     "select_category_placeholder": "カテゴリーを選択...",
     "link_to_item": "アイテムにリンク（任意）",
     "no_portfolio_items": "このカテゴリーにポートフォリオのアイテムがありません",
-    "template_steps_note": "テンプレートの手順は作成後に追加されます",
+    "template_steps_note": "プロジェクト作成後にこれらのステップを追加できます",
     "no_paint_recipes": "ペイントプロジェクトはまだありません。塗料リストやテクニックのメモを追加しましょう。",
     "add_paint": "塗料を追加",
     "track_paints_subtitle": "塗料・ブランド・テクニックを記録",
