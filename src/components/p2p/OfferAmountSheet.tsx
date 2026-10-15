@@ -144,7 +144,7 @@ export function OfferAmountSheet({
     if (!customTouched || parsedCustom != null) return null;
     const n = parseMoney(custom);
     if (n !== null && n > MAX_AMOUNT) {
-      return `The most you can offer is ${formatPrice(MAX_AMOUNT, currency, numberLocale)}.`;
+      return `The most you can offer is ${formatPrice(MAX_AMOUNT, currency, numberLocale, { exact: true })}.`;
     }
     if (n !== null && n <= 0) return 'Enter an amount above zero.';
     return 'Enter an amount, e.g. 45 or 45,50.';
@@ -174,7 +174,7 @@ export function OfferAmountSheet({
     >
       <View style={styles.body}>
         <Text style={[styles.basis, { color: colors.muted }]}>
-          {referenceLabel} {formatPrice(reference, currency, numberLocale)}
+          {referenceLabel} {formatPrice(reference, currency, numberLocale, { exact: true })}
         </Text>
 
         <View style={styles.chips}>
@@ -199,7 +199,7 @@ export function OfferAmountSheet({
                 accessibilityState={{ selected: active }}
                 accessibilityLabel={
                   `${pct > 0 ? 'Plus' : 'Minus'} ${Math.abs(pct)} percent, `
-                  + `${formatPrice(stepAmount, currency, numberLocale)}`
+                  + `${formatPrice(stepAmount, currency, numberLocale, { exact: true })}`
                 }
               >
                 <Text style={[styles.chipPct, { color: active ? colors.accent : colors.text }]}>
@@ -208,7 +208,7 @@ export function OfferAmountSheet({
                   {pct > 0 ? '+' : '−'}{Math.abs(pct)}%
                 </Text>
                 <Text style={[styles.chipAmount, { color: colors.muted }]}>
-                  {formatPrice(stepAmount, currency, numberLocale)}
+                  {formatPrice(stepAmount, currency, numberLocale, { exact: true })}
                 </Text>
               </AnimatedPressable>
             );
@@ -256,7 +256,7 @@ export function OfferAmountSheet({
           accessibilityState={{ disabled: amount == null || busy }}
           accessibilityLabel={
             amount != null
-              ? `${submitLabel} of ${formatPrice(amount, currency, numberLocale)}`
+              ? `${submitLabel} of ${formatPrice(amount, currency, numberLocale, { exact: true })}`
               : submitLabel
           }
         >
@@ -275,7 +275,7 @@ export function OfferAmountSheet({
               ]}
             >
               {amount != null
-                ? `${submitLabel} · ${formatPrice(amount, currency, numberLocale)}`
+                ? `${submitLabel} · ${formatPrice(amount, currency, numberLocale, { exact: true })}`
                 : submitLabel}
             </Text>
           )}

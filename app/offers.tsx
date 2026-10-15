@@ -17,6 +17,7 @@
  *    only added ~90pt of blank space above the bar. Corrected 2026-09-13.)
  *  - No `accessibilityRole="tabbar"` (hard-crashes Android).
  */
+import { formatMemberPrice } from '@/lib/memberPrice';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, SectionList, StyleSheet, RefreshControl, Alert, Animated,
@@ -148,13 +149,7 @@ function OffersScreen() {
    * on the listing and here.
    */
   const viewerPrice = useCallback(
-    (amount: number, from: string | null | undefined) =>
-      // currency-ok: convertCurrency has already moved this into settings.currency.
-      formatPrice(
-        convertCurrency(amount, (from as CurrencyCode) || 'EUR', settings.currency, settings.fxRates),
-        settings.currency,
-        settings.numberLocale,
-      ),
+    (amount: number, from: string | null | undefined) => formatMemberPrice(amount, from, settings),
     [settings.currency, settings.fxRates, settings.numberLocale],
   );
 

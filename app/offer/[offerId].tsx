@@ -34,6 +34,7 @@
  * live would land every trade push on a route that does not exist. The list
  * still highlights the pushed card. Repoint in the deploy AFTER this ships.
  */
+import { formatMemberPrice } from '@/lib/memberPrice';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, Image, Alert, ActivityIndicator, Animated,
@@ -52,9 +53,7 @@ import { useSettings } from '@/lib/settings';
 import { useAsync } from '@/hooks/useAsync';
 import { useToast } from '@/components/Toast';
 import { fireHaptic, HapticIntent } from '@/haptics';
-import { formatPrice, formatPercent } from '@/lib/format';
-import { convertCurrency } from '@/lib/fx';
-import type { CurrencyCode } from '@/data/types';
+import { formatPercent } from '@/lib/format';
 import { timeAgo } from '@/lib/timeAgo';
 import { collectorsApi } from '@/api/collectorsApi';
 import { PostageSheet } from '@/components/offers/PostageSheet';
@@ -95,13 +94,7 @@ function TradeScreen() {
    * or a ¥8000 bid reads "€8000" to a European viewer.
    */
   const viewerPrice = useCallback(
-    (amount: number) =>
-      // currency-ok: convertCurrency has already moved this into settings.currency.
-      formatPrice(
-        convertCurrency(amount, (offer?.currency as CurrencyCode) || 'EUR', settings.currency, settings.fxRates),
-        settings.currency,
-        settings.numberLocale,
-      ),
+    (amount: number) => formatMemberPrice(amount, offer?.currency, settings),
     [offer?.currency, settings.currency, settings.fxRates, settings.numberLocale],
   );
 

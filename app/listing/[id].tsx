@@ -13,6 +13,7 @@
  * implied guarantee is the fastest way to inherit liability we deliberately
  * scoped out.
  */
+import { formatMemberPrice } from '@/lib/memberPrice';
 import React, { useCallback, useMemo, useState } from "react";
 import {
   View,
@@ -42,9 +43,7 @@ import { fireHaptic, HapticIntent } from "@/haptics";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useAsync } from "@/hooks/useAsync";
 import { useSettings } from "@/lib/settings";
-import { formatPrice, moneyInputPlaceholder, moneyInputValue, parseMoney } from "@/lib/format";
-import { convertCurrency } from "@/lib/fx";
-import type { CurrencyCode } from "@/data/types";
+import { moneyInputPlaceholder, moneyInputValue, parseMoney } from "@/lib/format";
 import { collectorsApi } from "@/api/collectorsApi";
 import { categoryDisplayName } from "@/constants/categories";
 import { radius, text as textToken, fontWeight } from "@/theme/tokens";
@@ -131,13 +130,7 @@ function ListingDetailScreen() {
    * listing reads the same in the grid and here.
    */
   const viewerPrice = useCallback(
-    (amount: number) =>
-      // currency-ok: convertCurrency has already moved this into settings.currency.
-      formatPrice(
-        convertCurrency(amount, (listing?.currency as CurrencyCode) || "EUR", settings.currency, settings.fxRates),
-        settings.currency,
-        settings.numberLocale,
-      ),
+    (amount: number) => formatMemberPrice(amount, listing?.currency, settings),
     [listing?.currency, settings.currency, settings.fxRates, settings.numberLocale],
   );
 

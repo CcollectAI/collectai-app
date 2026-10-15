@@ -23,6 +23,7 @@
  *    the last row of the grid sits under it.
  * 3. **No `accessibilityRole="tabbar"`** anywhere — it hard-crashes Android.
  */
+import { formatMemberPrice } from '@/lib/memberPrice';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
@@ -62,7 +63,6 @@ import { useRegionalDemand } from '@/hooks/useRegionalDemand';
 import { usePaginatedList } from '@/hooks/usePaginatedList';
 import { SlowLoadNotice } from '@/components/SlowLoadNotice';
 import { useSettings, type NumberLocale, type Settings } from '@/lib/settings';
-import { convertCurrency } from '@/lib/fx';
 import { listingsCountLabel } from '@/lib/listingsCountLabel';
 import { formatPrice, getCurrencySymbol } from '@/lib/format';
 import { timeAgoShort } from '@/lib/timeAgo';
@@ -182,11 +182,7 @@ function ListingCard({
   // — which is what this did — printed "€8000" for a ¥8000 card: right number,
   // wrong money, and unusably wrong next to the listing beside it. Convert,
   // then format, so every tile in the grid is comparable.
-  const priceLabel = formatPrice(
-    convertCurrency(listing.price, (listing.currency as CurrencyCode) || 'EUR', currency, fxRates),
-    currency,
-    numberLocale,
-  );
+  const priceLabel = formatMemberPrice(listing.price, listing.currency, { currency, fxRates, numberLocale });
   return (
     <AnimatedPressable
       onPress={onPress}
@@ -718,16 +714,7 @@ function MemberMarketplaceScreen({ asTab = false }: { asTab?: boolean }) {
             // does — sending "€8000" for a ¥8000 listing would be the exact bug
             // ListingCard converts to avoid.
             // currency-ok: convertCurrency (below) moves it into settings.currency first.
-            priceLabel: formatPrice(
-              convertCurrency(
-                shareFor.price,
-                (shareFor.currency as CurrencyCode) || 'EUR',
-                settings.currency,
-                settings.fxRates,
-              ),
-              settings.currency,
-              settings.numberLocale,
-            ),
+            priceLabel: formatMemberPrice(shareFor.price, shareFor.currency, settings),
             route: `listing/${shareFor.id}`,
             // The public https url, built by the one function that also parses
             // it back (`inAppListingHref`). Sent instead of `sparrow://` so the

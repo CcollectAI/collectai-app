@@ -121,6 +121,14 @@ export type MoneyOpts = {
    * the model does not have, which is why the default stays 0.
    */
   cents?: boolean;
+  /**
+   * A figure a MEMBER typed — an asking price, an offer, shipping — rather than
+   * one we estimated: show cents only when it has them (`€20`, `€17,50`).
+   * Added 2026-10-15: a €17,50 offer read "Send offer · €18" on the button that
+   * sends €17,50, and a €20 + €2,50 listing read "€23 total incl. shipping".
+   * Not for converted amounts — after FX the cents are an estimate again.
+   */
+  exact?: boolean;
 };
 
 function money(amount: number, currency: Currency, locale: string, opts?: MoneyOpts): string {
@@ -162,7 +170,9 @@ function money(amount: number, currency: Currency, locale: string, opts?: MoneyO
     if (Number(abs.toFixed(2)) === 0) return `<${neg}${sym}${fmt(0.01, 2)}`;
     return `${neg}${sym}${fmt(abs, 2)}`;
   }
-  return `${neg}${sym}${fmt(abs, wantCents ? 2 : 0)}`;
+  const hasCents = Math.round(abs * 100) % 100 !== 0;
+  const showCents = wantCents || (Boolean(opts?.exact) && hasMinorUnits && hasCents);
+  return `${neg}${sym}${fmt(abs, showCents ? 2 : 0)}`;
 }
 
 /**
