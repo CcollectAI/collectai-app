@@ -60,7 +60,7 @@ export const APP_HELP: HelpTopic[] = [
     id: 'what-is-my-collection-worth',
     title: 'Where does my collection value come from?',
     summary:
-      'From what things like yours actually sold for — and where we have no sales to go on, we say so instead of guessing.',
+      'From recent market prices for things like yours — price guides, listings, and sales where we have them — and where we have nothing to go on, we say so instead of guessing.',
     keywords: [
       'value', 'worth', 'price', 'valuation', 'estimate', 'portfolio', 'how much',
       'zero', 'no price', 'wrong price', 'why did it change', 'accurate', 'ebay',
@@ -79,7 +79,7 @@ export const APP_HELP: HelpTopic[] = [
       {
         action: 'Some items show no price at all, and that is deliberate.',
         detail:
-          'If nothing comparable has sold recently we have nothing honest to base a figure on, so we leave it blank rather than inventing one. Blanks are most common in smaller categories and on unusual variants.',
+          'If we have no recent market prices for it, we have nothing honest to base a figure on, so we leave it blank rather than inventing one. Blanks are most common in smaller categories and on unusual variants.',
       },
       {
         action: 'Add what you paid to turn "value" into "profit".',
@@ -88,7 +88,7 @@ export const APP_HELP: HelpTopic[] = [
       },
     ],
     footnote:
-      'Seeing a different number on eBay? Asking prices are what somebody hopes to get; ours are built from what people actually paid. The two are rarely the same, and the asking price is almost always the higher of them.',
+      'Seeing a different number on eBay? An asking price is what one seller hopes to get. Ours combines price guides and recent market data, and the item shows what it rests on and how many prices — so the two are rarely the same.',
   },
   {
     id: 'add-an-item',
@@ -316,14 +316,14 @@ export const APP_HELP: HelpTopic[] = [
     id: 'finish-a-set',
     title: 'How do I see which sets I am close to finishing?',
     summary:
-      'Set completion shows collections you are part-way through and what is missing. It is a Pro feature.',
+      'Set completion shows the trading-card sets you are part-way through and how many cards each is missing. It is a Pro feature.',
     keywords: [
       'set', 'sets', 'complete', 'completion', 'missing', 'finish', 'collection',
       'checklist', 'gaps', 'need',
     ],
     steps: [
       {
-        action: 'Open a category page and choose "Finish a set".',
+        action: 'Open a trading-card category — Pokémon, Magic, Yu-Gi-Oh!, Lorcana, Digimon or One Piece — and choose "Finish a set".',
         detail:
           'It groups your collections into Almost there, Making progress and Getting started, based on how much of each set you own.',
       },
@@ -371,7 +371,7 @@ export const APP_HELP: HelpTopic[] = [
     id: 'no-price-yet',
     title: 'Why does my item say "Not priced yet"?',
     summary:
-      'Because we have no sold prices for that exact thing — and we would rather say so than show you a number we made up.',
+      'Because we have no recent market prices for that exact thing — and we would rather say so than show you a number we made up.',
     keywords: [
       'no price', 'no price yet', 'not priced', 'zero', 'no value', 'missing price', 'not valued', 'unpriced',
       'blank', 'why', 'wrong value', 'estimate',
@@ -385,7 +385,7 @@ export const APP_HELP: HelpTopic[] = [
       {
         action: 'Expect gaps in categories that trade rarely.',
         detail:
-          'Cards and sealed products sell constantly, so we have plenty to go on. A one-off, a regional variant or a niche category may genuinely have no recent sales anywhere.',
+          'Cards and sealed products trade constantly, so we have plenty to go on. A one-off, a regional variant or a niche category may genuinely have no recent prices anywhere.',
       },
       {
         action: 'If you know what it is worth, set the value yourself.',
@@ -474,7 +474,7 @@ export const APP_HELP: HelpTopic[] = [
       },
     ],
     footnote:
-      'If the value still looks wrong, the item may be matched to the wrong catalogue entry, or we may have too few sold prices for that exact thing. You can always set a value yourself.',
+      'If the value still looks wrong, the item may be matched to the wrong catalogue entry, or we may have too few prices for that exact thing. You can always set a value yourself.',
   },
 ];
 
