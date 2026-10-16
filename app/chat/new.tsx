@@ -24,7 +24,7 @@ type DmStatusState = 'loading' | 'failed' | 'none' | 'pending_outgoing' | 'pendi
 
 const NewChatScreen: React.FC = () => {
   const { t } = useTranslation();
-  const { toUserId, contextEventId, contextListingTitle } = useLocalSearchParams<{
+  const { toUserId, contextEventId, contextListingTitle, contextIntent } = useLocalSearchParams<{
     toUserId?: string;
     contextEventId?: string;
     /** Marketplace listing title. Prefills the opener so the seller knows
@@ -32,6 +32,11 @@ const NewChatScreen: React.FC = () => {
      *  worst version of this flow. Title rather than id: the id would need a
      *  fetch here, and the title is all the prefill needs. */
     contextListingTitle?: string;
+    /** 'issue' = a buyer reporting a problem with an item they RECEIVED
+     *  ("I have an issue" on the receipt question, 2026-10-16). The default
+     *  opener asked a seller they had already bought from whether the item was
+     *  "still available". */
+    contextIntent?: string;
   }>();
   const router = useRouter();
   const { colors } = useAppTheme();
@@ -105,9 +110,11 @@ const NewChatScreen: React.FC = () => {
   const [message, setMessage] = useState(
     contextEvent
       ? `Hey, I saw you on the attendee list for "${contextEvent.title}". Want to connect?`
-      : contextListingTitle
-        ? `Hi — is "${contextListingTitle}" still available?`
-        : '',
+      : contextListingTitle && contextIntent === 'issue'
+        ? t('chat.issue_opener', { title: contextListingTitle, defaultValue: 'Hi — about "{{title}}": there is a problem with the item I received. ' })
+        : contextListingTitle
+          ? `Hi — is "${contextListingTitle}" still available?`
+          : '',
   );
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);

@@ -526,7 +526,7 @@ function TradeScreen() {
                         onEverythingOk: confirm,
                         onIssue: () => router.push({
                           pathname: '/chat/new',
-                          params: { toUserId: offer.seller_id, contextListingTitle: offer.listing_title ?? '' },
+                          params: { toUserId: offer.seller_id, contextListingTitle: offer.listing_title ?? '', contextIntent: 'issue' },
                         }),
                       });
                     }}

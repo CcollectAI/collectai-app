@@ -1413,7 +1413,8 @@
     "demo_peer_name": "Coleccionista de prueba",
     "demo_placeholder_note": "Marcador de posición · no se guarda",
     "compose_hint": "Escribe un mensaje y pulsa enviar",
-    "invite_inbox_note": "Aparecerá en su bandeja de entrada, donde podrán aceptarla o rechazarla."
+    "invite_inbox_note": "Aparecerá en su bandeja de entrada, donde podrán aceptarla o rechazarla.",
+    "issue_opener": "Hola — sobre \"{{title}}\": hay un problema con el artículo que recibí. "
   },
   "sell": {
     "sell_an_item": "Vender un artículo",

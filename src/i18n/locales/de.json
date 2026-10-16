@@ -1413,7 +1413,8 @@
     "demo_peer_name": "Test-Sammler",
     "demo_placeholder_note": "Platzhalter · wird nicht gespeichert",
     "compose_hint": "Nachricht eingeben und auf Senden tippen",
-    "invite_inbox_note": "Es erscheint in ihrem Posteingang, wo sie es annehmen oder ablehnen können."
+    "invite_inbox_note": "Es erscheint in ihrem Posteingang, wo sie es annehmen oder ablehnen können.",
+    "issue_opener": "Hallo — zu „{{title}}“: Mit dem erhaltenen Artikel gibt es ein Problem. "
   },
   "sell": {
     "sell_an_item": "Objekt verkaufen",

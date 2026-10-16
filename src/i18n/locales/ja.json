@@ -1413,7 +1413,8 @@
     "demo_peer_name": "テストコレクター",
     "demo_placeholder_note": "サンプル · 保存されません",
     "compose_hint": "メッセージを入力して送信を押してください",
-    "invite_inbox_note": "相手の受信トレイに表示され、承認または辞退できます。"
+    "invite_inbox_note": "相手の受信トレイに表示され、承認または辞退できます。",
+    "issue_opener": "「{{title}}」について：受け取った商品に問題があります。"
   },
   "sell": {
     "sell_an_item": "アイテムを売る",

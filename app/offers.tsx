@@ -1459,7 +1459,7 @@ function OffersScreen() {
                   onEverythingOk: confirm,
                   onIssue: () => router.push({
                     pathname: '/chat/new',
-                    params: { toUserId: o.seller_id, contextListingTitle: o.listing_title ?? '' },
+                    params: { toUserId: o.seller_id, contextListingTitle: o.listing_title ?? '', contextIntent: 'issue' },
                   }),
                 });
               }}

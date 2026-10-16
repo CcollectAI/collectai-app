@@ -1413,7 +1413,8 @@
     "demo_peer_name": "테스트 컬렉터",
     "demo_placeholder_note": "자리 표시자 · 저장되지 않음",
     "compose_hint": "메시지를 입력하고 보내기를 누르세요",
-    "invite_inbox_note": "상대방의 받은편지함에 표시되며 수락하거나 거절할 수 있습니다."
+    "invite_inbox_note": "상대방의 받은편지함에 표시되며 수락하거나 거절할 수 있습니다.",
+    "issue_opener": "\"{{title}}\" 관련: 받은 상품에 문제가 있습니다. "
   },
   "sell": {
     "sell_an_item": "아이템 판매",
