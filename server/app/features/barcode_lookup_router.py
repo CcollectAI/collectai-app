@@ -328,6 +328,22 @@ async def _lookup_local_catalog(barcode: str, pool) -> Optional[dict]:
     return None
 
 
+async def _ol_isbn_cover(client, isbn: str) -> Optional[str]:
+    """Open Library's covers service, by ISBN, when the edition has no cover id.
+
+    Walked 2026-10-16: Naruto vol 1 (9781569319000) came back with no cover —
+    the edition record lists no `covers`, yet covers.openlibrary.org serves
+    one for that ISBN (29 KB). `?default=false` makes a missing cover a 404
+    instead of a blank placeholder image, so a 200 means a real cover.
+    """
+    url = f"https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg?default=false"
+    try:
+        r = await client.head(url, follow_redirects=True)
+        return url if r.status_code == 200 else None
+    except Exception:
+        return None
+
+
 async def _lookup_open_library(isbn: str) -> Optional[dict]:
     """Query Open Library for book data by ISBN.
 
@@ -369,6 +385,8 @@ async def _lookup_open_library(isbn: str) -> Optional[dict]:
             if covers:
                 cover_id = covers[0]
                 cover_url = f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg"
+            elif _time.monotonic() < _deadline:
+                cover_url = await _ol_isbn_cover(client, isbn)
 
             # Number of pages
             pages = data.get("number_of_pages")

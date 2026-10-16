@@ -58,6 +58,8 @@ function BarcodeScanScreen() {
   const [scanState, setScanState] = useState<ScanState>('scanning');
   // Camera off and the member chose to type a code: the manual box without the camera.
   const [typeOnly, setTypeOnly] = useState(false);
+  // The error was the member's typing, not a miss: headed "Check the code", not "Not Found".
+  const [typedCodeError, setTypedCodeError] = useState(false);
   const [scannedCode, setScannedCode] = useState<{ type: string; value: string } | null>(null);
   const [lookupResult, setLookupResult] = useState<BarcodeLookupResult | null>(null);
   const [intakeResult, setIntakeResult] = useState<IntakeResultResponse | null>(null);
@@ -159,6 +161,7 @@ function BarcodeScanScreen() {
     // Length AND check digit, before any network call: a typo used to cost two
     // lookups and end in "Could not find product information" (src/lib/isbn.ts).
     const codeCheck = checkTypedCode(cleaned);
+    setTypedCodeError(codeCheck !== 'ok');
     if (codeCheck !== 'ok') {
       setErrorMessage(codeCheck === 'length'
         ? t('barcode.invalid_length', { defaultValue: 'Please enter a valid ISBN (10 or 13 digits)' })
@@ -300,6 +303,7 @@ function BarcodeScanScreen() {
 
   // Reset to scanning state
   const handleRescan = () => {
+    setTypedCodeError(false);
     setScannedCode(null);
     setLookupResult(null);
     setIntakeResult(null);
@@ -574,7 +578,9 @@ function BarcodeScanScreen() {
       {scanState === 'error' && (
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={64} color={colors.muted} />
-          <Text style={[styles.errorTitle, { color: colors.text }]}>{t('barcode.not_found', { defaultValue: 'Not Found' })}</Text>
+          <Text style={[styles.errorTitle, { color: colors.text }]}>{typedCodeError
+            ? t('barcode.check_the_code', { defaultValue: 'Check the code' })
+            : t('barcode.not_found', { defaultValue: 'Not Found' })}</Text>
           <Text style={[styles.errorText, { color: colors.muted }]}>
             {errorMessage}
           </Text>

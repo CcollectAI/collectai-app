@@ -38,3 +38,22 @@ def test_other_shapes_are_left_to_the_lookup(code):
 def test_viz_is_manga_and_matched_as_a_whole_word():
     assert _classify_category("Viz", "Naruto, Vol 1", ["comics"]) == "manga"
     assert _classify_category("Vizzini Press", "Some Novel", []) is None
+
+
+class _Head:
+    def __init__(self, code):
+        self.code = code
+        self.urls = []
+
+    async def head(self, url, follow_redirects=True):
+        self.urls.append(url)
+        return type("R", (), {"status_code": self.code})()
+
+
+def test_isbn_cover_fallback_only_when_the_cover_exists():
+    import asyncio
+    from app.features.barcode_lookup_router import _ol_isbn_cover
+    ok = _Head(200)
+    assert asyncio.run(_ol_isbn_cover(ok, "9781569319000")).endswith("9781569319000-L.jpg?default=false")
+    assert "default=false" in ok.urls[0]  # a missing cover must 404, not draw a blank
+    assert asyncio.run(_ol_isbn_cover(_Head(404), "9781569319000")) is None

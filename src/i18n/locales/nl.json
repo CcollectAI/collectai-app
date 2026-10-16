@@ -357,7 +357,8 @@
     "type_code_instead": "Typ de code in",
     "via_catalogue": "Gevonden in de Sparrow-catalogus",
     "via_members": "Herkend uit wat leden hebben opgeslagen",
-    "via_source": "Gevonden via {{source}}"
+    "via_source": "Gevonden via {{source}}",
+    "check_the_code": "Controleer de code"
   },
   "filters": {
     "close_a11y": "Filters sluiten",

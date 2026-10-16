@@ -357,7 +357,8 @@
     "type_code_instead": "コードを入力する",
     "via_catalogue": "Sparrowカタログで見つかりました",
     "via_members": "メンバーの保存内容から認識しました",
-    "via_source": "{{source}}で見つかりました"
+    "via_source": "{{source}}で見つかりました",
+    "check_the_code": "コードを確認してください"
   },
   "filters": {
     "close_a11y": "フィルターを閉じる",

@@ -357,7 +357,8 @@
     "type_code_instead": "코드 직접 입력",
     "via_catalogue": "Sparrow 카탈로그에서 찾았습니다",
     "via_members": "회원들이 저장한 내용으로 인식했습니다",
-    "via_source": "{{source}}에서 찾았습니다"
+    "via_source": "{{source}}에서 찾았습니다",
+    "check_the_code": "코드를 확인하세요"
   },
   "filters": {
     "close_a11y": "필터 닫기",

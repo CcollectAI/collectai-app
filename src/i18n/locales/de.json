@@ -357,7 +357,8 @@
     "type_code_instead": "Code stattdessen eintippen",
     "via_catalogue": "Im Sparrow-Katalog gefunden",
     "via_members": "Erkannt anhand dessen, was Mitglieder gespeichert haben",
-    "via_source": "Gefunden über {{source}}"
+    "via_source": "Gefunden über {{source}}",
+    "check_the_code": "Code prüfen"
   },
   "filters": {
     "close_a11y": "Filter schließen",

@@ -357,7 +357,8 @@
     "type_code_instead": "Escribir el código",
     "via_catalogue": "Encontrado en el catálogo de Sparrow",
     "via_members": "Reconocido por lo que han guardado los miembros",
-    "via_source": "Encontrado en {{source}}"
+    "via_source": "Encontrado en {{source}}",
+    "check_the_code": "Revisa el código"
   },
   "filters": {
     "close_a11y": "Cerrar filtros",

@@ -357,7 +357,8 @@
     "type_code_instead": "Type the code instead",
     "via_catalogue": "Found in the Sparrow catalogue",
     "via_members": "Recognised from what members saved",
-    "via_source": "Found via {{source}}"
+    "via_source": "Found via {{source}}",
+    "check_the_code": "Check the code"
   },
   "filters": {
     "close_a11y": "Close filters",
