@@ -1274,13 +1274,14 @@
     "at_asking_short": "Op vraagprijs",
     "step_postage_title": "Verzendkosten vastleggen",
     "step_postage_now": "Wat kostte het versturen? Tot je dat invult, staat je winst op onbekend.",
-    "step_postage_done": "Vastgelegd. Het telt mee in je gerealiseerde W/V.",
+    "step_postage_done": "Vastgelegd — de winst op deze verkoop is nu bekend.",
     "problem_title": "Wat ging er mis?",
     "problem_explainer": "Een negatieve beoordeling telt mee voor deze gebruiker en andere leden zien hem. Beschrijf wat er gebeurde — alleen feiten, geen persoonlijke gegevens — zodat het te begrijpen en te beantwoorden is. Probeer het eerst in de chat op te lossen.",
     "problem_placeholder": "bijv. De kaart kwam aan met een vouw die niet op de foto’s stond",
     "problem_min": "Minstens {{count}} tekens.",
     "problem_submit": "Negatieve beoordeling plaatsen",
-    "problem_recorded": "Beoordeling geplaatst"
+    "problem_recorded": "Beoordeling geplaatst",
+    "step_rate_now": "Hoe ging het? Je beoordeling helpt andere leden veilig te handelen."
   },
   "item_attrs": {
     "case_size": "Kastmaat",

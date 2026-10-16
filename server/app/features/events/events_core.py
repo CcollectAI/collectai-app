@@ -26,6 +26,7 @@ from app.lib.bg_tasks import spawn_bg
 from app.lib.notify import notify_user
 
 from .events_helpers import (
+    user_events_gen,
     ALLOWED_EVENT_FORMATS,
     ALLOWED_EVENT_KINDS,
     CLEARABLE_EVENT_COLUMNS,
@@ -190,7 +191,7 @@ async def list_events(
 
     # Check cache
     uid = user_id or "anon"
-    cache_key = f"events:list:{uid}:{category_id}:{include_past}:{limit}:{offset}"
+    cache_key = f"events:list:{uid}:g{user_events_gen(uid)}:{category_id}:{include_past}:{limit}:{offset}"
     cached = cache_get(cache_key)
     if cached is not None:
         return cached
@@ -511,7 +512,7 @@ async def list_nearby_events(
     lat_r = round(lat, 2)
     lon_r = round(lon, 2)
     uid = user_id or "anon"
-    cache_key = f"events:nearby:{uid}:{lat_r}:{lon_r}:{radius_km}:{limit}:{offset}"
+    cache_key = f"events:nearby:{uid}:g{user_events_gen(uid)}:{lat_r}:{lon_r}:{radius_km}:{limit}:{offset}"
     cached = cache_get(cache_key)
     if cached is not None:
         return cached

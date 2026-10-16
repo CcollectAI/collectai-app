@@ -36,7 +36,7 @@ from app.errors import error_response
 from app.features.pagination import pagination_params
 from app.lib.blocks import raise_if_blocked
 from app.lib.db_helpers import get_db_pool
-from app.lib.money import format_money
+from app.lib.money import trade_money
 from app.lib.payment_rails import (
     DISCLAIMER as PAYMENT_DISCLAIMER,
     REGIONS,
@@ -782,7 +782,7 @@ async def _settle_completed_trade(conn, offer_id: str, listing_id: str,
                 conn, str(r["buyer_id"]),
                 "That item has sold",
                 f"\"{l['listing_title'] or 'An item'}\" sold to another buyer, so "
-                f"your {format_money(float(r['amount']), r['currency'])} offer was closed.",
+                f"your {await trade_money(conn, str(r['buyer_id']), float(r['amount']), r['currency'])} offer was closed.",
                 offer_id,
             )
     except Exception as exc:
@@ -1189,10 +1189,11 @@ async def create_offer(
     # member's display name may be private (user_privacy_settings.allow_discovery),
     # and the amount plus the listing is what the seller needs to decide.
     async with pool.acquire() as nconn:
+        amt = await trade_money(nconn, str(listing["seller_id"]), out.amount, out.currency)
         await _notify_trade(
             nconn, str(listing["seller_id"]),
             "New offer on your listing",
-            f"{format_money(out.amount, out.currency)} for \"{listing['listing_title'] or 'your item'}\". "
+            f"{amt} for \"{listing['listing_title'] or 'your item'}\". "
             "Open bids to accept, counter or decline.",
             out.id,
         )
@@ -1554,7 +1555,10 @@ async def respond_to_offer(
         # left waiting on silence assumes the app is broken, and "declined" is
         # information they can act on (offer elsewhere, or higher).
         title_ = fresh["listing_title"] or "your item"
-        amt = format_money(float(fresh['amount']), fresh['currency'])
+        # Every branch below notifies the OTHER party, so format for them.
+        recipient = str(o["seller_id"]) if user_id == str(o["buyer_id"]) else str(o["buyer_id"])
+        async with pool.acquire() as lconn:
+            amt = await trade_money(lconn, recipient, float(fresh['amount']), fresh['currency'])
         if action == "accept":
             # WHO accepted decides who is told. Since 2026-08-15 a COUNTER is the
             # buyer's to answer, so this branch fires for both directions — and

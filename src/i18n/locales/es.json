@@ -1274,13 +1274,14 @@
     "at_asking_short": "Al precio pedido",
     "step_postage_title": "Registrar gastos de envío",
     "step_postage_now": "¿Cuánto te costó el envío? Hasta que lo indiques, tu beneficio aparece como desconocido.",
-    "step_postage_done": "Registrado. Cuenta en tu resultado realizado.",
+    "step_postage_done": "Registrado: el beneficio de esta venta ya se conoce.",
     "problem_title": "¿Qué salió mal?",
     "problem_explainer": "Una valoración negativa cuenta en contra de este miembro y los demás la ven. Cuenta qué pasó — solo hechos, sin datos personales — para que se pueda entender y responder. Intenta resolverlo antes en el chat.",
     "problem_placeholder": "p. ej. La carta llegó con un doblez que no salía en las fotos",
     "problem_min": "Al menos {{count}} caracteres.",
     "problem_submit": "Publicar valoración negativa",
-    "problem_recorded": "Valoración publicada"
+    "problem_recorded": "Valoración publicada",
+    "step_rate_now": "¿Qué tal fue? Tu valoración ayuda a otros a comerciar con seguridad."
   },
   "item_attrs": {
     "case_size": "Tamaño de la caja",

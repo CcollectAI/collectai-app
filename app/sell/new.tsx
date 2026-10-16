@@ -42,7 +42,8 @@
  * `colors.accentText` ONLY on an accent fill, safeGoBack (via ScreenHeader), SafeAreaView from
  * safe-area-context, no iOS-only accessibilityRole.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import React, { useCallback, useMemo, useState, useRef } from 'react';
 import {
   View, Text, TextInput, StyleSheet, ScrollView, ActivityIndicator, Image, Animated,
 } from 'react-native';
@@ -179,6 +180,15 @@ function SellNewScreen() {
   // From the collection the SERVER supplies the name from the item, so a typed
   // title is neither required nor used. Requiring one would block the flow on a
   // field the seller cannot see.
+  // Back used to discard a half-filled listing without a word (walked
+  // 2026-10-15: price typed, Back, gone). Add manually has asked since
+  // 2026-07; same hook here. The prefilled collection price is not an edit.
+  const initialPrice = useRef(price);
+  const leavingAfterSave = useRef(false);
+  const isDirty = title.trim().length > 0 || description.trim().length > 0
+    || photoUris.length > 0 || postage.trim().length > 0 || price !== initialPrice.current;
+  useUnsavedChanges({ isDirty, bypassRef: leavingAfterSave });
+
   const canList = (fromCollection || title.trim().length >= 2)
     && parsedPrice != null && parsedPostage !== null && !saving;
 
@@ -353,6 +363,7 @@ function SellNewScreen() {
           : 'Listed on the marketplace.',
         type: 'success',
       });
+      leavingAfterSave.current = true;
       router.replace({ pathname: '/listing/[id]', params: { id: listing.id } });
     } catch (err: unknown) {
       logger.error('[sell/new] create failed:', err);

@@ -1274,13 +1274,14 @@
     "at_asking_short": "At asking",
     "step_postage_title": "Record postage",
     "step_postage_now": "What did posting it cost you? Until you say, your profit is shown as unknown.",
-    "step_postage_done": "Recorded. It counts in your realised P/L.",
+    "step_postage_done": "Recorded — the profit on this sale is now known.",
     "problem_title": "What went wrong?",
     "problem_explainer": "A negative rating counts against this member and other members see it. Say what happened — facts only, no personal details — so it can be understood and answered. Try to sort it out in chat first.",
     "problem_placeholder": "e.g. The card arrived with a crease that was not in the photos",
     "problem_min": "At least {{count}} characters.",
     "problem_submit": "Post negative rating",
-    "problem_recorded": "Rating posted"
+    "problem_recorded": "Rating posted",
+    "step_rate_now": "How did it go? Your rating helps other members trade safely."
   },
   "item_attrs": {
     "case_size": "Case Size",

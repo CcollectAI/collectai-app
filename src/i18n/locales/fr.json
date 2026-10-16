@@ -1274,13 +1274,14 @@
     "at_asking_short": "Au prix demandé",
     "step_postage_title": "Indiquer les frais de port",
     "step_postage_now": "Combien t'a coûté l'envoi ? Tant que tu ne l'indiques pas, ton bénéfice reste inconnu.",
-    "step_postage_done": "Enregistré. Pris en compte dans ton résultat réalisé.",
+    "step_postage_done": "Enregistré — le bénéfice de cette vente est maintenant connu.",
     "problem_title": "Qu'est-ce qui n'a pas marché ?",
     "problem_explainer": "Une évaluation négative compte contre ce membre et les autres la voient. Décris ce qui s'est passé — des faits, aucune donnée personnelle — pour qu'on puisse comprendre et répondre. Essaie d'abord de régler ça dans le chat.",
     "problem_placeholder": "ex. La carte est arrivée pliée, ce qui n'était pas sur les photos",
     "problem_min": "Au moins {{count}} caractères.",
     "problem_submit": "Publier l'évaluation négative",
-    "problem_recorded": "Évaluation publiée"
+    "problem_recorded": "Évaluation publiée",
+    "step_rate_now": "Comment ça s'est passé ? Ton évaluation aide les autres membres à échanger en confiance."
   },
   "item_attrs": {
     "case_size": "Taille du boîtier",

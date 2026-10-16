@@ -1274,13 +1274,14 @@
     "at_asking_short": "희망가와 동일",
     "step_postage_title": "배송비 기록",
     "step_postage_now": "발송 비용이 얼마였나요? 입력하기 전까지 수익은 알 수 없음으로 표시됩니다.",
-    "step_postage_done": "기록됨. 실현 손익에 반영됩니다.",
+    "step_postage_done": "기록됨 — 이 판매의 수익이 이제 확인되었습니다.",
     "problem_title": "무엇이 잘못되었나요?",
     "problem_explainer": "부정적 평가는 이 회원에게 불리하게 반영되며 다른 회원도 볼 수 있습니다. 무슨 일이 있었는지 사실만(개인정보 없이) 적어 주세요. 먼저 채팅으로 해결해 보세요.",
     "problem_placeholder": "예: 사진에 없던 구김이 카드에 있었습니다",
     "problem_min": "최소 {{count}}자.",
     "problem_submit": "부정적 평가 등록",
-    "problem_recorded": "평가가 등록되었습니다"
+    "problem_recorded": "평가가 등록되었습니다",
+    "step_rate_now": "거래는 어땠나요? 평가는 다른 회원의 안전한 거래에 도움이 됩니다."
   },
   "item_attrs": {
     "case_size": "케이스 크기",

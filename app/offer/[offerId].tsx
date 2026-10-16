@@ -249,9 +249,13 @@ function TradeScreen() {
         key: 'rate',
         title: offer.i_am_buyer ? 'Rate the seller' : 'Rate the buyer',
         state: state(!!offer.already_graded, !!offer.can_grade && !offer.already_graded),
+        // Three states, not two: the caption said "Unlocks once you have both
+        // confirmed" under an UNLOCKED Rate button (walked 2026-10-16).
         detail: offer.already_graded
           ? 'Thanks — your rating is on their profile.'
-          : 'Unlocks once you have both confirmed.',
+          : offer.can_grade
+            ? t('offers.step_rate_now', { defaultValue: 'How did it go? Your rating helps other members trade safely.' })
+            : 'Unlocks once you have both confirmed.',
       },
     ];
   }, [offer, t]);

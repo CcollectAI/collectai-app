@@ -14,6 +14,7 @@ from app.lib.db_helpers import get_db_pool
 from app.lib.error_codes import ErrorCode
 
 from .events_helpers import (
+    bump_user_events_gen,
     IN_MEMORY_RSVPS,
     RsvpRequest,
     event_rsvp_limit,
@@ -100,6 +101,7 @@ async def rsvp_event(
                         # sponsor RSVPs (real billing/reporting data).
                         spawn_bg(increment_sponsor_rsvp(event_id), "sponsor_rsvp")
 
+                bump_user_events_gen(user_id)  # the cached lists carry MY rsvp status
                 return {"success": True, "status": actual_status, "waitlisted": waitlisted}
 
         except HTTPException:
@@ -111,6 +113,7 @@ async def rsvp_event(
     # Offline / in-memory fallback
     IN_MEMORY_RSVPS.setdefault(event_id, {})[user_id] = actual_status
     logger.info("[events] RSVP (in-memory): user=%s, event=%s, status=%s", user_id, event_id, actual_status)
+    bump_user_events_gen(user_id)  # the cached lists carry MY rsvp status
     return {"success": True, "status": actual_status, "waitlisted": waitlisted}
 
 
@@ -137,6 +140,7 @@ async def unrsvp_event(
                     user_id,
                 )
                 logger.info("[events] Un-RSVP: user=%s, event=%s", user_id, event_id)
+                bump_user_events_gen(user_id)  # the cached lists carry MY rsvp status
                 return {"success": True, "message": "RSVP removed"}
 
         except HTTPException:
@@ -149,4 +153,5 @@ async def unrsvp_event(
     rsvps = IN_MEMORY_RSVPS.get(event_id, {})
     rsvps.pop(user_id, None)
     logger.info("[events] Un-RSVP (in-memory): user=%s, event=%s", user_id, event_id)
+    bump_user_events_gen(user_id)  # the cached lists carry MY rsvp status
     return {"success": True, "message": "RSVP removed"}

@@ -36,6 +36,26 @@ drop_alert_limit = per_user_rate_limit(20, window_seconds=60, scope="drop_alert"
 
 EVENTS_CACHE_TTL = 300  # 5 minutes
 
+
+# Per-member cache GENERATION for the event lists (2026-10-16). The lists carry
+# the CALLER's own `user_rsvp_status`, cached 5 min under a per-user key that
+# nothing invalidated — RSVP "going" and the Events tab still showed you as not
+# going for up to five minutes. The cache can only delete exact keys, so the
+# key carries a generation that an RSVP bumps: old entries are simply never read
+# again. A timestamp, so it only moves forward; it outlives any 5-min entry.
+_GEN_TTL = 86_400
+
+
+def user_events_gen(uid: str) -> int:
+    from app.cache import cache_get
+    return int(cache_get(f"events:gen:{uid}") or 0)
+
+
+def bump_user_events_gen(uid: str) -> None:
+    import time
+    from app.cache import cache_set
+    cache_set(f"events:gen:{uid}", int(time.time() * 1000), ttl=_GEN_TTL)
+
 ALLOWED_EVENT_KINDS = {"collection_drop", "meetup", "stream", "convention", "release"}
 ALLOWED_EVENT_FORMATS = {"in_person", "online", "hybrid"}
 ALLOWED_EVENT_STATUSES = {"draft", "published", "cancelled"}

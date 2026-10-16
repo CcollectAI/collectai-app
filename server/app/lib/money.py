@@ -25,6 +25,8 @@ showing no mark at all.
 """
 from __future__ import annotations
 
+import re
+
 # Mirror of CURRENCY_SYMBOLS in src/lib/format.ts. Keep in sync — the parity
 # test is what enforces it.
 CURRENCY_SYMBOLS: dict[str, str] = {
@@ -154,4 +156,29 @@ async def member_money(conn, user_id: str, amount_eur: float | int | None) -> st
     except Exception:
         return format_money(amount_eur, "EUR")
     return format_money(amount_eur, currency, locale)
+
+
+async def trade_money(conn, user_id: str, amount: float | int | None, currency: str | None) -> str:
+    """A TRADE amount as the recipient reads numbers (2026-10-16).
+
+    Walked: the counter notification read "The seller countered with EUR19.00"
+    to a Dutch member whose app shows "EUR19". Unlike member_money this does NOT
+    convert — a trade is in the listing's currency and that is the money on
+    the table — it only takes the recipient's number locale, and drops ",00"
+    from a whole amount the way the app's exact member prices do (an amount
+    with cents keeps them: nothing is rounded).
+    """
+    if amount is None:
+        return ""
+    locale = None
+    try:
+        locale = await conn.fetchval(
+            "SELECT locale FROM public.user_settings WHERE user_id = $1::uuid", user_id,
+        )
+    except Exception:
+        locale = None
+    text = format_money(amount, currency, locale)
+    if float(amount) == int(float(amount)):
+        text = re.sub(r"([.,])00(?=$|\s)", "", text, count=1)
+    return text
 

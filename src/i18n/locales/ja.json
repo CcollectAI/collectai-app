@@ -1274,13 +1274,14 @@
     "at_asking_short": "希望価格と同額",
     "step_postage_title": "送料を記録",
     "step_postage_now": "発送にいくらかかりましたか?入力するまで、利益は不明と表示されます。",
-    "step_postage_done": "記録済み。実現損益に反映されます。",
+    "step_postage_done": "記録しました — この販売の利益が確定しました。",
     "problem_title": "何が問題でしたか？",
     "problem_explainer": "低評価はこのメンバーの評価に反映され、他のメンバーにも表示されます。何があったかを事実のみで（個人情報なしで）書いてください。まずはチャットで解決を試みてください。",
     "problem_placeholder": "例: 写真になかった折れがカードにありました",
     "problem_min": "{{count}}文字以上。",
     "problem_submit": "低評価を投稿",
-    "problem_recorded": "評価を投稿しました"
+    "problem_recorded": "評価を投稿しました",
+    "step_rate_now": "取引はいかがでしたか？評価は他のメンバーの安全な取引に役立ちます。"
   },
   "item_attrs": {
     "case_size": "ケースサイズ",
