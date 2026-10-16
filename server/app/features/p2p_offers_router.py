@@ -2119,7 +2119,7 @@ async def list_payment_rails(
         if pool is not None:
             offer = await pool.fetchrow(
                 """
-                SELECT seller_id, buyer_id, amount, currency, status
+                SELECT seller_id, buyer_id, amount, currency, status, shipping_cost
                 FROM public.p2p_offers WHERE id = $1::uuid
                 """,
                 offer_id,
@@ -2140,7 +2140,10 @@ async def list_payment_rails(
                         str(offer["seller_id"]),
                     )
                 }
-                amount = float(offer["amount"] or 0)
+                # What the buyer actually sends: item + the postage on the
+                # offer (2026-10-16). The sheet says "Total to pay"; a link
+                # prefilled with the item alone would contradict it.
+                amount = round(float(offer["amount"] or 0) + float(offer["shipping_cost"] or 0), 2)
                 currency = offer["currency"] or "EUR"
                 # A reference the seller can recognise. Short, and it names the
                 # item rather than the offer id, because the seller reads this

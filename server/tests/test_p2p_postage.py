@@ -97,3 +97,24 @@ def test_create_offer_snapshots_the_listing_postage():
 def test_postage_record_adds_back_what_the_buyer_paid():
     src = Path(r.__file__).read_text()
     assert "+ COALESCE(shipping_charged, 0)" in src
+
+
+def test_prefilled_payment_link_carries_item_plus_postage(monkeypatch):
+    """'Total to pay EUR 21,50' must not open PayPal prefilled with 19."""
+    import asyncio as _a
+
+    class Pool:
+        async def fetchrow(self, sql, *a):
+            if "p2p_offers" in sql:
+                return {"seller_id": "s", "buyer_id": "b", "amount": 19, "currency": "EUR",
+                        "status": "accepted", "shipping_cost": 2.5}
+            return None  # no stored region
+
+        async def fetch(self, sql, *a):
+            return [{"rail_key": "paypal", "handle": "sellerhandle"}]
+
+    monkeypatch.setattr(r, "get_db_pool", lambda: Pool())
+    out = _a.run(r.list_payment_rails(region="europe", offer_id="o1", user_id="b"))
+    paypal = next(x for x in out.rails if x.key == "paypal")
+    assert paypal.pay_url and "21.5" in paypal.pay_url
+    assert "/19" not in paypal.pay_url
