@@ -86,7 +86,11 @@ def _make_item_row(
         "grade": grade,
         "image_url": image_url,
         "date_acquired": date_acquired,
-        "estimated_value": estimated_value,
+        # item_value_v1's columns (2026-10-16): the report reads the one
+        # valuation definition, not price_predictions alone.
+        "value_eur": estimated_value,
+        "value_source": "catalog_model" if estimated_value is not None else "none",
+        "value_as_of": None,
     }
 
 
@@ -245,7 +249,7 @@ class TestInsuranceReportJsonMockedDB:
         assert len(data["items"]) == 2
         assert data["items"][0]["name"] == "Charizard Holo 1st Edition"
         assert data["items"][1]["name"] == "LEGO Millennium Falcon"
-        assert "ridge regression" in data["methodology"].lower() or "pricing algorithm" in data["methodology"].lower()
+        assert "market model estimate" in data["methodology"].lower()  # names only the bases present
 
     @patch(f"{MODULE}.get_db_pool")
     def test_item_with_null_value(self, mock_get_pool):
@@ -441,7 +445,7 @@ class TestInsuranceReportHtmlMockedDB:
 
         resp = client.get("/export/insurance-report?format=html")
         assert "Methodology" in resp.text
-        assert "ridge regression" in resp.text.lower() or "pricing algorithm" in resp.text.lower()
+        assert "market model estimate" in resp.text.lower()  # names only the bases present (2026-10-16)
 
     @patch(f"{MODULE}.get_db_pool")
     def test_html_image_url_rendered(self, mock_get_pool):
@@ -466,3 +470,37 @@ class TestInsuranceReportHtmlMockedDB:
 
         resp = client.get("/export/insurance-report?format=html")
         assert "N/A" in resp.text
+
+
+class TestInsuranceReportValuesEveryItem:
+    """2026-10-16: the report read price_predictions alone — 8 of 9 items on the
+    test account had no value and the one it had was not converted."""
+
+    def _run(self, rows, currency="EUR", rates=None):
+        from unittest.mock import patch
+        pool, conn = _mock_pool()
+        conn.fetchrow = AsyncMock(return_value=_make_user_row())
+        conn.fetch = AsyncMock(return_value=rows)
+        with patch("app.features.export_router.get_db_pool", return_value=pool), \
+             patch("app.lib.fx_service.get_rates_from_eur", AsyncMock(return_value=rates or {})):
+            return client.get(f"/export/insurance-report?format=json&currency={currency}").json()
+
+    def test_owner_estimate_and_catalogue_items_are_valued_with_their_basis(self):
+        own = _make_item_row(title="LEGO", estimated_value=900.0)
+        own["value_source"] = "user_estimate"
+        cat = _make_item_row(title="Rayquaza", estimated_value=94.58)
+        cat["value_source"] = "catalog_price"
+        data = self._run([own, cat])
+        assert data["total_estimated_value"] == 994.58
+        assert [i["value_basis"] for i in data["items"]] == ["Owner's estimate", "Catalogue market price"]
+        assert "owner's own estimates" in data["methodology"]
+
+    def test_converts_to_the_requested_currency(self):
+        data = self._run([_make_item_row(estimated_value=100.0)], "USD", {"USD": 1.12})
+        assert data["currency"] == "USD"
+        assert data["total_estimated_value"] == 112.0
+
+    def test_no_rate_reports_in_eur_rather_than_mislabel(self):
+        data = self._run([_make_item_row(estimated_value=100.0)], "USD", {})
+        assert data["currency"] == "EUR"
+        assert data["total_estimated_value"] == 100.0

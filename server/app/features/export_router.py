@@ -49,6 +49,10 @@ class InsuranceItemRow(BaseModel):
     currency: str = "EUR"
     image_url: str | None = None
     date_acquired: str | None = None
+    # What the value rests on (2026-10-16) — an insurer has to know whether a
+    # figure is a market model, a catalogue price or the owner's own estimate.
+    value_basis: str | None = None
+    value_as_of: str | None = None
 
 
 class InsuranceReportData(BaseModel):
@@ -67,6 +71,37 @@ class InsuranceReportData(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+# What each item_value_v1 source means, in words an insurer reads (2026-10-16).
+_VALUE_BASIS = {
+    "catalog_model": "Market model estimate",
+    "catalog_price": "Catalogue market price",
+    "user_estimate": "Owner's estimate",
+    "quick_scan": "Scan estimate",
+    "app_estimate": "App estimate",
+}
+
+
+def _methodology(bases: set[str], currency: str) -> str:
+    """Only claim the methods that produced a value in THIS report. The old text
+    said every value came from a regression model over sold listings — on the
+    test account that described 1 item of 9."""
+    parts = []
+    if "catalog_model" in bases:
+        parts.append("market model estimates (a regression over recent marketplace prices, median)")
+    if "catalog_price" in bases:
+        parts.append("catalogue market prices (median of recent marketplace prices, dated)")
+    if "user_estimate" in bases:
+        parts.append("the owner's own estimates")
+    if "quick_scan" in bases or "app_estimate" in bases:
+        parts.append("photo-scan estimates")
+    basis = "; ".join(parts) if parts else "no item currently has a value"
+    return (
+        f"Each item's value is shown with its basis: {basis}. Items without a value "
+        f"are listed as N/A and are not in the total. Values in {currency}"
+        + ("" if currency == "EUR" else " (converted from EUR at the day's rate)") + "."
+    )
+
+
 def _render_html_report(data: InsuranceReportData) -> str:
     """Render the insurance valuation report as a print-friendly HTML page."""
 
@@ -81,6 +116,9 @@ def _render_html_report(data: InsuranceReportData) -> str:
             img_cell = '<div style="width:48px;height:48px;background:#f0f0f0;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#999;font-size:10px;">N/A</div>'
 
         val_display = f"{data.currency} {item.estimated_value:,.2f}" if item.estimated_value is not None else "N/A"
+        if item.value_basis:
+            basis = item.value_basis + (f", {item.value_as_of}" if item.value_as_of else "")
+            val_display += f'<br/><span style="color:#666;font-size:11px;font-weight:400;">{_escape_html(basis)}</span>'
         date_display = item.date_acquired or "N/A"
         condition_display = item.condition or "N/A"
         grade_display = item.grade or "N/A"
@@ -381,7 +419,13 @@ async def export_insurance_report(
                 user_id,
             )
 
-            # Fetch all items with their latest valuation
+            # Every item at ITS value — public.item_value_v1, the one definition
+            # the portfolio, Home and the Items tab use (2026-10-16). This read
+            # price_predictions.q50 alone, so on the test account 8 of 9 items
+            # (EUR 900 LEGO, owner estimates, catalogue prices) had NO value and
+            # the insured total was EUR 912 against a EUR 2,130 collection —
+            # and the one value it had was printed under the requested currency
+            # label without being converted.
             rows = await conn.fetch(
                 """
                 SELECT
@@ -392,33 +436,42 @@ async def export_insurance_report(
                     COALESCE(i.condition_grade, '')          AS grade,
                     i.image_url,
                     i.created_at                             AS date_acquired,
-                    pp.q50                                   AS estimated_value
+                    iv.value_eur, iv.value_source, iv.value_as_of
                 FROM items i
-                LEFT JOIN LATERAL (
-                    -- price_predictions canonical join columns are item_ref
-                    -- + generated_at, not item_id + asof (learnings.md §42).
-                    -- Partition prune: latest prediction is always within
-                    -- the last 60 days; LATERAL fires once per item.
-                    SELECT q50
-                    FROM price_predictions
-                    WHERE item_ref = i.canonical_ref
-                      AND generated_at > now() - interval '60 days'
-                    ORDER BY generated_at DESC
-                    LIMIT 1
-                ) pp ON true
+                LEFT JOIN LATERAL public.item_value_v1(i) iv ON TRUE
                 WHERE i.user_id = $1::uuid AND NOT i.archived
                 ORDER BY i.category, i.title
                 """,
                 user_id,
             )
 
+            # EUR -> requested currency. No rate = report in EUR and SAY so,
+            # never an EUR number under another currency's label.
+            rate = 1.0
+            if currency != "EUR":
+                try:
+                    from app.lib.fx_service import get_rates_from_eur
+                    r = (await get_rates_from_eur()).get(currency)
+                    if r:
+                        rate = float(r)
+                    else:
+                        currency = "EUR"
+                except Exception as e:
+                    logger.error("[insurance-report] FX unavailable, reporting in EUR: %s", e)
+                    currency = "EUR"
+
             items: list[InsuranceItemRow] = []
             total_value = 0.0
+            bases: set[str] = set()
 
             for row in rows:
-                val = float(row["estimated_value"]) if row["estimated_value"] is not None else None
-                if val is not None:
+                val = None
+                if row["value_eur"] is not None and float(row["value_eur"]) > 0:
+                    val = round(float(row["value_eur"]) * rate, 2)
                     total_value += val
+                basis = _VALUE_BASIS.get(row["value_source"] or "")
+                if val is not None and basis:
+                    bases.add(row["value_source"])
 
                 date_str = None
                 if row["date_acquired"]:
@@ -426,6 +479,12 @@ async def export_insurance_report(
                         date_str = row["date_acquired"].strftime("%Y-%m-%d")
                     except Exception:
                         date_str = str(row["date_acquired"])
+                as_of = None
+                if row["value_as_of"] is not None and val is not None:
+                    try:
+                        as_of = "as of " + row["value_as_of"].strftime("%Y-%m-%d")
+                    except Exception:
+                        as_of = None
 
                 items.append(InsuranceItemRow(
                     id=str(row["id"]),
@@ -437,6 +496,8 @@ async def export_insurance_report(
                     currency=currency,
                     image_url=row["image_url"] if row["image_url"] else None,
                     date_acquired=date_str,
+                    value_basis=basis if val is not None else None,
+                    value_as_of=as_of,
                 ))
 
             user_email = user_row["email"] if user_row else None
@@ -449,13 +510,7 @@ async def export_insurance_report(
                 total_items=len(items),
                 total_estimated_value=round(total_value, 2),
                 currency=currency,
-                methodology=(
-                    "Values are estimated using Sparrow Collect's pricing algorithm, which analyzes "
-                    "recent sold listings from major marketplaces (eBay, TCGPlayer, Cardmarket, "
-                    "StockX, and others), applies condition-based adjustments, and uses ridge "
-                    "regression models to predict current fair market value (q50 median estimate). "
-                    "Population data and rarity factors are incorporated where available."
-                ),
+                methodology=_methodology(bases, currency),
                 items=items,
             )
 
