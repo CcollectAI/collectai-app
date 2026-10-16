@@ -181,7 +181,9 @@ export function ScoreExplanationSheet({
                     <Text style={[styles.scoreBadgeValue, { color: scoreColor }]}>
                       {notScored ? '—' : displayScore}
                     </Text>
-                    <Text style={[styles.scoreBadgeMax, { color: colors.muted }]}>/100</Text>
+                    {notScored ? null : (
+                      <Text style={[styles.scoreBadgeMax, { color: colors.muted }]}>/100</Text>
+                    )}
                   </View>
                   <Text style={[styles.scoreLevelLabel, { color: scoreColor }]}>
                     {scoreLabel}
