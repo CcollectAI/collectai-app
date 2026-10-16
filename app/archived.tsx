@@ -17,6 +17,7 @@
  * object somebody else now owns — so it says so rather than offering a bare
  * Restore.
  */
+import { collectorsApi } from '@/api/collectorsApi';
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { ScreenErrorBoundary } from "@/components/ScreenErrorBoundary";
 import { QuickNavBar } from "@/components/QuickNavBar";
@@ -55,6 +56,13 @@ function ArchivedContent() {
   // held apart deliberately.
   const [error, setError] = useState<string | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  // Items that LEFT BY A SALE (2026-10-16). Settlement retires the seller's row
+  // by archiving it, and this screen tested `source === 'marketplace'` — which
+  // marks the BUYER's new row — so a sold card read "You archived this" with a
+  // working Restore that would put an object someone else now owns back into
+  // the collection and its value. A listing records the item it sold, so the
+  // member's own SOLD listings are the exact answer.
+  const [soldItemIds, setSoldItemIds] = useState<Set<string>>(new Set());
   const cancelledRef = useRef(false);
 
   const fetchArchived = useCallback(async () => {
@@ -63,6 +71,19 @@ function ArchivedContent() {
       if (cancelledRef.current) return;
       setItems(data);
       setError(null);
+      try {
+        const res = await collectorsApi.listP2PListings({ mine: true, limit: 200 });
+        if (cancelledRef.current) return;
+        setSoldItemIds(new Set(
+          (res?.listings ?? [])
+            .filter((l) => l.status === 'sold' && l.item_id)
+            .map((l) => l.item_id as string),
+        ));
+      } catch (e) {
+        // Unknown which were sold: keep Restore available rather than blocking
+        // every restore, and log it (error level — warn is stripped in release).
+        logger.error('[Archived] could not read sold listings:', e);
+      }
     } catch (err) {
       if (cancelledRef.current) return;
       logger.error("[Archived] Failed to load archived items:", err);
@@ -121,7 +142,7 @@ function ArchivedContent() {
       // What marks a sale on this screen is the item having left via a trade,
       // so we surface the distinction rather than implying every archived item
       // was tidied away by hand.
-      const soldOnSparrow = item.source === "marketplace";
+      const soldOnSparrow = soldItemIds.has(item.id);
       const busy = restoringId === item.id;
 
       return (
@@ -149,6 +170,7 @@ function ArchivedContent() {
             </Text>
           </View>
 
+          {soldOnSparrow ? null : (
           <AnimatedPressable
             onPress={() => handleRestore(item)}
             disabled={busy}
@@ -162,10 +184,11 @@ function ArchivedContent() {
               <Text style={[styles.restoreText, { color: colors.accent }]}>Restore</Text>
             )}
           </AnimatedPressable>
+          )}
         </View>
       );
     },
-    [colors, handleRestore, restoringId],
+    [colors, handleRestore, restoringId, soldItemIds],
   );
 
   const renderEmpty = useCallback(() => {
