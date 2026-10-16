@@ -65,7 +65,35 @@ _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in 
 - **Done meanwhile (2026-10-15):** card-linked watches show the catalogue price, labelled and dated, by the item_value_v1 rule (`GET /watchlist/mine` → `catalog_price_eur`/`catalog_price_as_of`; app merges by id). "Charizard ex" → €5.53, last seen 12 Oct. Free-text watches (no catalogue card) still show no price.
 - **Decide:** re-enable the worker (live listings + trend per watch; bounded outbound calls — eBay budget ~1.5k/day of 5k used, OPEN_DECISIONS/project_ebay_api_compliance) or keep catalogue-only until there are members. Recommendation: re-enable at public launch.
 
+### 26. Rating comments: show them, and let the rated member reply? (opened 2026-10-16)
+- **State:** a negative rating now REQUIRES a reason (≥ 10 chars, server + app, `2112ce95`), stored in `member_grades.note` — and shown nowhere: the profile and tiles show counts/percentages only (P2P spec §12). Vinted shows each comment and lets the other member reply.
+- **Decide:** (a) show rating comments on the member's profile, (b) add a reply (one per grade, ratee only), (c) a feedback window (Vinted: 4 days). Thumbs stay either way (§12).
+- **Re-check:** `select count(*) filter (where note is not null) from member_grades`.
+
+### 27. Does postage count toward DAC7 consideration? (opened 2026-10-16)
+- **State:** since `06bc2b9a` the seller's sale records the postage the buyer paid (`marketplace_sales.shipping_charged`), but `_dac7_accrue` still adds the ITEM amount only.
+- **Decide:** with your accountant — is buyer-paid postage "consideration" under DAC7? If yes, `_dac7_accrue(…, amount + shipping)`; a one-line change.
+
+### 28. Clean up the deleted test buyers' bids (opened 2026-10-16, approved by Merle, blocked by permissions)
+- **State:** 9 non-completed bids on simcheck's listings from buyers deleted in earlier tests (3 still "Your move", one accepted €850 counted as "committed"); new deletions no longer leave these (class BB, DEPLOYED). The cleanup script (scratchpad `orph.py`: transaction, scoped to simcheck, keeps completed trades, releases the reservation) was **blocked by the session's permission policy** on prod writes.
+- **Also found:** one CANCELLED €85 bid from a deleted buyer on a gmail.com seller's SOLD listing — outside the approval, left alone.
+- **Do:** allow it (or run it yourself). **Re-check:** `select count(*) from p2p_offers o left join auth.users b on b.id=o.buyer_id where b.id is null and o.status <> 'completed'` → 1 (the gmail one) after.
+
+### 29. Unused endpoints that answer an empty 200 on a DB error (opened 2026-10-16)
+- `GET /analytics/collection/trends` and `GET /analytics/items/{id}/trends` return `[]` with 200 when the DB read fails (rule F) — but **no screen calls either** (Analytics dropped them 2026-07-24; `getItemTrends` has no caller). Delete them, or 503 them if a caller is planned.
+
+### 30. `marketplace_listings.shipping_cost` DEFAULTS to 0 (opened 2026-10-16)
+- 5 listings carry 0 — "free postage" — that may only mean "not stated" (the app's create path now sends nothing when empty → NULL). Decide: `ALTER … DROP DEFAULT` (unknown stays NULL), and whether to NULL those 5 (all DEMO listings on test accounts).
+
 ## Decided
+
+- **2026-10-16 — Marketplace the Vinted way (Merle: "the shipping should be visible like it is on a vinted transaction … for the negative rating again look at vinted … and point 3")**:
+  1. **Postage visible and on top of the offer** — snapshot on the offer, item + postage = total on every money screen, sell-form field, buyer cost basis and seller net include it. `06bc2b9a` (migration `20261016_p2p_offer_postage` APPLIED, server DEPLOYED 2026-10-16; client in the next build).
+  2. **Negative rating needs a reason** (thumbs kept, no auto-feedback). `2112ce95` (server DEPLOYED).
+  3. **Buyer receipt asks "Everything is OK" / "I have an issue"**; no 2-day auto-complete (spec §5b). `2112ce95` (client).
+  4. Clean up deleted test buyers' bids — approved, blocked by permissions → #28.
+  5. Small findings (notification money, RSVP cache, sell Back guard, captions) — `95687e63` (server DEPLOYED).
+  Details: docs/P2P_MARKETPLACE_SPEC.md §13.
 
 - **2026-10-13 — Pricing (Merle: "implement all these suggestions")**, after a competitor scan
   (Collectr $7.99/$59.99, CollX $6.99–9.99/$49.99–99.99, Ludex $4.99/$9.99/$24.99 tiers,

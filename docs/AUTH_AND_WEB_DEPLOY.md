@@ -368,6 +368,20 @@ bake restart (all nine ExecStartPre gates run by hand first, all PASS):
 **10/10**, including `DELETE /account -> 200`, the account really gone (404),
 and the `?confirm` guard still refusing without the token.
 
+## Rows owned under another column name (2026-10-15, class BB)
+
+The per-table loop deletes `WHERE user_id = $1`, and `audit_account_deletion.py`
+enumerated columns NAMED `user_id`. A member's bids as a buyer
+(`p2p_offers.buyer_id`), DM requests (`requester_id` / `target_user_id`), grades
+(`rater_id` / `ratee_id`) and user events with `user_id` NULL (`created_by`)
+survived deletion — against this page's own promise that offers and messages are
+deleted. `_PERSON_COLUMN_DELETES` deletes them (completed trades are kept: the
+seller's transaction record, "What is kept"); `_PERSON_COLUMNS_COVERED` records
+the columns removed with their row. The audit now finds person columns by VALUE
+(uuid columns whose values are `auth.users` ids) and fails on an undecided one.
+DEPLOYED 2026-10-16. The throwaway trade account `walk-seller-1015@sparrowcollect.test`
+is to be deleted through the app's own Delete account to walk this path.
+
 ## The web deletion page (`web/delete-account.html`)
 
 Play and App Store both require deletion to be initiable **without the app** —

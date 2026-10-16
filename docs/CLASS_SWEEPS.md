@@ -119,6 +119,11 @@ Two rules the tooling learned the hard way:
 | AW | A shop tap opened past the one function that records it | **fixed + gated 2026-09-28 (client)** ✅ **SHIPPED in iOS build 166/167 + Android AAB 7 (all built from ≥ 2026-10-09 HEAD)** | Item Shop, price sources, market hits, category store, barcode and the push tap all used a bare `Linking.openURL`; prod held 6 `affiliate_click` rows ever, the last on 2026-08-17. All go through `openAffiliateUrl` now; gate `check:affiliate-open`. Falsifier: in `ItemShopSection.tsx` swap the `openAffiliateUrl(...)` line for `Linking.openURL(link.affiliate_url);` → `npm run check:affiliate-open` exits 1. See "## AW" below |
 | AX | An outbound link that lands on a page with nothing to buy | **fixed 2026-09-28 (server) ✅ ON PROD (verified 2026-10-13: md5 of all 400 `server/{app,workers,pipelines,scripts}` files vs `/opt/collectors/server` — every `app/` file identical)**: Chrono24 URL; Yahoo JP + Mercari hidden for `europe` (saved region used when none is sent)** | Opened every search builder in a real browser from NL. Chrono24 ignored `query` without `dosearch=true` → empty form (FIXED). Yahoo Auctions JP: "no longer available in the EEA" since 2022-04-06, yet offered for every JP category in every region. Mercari US: its OWN search box returns "No results found" from NL, yet Mercari is in the floor set for every category. Falsifier: open `https://auctions.yahoo.co.jp/search/search?p=charizard` from an EU connection → EEA notice. See "## AX" below |
 | AY | A scraper row whose URL is the first link in the block, and whose sold flag is dropped | **parse fixed 2026-09-28 (server) ✅ ON PROD (verified 2026-10-13: md5 of all 400 `server/{app,workers,pipelines,scripts}` files vs `/opt/collectors/server` — every `app/` file identical)**; old rows + sold flag + rollup are OPEN_DECISIONS #13–#15** | `crawl4ai_caller._extract_url_from_listing` takes the FIRST URL: on Mercari that is the photo (9,221 `is_listing` rows in 30 d at `u-mercari-images.mercdn.net`). Both scrapers write `sold_at: None` even for `is_sold: True`, and persist derives `is_listing = sold_at IS NULL` — sold comps are stored as buyable listings, invisible to valuation and eligible for Target Hit (0 of 120 fired alerts so far). Falsifier: `select count(*) from market_hits where seen_at > now()-interval '30 days' and is_listing and url like '%mercdn%'` → >0. See "## AY" below |
+| AZ | A picker built on Android's Alert, which shows at most three buttons | **fixed + gated 2026-10-15 (client, needs a build)** | `showActionSheet` fell back to `Alert.alert` on Android: the carrier picker offered 3 of 10 carriers and no Cancel, the sell form's Category 3 of 50+, plus Condition, item Category/Set/Condition, `SelectField`, photo labels, and Report listing (4 reasons + Cancel). `ActionSheetHost` (mounted in `_layout`) renders a list. Falsifier: add a file with `Alert.alert('t','m',[{text:'a'},{text:'b'},{text:'c'},{text:'d'}])` → `npm run check:android-alert-buttons` exits 1. See "## AZ" below |
+| BA | A toast drawn under a native Modal on Android | **fixed + gated 2026-10-15 (client, needs a build)** | Edit Profile's server reason "Username may only contain letters…" was toasted and invisible (Save read as dead); every sheet that toasts while open had the same hole. Toast renders in the topmost `<ToastHost />`; all 44 `<Modal>`s carry one. Falsifier: a `<Modal>` without `<ToastHost />` → `npm run check:toast-host` exits 1; `__tests__/components/toastHost.test.tsx` red if the root always renders. See "## BA" below |
+| BB | A member held under a column NOT named `user_id`, invisible to account deletion and its audit | **fixed + gated 2026-10-15, DEPLOYED 2026-10-16** | `DELETE /account` and `audit_account_deletion.py` keyed on `user_id`; bids as buyer (`p2p_offers.buyer_id`), DM requests, grades and user events (`created_by`, `user_id` NULL) survived. `_PERSON_COLUMN_DELETES` / `_PERSON_COLUMNS_COVERED`; the audit finds person columns by VALUE. Falsifier: run the audit against the router from before `eecbdb86` → 8 person-column gaps; current → 0. See "## BB" below |
+| BC | A per-user cache of the user's OWN data that their own write never invalidates | **fixed 2026-10-15/16, DEPLOYED 2026-10-16** | Home's category breakdown: 6 h cache, Home "Total Items" 8 while overview said 9 after a purchase → cache removed (28-79 ms uncached). Event lists: 5 min per-user cache carrying MY rsvp status → per-user generation bumped on RSVP. Falsifier: `grep -rn "cache_set(" server/app` and, for every key containing the user id, find the write that clears or versions it. See "## BC" below |
+| BD | A member's own money rounded to whole units, and postage dropped from the deal | **fixed 2026-10-15/16 (client needs a build; server + migration 20261016 DEPLOYED/APPLIED)** | "€23 total incl. shipping" for 20 + 2,50; "Send offer · €18" sent 17,50; "Pay the seller: Agreed amount €19" on a 19 + 2,50 trade; buyer cost basis and seller net ignored postage. `formatMemberPrice` (exact cents), `p2p_offers.shipping_cost` snapshot, `PostageBreakdown`. Falsifier: `__tests__/lib/memberPrice.test.ts`, `__tests__/components/postageBreakdown.test.tsx`, `server/tests/test_p2p_postage.py`. See "## BD" below |
 
 ## AV — an affiliate link built to a format the network does not read (2026-09-28)
 
@@ -217,6 +222,67 @@ Two defects, one adapter family:
 Not fixed: making these rows `is_listing = false` would put junk-titled sold
 comps INTO valuation and training. That needs the URL/title parse fixed first,
 then a decision on whether scraper sold comps are trusted at all.
+
+## AZ — a picker built on Android's Alert (2026-10-15)
+
+Walked as a seller: Add tracking → Carrier offered **PostNL, DPD, GLS** — no
+DHL, bpost, UPS, no Cancel. Android's `Alert.alert` renders at most three
+buttons and drops the rest silently; `showActionSheet` used it as its Android
+branch, so every picker with more than two options lost choices on Android only
+(iOS used `ActionSheetIOS`). Enumerated 11 callers: carriers (10), sell Category
+(50+), Condition ×2, item Category/Set, `SelectField`, photo labels.
+
+Fix at the chokepoint: `src/components/ActionSheetHost.tsx`, mounted once in
+`app/_layout.tsx`; `showActionSheet` keeps its signature. Gate
+`scripts/check-android-alert-buttons.mjs` (AST, in `verify:prebuild`) counts
+every `Alert.alert` button array and refuses > 3 or a non-literal array — it
+found the second instance, Report listing (4 reasons + Cancel), moved to the
+picker. Falsifier: see the row.
+
+## BA — a toast drawn under a native Modal (2026-10-15)
+
+A native `<Modal>` is its own window on Android, above the app root, and the
+ToastProvider drew at the root. Walked: Edit Profile, username `simcheck_walk !`
+→ Save → nothing visible; logcat had the server's exact reason, already toasted.
+Fix: the toast renders in the topmost mounted `<ToastHost />` (RN mounts a
+Modal's children only while visible, so mounted hosts = open modals), at the
+root only when none. Inserted in all 44 `<Modal>` elements (30 files); gate
+`scripts/check-toast-host.mjs` (AST). Tests that mocked `@/components/Toast`
+needed `ToastHost: () => null` (8 files).
+
+## BB — a member held under a column not named user_id (2026-10-15)
+
+Found walking a trade: three "Your move" bids whose buyers no longer exist.
+`p2p_offers` has no FK on `buyer_id`/`seller_id`; deletion deleted
+`WHERE user_id = $1` per table; the audit enumerated columns NAMED `user_id`.
+Enumerated by VALUE (every uuid column in `public` whose values hit
+`auth.users.id`): 12 columns, 8 with no cascading FK. Prod at the time: 11
+orphan bids, ~165 DM requests, 4 user events, 1 grade. The public deletion page
+promised "Marketplace listings, offers … Messages" are deleted. Completed trades
+are kept (the seller's transaction record — "What is kept"). Also caught by the
+new audit: `scan_events` (added 2026-10-14) was in no bucket.
+Existing orphans are NOT cleaned yet: the cleanup for the test account was
+blocked by the session's permission policy (2026-10-16); one more orphan, a
+cancelled €85 bid on a gmail.com seller's sold listing, was left untouched.
+
+## BC — a per-user cache of the user's own data (2026-10-15)
+
+`cache_set` keyed by user id with nothing invalidating it on that user's own
+write. Two live instances: `portfolio_breakdown:{uid}` (6 h — Home's tiles and
+item count lagged a purchase; uncached it is 28-79 ms for the largest accounts,
+so removed) and `events:list|nearby:{uid}` (5 min, carries the caller's
+`user_rsvp_status` — now keyed by a per-user generation bumped on RSVP /
+un-RSVP). Not instances: deep-dive (per category), leaderboard (global),
+barcode (per ISBN), `followed_cats` (already deleted on write).
+
+## BD — a member's own money rounded, and postage dropped from the deal (2026-10-15/16)
+
+`money()` rounds every amount ≥ 1 to whole units — right for estimates, wrong for
+a figure a member TYPED. `MoneyOpts.exact` shows cents only when present;
+`formatMemberPrice` is the one convert-then-format for member prices (5 hand
+copies replaced), whole units again after FX. Then Merle: "the shipping should
+be visible like it is on a Vinted transaction" — see
+docs/P2P_MARKETPLACE_SPEC.md "Postage, ratings and receipt the Vinted way".
 
 ## AD — a money format typed into the UI (2026-09-24)
 

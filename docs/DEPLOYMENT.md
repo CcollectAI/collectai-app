@@ -766,6 +766,19 @@ reason this is written down rather than muted.
 After merging a server fix, ask: does this need to reach EC2 (rsync), the
 scheduled pipelines (branch), or both?
 
+### 2026-10-16 — a migration that would have stopped the restart
+
+Deploy of 10 server files + migrations 20261015b and 20261016 (backup
+`/opt/collectors/backups/deploy_20261016_1315`). The 9 `ExecStartPre` gates were
+run BY HAND before restarting — and `preflight_schema_lock` FAILED:
+20261015b had changed `mv_category_top_value.price_eur` from numeric to float8
+(its new source stores float8). As a startup gate it would have kept bake from
+coming back. Fixed in the migration (`::numeric`), re-applied, gate PASS, then
+restart → healthz 200. **Run the gates after applying a migration, not only
+after copying code** — a view's column TYPE is part of the lock.
+Also: in zsh `rsync $FILES` does not word-split — use an array, or nothing is
+copied (the remote `tar` backup DID split, so the backup alone looked fine).
+
 ## CI/CD
 
 GitHub Actions workflows in `.github/workflows/`:

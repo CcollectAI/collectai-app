@@ -4017,3 +4017,15 @@ pinned "No sales in the last 90 days" was updated, not deleted.
 flex thirds; the high one must be `textAlign: 'right'` or it floats at ~67%
 instead of over the bar's end and "High" (Merle's screenshot). Same rule for
 any label row made of `flex: 1` cells: align each to the edge it names.
+
+## Three Android rules from the trade walk (2026-10-15)
+
+1. **A member's own money shows its cents.** `formatMemberPrice` / `MoneyOpts.exact`
+   for anything a member typed (price, offer, postage): `€20`, `€22,50`. Estimates
+   stay whole. Never the total alone when the parts are on the same screen — they
+   add up now (class BD).
+2. **Pickers go through `showActionSheet`**, never a hand-built `Alert.alert` with
+   options: Android shows three buttons (class AZ, `check:android-alert-buttons`).
+3. **Every `<Modal>` carries `<ToastHost />`**, or its toasts are drawn under it on
+   Android (class BA, `check:toast-host`).
+

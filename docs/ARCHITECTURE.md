@@ -975,6 +975,13 @@ grepping the file for `v_item_values_v1` finds only comments, because the
 endpoints call the wrapped function rather than the view. Check for
 `item_value_v1` per handler, not the view name per file.
 
+⚠️ **A third trap, found 2026-10-15: a cache sits outside this parity.**
+`category-breakdown` carried a 6-hour per-user cache that nothing invalidated, so
+after a purchase `/portfolio/overview` counted 9 items and Home's tiles (this
+endpoint) 8 — every check above compares FRESH reads and could not see it.
+Removed (28-79 ms uncached); a failed read is now 503, not an empty 200. Class
+BC in docs/CLASS_SWEEPS.md.
+
 #### `chat_threads_v1` user FKs — added 2026-07-31, two different semantics
 
 The table had **no foreign keys to `auth.users`**, so deleting a user left

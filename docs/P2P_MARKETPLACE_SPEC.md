@@ -2021,3 +2021,51 @@ see the query, which is the argument for keeping gates literal-scoped.
 - **An off-platform sale is recorded.** Mark as sold asks the price and records
   it exactly as an in-app trade does, DAC7 included (`docs/CLASS_SWEEPS.md` AJ).
 - **Mandates include Sparrow listings** (`docs/CLASS_SWEEPS.md` AI).
+
+## 13. Postage, ratings and receipt — the Vinted way (2026-10-16)
+
+Walked as buyer AND seller on Android (2026-10-15) with a throwaway counterparty.
+Merle: *"the shipping should be visible like it is on a vinted transaction …
+for the negative rating again look at vinted for guidance on this and point 3"*
+(point 3 = "I received it" completes the trade in one tap).
+
+### What Vinted does (checked 2026-10-16)
+
+| | Vinted | Sources |
+|---|---|---|
+| Postage | An offer is for the ITEM; "you can't offer or request a lower price for … postage or fees"; postage is added on top; the buyer sees the breakdown and total before paying | [help/258](https://www.vinted.co.uk/help/258-i-want-to-make-an-offer-or-suggest-a-different-price), [pricelist](https://www.vinted.co.uk/pricelist) |
+| Ratings | 1–5 stars + comment within 4 days of completion; the other member can **reply**; you can edit/delete your own; automatic feedback (positive if the buyer is silent 4 days, negative for not shipping / cancelling) | [help/14](https://www.vinted.com/help/14-feedback-star-ratings) |
+| Receipt | Two buttons: **Everything is OK** (irreversible) / **I have an issue** (suspends); auto-completes 2 days after "delivered" | [help/550](https://www.vinted.com/help/550), [help/1522](https://www.vinted.com/help/1522) |
+
+### What we took, and what we did not
+
+**Postage — taken.** `p2p_offers.shipping_cost` snapshots the listing's postage
+when the offer is made (migration `20261016_p2p_offer_postage`, APPLIED
+2026-10-16): a listing edit cannot move an agreed trade. NULL = the seller stated
+none ("agree it with the seller"), never treated as free. Item + postage = total
+on the listing, the offer and counter sheets, the cards, the trade header and
+"Pay the seller" (headline = **Total to pay**). The sell form has a postage field
+(empty = not stated, 0 = free). Money: the buyer's new item costs item + postage;
+the seller's sale records `shipping_charged`, so net = item + postage charged −
+their own stamp (recorded later) — a reimbursed stamp is no longer a loss.
+DAC7 still accrues the ITEM amount only — whether postage counts as
+"consideration" is an open question, not decided here.
+
+**Ratings — the reason, not the stars.** Thumbs stay (§12, Merle 2026-08-18). A
+NEGATIVE grade must say what went wrong: `GradeCreate` refuses < 10 characters
+(server, so old builds and direct calls too); the app opens "What went wrong?"
+with the same minimum (parity test). **Not taken:** automatic feedback — it would
+publish a grade nobody gave. **Not built yet:** the ratee's reply and a visible
+list of rating comments (notes are stored, shown nowhere) — open decision.
+
+**Receipt — the question, not the timer.** The buyer's confirm asks "Is
+everything OK with the item?": *Everything is OK* (says it can't be undone) /
+*I have an issue* (opens chat with the seller) / *Not yet*. The seller's "I sent
+it" stays one tap — it completes nothing alone. **Not taken:** the 2-day
+auto-complete. §5b: completing a trade from time or carrier status substitutes
+our judgment for the buyer's — only the buyer confirms.
+
+Also from that walk (all fixed): member prices to the cent (class BD), the
+offers screens refetch on return, Android pickers show every option (AZ), toasts
+inside modals (BA), "Pay the seller" says when the seller added no payment
+handle, deleted buyers' bids no longer survive account deletion (BB).
