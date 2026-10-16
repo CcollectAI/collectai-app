@@ -188,7 +188,7 @@ function TradeScreen() {
     const state = (isDone: boolean, isNow: boolean): StepState =>
       isDone ? 'done' : isNow ? 'now' : 'later';
 
-    return [
+    const all = [
       {
         key: 'respond',
         title: 'Respond',
@@ -258,6 +258,10 @@ function TradeScreen() {
             : 'Unlocks once you have both confirmed.',
       },
     ];
+    // A declined / cancelled / expired trade ENDED at Respond. Listing "Book
+    // the parcel … Rate the buyer" under it read as steps still to come
+    // (walked 2026-10-16, a declined bid).
+    return dead ? all.slice(0, 1) : all;
   }, [offer, t]);
 
   const openListing = useCallback(() => {
