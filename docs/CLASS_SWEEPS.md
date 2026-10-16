@@ -124,6 +124,7 @@ Two rules the tooling learned the hard way:
 | BB | A member held under a column NOT named `user_id`, invisible to account deletion and its audit | **fixed + gated 2026-10-15, DEPLOYED 2026-10-16** | `DELETE /account` and `audit_account_deletion.py` keyed on `user_id`; bids as buyer (`p2p_offers.buyer_id`), DM requests, grades and user events (`created_by`, `user_id` NULL) survived. `_PERSON_COLUMN_DELETES` / `_PERSON_COLUMNS_COVERED`; the audit finds person columns by VALUE. Falsifier: run the audit against the router from before `eecbdb86` → 8 person-column gaps; current → 0. See "## BB" below |
 | BC | A per-user cache of the user's OWN data that their own write never invalidates | **fixed 2026-10-15/16, DEPLOYED 2026-10-16** | Home's category breakdown: 6 h cache, Home "Total Items" 8 while overview said 9 after a purchase → cache removed (28-79 ms uncached). Event lists: 5 min per-user cache carrying MY rsvp status → per-user generation bumped on RSVP. Falsifier: `grep -rn "cache_set(" server/app` and, for every key containing the user id, find the write that clears or versions it. See "## BC" below |
 | BD | A member's own money rounded to whole units, and postage dropped from the deal | **fixed 2026-10-15/16 (client needs a build; server + migration 20261016 DEPLOYED/APPLIED)** | "€23 total incl. shipping" for 20 + 2,50; "Send offer · €18" sent 17,50; "Pay the seller: Agreed amount €19" on a 19 + 2,50 trade; buyer cost basis and seller net ignored postage. `formatMemberPrice` (exact cents), `p2p_offers.shipping_cost` snapshot, `PostageBreakdown`. Falsifier: `__tests__/lib/memberPrice.test.ts`, `__tests__/components/postageBreakdown.test.tsx`, `server/tests/test_p2p_postage.py`. See "## BD" below |
+| BE | A steady STATE logged at ERROR on every call — with Sentry's default logging integration, every one is an event | **fixed 2026-10-16 (server)** | `scrapedo_quota` "BLOCKING: 30 requests left" 7,775× in 12 days (~99% of server ERRORs) → announced once per state per 24 h, repeats DEBUG. `firecrawl_quota` already suppresses. Falsifier: `ssh collectai 'grep -a -E "^2026-[0-9-]+ [0-9:,]+ \\[[^]]*\\] ERROR:" /opt/collectors/bake.log \| sed -E "s/^[^]]*\\] //; s/[0-9]+/N/g" \| cut -c1-120 \| sort \| uniq -c \| sort -rn \| head'` — no line should dominate. See "## BE" below |
 
 ## AV — an affiliate link built to a format the network does not read (2026-09-28)
 
@@ -283,6 +284,16 @@ a figure a member TYPED. `MoneyOpts.exact` shows cents only when present;
 copies replaced), whole units again after FX. Then Merle: "the shipping should
 be visible like it is on a Vinted transaction" — see
 docs/P2P_MARKETPLACE_SPEC.md "Postage, ratings and receipt the Vinted way".
+
+## BE — a state logged at ERROR on every call (2026-10-16)
+
+Merle: "sentry has errors ballooning up on email". Not the 10-16 deploy (only
+quota lines after the restart) and not the app (no build carries a Sentry DSN).
+Ranking every server ERROR since 10-04 by message: `[scrapedo_quota] BLOCKING:
+N requests left` 7,775, the next type 25. A spent free tier is a state, not an
+event, and `server/main.py` initialises Sentry with defaults, so each line was an
+event. Crawl4AI's "[ERROR]... ×" lines are its own console logger (not Python
+logging) and our wrapper logs crawl failures at WARNING — neither reaches Sentry.
 
 ## AD — a money format typed into the UI (2026-09-24)
 

@@ -98,18 +98,40 @@ async def remaining(force: bool = False) -> Optional[int]:
     return None
 
 
+# A STATE is announced once, not per call (2026-10-16). "BLOCKING: 30 requests
+# left" was logged at ERROR on every blocked call — 7,775 times between
+# 2026-10-04 and 10-16, ~99% of all server ERROR lines — and the server's Sentry
+# (default LoggingIntegration) turns every ERROR into an event: one issue, an
+# exploding count, and Merle's inbox ("sentry has errors ballooning up").
+# Failing closed is unchanged; the first block in a 24 h window is still an
+# ERROR (that is the alert), repeats are DEBUG. Same lesson firecrawl_quota
+# already wrote down: "retrying it just fills the log until the plan resets".
+_ANNOUNCE_TTL = 86_400
+
+
+def _announce(state: str, msg: str, *args) -> None:
+    key = f"scrapedo:announced:{state}"
+    if cache_get(key):
+        logger.debug(msg, *args)
+        return
+    cache_set(key, 1, ttl=_ANNOUNCE_TTL)
+    logger.error(msg + " (said once per 24 h; further blocks are silent)", *args)
+
+
 async def allow(reserve: int = _DEFAULT_RESERVE) -> bool:
     """Whether a Scrape.do request may be made right now."""
     left = await remaining()
     if left is None:
-        logger.error(
+        _announce(
+            "unreadable",
             "[scrapedo_quota] BLOCKING: cannot read the remaining monthly quota. "
             "Failing closed — a missed comp costs one row, overrunning a hard "
-            "cap costs the month."
+            "cap costs the month.",
         )
         return False
     if left <= reserve:
-        logger.error(
+        _announce(
+            "spent",
             "[scrapedo_quota] BLOCKING: %d requests left, reserve is %d. "
             "The monthly free tier is spent; it resets on the 1st.",
             left, reserve,

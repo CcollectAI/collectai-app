@@ -102,3 +102,29 @@ class TestTheReserve:
     def test_the_reserve_is_below_the_free_tier_but_not_trivial(self):
         assert 0 < q._DEFAULT_RESERVE < 1000
         assert q._CACHE_TTL <= 3600, "a stale quota view must not outlive an hour"
+
+
+class TestSaidOnce:
+    """A spent quota is a STATE, announced once — not an ERROR per call
+    (2026-10-16: 7,775 identical ERRORs in 12 days, each a Sentry event)."""
+
+    @pytest.mark.asyncio
+    async def test_a_burst_of_blocked_calls_logs_one_error_and_blocks_them_all(self, monkeypatch, caplog):
+        async def _fetch(timeout=15.0):
+            return 30
+        monkeypatch.setattr(q, "fetch_remaining", _fetch)
+        with caplog.at_level("DEBUG"):
+            results = [await q.allow(reserve=100) for _ in range(50)]
+        assert results == [False] * 50  # still fails closed every time
+        errors = [r for r in caplog.records if r.levelname == "ERROR" and "BLOCKING" in r.message]
+        assert len(errors) == 1
+
+    @pytest.mark.asyncio
+    async def test_unreadable_is_its_own_state_and_also_said_once(self, monkeypatch, caplog):
+        async def _fetch(timeout=15.0):
+            return None
+        monkeypatch.setattr(q, "fetch_remaining", _fetch)
+        with caplog.at_level("ERROR"):
+            for _ in range(10):
+                assert await q.allow() is False
+        assert len([r for r in caplog.records if r.levelname == "ERROR" and "cannot read" in r.message]) == 1

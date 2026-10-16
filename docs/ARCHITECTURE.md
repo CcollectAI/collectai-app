@@ -335,6 +335,13 @@ costs a row, while failing open against a hard cap costs the month. A stale
 cached count is preferred to no count, so one flaky request cannot take the
 adapter dark, but "we could not ask" never renders as "plenty left".
 
+**A spent month is a STATE, said once (2026-10-16).** The block was logged at
+ERROR on every call: 7,775 identical lines from 10-04 to 10-16, ~99% of all
+server ERRORs, and the server's Sentry (default LoggingIntegration) makes every
+ERROR an event — Merle: "sentry has errors ballooning up". Now the first block
+per state ("spent" / "unreadable") per 24 h is ERROR, repeats DEBUG; it still
+fails closed on every call.
+
 ⚠️ **`spend_tracker` does NOT cover this, despite appearances.** It has a
 monthly reset, per-provider costs and a `check()` before every call — but it
 compares one **shared EUR pool** across every provider, and scrapedo is
