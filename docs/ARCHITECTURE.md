@@ -982,6 +982,13 @@ grepping the file for `v_item_values_v1` finds only comments, because the
 endpoints call the wrapped function rather than the view. Check for
 `item_value_v1` per handler, not the view name per file.
 
+⚠️ **A fourth value site that never got the memo (2026-10-16): the insurance
+report.** `/export/insurance-report` read `price_predictions.q50` alone — on the
+test account 8 of 9 items had no value, the "insured total" was EUR 912 of a
+EUR 2,130 collection, and that number was printed under the requested currency
+without converting. Now `item_value_v1` + FX + a per-item basis. Re-check: the
+report's EUR total must equal `/portfolio/overview`'s `total_value`.
+
 ⚠️ **A third trap, found 2026-10-15: a cache sits outside this parity.**
 `category-breakdown` carried a 6-hour per-user cache that nothing invalidated, so
 after a purchase `/portfolio/overview` counted 9 items and Home's tiles (this
