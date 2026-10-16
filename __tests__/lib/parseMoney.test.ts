@@ -67,3 +67,16 @@ describe('parseMoney', () => {
     }
   });
 });
+
+describe('malformed amounts are refused, not guessed (2026-10-16)', () => {
+  // Walked: "4,5,0" typed as postage read as EUR 45 — a plausible wrong number.
+  it.each(['4,5,0', '4,,5', '1..5', '12,34,5', '1.2345', '1,23.456'])('%s -> null', (v) => {
+    expect(parseMoney(v)).toBeNull();
+  });
+  it.each([
+    ['4,50', 4.5], ['4.50', 4.5], ['1.234,50', 1234.5], ['1,234.50', 1234.5],
+    ['1.234.567,89', 1234567.89], ['0,999', 0.999], ['12', 12], ['1.250', 1250],
+  ])('%s -> %s still parses', (v, n) => {
+    expect(parseMoney(v)).toBe(n);
+  });
+});

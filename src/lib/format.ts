@@ -452,6 +452,16 @@ export function parseMoney(value: string | null | undefined): number | null {
   // decimals, so there is nothing real on the other side of the trade — except
   // a leading "0", where "0,999" can only be a fraction.
   const grouped = lastSep !== -1 && !/[.,]/.test(head) && tail.length === 3 && head !== '' && head !== '0';
+  // MALFORMED is refused, not guessed (2026-10-16). Walked: "4,5,0" typed as a
+  // postage read as EUR 45, "4,,5" as 4.5 — the plausible-wrong-number shape
+  // this function exists to prevent. null makes every caller's field say the
+  // amount is invalid instead of saving a figure the member never meant.
+  if (/[.,]{2,}/.test(cleaned)) return null;
+  if (/[.,]/.test(head)) {
+    const groups = head.split(/[.,]/);
+    if (!/^\d{1,3}$/.test(groups[0]) || groups.slice(1).some((g) => !/^\d{3}$/.test(g))) return null;
+  }
+  if (lastSep !== -1 && !grouped && tail.length > 2 && head !== '0' && head !== '') return null;
   const normalised =
     lastSep === -1
       ? cleaned
