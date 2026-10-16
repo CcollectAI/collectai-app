@@ -85,7 +85,11 @@ _Opened 2026-09-28 from the affiliate / outbound-link sweep (classes AV–AY in 
 ### 30. `marketplace_listings.shipping_cost` DEFAULTS to 0 (opened 2026-10-16)
 - 5 listings carry 0 — "free postage" — that may only mean "not stated" (the app's create path now sends nothing when empty → NULL). Decide: `ALTER … DROP DEFAULT` (unknown stays NULL), and whether to NULL those 5 (all DEMO listings on test accounts).
 
-## Decided
+### 31. A seller's account deletion erases the BUYER's record of a completed trade (opened 2026-10-16)
+- **Measured 2026-10-16** deleting the throwaway `walk-seller-1015` via `DELETE /account`: its listing is ON DELETE CASCADE from `auth.users`, and `p2p_offers.listing_id` cascades from the listing — so the test account's completed €19 PURCHASE (offer `dd379708…`) vanished. The buyer keeps the item (`acquired_from = sparrow:offer:<id>`), not the trade (no rating, no history). The reverse case — a deleted BUYER — keeps the trade (class BB rule).
+- **Decide:** keep completed trades for the remaining party (soft-delete the listing, or `ON DELETE SET NULL` on `p2p_offers.listing_id` with a title snapshot), or accept that the trade goes with the seller.
+- **Re-check:** `select count(*) from p2p_offers where status='completed' and listing_id is null` / the buyer's Open bids → Buying.
+
 
 - **2026-10-16 — Marketplace the Vinted way (Merle: "the shipping should be visible like it is on a vinted transaction … for the negative rating again look at vinted … and point 3")**:
   1. **Postage visible and on top of the offer** — snapshot on the offer, item + postage = total on every money screen, sell-form field, buyer cost basis and seller net include it. `06bc2b9a` (migration `20261016_p2p_offer_postage` APPLIED, server DEPLOYED 2026-10-16; client in the next build).
