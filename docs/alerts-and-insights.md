@@ -1463,3 +1463,13 @@ The trade pushes additionally carry the offer: `/offers?offerId=<id>`, and
 `app/offers.tsx` READS it — highlights that card and opens the rating prompt on
 arrival. Reading it is what makes the contract checkable by `check:params`; a
 param nothing reads is legal TS and silently dropped.
+
+## Preferences are checked at the push chokepoint (2026-10-16)
+
+`send_push_to_user` (server/app/push.py) now reads the member's toggle for the
+push's `data.type` via `ALERT_TYPE_TO_PREF` before sending. Chat pushes call it
+directly (not `notify_user`), so Settings → Notifications → "Messages" OFF
+still pushed every chat message. The history row is still written (muting is a
+delivery preference). Types with no toggle (`catalog_mapped`, `sponsored_event`)
+are unaffected. Test: `server/tests/test_push_respects_prefs.py`.
+Found walking the 10-15 unwalked-path inventory (#15).

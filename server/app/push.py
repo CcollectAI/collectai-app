@@ -171,6 +171,26 @@ async def send_push_to_user(
         deep_link=deep_link,
     )
 
+    # The member's own off-switch (2026-10-16). Chat pushes come straight here,
+    # not through notify_user, and this function never read preferences — so
+    # Settings → Notifications → "Messages" OFF still pushed every chat message.
+    # Checked at the chokepoint by the push's `type` (ALERT_TYPE_TO_PREF is the
+    # one type → toggle map); types with no toggle (catalog_mapped,
+    # sponsored_event, …) are unaffected. The history row above is kept, as
+    # notify_user does: muting a push is a delivery preference, not deletion.
+    ptype = (data or {}).get("type")
+    if isinstance(ptype, str) and ptype:
+        from app.lib.notify import ALERT_TYPE_TO_PREF, _get_user_prefs
+        pref_key = ALERT_TYPE_TO_PREF.get(ptype)
+        if pref_key:
+            try:
+                prefs = await _get_user_prefs(conn, user_id)
+            except Exception as e:  # a prefs read must not cost the push
+                logger.error("[push] preference read failed for %s: %s", user_id[:8], e)
+                prefs = {}
+            if prefs.get(pref_key, True) is False:
+                return 0
+
     rows = await conn.fetch(
         "SELECT push_token FROM public.user_push_tokens WHERE user_id = $1 AND active = true",
         user_id,
