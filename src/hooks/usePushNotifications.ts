@@ -43,6 +43,11 @@ Notifications.setNotificationHandler({
 // Hook
 // ---------------------------------------------------------------------------
 
+/** Notification responses already routed — module-level, so a re-run of the
+ *  effect (userId change) or the listener AND the cold-start read delivering
+ *  the same tap route it once. */
+const handledResponseIds = new Set<string>();
+
 export function usePushNotifications(userId: string | null) {
   const router = useRouter();
   const notificationListener = useRef<Notifications.EventSubscription | null>(null);
@@ -173,9 +178,23 @@ export function usePushNotifications(userId: string | null) {
         }
       });
 
-    // 5. Listener: user tapped on a notification
-    responseListener.current =
-      Notifications.addNotificationResponseReceivedListener((response) => {
+    // 5. A tap on a notification — LIVE (listener) and COLD START (below).
+    //
+    // 2026-10-16: this effect waits for `userId`, i.e. for the session to
+    // restore, so on a cold start the listener is added seconds after launch —
+    // and nothing asked expo for the response that LAUNCHED the app. Tapping a
+    // push while the app was closed opened Home; the offer, deal, item or
+    // thread it was about never showed (unwalked path #13 of the 10-15
+    // inventory: `getLastNotificationResponse` appeared nowhere). One handler,
+    // two entry points, deduped by notification id so a response is routed
+    // once however it arrives.
+    const onResponse = (response: Notifications.NotificationResponse) => {
+        // Dedupe only on a real id: a response without one must still route.
+        const responseId = response.notification?.request?.identifier;
+        if (responseId) {
+          if (handledResponseIds.has(responseId)) return;
+          handledResponseIds.add(responseId);
+        }
         const data = response.notification.request.content.data as
           | Record<string, unknown>
           | undefined;
@@ -299,7 +318,20 @@ export function usePushNotifications(userId: string | null) {
         } else if (typeof data.user_id === "string" && data.user_id) {
           router.push(`/users/${data.user_id}` as Href);
         }
-      });
+    };
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(onResponse);
+
+    // Cold start: the tap that opened the app. Cleared once routed, so a later
+    // launch does not replay an old tap.
+    try {
+      const launchedBy = Notifications.getLastNotificationResponse();
+      if (launchedBy) {
+        onResponse(launchedBy);
+        Notifications.clearLastNotificationResponse();
+      }
+    } catch (e) {
+      logger.error('[push] reading the launch notification failed:', e);
+    }
 
     // 6. Clear badge when app comes to foreground
     const appStateSubscription = AppState.addEventListener(

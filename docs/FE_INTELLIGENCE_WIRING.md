@@ -66,6 +66,15 @@ export async function postFeedback(
 
 **Trigger**: `Notifications.addNotificationResponseReceivedListener` callback (already exists for deep-link routing).
 
+**Cold start (2026-10-16).** The listener is added only after the session
+restores (the effect waits for `userId`), so a tap that LAUNCHED the app was
+never routed — the app opened on Home. The handler is now `onResponse`, called
+by the listener AND once from `Notifications.getLastNotificationResponse()`
+after login (then `clearLastNotificationResponse()`), deduped by
+`request.identifier`. Test: `__tests__/hooks/usePushNotifications.test.ts`
+"routes the notification that launched the app". Android pushes still need FCM
+(docs/ANDROID_LAUNCH.md); iOS is where this was live.
+
 **Payload**:
 ```ts
 const notificationId = response.notification.request.identifier;

@@ -25,6 +25,8 @@ const mockAddNotificationReceivedListener = jest.fn().mockImplementation((cb) =>
   return { remove: jest.fn() };
 });
 
+const mockGetLastNotificationResponse = jest.fn().mockReturnValue(null);
+const mockClearLastNotificationResponse = jest.fn();
 const mockAddNotificationResponseReceivedListener = jest.fn().mockImplementation((cb) => {
   notificationResponseCallback = cb;
   return { remove: jest.fn() };
@@ -40,6 +42,8 @@ jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
   addNotificationReceivedListener: (...args: unknown[]) => mockAddNotificationReceivedListener(...args),
   addNotificationResponseReceivedListener: (...args: unknown[]) => mockAddNotificationResponseReceivedListener(...args),
+  getLastNotificationResponse: () => mockGetLastNotificationResponse(),
+  clearLastNotificationResponse: () => mockClearLastNotificationResponse(),
   AndroidImportance: { HIGH: 4, DEFAULT: 3 },
 }));
 
@@ -421,5 +425,22 @@ describe('usePushNotifications', () => {
     await new Promise((r) => setTimeout(r, 0));
 
     expect(mockRequestPermissionsAsync).toHaveBeenCalled();
+  });
+
+  // 2026-10-16: the listener is added after the session restores, so a tap
+  // that LAUNCHED the app (cold start) was never routed — Home opened instead.
+  it('routes the notification that launched the app, once, and clears it', async () => {
+    const launch = {
+      notification: { request: { identifier: 'n-cold-1', content: { data: { deal_id: 'deal-cold' } } } },
+    };
+    mockGetLastNotificationResponse.mockReturnValueOnce(launch);
+    renderHook(() => usePushNotifications('user-1'));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mockPush).toHaveBeenCalledWith('/purchase/deal/deal-cold');
+    expect(mockClearLastNotificationResponse).toHaveBeenCalled();
+    // The same tap arriving through the listener as well is not routed twice.
+    mockPush.mockClear();
+    notificationResponseCallback!(launch);
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });
