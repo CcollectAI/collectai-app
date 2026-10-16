@@ -38,7 +38,10 @@ SELECT ranked.category,
     SELECT mp.category,
            ci.id AS catalog_item_id,
            mp.category || ':' || mp.item_key AS item_ref,
-           mp.price_eur,
+           -- ::numeric — the old view's type. mv_catalog_item_price stores a
+           -- float8, and the change tripped preflight_schema_lock (a startup
+           -- gate: bake would not have restarted). Readers expect numeric.
+           mp.price_eur::numeric AS price_eur,
            row_number() OVER (PARTITION BY mp.category ORDER BY mp.price_eur DESC, ci.id) AS rn
       FROM public.mv_catalog_item_price mp
       JOIN public.category_items ci
