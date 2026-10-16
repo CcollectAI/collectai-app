@@ -1274,7 +1274,13 @@
     "at_asking_short": "希望価格と同額",
     "step_postage_title": "送料を記録",
     "step_postage_now": "発送にいくらかかりましたか?入力するまで、利益は不明と表示されます。",
-    "step_postage_done": "記録済み。実現損益に反映されます。"
+    "step_postage_done": "記録済み。実現損益に反映されます。",
+    "problem_title": "何が問題でしたか？",
+    "problem_explainer": "低評価はこのメンバーの評価に反映され、他のメンバーにも表示されます。何があったかを事実のみで（個人情報なしで）書いてください。まずはチャットで解決を試みてください。",
+    "problem_placeholder": "例: 写真になかった折れがカードにありました",
+    "problem_min": "{{count}}文字以上。",
+    "problem_submit": "低評価を投稿",
+    "problem_recorded": "評価を投稿しました"
   },
   "item_attrs": {
     "case_size": "ケースサイズ",
@@ -1855,5 +1861,12 @@
     "item_agreed": "商品（合意額）",
     "total_to_pay": "支払い合計",
     "plus_postage": "+ 送料 {{amount}}"
+  },
+  "receipt": {
+    "title": "商品に問題はありませんか？",
+    "body": "確認すると取引が完了し、取り消せません。まず商品を確認してください。問題があれば、確認する前に出品者に伝えてください。",
+    "issue": "問題がある",
+    "not_yet": "まだ",
+    "ok": "問題なし"
   }
 }

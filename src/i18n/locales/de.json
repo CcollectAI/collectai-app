@@ -1274,7 +1274,13 @@
     "at_asking_short": "Zur Preisvorstellung",
     "step_postage_title": "Porto erfassen",
     "step_postage_now": "Was hat der Versand gekostet? Bis du es einträgst, wird dein Gewinn als unbekannt angezeigt.",
-    "step_postage_done": "Erfasst. Es zählt in deinem realisierten G/V."
+    "step_postage_done": "Erfasst. Es zählt in deinem realisierten G/V.",
+    "problem_title": "Was ist schiefgelaufen?",
+    "problem_explainer": "Eine negative Bewertung zählt gegen dieses Mitglied und andere sehen sie. Beschreibe, was passiert ist — nur Fakten, keine persönlichen Daten —, damit man es verstehen und beantworten kann. Versucht es zuerst im Chat zu klären.",
+    "problem_placeholder": "z. B. Die Karte kam mit einem Knick an, der auf den Fotos nicht zu sehen war",
+    "problem_min": "Mindestens {{count}} Zeichen.",
+    "problem_submit": "Negative Bewertung abgeben",
+    "problem_recorded": "Bewertung abgegeben"
   },
   "item_attrs": {
     "case_size": "Gehäusegröße",
@@ -1855,5 +1861,12 @@
     "item_agreed": "Artikel (vereinbart)",
     "total_to_pay": "Zu zahlen",
     "plus_postage": "+ {{amount}} Versand"
+  },
+  "receipt": {
+    "title": "Ist mit dem Artikel alles in Ordnung?",
+    "body": "Mit der Bestätigung ist der Handel abgeschlossen; das lässt sich nicht rückgängig machen. Prüfe zuerst den Artikel. Wenn etwas nicht stimmt, sag es dem Verkäufer, bevor du bestätigst.",
+    "issue": "Ich habe ein Problem",
+    "not_yet": "Noch nicht",
+    "ok": "Alles in Ordnung"
   }
 }

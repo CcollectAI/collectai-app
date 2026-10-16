@@ -34,6 +34,7 @@
  * live would land every trade push on a route that does not exist. The list
  * still highlights the pushed card. Repoint in the deploy AFTER this ships.
  */
+import { askBuyerToConfirmReceipt } from '@/lib/confirmReceipt';
 import { formatMemberPrice } from '@/lib/memberPrice';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
@@ -509,10 +510,22 @@ function TradeScreen() {
               {s.key === 'confirm' && s.state === 'now' ? (
                 <View style={styles.actions}>
                   <AnimatedPressable
-                    onPress={() => act(
-                      () => collectorsApi.p2pConfirmExchange(offer.id),
-                      offer.i_am_buyer ? 'Marked received' : 'Marked sent',
-                    )}
+                    onPress={() => {
+                      const confirm = () => act(
+                        () => collectorsApi.p2pConfirmExchange(offer.id),
+                        offer.i_am_buyer ? 'Marked received' : 'Marked sent',
+                      );
+                      // The buyer's confirmation completes the trade — ask first.
+                      if (!offer.i_am_buyer) { confirm(); return; }
+                      askBuyerToConfirmReceipt({
+                        t,
+                        onEverythingOk: confirm,
+                        onIssue: () => router.push({
+                          pathname: '/chat/new',
+                          params: { toUserId: offer.seller_id, contextListingTitle: offer.listing_title ?? '' },
+                        }),
+                      });
+                    }}
                     disabled={busy}
                     style={[styles.btn, { backgroundColor: colors.accent }]}
                     accessibilityRole="button"

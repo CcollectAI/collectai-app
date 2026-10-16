@@ -29,7 +29,7 @@ from typing import List, Optional
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.auth import get_current_user_id
 from app.errors import error_response
@@ -960,9 +960,31 @@ class OfferListResponse(BaseModel):
     total: int = 0
 
 
+NEGATIVE_NOTE_MIN = 10
+
+
 class GradeCreate(BaseModel):
+    """A rating of the other party to a completed trade.
+
+    A NEGATIVE grade must say what went wrong (2026-10-16). Walked: "Problem"
+    posted a negative grade in one tap, with no reason, no confirmation — a
+    mark on another member's reputation that nobody, including them, could
+    understand or answer. Vinted pairs every rating with a comment and lets the
+    other member reply; the reason is the half we can require now. Enforced
+    HERE, not only in the app, so an older build or a direct call cannot post
+    a bare negative.
+    """
     verdict: str = Field(..., pattern=r"^(positive|negative)$")
     note: Optional[str] = Field(None, max_length=500)
+
+    @model_validator(mode="after")
+    def _negative_needs_a_reason(self):
+        if self.verdict == "negative" and len((self.note or "").strip()) < NEGATIVE_NOTE_MIN:
+            raise ValueError(
+                "Say what went wrong — a negative rating needs a short reason "
+                f"(at least {NEGATIVE_NOTE_MIN} characters)."
+            )
+        return self
 
 
 class MemberReputation(BaseModel):

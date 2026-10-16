@@ -1274,7 +1274,13 @@
     "at_asking_short": "Al precio pedido",
     "step_postage_title": "Registrar gastos de envío",
     "step_postage_now": "¿Cuánto te costó el envío? Hasta que lo indiques, tu beneficio aparece como desconocido.",
-    "step_postage_done": "Registrado. Cuenta en tu resultado realizado."
+    "step_postage_done": "Registrado. Cuenta en tu resultado realizado.",
+    "problem_title": "¿Qué salió mal?",
+    "problem_explainer": "Una valoración negativa cuenta en contra de este miembro y los demás la ven. Cuenta qué pasó — solo hechos, sin datos personales — para que se pueda entender y responder. Intenta resolverlo antes en el chat.",
+    "problem_placeholder": "p. ej. La carta llegó con un doblez que no salía en las fotos",
+    "problem_min": "Al menos {{count}} caracteres.",
+    "problem_submit": "Publicar valoración negativa",
+    "problem_recorded": "Valoración publicada"
   },
   "item_attrs": {
     "case_size": "Tamaño de la caja",
@@ -1855,5 +1861,12 @@
     "item_agreed": "Artículo (acordado)",
     "total_to_pay": "Total a pagar",
     "plus_postage": "+ {{amount}} de envío"
+  },
+  "receipt": {
+    "title": "¿Está todo bien con el artículo?",
+    "body": "Confirmar completa el intercambio y no se puede deshacer. Revisa antes el artículo. Si algo va mal, díselo al vendedor antes de confirmar.",
+    "issue": "Tengo un problema",
+    "not_yet": "Todavía no",
+    "ok": "Todo está bien"
   }
 }

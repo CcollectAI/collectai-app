@@ -17,6 +17,7 @@
  *    only added ~90pt of blank space above the bar. Corrected 2026-09-13.)
  *  - No `accessibilityRole="tabbar"` (hard-crashes Android).
  */
+import { askBuyerToConfirmReceipt } from '@/lib/confirmReceipt';
 import { formatMemberPrice } from '@/lib/memberPrice';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -53,6 +54,9 @@ import { radius, text as textToken, fontWeight, shadow } from '@/theme/tokens';
 import logger from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { userErrorMessage } from '@/lib/userErrorMessage';
+
+/** Same minimum as the server's GradeCreate (p2p_offers_router.NEGATIVE_NOTE_MIN). */
+const NEGATIVE_NOTE_MIN = 10;
 
 type Role = 'all' | 'buying' | 'selling';
 
@@ -641,13 +645,31 @@ function OffersScreen() {
     );
   }, [act, postageFor, t]);
 
+  // A NEGATIVE rating needs a reason (2026-10-16). "Problem" used to post a
+  // negative grade in one tap — no reason, no second look — a mark on someone's
+  // reputation nobody could understand or answer. Vinted pairs every rating
+  // with a comment; the server now refuses a negative without one
+  // (GradeCreate, NEGATIVE_NOTE_MIN), and this sheet is where it is written.
+  const [problemFor, setProblemFor] = useState<P2POffer | null>(null);
+  const [problemNote, setProblemNote] = useState('');
+  const problemReady = problemNote.trim().length >= NEGATIVE_NOTE_MIN;
+  const closeProblem = useCallback(() => { setProblemFor(null); setProblemNote(''); }, []);
+  const submitProblem = useCallback(async () => {
+    if (!problemFor || !problemReady) return;
+    const o = problemFor;
+    const note = problemNote.trim();
+    closeProblem();
+    await act(() => collectorsApi.p2pGradeCounterparty(o.id, 'negative', note), o.id,
+      t('offers.problem_recorded', { defaultValue: 'Rating posted' }));
+  }, [act, closeProblem, problemFor, problemNote, problemReady, t]);
+
   const onGrade = useCallback((o: P2POffer) => {
     Alert.alert(
       'How did it go?',
       'Your grade is visible to other members and helps them trade safely.',
       [
         { text: 'Good trade', onPress: () => act(() => collectorsApi.p2pGradeCounterparty(o.id, 'positive'), o.id, 'Thanks — graded') },
-        { text: 'Problem', style: 'destructive' as const, onPress: () => act(() => collectorsApi.p2pGradeCounterparty(o.id, 'negative'), o.id, 'Grade recorded') },
+        { text: 'Problem', style: 'destructive' as const, onPress: () => setProblemFor(o) },
         { text: 'Later', style: 'cancel' as const },
       ],
     );
@@ -1424,11 +1446,23 @@ function OffersScreen() {
           {/* can_confirm / can_grade come from the SERVER — see file header. */}
           {o.can_confirm ? (
             <AnimatedPressable
-              onPress={() => act(
-                () => collectorsApi.p2pConfirmExchange(o.id),
-                o.id,
-                o.i_am_buyer ? 'Marked received' : 'Marked sent',
-              )}
+              onPress={() => {
+                const confirm = () => act(
+                  () => collectorsApi.p2pConfirmExchange(o.id),
+                  o.id,
+                  o.i_am_buyer ? 'Marked received' : 'Marked sent',
+                );
+                // The buyer's confirmation completes the trade — ask first.
+                if (!o.i_am_buyer) { confirm(); return; }
+                askBuyerToConfirmReceipt({
+                  t,
+                  onEverythingOk: confirm,
+                  onIssue: () => router.push({
+                    pathname: '/chat/new',
+                    params: { toUserId: o.seller_id, contextListingTitle: o.listing_title ?? '' },
+                  }),
+                });
+              }}
               disabled={busy}
               style={[styles.btn, { backgroundColor: colors.accent }]}
               accessibilityRole="button"
@@ -1548,8 +1582,8 @@ function OffersScreen() {
     // tapping a group row updates the state, the list re-renders from a stale
     // renderer, and the group appears not to open at all.
   }, [act, busyId, colors, confirmDecline, confirmAccept, confirmWithdraw, deepLinkOfferId, groupMeta, onCounter, onGrade,
-      openPostage, openTracking, role, router, groupHeadIds, openGroups, sectionCounts, toggleGroup,
-      settings.currency, settings.numberLocale, settings.hapticsEnabled]);
+      openPostage, role, router, groupHeadIds, openGroups, sectionCounts, toggleGroup, t, viewerPrice,
+      settings.hapticsEnabled]);
 
   return (
     <View style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -1730,8 +1764,8 @@ function OffersScreen() {
           </Text>
 
           {/* A dropdown, not a chip grid — `showActionSheet` is what every other
-              picker in the app uses (native ActionSheetIOS on iOS, an Alert on
-              Android), so a carrier is chosen the same way a category or a
+              picker in the app uses (native ActionSheetIOS on iOS, ActionSheetHost on
+              Android — not an Alert, which shows only three options), so a carrier is chosen the same way a category or a
               condition is in app/sell/new.tsx. The chips also grew with the
               carrier list; a field does not. */}
           <Text style={[styles.sheetLabel, { color: colors.text }]}>Carrier</Text>
@@ -1826,6 +1860,53 @@ function OffersScreen() {
           >
             <Text style={[styles.btnText, { color: canSaveTracking ? colors.accentText : colors.muted }]}>
               {t('offers.save_tracking', { defaultValue: 'Save tracking' })}
+            </Text>
+          </AnimatedPressable>
+        </ScrollView>
+      </BottomSheetModal>
+
+      {/* What went wrong — required before a negative rating is posted. */}
+      <BottomSheetModal
+        visible={problemFor !== null}
+        onClose={closeProblem}
+        title={t('offers.problem_title', { defaultValue: 'What went wrong?' })}
+        colors={colors}
+        maxHeight="70%"
+      >
+        <ScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
+          <Text style={[styles.sheetHint, { color: colors.muted }]}>
+            {t('offers.problem_explainer', { defaultValue: 'A negative rating counts against this member and other members see it. Say what happened — facts only, no personal details — so it can be understood and answered. Try to sort it out in chat first.' })}
+          </Text>
+          <TextInput
+            value={problemNote}
+            onChangeText={setProblemNote}
+            placeholder={t('offers.problem_placeholder', { defaultValue: 'e.g. The card arrived with a crease that was not in the photos' })}
+            placeholderTextColor={colors.muted}
+            multiline
+            maxLength={500}
+            style={[styles.input, { minHeight: 96, textAlignVertical: 'top', color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]}
+            accessibilityLabel={t('offers.problem_title', { defaultValue: 'What went wrong?' })}
+          />
+          {!problemReady ? (
+            <Text style={[styles.sheetHint, { color: colors.muted }]}>
+              {t('offers.problem_min', { count: NEGATIVE_NOTE_MIN, defaultValue: 'At least {{count}} characters.' })}
+            </Text>
+          ) : null}
+          <AnimatedPressable
+            onPress={submitProblem}
+            disabled={!problemReady}
+            style={[
+              styles.btn,
+              styles.sheetSave,
+              problemReady
+                ? { backgroundColor: colors.danger }
+                : { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+            ]}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !problemReady }}
+          >
+            <Text style={[styles.btnText, { color: problemReady ? '#FFFFFF' : colors.muted }]}>
+              {t('offers.problem_submit', { defaultValue: 'Post negative rating' })}
             </Text>
           </AnimatedPressable>
         </ScrollView>

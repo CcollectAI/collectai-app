@@ -1274,7 +1274,13 @@
     "at_asking_short": "At asking",
     "step_postage_title": "Record postage",
     "step_postage_now": "What did posting it cost you? Until you say, your profit is shown as unknown.",
-    "step_postage_done": "Recorded. It counts in your realised P/L."
+    "step_postage_done": "Recorded. It counts in your realised P/L.",
+    "problem_title": "What went wrong?",
+    "problem_explainer": "A negative rating counts against this member and other members see it. Say what happened — facts only, no personal details — so it can be understood and answered. Try to sort it out in chat first.",
+    "problem_placeholder": "e.g. The card arrived with a crease that was not in the photos",
+    "problem_min": "At least {{count}} characters.",
+    "problem_submit": "Post negative rating",
+    "problem_recorded": "Rating posted"
   },
   "item_attrs": {
     "case_size": "Case Size",
@@ -1855,5 +1861,12 @@
     "item_agreed": "Item (agreed)",
     "total_to_pay": "Total to pay",
     "plus_postage": "+ {{amount}} postage"
+  },
+  "receipt": {
+    "title": "Is everything OK with the item?",
+    "body": "Confirming completes the trade and can't be undone. Check the item first. If something is wrong, tell the seller before you confirm.",
+    "issue": "I have an issue",
+    "not_yet": "Not yet",
+    "ok": "Everything is OK"
   }
 }

@@ -1274,7 +1274,13 @@
     "at_asking_short": "Op vraagprijs",
     "step_postage_title": "Verzendkosten vastleggen",
     "step_postage_now": "Wat kostte het versturen? Tot je dat invult, staat je winst op onbekend.",
-    "step_postage_done": "Vastgelegd. Het telt mee in je gerealiseerde W/V."
+    "step_postage_done": "Vastgelegd. Het telt mee in je gerealiseerde W/V.",
+    "problem_title": "Wat ging er mis?",
+    "problem_explainer": "Een negatieve beoordeling telt mee voor deze gebruiker en andere leden zien hem. Beschrijf wat er gebeurde — alleen feiten, geen persoonlijke gegevens — zodat het te begrijpen en te beantwoorden is. Probeer het eerst in de chat op te lossen.",
+    "problem_placeholder": "bijv. De kaart kwam aan met een vouw die niet op de foto’s stond",
+    "problem_min": "Minstens {{count}} tekens.",
+    "problem_submit": "Negatieve beoordeling plaatsen",
+    "problem_recorded": "Beoordeling geplaatst"
   },
   "item_attrs": {
     "case_size": "Kastmaat",
@@ -1855,5 +1861,12 @@
     "item_agreed": "Artikel (afgesproken)",
     "total_to_pay": "Totaal te betalen",
     "plus_postage": "+ {{amount}} verzending"
+  },
+  "receipt": {
+    "title": "Is alles in orde met het artikel?",
+    "body": "Bevestigen rondt de ruil af en kan niet ongedaan worden gemaakt. Controleer eerst het artikel. Is er iets mis, laat het de verkoper weten voordat je bevestigt.",
+    "issue": "Ik heb een probleem",
+    "not_yet": "Nog niet",
+    "ok": "Alles is in orde"
   }
 }
